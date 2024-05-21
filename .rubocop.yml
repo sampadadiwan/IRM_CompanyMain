@@ -55,6 +55,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
     - 'app/packs/core/documents/models/e_signature.rb'
     - 'app/packs/core/support_client_mappings/models/support_client_mapping.rb'
     - 'app/packs/misc/import_uploads/services/import_util.rb'
@@ -116,6 +117,7 @@ Lint/RescueException:
 Lint/DuplicateBranch:
   Exclude:
     - 'app/packs/core/base/helpers/currency_helper.rb'
+    - 'app/packs/funds/funds/models/fund_formula.rb'
     
 Lint/MissingSuper:
   Exclude:

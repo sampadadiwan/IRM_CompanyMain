@@ -72,7 +72,8 @@ class FundFormula < ApplicationRecord
     find_expressions(ast, expressions)
     expression_map = {}
     expressions.each do |exp|
-      expression_map[exp] = eval(exp, binding)
+      val = eval(exp, binding)
+      expression_map[exp] = val unless val.is_a?(ApplicationRecord)
     end
     expression_map
   end

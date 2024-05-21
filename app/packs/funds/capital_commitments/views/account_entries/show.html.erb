@@ -150,7 +150,11 @@
       </td>
       <td>
         <% @account_entry.explanation.each do |exp| %>
-          <div><%= exp %></div>
+          <% if parse_json(exp) %>
+            <pre class="text-primary"><%= raw JSON.pretty_generate(parse_json(exp.presence), options = {}) %></pre>
+          <% else %>
+            <div><%= exp %></div>
+          <% end %>
         <% end %>
       </td>
     </tr>

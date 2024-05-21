@@ -25,7 +25,7 @@ class AccountEntryAllocationHelper
 
     ae = ae.where(rule_for:) if rule_for.present?
 
-    ae.delete_all
+    ae.update_all(deleted_at: Time.zone.now)
     notify("Cleaned up prev allocated entries", :success, @user_id)
   end
 

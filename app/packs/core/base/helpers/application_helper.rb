@@ -93,6 +93,17 @@ module ApplicationHelper
     end
   end
 
+  def parse_json(obj)
+    JSON.parse(obj)
+  rescue JSON::ParserError, TypeError
+    nil
+  end
+
+  def json2table(json, table_options: nil)
+    table_options ||= { table_class: "table table-bordered dataTable no_hover_table" }.freeze
+    Json2table.get_html_table(json, table_options)
+  end
+
   def cache_key(key, include_theme: false)
     key = [key, current_user, current_user&.entity, current_user&.curr_role, params[:page], params[:units]]
     key << cookies[:theme] if include_theme

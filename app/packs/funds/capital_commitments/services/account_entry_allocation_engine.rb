@@ -81,7 +81,7 @@ class AccountEntryAllocationEngine
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
       Rails.logger.debug { "No fund_unit_setting found for #{capital_commitment.to_json}" } unless fund_unit_setting
 
-      printable = fund_formula.parse_statement(bdg)
+      printable = fund_formula.parse_statement(binding)
       Rails.logger.debug printable
 
       ae = AccountEntry.new(name: fund_formula.name, fund_formula:,
