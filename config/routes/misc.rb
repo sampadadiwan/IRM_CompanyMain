@@ -3,6 +3,7 @@ get "/health_check/db_check", to: "health_check#db_check"
 get "/health_check/elastic_check", to: "health_check#elastic_check"
 get "/health_check/xirr_check", to: "health_check#xirr_check"
 get "/health_check/replication_check", to: "health_check#replication_check"
+get "/health_check/disk_check", to: "health_check#disk_check"
 
 get '/oauth2callback', to: 'entities#dashboard'
 
