@@ -13,7 +13,7 @@ namespace :db do  desc "Backup database to AWS-S3"
     client = Aws::S3::Client.new(
       :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: ENV["AWS_REGION"]
+      region: ENV["AWS_S3_REGION"]
     )
     
     s3 = Aws::S3::Resource.new(client: client)
@@ -118,7 +118,7 @@ namespace :db do  desc "Backup database to AWS-S3"
     client = Aws::S3::Client.new(
       :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: ENV["AWS_REGION"]
+      region: ENV["AWS_S3_REGION"]
     )
     
     s3 = Aws::S3::Resource.new(client: client)
@@ -131,7 +131,7 @@ namespace :db do  desc "Backup database to AWS-S3"
         acl: "private", # accepts private, public-read, public-read-write, authenticated-read
         bucket: bucket_name,
         create_bucket_configuration: {
-          location_constraint: ENV["AWS_REGION"], # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
+          location_constraint: ENV["AWS_S3_REGION"], # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
         },
       })
     end
@@ -154,117 +154,135 @@ namespace :db do  desc "Backup database to AWS-S3"
   end
 
   task :backup => [:environment] do
-    # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
-    User.support_users.first.touch
-    backup_db
+    begin
+      # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
+      User.support_users.first.touch
+      backup_db
+    rescue => e
+      ExceptionNotifier.notify_exception(e)
+      raise e
+    end
   end
 
   desc 'Test the latest database backup from S3'
   task :restore, [:restore_db_name, :db_host] do |t, args|
-    
-    args.with_defaults(:restore_db_name => :test_db_restore)
-    puts "\n#####################"
-    puts "Restoring latest backup from S3 for IRM_#{Rails.env} to #{args[:restore_db_name]} on #{args[:db_host]}"
-    puts "#######################"
+    begin
+      args.with_defaults(:restore_db_name => :test_db_restore)
+      puts "\n#####################"
+      puts "Restoring latest backup from S3 for IRM_#{Rails.env} to #{args[:restore_db_name]} on #{args[:db_host]}"
+      puts "#######################"
 
-    restore_db_name = args[:restore_db_name]
+      restore_db_name = args[:restore_db_name]
 
-    host = args[:db_host] == "Primary" ? Rails.application.credentials[:DB_HOST] : Rails.application.credentials[:DB_HOST_REPLICA]
+      host = args[:db_host] == "Primary" ? Rails.application.credentials[:DB_HOST] : Rails.application.credentials[:DB_HOST_REPLICA]
 
-    puts "Restoring latest backup from S3 for IRM_#{Rails.env} to #{restore_db_name} on #{host}"
-    restore_db(restore_db_name:, host:)      
+      puts "Restoring latest backup from S3 for IRM_#{Rails.env} to #{restore_db_name} on #{host}"
+      restore_db(restore_db_name:, host:)      
+    rescue => e
+      ExceptionNotifier.notify_exception(e)
+      raise e
+    end
   end
 
   task :backup_and_test => [:environment] do
-    # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
-    time = Time.zone.now
-    u = User.support_users.first
-    u.update_column(:updated_at, time)
+    begin
+      # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
+      time = Time.zone.now
+      u = User.support_users.first
+      u.update_column(:updated_at, time)
 
-    # Backup the DB
-    backup_db
+      # Backup the DB
+      backup_db
 
-    # Restore the DB
-    restore_db(test_count_query: "SELECT COUNT(*) FROM users where updated_at = '#{time.strftime("%Y-%m-%d %H:%M:%S.%6N")}'")
+      # Restore the DB
+      restore_db(test_count_query: "SELECT COUNT(*) FROM users where updated_at = '#{time.strftime("%Y-%m-%d %H:%M:%S.%6N")}'")
+    rescue => e
+      ExceptionNotifier.notify_exception(e)
+      raise e
+    end
   end
 
   desc 'Create a MySQL replica on a different machine'
   task :create_replica, [:skip_restore_backup] do |t, args|
+    begin
+      args.with_defaults(:skip_restore_backup => false)
+      skip_restore_backup = args[:skip_restore_backup]
 
-    args.with_defaults(:skip_restore_backup => false)
-    skip_restore_backup = args[:skip_restore_backup]
+      # Connection details for the source database
+      source_host = Rails.application.credentials[:DB_HOST]
+      source_user = Rails.application.credentials[:DB_USER]
+      source_password = Rails.application.credentials[:DB_PASS]
+      source_database = "IRM_#{Rails.env}"
+      source_port = 3306
 
-    # Connection details for the source database
-    source_host = Rails.application.credentials[:DB_HOST]
-    source_user = Rails.application.credentials[:DB_USER]
-    source_password = Rails.application.credentials[:DB_PASS]
-    source_database = "IRM_#{Rails.env}"
-    source_port = 3306
+      # Connection details for the destination database
+      destination_host = Rails.application.credentials[:DB_HOST_REPLICA]
+      destination_user = Rails.application.credentials[:DB_USER]
+      destination_password = Rails.application.credentials[:DB_PASS]
+      destination_database = "IRM_#{Rails.env}"
+      destination_port = 3306
 
-    # Connection details for the destination database
-    destination_host = Rails.application.credentials[:DB_HOST_REPLICA]
-    destination_user = Rails.application.credentials[:DB_USER]
-    destination_password = Rails.application.credentials[:DB_PASS]
-    destination_database = "IRM_#{Rails.env}"
-    destination_port = 3306
+      puts "\n#####################"
+      puts "Creating a MySQL replica"
+      puts "from #{source_host} of database #{source_database}"
+      puts "on #{destination_host} for database #{destination_database}"
+      puts "#######################"
 
-    puts "\n#####################"
-    puts "Creating a MySQL replica"
-    puts "from #{source_host} of database #{source_database}"
-    puts "on #{destination_host} for database #{destination_database}"
-    puts "#######################"
+      # Connect to the source database
+      source_client = Mysql2::Client.new(
+        host: source_host,
+        username: source_user,
+        password: source_password,
+        database: source_database,
+        port: source_port
+      )
 
-    # Connect to the source database
-    source_client = Mysql2::Client.new(
-      host: source_host,
-      username: source_user,
-      password: source_password,
-      database: source_database,
-      port: source_port
-    )
+      # Connect to the destination database
+      destination_client = Mysql2::Client.new(
+        host: destination_host,
+        username: destination_user,
+        password: destination_password,
+        port: destination_port
+      )
 
-    # Connect to the destination database
-    destination_client = Mysql2::Client.new(
-      host: destination_host,
-      username: destination_user,
-      password: destination_password,
-      port: destination_port
-    )
+      # Get the current binary log file and position from the source
+      result = source_client.query('SHOW MASTER STATUS')
+      binlog_file = result.first['File']
+      binlog_position = result.first['Position']
+      puts "Current binary log file: #{binlog_file}, position: #{binlog_position}"
 
-    # Get the current binary log file and position from the source
-    result = source_client.query('SHOW MASTER STATUS')
-    binlog_file = result.first['File']
-    binlog_position = result.first['Position']
-    puts "Current binary log file: #{binlog_file}, position: #{binlog_position}"
+      # Create a new database on the destination
+      destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
 
-    # Create a new database on the destination
-    destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
+      restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) unless skip_restore_backup
+      
+      # Set up replication on the destination
+      change_master_query = "CHANGE MASTER TO
+        MASTER_HOST='#{source_host}',
+        MASTER_USER='#{source_user}',
+        MASTER_PORT=#{source_port},
+        MASTER_PASSWORD='#{source_password}',
+        MASTER_LOG_FILE='#{binlog_file}',
+        MASTER_LOG_POS=#{binlog_position}"
 
-    restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) unless skip_restore_backup
-    
-    # Set up replication on the destination
-    change_master_query = "CHANGE MASTER TO
-      MASTER_HOST='#{source_host}',
-      MASTER_USER='#{source_user}',
-      MASTER_PORT=#{source_port},
-      MASTER_PASSWORD='#{source_password}',
-      MASTER_LOG_FILE='#{binlog_file}',
-      MASTER_LOG_POS=#{binlog_position}"
+      puts "Setting up replication on the destination with query: #{change_master_query}"
+      # This is to make the slave different from the master
+      destination_client.query('SET GLOBAL server_id = 2')
+      # Stop and reset the replica
+      destination_client.query('STOP REPLICA')
+      destination_client.query('RESET REPLICA ALL')
+      # Setup the replica
+      destination_client.query(change_master_query)
+      # Start the replica
+      puts 'Starting slave replication on the destination'
+      destination_client.query('START REPLICA')
+      puts 'Replication setup complete!'
 
-    puts "Setting up replication on the destination with query: #{change_master_query}"
-    # This is to make the slave different from the master
-    destination_client.query('SET GLOBAL server_id = 2')
-    # Stop and reset the replica
-    destination_client.query('STOP REPLICA')
-    destination_client.query('RESET REPLICA ALL')
-    # Setup the replica
-    destination_client.query(change_master_query)
-    # Start the replica
-    puts 'Starting slave replication on the destination'
-    destination_client.query('START REPLICA')
-    puts 'Replication setup complete!'
-
-    source_client.query('SHOW REPLICA STATUS')
+      source_client.query('SHOW REPLICA STATUS')
+    rescue => e
+      ExceptionNotifier.notify_exception(e)
+      raise e
+    end
   end
   
 end
