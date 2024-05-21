@@ -1,3 +1,9 @@
+V7.1.02
+#####################################
+5ca133dbd Added funds import
+4878df000 Hybrid fund approval (#264)
+f96732402 Better title for allocation_form
+
 V7.1.01
 #####################################
 45a5e1d51 limit-grab-to-kanban (#263)

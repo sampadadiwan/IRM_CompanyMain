@@ -145,6 +145,7 @@ Security/Eval:
     - 'app/packs/secondaries/interests/models/interest.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
+    - 'app/packs/funds/funds/models/fund_formula.rb'
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:
