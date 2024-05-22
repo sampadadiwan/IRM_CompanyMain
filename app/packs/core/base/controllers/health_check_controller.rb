@@ -26,35 +26,34 @@ class HealthCheckController < ApplicationController
   end
 
   def disk_check
-      # Execute the `df -h` command to get disk space usage
-      disk_usage = `df -h`
-      
-      # Find the line that contains the root filesystem (assuming it's mounted on /)
-      root_fs_line = disk_usage.split("\n").find { |line| line.include?(' /') }
-      
-      if root_fs_line
-        # Extract the percentage usage from the line
-        usage_percentage = root_fs_line.split[4].to_i
-    
-        # Check if the usage is 95% or more
-        if usage_percentage >= 95
-          puts "Warning: Disk space is at #{usage_percentage}%"
-        else
-          puts "Disk space is at #{usage_percentage}%. All good!"
-        end
-      else
-        puts "Could not find root filesystem information."
-      end
+    # Execute the `df -h` command to get disk space usage
+    disk_usage = `df -h`
 
-      respond_to do |format|
-        if usage_percentage < 95
-          format.json { render json: "Ok", status: :ok }
-        else
-          raise "Disk space is at #{usage_percentage}%."
-        end
+    # Find the line that contains the root filesystem (assuming it's mounted on /)
+    root_fs_line = disk_usage.split("\n").find { |line| line.include?(' /') }
+
+    if root_fs_line
+      # Extract the percentage usage from the line
+      usage_percentage = root_fs_line.split[4].to_i
+
+      # Check if the usage is 95% or more
+      if usage_percentage >= 95
+        Rails.logger.debug { "Warning: Disk space is at #{usage_percentage}%" }
+      else
+        Rails.logger.debug { "Disk space is at #{usage_percentage}%. All good!" }
       end
-    
-  end    
+    else
+      Rails.logger.debug "Could not find root filesystem information."
+    end
+
+    respond_to do |format|
+      if usage_percentage < 95
+        format.json { render json: "Ok", status: :ok }
+      else
+        raise "Disk space is at #{usage_percentage}%."
+      end
+    end
+  end
 
   def replication_check
     respond_to do |format|

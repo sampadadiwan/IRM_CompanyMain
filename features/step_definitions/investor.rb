@@ -358,6 +358,7 @@ Then('the investor kycs must have the data in the sheet') do
       cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
       cc.esign_emails.should == user_data["Investor Signatory Emails"]
       cc.agreement_committed_amount.to_d.should == user_data["Agreement Committed Amount"]&.to_d || 0
+      cc.agreement_unit_type.should == user_data["Agreement Unit Type"]
       cc.import_upload_id.should == ImportUpload.last.id
     end
     cc.class.name.should == cc.type_from_kyc_type
@@ -682,7 +683,7 @@ Given('we Generate Commitment Agreement for the first capital commitment') do
   @capital_commitment = CapitalCommitment.last
   @capital_commitment.investor_kyc = InvestorKyc.last
   @capital_commitment.save!
-  
+
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
   click_on("Generate #{@template_name}")
@@ -768,10 +769,10 @@ Then('the esign completed document is present') do
 end
 
 
-Given('the template has esigns setup') do 
+Given('the template has esigns setup') do
   @fund.esign_emails = "shrikantgour018@gmail.com,aseemak56@yahoo.com"
   @fund.save!
-  
+
   @doc = Document.where(template: true).last
   @template_esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Fund Signatories", position: 1, status: "")
   @template_esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Investor Signatories", position: 2, status: "")

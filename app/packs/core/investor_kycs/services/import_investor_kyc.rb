@@ -1,5 +1,5 @@
 class ImportInvestorKyc < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Sebi Investor Category", "Sebi Investor Sub Category"].freeze
+  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type", "Sebi Investor Category", "Sebi Investor Sub Category"].freeze
   # add them as standard fields above
 
   def standard_headers
@@ -40,6 +40,7 @@ class ImportInvestorKyc < ImportUtil
 
     investor_kyc.assign_attributes(investor:, PAN: user_data["Pan"],
                                    agreement_committed_amount: user_data["Agreement Committed Amount"],
+                                   agreement_unit_type: user_data["Agreement Unit Type"],
                                    full_name: user_data["Investing Entity"],
                                    address: user_data["Address"],
                                    corr_address: user_data["Correspondence Address"],
