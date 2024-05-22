@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_20_144041) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_21_131708) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1000,6 +1000,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_20_144041) do
     t.string "signer_id", limit: 20
     t.string "email", limit: 60
     t.bigint "document_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_e_signatures_on_deleted_at"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
@@ -2693,6 +2695,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_20_144041) do
     t.string "duty_payer_phone_number"
     t.string "duty_payer_email_id"
     t.string "amounts"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_stamp_papers_on_deleted_at"
     t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
   end

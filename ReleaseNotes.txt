@@ -1,5 +1,12 @@
 V7.1.02
 #####################################
+e987a5279  added disk_check
+aba1e7a7f Kyc sub categories fix (#267)
+8984f3eca Added parse_statment to fund formula for better explanations
+5c68d51fc Fixed bug with AWS region
+
+V7.1.02
+#####################################
 5ca133dbd Added funds import
 4878df000 Hybrid fund approval (#264)
 f96732402 Better title for allocation_form
