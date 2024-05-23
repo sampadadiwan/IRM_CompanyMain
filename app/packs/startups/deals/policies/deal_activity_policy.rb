@@ -46,6 +46,10 @@ class DealActivityPolicy < DealBasePolicy
     permissioned_employee?
   end
 
+  def update_sequence?
+    permissioned_employee?
+  end
+
   def destroy?
     permissioned_employee?(:destroy)
   end

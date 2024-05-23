@@ -104,14 +104,12 @@ class DealActivitiesController < ApplicationController
   end
 
   def update_sequence
-    DealActivity.public_activity_off
-    @deal_activity.set_list_position(params[:sequence].to_i + 1)
-    DealActivity.public_activity_on
-
-    # @deal_activity.create_activity key: 'deal_activity.sequence.updated', owner: current_user
-    @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
-    params[:template] = true
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
+    ActiveRecord::Base.connected_to(role: :writing) do
+      @deal_activity.set_list_position(params[:sequence].to_i + 1)
+      @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
+      params[:template] = true
+      ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
+    end
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
@@ -123,11 +121,7 @@ class DealActivitiesController < ApplicationController
   end
 
   def toggle_completed
-    DealActivity.public_activity_off
     success = @deal_activity.update(deal_activity_params)
-    DealActivity.public_activity_on
-
-    @deal_activity.create_activity key: 'deal_activity.completed', owner: current_user if @deal_activity.completed
 
     respond_to do |format|
       if success
