@@ -113,7 +113,7 @@
                     </div>
                     </div>
                 </div>
-            <% else %>
+            <% end %>
                 <div class="card">
                     <div class="card-body">
                     <div class="row align-items-center">
@@ -122,7 +122,13 @@
                                 Recent Documents
                             </h5>
                             <table class="table">
-                                <% capital_commitment.docs_for_investor.limit(3).order(id: :desc).each do |doc| %>
+                                <% capital_commitment.docs_for_investor.limit(2).order(id: :desc).each do |doc| %>
+                                    <tr>
+                                        <td><%= link_to doc.name, doc %></td> 
+                                        <td><%= l doc.created_at.to_date %></td>
+                                    </tr>
+                                <% end %>
+                                <% capital_commitment.fund.data_room_folder.documents.limit(2).order(id: :desc).each do |doc| %>
                                     <tr>
                                         <td><%= link_to doc.name, doc %></td> 
                                         <td><%= l doc.created_at.to_date %></td>
@@ -133,7 +139,6 @@
                     </div>
                     </div>
                 </div>
-            <% end %>
         </div>
         
         <!-- div class="col-lg-12 col-md-6">
