@@ -36,7 +36,8 @@ When('I click on the action dropdown and select any Investor and save') do
 end
 
 When('I click on a Kanban Card and edit the form') do
-  all(".kanban-card").first.click()
+  deal_investor = DealInvestor.first
+  find('h4', text: deal_investor.name).click()
   sleep(0.5)
   click_link('Edit')
   sleep(0.25)
@@ -47,6 +48,7 @@ When('I click on a Kanban Card and edit the form') do
 end
 
 When("I click on a Kanban Card's tags") do
+  DealInvestorIndex.import!
   expect(all(".kanban-card").count).to (eq(2))
   click_link("Random")
   sleep(1)
@@ -324,7 +326,7 @@ end
 When('I click on a Kanban Card') do
   @deal_investor = DealInvestor.last
   expect(all(".kanban-card").count).to (eq(2))
-  find('.kanban-card', text: /#{Regexp.escape(@deal_investor.name)}/).click
+  find('h4', text: @deal_investor.name).click()
   sleep(1)
 end
 
