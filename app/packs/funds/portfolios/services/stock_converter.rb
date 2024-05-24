@@ -1,22 +1,12 @@
 class StockConverter < Trailblazer::Operation
-  step :validate_net_quantity
   step :create_stock_conversion
   step :adjust_from_portfolio_investment
   step :create_to_portfolio_investment
   left :handle_errors
 
-  def validate_net_quantity(_ctx, stock_conversion:, **)
-    if stock_conversion.from_quantity < stock_conversion.from_portfolio_investment.net_quantity
-      true
-    else
-      stock_conversion.errors.add(:from_quantity, "must be less than the net quantity")
-      false
-    end
-  end
-
   def create_stock_conversion(ctx, stock_conversion:, **)
-    stock_conversion.save
     ctx[:from_portfolio_investment] = stock_conversion.from_portfolio_investment
+    stock_conversion.save
   end
 
   def adjust_from_portfolio_investment(_ctx, stock_conversion:, from_portfolio_investment:, **)

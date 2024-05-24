@@ -23,6 +23,7 @@ class StockConversionsController < ApplicationController
     @stock_conversion.entity_id = @stock_conversion.from_portfolio_investment.entity_id
     @stock_conversion.fund_id = @stock_conversion.from_portfolio_investment.fund_id
     @stock_conversion.from_instrument_id = @stock_conversion.from_portfolio_investment.investment_instrument_id
+    @stock_conversion.from_quantity = @stock_conversion.from_portfolio_investment.net_quantity
     authorize @stock_conversion
   end
 

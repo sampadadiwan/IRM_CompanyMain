@@ -1,3 +1,27 @@
+V7.1.05
+#####################################
+
+08a4e736c Added explain to run allocations
+efb92f358 Fix for stock conversion, multi currency
+9907f64c9 Fixed bug with stock conversion multiple conversions
+b22d8ed02 Fixed bug with calc of base_amount for to_portfolio_investment
+33c5c13fe Added conversion? policy to PI
+d4c9965c5 Fixed portfolio tests
+c7dfa907e Added conversion? policy to PI
+b6b02e4e2 Now rollup net_quantity of PI to quantity of API
+074381cb1 Better link to portfolio company
+289f98013 Added sidekiq restart post deploy
+7b4e4069a Added Show conversions button
+aafb1609c Added UI for stock_conversion
+ab82dd24a Added stock conversion
+0701436a0 Fixed date format (#272)
+4d20b9aeb Added Valuation creation when PI is created
+4562e6907 (origin/main, origin/HEAD, main) Added fund docs to the investor view
+3150d2002 Added fund docs to the investor view
+5ee671eb9 Abhay/grid view fixes (#270)
+9fe6f77e0 Reverted capistrano sidekiq
+af782fa44 (tag: V7.1.04) Added agrement unit type to investor kyc upload (#269)
+
 V7.1.02
 #####################################
 e987a5279  added disk_check

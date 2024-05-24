@@ -1,6 +1,6 @@
 <%%= render FormCard.new(title: "<%= human_name.pluralize.titleize %> : #{<%=model_resource_name%>.presence || 'New'}") do %>
 
-  <%%= form_with(model: <%= model_resource_name %>) do |form| %>
+  <%%= form_with(model: <%= model_resource_name %>, validate: true) do |form| %>
     <%% if <%= singular_table_name %>.errors.any? %>
       <div class="alert alert-danger">
         <h2><%%= pluralize(<%= singular_table_name %>.errors.count, "error") %> prohibited this <%= singular_table_name %> from being saved:</h2>

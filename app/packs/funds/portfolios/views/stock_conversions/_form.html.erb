@@ -1,5 +1,5 @@
 <%= render FormCard.new(title: "Stock Conversions : #{stock_conversion.presence || 'New'}") do %>
-  <%= form_with(model: stock_conversion) do |form| %>
+  <%= form_with(model: stock_conversion, validate: true) do |form| %>
     <% if stock_conversion.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(stock_conversion.errors.count, "error") %> prohibited this stock_conversion from being saved:</h2>
@@ -24,14 +24,17 @@
     <div class="form-group">
       <%= form.label :from_quantity %>
       <%= form.text_field :from_quantity, class: "form-control"  %>
+      <span class="text-muted">Quantity you want to convert. Cannot exceed <%= stock_conversion.from_portfolio_investment.net_quantity %> </span>
     </div>
     <div class="form-group">
       <%= form.label :to_instrument_id %>
       <%= form.select :to_instrument_id, stock_conversion.from_portfolio_investment.portfolio_company.investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control"  %>
+      <span class="text-muted">The instrument to which you want to convert</span>
     </div>
     <div class="form-group">
       <%= form.label :to_quantity %>
       <%= form.number_field :to_quantity, class: "form-control", step: :any  %>
+      <span class="text-muted">The quantity of the new instrument</span>
     </div>
     <div class="form-group">
       <%= form.label :conversion_date %>

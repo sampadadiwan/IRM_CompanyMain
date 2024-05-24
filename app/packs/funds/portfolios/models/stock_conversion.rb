@@ -11,6 +11,7 @@ class StockConversion < ApplicationRecord
   delegate :to_s, to: :from_portfolio_investment
 
   validates :to_quantity, :from_quantity, :conversion_date, presence: true
+  validates :from_quantity, numericality: { less_than_or_equal_to: ->(sc) { sc.from_portfolio_investment.net_quantity }, message: "cannot exceed the maximum quantity" }
 
   scope :fund_id, ->(fund_id) { where(fund_id:) }
   scope :entity_id, ->(entity_id) { where(entity_id:) }
