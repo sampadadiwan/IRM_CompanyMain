@@ -1,0 +1,41 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Stock Conversions</h1>
+</div>
+<div class="table-responsive">
+  <table id="stock_conversions" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          From Investment
+        </th>
+        <th>
+          From Instrument
+        </th>
+        <th>
+          From Quantity
+        </th>
+        <th>
+          To Instrument
+        </th>
+        <th>
+          To Quantity
+        </th>
+        <th>
+          To Investment
+        </th>
+        <th>
+          Fund
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @stock_conversions.each do |stock_conversion| %>
+        <%= render stock_conversion %>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= paginate @stock_conversions %>
+</div>

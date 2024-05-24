@@ -32,6 +32,12 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :explain, "Explain Formulas" %>
+      <%= form.check_box :explain, class: "form-check-input", name: "explain", value: true, checked: run_allocations %>
+      <small class="text-muted">Check if you formulas to be explained</small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :rule_for, "For" %>
       <% selected = params[:rule_for] || "Accounting" %>
       <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>

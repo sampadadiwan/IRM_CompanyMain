@@ -9,7 +9,7 @@ class Valuation < ApplicationRecord
 
   validates :per_share_value, numericality: { greater_than: 0 }
   validates :valuation_date, presence: true
-  validate :unique_valuation
+  validates_uniqueness_of :valuation_date, scope: %i[investment_instrument_id entity_id owner_id owner_type]
 
   # Ensure callback to the owner
   after_save :update_owner
@@ -25,10 +25,6 @@ class Valuation < ApplicationRecord
       entity.per_share_value_cents = per_share_value_cents
       entity.save
     end
-  end
-
-  def unique_valuation
-    errors.add(:valuation_date, 'Valuation already exists for this date.') if owner.valuations.exists?(valuation_date:, investment_instrument_id:)
   end
 
   def update_owner

@@ -2,6 +2,8 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   step :compute_amount_cents
   step :setup_aggregate
   left :handle_setup_aggregate_errors
+  step :create_valuation
+  left :handle_valuation_errors
   step :compute_fmv
   step :compute_quantity_as_of_date
   step :save
@@ -21,5 +23,25 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
 
   def setup_aggregate(_ctx, portfolio_investment:, **)
     portfolio_investment.setup_aggregate
+  end
+
+  # When a new PortfolioInvestment is created, we need to create a new Valuation for it.
+  def create_valuation(ctx, portfolio_investment:, **)
+    investment_instrument_id = portfolio_investment.investment_instrument_id
+    investment_date = portfolio_investment.investment_date
+    base_cost_cents = portfolio_investment.base_amount_cents
+    entity_id = portfolio_investment.entity_id
+    portfolio_investment.fund
+
+    last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(investment_instrument_id:, valuation_date: investment_date, entity_id:)
+
+    last_valuation.per_share_value_cents = base_cost_cents
+    ctx[:valuation] = last_valuation
+    last_valuation.save
+  end
+
+  def handle_valuation_errors(ctx, valuation:, **)
+    Rails.logger.debug { "PortfolioInvestmentCreate Valuation errors: #{valuation.errors.full_messages}" }
+    ctx[:errors] = valuation.errors.full_messages
   end
 end

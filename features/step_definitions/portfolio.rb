@@ -95,7 +95,7 @@ include CurrencyHelper
 
 Given('there is a valuation {string} for the portfolio company') do |args|
   @portfolio_company = @entity.investors.portfolio_companies.last
-  @valuation = FactoryBot.build(:valuation, entity: @entity, owner: @portfolio_company, investment_instrument: @investment_instrument)
+  @valuation = FactoryBot.build(:valuation, entity: @entity, owner: @portfolio_company, investment_instrument: @investment_instrument, valuation_date: Date.today)
   key_values(@valuation, args)
   @valuation.save!
 end
@@ -110,7 +110,14 @@ end
 
 Then('the fmv must be calculated for the portfolio') do
   PortfolioInvestment.all.each do |pi|
-    pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date))
+    if pi.buy?
+      pi.net_quantity.should == pi.quantity + pi.sold_quantity - pi.transfer_quantity
+      pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date)) 
+    else
+      pi.net_quantity.should == pi.quantity
+      pi.fmv_cents.should == 0
+      pi.gain_cents.should == pi.amount_cents.abs + pi.cost_of_sold_cents
+    end
   end
 end
 
@@ -320,5 +327,54 @@ Then('Sebi report should be generated for the fund') do
     ws.rows.each_with_index do |row, ridx|
       row.should == result_sheet_rows[ridx]
     end
+  end
+end
+
+
+
+
+Given('I create a new stock conversion {string}  from {string} to {string}') do |args, from_instrument, to_instrument|  
+  
+  @from_portfolio_investment = PortfolioInvestment.buys.sample
+  @from_instrument = @from_portfolio_investment.investment_instrument
+  # Grab the to_instrument from the portfolio company
+  @to_instrument = InvestmentInstrument.new
+  key_values(@to_instrument, to_instrument)
+  @to_instrument = @from_portfolio_investment.portfolio_company.investment_instruments.where(name: @to_instrument.name).first
+
+  @stock_conversion = StockConversion.new(entity_id: @entity.id, from_portfolio_investment: @from_portfolio_investment, to_instrument: @to_instrument, from_instrument: @from_instrument, fund: @fund, conversion_date: Date.today)  
+  key_values(@stock_conversion, args)
+
+  StockConverter.wtf?(stock_conversion: @stock_conversion).success?.should == true
+end
+
+Then('the from portfolio investments must be adjusted') do
+  @from_portfolio_investment.reload
+  @from_portfolio_investment.transfer_quantity.should == @stock_conversion.from_quantity
+  @from_portfolio_investment.net_quantity.should == @from_portfolio_investment.quantity + @from_portfolio_investment.sold_quantity - @stock_conversion.from_quantity
+  @from_portfolio_investment.notes.should == @stock_conversion.notes
+end
+
+Then('the to portfolio investments must be created') do
+  @to_portfolio_investment = @stock_conversion.to_portfolio_investment
+  @to_portfolio_investment.entity_id.should == @from_portfolio_investment.entity_id
+  @to_portfolio_investment.fund_id.should == @from_portfolio_investment.fund_id
+  @to_portfolio_investment.form_type_id.should == @from_portfolio_investment.form_type_id
+  @to_portfolio_investment.portfolio_company_id.should == @from_portfolio_investment.portfolio_company_id
+  @to_portfolio_investment.portfolio_company_name.should == @from_portfolio_investment.portfolio_company_name
+  @to_portfolio_investment.investment_date.should == @from_portfolio_investment.investment_date
+  @to_portfolio_investment.quantity.should == @stock_conversion.to_quantity
+  @to_portfolio_investment.commitment_type.should == @from_portfolio_investment.commitment_type
+  @to_portfolio_investment.folio_id.should == @from_portfolio_investment.folio_id
+  @to_portfolio_investment.capital_commitment_id.should == @from_portfolio_investment.capital_commitment_id
+  @to_portfolio_investment.investment_instrument_id.should == @stock_conversion.to_instrument_id
+  @to_portfolio_investment.notes.should == @stock_conversion.notes
+  @to_portfolio_investment.base_amount_cents.should == @to_portfolio_investment.convert_currency(@from_portfolio_investment.investment_instrument.currency, @to_portfolio_investment.investment_instrument.currency, @from_portfolio_investment.base_cost_cents, @from_portfolio_investment.investment_date) * @stock_conversion.from_quantity
+end
+
+
+Then('the APIs must have the right quantity post transfer') do
+  AggregatePortfolioInvestment.all.each do |api|
+    api.quantity.should == api.portfolio_investments.buys.sum(:net_quantity)
   end
 end

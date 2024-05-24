@@ -1,0 +1,4 @@
+<%= render "/layouts/steps", steps: ["Select Quantity", "Select To Instrument"].freeze %>
+<%= render NewCard.new do %>
+    <%= render "form", stock_conversion: @stock_conversion %>
+<% end %>

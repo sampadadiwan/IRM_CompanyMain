@@ -144,6 +144,7 @@ class FundsController < ApplicationController
       generate_soa = params[:generate_soa] == "1"
       fund_ratios = params[:fund_ratios] == "1"
       run_allocations = params[:run_allocations] == "1"
+      explain = params[:explain] == "1"
       sample = params[:sample] == "true"
       rule_for = params[:rule_for]
       user_id = current_user.id
@@ -154,7 +155,7 @@ class FundsController < ApplicationController
     end
 
     if start_date.present? && end_date.present?
-      AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, run_allocations:,
+      AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, run_allocations:, explain:,
                                                                               user_id:, generate_soa:, template_name:, fund_ratios:, sample:)
       redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few mins and refresh the page")
     else

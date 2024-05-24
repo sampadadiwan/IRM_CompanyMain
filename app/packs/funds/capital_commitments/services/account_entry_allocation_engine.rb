@@ -1,13 +1,14 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, run_allocations: true,
+  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, run_allocations: true, explain: false,
                  generate_soa: false, template_name: nil, fund_ratios: false, sample: false)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
     @run_allocations = run_allocations
+    @explain = explain
     @generate_soa = generate_soa
     @template_name = template_name
     @fund_ratios = fund_ratios
@@ -80,9 +81,6 @@ class AccountEntryAllocationEngine
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
       Rails.logger.debug { "No fund_unit_setting found for #{capital_commitment.to_json}" } unless fund_unit_setting
-
-      printable = fund_formula.parse_statement(binding)
-      Rails.logger.debug printable
 
       ae = AccountEntry.new(name: fund_formula.name, fund_formula:,
                             amount_cents: @helper.safe_eval(fund_formula.formula, binding))
@@ -194,7 +192,7 @@ class AccountEntryAllocationEngine
       account_entry.explanation = []
       account_entry.explanation << fund_formula.formula
       account_entry.explanation << fund_formula.description
-      account_entry.explanation << fund_formula.parse_statement(bdg).to_json
+      account_entry.explanation << fund_formula.parse_statement(bdg).to_json if @explain
 
       account_entry.parent = parent
       account_entry.generated = true

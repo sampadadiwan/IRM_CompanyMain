@@ -50,4 +50,8 @@ class PortfolioInvestmentPolicy < FundBasePolicy
       create?
     end
   end
+
+  def conversion?
+    record.buy? && record.net_quantity.positive?
+  end
 end

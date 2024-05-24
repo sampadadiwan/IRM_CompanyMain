@@ -1,0 +1,93 @@
+<%= render FormCard.new(title: "#{@stock_conversion}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @stock_conversion.entity.name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @stock_conversion.fund %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        From Portfolio Investment
+      </td>
+      <td>
+        <%= link_to @stock_conversion.from_portfolio_investment %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        From Instrument
+      </td>
+      <td>
+        <%= link_to @stock_conversion.from_instrument %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        From Quantity
+      </td>
+      <td>
+        <%= @stock_conversion.from_quantity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To Instrument
+      </td>
+      <td>
+        <%= link_to @stock_conversion.to_instrument %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To Quantity
+      </td>
+      <td>
+        <%= @stock_conversion.to_quantity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To Portfolio Investment
+      </td>
+      <td>
+        <%= link_to @stock_conversion.to_portfolio_investment %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Conversion Date
+      </td>
+      <td>
+        <%= l @stock_conversion.conversion_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Note
+      </td>
+      <td>
+        <%= @stock_conversion.notes %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@stock_conversion).update? %>
+      <%= link_to "Edit", edit_stock_conversion_path(@stock_conversion), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @stock_conversion, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

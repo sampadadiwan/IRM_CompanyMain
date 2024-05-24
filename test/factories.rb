@@ -1,4 +1,16 @@
 FactoryBot.define do
+  factory :stock_conversion do
+    entity { nil }
+    portfolio_investment { nil }
+    fund { nil }
+    from_instrument { nil }
+    from_quantity { "9.99" }
+    to_instrument { nil }
+    to_quantity { "9.99" }
+    note { "MyText" }
+    conversion_date { Date.today - rand(30).days }
+  end
+
   factory :doc_question do
     entity { nil }
     tags { "MyString" }
@@ -134,7 +146,7 @@ FactoryBot.define do
     fund { Fund.all.sample }
     entity { fund.entity }
     portfolio_company { entity.investors.portfolio_companies.sample }
-    investment_date { Time.zone.today - rand(36).months }
+    investment_date { Time.zone.today - 1.month - rand(48).months }
     base_amount_cents { 10000000 * rand(1..20) }
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
     sub_category { "Equity" }

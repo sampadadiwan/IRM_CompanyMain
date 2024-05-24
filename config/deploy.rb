@@ -50,6 +50,7 @@ namespace :deploy do
   end
 
   before "deploy:updated", :upload_env
+  before 'deploy:finished', 'sidekiq:restart'
 end
 
 namespace :puma do

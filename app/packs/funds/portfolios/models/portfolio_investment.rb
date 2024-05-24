@@ -21,11 +21,16 @@ class PortfolioInvestment < ApplicationRecord
 
   validates :investment_date, :quantity, :amount_cents, presence: true
 
-  monetize :base_amount_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
+  monetize :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
-  counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
+  # We rollup net quantity to the API quantity, only for buys. This takes care of sells and transfers
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "quantity" : nil }, delta_column: 'net_quantity', column_names: {
+    ["portfolio_investments.quantity > ?", 0] => 'quantity',
+    ["portfolio_investments.quantity < ?", 0] => nil
+  }
+
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }

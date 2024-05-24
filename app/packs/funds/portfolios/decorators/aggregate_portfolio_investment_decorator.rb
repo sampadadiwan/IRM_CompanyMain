@@ -1,6 +1,6 @@
 class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
   def company_link
-    h.link_to object.portfolio_company_name, object
+    h.link_to object.portfolio_company_name, object.portfolio_company
   end
 
   def investment_instrument

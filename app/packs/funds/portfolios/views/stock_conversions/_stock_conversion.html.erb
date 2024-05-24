@@ -1,0 +1,27 @@
+
+<tr id="<%= dom_id stock_conversion %>">
+  <td>
+    <%= link_to stock_conversion.from_portfolio_investment %>
+  </td>
+  <td>
+    <%= link_to stock_conversion.from_instrument %>
+  </td>
+  <td>
+    <%= stock_conversion.from_quantity %>
+  </td>
+  <td>
+    <%= link_to stock_conversion.to_instrument %>
+  </td>
+  <td>
+    <%= stock_conversion.to_quantity %>
+  </td>
+  <td>
+    <%= link_to stock_conversion.to_portfolio_investment %>
+  </td>
+  <td>
+    <%= link_to stock_conversion.fund %>
+  </td>
+  <td>
+    <%= link_to "Show", stock_conversion , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

@@ -40,10 +40,9 @@ Scenario Outline: Create valuation and FMV
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
   Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "<fund>" for the entity
-  Given there is a valuation "per_share_value_cents=10000;valuation_date=01/01/2022" for the portfolio company
-  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
-  Given there is a valuation "per_share_value_cents=12000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2023" for the portfolio company
-  Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"  
+  Given there are "3" portfolio investments "quantity=-100;category=Unlisted;" 
+  Given there is a valuation "per_share_value_cents=12000" for the portfolio company
   Then the fmv must be calculated for the portfolio
 
 
@@ -147,3 +146,25 @@ Scenario Outline: Stock Adjustment
     |adjustment=2.0;category=Unlisted;sub_category=Equity          |
     |adjustment=0.5;category=Unlisted;sub_category=Equity          |
     |adjustment=3.0;category=Unlisted;sub_category=Equity          |
+
+
+Scenario Outline: Stock Conversion
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  Given there is an existing portfolio company "name=Apple;primary_email=tc@apple.com;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "<from_instrument>"
+  Given there is a valuation "per_share_value_cents=10000" for the portfolio company
+  And Given I upload "portfolio_investments2.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "2" portfolio investments created
+  Given there is an investment instrument for the portfolio company "<to_instrument>"
+  Given I create a new stock conversion "<conversion>"  from "<from_instrument>" to "<to_instrument>"
+  Then the from portfolio investments must be adjusted
+  And the to portfolio investments must be created
+  And the APIs must have the right quantity post transfer
+  Examples:
+    |conversion                                     | from_instrument | to_instrument |
+    |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |
+    |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=Debt;investment_domicile=Domestic ;currency=USD    |
+

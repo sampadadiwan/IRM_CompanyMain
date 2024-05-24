@@ -40,17 +40,22 @@ module PortfolioComputations
 
   def compute_fmv
     # For buys setup net_quantity, note sold_quantity is -ive
-    self.net_quantity = quantity + sold_quantity if buy?
-    self.gain_cents = amount_cents.abs + cost_of_sold_cents if sell?
+    if buy?
+      self.net_quantity = (quantity + sold_quantity - transfer_quantity)
+      self.fmv_cents = compute_fmv_cents_on(Time.zone.today)
+    else
+      self.net_quantity = quantity
+      self.fmv_cents = 0
+      self.gain_cents = amount_cents.abs + cost_of_sold_cents
+    end
 
-    self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today, create_valuation: true) : 0
+    # self.net_quantity = buy? ? (quantity + sold_quantity - transfer_quantity) : quantity
+    # self.gain_cents = amount_cents.abs + cost_of_sold_cents if sell?
+    # self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today) : 0
   end
 
-  def compute_fmv_cents_on(date, create_valuation: false)
+  def compute_fmv_cents_on(date)
     last_valuation = portfolio_company.valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
-
-    # We dont have a valuation and we need to create one
-    last_valuation = portfolio_company.valuations.create(investment_instrument_id:, valuation_date: investment_date, per_share_value_cents: base_cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
 
     nq = if date == Time.zone.today
            net_quantity
@@ -63,7 +68,8 @@ module PortfolioComputations
 
   def net_quantity_on(date)
     sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
-    quantity + sold_quantity_on
+    transfer_quantity_on = StockTransfer.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
+    quantity + sold_quantity_on - transfer_quantity_on
   end
 
   def price_per_share_cents

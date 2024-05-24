@@ -76,6 +76,33 @@
       </tr>
 
       <% if @portfolio_investment.buy? %>
+        <tr>
+          <td>
+            Sold Quantity
+          </td>
+          <td>
+            <%= @portfolio_investment.sold_quantity %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Transfer Quantity
+          </td>
+          <td>
+            <%= @portfolio_investment.transfer_quantity %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Net Quantity
+          </td>
+          <td>
+            <%= @portfolio_investment.net_quantity %>
+          </td>
+        </tr>
+      <% end %>
+
+      <% if @portfolio_investment.buy? %>
       <tr>
         <td>
           Cost
@@ -161,26 +188,7 @@
         <td>
           <%= @portfolio_investment.notes %>
         </td>
-      </tr>
-
-      <% if params[:debug].present? && @portfolio_investment.buy? %>
-      <tr>
-        <td>
-          Sold Quantity
-        </td>
-        <td>
-          <%= @portfolio_investment.sold_quantity %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Net Quantity
-        </td>
-        <td>
-          <%= @portfolio_investment.net_quantity %>
-        </td>
-      </tr>
-      <% end %>
+      </tr>      
 
       <% if params[:debug].present? && @portfolio_investment.sell? %>
       <tr>
@@ -208,7 +216,11 @@
 </div>
 
 <div>
-    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} if policy(@portfolio_investment).update? %> 
+  <% if policy(@portfolio_investment).update? %>
+    
+    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"}  %> 
+    <%= link_to "Conversion", new_stock_conversion_path("stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id), {class: "btn btn-outline-success"} if policy(@portfolio_investment).conversion? %> 
+  <% end %>
     <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@portfolio_investment).destroy? %>
   
 </div>

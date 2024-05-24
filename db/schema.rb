@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_21_131708) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_24_070535) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2454,6 +2454,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_131708) do
     t.decimal "quantity_as_of_date", precision: 10, default: "0"
     t.decimal "base_amount_cents", precision: 20, scale: 2
     t.bigint "exchange_rate_id"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -2716,6 +2717,27 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_131708) do
     t.index ["investment_instrument_id"], name: "index_stock_adjustments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_stock_adjustments_on_portfolio_company_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
+  end
+
+  create_table "stock_conversions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "from_portfolio_investment_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "from_instrument_id", null: false
+    t.decimal "from_quantity", precision: 20, scale: 2
+    t.bigint "to_instrument_id", null: false
+    t.decimal "to_quantity", precision: 20, scale: 2
+    t.bigint "to_portfolio_investment_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "conversion_date"
+    t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
+    t.index ["from_instrument_id"], name: "index_stock_conversions_on_from_instrument_id"
+    t.index ["from_portfolio_investment_id"], name: "index_stock_conversions_on_from_portfolio_investment_id"
+    t.index ["fund_id"], name: "index_stock_conversions_on_fund_id"
+    t.index ["to_instrument_id"], name: "index_stock_conversions_on_to_instrument_id"
+    t.index ["to_portfolio_investment_id"], name: "index_stock_conversions_on_to_portfolio_investment_id"
   end
 
   create_table "support_client_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3234,6 +3256,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_131708) do
   add_foreign_key "stock_adjustments", "investment_instruments"
   add_foreign_key "stock_adjustments", "investors", column: "portfolio_company_id"
   add_foreign_key "stock_adjustments", "users"
+  add_foreign_key "stock_conversions", "entities"
+  add_foreign_key "stock_conversions", "funds"
+  add_foreign_key "stock_conversions", "investment_instruments", column: "from_instrument_id"
+  add_foreign_key "stock_conversions", "investment_instruments", column: "to_instrument_id"
+  add_foreign_key "stock_conversions", "portfolio_investments", column: "from_portfolio_investment_id"
+  add_foreign_key "stock_conversions", "portfolio_investments", column: "to_portfolio_investment_id"
   add_foreign_key "support_client_mappings", "entities"
   add_foreign_key "support_client_mappings", "users"
   add_foreign_key "taggings", "tags"
