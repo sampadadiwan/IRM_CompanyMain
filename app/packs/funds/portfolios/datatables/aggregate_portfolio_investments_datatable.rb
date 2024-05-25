@@ -4,7 +4,7 @@ class AggregatePortfolioInvestmentsDatatable < ApplicationDatatable
       id: { source: "AggregatePortfolioInvestment.id" },
       commitment_type: { source: "AggregatePortfolioInvestment.commitment_type" },
       portfolio_company_name: { source: "AggregatePortfolioInvestment.portfolio_company_name" },
-      investment_instrument: { source: "AggregatePortfolioInvestment.investment_instrument" },
+      investment_instrument: { source: "InvestmentInstrument.name" },
       bought_amount: { source: "AggregatePortfolioInvestment.bought_amount_cents" },
       sold_amount: { source: "AggregatePortfolioInvestment.sold_amount_cents" },
       current_quantity: { source: "AggregatePortfolioInvestment.quantity" },
