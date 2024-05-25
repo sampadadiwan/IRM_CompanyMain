@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_24_070535) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_25_054402) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -69,12 +69,15 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_24_070535) do
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["entry_type"], name: "index_account_entries_on_entry_type"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["name"], name: "index_account_entries_on_name"
     t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
+    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
   create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
