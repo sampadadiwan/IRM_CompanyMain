@@ -91,7 +91,7 @@ class AccountEntryAllocationEngine
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment, @start_date)
 
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
@@ -126,7 +126,7 @@ class AccountEntryAllocationEngine
 
       @helper.add_to_computed_fields_cache(capital_commitment, ae)
 
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
@@ -158,7 +158,7 @@ class AccountEntryAllocationEngine
         @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
       end
 
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
@@ -189,7 +189,7 @@ class AccountEntryAllocationEngine
         @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
       end
 
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
@@ -252,7 +252,7 @@ class AccountEntryAllocationEngine
 
       @fund.fund_account_entries.create(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, cumulative: true, commitment_type: fund_formula.commitment_type, amount_cents: account_entries.sum(:amount_cents))
 
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
@@ -310,7 +310,7 @@ class AccountEntryAllocationEngine
 
       # Rollup this allocation for each commitment
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
-      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : Completed #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 

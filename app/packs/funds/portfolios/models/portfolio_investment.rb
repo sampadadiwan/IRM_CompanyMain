@@ -15,9 +15,13 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :capital_commitment, optional: true
   belongs_to :aggregate_portfolio_investment
   belongs_to :portfolio_company, class_name: "Investor"
+  has_many :valuations, through: :portfolio_company
+
   belongs_to :investment_instrument
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
+
+  has_many :stock_conversions, foreign_key: :from_portfolio_investment_id, dependent: :destroy
 
   validates :investment_date, :quantity, :amount_cents, presence: true
 

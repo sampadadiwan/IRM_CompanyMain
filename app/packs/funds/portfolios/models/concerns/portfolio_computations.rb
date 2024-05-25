@@ -55,7 +55,7 @@ module PortfolioComputations
   end
 
   def compute_fmv_cents_on(date)
-    last_valuation = portfolio_company.valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
+    last_valuation = valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
 
     nq = if date == Time.zone.today
            net_quantity
@@ -68,7 +68,7 @@ module PortfolioComputations
 
   def net_quantity_on(date)
     sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
-    transfer_quantity_on = StockConversion.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
+    transfer_quantity_on = stock_conversions.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
     quantity + sold_quantity_on - transfer_quantity_on
   end
 
