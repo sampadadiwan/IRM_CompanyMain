@@ -1,6 +1,13 @@
+V7.1.06
+#####################################
+5b84cee04 Better allocation engine with better RT updates
+55510ea4f Delete old account entries on allocation run
+3b40abae1 Added index to account entries
+5c76c7222 Fixed sorting for API instrument
+26e51578f Added better from_quantity validation in stock conversion
+
 V7.1.05
 #####################################
-
 08a4e736c Added explain to run allocations
 efb92f358 Fix for stock conversion, multi currency
 9907f64c9 Fixed bug with stock conversion multiple conversions
