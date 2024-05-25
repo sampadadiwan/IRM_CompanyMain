@@ -2,7 +2,7 @@ class AccountEntry < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include ForInvestor
-  include Trackable.new
+  include Trackable.new(on: [:update])
   include RansackerAmounts.new(fields: %w[amount])
 
   STANDARD_COLUMN_NAMES = ["Folio", "Reporting Date", "Period", "Entry Type", "Name", "Amount",

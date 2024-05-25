@@ -2466,6 +2466,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_25_054402) do
     t.index ["exchange_rate_id"], name: "index_portfolio_investments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_portfolio_investments_on_fund_id"
+    t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
   end
@@ -2735,6 +2736,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_25_054402) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "conversion_date"
+    t.index ["conversion_date"], name: "index_stock_conversions_on_conversion_date"
     t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
     t.index ["from_instrument_id"], name: "index_stock_conversions_on_from_instrument_id"
     t.index ["from_portfolio_investment_id"], name: "index_stock_conversions_on_from_portfolio_investment_id"

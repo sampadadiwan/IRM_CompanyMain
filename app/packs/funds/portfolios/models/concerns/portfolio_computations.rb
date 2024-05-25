@@ -68,7 +68,7 @@ module PortfolioComputations
 
   def net_quantity_on(date)
     sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
-    transfer_quantity_on = StockTransfer.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
+    transfer_quantity_on = StockConversion.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
     quantity + sold_quantity_on - transfer_quantity_on
   end
 
