@@ -27,17 +27,21 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
 
   # When a new PortfolioInvestment is created, we need to create a new Valuation for it.
   def create_valuation(ctx, portfolio_investment:, **)
-    investment_instrument_id = portfolio_investment.investment_instrument_id
-    investment_date = portfolio_investment.investment_date
-    base_cost_cents = portfolio_investment.base_cost_cents
-    entity_id = portfolio_investment.entity_id
-    portfolio_investment.fund
+    if portfolio_investment.buy?
+      investment_instrument_id = portfolio_investment.investment_instrument_id
+      investment_date = portfolio_investment.investment_date
+      base_cost_cents = portfolio_investment.base_cost_cents
+      entity_id = portfolio_investment.entity_id
+      portfolio_investment.fund
 
-    last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(investment_instrument_id:, valuation_date: investment_date, entity_id:)
+      last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(investment_instrument_id:, valuation_date: investment_date, entity_id:)
 
-    last_valuation.per_share_value_cents = base_cost_cents
-    ctx[:valuation] = last_valuation
-    last_valuation.save
+      last_valuation.per_share_value_cents = base_cost_cents
+      ctx[:valuation] = last_valuation
+      last_valuation.save
+    else
+      true
+    end
   end
 
   def handle_valuation_errors(ctx, valuation:, **)

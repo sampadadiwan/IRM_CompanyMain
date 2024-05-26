@@ -63,6 +63,7 @@ class PortfolioInvestment < ApplicationRecord
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
+  # This is used to improve the performance of the portfolio computations, in allocations
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
   def setup_aggregate

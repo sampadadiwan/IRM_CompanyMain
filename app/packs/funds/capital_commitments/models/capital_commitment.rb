@@ -79,6 +79,7 @@ class CapitalCommitment < ApplicationRecord
 
   delegate :currency, to: :fund
 
+  # This is used to improve the performance of the formulas, in allocations
   memoize :get_account_entry, :cumulative_account_entry, :on_date, :quarterly, :since_inception
 
   counter_culture :fund,
