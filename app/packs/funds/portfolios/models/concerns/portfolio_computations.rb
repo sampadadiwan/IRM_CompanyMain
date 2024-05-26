@@ -38,6 +38,7 @@ module PortfolioComputations
     end
   end
 
+  # This method is memoized to avoid multiple calls to the database
   def compute_fmv
     # For buys setup net_quantity, note sold_quantity is -ive
     if buy?
@@ -54,6 +55,7 @@ module PortfolioComputations
     # self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today) : 0
   end
 
+  # This method is memoized to avoid multiple calls to the database
   def compute_fmv_cents_on(date)
     last_valuation = valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
 
@@ -66,6 +68,7 @@ module PortfolioComputations
     last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
   end
 
+  # This method is memoized to avoid multiple calls to the database
   def net_quantity_on(date)
     sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
     transfer_quantity_on = stock_conversions.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)

@@ -536,6 +536,7 @@ GEM
       actionpack (>= 5.2)
       activerecord (>= 5.2)
     matrix (0.4.2)
+    memoized (1.1.1)
     method_source (1.0.0)
     mini_magick (4.12.0)
     mini_mime (1.1.5)
@@ -988,6 +989,7 @@ DEPENDENCIES
   libreconv
   mail-logger
   marginalia (~> 1.11)
+  memoized
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   net-ssh (= 7.2.1)

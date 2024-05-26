@@ -44,6 +44,7 @@ gem 'rswag-ui'
 # Use Redis adapter to run Action Cable in production
 gem "redis", "~> 4.0"
 # Background Jobs
+gem 'memoized'
 gem "sidekiq"
 gem "sidekiq-scheduler"
 

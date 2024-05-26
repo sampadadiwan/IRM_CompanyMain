@@ -42,7 +42,7 @@ class AccountEntryAllocationEngine
         raise e
       end
       time_taken = (Time.zone.now - start_time) / 60.0
-      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken} minutes", :success, @user_id)
+      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken.round(2)} minutes", :success, @user_id)
     end
 
     @helper.generate_fund_ratios if @fund_ratios
@@ -162,21 +162,32 @@ class AccountEntryAllocationEngine
     end
   end
 
+  # # Computes and caches the FMV for the portfolio investments for a given end date
+  # def cached_fmv(pi, end_date)
+  #   @fmv_cache ||= {}
+  #   if @fmv_cache[end_date]  == nil
+  #     @fmv_cache[end_date] = {}
+  #     # We use the pool PIs to compute the FMV, as only pool PIs are allocated, Co Invest is specific to a commitment
+  #     @fund.portfolio_investments.pool.where(investment_date: ..@end_date).each do |pi|
+  #       @fmv_cache[end_date][pi.id] = pi.compute_fmv_cents_on(@end_date)
+  #     end
+  #   end
+  #   @fmv_cache[end_date][pi.id]
+  # end
+
   def allocate_portfolios_investment(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
+    # We use the pool PIs as only pool PIs are allocated, Co Invest is specific to a commitment
+    portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
 
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@sample).pool.each_with_index do |capital_commitment, idx|
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment, @start_date)
-      portfolio_investments = capital_commitment.Pool? ? @fund.portfolio_investments.pool.where(investment_date: ..@end_date) : PortfolioInvestment.none
 
-      # Only pool PIs should be used to generate account_entries
       portfolio_investments.each do |portfolio_investment|
         ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true, fund_formula:)
 
-        icp = capital_commitment.get_account_entry("Investable Capital Percentage", portfolio_investment.investment_date)
-
-        fmv_cents = portfolio_investment.compute_fmv_cents_on(@end_date)
+        # fmv_cents = portfolio_investment.compute_fmv_cents_on(@end_date)
         begin
           ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
         rescue Exception => e

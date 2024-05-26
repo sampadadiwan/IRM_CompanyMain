@@ -6,6 +6,7 @@ class PortfolioInvestment < ApplicationRecord
   include Trackable.new
   include PortfolioComputations
   include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
+  include Memoized
 
   attr_accessor :created_by_import
 
@@ -61,6 +62,8 @@ class PortfolioInvestment < ApplicationRecord
     where("portfolio_company_id=? and investment_instrument_id = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, investment_instrument_id).order(investment_date: :asc)
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
+
+  memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?

@@ -29,7 +29,7 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   def create_valuation(ctx, portfolio_investment:, **)
     investment_instrument_id = portfolio_investment.investment_instrument_id
     investment_date = portfolio_investment.investment_date
-    base_cost_cents = portfolio_investment.base_amount_cents
+    base_cost_cents = portfolio_investment.base_cost_cents
     entity_id = portfolio_investment.entity_id
     portfolio_investment.fund
 

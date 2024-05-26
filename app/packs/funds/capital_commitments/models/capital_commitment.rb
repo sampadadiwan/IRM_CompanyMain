@@ -3,7 +3,7 @@ class CapitalCommitment < ApplicationRecord
   include WithExchangeRate
   include WithCustomField
   include Trackable.new
-
+  include Memoized
   include CommitmentAccountEntry
   include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
 
@@ -78,6 +78,8 @@ class CapitalCommitment < ApplicationRecord
   validate :allowed_unit_type
 
   delegate :currency, to: :fund
+
+  memoize :get_account_entry, :cumulative_account_entry, :on_date, :quarterly, :since_inception
 
   counter_culture :fund,
                   column_name: proc { |r| r.Pool? ? 'committed_amount_cents' : 'co_invest_committed_amount_cents' },
