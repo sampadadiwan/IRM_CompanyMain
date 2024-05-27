@@ -27,7 +27,11 @@ class ImportPortfolioInvestment < ImportUtil
     # add the sebi reporting fields in invesment instrument in json_fields (merge with any existing)
     investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::SEBI_REPORTING_FIELDS.stringify_keys.keys.map(&:titleize))&.transform_keys { |key| key.downcase.tr(' ', '_') })
 
-    investment_instrument.save! # if investment_instrument.new_record?
+    if investment_instrument.valid?
+      investment_instrument.save!
+    else
+      raise "Investment Instrument is not valid #{investment_instrument.errors.full_messages.join(',')}"
+    end
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
       portfolio_company_name:, investment_date:, base_amount_cents:, quantity:, investment_instrument:, capital_commitment:, commitment_type:, fund:, entity_id: fund.entity_id
