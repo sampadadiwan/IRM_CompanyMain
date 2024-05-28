@@ -9,7 +9,7 @@
     <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
         class: "btn btn-outline-success" , form_class: "deleteButton" ,
         data: {action: "click->confirm#popup" , turbo: false,
-        msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
+        msg: "Ratios computations will take the last portfolio FMV and account entries for 'Cash in Hand' and 'Net Current Assets' prior to end date for the computations. Please check these are updated. Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
 
     <%= link_to "Download", download_xl_link(data_source), class: "btn btn-outline-success" %>
 
