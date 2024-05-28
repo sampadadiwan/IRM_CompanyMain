@@ -41,8 +41,8 @@ class FundRatiosJob < ApplicationJob
     calc = capital_commitment ? CapitalCommitmentCalcs.new(capital_commitment, end_date) : FundPortfolioCalcs.new(fund, end_date)
 
     # Create the ratios
-    xirr, cash_flows = calc.xirr(return_cash_flows: true)
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %", cash_flows: cash_flows.to_json)
+    xirr, = calc.xirr(return_cash_flows: false)
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
 
     # FundRatio.create!(owner: , entity_id: fund.entity_id, fund:, name: "Moic", value: calc.moic, display_value: calc.moic.to_s)
 
@@ -75,8 +75,8 @@ class FundRatiosJob < ApplicationJob
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Paid In to Committed Capital", value:, display_value:)
 
     # Compute the portfolio_company_ratios
-    calc.portfolio_company_irr(return_cash_flows: true).each do |api_id, values|
-      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %", cash_flows: values[:cash_flows]&.to_json)
+    calc.portfolio_company_irr(return_cash_flows: false).each do |api_id, values|
+      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
     end
 
     # Compute the portfolio_company_ratios
