@@ -25,7 +25,7 @@ export default class extends Controller {
     if( $(`#${tab} .load_data_link`).length > 0 ) {
       // We need a small delay here, oterwise when the tab is programtically clicked,
       // the below link is not yet ready for a click, so without the delay the tab does not load
-      this.delay(1000).then(() =>  {
+      this.delay(1500).then(() =>  {
           console.log(`Clicking #${tab} .load_data_link`);
           $(`#${tab} .load_data_link`).find('span').trigger('click'); // Works
           $(`#${tab} .load_data_link`).hide();  // Select tab by name
