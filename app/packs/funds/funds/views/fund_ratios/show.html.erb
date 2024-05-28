@@ -78,9 +78,3 @@
 
 <% end %>
 
-<%= render FormCard.new(title: "Cash Flows For : #{@fund_ratio.name}") do %>
-  <% if @fund_ratio.cash_flows %>
-      <% table_options = { table_class: "table dataTable" } %>
-      <%= Json2table::get_html_table(@fund_ratio.cash_flows, table_options).html_safe %>
-  <% end %>
-<% end %>
