@@ -1,3 +1,19 @@
+V7.1.08
+#####################################
+b780affc5 (HEAD -> main, origin/main, origin/HEAD) Abhay/bulk import exchange rates (#268)
+bb31379ee Agg pi search (#275)
+5a8195a3f Added length validation for agreement_unit_type (#277)
+7cdc18d19 Misc changes, to doc sending, kyc bulk msgs
+04115c51f Merge branch 'main' of github.com:ausangshukla/IRM into main
+64aa83269 Commitment card fix (#276)
+482a80f51 Added better message for fund ratios
+26a3a1c6b Removed saving cashflows for XIRR
+d2838c69f Removed cashflows from Fund Ratios show page
+c382f9d7f Removed trackable from FundRatio
+ccde9a5e9 Added staging host to depploy
+54901c7da Better error handling for instrument creation in import PI
+84ce31931 Added valuation only when buy is created
+
 V7.1.06
 #####################################
 5b84cee04 Better allocation engine with better RT updates
