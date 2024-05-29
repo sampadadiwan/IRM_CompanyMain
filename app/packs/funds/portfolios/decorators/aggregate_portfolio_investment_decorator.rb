@@ -7,6 +7,10 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
     h.link_to object.investment_instrument, object
   end
 
+  def fund_name
+    h.link_to object.fund, object
+  end
+
   def dt_actions
     links = []
     links << h.link_to('Show', h.aggregate_portfolio_investment_path(object), class: "btn btn-outline-primary")

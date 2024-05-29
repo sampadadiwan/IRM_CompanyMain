@@ -6,6 +6,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @aggregate_portfolio_investments = policy_scope(AggregatePortfolioInvestment).includes(:fund, :portfolio_company, :investment_instrument)
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
+    @aggregate_portfolio_investments = AggregatePortfolioInvestmentSearch.perform(@aggregate_portfolio_investments, current_user, params)
     @show_fund_name = params["show_fund_name"] || false
     respond_to do |format|
       format.html

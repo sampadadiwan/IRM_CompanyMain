@@ -23,6 +23,7 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.import
     CapitalDistributionPaymentIndex.import
     InvestorKycIndex.import
+    AggregatePortfolioInvestmentIndex.import
   end
 
   def reset
@@ -47,6 +48,7 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.reset!
     CapitalDistributionPaymentIndex.reset!
     InvestorKycIndex.reset!
+    AggregatePortfolioInvestmentIndex.reset!
   end
 
   def create
@@ -71,5 +73,6 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.create
     CapitalDistributionPaymentIndex.create
     InvestorKycIndex.create
+    AggregatePortfolioInvestmentIndex.create
   end
 end

@@ -3,6 +3,7 @@ class AggregatePortfolioInvestmentsDatatable < ApplicationDatatable
     @view_columns ||= {
       id: { source: "AggregatePortfolioInvestment.id" },
       commitment_type: { source: "AggregatePortfolioInvestment.commitment_type" },
+      fund_name: { source: "Fund.name" },
       portfolio_company_name: { source: "AggregatePortfolioInvestment.portfolio_company_name" },
       investment_instrument: { source: "InvestmentInstrument.name" },
       bought_amount: { source: "AggregatePortfolioInvestment.bought_amount_cents" },
@@ -19,6 +20,7 @@ class AggregatePortfolioInvestmentsDatatable < ApplicationDatatable
       {
         id: record.id,
         commitment_type: record.commitment_type,
+        fund_name: record.decorate.fund_name,
         portfolio_company_name: record.decorate.company_link,
         investment_instrument: record.decorate.investment_instrument,
         bought_amount: record.decorate.money_to_currency(record.bought_amount, params),
