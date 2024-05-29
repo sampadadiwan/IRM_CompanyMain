@@ -1,0 +1,43 @@
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Exchange Rates</h1>
+  <span>
+    <%= link_to "Import",
+                      new_import_upload_path("import_upload[import_type]": "ExchangeRate",
+                      "sample_upload": "EXCHANGE_RATE"),
+                      { class: "btn btn-outline-success"} %>
+    <%= link_to "New Exchange Rate", new_exchange_rate_path, {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Show All", exchange_rates_path(all: true), {class: "btn btn-outline-success"}  %>
+  </span>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="exchange_rates" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          From
+        </th>
+        <th>
+          To
+        </th>
+        <th>
+          Rate
+        </th>
+        <th>
+          As Of
+        </th>
+        <th>
+          Latest
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% exchange_rates.each do |exchange_rate| %>
+        <%= render exchange_rate %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
