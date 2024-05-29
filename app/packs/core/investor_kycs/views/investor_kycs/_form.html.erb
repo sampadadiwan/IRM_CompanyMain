@@ -74,7 +74,7 @@
               </div>
               <div class="form-group">
                 <%= form.label :agreement_unit_type, "Unit Type" %>
-                <%= form.text_field :agreement_unit_type, class: "form-control"  %>
+                <%= form.text_field :agreement_unit_type, class: "form-control", maxlength: 20  %>
                 <small class="form-text text-muted">Please enter the unit type for the investor</small>
               </div>
             <% end %>
@@ -158,7 +158,7 @@
 
           <div class="form-group">
             <%= form.label :bank_account_type, "Account Type" %>
-            <%= form.select :bank_account_type, ["Savings Account", "Current Account ", "Non-Resident Ordinary (NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"], {}, class: "form-control"  %>
+            <%= form.select :bank_account_type, ["Savings Account", "Current Account ", "Non-Resident Ordinary (NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"], {}, class: "form-control", maxlength: 40  %>
           </div>
 
           <div class="form-group">
