@@ -1,5 +1,5 @@
 class AggregatePortfolioInvestmentIndex < Chewy::Index
-  SEARCH_FIELDS = %i[commitment_type portfolio_company_name investment_instrument fund_name]
+  SEARCH_FIELDS = %i[commitment_type portfolio_company_name investment_instrument fund_name].freeze
 
   index_scope AggregatePortfolioInvestment.includes(:entity, :fund)
 

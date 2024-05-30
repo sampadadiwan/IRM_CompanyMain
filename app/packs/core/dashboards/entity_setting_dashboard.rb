@@ -40,7 +40,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     digio_client_secret: Field::String,
     digio_cutover_date: Field::DateTime,
     created_at: Field::DateTime,
-    updated_at: Field::DateTime
+    updated_at: Field::DateTime,
+    append_to_commitment_agreement: Field::String
   }.freeze
 
   # COLLECTION_ATTRIBUTES
