@@ -62,7 +62,7 @@ class DocumentsBulkActionJob < BulkActionJob
 
     else
       msg = "Document #{document.name} is not approved" unless document.approved
-      msg = "Document #{document.name} does not belong to KYC or Commitment" unless %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
+      msg = "Document #{document.name} does not belong to KYC or Commitment" unless %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
       set_error(msg, document, user_id)
     end
   end
