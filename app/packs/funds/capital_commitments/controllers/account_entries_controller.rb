@@ -93,13 +93,8 @@ class AccountEntriesController < ApplicationController
   end
 
   def delete_all
-    # We get a ransack query for the AEs to delete
-    @q = AccountEntry.ransack(params[:q])
-    # Get the AEs for the query
-    @account_entries = policy_scope(@q.result)
-    count = @account_entries.count
-    @account_entries.delete_all
-    redirect_to account_entries_path(q: params[:q].to_unsafe_h), notice: "#{count} account entries were deleted."
+    AccountEntryDeleteJob.perform_later(params.to_unsafe_h, current_user.id)
+    redirect_to account_entries_path(params: params.to_unsafe_h), notice: "Account entries deletion in progress."
   end
 
   private
