@@ -98,6 +98,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     call_basis
     kpi_reminder_frequency
     kpi_reminder_before
+    append_to_commitment_agreement
     whatsapp_templates
     whatsapp_token
     whatsapp_endpoint
@@ -136,6 +137,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     call_basis
     kpi_reminder_frequency
     kpi_reminder_before
+    append_to_commitment_agreement
     custom_flags
   ].freeze
 

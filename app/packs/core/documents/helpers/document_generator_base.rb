@@ -1,4 +1,5 @@
 module DocumentGeneratorBase
+  IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
   def convert(template, context, file_name)
     # Mail Merge
     template.render_to_file File.expand_path("#{file_name}.docx"), context
@@ -80,8 +81,16 @@ module DocumentGeneratorBase
     if footers.length.positive?
       footers.each do |footer|
         file = footer.file.download
-        header_footer_download_path << file.path
-        combined_pdf << CombinePDF.load(file.path)
+        # Sometimes the files are images, so we need to convert to pdf
+        if IMAGE_EXTENSIONS.include?(File.extname(file.path))
+          Libreconv.convert(file.path, "#{file.path}.pdf")
+          file_path = "#{file.path}.pdf"
+        else
+          file_path = file.path
+        end
+        Rails.logger.debug { "Adding footer #{file_path}" }
+        header_footer_download_path << file_path
+        combined_pdf << CombinePDF.load(file_path)
       end
     end
   end

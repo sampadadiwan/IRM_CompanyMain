@@ -52,7 +52,7 @@ class CapitalCommitmentDocGenerator
     append_to_commitment_agreement = capital_commitment.entity.entity_setting.append_to_commitment_agreement
     if append_to_commitment_agreement.present?
       doc_names = append_to_commitment_agreement.split(",")
-      additional_footers += investor_kyc.documents.where(name: doc_names).to_a
+      additional_footers += capital_commitment.investor_kyc.documents.where(name: doc_names).to_a
     end
 
     additional_footers += capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer", "#{@fund_doc_template_name} Signature"])
