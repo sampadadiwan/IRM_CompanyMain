@@ -95,13 +95,18 @@ Scenario Outline: Import investor kycs
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And the investors have approved investor access
-  And Given I upload an investor kyc file for employees
+  And Given I upload an investor kyc "investor_kycs.xlsx" for employees
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
   And the imported data must have the form_type updated
   And the approved investor access should receive a notification
   And Aml Report should be generated for each investor kyc
+  And Given I upload an investor kyc "investor_kycs_update.xlsx" for employees
+  Then I should see the "Import in progress"
+  Then There should be "4" investor kycs created
+  And the investor kycs must have the data in the sheet
+  
 
 @import
 Scenario Outline: Import investors

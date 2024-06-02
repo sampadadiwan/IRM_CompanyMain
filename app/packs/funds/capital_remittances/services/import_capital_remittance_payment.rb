@@ -40,15 +40,22 @@ class ImportCapitalRemittancePayment < ImportUtil
                                                                 folio_amount_cents:,
                                                                 reference_no: user_data["Reference No"],
                                                                 payment_date: user_data["Payment Date"]).first
-    if capital_remittance_payment.present? && update_only&.downcase == "yes"
-      capital_remittance_payment.import_upload_id = import_upload.id
-      save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
-    elsif capital_remittance_payment.nil?
-      raise "Capital Remittance Payment not found" if update_only&.downcase == "yes"
 
+    if update_only == "Yes"
+      if capital_remittance_payment.present?
+        # Update only, and we have a pre-existing capital_remittance_payment
+        capital_remittance_payment.import_upload_id = import_upload.id
+        save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
+      else
+        # Update only, but we dont have a pre-existing capital_remittance_payment
+        raise "Skipping: CapitalRemittancePayment not found for update"
+      end
+    elsif capital_remittance_payment.nil?
       capital_remittance_payment = CapitalRemittancePayment.new(import_upload_id: import_upload.id)
       save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
+    # No update, and we dont have a pre-existing capital_remittance_payment
     else
+      # No update, but we have a pre-existing capital_remittance_payment
       raise "Skipping: CapitalRemittancePayment already exists"
     end
 

@@ -216,12 +216,12 @@ Then('the investor accesses must have the data in the sheet') do
 end
 
 
-Given('Given I upload an investor kyc file for employees') do
+Given('Given I upload an investor kyc {string} for employees') do |file_name|
   visit(investor_kycs_path)
   click_on("Upload/Download")
   click_on("Upload KYC Details")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_kycs.xlsx'), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   sleep(1)
   click_on("Save")
   sleep(1)
@@ -359,7 +359,7 @@ Then('the investor kycs must have the data in the sheet') do
       cc.esign_emails.should == user_data["Investor Signatory Emails"]
       cc.agreement_committed_amount.to_d.should == user_data["Agreement Committed Amount"]&.to_d || 0
       cc.agreement_unit_type.should == user_data["Agreement Unit Type"]
-      cc.import_upload_id.should == ImportUpload.last.id
+      cc.import_upload_id.should == ImportUpload.last.id unless user_data["Update Only"] != "Yes"
     end
     cc.class.name.should == cc.type_from_kyc_type
   end

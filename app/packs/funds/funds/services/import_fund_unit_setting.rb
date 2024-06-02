@@ -18,14 +18,20 @@ class ImportFundUnitSetting < ImportUtil
     fund_unit_setting = FundUnitSetting.where(fund_id: fund.id,
                                               entity_id: import_upload.entity_id, name:).first
 
-    if fund_unit_setting.present? && update_only == "Yes"
-      save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
-
+    if update_only == "Yes"
+      if fund_unit_setting.present?
+        # Update only, and we have a pre-existing fund_unit_setting
+        saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
+      else
+        # Update only, but we dont have a pre-existing fund_unit_setting
+        raise "Skipping: FundUnitSetting not found for update"
+      end
     elsif fund_unit_setting.nil?
       fund_unit_setting = FundUnitSetting.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
-      save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
-
+      saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
+    # No update, and we dont have a pre-existing fund_unit_setting
     else
+      # No update, but we have a pre-existing fund_unit_setting
       raise "Skipping: FundUnitSetting for fund already exists"
     end
 

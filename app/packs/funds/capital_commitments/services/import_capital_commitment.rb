@@ -15,17 +15,29 @@ class ImportCapitalCommitment < ImportUtil
     raise "Investor not found" unless investor
 
     update_only = user_data["Update Only"]
-    folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
+    folio_id, _, _, _, folio_currency, = get_params(user_data)
+    capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
 
-    if update_only.present? && %w[yes y true].include?(update_only.downcase)
-      capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
-      raise "Capital Commitment not found for #{folio_id}" unless capital_commitment
-    else
-      # Make the capital_commitment
+    if update_only == "Yes"
+      if capital_commitment.present?
+        # Update only, and we have a pre-existing capital_commitment
+      else
+        # Update only, but we dont have a pre-existing capital_commitment
+        raise "Capital Commitment not found for #{folio_id}"
+      end
+    elsif capital_commitment.nil?
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
+    # No update, and we dont have a pre-existing capital_commitment
+    else
+      # No update, but we have a pre-existing capital_commitment
+      raise "Capital Commitment already exists for #{folio_id}"
     end
 
+    save_kyc(capital_commitment, import_upload, investor, user_data, custom_field_headers)
+  end
+
+  def save_kyc(capital_commitment, import_upload, investor, user_data, custom_field_headers)
     capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_type:, commitment_date:,
                                          onboarding_completed:, imported: true, investor:,
                                          investor_name: investor.investor_name, unit_type:,
