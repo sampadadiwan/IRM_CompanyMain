@@ -1,3 +1,9 @@
+V7.1.11
+#####################################
+
+75c998b04 Fixed Upload Only flag in imports
+75c39d5b8 Update capital call card width (#281)
+
 V7.1.08
 #####################################
 b780affc5 (HEAD -> main, origin/main, origin/HEAD) Abhay/bulk import exchange rates (#268)
