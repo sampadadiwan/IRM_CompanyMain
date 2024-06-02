@@ -21,6 +21,7 @@ class ImportCapitalCommitment < ImportUtil
     if update_only == "Yes"
       if capital_commitment.present?
         # Update only, and we have a pre-existing capital_commitment
+        save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
       else
         # Update only, but we dont have a pre-existing capital_commitment
         raise "Capital Commitment not found for #{folio_id}"
@@ -28,16 +29,16 @@ class ImportCapitalCommitment < ImportUtil
     elsif capital_commitment.nil?
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
+      save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
     # No update, and we dont have a pre-existing capital_commitment
     else
       # No update, but we have a pre-existing capital_commitment
       raise "Capital Commitment already exists for #{folio_id}"
     end
-
-    save_kyc(capital_commitment, import_upload, investor, user_data, custom_field_headers)
   end
 
-  def save_kyc(capital_commitment, import_upload, investor, user_data, custom_field_headers)
+  def save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
+    _, unit_type, commitment_type, commitment_date, _, onboarding_completed = get_params(user_data)
     capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_type:, commitment_date:,
                                          onboarding_completed:, imported: true, investor:,
                                          investor_name: investor.investor_name, unit_type:,
