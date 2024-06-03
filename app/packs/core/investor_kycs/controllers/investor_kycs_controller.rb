@@ -99,13 +99,15 @@ class InvestorKycsController < ApplicationController
   end
 
   def send_kyc_reminder
-    if @investor_kyc.investor.approved_users.present?
-      @investor_kyc.send_kyc_form(reminder: true)
-      msg = "KYC Reminder sent successfully."
-      redirect_to investor_kyc_url(@investor_kyc), notice: msg
-    else
-      msg = "KYC Reminder could not be sent as no user has been assigned to the investor."
-      redirect_to investor_kyc_url(@investor_kyc), alert: msg
+    ActiveRecord::Base.connected_to(role: :writing) do
+      if @investor_kyc.investor.approved_users.present?
+        @investor_kyc.send_kyc_form(reminder: true)
+        msg = "KYC Reminder sent successfully."
+        redirect_to investor_kyc_url(@investor_kyc), notice: msg
+      else
+        msg = "KYC Reminder could not be sent as no user has been assigned to the investor."
+        redirect_to investor_kyc_url(@investor_kyc), alert: msg
+      end
     end
   end
 
@@ -115,12 +117,14 @@ class InvestorKycsController < ApplicationController
   end
 
   def send_kyc_reminder_to_all
-    entity_id = current_user.entity_id
-    @investor_kycs = policy_scope(InvestorKyc)
-    authorize(InvestorKyc)
+    ActiveRecord::Base.connected_to(role: :writing) do
+      entity_id = current_user.entity_id
+      @investor_kycs = policy_scope(InvestorKyc)
+      authorize(InvestorKyc)
 
-    @investor_kycs.where(entity_id:, verified: false).find_each do |kyc|
-      kyc.send_kyc_form(reminder: true)
+      @investor_kycs.where(entity_id:, verified: false).find_each do |kyc|
+        kyc.send_kyc_form(reminder: true)
+      end
     end
     redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."
   end
