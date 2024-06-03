@@ -1061,7 +1061,18 @@ Then('the kyc form should be sent {string} to the investor') do |flag|
   user = InvestorAccess.includes(:user).first.user
   open_email(user.email)
   if flag == "true"
-    expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
+    expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}" 
+  else
+    current_email.should == nil
+  end
+end
+
+
+Then('the kyc form reminder should be sent {string} to the investor') do |flag|
+  user = InvestorAccess.includes(:user).first.user
+  open_email(user.email)
+  if flag == "true"
+    expect(current_email.subject).to include "Reminder to update KYC: #{@investor_kyc.entity.name}" 
   else
     current_email.should == nil
   end
@@ -1083,9 +1094,10 @@ Then('the aml report should be generated for the investor kyc') do
   AmlReport.first.should_not == nil
 end
 
-Then('notification should be sent {string} to the investor for kyc update') do |sent|
+Then('notification should be sent {string} to the employee for kyc update') do |sent|
   user = @entity.employees.first
   open_email(user.email)
+  puts "Checking email for #{user.email} sent #{sent}"
 
   if sent == "true"
     expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
@@ -1127,4 +1139,14 @@ Given('the kyc reminder is sent to the investor') do
   @entity.reload.investor_kycs.each do |kyc|
     kyc.send_kyc_form(reminder: true)
   end
+end
+
+
+
+Then('when I Send KYC reminder for the kyc') do
+  # clear_emails
+  visit(investor_kyc_path(@investor_kyc))
+  click_on("Actions")
+  click_on("Send KYC Reminder")
+  click_on("Proceed")
 end

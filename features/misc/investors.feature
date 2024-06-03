@@ -153,7 +153,9 @@ Scenario Outline: Create investor kyc
   Then the kyc form should be sent "<kyc_form_sent>" to the investor
   And the investor entity should have "enable_kycs" permissions
   And the aml report should be generated for the investor kyc
-  And notification should be sent "<kyc_update_notification>" to the investor for kyc update
+  And notification should be sent "<kyc_update_notification>" to the employee for kyc update
+  And when I Send KYC reminder for the kyc
+  Then the kyc form reminder should be sent "true" to the investor
 
   Examples:
     |kyc_form_sent| kyc                                     | investor_user | kyc_update_notification |
@@ -170,3 +172,5 @@ Scenario Outline: Create investor kyc
   And I create a new InvestorKyc with pan "ABCD9876F"
   Then I should see ckyc and kra data comparison page
   Then I select one and see the edit page and save
+
+
