@@ -112,7 +112,7 @@ Then('the fmv must be calculated for the portfolio') do
   PortfolioInvestment.all.each do |pi|
     if pi.buy?
       pi.net_quantity.should == pi.quantity + pi.sold_quantity - pi.transfer_quantity
-      pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date)) 
+      pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date))
     else
       pi.net_quantity.should == pi.quantity
       pi.fmv_cents.should == 0
@@ -295,7 +295,7 @@ Given('The user generates all fund reports for the fund') do
   select("All", from: "fund_report_name")
   fill_in('fund_report_start_date', with: "01/01/2020")
   sleep(1)
-  fill_in('fund_report_end_date', with: Time.zone.now.strftime("%m/%d/%Y"))
+  fill_in('fund_report_end_date', with: "01/01/2024")
   sleep(1)
   click_button("Save")
   sleep(2)
@@ -333,8 +333,8 @@ end
 
 
 
-Given('I create a new stock conversion {string}  from {string} to {string}') do |args, from_instrument, to_instrument|  
-  
+Given('I create a new stock conversion {string}  from {string} to {string}') do |args, from_instrument, to_instrument|
+
   @from_portfolio_investment = PortfolioInvestment.buys.sample
   @from_instrument = @from_portfolio_investment.investment_instrument
   # Grab the to_instrument from the portfolio company
@@ -342,7 +342,7 @@ Given('I create a new stock conversion {string}  from {string} to {string}') do 
   key_values(@to_instrument, to_instrument)
   @to_instrument = @from_portfolio_investment.portfolio_company.investment_instruments.where(name: @to_instrument.name).first
 
-  @stock_conversion = StockConversion.new(entity_id: @entity.id, from_portfolio_investment: @from_portfolio_investment, to_instrument: @to_instrument, from_instrument: @from_instrument, fund: @fund, conversion_date: Date.today)  
+  @stock_conversion = StockConversion.new(entity_id: @entity.id, from_portfolio_investment: @from_portfolio_investment, to_instrument: @to_instrument, from_instrument: @from_instrument, fund: @fund, conversion_date: Date.today)
   key_values(@stock_conversion, args)
 
   StockConverter.wtf?(stock_conversion: @stock_conversion).success?.should == true
