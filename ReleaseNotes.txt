@@ -1,6 +1,14 @@
+V7.1.14
+#####################################
+9d8c64b30 Added better validation for fund units
+c43ac5bb1 Account Entry Bulk import failed fix (#284)
+ab3306ce3 Allocation engine, now takes commitments before end_date only
+06bd0169b Added asset logger
+925f032ec Added tests for kyc reminder
+07495201a Fixed send kyc reminder
+
 V7.1.12
 #####################################
-
 75c998b04 Fixed Upload Only flag in imports
 75c39d5b8 Update capital call card width (#281)
 

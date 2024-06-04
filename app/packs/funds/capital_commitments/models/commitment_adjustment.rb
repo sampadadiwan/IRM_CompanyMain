@@ -100,7 +100,6 @@ class CommitmentAdjustment < ApplicationRecord
     "CommitmentAdjustment: #{capital_commitment.folio_id}, #{folio_amount}, #{amount}, #{owner}"
   end
 
-  
   def validate_as_of
     errors.add(:as_of, "must be on or after the commitment date") if as_of < capital_commitment.commitment_date
   end

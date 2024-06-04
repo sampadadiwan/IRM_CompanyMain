@@ -1161,6 +1161,7 @@ end
 Given('I trigger the bulk action for {string}') do |bulk_action|
   click_on("Bulk Actions")
   click_on(bulk_action)
+  sleep(2)
   click_on("Proceed")
 end
 
@@ -1170,4 +1171,14 @@ end
 
 Then('the kycs should be unverified') do
   InvestorKyc.where(verified: true).count.should == 0
+end
+
+Then('the kycs users should receive the kyc reminder email') do
+  InvestorKyc.where(verified: false).each do |kyc|
+    kyc.investor.investor_accesses.approved.each do |ia|
+      puts "Checking email for #{ia.email}"
+      open_email(ia.email)
+      expect(current_email.subject).to include "Reminder to update KYC: #{kyc.entity.name}"
+    end
+  end
 end

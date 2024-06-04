@@ -121,6 +121,10 @@ Scenario Outline: Bulk Actions on kycs
   And I trigger the bulk action for "Unverify"
   Then I should see the "Unverify completed"
   Then the kycs should be unverified
+  Given I filter the kycs by "verified=false"
+  And I trigger the bulk action for "Send Reminder"
+  Then I should see the "SendReminder completed"
+  Then the kycs users should receive the kyc reminder email
 
 @import
 Scenario Outline: Import investors

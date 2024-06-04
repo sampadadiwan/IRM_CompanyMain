@@ -16,5 +16,4 @@ class FundUnitSetting < ApplicationRecord
   def allowed_unit_type
     errors.add(:name, "#{name} is not allowed. Allowed values: #{fund.unit_types}") unless fund.unit_types.include?(name)
   end
-
 end
