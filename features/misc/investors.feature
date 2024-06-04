@@ -106,7 +106,21 @@ Scenario Outline: Import investor kycs
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
-  
+
+Scenario Outline: Bulk Actions on kycs
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And Given I upload an investors file for the company
+  And the investors have approved investor access
+  And Given I upload an investor kyc "investor_kycs.xlsx" for employees
+  Given I filter the kycs by "verified=false"
+  And I trigger the bulk action for "Verify"
+  Then I should see the "Verify completed"
+  Then the kycs should be verified
+  Given I filter the kycs by "verified=true"
+  And I trigger the bulk action for "Unverify"
+  Then I should see the "Unverify completed"
+  Then the kycs should be unverified
 
 @import
 Scenario Outline: Import investors

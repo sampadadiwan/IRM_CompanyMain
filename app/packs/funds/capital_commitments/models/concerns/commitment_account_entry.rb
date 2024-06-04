@@ -1,6 +1,19 @@
 module CommitmentAccountEntry
   extend ActiveSupport::Concern
 
+  def reset_committed_amount(new_folio_committed_amount)
+    # Zero everything out
+    self.committed_amount_cents = 0
+    self.orig_committed_amount_cents = 0
+    self.orig_folio_committed_amount_cents = 0
+    self.folio_committed_amount_cents = 0
+    # Set the folio_committed_amount
+    self.folio_committed_amount_cents = new_folio_committed_amount
+    # Call set_committed_amount
+    set_committed_amount
+    save
+  end
+
   ###########################################################
   # Account Entry Stuff
   ###########################################################

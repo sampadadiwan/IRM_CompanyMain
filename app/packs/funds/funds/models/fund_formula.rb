@@ -28,8 +28,8 @@ class FundFormula < ApplicationRecord
   end
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok
-  def commitments(sample)
-    cc = fund.capital_commitments
+  def commitments(end_date, sample)
+    cc = fund.capital_commitments.where(commitment_date: ..end_date)
     logger.debug "Sampling 1 commitment" if sample
     case commitment_type
     when "Pool"

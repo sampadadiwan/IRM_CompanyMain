@@ -8,9 +8,9 @@ set :branch, ENV["branch"] || 'main'
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true
 if fetch(:stage) == :production
-  set :ssh_options, keys: "~/.ssh/caphive.pem"
+  set :ssh_options, keys: "~/.ssh/caphive.pem", compression: false, keepalive: true
 else
-  set :ssh_options, keys: "~/.ssh/altxdev.pem"
+  set :ssh_options, keys: "~/.ssh/altxdev.pem", compression: false, keepalive: true
 end
 
 # Default value for :pty is false

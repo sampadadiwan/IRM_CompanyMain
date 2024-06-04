@@ -1150,3 +1150,24 @@ Then('when I Send KYC reminder for the kyc') do
   click_on("Send KYC Reminder")
   click_on("Proceed")
 end
+
+
+Given('I filter the kycs by {string}') do |args|
+  key, value = args.split("=")
+  url="investor_kycs?q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=#{key}&q%5Bc%5D%5B0%5D%5Bp%5D=eq&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=#{value}"
+  visit(url)
+end
+
+Given('I trigger the bulk action for {string}') do |bulk_action|
+  click_on("Bulk Actions")
+  click_on(bulk_action)
+  click_on("Proceed")
+end
+
+Then('the kycs should be verified') do
+  InvestorKyc.where(verified: false).count.should == 0
+end
+
+Then('the kycs should be unverified') do
+  InvestorKyc.where(verified: true).count.should == 0
+end

@@ -78,7 +78,7 @@ class AccountEntryAllocationEngine
   def generate_custom_fields(fund_formula, fund_unit_settings)
     Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
     # Generate the cols required
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       Rails.logger.debug { "Generating using formula #{fund_formula} for #{capital_commitment}, #{@start_date}, #{@end_date}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
@@ -102,7 +102,7 @@ class AccountEntryAllocationEngine
     cc_map = {}
 
     # Loop thru all the commitments and get the total of the account entry "field_name"
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, _idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, _idx|
       # Get the last entry for the field_name before the end date
       amount_cents = capital_commitment.account_entries.where(name: field_name, reporting_date: ..@end_date).order(reporting_date: :asc).last.amount_cents
 
@@ -117,7 +117,7 @@ class AccountEntryAllocationEngine
     # Delete all prev generated percentage
     AccountEntry.where(name: "#{field_name} Percentage", entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, generated: true).find_each(&:destroy)
 
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
       ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false, fund_formula:)
@@ -135,7 +135,7 @@ class AccountEntryAllocationEngine
   def allocate_aggregate_portfolios(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
 
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment, @start_date)
       apis = capital_commitment.Pool? ? @fund.aggregate_portfolio_investments.pool : []
@@ -180,7 +180,7 @@ class AccountEntryAllocationEngine
     # We use the pool PIs as only pool PIs are allocated, Co Invest is specific to a commitment
     portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
 
-    fund_formula.commitments(@sample).pool.each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).pool.each_with_index do |capital_commitment, idx|
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment, @start_date)
 
@@ -236,7 +236,7 @@ class AccountEntryAllocationEngine
 
     cumulative = !fund_formula.roll_up
 
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
@@ -269,7 +269,7 @@ class AccountEntryAllocationEngine
 
   # Used to generate cumulative account entries for things such as TDS which is uploaded by the fund per commitment
   def cumulate_account_entries(fund_formula, _fund_unit_settings)
-    fund_formula.commitments(@sample).each do |capital_commitment|
+    fund_formula.commitments(@end_date, @sample).each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
       next unless fund_formula.roll_up
@@ -302,7 +302,7 @@ class AccountEntryAllocationEngine
   end
 
   def allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
-    fund_formula.commitments(@sample).each_with_index do |capital_commitment, idx|
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       Rails.logger.debug { "Allocating #{fund_account_entry} to #{capital_commitment}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
