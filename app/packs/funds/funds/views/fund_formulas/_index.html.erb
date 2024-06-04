@@ -19,6 +19,20 @@
                     "import_upload[import_type]": "FundFormula",
                     "sample_upload": "FUND_FORMULA_SAMPLE"),
                     { class: "btn btn-outline-primary"}  if current_user.has_cached_role?(:support) %>                 
+
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Enable All
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+          <%= button_to "Enable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: true, fund_id: params[:fund_id] }, class: "dropdown-item" %>
+          <%= button_to "Disable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: false, fund_id: params[:fund_id] }, class: "dropdown-item" %>
+          </div>
+        </div>
+      </div>
     </span>
   <% end %>
 

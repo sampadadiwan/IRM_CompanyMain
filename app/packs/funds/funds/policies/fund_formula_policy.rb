@@ -29,6 +29,10 @@ class FundFormulaPolicy < ApplicationPolicy
     create?
   end
 
+  def enable_formulas?
+    create?
+  end
+
   def edit?
     update?
   end
