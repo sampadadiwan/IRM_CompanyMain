@@ -177,3 +177,21 @@ Scenario Outline: Fund E-Signatures Report
   Examples:
     |user	    |entity                                 |fund                 |msg	|
     |  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund 888      |Fund was successfully created|
+
+
+Scenario Outline: Duplicate account entry bulk upload
+    Given Im logged in as a user "" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is a fund "<fund>" for the entity
+    And Given I upload an investors file for the fund
+    Given the investors have approved investor access
+    Given the fund has capital call template
+    Given the investors are added to the fund
+    And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+    And Given the commitments have a cc "advisor@gmail.com"
+    And Given I upload "account_entries_with_dup.xlsx" "<error_count>" error file for Account Entries
+    Then I should see that the duplicate account entries are not uploaded
+
+    Examples:
+      |entity                                         |fund                |msg	| error_count|
+      |entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| 5 |
