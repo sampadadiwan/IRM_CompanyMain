@@ -1154,7 +1154,7 @@ end
 
 Given('I filter the kycs by {string}') do |args|
   key, value = args.split("=")
-  url="investor_kycs?q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=#{key}&q%5Bc%5D%5B0%5D%5Bp%5D=eq&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=#{value}"
+  url="investor_kycs?q[c][0][a][0][name]=#{key}&q[c][0][p]=eq&q[c][0][v][0][value]=#{value}&button="
   visit(url)
 end
 
