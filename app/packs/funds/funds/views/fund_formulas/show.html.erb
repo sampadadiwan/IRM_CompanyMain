@@ -97,23 +97,25 @@
 <div>
   <%= link_to "Edit", edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %> 
   <%= button_to "Delete", @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %> 
-  <div class="btn-group">
-    <div class="dropdown">
-      <% enabled = @fund_formula.enabled ? "Enabled" : "Disabled" %>
-      <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <%= enabled %>
-      </button>
-      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-      
-      <% if @fund_formula.enabled %>
-        <%= button_to "Disable", fund_formula_path(@fund_formula), method: :patch, params: { fund_formula: { enabled: false } }, class: "dropdown-item" %>
-      <% else %>
-        <%= button_to "Enable", fund_formula_path(@fund_formula), method: :patch, params: { fund_formula: { enabled: true } }, class: "dropdown-item" %>
-      <% end %>
+  <% if policy(@fund_formula).update? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <% enabled = @fund_formula.enabled ? "Enabled" : "Disabled" %>
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <%= enabled %>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        
+        <% if @fund_formula.enabled %>
+          <%= button_to "Disable", fund_formula_path(@fund_formula), method: :patch, params: { fund_formula: { enabled: false } }, class: "dropdown-item" %>
+        <% else %>
+          <%= button_to "Enable", fund_formula_path(@fund_formula), method: :patch, params: { fund_formula: { enabled: true } }, class: "dropdown-item" %>
+        <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </div>
 
 </div>
