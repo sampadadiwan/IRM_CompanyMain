@@ -1597,6 +1597,11 @@ Given('the remittances are verified') do
   end
 end
 
+Then('the remittances have verified set to {string}') do |flag|
+  CapitalRemittance.all.each do |cr|
+    cr.verified.should == (flag == "true")
+  end
+end
 
 Given('notification should be sent {string} to the remittance investors for {string}') do |sent, cn_args|
   cn = CustomNotification.new

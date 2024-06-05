@@ -3,11 +3,11 @@
     <div class="dropdown">
       <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Actions
+        Bulk Actions
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
         <% msg = "This will verify each remittance in the search results (including results on other pages). Proceed?" %>
-        <%= button_to "Verify", 
+        <%= button_to "Toggle Verify", 
             bulk_actions_capital_remittances_path("bulk_action": "Verify", params: params.to_unsafe_h),
             class: "dropdown-item", 
             data: {msg:, action: "click->confirm#popup", method: :post}  %>

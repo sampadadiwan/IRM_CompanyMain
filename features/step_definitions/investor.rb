@@ -1153,17 +1153,8 @@ end
 
 
 Given('I filter the kycs by {string}') do |args|
-  key, value = args.split("=")
-  url="investor_kycs?q[c][0][a][0][name]=#{key}&q[c][0][p]=eq&q[c][0][v][0][value]=#{value}&button="
-  visit(url)
 end
 
-Given('I trigger the bulk action for {string}') do |bulk_action|
-  click_on("Bulk Actions")
-  click_on(bulk_action)
-  sleep(2)
-  click_on("Proceed")
-end
 
 Then('the kycs should be verified') do
   InvestorKyc.where(verified: false).count.should == 0

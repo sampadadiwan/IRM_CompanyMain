@@ -113,15 +113,15 @@ Scenario Outline: Bulk Actions on kycs
   And Given I upload an investors file for the company
   And the investors have approved investor access
   And Given I upload an investor kyc "investor_kycs.xlsx" for employees
-  Given I filter the kycs by "verified=false"
+  Given I filter the "investor_kycs" by "verified=false"
   And I trigger the bulk action for "Verify"
   Then I should see the "Verify completed"
   Then the kycs should be verified
-  Given I filter the kycs by "verified=true"
+  Given I filter the "investor_kycs" by "verified=true"
   And I trigger the bulk action for "Unverify"
   Then I should see the "Unverify completed"
   Then the kycs should be unverified
-  Given I filter the kycs by "verified=false"
+  Given I filter the "investor_kycs" by "verified=false"
   And I trigger the bulk action for "Send Reminder"
   Then I should see the "SendReminder completed"
   Then the kycs users should receive the kyc reminder email

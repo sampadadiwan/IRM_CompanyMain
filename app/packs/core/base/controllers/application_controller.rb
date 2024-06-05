@@ -40,10 +40,10 @@ class ApplicationController < ActionController::Base
   def bulk_actions
     # Here we get a ransack search
     rows = fetch_rows
+
     # and a bulk action to perform on the results
-    ActiveRecord::Base.connected_to(role: :writing) do
-      "#{controller_name}_bulk_action_job".classify.constantize.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action], params: params.to_unsafe_h)
-    end
+    "#{controller_name}_bulk_action_job".classify.constantize.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action], params: params.to_unsafe_h)
+
     # and redirect back to the page we came from
     redirect_path = request.referer || root_path
     redirect_to redirect_path, notice: "Bulk Action started, please check back in a few mins."

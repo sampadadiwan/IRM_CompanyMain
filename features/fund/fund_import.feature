@@ -106,7 +106,14 @@ Scenario Outline: Import capital remittance
   And if the first remittance is deleted
   Then the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
-
+  Given I filter the "capital_remittances" by "verified=true"
+  And I trigger the bulk action for "Toggle Verify"
+  # Then I should see the "Verify completed"
+  And the remittances have verified set to "false"
+  Given I filter the "capital_remittances" by "verified=false"
+  And I trigger the bulk action for "Toggle Verify"
+  # Then I should see the "Verify completed"
+  And the remittances have verified set to "true"  
 
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount |

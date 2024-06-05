@@ -192,3 +192,17 @@ Given('the email queue is cleared') do
   puts "######### clearing all emails #########"
   clear_emails
 end
+
+Given('I trigger the bulk action for {string}') do |bulk_action|
+  click_on("Bulk Actions")
+  click_on(bulk_action)
+  sleep(2)
+  click_on("Proceed")
+  sleep(5)
+end
+
+Given('I filter the {string} by {string}') do |controller, args|
+  key, value = args.split("=")
+  url="#{controller}?q[c][0][a][0][name]=#{key}&q[c][0][p]=eq&q[c][0][v][0][value]=#{value}"
+  visit(url)
+end
