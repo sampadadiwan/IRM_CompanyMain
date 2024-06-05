@@ -189,9 +189,9 @@ class FundsController < ApplicationController
   def fund_params
     params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :commitment_doc_list,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
-                                 :currency, :unit_types, :units_allocation_engine, :form_type_id,
+                                 :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date,
                                  :registration_number, :category, :sub_category, :sponsor_name, :manager_name,
-                                 :trustee_name, :contact_name, :contact_email, :show_portfolios,
+                                 :trustee_name, :contact_name, :contact_email, :show_portfolios, :last_close_date,
                                  :esign_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

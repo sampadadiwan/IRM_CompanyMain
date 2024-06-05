@@ -47,6 +47,32 @@
         </td>
       </tr>
 
+      <% if fund.first_close_date.present? %>
+
+          <tr>
+            <td>
+              First Close
+            </td>
+            <td>
+              <%= l fund.first_close_date %>
+            </td>
+          </tr>
+
+      <% end %>
+
+      <% if fund.last_close_date.present? %>
+
+          <tr>
+            <td>
+              Last Close
+            </td>
+            <td>
+              <%= l fund.last_close_date %>
+            </td>
+          </tr>
+
+      <% end %>
+
       <% if fund.unit_types.present? %>
 
           <tr>
