@@ -39,8 +39,10 @@ class InvestorKycsBulkActionJob < BulkActionJob
       msg = "KYC Reminder could not be sent, KYC is verified and uneditable by user"
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
-    else
+    elsif Rails.env.test?
       # Randomize the time to send the reminder, so we dont flood aws SES
+      SendKycFormJob.perform_later(investor_kyc.id, reminder: true)
+    else
       SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: true)
     end
   end

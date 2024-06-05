@@ -1154,13 +1154,14 @@ end
 
 Given('I filter the kycs by {string}') do |args|
   key, value = args.split("=")
-  url="investor_kycs?q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=#{key}&q%5Bc%5D%5B0%5D%5Bp%5D=eq&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=#{value}"
+  url="investor_kycs?q[c][0][a][0][name]=#{key}&q[c][0][p]=eq&q[c][0][v][0][value]=#{value}&button="
   visit(url)
 end
 
 Given('I trigger the bulk action for {string}') do |bulk_action|
   click_on("Bulk Actions")
   click_on(bulk_action)
+  sleep(2)
   click_on("Proceed")
 end
 
@@ -1170,4 +1171,14 @@ end
 
 Then('the kycs should be unverified') do
   InvestorKyc.where(verified: true).count.should == 0
+end
+
+Then('the kycs users should receive the kyc reminder email') do
+  InvestorKyc.where(verified: false).each do |kyc|
+    kyc.investor.investor_accesses.approved.each do |ia|
+      puts "Checking email for #{ia.email}"
+      open_email(ia.email)
+      expect(current_email.subject).to include "Reminder to update KYC: #{kyc.entity.name}"
+    end
+  end
 end

@@ -13,6 +13,7 @@ class CommitmentAdjustment < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true
 
   validates :reason, :as_of, :folio_amount_cents, :adjustment_type, presence: true
+  validate :validate_as_of
   validates :adjustment_type, length: { maximum: 20 }
   validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }
 
@@ -97,5 +98,9 @@ class CommitmentAdjustment < ApplicationRecord
 
   def to_s
     "CommitmentAdjustment: #{capital_commitment.folio_id}, #{folio_amount}, #{amount}, #{owner}"
+  end
+
+  def validate_as_of
+    errors.add(:as_of, "must be on or after the commitment date") if as_of < capital_commitment.commitment_date
   end
 end

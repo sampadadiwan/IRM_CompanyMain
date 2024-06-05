@@ -715,7 +715,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-  
+
   if page.has_button?("Upload / Download")
     click_on("Upload / Download")
     click_on("Upload")
@@ -1210,6 +1210,35 @@ Then('There should be {string} account_entries created') do |count|
   AccountEntry.count.should == count.to_i
 end
 
+Given('Given I upload {string} {string} error file for Account Entries') do |file, err_count|
+  @import_file = file
+  visit(capital_commitment_path(@fund.capital_commitments.first))
+  click_on("Account Entries")
+  sleep(1)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == err_count.to_i
+end
+
+Then('I should see that the duplicate account entries are not uploaded') do
+  # last 5 account entries are duped
+  file = ImportUpload.last.import_results.download
+  data = Roo::Spreadsheet.open(file.path)
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+  # data from 21st row should have error "Duplicate, already present"
+  data.each_with_index do |row, idx|
+    next if idx < 21 # skip rows
+    # column after headers should have error "Duplicate, already present"
+    row[headers.length - 1].include?("Duplicate, already present").should == true
+  end
+end
+
 Then('the account_entries must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
@@ -1611,7 +1640,7 @@ end
 
 
 When('fund units are transferred {string}') do |transfer|
-  
+
   @fund.reload
   @price, @premium, @transfer_quantity = transfer.split(",").map{|x| x.split("=")[1].to_d}
   from_cc = @fund.capital_commitments.first
