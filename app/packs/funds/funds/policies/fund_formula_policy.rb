@@ -26,11 +26,11 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    belongs_to_entity?(user, record.fund)
   end
 
   def enable_formulas?
-    create?
+    update?
   end
 
   def edit?

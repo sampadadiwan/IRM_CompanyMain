@@ -1,5 +1,6 @@
 class FundFormulasController < ApplicationController
   before_action :set_fund_formula, only: %i[show edit update destroy]
+  after_action :verify_authorized, except: %i[index enable_formulas]
 
   # GET /fund_formulas or /fund_formulas.json
   def index
@@ -63,7 +64,6 @@ class FundFormulasController < ApplicationController
   end
 
   def enable_formulas
-    authorize FundFormula
     fetch_rows
     enabled = ActiveRecord::Type::Boolean.new.cast(params[:enable])
     respond_to do |format|
