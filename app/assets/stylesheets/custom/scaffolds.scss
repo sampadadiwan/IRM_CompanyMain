@@ -1050,3 +1050,9 @@ h6 {
 }
 
 .hscrollable { overflow: scroll; overflow-y:hidden; } 
+
+.readonly-field {
+  background-color: #f0f0f0; /* Light gray background */
+  color: #999; /* Gray text color */
+  cursor: not-allowed; /* Change cursor to indicate non-interactivity */
+}
