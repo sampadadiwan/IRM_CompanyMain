@@ -38,6 +38,6 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?
+    update?
   end
 end
