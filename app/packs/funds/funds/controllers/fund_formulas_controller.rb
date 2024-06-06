@@ -1,19 +1,24 @@
 class FundFormulasController < ApplicationController
   before_action :set_fund_formula, only: %i[show edit update destroy]
+  after_action :verify_authorized, except: %i[index enable_formulas]
 
   # GET /fund_formulas or /fund_formulas.json
   def index
+    fetch_rows
+
+    if params[:fund_id].present?
+      @bread_crumbs = { Funds: funds_path, "#{Fund.find(params[:fund_id])}": fund_path(id: params[:fund_id]),
+                        'Fund Formulas': nil }
+    end
+  end
+
+  def fetch_rows
     @fund_formulas = policy_scope(FundFormula)
     @fund_formulas = @fund_formulas.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_formulas = @fund_formulas.where(enabled: true) if params[:enabled].present? && params[:enabled] == 'true'
     @fund_formulas = @fund_formulas.where(enabled: false) if params[:enabled].present? && params[:enabled] == 'false'
     @fund_formulas = @fund_formulas.where(rule_for: params[:rule_for]) if params[:rule_for].present?
     @fund_formulas = @fund_formulas.order(:fund_id, sequence: :asc)
-
-    if params[:fund_id].present?
-      @bread_crumbs = { Funds: funds_path, "#{Fund.find(params[:fund_id])}": fund_path(id: params[:fund_id]),
-                        'Fund Formulas': nil }
-    end
   end
 
   # GET /fund_formulas/1 or /fund_formulas/1.json
@@ -54,6 +59,20 @@ class FundFormulasController < ApplicationController
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @fund_formula.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def enable_formulas
+    fetch_rows
+    enabled = ActiveRecord::Type::Boolean.new.cast(params[:enable])
+    respond_to do |format|
+      if @fund_formulas.update_all(enabled:)
+        format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas was successfully updated." }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas not updated." }
+        format.json { head :no_content }
       end
     end
   end
