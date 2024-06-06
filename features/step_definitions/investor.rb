@@ -437,7 +437,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
 
   if files.include?("pan")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_pan_card' do
+      within '#custom_file_upload_pan' do
         click_on 'Choose file'
       end
     end
