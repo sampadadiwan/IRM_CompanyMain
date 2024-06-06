@@ -58,7 +58,7 @@
         </div>
       </div>
 
-
+      <% if @fund.entity.entity_setting.regulatory_env == "SEBI" %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -75,6 +75,7 @@
           </div>
         </div>
       </div>
+      <% end %>
 
       <% if policy(@fund).update? %>
 

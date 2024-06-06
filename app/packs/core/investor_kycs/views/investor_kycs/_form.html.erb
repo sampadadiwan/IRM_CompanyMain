@@ -85,20 +85,21 @@
               <%= form.date_field :birth_date, class: "form-control" %>
             </div>
 
+            <% pan_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
             <div class="form-group">
-              <%= form.label :PAN, "PAN" %>
+              <%= form.label :pan, pan_label %>
               <%= form.text_field :PAN, class: "form-control", maxlength: 15  %>
             </div>
 
 
             <div class="form-group">
-              <%= file_fields("Upload PAN Card", investor_kyc, form, required: is_investor, meta_data: "PAN") %>
-              <small class="form-text text-muted">Please upload a clear image of your PAN card</small>
+              <%= file_fields("Upload #{pan_label}", investor_kyc, form, required: is_investor, meta_data: "PAN") %>
+              <small class="form-text text-muted">Please upload a clear image of your <%=pan_label%></small>
             </div>
 
             <% if current_user.entity_id == investor_kyc.entity_id %>
               <div class="form-group">
-                <%= form.label :pan_verified %>
+                <%= form.label :pan_verified, "#{pan_label} Verified" %>
                 <%= form.check_box :pan_verified, class: "form-check-input"  %>
               </div>
             <% end %>
@@ -121,10 +122,8 @@
 
           <div class="form-group">
               <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
-
-              <small class="form-text text-muted"> Any one of:
-                Passport, Aadhar Card, Driving license, Deemed proof of address (utility bill not older than 2 months)
-              </small>
+              <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
+              <small class="form-text text-muted"> Any one of: <%=address_proof_label%></small>
 
           </div>
 
@@ -139,10 +138,6 @@
             <%= form.text_area :corr_address, class: "form-control"  %>
             <small class="form-text text-muted">If different from the address above.</small>
           </div>
-
-
-
-
 
           <div class="form-group">
             <%= form.label :bank_name, "Bank Name" %>
@@ -166,8 +161,9 @@
             <%= form.text_field :bank_account_number, class: "form-control", maxlength: 40  %>
           </div>
 
+          <% ifsc_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Bank Routing Number") %>
           <div class="form-group">
-            <%= form.label :ifsc_code %>
+            <%= form.label :ifsc_code, ifsc_label %>
             <%= form.text_field :ifsc_code, class: "form-control", maxlength: 20 %>
           </div>
 

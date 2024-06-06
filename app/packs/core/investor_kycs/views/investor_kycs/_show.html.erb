@@ -1,3 +1,5 @@
+<%= pan_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
+<%= ifsc_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Bank Routing number") %>
 <%= render ToggleCard.new(title: "KYC #{investor_kyc.full_name}", css_class: "show_inv_entities") do %>
 
   <table class="table table-bordered dataTable">
@@ -74,7 +76,7 @@
 
     <tr>
       <td>
-        Pan
+        <%= pan_label %>
       </td>
       <td>
         <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url, target: "_blank") : investor_kyc.PAN   %>
@@ -154,7 +156,7 @@
     </tr>
     <tr>
       <td>
-        Ifsc Code
+        <%=ifsc_label%>
       </td>
       <td>
         <%= investor_kyc.ifsc_code %>
@@ -297,7 +299,7 @@
     </tr>
     <tr>
       <td>
-        Pan Card Data
+        <%= pan_label %> Data
       </td>
       <td>
         <%= investor_kyc.pan_card_data %>
@@ -306,7 +308,7 @@
 
     <tr>
       <td>
-        Pan Verification Response
+        <%=pan_label%> Verification Response
       </td>
       <td>
         <%= investor_kyc.pan_verification_response %>
@@ -314,7 +316,7 @@
     </tr>
     <tr>
       <td>
-        Pan Verification Status
+        <%=pan_label%> Verification Status
       </td>
       <td>
         <%= investor_kyc.pan_verification_status %>

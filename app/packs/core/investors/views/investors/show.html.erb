@@ -12,6 +12,37 @@
         <%= @investor.investor_name %>
       </td>
     </tr>
+    
+    <tr>
+      <td>
+        Category
+      </td>
+      <td>
+        <%= @investor.category %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Primary Email
+      </td>
+      <td>
+        <%= @investor.primary_email %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        <%= Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
+      </td>
+      <td>
+        <%= @investor.pan %>
+        <% if @investor.pan&.strip != @investor.investor_entity.pan&.strip %>
+          <span class="badge bg-danger">Mismatched PAN, please contact support</span>
+        <% end %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Investee Entity
@@ -40,35 +71,8 @@
         <%= raw @investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if @investor.tag_list %>
       </td>
     </tr>
-    <tr>
-      <td>
-        Category
-      </td>
-      <td>
-        <%= @investor.category %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Primary Email
-      </td>
-      <td>
-        <%= @investor.primary_email %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        PAN
-      </td>
-      <td>
-        <%= @investor.pan %>
-        <% if @investor.pan&.strip != @investor.investor_entity.pan&.strip %>
-          <span class="badge bg-danger">Mismatched PAN, please contact support</span>
-        <% end %>
-      </td>
-    </tr>
+    
+    
     <tr>
       <td>
         City
