@@ -54,7 +54,7 @@
           <%= form.label :description %>
           <%= form.text_area :description, class: "form-control"  %>
         </div>
-
+                
         <div class="form-group">
           
           <div class="alert alert-info">
@@ -62,7 +62,7 @@
           </div>
 
           <%= form.label :formula %>
-          <%= form.text_area :formula, class: "form-control"  %>
+          <%= form.text_area :formula, class: "form-control #{'readonly-field' if !policy(fund_formula).create?}", readonly: !policy(fund_formula).create?, placeholder: "Read-only field"  %>
           
         </div>
 
