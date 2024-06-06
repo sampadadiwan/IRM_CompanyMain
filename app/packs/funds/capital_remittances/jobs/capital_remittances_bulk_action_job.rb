@@ -5,6 +5,7 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
 
   def perform_action(capital_remittance, user_id, bulk_action, params: {})
     msg = "Performing #{bulk_action} on remittance #{capital_remittance}"
+    Rails.logger.info(msg + " params: #{params}")
     send_notification(msg, user_id, :success)
     case bulk_action.downcase
 
