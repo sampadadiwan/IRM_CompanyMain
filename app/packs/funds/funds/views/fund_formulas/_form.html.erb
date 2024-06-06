@@ -54,18 +54,17 @@
           <%= form.label :description %>
           <%= form.text_area :description, class: "form-control"  %>
         </div>
-        <% if policy(fund_formula).create? %>
-          <div class="form-group">
-            
-            <div class="alert alert-info">
-              <small>Please ensure proper spacing between formula tokens</small>
-            </div>
-
-            <%= form.label :formula %>
-            <%= form.text_area :formula, class: "form-control"  %>
-            
+                
+        <div class="form-group">
+          
+          <div class="alert alert-info">
+            <small>Please ensure proper spacing between formula tokens</small>
           </div>
-        <% end %>
+
+          <%= form.label :formula %>
+          <%= form.text_area :formula, class: "form-control #{'readonly-field' if !policy(fund_formula).create?}", readonly: !policy(fund_formula).create?, placeholder: "Read-only field"  %>
+          
+        </div>
 
         <div class="form-group">
             <%= form.label :roll_up %>
