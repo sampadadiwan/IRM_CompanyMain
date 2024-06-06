@@ -69,10 +69,11 @@ class FundFormulasController < ApplicationController
     respond_to do |format|
       if @fund_formulas.update_all(enabled:)
         format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas was successfully updated." }
+        format.json { head :no_content }
       else
         format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas not updated." }
+        format.json { head :no_content }
       end
-      format.json { head :no_content }
     end
   end
 
