@@ -44,7 +44,7 @@ class ApplicationPolicy
   end
 
   def support?
-    user.has_cached_role?(:support)
+    user.has_cached_role?(:support) || user.support_user_id.present?
   end
 
   def super_user?

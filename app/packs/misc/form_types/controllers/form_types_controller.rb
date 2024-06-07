@@ -31,7 +31,7 @@ class FormTypesController < ApplicationController
     authorize(@form_type)
     allowed = true
     begin
-      unless current_user.has_cached_role?(:support)
+      unless current_user.support?
         # We dont allow non support users to update calculations
         @form_type.form_custom_fields.each do |fcf|
           allowed = false if fcf.field_type == "Calculation"
@@ -59,7 +59,7 @@ class FormTypesController < ApplicationController
   def update
     allowed = true
     begin
-      unless current_user.has_cached_role?(:support)
+      unless current_user.support?
         # We dont allow non support users to update calculations
         params["form_type"]["form_custom_fields_attributes"].each_value do |fcf|
           if fcf["field_type"] == "Calculation"

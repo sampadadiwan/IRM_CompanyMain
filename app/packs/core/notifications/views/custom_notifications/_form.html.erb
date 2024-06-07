@@ -62,7 +62,7 @@
 
     <% end %>
 
-    <% if current_user.has_cached_role?(:support) %>      
+    <% if current_user.support? %>      
 
       <div class="form-group">
         <%= form.label :is_erb, "Dynamic Template" %>

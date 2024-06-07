@@ -1,3 +1,19 @@
+V7.1.15
+#####################################
+a97ad9fdd Fixed tests
+726280600 Enable fund formula buttons (#287)
+5fa375ad6 Conditonal view for formula
+28f372155 Fixed investors kyc form for reg env
+c5e7dbc37 Fixed investors form, and IA form for phone numbers
+01edbbfa8 Added Labels for reg env
+c36efa4a1 Enable fund formula buttons (#285)
+630ab1cec Allow support to update the formula
+cce9a6fae Fixed new fund test
+73f16db04 Added fund close dates (#286)
+565f3ce21 Enable normal users to enable and disable
+a4ebc7c0b Added better tests for bulk actions
+1bc8efa5f Added tests for kyc bulk actions
+
 V7.1.14
 #####################################
 9d8c64b30 Added better validation for fund units
