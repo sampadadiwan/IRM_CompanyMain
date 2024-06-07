@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_06_071640) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -863,11 +863,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
     t.string "source"
     t.string "introduced_by"
     t.text "notes"
+    t.json "json_fields"
+    t.bigint "form_type_id"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deal_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"
+    t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
     t.index ["investor_id", "deal_id"], name: "index_deal_investors_on_investor_id_and_deal_id", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
@@ -1115,6 +1118,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
     t.datetime "digio_cutover_date"
     t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
+    t.json "kanban_steps"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
@@ -2093,6 +2097,49 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
     t.index ["pan"], name: "index_investors_on_pan"
   end
 
+  create_table "kanban_boards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.integer "owner_id"
+    t.string "owner_type"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.index ["entity_id"], name: "index_kanban_boards_on_entity_id"
+    t.index ["owner_id", "owner_type"], name: "index_kanban_boards_on_owner_id_and_owner_type"
+  end
+
+  create_table "kanban_cards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "data_source_id"
+    t.string "data_source_type"
+    t.datetime "deleted_at"
+    t.bigint "entity_id", null: false
+    t.bigint "kanban_board_id", null: false
+    t.bigint "kanban_column_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "title"
+    t.string "info_field"
+    t.text "notes"
+    t.string "tags"
+    t.index ["data_source_type", "data_source_id"], name: "index_kanban_cards_on_data_source_type_and_data_source_id"
+    t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
+    t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
+    t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
+  end
+
+  create_table "kanban_columns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.integer "sequence"
+    t.datetime "deleted_at"
+    t.bigint "entity_id", null: false
+    t.bigint "kanban_board_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_kanban_columns_on_entity_id"
+    t.index ["kanban_board_id"], name: "index_kanban_columns_on_kanban_board_id"
+  end
+
   create_table "kpi_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -3059,6 +3106,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
   add_foreign_key "deal_investors", "deals"
   add_foreign_key "deal_investors", "entities"
   add_foreign_key "deal_investors", "folders", column: "document_folder_id"
+  add_foreign_key "deal_investors", "form_types"
   add_foreign_key "deal_investors", "investors"
   add_foreign_key "deals", "deals", column: "clone_from_id"
   add_foreign_key "deals", "entities"
@@ -3178,6 +3226,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_05_050407) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "kanban_boards", "entities"
+  add_foreign_key "kanban_cards", "entities"
+  add_foreign_key "kanban_cards", "kanban_boards"
+  add_foreign_key "kanban_cards", "kanban_columns"
+  add_foreign_key "kanban_columns", "entities"
+  add_foreign_key "kanban_columns", "kanban_boards"
   add_foreign_key "kpi_reports", "entities"
   add_foreign_key "kpi_reports", "entities", column: "owner_id"
   add_foreign_key "kpi_reports", "folders", column: "document_folder_id"
