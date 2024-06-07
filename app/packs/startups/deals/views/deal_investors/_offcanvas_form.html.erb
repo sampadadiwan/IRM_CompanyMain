@@ -1,6 +1,7 @@
 
 <% turbo_frame_id = "deal_investor_form_offcanvas#{deal_investor.id}" %>
 <%= turbo_frame_tag turbo_frame_id do %>
+<% doc_owner_tag||="" %>
 <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
   <div class="dynamic_form" data-controller="deal-form-new-deal-investor">
         <%= form_with(model: deal_investor, validate: true) do |form| %>
@@ -19,7 +20,7 @@
             <%= form.text_field :turbo_frame_id, class: "form-control", disabled: "disabled", value: turbo_frame_id, hidden: true  %>
 
             <div class="form-group">
-            <%= form.label :deal_id %>
+            <%= form.text_field :kanban_column_id, hidden: true %>
             <%= form.text_field :deal_name, class: "form-control", disabled: "disabled", value: deal_investor.deal.name  %>
             <%= form.text_field :deal_id, class: "form-control", hidden: true  %>
             <%= form.text_field :deal_activity_id, class: "form-control", hidden: true  %>
@@ -103,6 +104,10 @@
             <%= form.rich_text_area :notes, class: "form-control trix-content"  %>
             </div>
 
+            <%= custom_form_fields(deal_investor, form) %>
+
+            <%= render "layouts/multi_upload", form: form, title: "Documents",
+                        for_model: "deal_investor", owner_tag: doc_owner_tag %>
 
             <div class="form-group">
                 <%= form.submit "Save", {class: "btn btn-outline-primary", id: "saveButton"}%>
@@ -112,18 +117,3 @@
 
   </div>
 <% end %>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Get references to the buttons
-  var saveButton = document.getElementById('saveButton');
-
-  // Add click event listener to the Save button
-  saveButton.addEventListener('click', function(event) {
-    // Dismiss the offcanvas
-    var offcanvas = document.getElementById("offcanvas_DealInvestor"<%= deal_investor.id %>);
-    var offcanvasInstance = new bootstrap.Offcanvas(offcanvas);
-    offcanvasInstance.hide();
-  });
-});
-</script>

@@ -5,10 +5,10 @@ Scenario Outline: Create new deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   And I am at the deals page
+  When I have Boards Permissions
   When I create a new deal "<deal>"
   Then I should see the "<msg>"
   And an deal should be created
-  And I am at the deals kanban show page
 
   Examples:
   	|user	      |entity               |deal                             |msg	|
@@ -19,11 +19,11 @@ Scenario: Fill form to create new deal investor
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
-    When I click on the action dropdown and select any Investor and save
+    When I click on the Add Item and select any Investor and save
 
     Examples:
   	|user	      |entity               |deal                             |msg	|
@@ -34,11 +34,11 @@ Scenario: Delete deal investor from kanban board
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
-    When I click on the action dropdown and select any Investor and save
+    When I click on the Add Item and select any Investor and save
     When I click on a Kanban Card
     Then The offcanvas opens
     When I click on the delete button on offcanvas
@@ -48,16 +48,15 @@ Scenario: Delete deal investor from kanban board
   	|user	      |entity               |deal                             |msg	|
   	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
 
-Scenario: Deal Activity error without title and days
+Scenario: Kanban Column creation
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
-    When I click on the action dropdown and create a deal activity without title and days
-    Then I should see the error "<error>"
+    When I click on the action dropdown and create a Kanban Column
 
     Examples:
   	|user	      |entity               |deal                             |msg	|error |
@@ -68,10 +67,10 @@ Scenario: Duplicate Deal Investor error
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
     When I click on the action dropdown and select the same Investor and save
     Then I should see the error "<error>"
 
@@ -83,10 +82,10 @@ Scenario: No investor selected Deal Investor error
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
     When I click on the action dropdown and dont select any Investor and save
     Then I should see the error "<error>"
 
@@ -99,11 +98,11 @@ Scenario: Filter Deal Investors using tags
   Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     And I am at the deals page
+    When I have Boards Permissions
     When I create a new deal "<deal>"
     Then I should see the "<msg>"
     And an deal should be created
-    And I am at the deals kanban show page
-    When I click on the action dropdown and select any Investor and save
+    When I click on the Add Item and select any Investor and save
     When I click on a Kanban Card and edit the form
     When I click on a Kanban Card's tags
 
@@ -115,17 +114,42 @@ Scenario: Filter Deal Investors using tags
 
 Scenario: Move card from one column to another
   Given Im logged in as a user "<user>" for an entity "<entity>"
-    Given the user has role "company_admin"
-    And I am at the deals page
-    When I create a new deal "<deal>"
-    Then I should see the "<msg>"
-    And an deal should be created
-    And I am at the deals kanban show page
-    When I click on the action dropdown and select any Investor and save
-    When I move card from one column to another
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  When I click on the Add Item and select any Investor and save
+  When I move card from one column to another
 
 
-    Examples:
-  	|user	      |entity               |deal                             |msg	|
-  	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
-    |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
+  Examples:
+  |user	      |entity               |deal                             |msg	|
+  |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
+  |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
+
+Scenario: Plane Kanban Board
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the Boards Page
+  When I have Boards Permissions
+  When I create a new board "<board>"
+
+  Examples:
+  |user	      |entity               |board                            |msg	|
+  |  	        |entity_type=Company  |name=Series A |Deal was successfully created|
+  |  	        |entity_type=Company  |name=Series B |Deal was successfully created|
+
+Scenario: Archive a Kanban Column
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the Boards Page
+  When I have Boards Permissions
+  When I create a new board "<board>"
+  When I add an item to the board
+
+  Examples:
+  |user	      |entity               |board                            |msg	|
+  |  	        |entity_type=Company  |name=Series A |Deal was successfully created|
+  |  	        |entity_type=Company  |name=Series B |Deal was successfully created|

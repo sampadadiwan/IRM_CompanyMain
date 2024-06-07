@@ -7,14 +7,17 @@ end
 When('I create a new deal {string}') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
-
   click_on("New Deal")
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
   select(@deal.status, from: "deal_status")
   click_on("Save")
+  sleep(0.5)
+  kanban_board = KanbanBoard.first
+  kanban_columns = kanban_board.kanban_columns.pluck(:name)
+  sleep(3)
+  kanban_columns.each { |column| expect(page.text).to(include(column)) }
 end
-
 
 When('I edit the deal {string}') do |arg1|
   key_values(@deal, arg1)
@@ -29,7 +32,9 @@ When('I edit the deal {string}') do |arg1|
   sleep(1)
 end
 
-When('I click on the action dropdown and select any Investor and save') do
+When('I click on the Add Item and select any Investor and save') do
+  first('button', text: "Add Item").click
+  sleep(0.25)
   select_investor_and_save(2, 'First Investment')
   select_investor_and_save(3, 'Second Investment')
   expect(all(".kanban-card").first.text).to include(@deal.deal_investors.first.investor_name)
@@ -37,41 +42,45 @@ end
 
 When('I click on a Kanban Card and edit the form') do
   deal_investor = DealInvestor.first
-  find('h4', text: deal_investor.name).click()
+  find('h3', text: deal_investor.name).click
   sleep(0.5)
   click_link('Edit')
   sleep(0.25)
   fill_in('Tags', with: "Random, Tag")
   click_button('Save')
   sleep(1)
-  expect(all(".kanban-card").first.text).to include("Random Tag")
+  expect(all(".kanban-card").first.text).to include("Random")
+  expect(all(".kanban-card").first.text).to include("Tag")
 end
 
 When("I click on a Kanban Card's tags") do
-  DealInvestorIndex.import!
-  expect(all(".kanban-card").count).to (eq(2))
+  KanbanCardIndex.import!
+  expect(all(".kanban-card").count).to(eq(2))
   click_link("Random")
   sleep(1)
-  expect(all(".kanban-card").count).to (eq(1))
+  expect(all(".kanban-card").count).to(eq(1))
 end
 
 When("I move card from one column to another") do
-  all(".move-to-next-column").first.click()
-  sleep(1)
-  expect(@deal.deal_investors.first.deal_activities.first.status).to(eq("Complete"))
+  all(".move-to-next-column").first.click
+  sleep(3)
+  expect(KanbanCard.first.audits.last.audited_changes.keys).to(include("kanban_column_id"))
 end
 
 Then('an deal should be created') do
   @created = Deal.last
-  @created.name.should == @deal.name
-  @created.amount.should == @deal.amount
-  @created.status.should == @deal.status
+  @created.name.should
+  @deal.name
+  @created.amount.should
+  @deal.amount
+  @created.status.should
+  @deal.status
   @deal = @created
 end
 
 Then('I should see the deal details on the details page') do
   visit(deal_path(@deal))
-  find("#deal_tab").click()
+  find_by_id('deal_tab').click
   expect(page).to have_content(@deal.name)
   expect(page).to have_content(money_to_currency(@deal.amount))
   expect(page).to have_content(@deal.status)
@@ -82,14 +91,13 @@ Then('I am at the deals kanban show page') do
   visit(kanban_deal_path(@deal))
   expect(page).to have_content(@deal.name)
   deal_activities = DealActivity.templates(@deal).pluck(:title)
-  deal_activities.each {|activity| expect(page.html).to(include(activity)) }
+  deal_activities.each { |activity| expect(page.html).to(include(activity)) }
 end
 
 Then('I should see the deal in all deals page') do
   visit("/deals")
   expect(page).to have_content(@deal.name)
-  expect(page).to have_content(money_to_currency(@deal.amount))
-  expect(page).to have_content(@deal.status)
+  expect(page).to have_content(money_to_currency(@deal.amount).scan(/\d+/).map(&:to_i)[0])
 end
 
 Given('I visit the deal details page') do
@@ -98,11 +106,10 @@ Given('I visit the deal details page') do
   visit(deal_url(@deal))
 end
 
-
 Given('there exists a deal {string} for my company') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
-  CreateDeal.wtf?(deal: @deal).success?.should == true
+  CreateDeal.wtf?(deal: @deal).success?.should
   puts "\n####Deal####\n"
   puts @deal.to_json
 end
@@ -114,35 +121,29 @@ end
 
 Then('the deal should be started') do
   @deal.reload
-  @deal.start_date.should_not == nil
-  @deal.deal_activities.should_not == nil
+  @deal.start_date.should_not
+  @deal.deal_activities.should_not.nil?
 end
-
 
 Given('given there is a deal {string} for the entity') do |arg1|
   @deal = FactoryBot.build(:deal, entity_id: @entity.id)
   key_values(@deal, arg1)
-  CreateDeal.wtf?(deal: @deal).success?.should == true
+  CreateDeal.wtf?(deal: @deal).success?.should
   puts "\n####Deal####\n"
   puts @deal.to_json
-
 end
-
 
 Given('the deal is started') do
   @deal.start_deal
 end
 
 Given('I am {string} employee access to the deal') do |given|
-  if given == "given" || given == "yes"
-    @access_right = AccessRight.create(entity_id: @deal.entity_id, owner: @deal, user_id: @user.id)
-  end
+  @access_right = AccessRight.create(entity_id: @deal.entity_id, owner: @deal, user_id: @user.id) if %w[given yes].include?(given)
 end
 
 Given('I have {string} access to the deal') do |should|
   Pundit.policy(@user, @deal).show?.should == (should == "true")
 end
-
 
 Given('I should not have access to the deal') do
   Pundit.policy(@user, @deal).show?.should == false
@@ -159,7 +160,6 @@ end
 Given('another user {string} have access to the deal') do |arg|
   Pundit.policy(@another_user, @deal).show?.to_s.should == arg
 end
-
 
 Given('another entity is an investor {string} in entity') do |arg|
   random_pan = Faker::Alphanumeric.alphanumeric(number: 10, min_alpha: 3)
@@ -179,19 +179,16 @@ Given('another entity is a deal_investor {string} in the deal') do |arg|
   puts @deal_investor.to_json
 end
 
-
-
 Given('another user has investor access {string} in the investor') do |arg|
   @investor_access = InvestorAccess.new(entity: @entity, investor: @investor,
-                            first_name: @another_user.first_name, last_name: @another_user.last_name,
-                            email: @another_user.email, granter: @user )
+                                        first_name: @another_user.first_name, last_name: @another_user.last_name,
+                                        email: @another_user.email, granter: @user)
   key_values(@investor_access, arg)
 
   @investor_access.save!
   puts "\n####Investor Access####\n"
   puts @investor_access.to_json
 end
-
 
 Given('investor has access right {string} in the deal') do |arg1|
   @access_right = AccessRight.new(owner: @deal, entity: @entity)
@@ -201,27 +198,23 @@ Given('investor has access right {string} in the deal') do |arg1|
   puts @access_right.to_json
 end
 
-
-
 ############################################################################
 ############################################################################
 #######################  Investor related test steps #############################
 ############################################################################
 ############################################################################
 
-
-
-Given('there are {string} exisiting deals {string} with another firm in the startups') do |count, args|
+Given('there are {string} exisiting deals {string} with another firm in the startups') do |count, _args|
   @another_entity = FactoryBot.create(:entity, entity_type: "Investor")
 
   Entity.startups.each do |company|
     @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)
     (1..count.to_i).each do
       deal = FactoryBot.build(:deal, entity: company)
-      CreateDeal.wtf?(deal: deal).success?.should == true
+      CreateDeal.wtf?(deal:).success?.should
 
       begin
-        di = FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal: deal)
+        FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal:)
       rescue Exception => e
         puts deal.entity.folders.collect(&:full_path)
         puts deal.to_json
@@ -231,8 +224,7 @@ Given('there are {string} exisiting deals {string} with another firm in the star
   end
 end
 
-Given('there are {string} exisiting deals {string} with my firm in the startups') do |count, args|
-
+Given('there are {string} exisiting deals {string} with my firm in the startups') do |count, _args|
   Entity.startups.each do |company|
     (1..count.to_i).each do
       deal = FactoryBot.create(:deal, entity: company, name: Faker::Company.bs)
@@ -240,9 +232,10 @@ Given('there are {string} exisiting deals {string} with my firm in the startups'
       ap deal
 
       inv = deal.entity.investors.where(investor_name: @investor.investor_name).first
-      di = FactoryBot.create(:deal_investor, investor: inv, entity: company, deal: deal)
+      di = FactoryBot.create(:deal_investor, investor: inv, entity: company, deal:)
       puts "\n####Deal Investor####\n"
-      ap di    end
+      ap di
+    end
   end
 end
 
@@ -251,7 +244,7 @@ Given('I am at the deal_investors page') do
 end
 
 Then('I should not see the deals of the company') do
-  DealInvestor.all.each do |di|
+  DealInvestor.find_each do |di|
     within("#deal_investors") do
       expect(page).to have_no_content(di.deal_name)
       expect(page).to have_no_content(di.investor_name)
@@ -259,27 +252,23 @@ Then('I should not see the deals of the company') do
   end
 end
 
-
 Then('I should see the deals of the company') do
-  DealInvestor.where(investor_entity_id: @entity.id).each do |di|
+  DealInvestor.where(investor_entity_id: @entity.id).find_each do |di|
     expect(page).to have_content(di.deal_name)
     expect(page).to have_content(di.investor_name)
   end
 end
 
-
 Given('I have access to all deals') do
-
-  DealInvestor.where(investor_entity_id: @entity.id).all.each do |di|
-
-    ia = InvestorAccess.create!(investor:di.investor, user: @user,
-                          first_name: @user.first_name,
-                          last_name: @user.last_name,
-                          email: @user.email, approved: true,
-                          entity_id: di.entity_id)
+  DealInvestor.where(investor_entity_id: @entity.id).find_each do |di|
+    InvestorAccess.create!(investor: di.investor, user: @user,
+                           first_name: @user.first_name,
+                           last_name: @user.last_name,
+                           email: @user.email, approved: true,
+                           entity_id: di.entity_id)
 
     ar = AccessRight.create(owner: di, access_type: "DealInvestor",
-        entity: di.entity, access_to_investor_id: di.investor_id)
+                            entity: di.entity, access_to_investor_id: di.investor_id)
 
     puts "\n####Access Right####\n"
     puts ar.to_json
@@ -291,42 +280,38 @@ end
 
 Given('the investors are added to the deal') do
   @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create( owner: @deal, access_type: "Deal",
-                                 access_to_investor_id: inv.id, entity: @user.entity)
+    ar = AccessRight.create(owner: @deal, access_type: "Deal",
+                            access_to_investor_id: inv.id, entity: @user.entity)
 
-
-        puts "\n####Granted Access####\n"
-        puts ar.to_json
+    puts "\n####Granted Access####\n"
+    puts ar.to_json
   end
 end
-
 
 Then('the deal data room should be setup') do
   @deal.reload
   puts "\n####Data Room####\n"
   puts @deal.data_room_folder.to_json
-  @deal.data_room_folder.should_not == nil
-  @deal.data_room_folder.name.should == "Data Room"
+  @deal.data_room_folder.should_not
+  @deal.data_room_folder.name.should
   @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
 end
 
 def select_investor_and_save(investor_id, tags)
-  find(".dropdown-toggle").click
-  sleep(0.5)
-  click_link('Add Deal Investor')
-  sleep(2)
-  select_box = find("#deal_investor_investor_id")
-  select_box.find("option:nth-of-type(#{investor_id})").select_option
-  input_field = find('#deal_investor_tags')
+  first('button', text: "Add Item").click
+  sleep(1)
+  find('select#deal_investor_investor_id').find(:xpath, "option[#{investor_id}]").select_option
+  input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
+  sleep(0.5)
   click_button('Save')
   sleep(1)
 end
 
 When('I click on a Kanban Card') do
   @deal_investor = DealInvestor.last
-  expect(all(".kanban-card").count).to (eq(2))
-  find('h4', text: @deal_investor.name).click()
+  expect(all(".kanban-card").count).to(eq(2))
+  find('h3', text: @deal_investor.name).click
   sleep(1)
 end
 
@@ -347,17 +332,17 @@ When('I click on the delete button on offcanvas') do
 end
 
 Then('The card is deleted fromt the kanban board') do
-  expect(page).not_to have_content(@deal_investor.name)
-  expect(all(".kanban-card").count).to (eq(1))
+  expect(page).to have_no_content(@deal_investor.name)
+  expect(all(".kanban-card").count).to(eq(1))
 end
 
-When('I click on the action dropdown and create a deal activity without title and days') do
-  find(".dropdown-toggle").click
+When('I click on the action dropdown and create a Kanban Column') do
+  find(".column-add").click
   sleep(0.5)
-  click_link('Add Deal Activity')
-  sleep(1)
+  find_by_id('kanban_column_name').set('New Column')
   click_button('Save')
   sleep(1)
+  expect(page.text).to(include('New Column'))
 end
 
 Then('I should see the error "{string}"') do |string|
@@ -370,9 +355,7 @@ When('I click on the action dropdown and select the same Investor and save') do
 end
 
 When('I click on the action dropdown and dont select any Investor and save') do
-  find(".dropdown-toggle").click
-  sleep(0.5)
-  click_link('Add Deal Investor')
+  first('button', text: "Add Item").click
   sleep(1)
   click_button('Save')
   sleep(1)

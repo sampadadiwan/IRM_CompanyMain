@@ -1,0 +1,2 @@
+<% kanban_colummn ||= @kanban_column %>
+turbo_stream.replace("kanban_column_edit_#{kanban_column.id}", partial: "kanban_columns/form", locals: { kanban_column: kanban_column })

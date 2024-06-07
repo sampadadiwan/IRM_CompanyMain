@@ -1,0 +1,19 @@
+<% turbo||=false %>
+<%= turbo_frame_tag "new_column_form#{@kanban_column.kanban_board_id}" do %>
+    <%= form_with(model: @kanban_column, validate: true, turbo: turbo) do |form| %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :kanban_board_id, class: "form-control", hidden: true  %>
+        <span>
+        <div class="field">
+            <%= form.label :name %>
+            <%= form.text_field :name, class: "form-control" %>
+        </div>
+
+        <div class="actions">
+            <%= form.submit "Save", class: "btn btn-primary", id:"saveButton" %>
+        </div>
+        </span>
+
+    <% end %>
+<% end %>

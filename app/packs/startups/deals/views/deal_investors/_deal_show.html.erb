@@ -1,4 +1,5 @@
-<%= turbo_frame_tag "deal_investor_show_#{deal_investor.id}" do %>
+<%turbo_tag ||= "deal_investor_show_#{deal_investor.id}"%>
+<%= turbo_frame_tag turbo_tag do %>
 <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
 <table class="table table-bordered dataTable ">
 <%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>
@@ -10,7 +11,7 @@
     </td>
     <td>
       <%= belongs_to_entity ?
-        link_to(deal_investor.deal_name, deal_investor.deal) :
+        link_to(deal_investor.deal_name, deal_investor.deal, :target => "_blank") :
         deal_investor.deal_name %>
     </td>
   </tr>
@@ -20,7 +21,7 @@
     </td>
     <td>
       <%= belongs_to_entity ?
-          link_to(deal_investor.investor_name, deal_investor.investor) :
+          link_to(deal_investor.investor_name, deal_investor.investor, :target => "_blank") :
           deal_investor.investor_name %>
     </td>
   </tr>
@@ -39,6 +40,42 @@
     </td>
     <td>
       <%= deal_investor.tier %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Deal Lead
+    </td>
+    <td>
+      <%= deal_investor.deal_lead %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Source
+    </td>
+    <td>
+      <%= deal_investor.source %>
+    </td>
+  </tr>
+
+   <tr>
+    <td>
+      Introduced By
+    </td>
+    <td>
+      <%= deal_investor.introduced_by %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= deal_investor.tags %>
     </td>
   </tr>
 
@@ -119,7 +156,7 @@
       Entity
     </td>
     <td>
-      <%= link_to deal_investor.entity_name, deal_investor.entity %>
+      <%= link_to(deal_investor.entity_name, deal_investor.entity, :target => "_blank") %>
     </td>
   </tr>
 
@@ -132,10 +169,13 @@
     </td>
  </tr>
 
+<%= display_custom_fields(@deal_investor) %>
+
+
 </table>
 
 <div class="d-inline-flex">
-  <%= link_to "Edit", edit_deal_investor_path(deal_investor), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
+  <%= link_to "Edit", edit_deal_investor_path(deal_investor, turbo_frame: turbo_tag), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
   <%= form_with(model: deal_investor, url: deal_investor_path(deal_investor), method: :delete) do |form| %>
     <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
   <% end %>
@@ -155,7 +195,7 @@
 
 <% documents.each do |document| %>
 <div>
-    <%= link_to document.name, document_path(document.id) %>
+    <%= link_to document.name, document_path(document.id), target: "_blank" %>
 </div>
 <% end %>
 

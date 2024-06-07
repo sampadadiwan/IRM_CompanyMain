@@ -1,0 +1,12 @@
+<% kanban_card ||= @kanban_card %>
+<% if kanban_card.present? %>
+    <% if kanban_card.data_source_type == "KanbanCard" %>
+        <%= render NewCard.new do %>
+            <%= render "form", kanban_card: kanban_card %>
+        <% end %>
+    <% else %>
+        <%= render NewCard.new do %>
+            <%= render "#{kanban_card.data_source_type.underscore.pluralize}/form", object: kanban_card.data_source %>
+        <% end %>
+    <% end %>
+<% end %>

@@ -10,7 +10,7 @@ class EntitySetting < ApplicationRecord
   serialize :kpi_doc_list, type: Array
 
   before_save :ensure_single_kra_enabled, if: -> { kra_enabled_changed? && kra_enabled == true }
-
+  before_create :set_kanban_steps
   # Add new flags to the end of this list
   flag :custom_flags, %i[enable_this enable_that]
 
@@ -49,5 +49,21 @@ class EntitySetting < ApplicationRecord
 
   def validate_ckyc_enabled
     errors.add(:ckyc, "can not be enabled without FI Code") if ckyc_enabled == true && fi_code.blank?
+  end
+
+  def set_kanban_steps
+    self.kanban_steps = {
+      "Deal" =>
+      ["Pre Term Sheet Memo",
+       "Information Memorandum",
+       "Business Plan",
+       "IC Minutes",
+       "Final Term Sheet",
+       "Diligence Reports",
+       "Closing Investment Memo",
+       "Transaction Documents",
+       "CP Confirmation Certificate"],
+      "KanbanBoard" => ["Todo", "In Progres", "Done", "Validated"]
+    }
   end
 end

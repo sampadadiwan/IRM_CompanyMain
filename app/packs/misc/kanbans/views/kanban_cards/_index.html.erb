@@ -1,0 +1,57 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800 col-6">Cards</h1>
+  <%
+    kanban_card ||= params[:entity_id].present? ? KanbanCard.new(data_source_id: params[:data_source_id], data_source_type: params[:data_source_type], column_id: params[:column_id] , entity_id: params[:entity_id]) : nil
+  %>
+  <span>
+    <%= link_to "Add card",
+                    new_kanban_card_path(
+                        "kanban_card[data_source_id]": kanban_card.data_source_id,
+                        "kanban_card[data_source_type]": kanban_card.data_source_type,
+                        "kanban_card[column_id]": kanban_card.column_id,
+                        "kanban_card[entity_id]": kanban_card.entity_id,
+                        form_type: params[:form_type]),
+                        { data: { turbo_frame: 'new_kanban_card' },
+                        method: :get, class: "btn btn-outline-primary mt-0" } if kanban_card %>
+
+  </span>
+</div>
+
+<%= turbo_frame_tag "new_kanban_card" do %>
+<% end %>
+
+<div class="table-responsive">
+
+  <table id="kanban_cards_table" class="table table-bordered  dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+        Title
+        </th>
+        <th>
+        Info
+        </th>
+        <th>
+        Tags
+        </th>
+        <th>
+        Notes
+        </th>
+        <th>
+        Board
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody id="kanban_cards_table_body">
+      <% kanban_cards = kanban_cards.includes(:kanban_board) if kanban_cards.respond_to?(:includes) %>
+      <% kanban_cards.each do |kanban_card| %>
+        <%= render kanban_card, kanban_card: kanban_card %>
+      <% end %>
+    </tbody>
+
+  </table>
+
+</div>

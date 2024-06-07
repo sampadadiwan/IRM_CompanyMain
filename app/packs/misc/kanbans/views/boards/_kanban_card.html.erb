@@ -1,0 +1,59 @@
+<% turbo_tag = "#{kanban_card.data_source_type}#{kanban_card.data_source_id}Column#{kanban_card.kanban_column_id}"%>
+<%= turbo_frame_tag turbo_tag do%>
+<% offcanvas_id = "offcanvas_#{kanban_card.data_source_type}#{kanban_card.data_source_id}Column#{kanban_card.kanban_column_id}" %>
+<div id="kanban_card_<%= kanban_card.id %>" draggable="true" class="card ui-sortable-handle kanban-card" data-kanban-column-id="<%=kanban_column_id%>" data-kanban-card-id="<%= kanban_card.id %>"  data-offcanvas-id="<%=offcanvas_id%>" >
+  <div class="card-body">
+    <div class="task-header">
+      <div>
+        <h3 class="item-head fw-semibold small-heading" data-item-title="Investor Name"><%= kanban_card.title %></h3>
+      </div>
+    </div>
+    <div class="task-content">
+      <p class="mb-0" data-item-text= <%= kanban_card.info_field %>>
+         <%= kanban_card.info_field %>
+      </p>
+    </div>
+    <div class="task-body">
+      <div class="task-bottom">
+        <div class="tb-section-1">
+				<span class="hstack fs-2">
+					<i class="ti ti-money fs-5"></i>
+          <% unless kanban_card.tags.nil? || kanban_card.tags.empty? %>
+						<% kanban_card.tags.split(',').each do |tag| %>
+              <%= link_to tag.strip, search_kanban_cards_path(query: tag.strip, kanban_board: kanban_card.kanban_board_id), method: :get, remote: true, class: "badge bg-secondary text-light fs-1 card-tag", style: "cursor: pointer;" %>
+						<% end %>
+					<% end %>
+				</span>
+        </div>
+        <div class="tb-section-2">
+          <%  if Rails.env.test? %>
+            <div class="move-to-next-column">
+              <button class="btn btn-outline-primary btn-sm">>></button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <% card_class = kanban_card.data_source_type.constantize %>
+  <% object = card_class.find(kanban_card.data_source_id) %>
+
+  <%= render OffcanvasComponent.new(title: kanban_card.title, offcanvas_id: offcanvas_id) do %>
+    <%# Dynamically determine the show path helper %>
+    <% show_path_helper = "#{kanban_card.data_source_type.underscore}_path" %>
+    <% offcanvas_turbo_tag= "kanban_card_show_#{kanban_card.id}" %>
+
+    <% show_path = send(show_path_helper, object, turbo: true, turbo_frame: offcanvas_turbo_tag) %>
+    <%= link_to show_path,
+                class: "offcanvas_load_data_link_kanban_card_#{kanban_card.id}",
+                data: { turbo_frame: offcanvas_turbo_tag, turbo: true } do %>
+      <span>Loading...</span>
+    <% end %>
+
+    <%= turbo_frame_tag offcanvas_turbo_tag do %>
+    <% end %>
+
+  <% end %>
+<% end %>

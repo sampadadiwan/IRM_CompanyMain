@@ -131,7 +131,7 @@ class Entity < ApplicationRecord
   scope :perms, ->(p) { where_permissions(p.to_sym) }
   scope :no_perms, ->(p) { where_not_permissions(p.to_sym) }
 
-  before_save :check_url, :scrub_defaults
+  before_save :check_url, :scrub_defaults, :update_kanban_permissions
   def check_url
     self.url = "http://#{url}" if url.present? &&
                                   !(url.starts_with?("http") || url.starts_with?("https"))
@@ -156,6 +156,10 @@ class Entity < ApplicationRecord
       Rails.logger.error "Error in SetupStartup for #{name}"
       raise result[:errors]
     end
+  end
+
+  def update_kanban_permissions
+    permissions.set(:enable_kanban) if permissions.enable_deals?
   end
 
   def to_s

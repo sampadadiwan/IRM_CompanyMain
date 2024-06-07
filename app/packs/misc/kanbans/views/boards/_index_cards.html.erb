@@ -1,0 +1,23 @@
+<div class="container">
+  <%
+    color = "info"
+  %>
+  <div class="row">
+    <% kanban_boards.each_with_index do |kanban_board, index| %>
+      <% color = color == "info" ? "success" : "info" %>
+
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+        <% owner = kanban_board.owner_type&.constantize&.find_by(id: kanban_board.owner_id) %>
+        <% path = (owner.present? && policy(owner).show?) ? board_path(kanban_board) : nil %>
+            <%= render(NumberStatsComponent.new(
+                path: path,
+                amount: kanban_board.name,
+                subtitle: kanban_board.owner_type&.casecmp?("KanbanBoard") ? "Board" : kanban_board.owner_type,
+                progress_bar_color: color ,
+                css_class: "darker-shadow-offwhite"
+            )) %>
+      </div>
+
+    <% end %>
+  </div>
+</div>

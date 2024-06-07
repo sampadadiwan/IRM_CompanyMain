@@ -27,3 +27,21 @@ authenticate :user, ->(user) { user.has_cached_role?(:super) } do
   mount Sidekiq::Web => '/sidekiq'
   mount Blazer::Engine, at: "blazer"
 end
+
+resources :boards do
+  get 'owner_ids', on: :collection
+  get 'archived_kanban_columns', on: :collection
+end
+
+resources :kanban_cards do
+  patch 'move_kanban_card', on: :member
+  get 'search', on: :collection
+end
+
+resources :kanban_columns do
+  patch 'update_sequence', on: :member
+  delete 'delete_column', on: :member
+  patch 'restore_column', on: :member
+end
+
+resources :kanban_boards, controller: "boards"

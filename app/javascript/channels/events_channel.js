@@ -13,7 +13,6 @@ consumer.subscriptions.create("EventsChannel", {
   received(data) {
     const url = window.location.href;
     if(url.includes(data["item"]) && url.includes(data["item_id"])) {
-      console.log("Recieved");
       $(".search-button").eq(0).click();
       $(".btn.btn-outline-primary.show_details_link").click();
     }

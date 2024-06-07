@@ -38,6 +38,42 @@
     </td>
   </tr>
 
+    <tr>
+    <td>
+      Deal Lead
+    </td>
+    <td>
+      <%= deal_investor.deal_lead %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Source
+    </td>
+    <td>
+      <%= deal_investor.source %>
+    </td>
+  </tr>
+
+   <tr>
+    <td>
+      Introduced By
+    </td>
+    <td>
+      <%= deal_investor.introduced_by %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= deal_investor.tags %>
+    </td>
+  </tr>
+
   <tr>
     <td>
       Pre Money Valuation
@@ -127,5 +163,7 @@
        <%= deal_investor.notes %>
     </td>
  </tr>
+
+  <%= display_custom_fields(@deal_investor) %>
 
 </table>

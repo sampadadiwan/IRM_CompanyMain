@@ -1,8 +1,8 @@
 <%= render FormCard.new(title: "Stakeholder : #{investor.investor_name.presence || 'New'}") do %>
 
 <div data-controller="investor">
-  
-  <%= form_with(model: investor, validate: true) do |form| %>
+
+  <%= form_with(model: investor, validate: true, data:{turbo: false}) do |form| %>
     <% if investor.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(investor.errors.count, "error") %> prohibited this investor from being saved:</h2>
@@ -15,7 +15,7 @@
       </div>
     <% end %>
 
-    
+
     <%= render "form_fields", investor: investor, form: form %>
 
     <div class="form-group">

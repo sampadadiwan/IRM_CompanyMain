@@ -1,0 +1,39 @@
+<%= turbo_frame_tag "new_kanban_card" do %>
+<div class="dynamic_form centered" data-controller="wizard">
+    <div class="col-md-6 card shadow mb-4 justify-content-md-center">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between">
+			<h4 class="mb-0">Card : New</h4>
+			<button type="button" class="btn-close text-reset" data-action="click->wizard#close" aria-label="Close"></button>
+		</div>
+        <div class="card-body">
+			<%= form_with(model: kanban_card, validate: true, class: "wizard_form row justify-content-md-center") do |form| %>
+					<%= form.text_field :kanban_column_id, class: "form-control", hidden: true  %>
+					<%= form.text_field :kanban_board_id, class: "form-control", hidden: true  %>
+					<%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+					<%= form.hidden_field :data_source_id, value: kanban_card.data_source_id %>
+					<%= form.hidden_field :data_source_type, value: kanban_card.data_source_type %>
+					<div class="form-group">
+					<%= form.label :title %>
+					<%= form.text_field :title, class: "form-control" %>
+					</div>
+					<div class="form-group">
+					<%= form.label :notes %>
+					<%= form.text_field :notes, class: "form-control" %>
+					</div>
+					<div class="form-group">
+					<%= form.label :info_field %>
+					<%= form.text_field :info_field, class: "form-control" %>
+					</div>
+					<div class="form-group">
+					<%= form.label :tags %>
+					<%= form.text_field :tags, class: "form-control" %>
+					</div>
+					<div class="form-group">
+					<%= form.submit "Save", class: "btn btn-primary" %>
+               		<a class="btn btn-outline-danger", data-action="click->wizard#close">Close</a>
+					</div>
+			<% end %>
+		</div>
+    </div>
+</div>
+<% end %>

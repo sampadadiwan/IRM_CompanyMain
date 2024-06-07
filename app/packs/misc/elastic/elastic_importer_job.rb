@@ -23,6 +23,7 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.import
     CapitalDistributionPaymentIndex.import
     InvestorKycIndex.import
+    KanbanCardIndex.import
     AggregatePortfolioInvestmentIndex.import
   end
 
@@ -48,6 +49,7 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.reset!
     CapitalDistributionPaymentIndex.reset!
     InvestorKycIndex.reset!
+    KanbanCardIndex.reset!
     AggregatePortfolioInvestmentIndex.reset!
   end
 
@@ -73,6 +75,7 @@ class ElasticImporterJob < ApplicationJob
     CapitalRemittanceIndex.create
     CapitalDistributionPaymentIndex.create
     InvestorKycIndex.create
+    KanbanCardIndex.create
     AggregatePortfolioInvestmentIndex.create
   end
 end

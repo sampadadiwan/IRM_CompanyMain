@@ -5,6 +5,7 @@ class Deal < ApplicationRecord
   include WithDataRoom
   include WithCustomField
   include InvestorsGrantedAccess
+  include KanbanManager
 
   # encrypts :name
   monetize :amount_cents, with_model_currency: :currency

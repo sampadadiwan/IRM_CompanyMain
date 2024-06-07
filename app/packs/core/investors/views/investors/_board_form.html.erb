@@ -1,0 +1,38 @@
+
+<%= turbo_frame_tag frame do%>
+<div class="wizard_container dynamic_form centered" data-controller="investor">
+    <div class="col-md-6 card shadow mb-4 justify-content-md-center">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between">
+            <h4 class="mb-0">StakeHolder: New</h4>
+            <button type="button" class="btn-close text-reset" data-action="click->investor#close" aria-label="Close"></button>
+        </div>
+        <div class="card-body">
+
+
+            <%= form_with(model: investor, validate: true) do |form| %>
+                <% if investor.errors.any? %>
+                <div class="alert alert-danger">
+                    <h2><%= pluralize(investor.errors.count, "error") %> prohibited this investor from being saved:</h2>
+
+                    <ul>
+                    <% investor.errors.each do |error| %>
+                        <li><%= error.full_message %></li>
+                    <% end %>
+                    </ul>
+                </div>
+                <% end %>
+                <%= form.text_field :turbo_frame, name: "turbo_frame", class: "form-control", hidden: true, value: frame %>
+
+                <%= render "form_fields", investor: investor, form: form %>
+
+                <div class="form-group">
+                <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+                <a class="btn btn-outline-danger", data-action="click->investor#close">Close</a>
+                </div>
+            <% end %>
+
+        </div>
+    </div>
+</div>
+
+<% end %>

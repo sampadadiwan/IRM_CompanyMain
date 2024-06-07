@@ -1,1 +1,1 @@
-<%= turbo_stream.replace("deal_investor_form_offcanvas#{@deal_investor.id}", partial: "deal_investors/offcanvas_form_success", locals: { deal_investor: @deal_investor, current_user: @current_user }) %>
+<%= turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form_success", locals: { deal_investor: @deal_investor, current_user: @current_user }) %>

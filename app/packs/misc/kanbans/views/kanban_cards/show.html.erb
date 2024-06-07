@@ -1,0 +1,89 @@
+<% kanban_card ||= @kanban_card%>
+<%turbo_tag ||= "kanban_card_show#{kanban_card.id}"%>
+<%= turbo_frame_tag turbo_tag do %>
+<div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+<table class="table table-bordered dataTable ">
+<%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>
+<% update_allowed ||= false %>
+
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= link_to(kanban_card.entity.name, kanban_card.entity) %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Board
+    </td>
+    <td>
+      <%= link_to(kanban_card.kanban_board.name, kanban_card.kanban_board) %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Column
+    </td>
+    <td>
+      <%= link_to(kanban_card.kanban_column.name, kanban_card.kanban_board) %>
+    </td>
+  </tr>
+  <% if kanban_card.data_source_type != kanban_card.class.to_s  %>
+  <tr>
+    <td>
+      Source
+    </td>
+    <td>
+      <% object = kanban_card.data_source_type.constantize.find(kanban_card.data_source_id)  %>
+      <%= link_to object %>
+    </td>
+  </tr>
+  <% end %>
+
+  <tr>
+    <td>
+      Title
+    </td>
+    <td>
+      <%= kanban_card.title %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= kanban_card.notes %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Info
+    </td>
+    <td>
+      <%= kanban_card.info_field %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= kanban_card.tags %>
+    </td>
+  </tr>
+
+</table>
+
+<div class="d-inline-flex">
+  <%= link_to "Edit", edit_kanban_card_path(kanban_card, turbo_frame: turbo_tag), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
+  <%= form_with(model: kanban_card, url: kanban_card_path(kanban_card), method: :delete) do |form| %>
+    <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
+  <% end %>
+</div>
+<% end %>

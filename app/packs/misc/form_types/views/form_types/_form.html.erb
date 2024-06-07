@@ -1,4 +1,4 @@
-<% if params[:debug].present? && !@form_type.new_record? %>  
+<% if params[:debug].present? && !@form_type.new_record? %>
   <%= render FormCard.new(title: "Rename Custom Field: #{@form_type.name}") do %>
     <div class="alert alert-info">
       Renaming a custom field will change the name of the field and the data stored for that custom field. Please do this only during off peak hours as it loads the DB with updates
@@ -8,7 +8,7 @@
       <input type="hidden" name="id" value="<%= @form_type.id %>">
       <div class="col-5"><input type="text" name="old_name" class="form-control" placeholder="Old Name"></div>
       <div class="col-5"><input type="text" name="new_name" class="form-control" placeholder="New Name"></div>
-      <div class="col-1"><input type="submit" class="btn btn-outline-primary"></div>      
+      <div class="col-1"><input type="submit" class="btn btn-outline-primary"></div>
     </form>
   <% end %>
 <% end %>
@@ -27,12 +27,12 @@
         </ul>
       </div>
     <% end %>
-    
-    <% 
-    
-      types = ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation", "Holding", "InvestmentOpportunity", "Fund", "CapitalCommitment", "CapitalCall", "CapitalRemittance", "Approval", "ApprovalResponse", "InvestorKyc", "IndividualKyc", "NonIndividualKyc", "FundUnitSetting", "AccountEntry", "AggregatePortfolioInvestment", "PortfolioInvestment", "User", "InvestmentInstrument"] 
 
-      types += [form_type.name] unless form_type.name.blank? || types.include?(form_type.name) 
+    <%
+
+      types = ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation", "Holding", "InvestmentOpportunity", "Fund", "CapitalCommitment", "CapitalCall", "CapitalRemittance", "Approval", "ApprovalResponse", "InvestorKyc", "IndividualKyc", "NonIndividualKyc", "FundUnitSetting", "AccountEntry", "AggregatePortfolioInvestment", "PortfolioInvestment", "User", "InvestmentInstrument", "DealInvestor"]
+
+      types += [form_type.name] unless form_type.name.blank? || types.include?(form_type.name)
 
     %>
 
@@ -52,7 +52,7 @@
         <div class='links'>
         </div>
       </div>
-        
+
       <div class="form-group">
         <%= link_to_add_association 'Add Field', form, :form_custom_fields, class: "btn btn-outline-primary" %>
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>

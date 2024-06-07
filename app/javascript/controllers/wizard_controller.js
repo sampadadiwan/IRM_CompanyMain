@@ -8,7 +8,7 @@ export default class extends Controller {
     }
 
     init() {
-        
+
         let validateFields = this.validateFields;
         let validateSection = this.validateSection;
 
@@ -38,7 +38,7 @@ export default class extends Controller {
         });
 
         allNextBtn.click(function () {
-            validateSection(this, validateFields);            
+            validateSection(this, validateFields);
         });
 
         $('div.setup-panel div a.btn-outline-primary').first().trigger('click');
@@ -54,13 +54,13 @@ export default class extends Controller {
             nextStepWizard = $('div.setup-panel div a[href="#' + curStepBtn + '"]').parent().next().children("a"),
             curInputs = curStep.find("input[type='checkbox'],input[type='file'],input[type='text'],input[type='number'],input[type='date'],select,textarea");
 
-            
+
         if($(".wizard_form").attr("data-client-side-validations")) {
             if ( $(".wizard_form")[0].ClientSideValidations ) {
                 isValid = validateFields(curInputs);
             }
         } else {
-            console.log("No client side validations");            
+            console.log("No client side validations");
         }
 
         if (isValid)
@@ -70,9 +70,9 @@ export default class extends Controller {
 
     validateFields(curInputs) {
         let validators = $(".wizard_form")[0].ClientSideValidations.settings.validators;
-        let isValid = true;        
+        let isValid = true;
         // $(".field_with_errors").removeClass("field_with_errors");
-        
+
         for (var i = 0; i < curInputs.length; i++) {
             // console.log(`Validating: ${$(curInputs[i]).attr("id")}`);
             let input_type = $(curInputs[i]).attr("type");
@@ -88,14 +88,20 @@ export default class extends Controller {
                 if(!curInputs[i].validity.valid) {
                     console.log(`Not valid: ${input_id} ${input_type}`);
                     isValid = false;
-                    $(jq_input_id).closest(".form-group").addClass("field_with_errors");                        
+                    $(jq_input_id).closest(".form-group").addClass("field_with_errors");
                 } else {
                     $(jq_input_id).closest(".form-group").removeClass("field_with_errors");
                 }
-            } 
-            
+            }
+
         }
 
         return isValid;
+    }
+
+
+    close(event) {
+        console.log("closeForm");
+        $(".dynamic_form").remove();
     }
 }

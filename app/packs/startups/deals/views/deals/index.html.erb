@@ -9,7 +9,7 @@
   </span>
 </div>
 
-<%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments", 
+<%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
             "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
 
-<%= render "deals/index", deals: @deals %>
+<%= render "/deals/index_cards", deals: @deals %>

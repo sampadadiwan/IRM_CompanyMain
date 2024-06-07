@@ -78,8 +78,14 @@ class User < ApplicationRecord
   before_create :setup_defaults
   after_create :update_investor_access
   before_save :confirm_user, if: :password_changed?
+  before_save :update_kanban_permissions
+
   def confirm_user
     confirm unless confirmed?
+  end
+
+  def update_kanban_permissions
+    permissions.set(:enable_kanban) if permissions.enable_deals?
   end
 
   # Ensure that support gets enabled if a mapping is already there.

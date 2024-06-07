@@ -53,6 +53,13 @@ class InvestorsController < ApplicationController
     @investor = Investor.new(investor_params)
     authorize @investor
     setup_custom_fields(@investor)
+
+    @frame = params[:turbo_frame] || "new_deal_investor"
+    if params[:turbo]
+      render turbo_stream: [
+        turbo_stream.replace(@frame, partial: "investors/board_form", locals: { investor: @investor, frame: @frame })
+      ]
+    end
   end
 
   # GET /investors/1/edit
@@ -69,6 +76,14 @@ class InvestorsController < ApplicationController
     respond_to do |format|
       if @investor.save
         redirect_url = params[:back_to].presence || investor_url(@investor)
+        format.turbo_stream do
+          @frame = params[:turbo_frame] || "new_deal_investor"
+          partial = params[:back_to].presence || "investors/board_form"
+          UserAlert.new(user_id: current_user.id, message: "Investor was successfully created!", level: "success").broadcast
+          render turbo_stream: [
+            turbo_stream.replace(@frame, partial:, locals: { frame: @frame })
+          ]
+        end
         format.html { redirect_to redirect_url, notice: "Investor was successfully created." }
         format.json { render :show, status: :created, location: @investor }
       else
@@ -76,6 +91,13 @@ class InvestorsController < ApplicationController
 
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @investor.errors, status: :unprocessable_entity }
+        format.turbo_stream do
+          @alert = "Investor could not be created!"
+          @alert += " #{@investor.errors.full_messages.join(', ')}"
+          render turbo_stream: [
+            turbo_stream.prepend(@frame, partial: "layouts/alerts", locals: { alert: @alert })
+          ]
+        end
       end
     end
   end

@@ -5,10 +5,7 @@ wb.add_worksheet(name: "Deal Sheet") do |sheet|
   sheet.add_row @activity_names
   # Create entries for each item
   policy_scope(@deal.deal_investors).each do |deal_investor|
-    activity_summary = []
-    deal_investor.deal_activities.each do |activity|
-      activity_summary << activity.completed
-    end
+    activity_summary = deal_investor.deal_activities.map(&:completed)
 
     sheet.add_row([deal_investor.investor_name, deal_investor.status,
                    money_to_currency(deal_investor.primary_amount),

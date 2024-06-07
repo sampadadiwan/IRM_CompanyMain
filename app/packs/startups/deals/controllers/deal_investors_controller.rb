@@ -14,6 +14,13 @@ class DealInvestorsController < ApplicationController
       render turbo_stream: [
         turbo_stream.replace("kanban_#{params[:deal]}_columns", partial: "/deals/kanban_deal_columns", locals: { deal: @deal, deal_investors: @deal_investors, deal_activities: DealActivity.templates(@deal), current_user:, filter_state: "show" })
       ]
+    elsif params[:turbo] && (params[:boards] && params[:board_id].present?)
+      @kanban_cards = KanbanCard.where(data_source_type: "DealInvestor", data_source_id: @deal_investors.pluck(:id))
+      @filtered_results = false
+      kanban_board = KanbanBoard.find(params["board_id"])
+      render turbo_stream: [
+        turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
+      ]
     end
   end
 
@@ -57,9 +64,11 @@ class DealInvestorsController < ApplicationController
   # GET /deal_investors/1 or /deal_investors/1.json
   def show
     authorize @deal_investor
+
     if params[:turbo]
+      frame = params[:turbo_frame] || "deal_investor_show_#{params[:id]}"
       render turbo_stream: [
-        turbo_stream.replace("deal_investor_show_#{@deal_investor.id}", partial: "deal_investors/deal_show", locals: { deal_investor: @deal_investor, update_allowed: policy(@deal_investor).update?, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id })
+        turbo_stream.replace(frame, partial: "deal_investors/deal_show", locals: { deal_investor: @deal_investor, update_allowed: policy(@deal_investor).update?, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, turbo_tag: frame })
       ]
     end
   end
@@ -68,23 +77,37 @@ class DealInvestorsController < ApplicationController
   def new
     @deal_investor = DealInvestor.new(deal_investor_params)
     authorize @deal_investor
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.append('new_deal_investor', partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor })
-        ]
+    setup_custom_fields(@deal_investor)
+
+    frame = params[:turbo_frame] || "new_deal_investor"
+    if params[:turbo]
+      render turbo_stream: [
+        turbo_stream.append(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor })
+      ]
+    else
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.append(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor })
+          ]
+        end
+        format.html
       end
-      format.html
     end
   end
 
   # GET /deal_investors/1/edit
   def edit
     authorize @deal_investor
+    setup_custom_fields(@deal_investor)
+    @kanban_card = KanbanCard.find_by(data_source_id: @deal_investor.id, data_source_type: @deal_investor.class)
+    @kanban_column = @kanban_card&.kanban_column
+
     respond_to do |format|
       format.turbo_stream do
+        frame = params[:turbo_frame] || "deal_investor_show_#{params[:id]}"
         render turbo_stream: [
-          turbo_stream.replace("deal_investor_show_#{@deal_investor.id}", partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update? })
+          turbo_stream.replace(frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, update_allowed: DealInvestorPolicy.new(current_user, @deal_investor).update?, turbo_tag: frame, doc_owner_tag: @kanban_column&.name })
         ]
       end
       format.html
@@ -102,14 +125,21 @@ class DealInvestorsController < ApplicationController
 
     authorize @deal_investor.deal
     authorize @deal_investor
+
+    setup_doc_user(@deal_investor)
+
     @current_user = current_user
+    @frame = params[:turbo_frame] || "new_deal_investor"
 
     respond_to do |format|
       if @deal_investor.save
         ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal investor was successfully created." }
         format.json { render :show, status: :created, location: @deal_investor }
-        format.turbo_stream { render :create }
+        format.turbo_stream do
+          UserAlert.new(user_id: current_user.id, message: "Deal Investor was successfully created!", level: "success").broadcast
+          render :create
+        end
       else
         @alert = "Deal Investor could not be created!"
         format.html do
@@ -125,7 +155,10 @@ class DealInvestorsController < ApplicationController
   # PATCH/PUT /deal_investors/1 or /deal_investors/1.json
   def update
     authorize @deal_investor
+    setup_doc_user(@deal_investor)
+
     @current_user = current_user
+    @frame = params[:turbo_frame] || "deal_investor_form_offcanvas#{@deal_investor.id}"
     respond_to do |format|
       if @deal_investor.update(deal_investor_params)
         ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
@@ -146,10 +179,7 @@ class DealInvestorsController < ApplicationController
   # DELETE /deal_investors/1 or /deal_investors/1.json
   def destroy
     authorize @deal_investor
-    @current_deal_activity_id = @deal_investor.current_deal_activity_id
-    deal = @deal_investor.deal
     @deal_investor.destroy
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, deal.broadcast_data)
     respond_to do |format|
       @message = "Deal investor was successfully destroyed."
       @status = "success"
@@ -164,11 +194,12 @@ class DealInvestorsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal_investor
     @deal_investor = DealInvestor.find(params[:id])
+    @bread_crumbs = { Deals: deals_path, "#{@deal_investor.deal.name || '-'}": deal_path(@deal_investor.deal), "#{@deal_investor.investor_name || '-'}": deal_investor_path(@deal_investor) }
   end
 
   # Only allow a list of trusted parameters through.
   def deal_investor_params
     params.require(:deal_investor).permit(:deal_id, :investor_id, :status, :primary_amount, :notes, :tags, :source, :introduced_by, :deal_lead,
-                                          :secondary_investment, :entity_id, :investor_advisor, :company_advisor, :pre_money_valuation, :tier, :fee, :deal_activity_id)
+                                          :secondary_investment, :entity_id, :investor_advisor, :company_advisor, :pre_money_valuation, :tier, :fee, :deal_activity_id, :kanban_column_id, properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

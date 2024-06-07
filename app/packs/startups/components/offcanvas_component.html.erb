@@ -1,9 +1,9 @@
-<div class="offcanvas offcanvas-end" role="dialog" aria-modal="true" tabindex="-1" id="<%=@offcanvas_id%>" aria-labelledby="<%=@offcanvas_id%>Label">
+<div class="offcanvas offcanvas-end" role="dialog" aria-modal="true" tabindex="-1" id="<%=@offcanvas_id%>" aria-labelledby="<%=@offcanvas_id%>Label" style="z-index: 1000;" >
   <div class="offcanvas-header">
     <h5 class="offcanvas-title" id="<%=@offcanvas_id%>Label">
         <%= @title %>
       </h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <button type="button" class="btn-close text-reset offcanvas-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
       <%= content %>

@@ -43,6 +43,10 @@
             </div>
             <% end %>
 
+            <% if  %w[boards].include?(params[:controller]) %>
+              <% @q = KanbanCard.ransack(@q.conditions) %>
+            <% end %>
+
             <%= f.button "", class: "btn btn-outline-primary search-button", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
               <i class="ti ti-search"></i>
             <% end %>

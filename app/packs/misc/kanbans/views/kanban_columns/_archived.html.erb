@@ -1,0 +1,19 @@
+<h1 class="h3 mb-0 text-gray-800">Archived Columns</h1>
+<div class="table-responsive" data-controller="datatable">
+  <table id="archived_columns" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Name
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% kanban_columns&.each do |kanban_column| %>
+        <%= render "kanban_columns/kanban_column", kanban_column: kanban_column %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,22 @@
+<div class="container-fluid px-2">
+  <%# color should alternate between success and info %>
+  <%
+    color = "info"
+  %>
+  <div class="row">
+    <% deals.each_with_index do |deal, index| %>
+      <% color = color == "info" ? "success" : "info" %>
+
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+        <%= render(NumberStatsComponent.new(
+          path: deal_path(deal, kanban: true),
+          amount: deal.name,
+          subtitle: "#{deal.amount} #{deal.currency}",
+          progress_bar_color: color,
+          css_class: "darker-shadow-offwhite"
+        )) %>
+      </div>
+
+    <% end %>
+  </div>
+</div>

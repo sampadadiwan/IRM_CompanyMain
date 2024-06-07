@@ -43,6 +43,7 @@
 }
 
 .task-list-container {
+  margin-right: -15px; /* Adjust this value to reduce the space */
   z-index: 1;
   height: 100%;
   display: flex;
@@ -51,11 +52,32 @@
   position: relative;
 }
 
+.task-header {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 5px !important;
+  padding-bottom: 0 !important;
+}
+
+.task-content {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+
+.task-list-section {
+  overflow-x: auto;
+}
+
 .connect-sorting {
   height: 100%;
 }
 
 .connect-sorting-content {
+  margin-right: -10px; /* Adjust this value to reduce the space */
+  margin-left: -10px;
   height: calc(100% - 40px);
   overflow-y: auto;
 }
@@ -75,6 +97,8 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  margin-bottom: 0px;
+  margin-top: 0px;
 }
 
 .layout-spacing {
@@ -107,4 +131,73 @@
 
 .simplebar-vertical {
   visibility: visible;
+}
+
+.add-item-button {
+  background-color: transparent;
+  border: none;
+  color: #fafafa;
+  padding: 8px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-item-btn:hover {
+  background-color: #f2f2f2;
+}
+
+.square-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+}
+
+.square-button i {
+  font-size: 20px;
+}
+
+.margin-center {
+  margin-bottom: 40px;
+}
+
+.mb-8 {
+  margin-bottom: 15px;
+}
+
+.kanban-filter-hidden {
+  display: none;
+}
+
+.add-column-button {
+  font-size: 30px;
+}
+
+.mb-8 {
+  margin-bottom: 15px;
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.darker-shadow-offwhite {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); // Darker shadow
+  border-radius: 8px; // Add this line to ensure rounded edges
+
+  &:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); // Slightly darker shadow on hover
+    border-radius: 8px; // Ensure the rounded edges remain on hover
+  }
+}
+
+.small-heading {
+  font-size: 0.9rem;
 }

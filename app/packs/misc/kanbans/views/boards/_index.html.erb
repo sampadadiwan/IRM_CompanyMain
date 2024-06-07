@@ -1,0 +1,33 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Boards</h1>
+  <div class="d-flex align-items-center">
+      <%= link_to "New Board",
+            new_board_path("kanban_board[entity_id]": current_user.entity_id),
+            {class: "btn btn-outline-primary"} if policy(KanbanBoard.new(entity_id: current_user.entity_id)).new? %>
+      <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
+          href="<%=boards_path%>" >
+        <i class="ti ti-grid-dots text-primary fs-6"></i>
+      </a>
+  </div>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="kanban_boards" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Name
+        </th>
+        <th>
+          For
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% kanban_boards&.each do |kanban_board| %>
+        <%= render "boards/kanban_board", kanban_board: kanban_board %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

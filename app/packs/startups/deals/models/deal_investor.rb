@@ -2,6 +2,8 @@ class DealInvestor < ApplicationRecord
   include Trackable.new
   include WithFolder
   include ForInvestor
+  include KanbanCardManager
+  include WithCustomField
   include RansackerAmounts.new(fields: %w[total_amount primary_amount secondary_investment fee])
 
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
@@ -63,7 +65,7 @@ class DealInvestor < ApplicationRecord
   end
 
   def short_name
-    names = investor_name.split("-")
+    names = investor_name&.split("-")
     %w[Employees Founders].include?(names[1].strip) ? names[1] : names[0]
   end
 
@@ -125,7 +127,7 @@ class DealInvestor < ApplicationRecord
   end
 
   def folder_path
-    "#{deal.folder_path}/Deal Investors/#{investor_name.delete('/')}"
+    "#{deal.folder_path}/Deal Investors/#{investor_name&.delete('/')}"
   end
 
   def folder_type

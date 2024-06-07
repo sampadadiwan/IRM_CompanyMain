@@ -1,1 +1,1 @@
-<%= turbo_stream.prepend('new_deal_investor', partial: "layouts/alerts", locals: { alert: @alert } ) %>
+<%= turbo_stream.prepend(@frame, partial: "layouts/alerts", locals: { alert: @alert } ) %>

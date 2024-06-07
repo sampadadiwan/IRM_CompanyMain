@@ -1,66 +1,67 @@
-
+<%= render NewCard.new do%>
 <div class="card shadow mb-4">
   <div class="card-header py-3">
       <h6 class="m-0 font-weight-bold text-primary">Deal</h6>
   </div>
   <div class="card-body">
 
-<%= form_with(model: deal, validate: true) do |form| %>
-  <% if deal.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(deal.errors.count, "error") %> prohibited this deal from being saved:</h2>
+  <%= form_with(model: deal, validate: true) do |form| %>
+    <% if deal.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(deal.errors.count, "error") %> prohibited this deal from being saved:</h2>
 
-      <ul>
-        <% deal.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+        <ul>
+          <% deal.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", placeholder: "E.x Series A"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :start_date %>
+      <%= form.date_field :start_date, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label "Amount to be raised" %> <span class="formatted_currency"></span>
+      <%= form.number_field :amount, class: "form-control", placeholder: "Expected amount to be raised", data: {action: "input->currencyformat#format"}  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :status %>
+      <%= form.select :status, Deal::STATUS, {}, {class: "form-control"} %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :currency %>
+      <%= form.select :currency, ENV["CURRENCY"].split(","), {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :clone_from %>
+      <%= form.select :clone_from_id, deal.entity.deals.map{|d| [d.name, d.id]}, {include_blank: true}, class: "form-control"  %>
+      <small class="text-muted"> Select a deal if you want the steps to be cloned, or leave blank </small>
+    </div>
+
+    <%= custom_form_fields(deal, form) %>
+
+    <div class="form-group">
+      <%= form.label :archived %>
+      <%= form.check_box :archived, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-
-  <div class="form-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control", placeholder: "E.x Series A"  %>
+    </div>
   </div>
-
-  <div class="form-group">
-    <%= form.label :start_date %>
-    <%= form.date_field :start_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label "Amount to be raised" %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount, class: "form-control", placeholder: "Expected amount to be raised", data: {action: "input->currencyformat#format"}  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :status %>
-    <%= form.select :status, Deal::STATUS, {}, {class: "form-control"} %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :currency %>
-    <%= form.select :currency, ENV["CURRENCY"].split(","), {}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :clone_from %>
-    <%= form.select :clone_from_id, deal.entity.deals.map{|d| [d.name, d.id]}, {include_blank: true}, class: "form-control"  %>
-    <small class="text-muted"> Select a deal if you want the steps to be cloned, or leave blank </small>
-  </div>
-
-  <%= custom_form_fields(deal, form) %>
-
-  <div class="form-group">
-    <%= form.label :archived %>
-    <%= form.check_box :archived, class: "form-check-input"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
-
-  </div>
-</div>
+<%end%>

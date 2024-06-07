@@ -1,0 +1,121 @@
+<%= turbo_frame_tag "board_#{kanban_board.id}" do %>
+  <% @searched_kanban_cards = @kanban_cards || nil %>
+  <% filter_state = "collapse" %>
+  <% filtered_results = @filtered_results || false %>
+  <% params[:filter] = true  %>
+  <% @q ||= @q %>
+  <div class="kanban-filter">
+    <%= render "/layouts/filter", associations: [], state: filter_state, hidden_fields: {boards: true, turbo:true, board_id: kanban_board.id} %>
+  </div>
+  <div class="action-btn layout-top-spacing mb-8 d-flex align-items-center justify-content-between flex-wrap gap-6">
+    <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
+    <div class="d-flex align-items-center justify-content-end mb-7">
+      <% if filtered_results %>
+        <form id="clear-filter-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
+          <button type="submit" class="btn btn-primary filter-button">
+            <i class="ti ti-filter"></i> Clear Filter
+          </button>
+          <input type="hidden" name="kanban_board" value="<%= kanban_board.id %>">
+          <input type="hidden" name="query" value=""> <!-- Empty query parameter -->
+        </form>
+      <% end %>
+      <% # Need to change this after discussing %>
+      <% if kanban_board.owner_type == "Deal" %>
+        <%= link_to deal_path(id: kanban_board.owner_id, chart: true), class: "btn btn-outline-success", data: { turbo: false } do %>
+          <i class="fas fa-chart-line"></i> Charts
+        <% end %>  
+      <% end %>    
+      <form id="kanban-search-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
+        <div class="search-box me-3">
+          <input id="kanban-search-input" name="query" type="text" class="form-control" placeholder="Search...">
+        </div>
+        <input type="hidden" name="kanban_board" value="<%= kanban_board.id %>">
+      </form>
+      <div class="dropdown">
+        <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <i class="ti ti-dots-vertical text-dark"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
+          <a class="dropdown-item archived-columns" href="javascript:void(0);">Archived Columns</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<%= turbo_frame_tag "board#{kanban_board.id}_new_kanban_card" do %>
+<% end %>
+
+<div class="row scrumboard" id="cancel-row" data-controller="board" data-kanban-board-id="<%= kanban_board.id %>">
+  <div class="col-lg-12 layout-spacing pb-3">
+    <div data-simplebar="init" class="simplebar-scrollable-x">
+      <div class="simplebar-wrapper" style="margin: 0px;">
+        <div class="simplebar-height-auto-observer-wrapper">
+          <div class="simplebar-height-auto-observer"></div>
+        </div>
+        <div class="">
+          <div class="simplebar-offset" style="right: 0px; bottom: 0px;">
+            <div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: auto; overflow: scroll hidden;">
+              <div class="simplebar-content" style="padding: 0px;">
+                <div class="task-list-section" id="<%= kanban_board.id %>">
+                  <% kanban_board.kanban_columns.each do |kanban_column| %>
+                    <% if @searched_kanban_cards.nil? %>
+                      <%= render "boards/kanban_column", kanban_column: kanban_column, kanban_cards: kanban_column.kanban_cards %>
+                    <% else %>
+                      <% filtered_cards = kanban_column.kanban_cards & @searched_kanban_cards %>
+                      <%= render "boards/kanban_column", kanban_column: kanban_column, kanban_cards: filtered_cards %>
+                    <% end %>
+                  <% end %>
+                  <% if policy(KanbanColumn.new(entity_id: current_user.entity_id)).create? %>
+                    <button type="button add-column-button" aria-haspopup="true" aria-expanded="false" data-testid="add-new-column-button" aria-labelledby=":r13:" data-size="small" class="square-button column-add">
+                      <span data-component="buttonContent">
+                        <span data-component="leadingVisual">
+                          <i class="ti ti-plus"></i>
+                        </span>
+                      </span>
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="simplebar-placeholder"></div>
+      </div>
+      <div class="simplebar-track simplebar-horizontal">
+        <div class="simplebar-scrollbar" style="width: 866px; display: block; transform: translate3d(0px, 0px, 0px);"></div>
+      </div>
+      <div class="simplebar-track simplebar-vertical">
+        <div class="simplebar-scrollbar" style="height: 0px; display: none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% modal_id = "modal_add_kanban_column#{kanban_board.id}" %>
+<%= turbo_frame_tag "add_column_modal" do %>
+  <%= render EditModalComponent.new(title: "Add Column", modal_id: modal_id) do %>
+    <%= link_to new_kanban_column_path("kanban_column[kanban_board_id]": kanban_board.id, "kanban_column[entity_id]": kanban_board.entity_id, turbo: true),
+                class: "modal_add_kanban_column_load_data_link_#{kanban_board.id}",
+                data: { turbo_frame: "new_kanban_column#{kanban_board.id}", turbo: true } do %>
+      <span>Loading...</span>
+    <% end %>
+
+    <%= turbo_frame_tag "new_kanban_column#{kanban_board.id}" do %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% modal_id = "modal_archived_columns_#{kanban_board.id}" %>
+<%= turbo_frame_tag "archived_columns_modal" do %>
+  <%= render EditModalComponent.new(title: "Archived Columns", modal_id: modal_id) do %>
+    <%= link_to archived_kanban_columns_boards_path("kanban_board_id": kanban_board.id, turbo: true),
+                class: "modal_archived_kanban_columns_load_data_link_#{kanban_board.id}",
+                data: { turbo_frame: "archived_columns_#{kanban_board.id}", turbo: true } do %>
+      <span>Loading...</span>
+    <% end %>
+
+    <%= turbo_frame_tag "archived_columns_#{kanban_board.id}" do %>
+    <% end %>
+  <% end %>
+<% end %>
+<% end %>

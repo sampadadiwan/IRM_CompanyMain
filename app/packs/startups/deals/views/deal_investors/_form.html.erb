@@ -1,12 +1,13 @@
 
 <%= turbo_frame_tag "new_deal_investor" do %>
+<% turbo ||= false%>
   <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-primary">Potential Investment</h6>
     </div>
     <div class="card-body">
 
-      <%= form_with(model: deal_investor, validate: true, data: {turbo: false}) do |form| %>
+      <%= form_with(model: deal_investor, validate: true, data: {turbo: turbo}) do |form| %>
         <% if deal_investor.errors.any? %>
           <div class="alert alert-danger">
             <h2><%= pluralize(deal_investor.errors.count, "error") %> prohibited this deal_investor from being saved:</h2>
@@ -18,6 +19,8 @@
             </ul>
           </div>
         <% end %>
+
+        <%= form.text_field :back_to, name: "back_to", class: "form-control", hidden: true, value: params[:back_to] %>
 
         <div class="form-group">
           <%= form.label :deal_id %>
@@ -32,13 +35,33 @@
             Create <%= link_to "New Stakeholder",
               new_investor_path("investor[entity_id]": current_user.entity_id,
                   "back_to": new_deal_investor_path("deal_investor[deal_id]": deal_investor.deal_id,
-                  "deal_investor[entity_id]": deal_investor.entity_id)) %>
+                  "deal_investor[entity_id]": deal_investor.entity_id, back_to: params[:back_to])) %>
           </small>
         </div>
 
         <div class="form-group">
           <%= form.label :tier %>
           <%= form.text_field :tier, {class: "form-control", maxlength: 20} %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :deal_lead %>
+          <%= form.text_field :deal_lead, {class: "form-control", maxlength: 20} %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :source %>
+          <%= form.text_field :source, {class: "form-control", maxlength: 20} %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :introduced_by %>
+          <%= form.text_field :introduced_by, {class: "form-control", maxlength: 20} %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :tags %>
+          <%= form.text_field :tags, {class: "form-control", maxlength: 20} %>
         </div>
 
         <div class="form-group">
@@ -82,6 +105,10 @@
           <%= form.rich_text_area :notes, class: "form-control trix-content"  %>
         </div>
 
+        <%= custom_form_fields(deal_investor, form) %>
+
+        <%= render "layouts/multi_upload", form: form, title: "Documents",
+                        for_model: "deal_investor"  %>
 
         <div class="form-group">
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>

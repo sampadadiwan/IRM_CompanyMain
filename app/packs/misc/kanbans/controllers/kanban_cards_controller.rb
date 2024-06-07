@@ -1,0 +1,140 @@
+class KanbanCardsController < ApplicationController
+  before_action :set_kanban_card, only: %w[show edit update destroy move_kanban_card]
+  skip_before_action :verify_authenticity_token, only: %i[move_kanban_card]
+
+  def index
+    @q = KanbanCard.ransack(params[:q])
+    @kanban_cards = policy_scope(@q.result).includes(:kanban_board)
+    @kanban_cards = @kanban_cards.where(kanban_board_id: params[:kanban_board_id]) if params[:kanban_board_id].present?
+    @filtered_results = params[:query].present?
+    kanban_board = KanbanBoard.find(params["board_id"])
+    render turbo_stream: [
+      turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
+    ]
+  end
+
+  def new
+    @kanban_card = KanbanCard.new(kanban_card_params)
+    authorize @kanban_card
+    frame = "board#{@kanban_card.kanban_board_id}_new_kanban_card"
+    render turbo_stream: [
+      turbo_stream.append(frame, partial: "kanban_cards/form", locals: { kanban_card: @kanban_card })
+    ]
+  end
+
+  def create
+    @kanban_card = KanbanCard.create!(kanban_card_params)
+    @kanban_card.update(data_source_type: "KanbanCard", data_source_id: @kanban_card.id)
+    kanban_board = @kanban_card.kanban_board
+    authorize @kanban_card
+    authorize kanban_board
+    respond_to do |format|
+      if @kanban_card.persisted?
+        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_board.broadcast_data)
+        format.html { redirect_to kanban_board_url(kanban_board), notice: "Card is successfully created." }
+        format.json { render :show, status: :created }
+        format.turbo_stream do
+          UserAlert.new(user_id: current_user.id, message: "Card is successfully created.", level: "success").broadcast
+          render :create
+        end
+      else
+        @alert = "Card could not be created!"
+        format.html do
+          render :new, status: :unprocessable_entity
+        end
+        format.json { render json: @kanban_card.errors, status: :unprocessable_entity }
+        @alert += " #{@kanban_card.errors.full_messages.join(', ')}"
+        format.turbo_stream { render :create_failure, alert: @alert }
+      end
+    end
+  end
+
+  def show
+    if params[:turbo]
+      frame = params[:turbo_frame] || "kanban_card_show_offcanvas#{@kanban_card.id}"
+      render turbo_stream: [
+        turbo_stream.replace(frame, partial: "kanban_cards/offcanvas_show", locals: { kanban_card: @kanban_card, update_allowed: policy(@kanban_card).update?, turbo_tag: frame })
+      ]
+    end
+  end
+
+  def edit
+    @kanban_column = @kanban_card&.kanban_column
+    respond_to do |format|
+      format.turbo_stream do
+        frame = params[:turbo_frame] || "kanban_card_form_offcanvas#{@kanban_card.id}"
+        render turbo_stream: [
+          turbo_stream.replace(frame, partial: "kanban_cards/offcanvas_form", locals: { kanban_card: @kanban_card, update_allowed: policy(@kanban_card).update?, turbo_tag: frame })
+        ]
+      end
+    end
+  end
+
+  def update
+    @frame = params[:turbo_frame] || params["kanban_card"]["turbo_frame"] || "kanban_card_form_offcanvas#{@kanban_card.id}"
+    @current_user = current_user
+
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      if @kanban_card.update(kanban_card_params)
+        format.html { redirect_to @kanban_card, notice: 'Card was successfully updated.' }
+        format.json { render :show, status: :ok, location: @kanban_card }
+        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_card.kanban_board.broadcast_data)
+      else
+        format.html { render :edit }
+        format.json { render json: @kanban_card.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def destroy
+    @kanban_card.destroy
+
+    respond_to do |format|
+      format.html { redirect_to @kanban_card.kanban_board, notice: "Card was successfully deleted." }
+      format.json { head :no_content }
+    end
+  end
+
+  def move_kanban_card
+    result = MoveKanbanCard.wtf?(params:, kanban_card: @kanban_card)
+    if result.success?
+      render json: {
+        message: "Card has been successfully moved"
+      }, status: :ok
+    else
+      render json: { errors: result["errors"] }, status: :unprocessable_entity
+    end
+  end
+
+  def search
+    @entity = current_user.entity
+    @q = DealInvestor.ransack(params[:q])
+    kanban_card_ids = KanbanCardIndex.filter(term: { entity_id: @entity.id })
+                                     .query(query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
+                                                            query: "*#{params[:query]}*", default_operator: 'and' }).objects.compact.pluck(:id)
+    @kanban_cards = KanbanCard.where(id: kanban_card_ids)
+    if params[:query].blank?
+      @filtered_results = false
+      @kanban_cards = nil
+    else
+      @filtered_results = true
+    end
+    kanban_board = KanbanBoard.find(params[:kanban_board])
+    render turbo_stream: [
+      turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
+    ]
+  end
+
+  private
+
+  def set_kanban_card
+    @kanban_card = KanbanCard.find(params[:id])
+    authorize @kanban_card
+  end
+
+  # Only allow a list of trusted parameters through.
+  def kanban_card_params
+    params.require(:kanban_card).permit(:entity_id, :kanban_board_id, :kanban_column_id, :data_source_id, :data_source_type, :title, :info_field, :notes, :tags)
+  end
+end

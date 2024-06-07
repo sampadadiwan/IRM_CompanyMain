@@ -43,7 +43,13 @@ class DealsController < ApplicationController
 
           render params[:kanban].present? ? "show" : "grid_view"
         end
-        format.html { render "grid_view" }
+        format.html do
+          if params[:kanban].present? && @deal.kanban_board.present?
+            redirect_to board_path(@deal.kanban_board)
+          else
+            render "grid_view"
+          end
+        end
       end
     end
   end
@@ -82,7 +88,8 @@ class DealsController < ApplicationController
     results = CreateDeal.wtf?(deal: @deal)
     respond_to do |format|
       if results.success?
-        format.html { redirect_to deal_url(@deal), notice: "Deal was successfully created." }
+        kanban_board = KanbanBoard.find_by(owner_type: "Deal", owner_id: @deal.id)
+        format.html { redirect_to board_path(kanban_board), notice: "Deal was successfully created." }
         format.json { render :show, status: :created, location: @deal }
       else
         format.html { render :new, status: :unprocessable_entity }

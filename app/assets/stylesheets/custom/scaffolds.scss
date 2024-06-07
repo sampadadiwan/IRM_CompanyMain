@@ -1049,7 +1049,11 @@ h6 {
   }
 }
 
-.hscrollable { overflow: scroll; overflow-y:hidden; } 
+.hscrollable { overflow: scroll; overflow-y:hidden; }
+
+.btn-close {
+  margin-left: auto; /* Push the button to the far right */
+}
 
 .readonly-field {
   background-color: #f0f0f0; /* Light gray background */

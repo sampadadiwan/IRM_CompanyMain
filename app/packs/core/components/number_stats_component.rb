@@ -1,6 +1,7 @@
 # app/components/fund_card_component.rb
 class NumberStatsComponent < ViewComponent::Base
-  def initialize(path:, amount:, subtitle:, progress_bar_color:, fs_size: 5, text_info: nil)
+  # rubocop :disable Metrics/ParameterLists
+  def initialize(path:, amount:, subtitle:, progress_bar_color:, fs_size: 5, text_info: nil, css_class: "")
     super
     @path = path
     @amount = amount
@@ -8,7 +9,9 @@ class NumberStatsComponent < ViewComponent::Base
     @progress_bar_color = progress_bar_color
     @fs_size = fs_size
     @text_info = text_info
+    @css_class = css_class
   end
+  # rubocop :enable Metrics/ParameterLists
 
-  attr_reader :path, :amount, :subtitle, :progress_bar_color, :text_info
+  attr_reader :path, :amount, :subtitle, :progress_bar_color, :text_info, :fs_size, :css_class
 end
