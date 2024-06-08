@@ -3,9 +3,7 @@ class User < ApplicationRecord
   include WithCustomField
   acts_as_favoritor
 
-  # include Trackable.new
-  audited only: %i[first_name last_name email phone permissions extended_permissions]
-  acts_as_paranoid
+  include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
 
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.

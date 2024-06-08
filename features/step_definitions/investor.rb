@@ -331,8 +331,8 @@ Then('There should be {string} investor kycs created') do |count|
   @entity.investor_kycs.count.should == count.to_i
 end
 
-Then('the investor kycs must have the data in the sheet') do
-  file = File.open("./public/sample_uploads/investor_kycs.xlsx", "r")
+Then('the investor kycs must have the data in the sheet {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 

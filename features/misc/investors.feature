@@ -98,14 +98,14 @@ Scenario Outline: Import investor kycs
   And Given I upload an investor kyc "investor_kycs.xlsx" for employees
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
-  And the investor kycs must have the data in the sheet
+  And the investor kycs must have the data in the sheet "investor_kycs.xlsx"
   And the imported data must have the form_type updated
   And the approved investor access should receive a notification
   And Aml Report should be generated for each investor kyc
   And Given I upload an investor kyc "investor_kycs_update.xlsx" for employees
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
-  And the investor kycs must have the data in the sheet
+  And the investor kycs must have the data in the sheet "investor_kycs_update.xlsx"
 
 Scenario Outline: Bulk Actions on kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
