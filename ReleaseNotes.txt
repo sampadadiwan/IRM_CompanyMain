@@ -1,3 +1,10 @@
+V7.1.16
+#####################################
+70e1944c9  Reverted SES keys
+ed3c9e9b5 Kanban board (#265)
+77f8b48da Added SES prod key
+e4dc2bf20 Added user.support? to enable support user who is impersonating to access support capabilities
+
 V7.1.15
 #####################################
 a97ad9fdd Fixed tests
