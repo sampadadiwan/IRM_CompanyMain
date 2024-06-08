@@ -24,12 +24,9 @@ class ImportInvestorKyc < ImportUtil
     # 1. Kyc found - update
     # 2. Kyc not found but there is a kyc with a blank full name or nil full name in the DB - update
     if update_only == "Yes"
-      # If kyc is not there, then we need to find one with no full_name
-      investor_kyc ||= InvestorKyc.where(investor_id: investor.id, PAN: pan,
-                                         entity_id: import_upload.entity_id, full_name: [nil, ""]).first
       # If kyc is not there, then we need to find one with no full_name and no PAN
-      investor_kyc ||= InvestorKyc.where(investor_id: investor.id, PAN: [nil, ""],
-                                         entity_id: import_upload.entity_id, full_name: [nil, ""]).first
+      investor_kyc ||= InvestorKyc.where(investor_id: investor.id, PAN: [pan, nil, ""],
+                                         entity_id: import_upload.entity_id, full_name: [full_name, nil, ""]).first
 
       if investor_kyc.present?
         # Update only, and we have a pre-existing KYC
