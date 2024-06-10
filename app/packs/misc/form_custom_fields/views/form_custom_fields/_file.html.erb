@@ -5,7 +5,7 @@
     # This is the name of the document, derived from the field name
     document_name = field.label.presence || field.name.humanize
     
-    field_id = field.name.titleize.delete(" ").underscore
+    field_id = FormCustomField.to_name(field.name)
     # This is the document, in case there is already a document attached with this name
     document = model.documents.where(name: document_name).first
     # The field is mandatory and the file has not yet been uploaded

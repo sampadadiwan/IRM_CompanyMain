@@ -6,7 +6,7 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  normalizes :name, with: ->(name) { FormCustomField.to_name(name) }
+  # normalizes :name, with: ->(name) { FormCustomField.to_name(name) }
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
@@ -52,7 +52,7 @@ class FormCustomField < ApplicationRecord
 
   before_save :set_default_values
   def set_default_values
-    self.name = name.strip.downcase
+    self.name = FormCustomField.to_name(name)
     self.label ||= name.humanize
   end
 

@@ -461,7 +461,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   end
   if files.include?("cancelled cheque")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_cancelled_cheque_bank_statement' do
+      within '#custom_file_upload_cancelled_cheque__bank_statement' do
         click_on 'Choose file'
       end
     end
@@ -501,7 +501,8 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
 
   if args.include?("properties")
     @investor_kyc.properties.each do |key, value|
-      fill_in("#{class_name}_properties_#{key.strip.titleize.delete(" ").underscore}", with: value)
+      name = FormCustomField.to_name(key)
+      fill_in("#{class_name}_properties_#{name}", with: value)
     end
   end
 
