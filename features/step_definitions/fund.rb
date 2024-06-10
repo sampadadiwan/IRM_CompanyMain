@@ -1407,7 +1407,7 @@ Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,true
   end
 end
 
-Given('Given I upload a fund unit setting file for the fund') do
+Given('Given I upload a fund unit settings {string} for the fund') do |file_name|
   visit(fund_url(@fund))
   click_on("Actions")
   click_on("Fund Unit Settings")
@@ -1415,7 +1415,7 @@ Given('Given I upload a fund unit setting file for the fund') do
   click_on("Upload")
   sleep(6)
   fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_unit_setting.xlsx'), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   sleep(3)
   click_on("Save")
   sleep(10)
@@ -1424,19 +1424,43 @@ Given('Given I upload a fund unit setting file for the fund') do
   ImportUpload.last.failed_row_count.should == 0
 end
 
-Then('There should be {string} fund unit settings created with data in the sheet') do |count|
-  file = File.open("./public/sample_uploads/fund_unit_setting.xlsx", "r")
+Then('There should be {string} fund unit settings created with data in {string}') do |count, file_name|
+  FundUnitSetting.all.count.should == count.to_i
+
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
-
+  custom_field_headers = headers - ImportFundUnitSetting::STANDARD_HEADERS
+  fund_unit_settings = FundUnitSetting.all.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
-
+    
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
-    FundUnitSetting.where(fund_id: Fund.find_by(name: row_data["Fund"]).id, name: row_data["Class/Series"], management_fee: row_data["Management Fee %"], setup_fee: row_data["Setup Fee %"], carry: row_data["Carry %"]).present?.should == true
+    fus = fund_unit_settings[idx-1]
+    puts "Checking import of #{fus.to_json}"
+    
+    fus.fund_id.should == Fund.find_by(name: row_data["Fund"]).id
+    fus.name.should == row_data["Class/Series"]
+    fus.management_fee.should == row_data["Management Fee %"]
+    fus.setup_fee.should == row_data["Setup Fee %"]
+    fus.carry.should == row_data["Carry %"]      
+
+    # Check that the custom fields got imported
+    custom_field_headers.each do |cf_header|
+      puts "Checking custom field #{cf_header}"
+      cf_name = FormCustomField.to_name(cf_header)
+      fus.custom_fields[cf_name].to_s.should == row_data[cf_header].to_s.strip
+
+      fcf = FormCustomField.where(name: cf_name).first
+      puts "Checking custom field #{fcf.name}"
+      fcf.should be_present
+    end
+
   end
 end
+
+
 
 # Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
 #   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }

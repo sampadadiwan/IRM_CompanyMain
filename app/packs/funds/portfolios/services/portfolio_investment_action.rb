@@ -1,6 +1,7 @@
 class PortfolioInvestmentAction < Trailblazer::Operation
   def compute_amount_cents(_ctx, portfolio_investment:, **)
     portfolio_investment.compute_amount_cents
+    true
   end
 
   def compute_quantity_as_of_date(_ctx, portfolio_investment:, **)

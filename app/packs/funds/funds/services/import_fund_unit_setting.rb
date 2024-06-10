@@ -21,14 +21,14 @@ class ImportFundUnitSetting < ImportUtil
     if update_only == "Yes"
       if fund_unit_setting.present?
         # Update only, and we have a pre-existing fund_unit_setting
-        saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
+        saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers, import_upload)
       else
         # Update only, but we dont have a pre-existing fund_unit_setting
         raise "Skipping: FundUnitSetting not found for update"
       end
     elsif fund_unit_setting.nil?
       fund_unit_setting = FundUnitSetting.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
-      saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
+      saved = save_fus(fund_unit_setting, fund, row_data, custom_field_headers, import_upload)
     # No update, and we dont have a pre-existing fund_unit_setting
     else
       # No update, but we have a pre-existing fund_unit_setting
@@ -38,8 +38,8 @@ class ImportFundUnitSetting < ImportUtil
     saved
   end
 
-  def save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
-    fund_unit_setting.assign_attributes(fund:,
+  def save_fus(fund_unit_setting, fund, row_data, custom_field_headers, import_upload)
+    fund_unit_setting.assign_attributes(fund:, import_upload_id: import_upload.id,
                                         name: row_data["Class/Series"],
                                         management_fee: row_data["Management Fee %"].to_s,
                                         setup_fee: row_data["Setup Fee %"]&.to_s,
