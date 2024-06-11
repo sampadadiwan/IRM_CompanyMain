@@ -26,7 +26,11 @@ class Investor < ApplicationRecord
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
 
+  # These are the access rights for the investor, to access items like Fund, InvestmentOpportunity, SecondarySale etc
   has_many :access_rights, foreign_key: :access_to_investor_id, dependent: :destroy
+  # These are the access rights for employees, advisors etc, to access the details of this investor
+  has_many :investor_access_rights, class_name: "AccessRight", as: :owner, dependent: :destroy
+
   has_many :deal_investors, dependent: :destroy
   has_many :deals, through: :deal_investors
   has_many :holdings, dependent: :destroy
@@ -61,7 +65,7 @@ class Investor < ApplicationRecord
   # Ensure investor_name is unique per entity_id
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
   normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
-
+  alias_attribute :name, :investor_name
   # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupCompany where a Founder Investor is created for startups.
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }, if: proc { |i| !i.is_holdings_entity }
 
