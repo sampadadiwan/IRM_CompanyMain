@@ -67,7 +67,9 @@ class FundFormulasController < ApplicationController
     fetch_rows
     enabled = ActiveRecord::Type::Boolean.new.cast(params[:enable])
     respond_to do |format|
+      # rubocop:disable Rails/SkipsModelValidations
       if @fund_formulas.update_all(enabled:)
+        # rubocop:enable Rails/SkipsModelValidations
         format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas was successfully updated." }
       else
         format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas not updated." }
