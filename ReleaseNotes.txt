@@ -1,3 +1,13 @@
+V7.1.20
+#####################################
+02d0a29cb (HEAD -> main, tag: V7.1.20, origin/main, origin/HEAD) Updated policies (#292)
+e459a7cb4 Added migration to update nil json_fields to {} (#290)
+99bad6278 Added better frame param for Access rights to support to/for investor access rights
+a9fa6f6ae Suppressed update_all rubo error in FundFormula (#291)
+2201e3b8d Added investment domicole to show page
+43a7c43b2 Added access rights to investors which are portfolio companies
+4a2c7fef0 Fixed issues with currency validation for PI create
+
 V7.1.16
 #####################################
 70e1944c9  Reverted SES keys
