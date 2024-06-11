@@ -44,13 +44,7 @@
 
       <a id="stakeholder_users_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
         <%= label %>
-      </a>
-
-      <% if policy(investor).update? %>        
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab" data-action="click->tabdetails#loadData">
-          Access Rights
-        </a>
-      <% end %>
+      </a>      
 
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
@@ -93,6 +87,13 @@
       <% end %>
 
     <% end %>
+
+    <% if policy(investor).update? %>        
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab" data-action="click->tabdetails#loadData">
+          Access Rights
+        </a>
+    <% end %>
+
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab" 
           data-action="click->tabdetails#loadData">
         Documents
@@ -178,40 +179,6 @@
 
       <% else %>
 
-        <div id="access-rights-tab" class="tab-pane fade in">
-          <div id="access_rights" class="associated_entity">
-            
-            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-              
-              <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
-                To Investor
-              </a>
-
-              <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
-                For Investor
-              </a>
-              
-            </nav>
-            <div class="tab-content">              
-
-              <div id="access_rights_to_investors_tab" class="tab-pane show active">
-                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form") do %>
-
-                <% end %>
-              </div>
-
-              <div id="access_rights_for_investors_tab" class="tab-pane fade">                
-                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor")  do %>
-                
-                <% end %>
-              </div>
-
-            </div>  
-            
-          </div>
-        </div>
-
-        
         <div id="investors-tab" class="tab-pane fade show active">
           <div id="investor_accesses" class="associated_entity">
             <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user), 
@@ -293,6 +260,40 @@
 
 
       <% end %>
+
+
+      <div id="access-rights-tab" class="tab-pane fade in">
+          <div id="access_rights" class="associated_entity">
+            
+            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+              
+              <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
+                To Investor
+              </a>
+
+              <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
+                For Investor
+              </a>
+              
+            </nav>
+            <div class="tab-content">              
+
+              <div id="access_rights_to_investors_tab" class="tab-pane show active">
+                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form") do %>
+
+                <% end %>
+              </div>
+
+              <div id="access_rights_for_investors_tab" class="tab-pane fade">                
+                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor")  do %>
+                
+                <% end %>
+              </div>
+
+            </div>  
+            
+          </div>
+      </div>
 
 
       <div id="docs-tab" class="tab-pane fade">

@@ -9,7 +9,7 @@ class InvestorSearch
       investors = owner.investors
     elsif !current_user.has_cached_role?(:company_admin)
       # No owner, he must be company admin or employee with investor access, else show nothing
-      investors = Investor.none
+      investors = investors.for_employee(current_user)
     end
 
     if params[:search] && params[:search][:value].present?

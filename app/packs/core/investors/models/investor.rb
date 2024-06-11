@@ -81,6 +81,10 @@ class Investor < ApplicationRecord
 
   validates :tag_list, length: { maximum: 120 }
 
+  scope :for_employee, lambda { |user|
+    joins(:investor_access_rights).where(investor_access_rights: { user_id: user.id })
+  }
+
   scope :for, lambda { |user, startup_entity|
                 where(entity_id: startup_entity.id,
                       investor_entity_id: user.entity_id)
