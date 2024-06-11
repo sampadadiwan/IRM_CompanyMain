@@ -36,7 +36,7 @@ class KanbanColumnPolicy < ApplicationPolicy
   end
 
   def delete_column?
-    permissioned_employee?
+    permissioned_employee? && user.has_cached_role?(:company_admin)
   end
 
   def restore_column?

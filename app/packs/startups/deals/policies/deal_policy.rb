@@ -65,7 +65,7 @@ class DealPolicy < ApplicationPolicy
         end
       end
     else
-      false
+      support?
     end
   end
 end

@@ -15,7 +15,9 @@
     </div>
     <div class="connect-sorting-content ui-sortable" data-sortable="true">
 			<% kanban_cards.each do |kanban_card| %>
-				<%= render "boards/kanban_card", kanban_card: kanban_card, kanban_column_id: kanban_column.id %>
+        <% if policy(kanban_card.data_source).show?%>
+          <%= render "boards/kanban_card", kanban_card: kanban_card, kanban_column_id: kanban_column.id %>
+        <% end %>
 			<% end %>
     </div>
     <button type="button" title="Add item" class="add-item-button">
