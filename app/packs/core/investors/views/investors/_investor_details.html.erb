@@ -279,7 +279,7 @@
             <div class="tab-content">              
 
               <div id="access_rights_to_investors_tab" class="tab-pane show active">
-                <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form") do %>
+                <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
 
                 <% end %>
               </div>

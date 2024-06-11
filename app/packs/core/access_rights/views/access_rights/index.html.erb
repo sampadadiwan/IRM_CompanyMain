@@ -1,6 +1,6 @@
 
-
-<%= turbo_frame_tag "access_rights_frame", target: "_top" do %>              
+<% frame = params[:frame] || "access_rights_frame" %>
+<%= turbo_frame_tag frame, target: "_top" do %>              
     <%= render "/access_rights/index", access_rights: @access_rights, access_right: nil %>
     <%= paginate @access_rights, data: {turbo_frame: 'access_rights_frame'} %>
 <% end %>
