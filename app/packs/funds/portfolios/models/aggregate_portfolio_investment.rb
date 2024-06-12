@@ -34,10 +34,11 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "#{portfolio_company_name}  #{investment_instrument}"
   end
 
-  before_save :compute_avg_cost
+  before_save :compute_avg_cost, if: -> { bought_quantity.positive? }
   def compute_avg_cost
-    self.avg_cost_cents = bought_quantity.positive? ? bought_amount_cents / bought_quantity : 0
-    self.cost_cents = bought_amount_cents + cost_of_sold_cents
+    self.avg_cost_cents = bought_amount_cents / bought_quantity
+    # cost_cents represents the cost of remaining shares after a sell and transfer
+    self.cost_cents = (bought_amount_cents - transfer_amount_cents) + cost_of_sold_cents
   end
 
   # This is used extensively in the AccountEntryAllocationEngine

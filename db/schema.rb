@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_12_143400) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -234,6 +234,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.datetime "deleted_at"
     t.bigint "investment_instrument_id"
     t.bigint "form_type_id"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_aggregate_portfolio_investments_on_form_type_id"
@@ -2122,7 +2123,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.string "info_field"
     t.text "notes"
     t.string "tags"
-    t.index ["data_source_type", "data_source_id"], name: "index_kanban_cards_on_data_source_type_and_data_source_id"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
@@ -2511,6 +2511,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.decimal "base_amount_cents", precision: 20, scale: 2
     t.bigint "exchange_rate_id"
     t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -2519,6 +2520,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.index ["exchange_rate_id"], name: "index_portfolio_investments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_portfolio_investments_on_fund_id"
+    t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
   end
@@ -2788,6 +2790,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "conversion_date"
+    t.index ["conversion_date"], name: "index_stock_conversions_on_conversion_date"
     t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
     t.index ["from_instrument_id"], name: "index_stock_conversions_on_from_instrument_id"
     t.index ["from_portfolio_investment_id"], name: "index_stock_conversions_on_from_portfolio_investment_id"
@@ -2956,6 +2959,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_11_051644) do
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
     t.index ["investment_instrument_id"], name: "index_valuations_on_investment_instrument_id"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"
+    t.index ["valuation_date"], name: "index_valuations_on_valuation_date"
   end
 
   create_table "versions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

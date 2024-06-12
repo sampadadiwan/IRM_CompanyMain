@@ -11,7 +11,12 @@ class StockConversion < ApplicationRecord
   delegate :to_s, to: :from_portfolio_investment
 
   validates :to_quantity, :from_quantity, :conversion_date, presence: true
-  validates :from_quantity, numericality: { less_than_or_equal_to: ->(sc) { sc.from_portfolio_investment.net_quantity }, message: "cannot exceed the maximum quantity" }
+  validate :from_quantity_and_intruments
+
+  def from_quantity_and_intruments
+    errors.add(:from_quantity, "cannot be greater than net quantity") if to_portfolio_investment.nil? && from_quantity > from_portfolio_investment.net_quantity
+    errors.add(:from_instrument, "cannot be the same as to instrument") if from_instrument == to_instrument
+  end
 
   scope :fund_id, ->(fund_id) { where(fund_id:) }
   scope :entity_id, ->(entity_id) { where(entity_id:) }

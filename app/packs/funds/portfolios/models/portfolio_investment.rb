@@ -36,6 +36,8 @@ class PortfolioInvestment < ApplicationRecord
     ["portfolio_investments.quantity < ?", 0] => nil
   }
 
+  counter_culture :aggregate_portfolio_investment, column_name: 'transfer_amount_cents', delta_column: 'transfer_amount_cents'
+
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
@@ -93,6 +95,8 @@ class PortfolioInvestment < ApplicationRecord
       # This sets the exchange rate being used for the conversion
       self.exchange_rate = get_exchange_rate(investment_instrument.currency, fund.currency, investment_date)
     end
+
+    self.transfer_amount_cents = transfer_quantity * cost_cents
   end
 
   def compute_quantity_as_of_date
