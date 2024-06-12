@@ -155,19 +155,6 @@
                           
             <% end %>
 
-
-            <% if @fund.entity.permissions.enable_units? %>
-              <div class="dropdown-divider"></div>
-
-              <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
-
-              <%= link_to "Fund Units" , fund_units_path(fund_id: @fund.id, cols: :all), {class: "dropdown-item" } %>
-            <% end %>
-
-            <div class="dropdown-divider"></div>
-
-            <%#= link_to "View Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if current_user.enable_investors %>
-
             <% if policy(@fund).update? %>
               <%
               document = Document.new(entity_id: @fund.entity_id , owner: @fund)
@@ -175,7 +162,6 @@
               %>
 
               <div class="d-none d-sm-block">
-
                 <li class="dropdown-submenu dropend">
                   <a href="#" id="misc_action_menu" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Misc</a>
                   <ul class="dropdown-menu">
@@ -191,13 +177,25 @@
                       <li>
                         <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
                       </li>
-                      <li>
-                        <%= link_to "View Investors" , investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  %>
-                      </li>
+                      
                   </ul>
-                </li>             
+                </li>                             
               </div>
             <% end %>
+
+
+            <% if @fund.entity.permissions.enable_units? %>
+              <div class="dropdown-divider"></div>
+
+              <%= link_to "Fund Unit Settings", fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
+
+              <%= link_to "Fund Units", fund_units_path(fund_id: @fund.id, cols: :all), {class: "dropdown-item" } %>
+
+              <%= link_to "View Investors", investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  if current_user.enable_investors %>
+            <% end %>
+
+
+            
         </div>
       </div>
 
