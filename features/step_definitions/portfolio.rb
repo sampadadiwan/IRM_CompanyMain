@@ -370,11 +370,14 @@ Then('the to portfolio investments must be created') do
   @to_portfolio_investment.investment_instrument_id.should == @stock_conversion.to_instrument_id
   @to_portfolio_investment.notes.should == @stock_conversion.notes
   @to_portfolio_investment.base_amount_cents.should == @to_portfolio_investment.convert_currency(@from_portfolio_investment.investment_instrument.currency, @to_portfolio_investment.investment_instrument.currency, @from_portfolio_investment.base_cost_cents, @from_portfolio_investment.investment_date) * @stock_conversion.from_quantity
+
+  @stock_conversion.to_portfolio_investment_id.should == @to_portfolio_investment.id
 end
 
 
 Then('the APIs must have the right quantity post transfer') do
   AggregatePortfolioInvestment.all.each do |api|
     api.quantity.should == api.portfolio_investments.buys.sum(:net_quantity)
+    api.transfer_amount_cents.should == api.portfolio_investments.sum(:transfer_amount_cents)
   end
 end
