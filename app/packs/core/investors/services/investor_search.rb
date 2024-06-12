@@ -5,8 +5,12 @@ class InvestorSearch
 
     if params[:owner_id].present? && params[:owner_type].present?
       owner = params[:owner_type].constantize.find(params[:owner_id])
-      authorize(owner, :show?)
-      investors = owner.investors
+      policy_class = "#{owner.class.name}Policy".constantize
+      investors = if policy_class.new(current_user, owner).show?
+                    owner.investors
+                  else
+                    Investor.none
+                  end
     elsif !current_user.has_cached_role?(:company_admin)
       # No owner, he must be company admin or employee with investor access, else show nothing
       investors = investors.for_employee(current_user)

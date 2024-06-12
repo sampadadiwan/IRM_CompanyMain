@@ -191,6 +191,9 @@
                       <li>
                         <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
                       </li>
+                      <li>
+                        <%= link_to "View Investors" , investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  %>
+                      </li>
                   </ul>
                 </li>             
               </div>
