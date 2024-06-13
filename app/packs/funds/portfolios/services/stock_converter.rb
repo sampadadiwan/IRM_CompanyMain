@@ -9,9 +9,9 @@ class StockConverter < Trailblazer::Operation
   def validate_currency(_ctx, stock_conversion:, **)
     from_currency = stock_conversion.from_instrument.currency
     to_currency = stock_conversion.to_instrument.currency
-
+    from_portfolio_investment = stock_conversion.from_portfolio_investment
     if from_currency != to_currency
-      exchange_rate = stock_conversion.entity.exchange_rates.where(from: from_currency, to: to_currency, as_of: ..stock_conversion.conversion_date).first
+      exchange_rate = stock_conversion.entity.exchange_rates.where(from: from_currency, to: to_currency, as_of: ..from_portfolio_investment.investment_date).first
       if exchange_rate.present?
         true
       else
@@ -51,7 +51,7 @@ class StockConverter < Trailblazer::Operation
     from_currency = from_portfolio_investment.investment_instrument.currency
     to_currency = to_portfolio_investment.investment_instrument.currency
 
-    base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, stock_conversion.conversion_date) * stock_conversion.from_quantity
+    base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, from_portfolio_investment.investment_date) * stock_conversion.from_quantity
     to_portfolio_investment.base_amount_cents = base_amount_cents
     ctx[:to_portfolio_investment] = to_portfolio_investment
   end
