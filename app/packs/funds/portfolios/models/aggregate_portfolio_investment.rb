@@ -12,7 +12,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
 
-  monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
 
   STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Fund Name", "Instrument", "Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name fund_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
@@ -38,7 +38,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   def compute_avg_cost
     self.avg_cost_cents = bought_amount_cents / bought_quantity
     # cost_cents represents the cost of remaining shares after a sell and transfer
-    self.cost_cents = (bought_amount_cents - transfer_amount_cents) + cost_of_sold_cents
+    self.cost_cents = bought_amount_cents + transfer_amount_cents + cost_of_sold_cents
   end
 
   # This is used extensively in the AccountEntryAllocationEngine

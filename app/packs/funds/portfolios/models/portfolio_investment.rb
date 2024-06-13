@@ -28,7 +28,7 @@ class PortfolioInvestment < ApplicationRecord
 
   monetize :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
-  monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   # We rollup net quantity to the API quantity, only for buys. This takes care of sells and transfers
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "quantity" : nil }, delta_column: 'net_quantity', column_names: {
@@ -96,7 +96,7 @@ class PortfolioInvestment < ApplicationRecord
       self.exchange_rate = get_exchange_rate(investment_instrument.currency, fund.currency, investment_date)
     end
 
-    self.transfer_amount_cents = transfer_quantity * cost_cents
+    self.transfer_amount_cents = -transfer_quantity * cost_cents
   end
 
   def compute_quantity_as_of_date
