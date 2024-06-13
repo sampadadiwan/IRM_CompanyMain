@@ -1,5 +1,6 @@
 class StockConversion < ApplicationRecord
   include ForInvestor
+  include Trackable.new
 
   belongs_to :entity
   belongs_to :from_portfolio_investment, class_name: "PortfolioInvestment"

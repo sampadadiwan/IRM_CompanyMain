@@ -21,6 +21,10 @@ class StockConversionPolicy < FundBasePolicy
     create?
   end
 
+  def reverse?
+    create?
+  end
+
   def update?
     false # permissioned_employee?(:update)
   end

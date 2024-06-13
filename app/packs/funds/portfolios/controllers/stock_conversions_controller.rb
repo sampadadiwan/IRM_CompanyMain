@@ -1,5 +1,5 @@
 class StockConversionsController < ApplicationController
-  before_action :set_stock_conversion, only: %i[show edit update destroy]
+  before_action :set_stock_conversion, only: %i[show edit update destroy reverse]
   has_scope :fund_id
   has_scope :entity_id
   has_scope :from_instrument_id
@@ -66,6 +66,14 @@ class StockConversionsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to stock_conversions_url, notice: "Stock conversion was successfully destroyed." }
       format.json { head :no_content }
+    end
+  end
+
+  def reverse
+    if StockConverterReverse.wtf?(stock_conversion: @stock_conversion).success?
+      redirect_to stock_conversions_url, notice: "Stock conversion was successfully reversed."
+    else
+      redirect_to stock_conversions_url, alert: "Stock conversion could not be reversed."
     end
   end
 

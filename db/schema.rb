@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_12_143400) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_13_112420) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2790,7 +2790,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_12_143400) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "conversion_date"
+    t.datetime "deleted_at"
     t.index ["conversion_date"], name: "index_stock_conversions_on_conversion_date"
+    t.index ["deleted_at"], name: "index_stock_conversions_on_deleted_at"
     t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
     t.index ["from_instrument_id"], name: "index_stock_conversions_on_from_instrument_id"
     t.index ["from_portfolio_investment_id"], name: "index_stock_conversions_on_from_portfolio_investment_id"
