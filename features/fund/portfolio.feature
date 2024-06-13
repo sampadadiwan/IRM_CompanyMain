@@ -163,6 +163,10 @@ Scenario Outline: Stock Conversion
   Then the from portfolio investments must be adjusted
   And the to portfolio investments must be created
   And the APIs must have the right quantity post transfer
+  And When I reverse the stock conversion
+  Then the to portfolio investments must be deleted
+  And the stock conversion must be deleted
+  And the from portfolio investments must be adjusted
   Examples:
     |conversion                                     | from_instrument | to_instrument |
     |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |

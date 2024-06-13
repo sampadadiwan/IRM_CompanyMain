@@ -350,11 +350,19 @@ end
 
 Then('the from portfolio investments must be adjusted') do
   @from_portfolio_investment.reload
-  @from_portfolio_investment.transfer_quantity.should == @stock_conversion.from_quantity
-  @from_portfolio_investment.transfer_amount_cents.should == -@stock_conversion.from_quantity * @from_portfolio_investment.cost_cents
-  @from_portfolio_investment.net_quantity.should == @from_portfolio_investment.quantity + @from_portfolio_investment.sold_quantity - @stock_conversion.from_quantity
-  @from_portfolio_investment.notes.should == @stock_conversion.notes
-
+  if StockConversion.where(id: @stock_conversion.id).count == 1  
+    puts "Checking from portfolio investment for conversions"  
+    @from_portfolio_investment.transfer_quantity.should == @stock_conversion.from_quantity
+    @from_portfolio_investment.transfer_amount_cents.should == -@stock_conversion.from_quantity * @from_portfolio_investment.cost_cents
+    @from_portfolio_investment.net_quantity.should == @from_portfolio_investment.quantity + @from_portfolio_investment.sold_quantity - @stock_conversion.from_quantity
+    @from_portfolio_investment.notes.should == @stock_conversion.notes
+  else
+    puts "Checking from portfolio investment for reversals"
+    @from_portfolio_investment.transfer_quantity.should == 0
+    @from_portfolio_investment.transfer_amount_cents.should == 0
+    @from_portfolio_investment.net_quantity.should == @from_portfolio_investment.quantity + @from_portfolio_investment.sold_quantity
+    @from_portfolio_investment.notes.should == ""
+  end
   # Check the api
   api = @from_portfolio_investment.aggregate_portfolio_investment
   api.transfer_amount_cents.should == @from_portfolio_investment.aggregate_portfolio_investment.portfolio_investments.sum(:transfer_amount_cents)
@@ -387,4 +395,16 @@ Then('the APIs must have the right quantity post transfer') do
     api.quantity.should == api.portfolio_investments.buys.sum(:net_quantity)
     api.transfer_amount_cents.should == api.portfolio_investments.sum(:transfer_amount_cents)
   end
+end
+
+Then('When I reverse the stock conversion') do
+  StockConverterReverse.wtf?(stock_conversion: @stock_conversion).success?.should == true
+end
+
+Then('the to portfolio investments must be deleted') do
+  PortfolioInvestment.where(id: @stock_conversion.to_portfolio_investment_id).count.should == 0
+end
+
+Then('the stock conversion must be deleted') do
+  StockConversion.where(id: @stock_conversion.id).count.should == 0
 end
