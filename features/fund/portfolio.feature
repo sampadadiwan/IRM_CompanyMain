@@ -166,5 +166,5 @@ Scenario Outline: Stock Conversion
   Examples:
     |conversion                                     | from_instrument | to_instrument |
     |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |
-    |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=Debt;investment_domicile=Domestic ;currency=USD    |
+    |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic;currency=INR| name=Debt;investment_domicile=Domestic ;currency=USD    |
 

@@ -1,8 +1,26 @@
 class StockConverter < Trailblazer::Operation
+  step :validate_currency
   step :create_stock_conversion
   step :adjust_from_portfolio_investment
   step :create_to_portfolio_investment
+  step :update_data
   left :handle_errors
+
+  def validate_currency(_ctx, stock_conversion:, **)
+    from_currency = stock_conversion.from_instrument.currency
+    to_currency = stock_conversion.to_instrument.currency
+
+    if from_currency != to_currency
+      exchange_rate = stock_conversion.entity.exchange_rates.where(from: from_currency, to: to_currency, as_of: ..stock_conversion.conversion_date).first
+      if exchange_rate.present?
+        true
+      else
+        stock_conversion.errors.add(:base, "No exchange rate found for #{from_currency} to #{to_currency} before #{stock_conversion.conversion_date}")
+        return false
+      end
+    end
+    true
+  end
 
   def create_stock_conversion(ctx, stock_conversion:, **)
     ctx[:from_portfolio_investment] = stock_conversion.from_portfolio_investment
@@ -12,8 +30,6 @@ class StockConverter < Trailblazer::Operation
   def adjust_from_portfolio_investment(_ctx, stock_conversion:, from_portfolio_investment:, **)
     from_portfolio_investment.transfer_quantity += stock_conversion.from_quantity
     from_portfolio_investment.notes = stock_conversion.notes
-    PortfolioInvestmentUpdate.wtf?(portfolio_investment: from_portfolio_investment)
-    from_portfolio_investment.aggregate_portfolio_investment.reload.save
   end
 
   def create_to_portfolio_investment(ctx, stock_conversion:, **)
@@ -35,19 +51,29 @@ class StockConverter < Trailblazer::Operation
     from_currency = from_portfolio_investment.investment_instrument.currency
     to_currency = to_portfolio_investment.investment_instrument.currency
 
-    base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, from_portfolio_investment.investment_date) * stock_conversion.from_quantity
+    base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, stock_conversion.conversion_date) * stock_conversion.from_quantity
     to_portfolio_investment.base_amount_cents = base_amount_cents
-
-    PortfolioInvestmentCreate.wtf?(portfolio_investment: to_portfolio_investment)
-
     ctx[:to_portfolio_investment] = to_portfolio_investment
-    if PortfolioInvestmentCreate.wtf?(portfolio_investment: to_portfolio_investment).success?
-      stock_conversion.to_portfolio_investment = to_portfolio_investment
-      stock_conversion.save
-    else
-      Rails.logger.debug { "create_to_portfolio_investment: #{to_portfolio_investment.errors.full_messages}" }
-      false
+  end
+
+  def update_data(_ctx, stock_conversion:, from_portfolio_investment:, to_portfolio_investment:, **)
+    from_saved = false
+    to_saved = false
+
+    PortfolioInvestment.transaction do
+      from_saved = PortfolioInvestmentUpdate.wtf?(portfolio_investment: from_portfolio_investment).success?
+      from_portfolio_investment.aggregate_portfolio_investment.reload.save
+
+      to_saved = PortfolioInvestmentCreate.wtf?(portfolio_investment: to_portfolio_investment).success?
+      if to_saved
+        stock_conversion.to_portfolio_investment = to_portfolio_investment
+        stock_conversion.save
+      else
+        Rails.logger.debug { "create_to_portfolio_investment: #{to_portfolio_investment.errors.full_messages}" }
+      end
     end
+
+    from_saved && to_saved
   end
 
   def handle_errors(ctx, stock_conversion:, **)

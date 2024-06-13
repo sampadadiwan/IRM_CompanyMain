@@ -362,6 +362,7 @@ Then('the from portfolio investments must be adjusted') do
 end
 
 Then('the to portfolio investments must be created') do
+  @stock_conversion.reload
   @to_portfolio_investment = @stock_conversion.to_portfolio_investment
   @to_portfolio_investment.entity_id.should == @from_portfolio_investment.entity_id
   @to_portfolio_investment.fund_id.should == @from_portfolio_investment.fund_id

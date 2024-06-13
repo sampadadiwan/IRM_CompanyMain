@@ -69,7 +69,7 @@ class DefaultUnitAllocationEngine
     msg << "No unit prices in call" if capital_remittance.capital_call.unit_prices.blank?
     unit_type = capital_remittance.capital_commitment.unit_type
     msg << "No unit type in commitment" if unit_type.blank?
-    msg << "Invalid unit type for commitment" if unit_type.present? && capital_remittance.capital_call.unit_prices[unit_type].blank?
+    msg << "Invalid unit price in call, for unit type" if unit_type.present? && capital_remittance.capital_call.unit_prices[unit_type].blank?
     msg
   end
 
