@@ -13,6 +13,7 @@ class StockConverter < Trailblazer::Operation
     from_portfolio_investment.transfer_quantity += stock_conversion.from_quantity
     from_portfolio_investment.notes = stock_conversion.notes
     PortfolioInvestmentUpdate.wtf?(portfolio_investment: from_portfolio_investment)
+    from_portfolio_investment.aggregate_portfolio_investment.reload.save
   end
 
   def create_to_portfolio_investment(ctx, stock_conversion:, **)

@@ -356,7 +356,9 @@ Then('the from portfolio investments must be adjusted') do
   @from_portfolio_investment.notes.should == @stock_conversion.notes
 
   # Check the api
-  @from_portfolio_investment.aggregate_portfolio_investment.transfer_amount_cents.should == @from_portfolio_investment.aggregate_portfolio_investment.portfolio_investments.sum(:transfer_amount_cents)
+  api = @from_portfolio_investment.aggregate_portfolio_investment
+  api.transfer_amount_cents.should == @from_portfolio_investment.aggregate_portfolio_investment.portfolio_investments.sum(:transfer_amount_cents)
+  api.cost_cents.should == (api.bought_amount_cents - api.transfer_amount_cents) + api.cost_of_sold_cents
 end
 
 Then('the to portfolio investments must be created') do
