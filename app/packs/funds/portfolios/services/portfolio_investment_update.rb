@@ -1,5 +1,6 @@
 class PortfolioInvestmentUpdate < PortfolioInvestmentAction
-  step :compute_fmv
+  step :compute_amount_cents
+  step :compute_fmv  
   step :save
   left :handle_errors
   step :compute_avg_cost
