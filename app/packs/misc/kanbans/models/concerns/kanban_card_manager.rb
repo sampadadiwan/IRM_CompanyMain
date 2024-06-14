@@ -73,6 +73,18 @@ module KanbanCardManager
     data.notes = notes
     data.tags = tags
     data.kanban_column_id = kanban_column_id.presence || card&.kanban_column_id
+    data.info_field = ""
+    if deal.card_view_attrs.present?
+      deal.card_view_attrs.each do |attr|
+        # data.info_field += "#{attr}: #{send(attr)}\n" if send(attr).present?
+        res = send(attr)
+        val = res.instance_of?(::Money) ? money_to_currency(res, { units: currency_unit }) : res
+        val ||= "-"
+        data.info_field += "#{val}," if val.present?
+      end
+    else
+      data.info_field = money_to_currency(total_amount, { units: currency_unit })
+    end
     data
   end
 

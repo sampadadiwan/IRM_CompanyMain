@@ -1,0 +1,10 @@
+  <div class="row">
+      <% deals.each_with_index do |deal, index| %>
+          <%= render(PreviewCardComponent.new(
+            title: deal.name,
+            path: deal_path(deal),
+            model: deal,
+            logo: deal.entity.logo
+          )) %>
+      <% end %>
+  </div>

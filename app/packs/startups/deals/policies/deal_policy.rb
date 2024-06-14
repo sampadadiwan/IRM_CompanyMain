@@ -32,7 +32,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def create?
-    permissioned_employee?(:create) && user.enable_deals
+    user.enable_deals
   end
 
   def new?
@@ -48,7 +48,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    permissioned_employee?(:destroy) && user.has_cached_role?(:company_admin)
   end
 
   def permissioned_employee?(perm = nil)

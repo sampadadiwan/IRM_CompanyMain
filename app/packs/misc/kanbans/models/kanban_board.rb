@@ -1,5 +1,6 @@
 class KanbanBoard < ApplicationRecord
   include Trackable.new
+  include CurrencyHelper
 
   belongs_to :owner, polymorphic: true, optional: true
   belongs_to :entity
@@ -33,6 +34,25 @@ class KanbanBoard < ApplicationRecord
       item_id: id,
       event: "updated"
     }
+  end
+
+  def update_cards(card_view_attrs)
+    currency_unit = owner.currency == "INR" ? "Crores" : "Million"
+    kanban_cards.each do |card|
+      info_field = ""
+      if card_view_attrs.present?
+        card_view_attrs.each do |attr|
+          # info_field += "#{attr}: #{send(attr)}\n" if send(attr).present?
+          res = card.data_source.send(attr)
+          val = res.instance_of?(::Money) ? money_to_currency(res, { units: currency_unit }) : res
+          val ||= "-"
+          info_field += "#{val},"
+        end
+      end
+      # rubocop:disable Rails/SkipsModelValidations
+      card.update_columns(info_field:)
+      # rubocop:enable Rails/SkipsModelValidations
+    end
   end
 
   def create_columns

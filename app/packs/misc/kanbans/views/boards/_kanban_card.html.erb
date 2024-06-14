@@ -9,9 +9,11 @@
       </div>
     </div>
     <div class="task-content">
-      <p class="mb-0" data-item-text= <%= kanban_card.info_field %>>
-         <%= kanban_card.info_field %>
-      </p>
+         <% kanban_card.info_field.split(',').each do |info| %>
+            <p class="mb-0" data-item-text= <%= info %>>
+                <%= info.strip %>
+            </p>
+          <% end %>
     </div>
     <div class="task-body">
       <div class="task-bottom">

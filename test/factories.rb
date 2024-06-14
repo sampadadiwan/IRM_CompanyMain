@@ -628,7 +628,6 @@ FactoryBot.define do
     tags { ["Lead", "Co-Investor", "Follow-on"][rand(3)] }
     deal_lead { Faker::Name.name }
     source { Faker::Name.name }
-    introduced_by { Faker::Name.name }
     notes { Faker::Company.catch_phrase }
   end
 

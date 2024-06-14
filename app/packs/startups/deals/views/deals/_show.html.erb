@@ -53,6 +53,33 @@
       </td>
    </tr>
 
+    <tr>
+      <td>
+         Tags
+      </td>
+      <td>
+         <%= deal.tags %>
+      </td>
+   </tr>
+
+   <tr>
+      <td>
+         Investment Opportunity
+      </td>
+      <td>
+         <%= deal.investment_opportunity_link %>
+      </td>
+   </tr>
+
+   <tr>
+      <td>
+         Card View Attributes
+      </td>
+      <td>
+         <%= deal.card_view_attrs&.map(&:titleize)&.join(", ") %>
+      </td>
+   </tr>
+
    <!-- <tr>
       <td>
          Currency Units
@@ -76,11 +103,11 @@
 
   </table>
 
-  <% if current_user.entity_id == @deal.entity_id %>
+  <% if current_user.entity_id == deal.entity_id %>
     <div>
-      <%= link_to "Edit", edit_deal_path(@deal), {class: "btn btn-outline-primary"} %> |
-      <%= button_to "Delete", @deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-    
+      <%= link_to "Edit", edit_deal_path(deal), {class: "btn btn-outline-primary"} %> |
+      <%= button_to "Delete", deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+
     </div>
   <% end %>
 

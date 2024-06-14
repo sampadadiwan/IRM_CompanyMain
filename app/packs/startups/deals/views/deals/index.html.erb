@@ -12,4 +12,8 @@
 <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
             "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
 
+<% unless current_user.curr_role.casecmp?("investor") %>
 <%= render "/deals/index_cards", deals: @deals %>
+<% else %>
+<%= render "/deals/investor_view", deals: @deals %>
+<% end %>

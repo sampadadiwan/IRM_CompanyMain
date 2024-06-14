@@ -1,6 +1,6 @@
 <div>
-    <%= turbo_frame_tag "new_task" do %>        
-        <%= render NewCard.new do %>
+    <%= turbo_frame_tag "new_task" do %>
+        <%= render NewCard.new(col_md: "col-md-12") do %>
             <%= render "form", task: task %>
         <% end %>
     <% end %>

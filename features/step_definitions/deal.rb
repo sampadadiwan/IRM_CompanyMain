@@ -10,7 +10,7 @@ When('I create a new deal {string}') do |arg1|
   click_on("New Deal")
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
-  select(@deal.status, from: "deal_status")
+  fill_in('deal_status', with: @deal.status)
   click_on("Save")
   sleep(0.5)
   kanban_board = KanbanBoard.first

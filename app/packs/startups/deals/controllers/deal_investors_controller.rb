@@ -199,7 +199,7 @@ class DealInvestorsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def deal_investor_params
-    params.require(:deal_investor).permit(:deal_id, :investor_id, :status, :primary_amount, :notes, :tags, :source, :introduced_by, :deal_lead,
-                                          :secondary_investment, :entity_id, :investor_advisor, :company_advisor, :pre_money_valuation, :tier, :fee, :deal_activity_id, :kanban_column_id, properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:deal_investor).permit(:deal_id, :investor_id, :status, :primary_amount, :notes, :tags, :source, :deal_lead,
+                                          :secondary_investment, :entity_id, :investor_advisor, :company_advisor, :pre_money_valuation, :tier, :fee, :deal_activity_id, :kanban_column_id, :form_type_id, properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

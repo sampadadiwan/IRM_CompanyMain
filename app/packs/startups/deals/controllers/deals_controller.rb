@@ -77,6 +77,12 @@ class DealsController < ApplicationController
   # GET /deals/1/edit
   def edit
     setup_custom_fields(@deal)
+    if params[:turbo]
+      frame = params[:turbo_frame_id] || "deal_form_#{@deal.id}"
+      render turbo_stream: [
+        turbo_stream.replace(frame, partial: "deals/form", locals: { deal: @deal, turbo_frame_id: frame, turbo: true })
+      ]
+    end
   end
 
   # POST /deals or /deals.json
@@ -88,8 +94,7 @@ class DealsController < ApplicationController
     results = CreateDeal.wtf?(deal: @deal)
     respond_to do |format|
       if results.success?
-        kanban_board = KanbanBoard.find_by(owner_type: "Deal", owner_id: @deal.id)
-        format.html { redirect_to board_path(kanban_board), notice: "Deal was successfully created." }
+        format.html { redirect_to deal_url(@deal, kanban: true), notice: "Deal was successfully created." }
         format.json { render :show, status: :created, location: @deal }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -100,11 +105,22 @@ class DealsController < ApplicationController
 
   # PATCH/PUT /deals/1 or /deals/1.json
   def update
+    @frame = params[:deal][:turbo_frame_id] || "deal_form_#{@deal.id}"
+    params[:deal].delete(:turbo_frame_id)
     respond_to do |format|
       if @deal.update(deal_params)
-        format.html { redirect_to deal_url(@deal), notice: "Deal was successfully updated." }
+        @success = true
+        format.turbo_stream do
+          ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal.broadcast_data)
+          UserAlert.new(user_id: current_user.id, message: "Deal was successfully updated! Please refresh!", level: "success").broadcast
+          render :update
+        end
+        format.html { redirect_to deal_url(@deal, kanban: true), notice: "Deal was successfully updated." }
         format.json { render :show, status: :ok, location: @deal }
       else
+        @success = false
+        @alert = "Deal could not be updated! #{@deal.errors.full_messages.join(', ')}"
+        format.turbo_stream { render :update }
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @deal.errors, status: :unprocessable_entity }
       end
@@ -132,7 +148,7 @@ class DealsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def deal_params
-    params.require(:deal).permit(:entity_id, :name, :amount, :status, :form_type_id, :clone_from_id,
-                                 :start_date, :currency, :units, :activity_list, :archived, properties: {})
+    params.require(:deal).permit(:entity_id, :name, :amount, :status, :form_type_id, :clone_from_id, :tags,
+                                 :start_date, :currency, :investment_opportunity_link, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
   end
 end

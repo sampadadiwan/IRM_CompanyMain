@@ -44,12 +44,6 @@
 
 .task-list-container {
   margin-right: -15px; /* Adjust this value to reduce the space */
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  position: relative;
 }
 
 .task-header {
@@ -66,25 +60,13 @@
   padding-bottom: 0 !important;
 }
 
-
-.task-list-section {
-  overflow-x: auto;
-}
-
-.connect-sorting {
-  height: 100%;
-}
-
 .connect-sorting-content {
   margin-right: -10px; /* Adjust this value to reduce the space */
   margin-left: -10px;
-  height: calc(100% - 40px);
-  overflow-y: auto;
 }
 
 .kanban-card {
   cursor: grab;
-  position: relative;
   left: 0px;
   top: 0px;
 }
@@ -94,17 +76,10 @@
 }
 
 .scrumboard {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
   margin-bottom: 0px;
   margin-top: 0px;
 }
 
-.layout-spacing {
-  flex: 1;
-  overflow-y: auto;
-}
 
 .simplebar-offset {
   right: 0px;
@@ -113,16 +88,6 @@
 
 .simplebar-content {
   padding: 0px;
-}
-
-.simplebar-content-wrapper {
-  height: auto;
-  overflow: scroll hidden;
-}
-
-.simplebar-placeholder {
-  width: 999px;
-  height: 737px;
 }
 
 .simplebar-horizontal {

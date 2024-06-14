@@ -7,7 +7,7 @@ class DealInvestor < ApplicationRecord
   include RansackerAmounts.new(fields: %w[total_amount primary_amount secondary_investment fee])
 
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
-            :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
+            :primary_amount_cents, :total_amount_cents, with_currency: ->(i) { i.deal.currency }
   # Make all models searchable
   update_index('deal_investor') { self if index_record? }
 
@@ -32,14 +32,31 @@ class DealInvestor < ApplicationRecord
   validates :company_advisor, :investor_advisor, length: { maximum: 100 }
 
   STATUS = %w[Active Pending Declined].freeze
+  CARD_VIEW_ATTRS = {
+    "Pre Money Valuation" => "pre_money_valuation",
+    "Primary Amount" => "primary_amount",
+    "Secondary Investment" => "secondary_investment",
+    "Fee" => "fee",
+    "Total Amount" => "total_amount",
+    "Tier" => "tier",
+    "Status" => "status",
+    "Deal Lead" => "deal_lead",
+    "Source" => "source",
+    "Notes" => "notes"
+  }.freeze
 
   scope :for, ->(user) { where("investors.investor_entity_id=?", user.entity_id).joins(:investor) }
   scope :not_declined, -> { where("deal_investors.status<>?", "Declined").joins(:investor) }
 
+  before_validation :calc_total_amount
   before_save :set_investor_entity_id
   def set_investor_entity_id
     self.investor_entity_id = investor.investor_entity_id
     self.investor_name = investor.investor_name
+  end
+
+  def calc_total_amount
+    self.total_amount_cents = primary_amount_cents + secondary_investment_cents + fee_cents
   end
 
   after_create_commit :create_activities_later
@@ -73,10 +90,6 @@ class DealInvestor < ApplicationRecord
     primary_amount + secondary_investment + fee
   end
 
-  def total_amount
-    total_amount_cents || total
-  end
-
   def current_deal_activity_id
     return nil if deal_activity.blank?
 
@@ -85,7 +98,7 @@ class DealInvestor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[total_amount investor_name tier tags source introduced_by deal_lead primary_amount secondary_investment fee]
+    %w[total_amount investor_name tier tags source deal_lead primary_amount secondary_investment fee]
   end
 
   def self.ransackable_associations(_auth_object = nil)

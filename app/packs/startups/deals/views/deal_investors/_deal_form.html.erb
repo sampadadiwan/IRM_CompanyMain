@@ -3,7 +3,7 @@
 <div class="wizard_container dynamic_form centered" data-controller="wizard">
     <div class="col-md-6 card shadow mb-4 justify-content-md-center">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
-            <h4 class="mb-0">Potential Investment</h4>
+            <h4 class="mb-0 text-white">Potential Investment</h4>
             <button type="button" class="btn-close text-reset" data-action="click->wizard#close" aria-label="Close"></button>
         </div>
 
@@ -55,11 +55,6 @@
             <div class="form-group">
             <%= form.label :source %>
             <%= form.text_field :source, {class: "form-control", maxlength: 20} %>
-            </div>
-
-            <div class="form-group">
-            <%= form.label :introduced_by %>
-            <%= form.text_field :introduced_by, {class: "form-control", maxlength: 20} %>
             </div>
 
             <div class="form-group">

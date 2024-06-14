@@ -1,11 +1,17 @@
+<% turbo_frame_id ||= "deal_form_#{deal.id}" %>
+<%= turbo_frame_tag turbo_frame_id do%>
+<%turbo ||= false%>
 <%= render NewCard.new do%>
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Deal</h6>
+<div class="card shadow mb-4 justify-content-md-center dynamic_form" data-controller="dynamic">
+  <div class="card-header py-3 d-flex align-items-center justify-content-between">
+      <h4 class="m-0 text-primary">Deal</h4>
+      <% if turbo.presence %>
+      <button type="button" class="btn-close text-reset" data-action="click->dynamic#close" aria-label="Close"></button>
+      <% end %>
   </div>
   <div class="card-body">
 
-  <%= form_with(model: deal, validate: true) do |form| %>
+  <%= form_with(model: deal, validate: true, data: {turbo: turbo}) do |form| %>
     <% if deal.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(deal.errors.count, "error") %> prohibited this deal from being saved:</h2>
@@ -18,6 +24,7 @@
       </div>
     <% end %>
 
+    <%= form.text_field :turbo_frame_id, value: turbo_frame_id, class: "form-control", hidden: true %>
 
     <div class="form-group">
       <%= form.label :name %>
@@ -36,12 +43,22 @@
 
     <div class="form-group">
       <%= form.label :status %>
-      <%= form.select :status, Deal::STATUS, {}, {class: "form-control"} %>
+      <%= form.text_field :status, class: "form-control", placeholder: "Open / Closing soon / First close done"  %>
     </div>
 
     <div class="form-group">
       <%= form.label :currency %>
       <%= form.select :currency, ENV["CURRENCY"].split(","), {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tags, class: "form-control", placeholder: "Imp, New"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :investment_opportunity_id %>
+      <%= form.text_field :investment_opportunity_link, class: "form-control", placeholder: "IO Id"  %>
     </div>
 
     <div class="form-group">
@@ -57,11 +74,20 @@
       <%= form.check_box :archived, class: "form-check-input"  %>
     </div>
 
+    <div class="form-group" id="employee_form_group">
+      <%= form.label :card_view_attrs, "Show in Card View" %>
+      <%= form.select :card_view_attrs, DealInvestor::CARD_VIEW_ATTRS.to_a, {include_blank: false, include_hidden: false}, class: "form-control select2 select2-multiple", multiple: "multiple" %>
+    </div>
+
     <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      <% if turbo.presence %>
+        <a class="btn btn-outline-danger", data-action="click->dynamic#close">Close</a>
+      <% end %>
     </div>
   <% end %>
 
     </div>
   </div>
+<%end%>
 <%end%>

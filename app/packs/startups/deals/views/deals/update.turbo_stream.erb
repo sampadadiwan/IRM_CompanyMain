@@ -1,0 +1,6 @@
+
+<% if @success %>
+  <%= turbo_stream.replace(@frame, partial: "deals/blank", locals: { turbo_frame_id: @frame }) %>
+<% else %>
+  <%= turbo_stream.prepend(@frame, partial: "layouts/alerts", locals: { alert: @alert } ) %>
+<% end %>

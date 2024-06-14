@@ -1,0 +1,52 @@
+<%
+    hide_show_btn ||= false
+%>
+
+
+<div class="io_card col col-md-4">
+
+
+    <div class="card inner_card preview">
+        <!-- <img src="..." class="card-img-top" alt="..."> -->
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+            <div class="ms-auto">
+                <%= model.status %>
+            </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="card-text">
+                <% if @logo.present? %>
+                    <div class="d-sm-flex align-items-center justify-content-between text-center">
+                        <%= image_tag @logo.url(expires_in: 60*60*24*7), class: "ci-logo" %>
+                    </div>
+                <% end %>
+
+                <div class="card-title d-flex justify-content-center align-items-center">
+                    <% if @path %>
+                        <a href="<%= @path %>">
+                    <% end %>
+                        <h3 class="font-weight-bold custom-underline mb-0"><%= @title %> </h3>
+                    <% if @path %>
+                        </a>
+                    <% end %>
+                </div>
+
+                <%= render "/deals/preview_card_table2", model: @model ,tags: @tags, show_tags: @show_tags, col_size: @col_size%>
+
+                <%
+=begin%>
+ <div class="text-center">
+                    <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
+                    <%= link_to "Show" , link , {class: "btn btn-outline-primary btn-lg" } unless hide_show_btn %>
+                </div>
+<%
+=end%>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<% params[:force_units] = nil %>
