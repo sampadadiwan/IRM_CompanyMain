@@ -31,7 +31,6 @@ class DefaultUnitAllocationEngine
     unit_type = capital_commitment.unit_type
     unit_price_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : nil
     unit_premium_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : nil
-    msg = []
 
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
         capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present?
@@ -51,7 +50,7 @@ class DefaultUnitAllocationEngine
 
       quantity = price_cents.positive? ? (amount_cents / (price_cents + premium_cents)) : 0
 
-      fund_unit = new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
+      fund_unit, msg = new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
 
       [fund_unit, msg]
     else
@@ -84,8 +83,11 @@ class DefaultUnitAllocationEngine
     fund_unit.reason = reason
     fund_unit.issue_date = [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
 
-    fund_unit.save!
-    fund_unit
+    if fund_unit.save
+      [fund_unit, []]
+    else
+      [fund_unit, fund_unit.errors]
+    end
   end
 
   def allocate_distribution_payment(capital_distribution_payment, reason)
