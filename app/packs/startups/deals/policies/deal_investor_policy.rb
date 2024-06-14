@@ -9,7 +9,7 @@ class DealInvestorPolicy < DealBasePolicy
         # find all deals that user has access to
         deal_ids = Deal.for_employee(user).includes(:access_rights).where("access_rights.user_id=?", user.id).pluck(:id)
         # find all deal investors that are associated with the deals
-        scope.where(entity_id: user.entity_id, deal_id: deal_ids).or(scope.for_employee(user))
+        scope.for_employee(user).or(scope.where(entity_id: user.entity_id, deal_id: deal_ids))
       elsif user.curr_role == "investor"
         scope.for_investor(user)
       end

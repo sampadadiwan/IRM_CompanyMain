@@ -26,7 +26,7 @@ When('I edit the deal {string}') do |arg1|
 
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
-  select(@deal.status, from: "deal_status")
+  fill_in('deal_status', with: @deal.status)
 
   click_on("Save")
   sleep(1)
