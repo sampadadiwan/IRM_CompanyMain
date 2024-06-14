@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_13_112420) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_14_140809) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -862,7 +862,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_13_112420) do
     t.string "tags"
     t.string "deal_lead"
     t.string "source"
-    t.string "introduced_by"
     t.text "notes"
     t.json "json_fields"
     t.bigint "form_type_id"
@@ -897,6 +896,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_13_112420) do
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
     t.json "json_fields"
+    t.string "investment_opportunity_link"
+    t.json "card_view_attrs"
+    t.string "tags", limit: 50
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
@@ -1465,7 +1467,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_13_112420) do
     t.bigint "fund_id", null: false
     t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
-    t.string "unit_type", limit: 10
+    t.string "unit_type", limit: 25
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
     t.text "reason"
     t.datetime "created_at", null: false

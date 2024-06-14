@@ -84,7 +84,7 @@ class DefaultUnitAllocationEngine
     fund_unit.reason = reason
     fund_unit.issue_date = [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
 
-    fund_unit.save
+    fund_unit.save!
     fund_unit
   end
 
