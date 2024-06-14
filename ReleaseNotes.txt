@@ -1,3 +1,12 @@
+V7.1.23
+#####################################
+57ad7a654 Better documents delete for support
+95444d29e Change unit_type length to 25
+25fec72a3 Fixed policy and spec form input (#295)
+d548cd94c Kanban fixes (#294)
+b6ea4679f Better link to exchange rates sample for import
+d273b3dc5 Added stock conversion reverse to UI
+
 V7.1.20
 #####################################
 02d0a29cb (HEAD -> main, tag: V7.1.20, origin/main, origin/HEAD) Updated policies (#292)

@@ -50,7 +50,7 @@ class CapitalCallJob < ApplicationJob
     generate_remittance_payments
 
     # Fix the counters
-    CapitalRemittance.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
+    CapitalRemittancesCountersJob.perform_later(@capital_call.entity_id, nil)
   end
 
   def generate_remittance_payments
