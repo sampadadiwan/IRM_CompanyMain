@@ -75,6 +75,8 @@ class DigioEsignHelper
   #   private
 
   def prepare_data(doc, file_name, encoded_file, display_on_page = "last")
+    # if file name bigger than 100 chars then truncate and add ... till 100 chars
+    file_name = file_name.length > 100 ? "#{file_name[0..96]}..." : file_name
     data = {
       signers: prep_user_data(doc.e_signatures),
       expire_in_days: 90,
