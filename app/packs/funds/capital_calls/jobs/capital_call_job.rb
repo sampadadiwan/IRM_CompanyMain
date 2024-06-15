@@ -50,7 +50,7 @@ class CapitalCallJob < ApplicationJob
     generate_remittance_payments
 
     # Fix the counters
-    CapitalRemittancesCountersJob.perform_later(nil, [@capital_call.fund_id])
+    CapitalRemittancesCountersJob.perform_later([@capital_call.fund_id], nil)
   end
 
   def generate_remittance_payments

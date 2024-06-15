@@ -30,7 +30,8 @@ class CapitalCall < ApplicationRecord
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
-  # validates :percentage_called, numericality: { in: 0..100 }
+  # validates percentage_called is less than or equal to 100
+  validates :percentage_called, numericality: { less_than_or_equal_to: 100 }
   validates :commitment_type, length: { maximum: 10 }
   validates :name, :fund_closes, length: { maximum: 255 }
 

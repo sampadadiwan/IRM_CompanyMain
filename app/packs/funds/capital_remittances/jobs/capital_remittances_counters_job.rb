@@ -1,5 +1,5 @@
 class CapitalRemittancesCountersJob < BulkActionJob
-  def perform(user_id = nil, fund_ids)
+  def perform(fund_ids, user_id = nil)
     send_notification("Recalculating counters for Capital Remittances ....", user_id, :info) if user_id
     # We need to rollup the counters for the Capital Remittances
     # This usually takes a long time.

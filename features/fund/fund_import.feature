@@ -57,7 +57,7 @@ Scenario Outline: Import capital calls
   And the capital calls must have the data in the sheet
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
-  And the funds are updated with remittance numbers
+  And the remittance rollups should be correct
   And when the exchange rate changes
   Then the commitment amounts change correctly
   # Given the last investor has a user "phone=7721046692"
@@ -103,6 +103,7 @@ Scenario Outline: Import capital remittance
   And Given I upload "capital_remittances.xlsx" file for Call remittances of the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  And the remittance rollups should be correct
   And if the first remittance is deleted
   Then the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
@@ -110,10 +111,12 @@ Scenario Outline: Import capital remittance
   And I trigger the bulk action for "Toggle Verify"
   # Then I should see the "Verify completed"
   And the remittances have verified set to "false"
+  And the remittance rollups should be correct
   Given I filter the "capital_remittances" by "verified=false"
   And I trigger the bulk action for "Toggle Verify"
   # Then I should see the "Verify completed"
   And the remittances have verified set to "true"  
+  And the remittance rollups should be correct
 
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount |

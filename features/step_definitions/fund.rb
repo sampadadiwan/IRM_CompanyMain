@@ -421,6 +421,46 @@ Then('the capital call collected amount should be {string}') do |arg|
 end
 
 
+Then('the remittance rollups should be correct') do
+  # Call rollups
+  CapitalCall.all.each do |capital_call|
+    capital_call.reload
+    puts "Checking rollups for #{capital_call.name}"
+    capital_call.capital_fee_cents.should == capital_call.capital_remittances.sum(:capital_fee_cents)
+    capital_call.other_fee_cents.should == capital_call.capital_remittances.sum(:other_fee_cents)
+    capital_call.collected_amount_cents.should == capital_call.capital_remittances.verified.sum(:collected_amount_cents)
+    capital_call.call_amount_cents.should == capital_call.capital_remittances.sum(:call_amount_cents)
+
+    # Fund rollups
+    fund = capital_call.fund
+    puts "Checking rollups for fund #{fund.name}"
+    fund.collected_amount_cents.should == fund.capital_remittances.sum(:collected_amount_cents)
+    fund.capital_fee_cents.should == fund.capital_remittances.sum(:capital_fee_cents)
+    fund.other_fee_cents.should == fund.capital_remittances.sum(:other_fee_cents)
+    fund.call_amount_cents.should == fund.capital_remittances.sum(:call_amount_cents)
+    fund.collected_amount_cents.should == fund.capital_remittances.verified.sum(:collected_amount_cents)
+    fund.co_invest_collected_amount_cents.should == fund.capital_remittances.verified.co_invest.sum(:collected_amount_cents)
+
+    fund.capital_commitments.each do |cc|
+      # Commitment rollups
+      puts "Checking rollups for commitment #{cc}"
+      cc.collected_amount_cents.should == cc.capital_remittances.verified.sum(:collected_amount_cents)
+      cc.folio_collected_amount_cents.should == cc.capital_remittances.verified.sum(:folio_collected_amount_cents)
+      cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
+      cc.folio_call_amount_cents.should == cc.capital_remittances.sum(:folio_call_amount_cents)
+    
+      # KYC rollups
+      folio_remittances = CapitalRemittance.where(folio_id: cc.folio_id)
+      if cc.investor_kyc
+        puts "Checking rollups for KYC #{cc.investor_kyc}"
+        cc.investor_kyc.call_amount_cents.should == folio_remittances.sum(:call_amount_cents)
+        cc.investor_kyc.collected_amount_cents.should == folio_remittances.verified.sum(:collected_amount_cents)
+        cc.investor_kyc.folio_collected_amount_cents.should == folio_remittances.verified.sum(:folio_collected_amount_cents)
+        cc.investor_kyc.other_fee_cents.should == folio_remittances.sum(:other_fee_cents)
+      end
+    end
+  end
+end
 
 Then('user {string} have {string} access to the fund') do |truefalse, accesses|
   accesses.split(",").each do |access|
@@ -728,7 +768,11 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   click_on("Save")
   sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  if ImportUpload.last.import_type == "CapitalCall"
+    sleep(6)
+  else
+    sleep(4)
+  end
   # ImportUpload.last.failed_row_count.should == 0
 
 end
