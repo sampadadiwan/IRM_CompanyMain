@@ -50,7 +50,7 @@ class CapitalCallJob < ApplicationJob
     generate_remittance_payments
 
     # Fix the counters
-    CapitalRemittancesCountersJob.perform_later(@capital_call.entity_id, nil)
+    CapitalRemittancesCountersJob.perform_later(nil, [@capital_call.fund_id])
   end
 
   def generate_remittance_payments
@@ -65,7 +65,7 @@ class CapitalCallJob < ApplicationJob
     end
 
     # Fix the counters
-    CapitalRemittancePayment.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
+    CapitalRemittancePayment.counter_culture_fix_counts where: { fund_id: @capital_call.fund_id }
 
     # We also need to fix the status of the CapitalRemittances, as the payments will have been created
     @capital_call.capital_remittances.each do |capital_remittance|

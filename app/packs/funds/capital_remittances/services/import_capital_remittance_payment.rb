@@ -125,7 +125,8 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     # We need to run the counter cache update for the capital_remittances
     # This usually takes a long time.
-    CapitalRemittancesCountersJob.perform_later(import_upload.entity_id, import_upload.user_id)
+    fund_ids = @capital_remittances.pluck(:fund_id).uniq
+    CapitalRemittancesCountersJob.perform_later(import_upload.user_id, fund_ids)
 
     true
   end
