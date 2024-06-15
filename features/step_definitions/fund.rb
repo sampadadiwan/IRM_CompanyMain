@@ -434,11 +434,10 @@ Then('the remittance rollups should be correct') do
     # Fund rollups
     fund = capital_call.fund
     puts "Checking rollups for fund #{fund.name}"
-    fund.collected_amount_cents.should == fund.capital_remittances.sum(:collected_amount_cents)
     fund.capital_fee_cents.should == fund.capital_remittances.sum(:capital_fee_cents)
     fund.other_fee_cents.should == fund.capital_remittances.sum(:other_fee_cents)
-    fund.call_amount_cents.should == fund.capital_remittances.sum(:call_amount_cents)
-    fund.collected_amount_cents.should == fund.capital_remittances.verified.sum(:collected_amount_cents)
+    fund.call_amount_cents.should == fund.capital_remittances.pool.sum(:call_amount_cents)
+    fund.collected_amount_cents.should == fund.capital_remittances.pool.verified.sum(:collected_amount_cents)
     fund.co_invest_collected_amount_cents.should == fund.capital_remittances.verified.co_invest.sum(:collected_amount_cents)
 
     fund.capital_commitments.each do |cc|
