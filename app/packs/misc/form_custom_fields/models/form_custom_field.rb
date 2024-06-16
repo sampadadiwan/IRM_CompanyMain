@@ -50,7 +50,7 @@ class FormCustomField < ApplicationRecord
     self.field_type ||= "TextField"
   end
 
-  before_save :set_default_values
+  before_create :set_default_values
   def set_default_values
     self.name = FormCustomField.to_name(name)
     self.label ||= name.humanize

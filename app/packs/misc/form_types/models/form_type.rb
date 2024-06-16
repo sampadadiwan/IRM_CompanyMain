@@ -22,10 +22,11 @@ class FormType < ApplicationRecord
         custom_field_headers.each do |cfh|
           # Create the custom form fields for the form type
           cust_field_key = cfh
-          unless form_type.form_custom_fields.exists?(name: cust_field_key) || form_type.form_custom_fields.exists?(label: cust_field_key)
-            form_type.form_custom_fields.create(name: cust_field_key, field_type: "TextField", label: cust_field_key)
-            newly_created_cf << cust_field_key
-          end
+          name = FormCustomField.to_name(cust_field_key)
+          next if form_type.form_custom_fields.exists?(name:)
+
+          form_type.form_custom_fields.create(name:, field_type: "TextField", label: cust_field_key)
+          newly_created_cf << cust_field_key
         end
       end
     end
