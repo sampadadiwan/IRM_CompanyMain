@@ -1,3 +1,7 @@
+V7.1.25
+#####################################
+e6202c83f Formula metrics (#297)
+
 V7.1.23
 #####################################
 57ad7a654 Better documents delete for support
