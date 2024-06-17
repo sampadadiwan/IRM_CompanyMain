@@ -461,7 +461,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   end
   if files.include?("cancelled cheque")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_cancelled_cheque__bank_statement' do
+      within '#custom_file_upload_cancelled_cheque_bank_statement' do
         click_on 'Choose file'
       end
     end
@@ -497,7 +497,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(1)
+  sleep(2)
 
   if args.include?("properties")
     @investor_kyc.properties.each do |key, value|
