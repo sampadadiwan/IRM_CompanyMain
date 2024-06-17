@@ -1496,6 +1496,7 @@ Then('There should be {string} fund unit settings created with data in {string}'
       fus.custom_fields[cf_name].to_s.should == row_data[cf_header].to_s.strip
 
       fcf = FormCustomField.where(name: cf_name).first
+      binding.pry if fcf.nil?
       puts "Checking custom field #{fcf.name}"
       fcf.should be_present
     end

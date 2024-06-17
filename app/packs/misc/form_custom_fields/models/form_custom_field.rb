@@ -108,6 +108,6 @@ class FormCustomField < ApplicationRecord
   end
 
   def self.to_name(header)
-    header.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '')
+    header.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '').squeeze("_")
   end
 end
