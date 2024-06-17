@@ -55,6 +55,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
     - 'app/packs/core/documents/models/e_signature.rb'
     - 'app/packs/core/support_client_mappings/models/support_client_mapping.rb'

@@ -32,9 +32,12 @@ class AccountEntryAllocationEngine
 
       formulas.each_with_index do |fund_formula, index|
         @formula_index = index
-        AccountEntry.transaction(joinable: false) do
-          run_formula(fund_formula, fund_unit_settings)
-        end
+        # Run the formula, but time it
+        start_time = Time.zone.now
+        run_formula(fund_formula, fund_unit_settings)
+        # Store the time taken to run the formula
+        fund_formula.update_column(:execution_time, ((Time.zone.now - start_time) * 1000).to_i)
+        # Provide notification
         @helper.notify("Completed #{index + 1} of #{@formula_count}: #{fund_formula.name}", :success, @user_id)
       rescue Exception => e
         @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
