@@ -10,7 +10,7 @@ class FundUnit < ApplicationRecord
   validates :unit_type, length: { maximum: 25 }
   validates :owner_type, length: { maximum: 255 }
 
-  monetize :total_premium_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :total_premium_cents, :amount_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :owner, column_name: 'units_quantity', delta_column: 'quantity'
 
@@ -20,6 +20,10 @@ class FundUnit < ApplicationRecord
 
   def to_s
     unit_type
+  end
+
+  def amount_cents
+    quantity * (price + premium) * 100
   end
 
   def self.ransackable_attributes(_auth_object = nil)

@@ -66,7 +66,14 @@
           <%= @fund_unit.premium %>
         </td>
       </tr>
-
+      <tr>
+        <td>
+           Amount
+        </td>
+        <td>
+          <%= money_to_currency @fund_unit.amount, params %>
+        </td>
+      </tr>
       <tr>
         <td>
           Premium Paid
