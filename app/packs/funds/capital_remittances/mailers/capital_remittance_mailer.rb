@@ -29,7 +29,7 @@ class CapitalRemittanceMailer < ApplicationMailer
   def notify_capital_remittance
     subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
     # Check for attachments
-    @capital_remittance.documents.generated.each do |doc|
+    @capital_remittance.documents.generated.approved.each do |doc|
       # This password protects the file if required and attachs it
       pw_protect_attach_file(doc, @custom_notification)
     end

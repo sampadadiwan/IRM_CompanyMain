@@ -5,7 +5,7 @@ class Valuation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
-  belongs_to :investment_instrument, optional: true
+  belongs_to :investment_instrument # , optional: true
 
   validates :per_share_value, numericality: { greater_than: 0 }
   validates :valuation_date, presence: true
