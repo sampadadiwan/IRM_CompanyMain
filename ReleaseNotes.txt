@@ -1,3 +1,12 @@
+V7.1.26
+#####################################
+b3624a51d (HEAD -> main, tag: V7.1.26) Added amount
+9f987789a Fixed FCF.to_name to remove dup _
+4f47fe418 Now attaches only generated and approved docs to call remittance emails
+b3844d333 Added investor access approved check for kyc
+1830be137 Merge pull request #298 from ausangshukla/boards-ui-fix
+5627665a9 (origin/boards-ui-fix) Sidebar boards icon in dark mode
+
 V7.1.25
 #####################################
 e6202c83f Formula metrics (#297)
