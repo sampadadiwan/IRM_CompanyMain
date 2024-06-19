@@ -1,5 +1,19 @@
 V7.1.26
 #####################################
+99782a03e Fixed bug with Exchange rates and api not getting updated
+8bdfbc8a8 Added adjustments to SOA
+c04c51bf1  Added reg_env to ES dashboard
+92e371904 Removed unwanted code
+5420cc740 Added FU amounts in index
+ed5d2c29b Added bulk_inserts for account entries in Allocation engine
+479a3639d Added better indexes for remittances
+b3624a51d (tag: V7.1.26) Added amount
+9f987789a Fixed FCF.to_name to remove dup _
+4f47fe418 Now attaches only generated and approved docs to call remittance emails
+b3844d333 Added investor access approved check for kyc
+
+V7.1.26
+#####################################
 b3624a51d (HEAD -> main, tag: V7.1.26) Added amount
 9f987789a Fixed FCF.to_name to remove dup _
 4f47fe418 Now attaches only generated and approved docs to call remittance emails
