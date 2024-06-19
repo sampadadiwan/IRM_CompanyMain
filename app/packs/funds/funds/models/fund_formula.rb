@@ -33,9 +33,9 @@ class FundFormula < ApplicationRecord
     logger.debug "Sampling 1 commitment" if sample
     case commitment_type
     when "Pool"
-      cc = sample ? cc.pool.limit(1) : cc.pool
+      cc = sample ? cc.pool.limit(3) : cc.pool
     when "CoInvest"
-      cc = sample ? cc.co_invest.limit(1) : cc.co_invest
+      cc = sample ? cc.co_invest.limit(3) : cc.co_invest
     end
     cc
   end

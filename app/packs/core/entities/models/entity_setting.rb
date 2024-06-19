@@ -38,6 +38,15 @@ class EntitySetting < ApplicationRecord
     Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
   end
 
+  # rubocop : disable Rails/SkipsModelValidations
+  def self.disable_all
+    if Rails.env.development?
+      EntitySetting.update_all(sandbox: true)
+      User.update_all(whatsapp_enabled: false)
+    end
+  end
+  # rubocop : enable Rails/SkipsModelValidations
+
   private
 
   # rubocop : disable Rails/SkipsModelValidations

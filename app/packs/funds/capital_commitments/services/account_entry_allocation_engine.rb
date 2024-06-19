@@ -15,19 +15,19 @@ class AccountEntryAllocationEngine
     @sample = sample
     @rule_for = rule_for
     @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
+    @bulk_insert_records = []
   end
 
   # There are 3 types of formulas - we need to run them in the sequence defined
   def run_formulas
     if @run_allocations
-      start_time = Time.zone.now
+      run_start_time = Time.zone.now
+      # Clear all the previous allocations
       @helper.cleaup_prev_allocation(rule_for: @rule_for)
-
+      # Get the fund unit settings mapped by name
       fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
-
+      # Pick only the enabled formulas
       formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
-      formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
-
       @formula_count = formulas.count
 
       formulas.each_with_index do |fund_formula, index|
@@ -35,8 +35,10 @@ class AccountEntryAllocationEngine
         # Run the formula, but time it
         start_time = Time.zone.now
         run_formula(fund_formula, fund_unit_settings)
+
         # Store the time taken to run the formula
         fund_formula.update_column(:execution_time, ((Time.zone.now - start_time) * 1000).to_i)
+
         # Provide notification
         @helper.notify("Completed #{index + 1} of #{@formula_count}: #{fund_formula.name}", :success, @user_id)
       rescue Exception => e
@@ -44,8 +46,8 @@ class AccountEntryAllocationEngine
         Rails.logger.debug { "Error in #{fund_formula.name} : #{e.message}" }
         raise e
       end
-      time_taken = (Time.zone.now - start_time) / 60.0
-      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken.round(2)} minutes", :success, @user_id)
+      time_taken = ((Time.zone.now - run_start_time)).to_i
+      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken} seconds", :success, @user_id)
     end
 
     @helper.generate_fund_ratios if @fund_ratios
@@ -53,7 +55,14 @@ class AccountEntryAllocationEngine
   end
 
   def run_formula(fund_formula, fund_unit_settings)
-    Rails.logger.debug { "Running formula #{fund_formula.name}" }
+    @bulk_insert_records = []
+    existing_record_count = @fund.account_entries.generated.count
+    puts { "Running formula #{fund_formula.name}" }
+
+    # Rollups are based on the name and entry_type, except for portfolio investments
+    rollup_name = fund_formula.name
+    rollup_entry_type = fund_formula.entry_type
+
     case fund_formula.rule_type
     when "GenerateCustomField"
       generate_custom_fields(fund_formula, fund_unit_settings)
@@ -69,15 +78,54 @@ class AccountEntryAllocationEngine
       allocate_aggregate_portfolios(fund_formula, fund_unit_settings)
     when "AllocatePortfolioInvestment"
       allocate_portfolios_investment(fund_formula, fund_unit_settings)
+      # portfolio investments rollups is based on the entry type and not the name
+      rollup_name = nil
+      rollup_entry_type = fund_formula.name
     when "Percentage"
       compute_custom_percentage(fund_formula)
     end
+
+    # At this point eh formulas are run, and we have the account_entries in @bulk_insert_records
+    # Insert the records in bulk
+    bulk_insert_data(fund_formula, fund_unit_settings, existing_record_count, rollup_name, rollup_entry_type)
   end
 
-  def commitments; end
+  def bulk_insert_data(fund_formula, fund_unit_settings, existing_record_count, rollup_name, rollup_entry_type)
+    if @bulk_insert_records.present?
+      result = AccountEntry.insert_all(@bulk_insert_records)
+      total_record_count = @fund.account_entries.generated.reload.count
+      inserted_rown_count = total_record_count - existing_record_count
+      Rails.logger.debug { "#{fund_formula.name}: Inserted #{inserted_rown_count} of #{@bulk_insert_records.length} records, total: #{total_record_count}" }
+      raise "Inserts failed" if inserted_rown_count != @bulk_insert_records.length
+    else
+      Rails.logger.debug { "#{fund_formula.name}: No records to insert" }
+    end
 
-  # This in theory generates a custom field in the commitment
-  #
+    # Rollup the account entries
+    if fund_formula.roll_up
+      @bulk_insert_records = []
+      fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, _idx|
+        cumulative_ae = capital_commitment.rollup_account_entries(rollup_name, rollup_entry_type, @start_date, @end_date)
+        @bulk_insert_records << cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
+        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+      end
+      result = AccountEntry.insert_all(@bulk_insert_records) if @bulk_insert_records.present?
+      rollup_inserted_rown_count = @fund.account_entries.generated.reload.count - inserted_rown_count
+      Rails.logger.debug { "#{fund_formula.name}: Inserted #{rollup_inserted_rown_count} roll_up records" }
+      raise "Rollup inserts failed" if rollup_inserted_rown_count != @bulk_insert_records.length
+    else
+      Rails.logger.debug { "#{fund_formula.name}: No roll_up records to insert" }
+    end
+
+    # This is special treatment for GenerateAccountEntry
+    if fund_formula.rule_type == "GenerateAccountEntry"
+      @bulk_insert_records = []
+      rollup_as_fund_account_entry(fund_formula, fund_unit_settings)
+    end
+  end
+
+  # This in theory generates a custom field variable that can be used in other formulas
+  # Its never saved to the DB
   def generate_custom_fields(fund_formula, fund_unit_settings)
     Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
     # Generate the cols required
@@ -125,7 +173,12 @@ class AccountEntryAllocationEngine
 
       ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false, fund_formula:)
 
-      ae.save!
+      ae.validate!
+      ae.run_callbacks(:save)
+      ae_attributes = ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
+      ae_attributes[:created_at] = Time.zone.now
+      ae_attributes[:updated_at] = Time.zone.now
+      @bulk_insert_records << ae_attributes
 
       @helper.add_to_computed_fields_cache(capital_commitment, ae)
 
@@ -156,27 +209,9 @@ class AccountEntryAllocationEngine
         end
       end
 
-      if fund_formula.roll_up
-        cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date)
-        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
-      end
-
       @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
-
-  # # Computes and caches the FMV for the portfolio investments for a given end date
-  # def cached_fmv(pi, end_date)
-  #   @fmv_cache ||= {}
-  #   if @fmv_cache[end_date]  == nil
-  #     @fmv_cache[end_date] = {}
-  #     # We use the pool PIs to compute the FMV, as only pool PIs are allocated, Co Invest is specific to a commitment
-  #     @fund.portfolio_investments.pool.where(investment_date: ..@end_date).each do |pi|
-  #       @fmv_cache[end_date][pi.id] = pi.compute_fmv_cents_on(@end_date)
-  #     end
-  #   end
-  #   @fmv_cache[end_date][pi.id]
-  # end
 
   def allocate_portfolios_investment(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
@@ -190,7 +225,6 @@ class AccountEntryAllocationEngine
       portfolio_investments.each do |portfolio_investment|
         ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true, fund_formula:)
 
-        # fmv_cents = portfolio_investment.compute_fmv_cents_on(@end_date)
         begin
           ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
         rescue Exception => e
@@ -198,16 +232,11 @@ class AccountEntryAllocationEngine
         end
       end
 
-      if fund_formula.roll_up
-        cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date)
-        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
-      end
-
       @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
-  def create_account_entry(account_entry, fund_formula, capital_commitment, parent, bdg)
+  def create_account_entry(account_entry, fund_formula, capital_commitment, parent, bdg, save_now: false)
     begin
       account_entry.capital_commitment = capital_commitment
       account_entry.folio_id = capital_commitment.folio_id
@@ -223,7 +252,20 @@ class AccountEntryAllocationEngine
       account_entry.commitment_type = fund_formula.commitment_type
       account_entry.fund_formula = fund_formula
 
-      account_entry.save!
+      if save_now
+        # Save the account entry
+        account_entry.save!
+      else
+        # Validate the account entry
+        account_entry.validate!
+        account_entry.run_callbacks(:save)
+        # Add the account entry to the bulk insert records
+        ae_attributes = account_entry.attributes.except("id", "created_at", "updated_at", "generated_deleted")
+        ae_attributes[:created_at] = Time.zone.now
+        ae_attributes[:updated_at] = Time.zone.now
+        @bulk_insert_records << ae_attributes
+      end
+
       @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
     rescue SkipRule => e
       Rails.logger.debug { "Skipping #{fund_formula.name} for #{capital_commitment}: #{e.message}" }
@@ -253,25 +295,27 @@ class AccountEntryAllocationEngine
         raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
       end
 
-      # Rollup this allocation for each commitment
-      capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
-
-      # Generate fund account entry
-      @fund.fund_account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, capital_commitment_id: nil).find_each(&:destroy)
-
-      account_entries = @fund.account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, entry_type: fund_formula.entry_type, generated: true, cumulative: false)
-
-      account_entries = account_entries.where(reporting_date: ..@end_date)
-      account_entries = account_entries.where(reporting_date: @start_date..)
-
-      @fund.fund_account_entries.create(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, cumulative: true, commitment_type: fund_formula.commitment_type, amount_cents: account_entries.sum(:amount_cents))
-
       @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end
 
+  # For those account entries that are generated, we also roll them up at the fund level.
+  # This is a historical thing, its a special treatment for generate_account_entries
+  def rollup_as_fund_account_entry(fund_formula, _fund_unit_settings)
+    # Generate fund account entry
+    @fund.fund_account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, capital_commitment_id: nil).find_each(&:destroy)
+
+    account_entries = @fund.account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, entry_type: fund_formula.entry_type, generated: true, cumulative: false)
+
+    account_entries = account_entries.where(reporting_date: ..@end_date)
+    account_entries = account_entries.where(reporting_date: @start_date..)
+
+    @fund.fund_account_entries.create(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, cumulative: true, commitment_type: fund_formula.commitment_type, amount_cents: account_entries.sum(:amount_cents))
+  end
+
   # Used to generate cumulative account entries for things such as TDS which is uploaded by the fund per commitment
   def cumulate_account_entries(fund_formula, _fund_unit_settings)
+    @bulk_insert_records = []
     fund_formula.commitments(@end_date, @sample).each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
@@ -279,8 +323,12 @@ class AccountEntryAllocationEngine
 
       # Rollup this allocation for each commitment
       cumulative_ae = capital_commitment.rollup_account_entries(fund_formula.name, fund_formula.entry_type, @start_date, @end_date)
+      @bulk_insert_records << cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
       @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
     end
+
+    count = AccountEntry.insert_all(@bulk_insert_records) if @bulk_insert_records.present?
+    Rails.logger.debug { "#{fund_formula.name}: Inserted #{count} roll_up records" }
   end
 
   # ALlocate account entries of the fund, to the varios capital commitments in the fund based on formulas
@@ -322,8 +370,6 @@ class AccountEntryAllocationEngine
         raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
       end
 
-      # Rollup this allocation for each commitment
-      capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
       @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
     end
   end

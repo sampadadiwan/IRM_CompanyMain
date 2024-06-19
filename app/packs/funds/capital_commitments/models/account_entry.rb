@@ -35,6 +35,7 @@ class AccountEntry < ApplicationRecord
   scope :unit_type, ->(unit_type) { where('capital_commitments.unit_type': unit_type) }
   scope :cumulative, -> { where(cumulative: true) }
   scope :not_cumulative, -> { where.not(cumulative: true) }
+  scope :generated, -> { where(generated: true) }
 
   serialize :explanation, type: Array
 
@@ -46,20 +47,6 @@ class AccountEntry < ApplicationRecord
   validates :name,
             uniqueness: { scope: %i[fund_id capital_commitment_id entry_type reporting_date cumulative deleted_at],
                           message: "Duplicate Account Entry for reporting date" }
-
-  # counter_culture :capital_commitment,
-  #                 column_name: proc { |r| !r.cumulative && r.entry_type == "Expense" ? 'total_allocated_expense_cents' : nil },
-  #                 delta_column: 'amount_cents',
-  #                 column_names: {
-  #                   ["account_entries.entry_type = ? and cumulative = ?", "Expense", false] => 'total_allocated_expense_cents'
-  #                 }
-
-  # counter_culture :capital_commitment,
-  #                 column_name: proc { |r| !r.cumulative && r.entry_type == "Income" ? 'total_allocated_income_cents' : nil },
-  #                 delta_column: 'amount_cents',
-  #                 column_names: {
-  #                   ["account_entries.entry_type = ? and cumulative = ?", "Income", false] => 'total_allocated_income_cents'
-  #                 }
 
   before_validation :setup_period
   def setup_period
