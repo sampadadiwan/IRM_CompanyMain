@@ -1615,6 +1615,7 @@ end
 
 Then('the capital commitment should have a committed amount {string}') do |committed_amount_cents|
   @capital_commitment.reload
+  puts "Checking committed amount #{@capital_commitment.committed_amount}"
   @capital_commitment.committed_amount_cents.should == committed_amount_cents.to_i
 end
 

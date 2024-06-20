@@ -14,6 +14,7 @@ Scenario Outline: Create a commitment adjustment
     Examples:
         | adjustment                                    | new_committed_amount_cents | new_arrears_amount_cents |
         | folio_amount_cents=10000000;adjustment_type=Top Up  | 110000000                  | 0                 |
+        | folio_amount_cents=-10000000;adjustment_type=Top Up | 90000000                   | 0                 |
         | folio_amount_cents=10000000;adjustment_type=Arrear  | 100000000                  | 10000000                 |
         | folio_amount_cents=-10000000;adjustment_type=Arrear | 100000000                  | -10000000                |
   
