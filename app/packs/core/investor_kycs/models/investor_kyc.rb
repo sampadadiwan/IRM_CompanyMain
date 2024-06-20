@@ -136,7 +136,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def to_s
-    full_name
+    full_name || investor_name
   end
 
   def document_list
