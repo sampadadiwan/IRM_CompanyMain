@@ -45,7 +45,7 @@ class ImportAccountEntry < ImportUtil
         msg = "Duplicate, already present"
         Rails.logger.debug { "#{msg} #{account_entry}" }
         raise msg unless account_entry.new_record?
-        raise account_entry.errors.full_messages unless account_entry.valid?
+        raise account_entry.errors.full_messages.join(",") unless account_entry.valid?
       end
     else
       raise "Fund not found" unless fund
