@@ -3,7 +3,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Deals</h1>
   <span>
-    <%= link_to "New Deal", new_deal_path("deal[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "New Deal", new_deal_path("deal[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"} if policy(Deal.new(entity_id: current_user.entity_id)).new? %>
     <%= link_to "View Archived Deals", deals_path(include_archived:true), {class: "btn btn-outline-success"}  %>
     <%= render "investments/currency_form" %>
   </span>
@@ -12,8 +12,4 @@
 <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
             "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
 
-<% unless current_user.curr_role.casecmp?("investor") %>
 <%= render "/deals/index_cards", deals: @deals %>
-<% else %>
-<%= render "/deals/investor_view", deals: @deals %>
-<% end %>

@@ -4,12 +4,17 @@
   <span>
     <%= link_to "New Deal Investor", new_deal_investor_path("deal_investor[deal_id]": params[:deal_id],
                 "deal_investor[entity_id]": current_user.entity_id ),
-                {class: "btn btn-outline-primary"} if params[:deal_id] %>
+                {class: "btn btn-outline-primary"} if params[:deal_id] && !current_user.curr_role.casecmp?("investor") %>
 
     <%= render "investments/currency_form" %>
   </span>
 </div>
 
+<% if current_user.curr_role.casecmp?("investor")%>
+
+<%= render "/deal_investors/investor_view", deal_investors: deal_investors %>
+
+<% else %>
 <div class="table-responsive">
 
   <table id="deal_investors" class="table table-bordered dataTable jqDataTable">
@@ -57,3 +62,4 @@
 
   </div>
 
+<% end %>

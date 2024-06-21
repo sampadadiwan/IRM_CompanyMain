@@ -9,7 +9,7 @@
                     <% else %>
                         Chat
                     <% end %>
-                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, investor_id: investor&.id), target: "_blank", class: "float-right" do %>
+                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name, investor_id: investor&.id), target: "_blank", class: "float-right" do %>
                         <i class="fas fa-expand"></i>
                     <% end %>
                 </h6>
@@ -23,11 +23,11 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    Tasks   
+                    Tasks
                 </h6>
             </div>
             <div class="card-body">
-                <%= render "tasks/index", owner: owner, for_entity: current_user.entity ,tasks: 
+                <%= render "tasks/index", owner: owner, for_entity: current_user.entity ,tasks:
                     Task.incomplete.where(owner: owner).includes(:user, :for_entity) %>
             </div>
         </div>

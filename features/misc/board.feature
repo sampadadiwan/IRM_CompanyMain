@@ -153,3 +153,39 @@ Scenario: Archive a Kanban Column
   |user	      |entity               |board                            |msg	|
   |  	        |entity_type=Company  |name=Series A |Deal was successfully created|
   |  	        |entity_type=Company  |name=Series B |Deal was successfully created|
+
+
+Scenario: Deals Board details
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  When I click on the Add Item and select any Investor and save
+  When I click on a Kanban Card
+  Then The offcanvas opens
+  And i click on the details button
+  Then I should see the details of the deal investor
+
+  Examples:
+  |user	      |entity               |deal                             |msg	|
+  |  	        |entity_type=Company  |name=Series F;amount_cents=10000 |Deal was successfully created|
+
+Scenario Outline: Deal edit and details
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  When I click on the Add Item and select any Investor and save
+  When I edit the deal "<edit>"
+  Then deal and cards should be updated
+  When i click on deal details i should see the tabs "<tabs>"
+  And i should see be able to edit the deal from deal tab
+  Examples:
+  	|user	      |entity               |deal                             |msg	|edit |tabs|
+  	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|"Access Rights, Deal Docs, Deal, Reminders"|

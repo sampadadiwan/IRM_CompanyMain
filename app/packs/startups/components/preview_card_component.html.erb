@@ -3,15 +3,15 @@
 %>
 
 
-<div class="io_card col col-md-4">
-
-
-    <div class="card inner_card preview">
+<div class="io_card col col-md-4 preview">
+    <div class="card inner_card">
         <!-- <img src="..." class="card-img-top" alt="..."> -->
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
+        <div class="card-header thin-padding">
+            <div class="d-flex">
             <div class="ms-auto">
+            <span class="mb-1 badge rounded-pill bg-info-subtle text-info">
                 <%= model.status %>
+            </span>
             </div>
             </div>
         </div>
@@ -33,18 +33,8 @@
                     <% end %>
                 </div>
 
-                <%= render "/deals/preview_card_table2", model: @model ,tags: @tags, show_tags: @show_tags, col_size: @col_size%>
-
-                <%
-=begin%>
- <div class="text-center">
-                    <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
-                    <%= link_to "Show" , link , {class: "btn btn-outline-primary btn-lg" } unless hide_show_btn %>
-                </div>
-<%
-=end%>
+                <%= render "/deal_investors/preview_card_table2", model: @model , object: @object, tags: @tags, show_tags: @show_tags, col_size: @col_size%>
             </div>
-
         </div>
     </div>
 </div>

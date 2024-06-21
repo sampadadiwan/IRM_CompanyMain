@@ -1,0 +1,113 @@
+<div class="io_facts row">
+<%# show either 2 buttons Overview and data room or just data room %>
+<% if model.investment_opportunity_link.present? %>
+  <div class="col-<%=col_size.to_i/2%> thin-padding">
+    <a href="<%= investment_opportunity_path(id: model.investment_opportunity_link) %>">
+      <div class="card shadow">
+        <div class="card-body d-flex justify-content-left contained">
+            <div
+                class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+                <i class="ti ti-info-circle fs-6"></i>
+            </div>
+            <div class="ms-1 align-self-center">
+                <h5>Overview</h5>
+            </div>
+
+        </div>
+      </div>
+    </a>
+
+  </div>
+  <div class="col-<%=col_size.to_i/2%> thin-padding">
+        <a href="<%= folder_documents_path(entity_id: model.entity_id, folder_id: model.data_room_folder_id, parent_folder_id: model.document_folder.id) %>">
+          <div class="card shadow">
+            <div class="card-body d-flex justify-content-left contained">
+              <div
+                class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
+                <i class="ti ti-database fs-6"></i>
+              </div>
+              <div class="ms-1 align-self-center">
+                  <h5>Data Room</h5>
+              </div>
+            </div>
+          </div>
+        </a>
+    </div>
+
+<% else %>
+
+    <div class="col-<%=col_size%>">
+        <a href="<%= folder_documents_path(entity_id: model.entity_id, folder_id: model.data_room_folder_id, parent_folder_id: model.document_folder.id) %>">
+          <div class="card shadow">
+            <div class="card-body d-flex justify-content-left contained">
+              <div
+                class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
+                <i class="ti ti-database fs-6"></i>
+              </div>
+              <div class="ms-3 align-self-center">
+                  <h3>Data Room</h3>
+              </div>
+            </div>
+          </div>
+        </a>
+    </div>
+
+<% end %>
+
+
+<% if true || current_user.curr_role.casecmp?("investor") %>
+  <div class="col-<%= col_size %>">
+  <%# confirm if this is the correct way %>
+    <a href="<%= messages_path(owner_id: model.id, owner_type: "DealInvestor", investor_id: object.investor_id) %>">
+      <div class="card shadow">
+        <div class="card-body d-flex justify-content-left contained">
+          <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+            <i class="ti ti-messages fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3>Queries</h3>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+<% else %>
+  <div class="col-<%= col_size %>">
+    <a href="<%= tasks_path(for_entity_id: model.entity_id, owner_id: model.id, owner_type: model.class.name) %>">
+      <div class="card shadow">
+        <div class="card-body d-flex justify-content-left contained">
+          <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+            <i class="ti ti-list-check fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3>Tasks</h3>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+<% end %>
+
+  <% if show_tags && tags.present? %>
+
+  <div class="col-<%=col_size%>">
+    <div class="card shadow">
+      <div class="card-body">
+        <div class="row text-center">
+          <div
+            class="">
+            <i class=""></i>
+          </div>
+          <div class="text-center">
+              <% tags&.split(",")&.each do |tag| %>
+                <span class="badge rounded-pill bg-primary"><%= link_to tag, investment_opportunities_path(tag:) %></span>
+              <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% end %>
+
+</div>

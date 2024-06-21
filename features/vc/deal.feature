@@ -6,8 +6,8 @@ Scenario Outline: View deal without access
   Given there are "3" exisiting investments "quantity=100" from my firm in startups
   Given there are "3" exisiting deals "<deal>" with another firm in the startups
   And I am at the deal_investors page
-  Then I should not see the deals of the company
-  
+  Then I should not see the deal cards of the company
+
   Examples:
   	|deal                                 |
   	|name=Series A;amount_cents=10000     |
@@ -19,8 +19,8 @@ Scenario Outline: View deal without access
   Given there are "3" exisiting investments "quantity=100" from my firm in startups
   Given there are "3" exisiting deals "<deal>" with my firm in the startups
   And I am at the deal_investors page
-  Then I should not see the deals of the company
-  
+  Then I should not see the deal cards of the company
+
   Examples:
   	|deal                                 |
   	|name=Series A;amount_cents=10000     |
@@ -33,8 +33,8 @@ Scenario Outline: View deal with access
   Given there are "1" exisiting deals "<deal>" with my firm in the startups
   Given I have access to all deals
   And I am at the deal_investors page
-  Then I should see the deals of the company
-  
+  Then I should see the deal cards of the company
+
   Examples:
   	|deal                                 |
   	|name=Series A;amount_cents=10000     |

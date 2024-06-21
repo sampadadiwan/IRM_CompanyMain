@@ -1,0 +1,12 @@
+  <div class="row">
+      <% deal_investors.includes(:deal).each_with_index do |deal_investor, index| %>
+      <% deal = deal_investor.deal %>
+          <%= render(PreviewCardComponent.new(
+            title: deal.name,
+            path: current_user.curr_role.casecmp?("investor") ? nil : deal_path(deal),
+            model: deal,
+            object: deal_investor,
+            logo: deal.entity.logo
+          )) %>
+      <% end %>
+  </div>

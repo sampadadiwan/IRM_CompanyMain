@@ -255,7 +255,22 @@ end
 Then('I should see the deals of the company') do
   DealInvestor.where(investor_entity_id: @entity.id).find_each do |di|
     expect(page).to have_content(di.deal_name)
-    expect(page).to have_content(di.investor_name)
+  end
+end
+
+Then('I should not see the deal cards of the company') do
+  DealInvestor.find_each do |di|
+    expect(page).to have_no_content(di.deal.name)
+  end
+end
+
+Then('I should see the deal cards of the company') do
+
+  DealInvestor.where(investor_entity_id: @entity.id).find_each do |di|
+    expect(page).to have_content(di.deal.name)
+    expect(page).to have_content(di.deal.status)
+    expect(page).to have_content("Data Room")
+    expect(page).to have_content("Queries")
   end
 end
 
@@ -322,6 +337,8 @@ Then('The offcanvas opens') do
   expect(page).to have_content(@deal_investor.deal.name)
   expect(page).to have_content("Deal")
   expect(page).to have_content("Status")
+  expect(page).to have_content("Deal Lead")
+  expect(page).to have_content("Source")
 end
 
 When('I click on the delete button on offcanvas') do
@@ -359,4 +376,123 @@ When('I click on the action dropdown and dont select any Investor and save') do
   sleep(1)
   click_button('Save')
   sleep(1)
+end
+
+Then('i click on the details button') do
+  within("#kanban_card_show_#{@deal_investor.kanban_card.id}") do
+    @new_window = window_opened_by { click_on("Details") }
+  end
+end
+
+Then('I should see the details of the deal investor') do
+  within_window @new_window do
+    # Confirm the content in the new tab
+    expect(page).to have_content(@deal_investor.name)
+    expect(page).to have_content(@deal_investor.deal.name)
+    expect(page).to have_content(@deal_investor.entity.name)
+    expect(page).to have_content(@deal_investor.investor_name)
+    expect(page).to have_content("Source")
+    expect(page).to have_content("Deal Lead")
+    expect(page).to have_content("Status")
+  end
+
+  # Optionally close the new window and switch back to the original window
+  @new_window.close
+  switch_to_window(windows.first)
+end
+
+When('I edit the deal "card_view_attrs={string}"') do |string|
+  update_deal_investors(@deal)
+  # find dropdown with class dropdown and click
+  dropdown = all(".dropdown").first
+  dropdown.click
+  sleep(0.5)
+  dropdown = all(".dropdown").last
+  xpath = "/html/body/div[2]/div[1]/div/div/turbo-frame/div[2]/div/div"
+  element = find(:xpath, xpath)
+  element.click
+  click_on("Edit")
+  sleep(0.5)
+  fill_in('Tags', with: "Deal Tag")
+  find('.select2-selection--multiple').click
+
+  string.split(",").each do |attr|
+    attr = attr.strip
+    # Find the search field within the dropdown and enter 'Status'
+    find('.select2-search__field').set("#{attr}")
+    find('li.select2-results__option', text: "#{attr}").click
+  end
+  click_on("Save")
+end
+
+
+Then('deal and cards should be updated') do
+  sleep(1)
+  element = all('.show_details_link').last
+  element.click
+  sleep(0.5)
+  click_on("Deal")
+  sleep(0.5)
+  expect(page).to have_content("Deal Tag")
+  expect(page).to have_content(@deal.reload.card_view_attrs.map(&:titleize)&.join(", "))
+end
+
+When('i click on deal details i should see the tabs "{string}"') do |string|
+  string.split(",").each do |tab|
+    tab = tab.strip
+    p "clicking on tab #{tab}"
+    expect(page).to have_content(tab)
+    click_on(tab)
+    sleep(0.5)
+    if tab == "Deal Docs"
+      expect(page).to have_content("Documents: #{@deal.name}")
+      expect(page).to have_content("All Documents")
+      expect(page).to have_content("Folders")
+      expect(page).to have_content("Data Room")
+    end
+    if tab == "Access Rights"
+      expect(page).to have_content("Grant Access")
+    end
+    if tab == "Deal"
+      expect(page).to have_content("#{@deal.entity.name}")
+      expect(page).to have_content("Card View Attributes")
+      expect(page).to have_content("Start Date")
+    end
+    if tab == "Reminders"
+      expect(page).to have_content("New Reminder")
+    end
+  end
+end
+
+When('i should see be able to edit the deal from deal tab') do
+  click_on("Deal")
+  sleep(0.5)
+  element = find("#deal_show")
+  within(element) do
+    click_on("Edit")
+    sleep(1)
+    # check if the form is visible
+  end
+
+  fill_in('deal_name', with: "New Deal Name")
+  fill_in('deal_status', with: "New Status")
+  click_on("Save")
+  sleep(1)
+  element = all('.show_details_link').last
+  element.click
+  sleep(0.5)
+  click_on("Deal")
+  sleep(0.5)
+  expect(page).to have_content("New Deal Name")
+  expect(page).to have_content("New Status")
+end
+
+def update_deal_investors(deal)
+  deal_investors_temp = []
+  deal.deal_investors.count.times do |i|
+    deal_investors_temp << FactoryBot.build(:deal_investor, deal: deal)
+  end
+  deal.deal_investors.each_with_index do |di, idx|
+    di.update(pre_money_valuation: deal_investors_temp[idx].pre_money_valuation, tier: deal_investors_temp[idx].tier, status: deal_investors_temp[idx].status, deal_lead: deal_investors_temp[idx].deal_lead)
+  end
 end

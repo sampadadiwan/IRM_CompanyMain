@@ -1077,13 +1077,64 @@ h6 {
   bottom: 0;
 }
 
-.previews {
+.preview {
+  .io_facts {
+    .card {
+      margin-bottom: 3px;
+    }
+    margin-bottom: 5px;
+  }
+
   .card {
-    margin: 10px;
-    padding: 10px 10px;
+    margin: 5px;
+    padding: 5px 5px;
+  }
+  .contained {
+    overflow: hidden;
+    height: 100%;
   }
   .card-body {
-    margin: 10px;
-    padding: 10px 10px;
+    margin: 5px;
+    padding: 5px 5px;
+  }
+  .ci-logo {
+    max-width: 100%; /* Ensure the logo fits within the width of the parent */
+    height: auto; /* Maintain aspect ratio */
+    display: block;
+    margin: 0 auto; /* Center the logo if the parent container is centered */
+  }
+  .thin-padding {
+    padding: 5px;
+  }
+
+  .thin-margin {
+    margin: 5px;
+  }
+
+  .contained {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .icon-container {
+    flex-shrink: 0; /* Prevent the icon from shrinking */
+    max-width: 100%; /* Ensure it doesn't exceed its parent */
+  }
+
+  .text-container {
+    flex-grow: 1; /* Allow text to take up remaining space */
+    max-width: 100%; /* Ensure it doesn't exceed its parent */
+  }
+
+  .text-wrap {
+    white-space: nowrap; /* Prevent text from overflowing */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Add ellipsis for overflow text */
+  }
+
+  .shadow{
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); // Darker shadow
   }
 }

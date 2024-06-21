@@ -2,36 +2,37 @@
 <%
     show_metadata ||= "Yes"
     show_for ||= "Yes"
+    target ||= "_top"
 %>
 
 <tr id="<%= dom_id access_right %>">
-    <td>        
+    <td>
         <% if access_right.user_id.present? %>
             <%= access_right.user.full_name %>
         <% elsif access_right.access_to_investor_id.present? %>
-            <%= link_to access_right.investor.investor_name, investor_path(access_right.investor, tab: "investors-tab") %>
+            <%= link_to access_right.investor.investor_name, investor_path(access_right.investor, tab: "investors-tab"), target: target %>
         <% else %>
-            <%= link_to access_right.access_to_category, investors_path(category: access_right.access_to_category) %>
+            <%= link_to access_right.access_to_category, investors_path(category: access_right.access_to_category), target: target %>
         <% end %>
-    </td>  
+    </td>
     <td>
         <%= access_right.access_type.present? ? access_right.access_type : access_right.owner&.class&.name %>
-    </td>  
+    </td>
     <% if show_metadata == "Yes" %>
     <td>
         <%= access_right.metadata %>
         <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
-    </td>  
+    </td>
     <% end %>
-    
+
     <td>
-        <%= link_to access_right.owner.name, access_right.owner if access_right.owner %>
-    </td> 
+        <%= link_to access_right.owner.name, access_right.owner, target: target if access_right.owner %>
+    </td>
 
     <td>
         <%= access_right.granted_by&.full_name %>
-    </td>  
-    
+    </td>
+
     <td>
         <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger" ,
               form_class: "deleteButton" , data: {msg: "This will remove access for this investor from the fund and all documents of this fund. Proceed?", action: "click->confirm#popup" , turbo: true} %>
