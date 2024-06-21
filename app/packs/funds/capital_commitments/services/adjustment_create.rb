@@ -5,6 +5,7 @@ class AdjustmentCreate < AdjustmentAction
   left :handle_errors
   step :create_reverse_payment
   step :update_commitment
+  left :handle_commitment_errors
   step :update_owner
   step :touch_investor
 
@@ -32,7 +33,16 @@ class AdjustmentCreate < AdjustmentAction
   end
 
   def update_commitment(_ctx, commitment_adjustment:, **)
-    CapitalCommitmentUpdate.call(capital_commitment: commitment_adjustment.capital_commitment.reload).success?
+    CapitalCommitmentUpdate.wtf?(capital_commitment: commitment_adjustment.capital_commitment.reload).success?
+  end
+
+  def handle_commitment_errors(ctx, commitment_adjustment:, **)
+    capital_commitment = commitment_adjustment.capital_commitment
+    unless capital_commitment.valid?
+      ctx[:errors] = capital_commitment.errors.full_messages.join(", ")
+      Rails.logger.error capital_commitment.errors.full_messages
+    end
+    capital_commitment.valid?
   end
 
   def update_owner(_ctx, commitment_adjustment:, **)
