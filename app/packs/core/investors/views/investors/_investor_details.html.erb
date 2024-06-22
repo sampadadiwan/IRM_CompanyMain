@@ -10,18 +10,15 @@
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
         Valuations
       </a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
-         data-action="click->tabdetails#loadData">
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
         <span class="d-none d-sm-block">Portfolio</span> Investments
       </a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#instruments-tab"
-         data-action="click->tabdetails#loadData">
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#instruments-tab">
         Instruments
       </a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab"
-         data-action="click->tabdetails#loadData">
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab">
         Portfolio Income
       </a>
 
@@ -30,12 +27,10 @@
       </a>
 
       <% if current_user.enable_kpis && current_user.curr_role_investor? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab"
-          data-action="click->tabdetails#loadData">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab">
           Kpis
         </a>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpi-mappings-tab"
-          data-action="click->tabdetails#loadData">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpi-mappings-tab">
           Kpi Mapping
         </a>
       <% end %>
@@ -49,39 +44,24 @@
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
               data-action="click->tabdetails#loadData">Commitments</a>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
-              data-action="click->tabdetails#loadData">Units</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab">
+          Units
+        </a>
       <% else %>
         <% if investor.entity.permissions.enable_investments? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab" 
-              data-action="click->tabdetails#loadData">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab">
             Investments
         </a>
         <% end %>
       <% end %>
 
-      <% if policy(investor).update? %>
-
-        <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notes-tab" 
-              data-action="click->tabdetails#loadData">
-            Notes
-        </a -->
-
-        <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
-                data-action="click->tabdetails#loadData">
-          Reminders
-        </a -->
-
-      <% end %>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
-            data-action="click->tabdetails#loadData">
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
           Tasks
       </a>
 
       <% if investor.entity.permissions.enable_kycs? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
-              data-action="click->tabdetails#loadData">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"  
+            data-action="click->tabdetails#loadData">
             KYC
         </a>
       <% end %>
@@ -89,13 +69,12 @@
     <% end %>
 
     <% if policy(investor).update? %>        
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab" data-action="click->tabdetails#loadData">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
           Access Rights
         </a>
     <% end %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab" 
-          data-action="click->tabdetails#loadData">
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">
         Documents
     </a>
     
@@ -109,72 +88,48 @@
         <div id="valuations-tab" class="tab-pane fade in show active">
           <div id="valuations" class="associated_entity">
             <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
-            <%= render "/valuations/index", valuations: Valuation.where(owner: investor) %>
+            <%= render "/valuations/index", valuations: Valuation.where(owner: investor).includes(:investment_instrument) %>
           </div>
         </div>
 
         <div id="portfolio-investments-tab" class="tab-pane fade">
           <div id="portfolio_investments" class="associated_entity">
-            <%= link_to aggregate_portfolio_investments_path(investor_id: investor.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+            <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top", src: aggregate_portfolio_investments_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="instruments-tab" class="tab-pane fade">
-          <div id="investment_instruments" class="associated_entity">
-            <%= link_to investment_instruments_path(portfolio_company_id: investor.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'investment_instruments_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "investment_instruments_list", target: "_top" do %>
+          <div id="investment_instruments" class="associated_entity">            
+            <%= turbo_frame_tag "investment_instruments_list", target: "_top", src: investment_instruments_path(portfolio_company_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="cashflows-tab" class="tab-pane fade">
-          <div id="portfolio_cashflows" class="associated_entity">
-            <%= link_to portfolio_cashflows_path(portfolio_company_id: investor.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'portfolio_cashflows_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "portfolio_cashflows_list", target: "_top" do %>
+          <div id="portfolio_cashflows" class="associated_entity">            
+            <%= turbo_frame_tag "portfolio_cashflows_list", target: "_top", src: portfolio_cashflows_path(portfolio_company_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="kpis-tab" class="tab-pane fade">
-          <div id="kpis" class="associated_entity">
-            <%= link_to kpi_reports_path(portfolio_company_id: investor.id, entity_id: investor.investor_entity_id, grid_view: true), class: "load_data_link", data: { turbo_frame: 'kpi_reports_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
+          <div id="kpis" class="associated_entity">            
+            <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: investor.investor_entity_id, grid_view: true), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="kpi-mappings-tab" class="tab-pane fade">
-          <div id="investor_kpi_mappings" class="associated_entity">
-            <%= link_to investor_kpi_mappings_path(investor_id: investor.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'investor_kpi_mappings_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top" do %>
+          <div id="investor_kpi_mappings" class="associated_entity">            
+            <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="stock-adjustments-tab" class="tab-pane fade">
-          <div id="stock_adjustments" class="associated_entity">
-            <%= render "/stock_adjustments/index", stock_adjustments: investor.stock_adjustments, investor: %>
-          </div>
+          <%= turbo_frame_tag "stock_adjustments_frame", target: "_top", src: stock_adjustments_path(portfolio_company_id: investor.id), loading: :lazy do %>
+          <% end %>
         </div>
 
       <% else %>
@@ -187,43 +142,29 @@
         </div>
 
         <div id="investments-tab" class="tab-pane fade">
-          <div id="investments" class="associated_entity">
-            <%= link_to investments_path(investor_id: investor.id), class: "load_data_link", data: { turbo_frame: 'investments_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "investments_frame", target: "_top" do %>
+          <div id="investments" class="associated_entity">            
+            <%= turbo_frame_tag "investments_frame", target: "_top", src: investments_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="notes-tab" class="tab-pane fade">
-          <div id="notes" class="associated_entity">
-            <%= link_to notes_path(investor_id: investor.id), class: "load_data_link", data: { turbo_frame: 'notes_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "notes_frame", target: "_top" do %>
+          <div id="notes" class="associated_entity">            
+            <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="tasks-tab" class="tab-pane fade">
-          <div id="tasks" class="associated_entity">
-            <%= link_to tasks_path(for_entity_id: investor.investor_entity_id, entity_id: investor.entity_id), class: "load_data_link", data: { turbo_frame: 'task_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "task_list", target: "_top" do %>
+          <div id="tasks" class="associated_entity">            
+            <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(for_entity_id: investor.investor_entity_id, entity_id: investor.entity_id), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
 
         <div id="reminders-tab" class="tab-pane fade">
-          <div id="reminders" class="associated_entity">
-            <%= link_to reminders_path( owner_id: investor.id, owner_type: "Investor", sent: false), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'reminders_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "reminders_list", target: "_top" do %>
+          <div id="reminders" class="associated_entity">            
+            <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: investor.id, owner_type: "Investor", sent: false), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
@@ -247,13 +188,8 @@
         </div>
 
         <div id="fund-units-tab" class="tab-pane fade">
-          <div id="fund_units" class="associated_entity">
-            <%= link_to fund_units_path(investor_id: investor.id, cols: "all"), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'fund_units_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+          <div id="fund_units" class="associated_entity">            
+            <%= turbo_frame_tag "fund_units_list", target: "_top", src: fund_units_path(investor_id: investor.id, cols: "all"), loading: :lazy do %>
             <% end %>
           </div>     
         </div>
@@ -299,14 +235,7 @@
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
           
-          <%= link_to folder_documents_path(entity_id: investor.entity_id,
-                                        folder_id: investor.document_folder.id),
-                                        class: "load_data_link",
-                                        data: { turbo_frame: 'documents_tree_frame' } do %>
-              <span>Loading...</span>
-          <% end %>
-          
-          <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+          <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: investor.entity_id, folder_id: investor.document_folder.id), loading: :lazy do %>
           <% end %>
 
         </div>

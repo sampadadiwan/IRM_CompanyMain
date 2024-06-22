@@ -4,6 +4,7 @@ class StockAdjustmentsController < ApplicationController
   # GET /stock_adjustments or /stock_adjustments.json
   def index
     @stock_adjustments = policy_scope(StockAdjustment)
+    @stock_adjustments = @stock_adjustments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
   end
 
   # GET /stock_adjustments/1 or /stock_adjustments/1.json

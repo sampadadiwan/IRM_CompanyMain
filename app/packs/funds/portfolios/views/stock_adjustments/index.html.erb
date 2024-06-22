@@ -1,2 +1,3 @@
-
-<%= render "/stock_adjustments/index", stock_adjustments: @stock_adjustments %>
+<%= turbo_frame_tag "stock_adjustments_frame", target: "_top" do %>
+    <%= render "/stock_adjustments/index", stock_adjustments: @stock_adjustments %>
+<% end %>
