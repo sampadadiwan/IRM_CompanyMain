@@ -20,7 +20,11 @@ class DocumentsBulkActionJob < BulkActionJob
       if document.to_be_approved?
         document.update(approved: true, approved_by_id: user_id)
       else
-        msg = "Document #{document.name} is not ready for approval"
+        msg = if document.approved
+                "Document #{document.name} is already approved"
+              else
+                "Document #{document.name} is not ready for approval"
+              end
         set_error(msg, document, user_id)
       end
 
