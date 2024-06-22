@@ -2,7 +2,7 @@
 class OfferVerify < OfferAction
   step :verify
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :generate_spa
   step :notify_accept_spa
 

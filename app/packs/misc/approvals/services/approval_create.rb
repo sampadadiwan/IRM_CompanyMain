@@ -1,6 +1,6 @@
 class ApprovalCreate < ApprovalService
   step :create_model
-  left :handle_errors, fail_fast: true
+  left :handle_errors, Output(:failure) => End(:failure), fail_fast: true
   step :setup_owner_access_rights
   step :generate_responses
   step :notify

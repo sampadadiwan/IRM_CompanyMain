@@ -1,6 +1,6 @@
 class InvestorKycUpdate < InvestorKycAction
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :send_kyc_form
   step :enable_kyc
   step :validate_bank

@@ -1,6 +1,6 @@
 class SecondarySaleCreate < SecondarySaleAction
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :allocate_sale
 
   # Run allocation if the sale is finalized and price is changed

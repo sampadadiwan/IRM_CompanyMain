@@ -4,7 +4,7 @@ class StockConverter < Trailblazer::Operation
   step :adjust_from_portfolio_investment
   step :create_to_portfolio_investment
   step :update_data
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
 
   def validate_currency(_ctx, stock_conversion:, **)
     from_currency = stock_conversion.from_instrument.currency

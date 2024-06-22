@@ -2,7 +2,7 @@ class AdjustmentCreate < AdjustmentAction
   step :validate
   step :compute_adjustments
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :create_reverse_payment
   step :update_commitment
   left :handle_commitment_errors

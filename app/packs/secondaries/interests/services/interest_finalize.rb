@@ -1,7 +1,7 @@
 class InterestFinalize < InterestAction
   step :finalize
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :notify_finalized
 
   def finalize(_ctx, interest:, **)

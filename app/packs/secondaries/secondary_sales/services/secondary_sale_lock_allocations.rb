@@ -1,7 +1,7 @@
 class SecondarySaleLockAllocations < SecondarySaleAction
   step :lock_allocations
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
 
   # Run allocation if the sale is finalized and price is changed
   def lock_allocations(ctx, secondary_sale:, **)

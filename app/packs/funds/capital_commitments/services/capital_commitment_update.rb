@@ -1,7 +1,7 @@
 class CapitalCommitmentUpdate < CapitalCommitmentAction
   step :set_committed_amount
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :update_folio_id
   step :compute_percentage
   step :touch_investor

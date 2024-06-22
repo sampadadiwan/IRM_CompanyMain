@@ -9,7 +9,7 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   step :compute_fmv
   step :compute_quantity_as_of_date
   step :save
-  left :handle_errors, Output(:failure) => End(:failure)
+  left :handle_errors, Output(:failure) => End(:failure), Output(:failure) => End(:failure)
   step :compute_avg_cost
   step :setup_attribution
 

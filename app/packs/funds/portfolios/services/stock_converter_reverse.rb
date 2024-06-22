@@ -1,7 +1,7 @@
 class StockConverterReverse < Trailblazer::Operation
   step :adjust_from_portfolio_investment
   step :reverse
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
 
   def adjust_from_portfolio_investment(_ctx, stock_conversion:, **)
     from_portfolio_investment = stock_conversion.from_portfolio_investment

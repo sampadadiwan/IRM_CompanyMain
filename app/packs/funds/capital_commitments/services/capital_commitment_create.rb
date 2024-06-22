@@ -1,7 +1,7 @@
 class CapitalCommitmentCreate < CapitalCommitmentAction
   step :set_committed_amount
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :give_access_rights
   step :create_remittance
   step :compute_percentage

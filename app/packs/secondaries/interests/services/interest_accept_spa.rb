@@ -1,7 +1,7 @@
 class InterestAcceptSpa < InterestAction
   step :accept_spa
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :notify_accept_spa
 
   def accept_spa(_ctx, interest:, **)

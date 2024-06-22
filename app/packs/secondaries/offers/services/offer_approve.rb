@@ -1,6 +1,6 @@
 class OfferApprove < OfferAction
   step :approve
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   # step :notify_accept_spa
 
   def approve(ctx, offer:, current_user:, **)

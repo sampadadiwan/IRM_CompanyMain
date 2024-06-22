@@ -2,7 +2,7 @@ class FundUnitTransferService < Trailblazer::Operation
   step :validate_transfer
   step :transfer_units
   step :send_notification
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
 
   def validate_transfer(ctx, quantity:, from_commitment:, to_commitment:, fund:, **)
     valid = true

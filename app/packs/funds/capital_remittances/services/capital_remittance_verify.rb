@@ -4,7 +4,7 @@ class CapitalRemittanceVerify < CapitalRemittanceAction
   step :set_status
   step :toggle_verify
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :payment_received_notification
   step :touch_investor
 

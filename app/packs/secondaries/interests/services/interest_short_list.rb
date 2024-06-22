@@ -1,7 +1,7 @@
 class InterestShortList < InterestAction
   step :short_list
   step :save
-  left :handle_errors
+  left :handle_errors, Output(:failure) => End(:failure)
   step :notify_shortlist
 
   def short_list(_ctx, interest:, **)
