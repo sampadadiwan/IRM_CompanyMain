@@ -32,9 +32,12 @@ class SoaGenerator
   def prepare_context(capital_commitment, start_date, end_date)
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
     remittances = capital_commitment.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
+
     distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
     account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
     fund_ratios = capital_commitment.fund_ratios.includes(:capital_commitment, :fund)
+    adjustments = capital_commitment.commitment_adjustments.includes(:capital_commitment, :fund)
+
     {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
@@ -42,9 +45,17 @@ class SoaGenerator
       end_date:,
       format_end_date: Time.zone.parse(end_date).strftime("%d %B %Y"),
       capital_commitment: TemplateDecorator.decorate(capital_commitment),
+      # Sometimes we need committed_amounts before start and end date
+      committed_amount_before_start_date: capital_commitment.committed_amount_before(start_date),
+      committed_amount_before_end_date: capital_commitment.committed_amount_before(end_date),
+
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
+
+      commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
+      commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..).where(as_of: ..end_date)),
+      commitment_adjustments_before_end_date: TemplateDecorator.decorate_collection(adjustments.where(as_of: ..end_date)),
 
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),

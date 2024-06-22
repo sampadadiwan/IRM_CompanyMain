@@ -276,4 +276,16 @@ class CapitalCommitment < ApplicationRecord
   def soa_folder
     get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
   end
+
+  def committed_amount_before(date)
+    if commitment_date > date
+      # If the commitment date is after the date, then there is no commitment before the date
+      Money.new(0, fund.currency)
+    else
+      # Get the adjustments before the date
+      adjustment_amount_cents_before_date = commitment_adjustments.where("as_of <= ?", date).sum(:amount_cents)
+      # Get the committed amount before the date
+      Money.new(orig_committed_amount_cents + adjustment_amount_cents_before_date, fund.currency)
+    end
+  end
 end
