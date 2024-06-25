@@ -32,3 +32,17 @@ Scenario Outline: Edit deal
   	|user	      |entity               |deal                             |msg	|
   	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
     |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
+
+Scenario Outline: Currency Units
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  And I should see the deal in all deals page
+  And I should be able to change currency units
+
+  Examples:
+    |user	      |entity               |deal                             |msg	|
+    |  	        |entity_type=Company  |name=Series R;amount_cents=100000000 |Deal was successfully created|

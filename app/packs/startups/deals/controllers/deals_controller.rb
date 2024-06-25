@@ -7,6 +7,7 @@ class DealsController < ApplicationController
     @deals = policy_scope(Deal)
     @bread_crumbs = { Deals: deals_path }
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
+    @units = params[:units]
   end
 
   def search

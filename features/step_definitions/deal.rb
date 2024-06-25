@@ -106,6 +106,14 @@ Given('I visit the deal details page') do
   visit(deal_url(@deal))
 end
 
+Then('I should be able to change currency units') do
+  ["Crores", "Lakhs", "Million"].each do |curr|
+    select(curr, from: "currency_units")
+    sleep(0.5)
+    expect(page).to have_content(money_to_currency(@deal.amount, {units: curr}))
+  end
+end
+
 Given('there exists a deal {string} for my company') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
