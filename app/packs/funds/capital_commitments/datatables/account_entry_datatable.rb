@@ -2,8 +2,8 @@ class AccountEntryDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "AccountEntry.id", searchable: false },
-      fund_name: { source: "Fund.name", searchable: false },
-      investor_name: { source: "CapitalCommitment.investor_name", searchable: false },
+      fund_name: { source: "Fund.name", searchable: true },
+      investor_name: { source: "CapitalCommitment.investor_name", searchable: true },
       folio_id: { source: "AccountEntry.folio_id", orderable: true },
       unit_type: { source: "CapitalCommitment.unit_type", orderable: true },
       reporting_date: { source: "AccountEntry.reporting_date", orderable: true },

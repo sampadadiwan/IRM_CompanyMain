@@ -20,9 +20,8 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
-
+    @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
     @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
-
     fund_bread_crumbs("Account Entries")
 
     respond_to do |format|
