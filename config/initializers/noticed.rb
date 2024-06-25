@@ -16,6 +16,10 @@ module NotificationExtensions
     delay_seconds = delay_seconds.positive? ? rand(1..delay_seconds) : rand(1..300)
     Rails.env.development? ? 0 : delay_seconds
   end
+
+  def model
+    params[:"#{self.class.name.split('::').first.sub('Notifier', '').underscore}"]
+  end
 end
 
 Rails.application.config.to_prepare do

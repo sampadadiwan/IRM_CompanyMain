@@ -5,6 +5,8 @@ class DealInvestor < ApplicationRecord
   include KanbanCardManager
   include WithCustomField
   include RansackerAmounts.new(fields: %w[total_amount primary_amount secondary_investment fee])
+  include WithFriendlyId
+  include WithIncomingEmail
 
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
             :primary_amount_cents, :total_amount_cents, with_currency: ->(i) { i.deal.currency }

@@ -1,6 +1,7 @@
 class ApprovalResponse < ApplicationRecord
   include Trackable.new
   include WithCustomField
+  include WithIncomingEmail
 
   belongs_to :entity
   belongs_to :investor

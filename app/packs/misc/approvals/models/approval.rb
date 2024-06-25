@@ -4,6 +4,7 @@ class Approval < ApplicationRecord
   include WithCustomField
   include InvestorsGrantedAccess
   include WithCustomNotifications
+  include WithIncomingEmail
 
   belongs_to :entity
   # Associated owner such as Fund, Deal etc. The AccessRights of the owner will be copied over to the approval post creation

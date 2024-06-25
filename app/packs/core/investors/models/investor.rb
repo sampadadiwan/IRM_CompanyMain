@@ -3,6 +3,8 @@ class Investor < ApplicationRecord
   include Trackable.new
   include UpdateInvestor
   include WithFolder
+  include WithFriendlyId
+  include WithIncomingEmail
 
   update_index('investor') { self if index_record? }
 
@@ -176,6 +178,10 @@ class Investor < ApplicationRecord
 
   def to_s
     "#{investor_name} : #{category}"
+  end
+
+  def for_friendly_id
+    "#{investor_name}-#{id}"
   end
 
   def emails(type = "Employees")

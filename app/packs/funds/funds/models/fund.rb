@@ -7,6 +7,8 @@ class Fund < ApplicationRecord
   include WithCustomField
   include Trackable.new
   include WithApprovals
+  include WithFriendlyId
+  include WithIncomingEmail
 
   update_index('fund') do
     self if index_record?

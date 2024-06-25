@@ -4,6 +4,7 @@ class Offer < ApplicationRecord
   include SaleChildrenScopes
   include WithCustomField
   include ForInvestor
+  include WithIncomingEmail
 
   STANDARD_COLUMN_NAMES = ["User", "Investor", "Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Approved", "Verified", "Updated At", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[user investor_name quantity allocation_quantity allocation_percentage final_price allocation_amount approved verified updated_at dt_actions].freeze

@@ -9,6 +9,7 @@ class SecondarySale < ApplicationRecord
   include InvestorsGrantedAccess
   include ForInvestor
   include WithCustomNotifications
+  include WithIncomingEmail
 
   # Make all models searchable
   update_index('secondary_sale') { self if index_record? }

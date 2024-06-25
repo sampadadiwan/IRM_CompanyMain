@@ -4,6 +4,7 @@ class Interest < ApplicationRecord
   include SaleChildrenScopes
   include WithCustomField
   include ForInvestor
+  include WithIncomingEmail
 
   belongs_to :user
   belongs_to :investor

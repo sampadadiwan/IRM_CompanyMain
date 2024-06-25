@@ -80,4 +80,7 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
 
   config.action_dispatch.tld_length = 0
+
+  # To support ngrok
+  config.hosts << /[a-z0-9\-]+\.ngrok-free\.app/
 end

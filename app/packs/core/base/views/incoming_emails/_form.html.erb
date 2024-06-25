@@ -1,0 +1,41 @@
+<%= render FormCard.new(title: "Incoming Emails : #{incoming_email.presence || 'New'}") do %>
+  <%= form_with(model: incoming_email, validate: true) do |form| %>
+    <% if incoming_email.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(incoming_email.errors.count, "error") %> prohibited this incoming_email from being saved:</h2>
+        <ul>
+          <% incoming_email.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div class="form-group">
+      <%= form.label :from %>
+      <%= form.text_field :from, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :to %>
+      <%= form.text_field :to, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :subject %>
+      <%= form.text_field :subject, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :body %>
+      <%= form.text_area :body, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :owner_id %>
+      <%= form.text_field :owner_id, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :entity_id %>
+      <%= form.text_field :entity_id, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

@@ -456,6 +456,8 @@ GEM
     faraday-retry (1.0.3)
     ffi (1.16.3)
     foreman (0.87.2)
+    friendly_id (5.5.1)
+      activerecord (>= 4.0.0)
     fugit (1.11.0)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
@@ -766,6 +768,7 @@ GEM
     ruby-vips (2.2.0)
       ffi (~> 1.12)
     ruby2_keywords (0.0.5)
+    ruby_http_client (3.5.5)
     rubyzip (2.3.2)
     rufus-scheduler (3.9.1)
       fugit (~> 1.1, >= 1.1.6)
@@ -789,6 +792,8 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
+    sendgrid-ruby (6.7.0)
+      ruby_http_client (~> 3.4)
     shrine (3.5.0)
       content_disposition (~> 1.0)
       down (~> 5.1)
@@ -975,6 +980,7 @@ DEPENDENCIES
   factory_bot_rails
   faker
   foreman
+  friendly_id (~> 5.5.0)
   groupdate
   has_scope
   hightop
@@ -1021,6 +1027,7 @@ DEPENDENCIES
   sassc-rails
   scout_apm
   selenium-webdriver
+  sendgrid-ruby
   shrine (~> 3.3)
   sidekiq
   sidekiq-scheduler

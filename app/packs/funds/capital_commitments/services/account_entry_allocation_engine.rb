@@ -28,6 +28,7 @@ class AccountEntryAllocationEngine
       fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
       # Pick only the enabled formulas
       formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
+      formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
       @formula_count = formulas.count
 
       formulas.each_with_index do |fund_formula, index|
@@ -171,7 +172,7 @@ class AccountEntryAllocationEngine
     fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
-      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false, fund_formula:)
+      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false, fund_formula:, commitment_type: fund_formula.commitment_type)
 
       ae.validate!
       ae.run_callbacks(:save)

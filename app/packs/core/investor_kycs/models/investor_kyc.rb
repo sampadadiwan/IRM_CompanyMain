@@ -12,6 +12,8 @@ class InvestorKyc < ApplicationRecord
   include WithFolder
   include ForInvestor
   include RansackerAmounts.new(fields: %w[collected_amount committed_amount call_amount distribution_amount])
+  include WithFriendlyId
+  include WithIncomingEmail
 
   belongs_to :investor
   belongs_to :entity

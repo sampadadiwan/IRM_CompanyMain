@@ -39,6 +39,15 @@ class ApplicationMailer < ActionMailer::Base
         @reply_to = @entity.entity_setting.reply_to.presence || @cc.presence || @from
       end
 
+      if @notification.model.is_a?(WithIncomingEmail)
+        # This model can receive inbound emails
+        @reply_to = if @reply_to.present?
+                      "#{@reply_to},#{@notification.model.incoming_email_address}"
+                    else
+                      "#{@from},#{@notification.model.incoming_email_address}"
+                    end
+      end
+
     end
 
     if @user.present?

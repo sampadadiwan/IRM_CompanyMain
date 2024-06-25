@@ -1,0 +1,21 @@
+
+<tr id="<%= dom_id incoming_email %>">
+  <td>
+    <%= incoming_email.from %>
+  </td>
+  <td>
+    <%= incoming_email.to %>
+  </td>
+  <td>
+    <%= incoming_email.subject %>
+  </td>
+  <td>
+    <%= incoming_email.owner_type %>
+  </td>
+  <td>
+    <%= l incoming_email.created_at %>
+  </td>
+  <td>
+    <%= link_to "Show", incoming_email , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

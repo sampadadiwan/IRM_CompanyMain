@@ -1,3 +1,11 @@
+V7.1.31
+#####################################
+8e0bd5788 Added committed_amounts between_dates
+f303100f6 Added committed_amounts struct to SOA gen
+d0d1396eb Fixed CR verify display issue
+95d565619 Better lazy loading of investor tabs
+54accd510 Rotated SES key
+
 V7.1.26
 #####################################
 99782a03e Fixed bug with Exchange rates and api not getting updated

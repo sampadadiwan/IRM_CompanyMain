@@ -1,0 +1,61 @@
+<%= render FormCard.new(title: "#{@incoming_email}") do %>
+  <table class="table table-bordered dataTable no_hover_table">
+    <tr>
+      <td>
+        From
+      </td>
+      <td>
+        <%= @incoming_email.from %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To
+      </td>
+      <td>
+        <%= @incoming_email.to %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Subject
+      </td>
+      <td>
+        <%= @incoming_email.subject %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Body
+      </td>
+      <td>
+        <%= (@incoming_email.body).html_safe %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @incoming_email.owner %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @incoming_email.entity %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@incoming_email).update? %>
+      <%= link_to "Edit", edit_incoming_email_path(@incoming_email), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @incoming_email, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>
+
+
+<%= render "/documents/index", documents: @incoming_email.documents %>

@@ -37,8 +37,9 @@ class SoaGenerator
     account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
     fund_ratios = capital_commitment.fund_ratios.includes(:capital_commitment, :fund)
     adjustments = capital_commitment.commitment_adjustments.includes(:capital_commitment, :fund)
-    committed_amounts_before_start_date = capital_commitment.committed_amount_before(start_date)
-    committed_amounts_before_end_date = capital_commitment.committed_amount_before(end_date)
+
+    committed_amounts_before_start_date = Money.new(capital_commitment.committed_amount_cents_before(start_date), capital_commitment.fund.currency)
+    committed_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), capital_commitment.fund.currency)
     committed_amounts_between_dates = committed_amounts_before_end_date - committed_amounts_before_start_date
 
     {

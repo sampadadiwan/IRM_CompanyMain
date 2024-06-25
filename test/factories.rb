@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :incoming_email do
+    from { "MyString" }
+    to { "MyString" }
+    subject { "MyString" }
+    body { "MyText" }
+    owner { nil }
+    entity { nil }
+  end
+
   factory :stock_conversion do
     entity { nil }
     portfolio_investment { nil }

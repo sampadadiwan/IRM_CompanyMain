@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_23_121410) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -530,6 +530,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "slug"
     t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
@@ -541,6 +542,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
     t.index ["investor_signatory_id"], name: "index_capital_commitments_on_investor_signatory_id"
+    t.index ["slug"], name: "index_capital_commitments_on_slug", unique: true
   end
 
   create_table "capital_distribution_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -868,6 +870,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.text "notes"
     t.json "json_fields"
     t.bigint "form_type_id"
+    t.string "slug"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
@@ -877,6 +880,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
     t.index ["investor_id", "deal_id"], name: "index_deal_investors_on_investor_id_and_deal_id", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
+    t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end
 
   create_table "deals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -902,12 +906,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.string "investment_opportunity_link"
     t.json "card_view_attrs"
     t.string "tags", limit: 50
+    t.string "slug"
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deals_on_document_folder_id"
     t.index ["entity_id"], name: "index_deals_on_entity_id"
     t.index ["form_type_id"], name: "index_deals_on_form_type_id"
+    t.index ["slug"], name: "index_deals_on_slug", unique: true
   end
 
   create_table "devise_api_tokens", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1322,6 +1328,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
   end
 
+  create_table "friendly_id_slugs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "slug", null: false
+    t.integer "sluggable_id", null: false
+    t.string "sluggable_type", limit: 50
+    t.string "scope"
+    t.datetime "created_at"
+    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
+    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
+    t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+  end
+
   create_table "fund_formulas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "fund_id"
     t.bigint "entity_id"
@@ -1571,6 +1588,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.bigint "import_upload_id"
     t.date "first_close_date"
     t.date "last_close_date"
+    t.string "slug"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1579,6 +1597,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
+    t.index ["slug"], name: "index_funds_on_slug", unique: true
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
@@ -1717,6 +1736,22 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["impressionable_type", "impressionable_id", "session_hash"], name: "poly_session_index"
     t.index ["impressionable_type", "message", "impressionable_id"], name: "impressionable_type_message_index", length: { message: 255 }
     t.index ["user_id"], name: "index_impressions_on_user_id"
+  end
+
+  create_table "incoming_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "from"
+    t.string "to"
+    t.string "subject"
+    t.text "body"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
+    t.index ["document_folder_id"], name: "index_incoming_emails_on_document_folder_id"
+    t.index ["entity_id"], name: "index_incoming_emails_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_incoming_emails_on_owner"
   end
 
   create_table "interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2017,12 +2052,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.datetime "investor_user_updated_at"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.string "agreement_unit_type", limit: 20
+    t.string "slug"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
     t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
+    t.index ["slug"], name: "index_investor_kycs_on_slug", unique: true
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
   end
 
@@ -2094,6 +2131,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.json "json_fields"
     t.string "primary_email"
     t.bigint "import_upload_id"
+    t.string "slug"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -2102,6 +2140,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
     t.index ["pan"], name: "index_investors_on_pan"
+    t.index ["slug"], name: "index_investors_on_slug", unique: true
   end
 
   create_table "kanban_boards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3198,6 +3237,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_18_030632) do
   add_foreign_key "holdings", "users"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
+  add_foreign_key "incoming_emails", "entities"
+  add_foreign_key "incoming_emails", "folders", column: "document_folder_id"
   add_foreign_key "interests", "folders", column: "document_folder_id"
   add_foreign_key "interests", "form_types"
   add_foreign_key "interests", "funding_rounds"

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :incoming_emails
   resources :doc_questions
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
@@ -32,4 +33,6 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "entities#dashboard"
+
+  post 'incoming_emails/sendgrid', to: 'incoming_emails#sendgrid'
 end
