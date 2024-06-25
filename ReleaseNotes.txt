@@ -1,3 +1,10 @@
+V7.1.32
+#####################################
+1129bbe6f (HEAD -> main, origin/main, origin/HEAD) Fixed .env.development, removed ngrok
+ae25d742a Send grid, now receives incoming email (#306)
+f6c669a09 Kanban fixes iter3 (#305)
+12ba6725f Account entry Elastic Search enabled (#303)
+
 V7.1.31
 #####################################
 8e0bd5788 Added committed_amounts between_dates

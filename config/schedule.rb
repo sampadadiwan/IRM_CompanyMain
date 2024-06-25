@@ -4,8 +4,8 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
+
 every 1.day, at: '02:01 am', roles: [:primary] do
-  command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 
   runner "ElasticImporterJob.perform_now"
   runner "VestedJob.perform_now"
@@ -46,4 +46,8 @@ every :reboot, roles: [:app] do
   bundle "sidekiq"
   bundle "puma --yjit -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
+end
+
+every 1.day, at: '02:01 am', roles: [:all] do
+  command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
