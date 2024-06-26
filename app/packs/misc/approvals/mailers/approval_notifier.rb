@@ -17,7 +17,6 @@ class ApprovalNotifier < BaseNotifier
   end
 
   notification_methods do
-
     def model
       params[:approval_response]
     end

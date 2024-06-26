@@ -4,7 +4,7 @@ class ImportCapitalRemittancePayment < ImportUtil
   step nil, delete: :create_custom_fields
 
   def initialize(**)
-    super(**)
+    super
     @capital_remittance_ids = {}
   end
 
@@ -113,7 +113,7 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def post_process(ctx, import_upload:, **)
-    super(ctx, import_upload:, **)
+    super
 
     @capital_remittances = CapitalRemittance.where(id: @capital_remittance_ids.keys)
     @capital_remittances.each do |capital_remittance|

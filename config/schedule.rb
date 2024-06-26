@@ -4,9 +4,7 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
-
 every 1.day, at: '02:01 am', roles: [:primary] do
-
   runner "ElasticImporterJob.perform_now"
   runner "VestedJob.perform_now"
   # runner "ClearMessagesCountJob.perform_now"

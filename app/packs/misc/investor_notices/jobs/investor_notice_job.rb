@@ -6,7 +6,7 @@ class InvestorNoticeJob < ApplicationJob
       if id.present?
         create_notice_entries(id)
       else
-        InvestorNotice.where("end_date < ?", Time.zone.today).update(active: false)
+        InvestorNotice.where(end_date: ...Time.zone.today).update(active: false)
       end
     end
   end

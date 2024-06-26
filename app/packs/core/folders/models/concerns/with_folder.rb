@@ -19,7 +19,7 @@ module WithFolder
 
     def really_destroy!(update_destroy_attributes: true)
       self.being_destroyed = true
-      super(update_destroy_attributes:)
+      super
     end
   end
 

@@ -53,7 +53,7 @@ gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
 gem 'has_scope'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
-gem "solid_cache"
+gem "solid_cache", "0.4.2"
 
 gem 'activerecord-import', "1.5.0"
 # Store env variables
@@ -62,7 +62,6 @@ gem 'dotenv-rails'
 gem 'exception_notification'
 gem 'sassc-rails'
 
-gem 'action_mailbox_amazon_ingress'
 gem "aws-sdk-ec2", require: false
 gem "aws-sdk-s3", require: false
 # Elastic search client
@@ -107,7 +106,7 @@ gem 'whenever', require: false
 
 # Uses bitwise flags
 gem 'active_flag'
-gem 'active_storage_validations'
+# gem 'active_storage_validations'
 gem "acts_as_list"
 
 # Tree relationship of folders/documents

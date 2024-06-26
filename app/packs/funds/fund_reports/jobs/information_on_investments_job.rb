@@ -24,7 +24,7 @@ class InformationOnInvestmentsJob
       Rails.logger.info "Skipping #{api.id} as it has no investment instrument"
       next if inv_instrument.blank?
 
-      if api.portfolio_investments.where("investment_date <= ?", end_date).blank?
+      if api.portfolio_investments.where(investment_date: ..end_date).blank?
         Rails.logger.info "Skipping Aggregate Portfolio Investment #{api.id} as it has no portfolio investments with investment date before the end date"
         next
       end
@@ -53,7 +53,7 @@ class InformationOnInvestmentsJob
       data[index]["Amount invested (for offshore investment only) in $Mn"]["Value"] = money_to_currency(Money.new(0))
 
       data[index]["Latest Value of Investment in Rs. Cr"]["Value"] = money_to_currency(api_as_of_date.fmv)
-      data[index]["Date of valuation of column O"]["Value"] = inv_instrument.portfolio_company.valuations.where("valuation_date <= ?", end_date).where(investment_instrument_id: inv_instrument.id).last&.valuation_date&.strftime("%d-%m-%Y") || ""
+      data[index]["Date of valuation of column O"]["Value"] = inv_instrument.portfolio_company.valuations.where(valuation_date: ..end_date).where(investment_instrument_id: inv_instrument.id).last&.valuation_date&.strftime("%d-%m-%Y") || ""
     end
     ######### Save the report
 
@@ -79,7 +79,7 @@ class InformationOnInvestmentsJob
         inv_instrument = api.investment_instrument
         next if inv_instrument.blank?
 
-        if api.portfolio_investments.where("investment_date <= ?", end_date).blank?
+        if api.portfolio_investments.where(investment_date: ..end_date).blank?
           Rails.logger.info "Skipping Aggregate Portfolio Investment #{api.id} as it has no portfolio investments with investment date before the end date"
           next
         end
@@ -100,7 +100,7 @@ class InformationOnInvestmentsJob
         # Money.new(api_as_of_date.portfolio_investments.where("investment_date <= ?", end_date).where("quantity > 0").where(investment_domicile: "Overseas").sum(&:amount)).amount.to_d
 
         latest_value_of_investment = api_as_of_date.fmv.amount.to_d
-        date_of_valuation = inv_instrument.portfolio_company.valuations.where("valuation_date <= ?", end_date).where(investment_instrument_id: inv_instrument.id).last&.valuation_date&.strftime("%d-%m-%Y") || ""
+        date_of_valuation = inv_instrument.portfolio_company.valuations.where(valuation_date: ..end_date).where(investment_instrument_id: inv_instrument.id).last&.valuation_date&.strftime("%d-%m-%Y") || ""
         row_data = [sr_no, name_of_scheme, investee_company_name, pan, type_of_investee_company, type_of_security, details_of_security, offshore_investment, isin, sebi_registration_number, is_associate, is_managed_or_sponsored_by_aif, sector, amount_invested, amount_invested_in_offshore, latest_value_of_investment, date_of_valuation]
 
         if index.zero?

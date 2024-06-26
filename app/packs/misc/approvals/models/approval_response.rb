@@ -2,6 +2,7 @@ class ApprovalResponse < ApplicationRecord
   include Trackable.new
   include WithCustomField
   include WithIncomingEmail
+  include WithFolder
 
   belongs_to :entity
   belongs_to :investor
@@ -27,6 +28,14 @@ class ApprovalResponse < ApplicationRecord
   validate :no_pending_response, if: proc { |r| !r.new_record? }
   def no_pending_response
     errors.add(:status, 'You need to select a response other than Pending') if status == "Pending"
+  end
+
+  def to_s
+    "#{investor.investor_name} - #{status}"
+  end
+
+  def folder_path
+    "#{approval.folder_path}/Responses/#{investor.investor_name}-#{id}"
   end
 
   after_commit :send_notification, unless: proc { |r| r.destroyed? || r.deleted_at.present? }

@@ -7,7 +7,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def post_process(ctx, import_upload:, **)
-    super(ctx, import_upload:, **)
+    super
     # This ensures all the counters for this funds API are fixed
     # PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
     # This will cause the compute_avg_cost to be called

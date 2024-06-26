@@ -23,7 +23,7 @@ module DocumentHelper
         # descendant_ids = parent.descendant_ids
         # descendant_ids << parent.id
         # folders = Folder.where(id: descendant_ids).where(id: aids).order(:name).arrange
-        folders = Folder.where("level >= ?", parent.level).where(id: aids).order(:name).arrange
+        folders = Folder.where(level: parent.level..).where(id: aids).order(:name).arrange
       else
         folders = Folder.where(id: aids).order(:name).arrange
       end

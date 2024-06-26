@@ -8,7 +8,7 @@ class ImportInvestorAccess < ImportUtil
   end
 
   def initialize(**)
-    super(**)
+    super
     @investor_accesses = []
   end
 

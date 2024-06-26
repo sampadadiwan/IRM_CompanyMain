@@ -179,21 +179,19 @@ class Offer < ApplicationRecord
   end
 
   def compute_fees(fees)
-    total_fees = []
-    fees.each do |fee|
-      total_fees << case fee.amount_label
-                    when "Per Share"
-                      # Per Share fees
-                      { name: fee.advisor_name, fee: allocation_quantity * fee.amount }
-                    when "Percentage"
-                      # % of amount fees
-                      { name: fee.advisor_name, fee: allocation_amount * fee.amount_cents / 10_000 }
-                    else
-                      # Flat fees
-                      { name: fee.advisor_name, fee: fee.amount }
-                    end
+    fees.map do |fee|
+      case fee.amount_label
+      when "Per Share"
+        # Per Share fees
+        { name: fee.advisor_name, fee: allocation_quantity * fee.amount }
+      when "Percentage"
+        # % of amount fees
+        { name: fee.advisor_name, fee: allocation_amount * fee.amount_cents / 10_000 }
+      else
+        # Flat fees
+        { name: fee.advisor_name, fee: fee.amount }
+      end
     end
-    total_fees
   end
 
   def self.compute_payments(offers, fees)

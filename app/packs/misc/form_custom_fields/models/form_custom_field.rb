@@ -45,8 +45,8 @@ class FormCustomField < ApplicationRecord
     errors.add(:condition_on, "#{name} cannot be dependent on another conditional field") if parent_field.present? && parent_field.condition_on.present?
   end
 
-  def initialize(*args)
-    super(*args)
+  def initialize(*)
+    super
     self.field_type ||= "TextField"
   end
 

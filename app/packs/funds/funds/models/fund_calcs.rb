@@ -2,8 +2,8 @@ class FundCalcs
   def initialize(model, valuation)
     @model = model
     @valuation = valuation
-    @collected_amount_cents = @model.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @valuation.valuation_date).sum(:amount_cents)
-    @distribution_amount_cents = @model.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @valuation.valuation_date).sum(:amount_cents)
+    @collected_amount_cents = @model.capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@valuation.valuation_date }).sum(:amount_cents)
+    @distribution_amount_cents = @model.capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@valuation.valuation_date }).sum(:amount_cents)
     @committed_amount_cents = @model.instance_of?(::Fund) ? @model.capital_commitments.sum(:committed_amount_cents) : @model.committed_amount_cents
   end
 

@@ -18,8 +18,8 @@ class Approval < ApplicationRecord
 
   validates :title, :due_date, :response_status, presence: true
 
-  def initialize(*args)
-    super(*args)
+  def initialize(*)
+    super
     self.due_date ||= Time.zone.today + 7.days
     default_response_status
   end
