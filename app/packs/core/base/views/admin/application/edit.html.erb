@@ -17,7 +17,7 @@ It displays a header, and renders the `_form` partial to do the heavy lifting.
 
 <% content_for(:title) { t("administrate.actions.edit_resource", name: page.page_title) } %>
 
-<header class="main-content__header" role="banner">
+<header class="main-content__header">
   <h1 class="main-content__page-title">
     <%= content_for(:title) %>
   </h1>
@@ -26,8 +26,8 @@ It displays a header, and renders the `_form` partial to do the heavy lifting.
     <%= link_to(
       t("administrate.actions.show_resource", name: page.page_title),
       [namespace, page.resource],
-      class: "btn btn-outline-success",
-    ) if valid_action?(:show) && show_action?(:show, page.resource) %>
+      class: "button",
+    ) if accessible_action?(page.resource, :show) %>
   </div>
 </header>
 
