@@ -6,7 +6,7 @@ class ImportCapitalCall < ImportUtil
   end
 
   def pre_process(ctx, import_upload:, **)
-    super(ctx, import_upload:, **)
+    super
     @exchange_rates = get_exchange_rates(ctx[:import_file], import_upload)
     true
   end

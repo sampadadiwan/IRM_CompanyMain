@@ -8,7 +8,7 @@ class ImportFundDocs < ImportUtil
   end
 
   def initialize(**)
-    super(**)
+    super
     @commitments = []
   end
 

@@ -6,7 +6,7 @@ class ImportInvestor < ImportUtil
   end
 
   def post_process(ctx, import_upload:, **)
-    super(ctx, import_upload:, **)
+    super
     import_upload.entity.investor_notices.each do |notice|
       InvestorNoticeJob.perform_now(notice.id)
     end

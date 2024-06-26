@@ -25,7 +25,7 @@ module WithExchangeRate
 
   def get_exchange_rate(from, to, as_of)
     exchange_rates = entity.exchange_rates.where(from:, to:).order(as_of: :asc)
-    @exchange_rate = as_of ? exchange_rates.where("as_of <= ?", as_of).last : exchange_rates.latest.last
+    @exchange_rate = as_of ? exchange_rates.where(as_of: ..as_of).last : exchange_rates.latest.last
     @exchange_rate
   end
 end

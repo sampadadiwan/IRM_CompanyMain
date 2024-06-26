@@ -28,8 +28,8 @@ class AccountEntry < ApplicationRecord
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   # Used in has_scope of controller
-  scope :reporting_date_start, ->(reporting_date_start) { where("reporting_date >= ?", reporting_date_start) }
-  scope :reporting_date_end, ->(reporting_date_end) { where("reporting_date <= ?", reporting_date_end) }
+  scope :reporting_date_start, ->(reporting_date_start) { where(reporting_date: reporting_date_start..) }
+  scope :reporting_date_end, ->(reporting_date_end) { where(reporting_date: ..reporting_date_end) }
   scope :entry_type, ->(entry_type) { where(entry_type:) }
   scope :folio_id, ->(folio_id) { where(folio_id:) }
   scope :unit_type, ->(unit_type) { where('capital_commitments.unit_type': unit_type) }

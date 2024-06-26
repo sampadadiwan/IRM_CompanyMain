@@ -7,7 +7,7 @@ class ImportAccountEntry < ImportUtil
   end
 
   def initialize(**)
-    super(**)
+    super
     @account_entries = []
   end
 

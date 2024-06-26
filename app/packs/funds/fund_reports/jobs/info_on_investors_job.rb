@@ -24,7 +24,7 @@ class InfoOnInvestorsJob
 
     data = hash_tree
 
-    kyc_sebi_datas = InvestorKycSebiData.where(investor_kyc_id: @fund.capital_commitments.where("commitment_date <= ?", end_date).select(:investor_kyc_id))
+    kyc_sebi_datas = InvestorKycSebiData.where(investor_kyc_id: @fund.capital_commitments.where(commitment_date: ..end_date).select(:investor_kyc_id))
 
     # Table 1 data
     data.merge!(report_table_1_data(kyc_sebi_datas, @fund))
@@ -50,7 +50,7 @@ class InfoOnInvestorsJob
     funds = funds.where(id: fund_id) if single
 
     funds.each_with_index do |scheme, index|
-      kyc_sebi_datas = InvestorKycSebiData.where(investor_kyc_id: scheme.capital_commitments.where("commitment_date <= ?", end_date).select(:investor_kyc_id))
+      kyc_sebi_datas = InvestorKycSebiData.where(investor_kyc_id: scheme.capital_commitments.where(commitment_date: ..end_date).select(:investor_kyc_id))
       sr_no = index + 1
       scheme_name = scheme.name
       Rails.logger.debug { "InfoOnInvestors for #{scheme_name}" }
@@ -128,8 +128,8 @@ class InfoOnInvestorsJob
     sum = 0
     kyc_sebi_datas.where(investor_category: "Foreign", investor_sub_category: "Foreign Others").find_each do |investor_kyc_sebi_data|
       investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -140,8 +140,8 @@ class InfoOnInvestorsJob
     sum = 0
     kyc_sebi_datas.where(investor_category: "Other", investor_sub_category: "Others").find_each do |investor_kyc_sebi_data|
       investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -150,8 +150,8 @@ class InfoOnInvestorsJob
     sum = 0
     kyc_sebi_datas.each do |investor_kyc_sebi_data|
       investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -181,15 +181,15 @@ class InfoOnInvestorsJob
     data["T3_FVCIs"]["Value"] = t3_calculate_sum(kyc_sebi_datas, "FVCIs", end_date, :committed_amount, fund.id)
     data["T3_NRIs"]["Value"] = t3_calculate_sum(kyc_sebi_datas, "NRIs", end_date, :committed_amount, fund.id)
     data["T3_Foreign Others"]["Value"] = money_to_currency(Money.new(kyc_sebi_datas.where(investor_category: "Foreign", investor_sub_category: "Foreign Others").sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end))
     data["T3_Domestic Developmental Agencies / Government Agencies"]["Value"] = t3_calculate_sum(kyc_sebi_datas, "Domestic Developmental Agencies/Government Agencies", end_date, :committed_amount, fund.id)
 
     data["T3_Other Others"]["Value"] = money_to_currency(Money.new(kyc_sebi_datas.where(investor_category: "Other", investor_sub_category: "Others").sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end))
     data["T3_Total"]["Value"] = money_to_currency(Money.new(kyc_sebi_datas.sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: fund.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end))
     data
   end
@@ -198,9 +198,9 @@ class InfoOnInvestorsJob
     sum = 0
     kyc_sebi_datas.where(investor_sub_category: sub_cat).find_each do |investor_kyc_sebi_data|
       # go to remittance payment level and sum
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id:).where("commitment_date <= ?", end_date).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&sum_method)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id:).where(commitment_date: ..end_date).find_each do |cc|
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&sum_method)
           sum += amt if amt.present?
         end
       end
@@ -210,7 +210,7 @@ class InfoOnInvestorsJob
 
   def t3_calculate_sum(kyc_sebi_datas, sub_cat, end_date, sum_method, fund_id, show_currency: true)
     money = Money.new(kyc_sebi_datas.where(investor_sub_category: sub_cat).sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id:).where("commitment_date <= ?", end_date).sum(&sum_method)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id:).where(commitment_date: ..end_date).sum(&sum_method)
     end)
     show_currency ? money_to_currency(money) : money
   end
@@ -265,9 +265,9 @@ class InfoOnInvestorsJob
     nri_coll_amt = t2_calculate_sum(kyc_sebi_datas, "NRIs", end_date, :amount, scheme.id, show_currency: false).amount.to_d
     sum = 0
     kyc_sebi_datas.where(investor_category: "Foreign", investor_sub_category: "Foreign Others").find_each do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).find_each do |cc|
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -276,9 +276,9 @@ class InfoOnInvestorsJob
     domestic_developmental_agencies_government_agencies_coll_amt = t2_calculate_sum(kyc_sebi_datas, "Domestic Developmental Agencies/Government Agencies", end_date, :amount, scheme.id, show_currency: false).amount.to_d
     sum = 0
     kyc_sebi_datas.where(investor_category: "Other", investor_sub_category: "Others").find_each do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).find_each do |cc|
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -286,9 +286,9 @@ class InfoOnInvestorsJob
     other_others_coll_amt = Money.new(sum).amount.to_d
     sum = 0
     kyc_sebi_datas.each do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).find_each do |cc|
-        cc.capital_remittances.where("remittance_date <= ?", end_date).find_each do |cr|
-          amt = cr.capital_remittance_payments.where("payment_date <= ?", end_date).sum(&:amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).find_each do |cc|
+        cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
+          amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
           sum += amt if amt.present?
         end
       end
@@ -319,16 +319,16 @@ class InfoOnInvestorsJob
     fvci_comm_amt = t3_calculate_sum(kyc_sebi_datas, "FVCIs", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
     nri_comm_amt = t3_calculate_sum(kyc_sebi_datas, "NRIs", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
     foreign_others_comm_amt = Money.new(kyc_sebi_datas.where(investor_category: "Foreign", investor_sub_category: "Foreign Others").sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end).amount.to_d
     domestic_developmental_agencies_government_agencies_comm_amt = t3_calculate_sum(kyc_sebi_datas, "Domestic Developmental Agencies/Government Agencies", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
 
     other_others_comm_amt = Money.new(kyc_sebi_datas.where(investor_category: "Other", investor_sub_category: "Others").sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end).amount.to_d
 
     total_comm_amt = Money.new(kyc_sebi_datas.sum do |investor_kyc_sebi_data|
-      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where("commitment_date <= ?", end_date).sum(&:committed_amount)
+      investor_kyc_sebi_data.investor_kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end).amount.to_d
 
     [sr_no, scheme.name, sponsor_comm_amt, manager_comm_amt, personnel_of_sponsor_comm_amt, personnel_of_manager_comm_amt, employee_benefit_trust_of_manager_comm_amt, bank_comm_amt, nbfc_comm_amt, insurance_companies_comm_amt, pension_funds_comm_amt, provident_funds_comm_amt, aifs_comm_amt, other_corporates_comm_amt, resident_individuals_comm_amt, non_corporate_other_than_trusts_comm_amt, trusts_comm_amt, fpi_comm_amt, fvci_comm_amt, nri_comm_amt, foreign_others_comm_amt, domestic_developmental_agencies_government_agencies_comm_amt, other_others_comm_amt, total_comm_amt]

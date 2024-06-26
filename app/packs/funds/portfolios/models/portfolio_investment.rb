@@ -100,7 +100,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def compute_quantity_as_of_date
-    aggregate_portfolio_investment.portfolio_investments.where("investment_date <= ?", investment_date).sum(:quantity)
+    aggregate_portfolio_investment.portfolio_investments.where(investment_date: ..investment_date).sum(:quantity)
   end
 
   before_create :update_name

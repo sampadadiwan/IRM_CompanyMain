@@ -8,7 +8,7 @@ class ImportOfferDocs < ImportUtil
   end
 
   def initialize(**)
-    super(**)
+    super
     @commitments = []
   end
 

@@ -6,7 +6,7 @@ class ImportExchangeRate < ImportUtil
   end
 
   def initialize(**)
-    super(**)
+    super
     @exchange_rates = []
   end
 
