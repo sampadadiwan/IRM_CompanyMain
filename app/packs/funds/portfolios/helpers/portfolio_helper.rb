@@ -3,7 +3,7 @@ module PortfolioHelper
     valuations = investment_instrument.valuations
     valuations = valuations.group_by { |v| v.valuation_date.strftime("%m/%Y") }
                            .map { |date, vals| [date, vals[-1].per_share_value_cents / 100] }
-
+                           .sort_by { |date, _| Date.strptime(date, "%m/%Y") }
     line_chart valuations, library: {
       plotOptions: { column: {
         dataLabels: {
