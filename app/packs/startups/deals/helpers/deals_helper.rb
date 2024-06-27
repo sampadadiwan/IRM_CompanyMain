@@ -66,4 +66,10 @@ module DealsHelper
     } },
                                           **chart_theme_color }
   end
+
+  def kanban_funnel_data(deal)
+    deal.kanban_board.kanban_columns.map do |column|
+      [column.name, column.kanban_cards.count]
+    end
+  end
 end

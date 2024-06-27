@@ -1,6 +1,6 @@
 class KanbanCardsController < ApplicationController
-  before_action :set_kanban_card, only: %w[show edit update destroy move_kanban_card]
-  skip_before_action :verify_authenticity_token, only: %i[move_kanban_card]
+  before_action :set_kanban_card, only: %w[show edit update destroy move_kanban_card update_sequence]
+  skip_before_action :verify_authenticity_token, only: %i[move_kanban_card update_sequence]
 
   def index
     @q = KanbanCard.ransack(params[:q])
@@ -98,6 +98,17 @@ class KanbanCardsController < ApplicationController
 
   def move_kanban_card
     result = MoveKanbanCard.wtf?(params:, kanban_card: @kanban_card)
+    if result.success?
+      render json: {
+        message: "Card has been successfully moved"
+      }, status: :ok
+    else
+      render json: { errors: result["errors"] }, status: :unprocessable_entity
+    end
+  end
+
+  def update_sequence
+    result = UpdateCardSequence.wtf?(params:, kanban_card: @kanban_card)
     if result.success?
       render json: {
         message: "Card has been successfully moved"

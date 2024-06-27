@@ -36,6 +36,7 @@ end
 resources :kanban_cards do
   patch 'move_kanban_card', on: :member
   get 'search', on: :collection
+  patch 'update_sequence', on: :member
 end
 
 resources :kanban_columns do

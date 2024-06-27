@@ -321,6 +321,7 @@ Then('the deal data room should be setup') do
 end
 
 def select_investor_and_save(investor_id, tags)
+  sleep(2)
   first('button', text: "Add Item").click
   sleep(1)
   find('select#deal_investor_investor_id').find(:xpath, "option[#{investor_id}]").select_option
@@ -431,11 +432,12 @@ When('I edit the deal "card_view_attrs={string}"') do |string|
     find('li.select2-results__option', text: "#{attr}").click
   end
   click_on("Save")
+  sleep(2)
 end
 
 
 Then('deal and cards should be updated') do
-  sleep(1)
+  visit current_url
   element = all('.show_details_link').last
   element.click
   sleep(0.5)

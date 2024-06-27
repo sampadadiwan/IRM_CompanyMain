@@ -48,3 +48,11 @@ When('I add an item to the board') do
 	expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(0))
 	expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(0))
 end
+
+When('I move card to the top position') do
+	kanban_card = KanbanCard.last
+	expect(kanban_card.sequence).to(eq(2))
+	all(".kanban-card").last.find(".move-to-up-column").click
+	sleep(2)
+	expect(kanban_card.reload.sequence).to(eq(1))
+end

@@ -64,7 +64,6 @@ export default class BoardController extends Controller {
   }
 
   achivedColumnsModal(event) {
-    console.log("A");
     let modal_id = "modal_archived_columns_"+document.getElementsByClassName("scrumboard")[0].dataset.kanbanBoardId;
     const modal = new bootstrap.Modal(document.getElementById(modal_id));
     modal.toggle();
@@ -78,6 +77,8 @@ export default class BoardController extends Controller {
 			return;
 		} else if (event.target.parentElement.classList.contains("move-to-next-column")) {
 			this.moveToNextColumn(event);
+    } else if (event.target.parentElement.classList.contains("move-to-up-column")) {
+      this.moveToTopOfColumn(event);
 		} else {
 			let offcanvas_id = event.target.closest('.kanban-card').dataset.offcanvasId;
 			const offcanvas = new bootstrap.Offcanvas(document.getElementById(offcanvas_id));
@@ -172,6 +173,10 @@ export default class BoardController extends Controller {
 			let dropTarget = event.target;
 			while (dropTarget) {
 				if (dropTarget.classList.contains("connect-sorting")) {
+          if (dropTarget.dataset.kanbanColumnId == initialColumn.dataset.kanbanColumnId) {
+            this.reorderCards(dropTarget, draggedCard, event);
+            return;
+          }
 					const columnContent = dropTarget.querySelector(".connect-sorting-content");
 					columnContent.appendChild(draggedCard);
 					targetKanbanColumnId = dropTarget.dataset.kanbanColumnId;
@@ -187,6 +192,39 @@ export default class BoardController extends Controller {
 			console.error("Dragged card not found or invalid.");
 		}
 	}
+
+  reorderCards(dropTarget, draggedCard, event) {
+    const target = event.target.closest(".kanban-card");
+    const cards = Array.from(event.currentTarget.getElementsByClassName("kanban-card"));
+    const targetIndex = cards.indexOf(target);
+    target.parentElement.insertBefore(draggedCard, cards[targetIndex]);
+    this.disableCardMovement();
+    this.sendReorderCardRequest(draggedCard.dataset.kanbanCardId, targetIndex);
+  }
+
+  moveToTopOfColumn(event) {
+    const draggedCard = event.target.closest(".kanban-card");
+    this.sendReorderCardRequest(draggedCard.dataset.kanbanCardId, 0);
+  }
+
+  sendReorderCardRequest(kanbanCardId, targetIndex) {
+    $.ajax({
+      url: `/kanban_cards/${kanbanCardId}/update_sequence.json`,
+      type: "PATCH",
+      data: {
+        new_position: targetIndex
+      },
+      success: (response) => {
+        console.log("Card sequence updated");
+      },
+      error: (xhr, status, error) => {
+        console.error("Failed to update card status:", error);
+      },
+      complete: () => {
+        this.enableCardMovement();
+      }
+    });
+  }
 
 	sendDropCardRequest(cardId, targetKanbanColumnId, kanbanCardId, initialColumn, draggedCard) {
     $.ajax({

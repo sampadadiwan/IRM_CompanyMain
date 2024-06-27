@@ -1,6 +1,7 @@
 class KanbanCard < ApplicationRecord
   include Trackable.new
 
+  acts_as_list scope: :kanban_column, column: :sequence
   update_index('kanban_card') { self if index_record? }
   belongs_to :kanban_board
   belongs_to :entity

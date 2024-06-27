@@ -39,6 +39,10 @@ class KanbanCardPolicy < ApplicationPolicy
     update?
   end
 
+  def update_sequence?
+    update?
+  end
+
   def permissioned_employee?
     if belongs_to_entity?(user, record)
       if user.has_cached_role?(:company_admin)

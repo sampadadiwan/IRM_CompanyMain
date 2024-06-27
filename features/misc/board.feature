@@ -129,6 +129,23 @@ Scenario: Move card from one column to another
   |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
   |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
 
+Scenario: Move card sequence in same column
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  When I click on the Add Item and select any Investor and save
+  When I move card to the top position
+
+
+  Examples:
+  |user	      |entity               |deal                             |msg	|
+  |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
+  |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
+
 Scenario: Plane Kanban Board
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

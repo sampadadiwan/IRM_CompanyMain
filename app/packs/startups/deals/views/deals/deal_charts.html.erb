@@ -8,6 +8,55 @@
     <div class="col-lg-12 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Deal Funnel</h6>
+            </div>
+            <div class="card-body">
+                <div id="funnel-chart-container" style="width:100%; height:400px;"></div>
+                <script src="https://code.highcharts.com/highcharts.js"></script>
+                <script src="https://code.highcharts.com/modules/funnel.js"></script>
+                <script type="text/javascript">
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var themeOptions = <%= raw chart_theme_color.to_json %>;
+                        Highcharts.chart('funnel-chart-container', {
+                            chart: {
+                                type: 'funnel',
+                                backgroundColor: themeOptions.chart ? themeOptions.chart.backgroundColor : null
+                            },
+                            title: {
+                                text: ''
+                            },
+                            credits: {
+                                enabled: false
+                            },
+                            series: [{
+                                name: 'Deal Investments',
+                                data: <%= raw kanban_funnel_data(@deal) %>
+                            }],
+                            plotOptions: {
+                                series: {
+                                    dataLabels: {
+                                        enabled: true,
+                                        format: '<b>{point.name}</b> ({point.y:.1f})',
+                                        softConnector: true
+                                    },
+                                    center: ['50%', '50%'],
+                                    width: '80%',
+                                    neckWidth: '30%',
+                                    neckHeight: '25%'
+                                }
+                            }
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Potential investments</h6>
             </div>
             <div class="card-body">
@@ -16,7 +65,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="row">
     <div class="col-lg-6 mb-4">
@@ -40,3 +88,4 @@
         </div>
     </div>
 </div>
+
