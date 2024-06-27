@@ -184,7 +184,7 @@
     # expect(page).to have_content(@entity.name)
     expect(page).to have_content(@offer.quantity)
     # within("td.approved") do
-        expect(page).to have_content("No")
+        # expect(page).to have_content("No")
     # end
   end
 

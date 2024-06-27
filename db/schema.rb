@@ -2170,9 +2170,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_26_014510) do
     t.string "info_field"
     t.text "notes"
     t.string "tags"
+    t.integer "sequence"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
+    t.index ["sequence"], name: "index_kanban_cards_on_sequence"
   end
 
   create_table "kanban_columns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

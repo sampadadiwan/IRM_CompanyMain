@@ -48,8 +48,9 @@ class DocumentsBulkActionJob < BulkActionJob
   end
 
   def send_document(document, user_id, custom_notification_id)
+    binding.pry
     # If the document is subject to approval and is approved only then send it
-    if ((document.subject_to_approval? && document.approved) || !document.subject_to_approval) && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
+    if ((document.subject_to_approval? && document.approved) || !document.subject_to_approval?) && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
       if document.notification_users.present?
         document.notification_users.each do |user|
           DocumentNotifier.with(entity_id: document.entity_id,
