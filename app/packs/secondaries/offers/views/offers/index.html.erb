@@ -1,9 +1,11 @@
 
 <%= turbo_frame_tag "offers_frame", target: "_top" do %>
+    
     <%
         show_entity = params[:show_entity].present? ? params[:show_entity]=="true" : true
     %>
     <%= render "/offers/index", offers: @offers, show_entity:show_entity, 
                 secondary_sale:nil, lazy_load_data: false %>
+
 <% end %>
 

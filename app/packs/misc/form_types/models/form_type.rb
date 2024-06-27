@@ -17,7 +17,8 @@ class FormType < ApplicationRecord
         next unless imported_row_count.positive?
 
         # Find or create the form type
-        form_type = FormType.find_or_create_by(name:, entity_id: import_upload.entity_id)
+        form_type = FormType.where(name:, entity_id: import_upload.entity_id).last
+        form_type ||= FormType.create(name:, entity_id: import_upload.entity_id)
 
         custom_field_headers.each do |cfh|
           # Create the custom form fields for the form type

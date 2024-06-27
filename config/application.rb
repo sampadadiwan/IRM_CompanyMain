@@ -5,7 +5,7 @@ require "rails/all"
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
-Dotenv::Railtie.load
+Dotenv::Rails.load
 
 module CapHive
   class Application < Rails::Application
@@ -17,16 +17,6 @@ module CapHive
 
     config.autoload_paths += Dir[Rails.root.join('app/components/**/'), Rails.root.join('app/packs/**/')]
     config.autoload_paths += %W[#{config.root}/app/packs/startups]
-
-    # config.eager_load_paths += DirRails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/')]
-
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("indices")
 
     core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings]
 

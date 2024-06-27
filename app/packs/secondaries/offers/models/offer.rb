@@ -275,34 +275,4 @@ class Offer < ApplicationRecord
       Document.find_or_create_by(name: "PAN", file_data: from_offer.pan_card_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
     end
   end
-
-  # rubocop:disable Rails/SkipsModelValidations
-  def self.fix_ambit(secondary_sale_id)
-    sale = SecondarySale.find(secondary_sale_id)
-    entity = sale.entity
-    users_no_investor = []
-    sale.offers.each do |o|
-      user = o.user
-      # Change users to the entity with the same primary_email
-      inv = entity.investors.where(primary_email: user.email).last
-      if inv
-        # Switch the user to the investor entity
-        user.update_columns(entity_id: inv.investor_entity_id, entity_type: "Investor", curr_role: "investor")
-        # Give access to the user for this investor
-        ia = InvestorAccess.create(user_id: user.id, investor_id: inv.id, entity_id: entity.id, first_name: user.first_name, last_name: user.last_name, email: user.email, approved: true, investor_entity_id: inv.investor_entity_id)
-        Rails.logger.debug { "Error: #{ia.errors.full_messages}" } unless ia.valid?
-
-        AccessRight.create(entity:, owner: sale, access_to_investor_id: inv.id, metadata: "Seller")
-        # Change holdings to the investor
-        o.holding.update_columns(investor_id: inv.id, holding_type: "Investor")
-        # Change Offers to the investor
-        o.update_columns(investor_id: inv.id, offer_type: "Investor")
-      else
-        users_no_investor << user.id
-      end
-    end
-
-    users_no_investor
-  end
-  # rubocop:enable Rails/SkipsModelValidations
 end

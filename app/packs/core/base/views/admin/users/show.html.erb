@@ -18,7 +18,7 @@ as well as a link to its edit page.
 
 <% content_for(:title) { t("administrate.actions.show_resource", name: page.page_title) } %>
 
-<header class="main-content__header" role="banner">
+<header class="main-content__header">
   <h1 class="main-content__page-title">
     <%= content_for(:title) %>
   </h1>
@@ -27,37 +27,42 @@ as well as a link to its edit page.
     <%= link_to(
       t("administrate.actions.edit_resource", name: page.page_title),
       [:edit, namespace, page.resource],
-      class: "btn btn-outline-success",
-    ) if valid_action?(:edit) && show_action?(:edit, page.resource) %>
+      class: "btn btn-outline-primary",
+    ) if accessible_action?(page.resource, :edit) %>
 
-    <%= link_to(
-            t("administrate.actions.destroy"),
-            [namespace, page.resource],
-            class: "btn btn-outline-danger",
-            method: :delete,
-            data: { confirm: t("administrate.actions.confirm") }
-          ) if show_action? :destroy, page.resource %>
+    <%= button_to(
+      t("administrate.actions.destroy"),
+      [namespace, page.resource],
+      class: "btn btn-outline-danger",
+      method: :delete,
+      data: { turbo_confirm: t("administrate.actions.confirm") }
+    ) if accessible_action?(page.resource, :destroy) %>
 
-      <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support %>
-
+    <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support %>
+    
   </div>
 </header>
 
 <section class="main-content__body">
-  <table class="table table-bordered dataTable ">
-    <% page.attributes.each do |attribute| %>
-      <tr>
+  <dl>
+    <% page.attributes.each do |title, attributes| %>
+      <fieldset class="<%= "field-unit--nested" if title.present? %>">
+        <% if title.present? %>
+          <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
+        <% end %>
 
-        <td id="<%= attribute.name %>">
-        <%= t(
-          "helpers.label.#{resource_name}.#{attribute.name}",
-          default: page.resource.class.human_attribute_name(attribute.name),
-        ) %>
-        </td>
+        <% attributes.each do |attribute| %>
+          <dt class="attribute-label" id="<%= attribute.name %>">
+          <%= t(
+            "helpers.label.#{resource_name}.#{attribute.name}",
+            default: page.resource.class.human_attribute_name(attribute.name),
+          ) %>
+          </dt>
 
-        <td><%= render_field attribute, page: page %></td>
-
-      </tr>
+          <dd class="attribute-data attribute-data--<%=attribute.html_class%>"
+              ><%= render_field attribute, page: page %></dd>
+        <% end %>
+      </fieldset>
     <% end %>
-  </table>
+  </dl>
 </section>

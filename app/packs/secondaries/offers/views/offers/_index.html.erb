@@ -2,88 +2,94 @@
 
 <%= render "/layouts/filter", associations: [:investor, :user, :secondary_sale, :interest] %>
 
+<% if params[:card].present? %>
+    <div class="row">
+        <% @offers.each do |offer| %>
+            <%= render "/offers/card", offer: offer %>
+        <% end %>
+    </div>
+    <%= paginate @offers.page(params[:page]) %>
+<% else %>
 
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800 ml-5">
+            Offers:
+            <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
+        </h1>
+        <span>
+            <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
+                                    class: "btn btn-outline-primary" if @secondary_sale %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        Offers:
-        <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
-    </h1>
-    <span>
-        <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
-                                  class: "btn btn-outline-primary" if @secondary_sale %>
+            
+            <div class="btn-group">
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Upload / Download
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-        
-        <div class="btn-group">
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Upload / Download
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-                <%= link_to "Upload Offers", 
-                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                    "import_upload[owner_type]": "SecondarySale", 
-                    "import_upload[import_type]": "Offer", 
-                    "sample_upload": "OFFERS_SAMPLE"), 
-                    { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
-
-                <%= link_to "Upload Offers Documents", 
+                    <%= link_to "Upload Offers", 
                         new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
                         "import_upload[owner_type]": "SecondarySale", 
-                        "import_upload[import_type]": "OfferDocs", 
-                        "sample_upload": "OFFERS_DOCS_SAMPLE"), 
+                        "import_upload[import_type]": "Offer", 
+                        "sample_upload": "OFFERS_SAMPLE"), 
                         { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
+                    <%= link_to "Upload Offers Documents", 
+                            new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                            "import_upload[owner_type]": "SecondarySale", 
+                            "import_upload[import_type]": "OfferDocs", 
+                            "sample_upload": "OFFERS_DOCS_SAMPLE"), 
+                            { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
-                <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                        class: "dropdown-item" if @secondary_sale %>
+
+                    <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                                            class: "dropdown-item" if @secondary_sale %>
 
 
 
+                    </div>
                 </div>
             </div>
-        </div>
 
 
-        <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
-                                  method: :patch, class: "btn btn-outline-success" if @secondary_sale && policy(@secondary_sale).approve_offers? %>
+            <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
+                                    method: :patch, class: "btn btn-outline-success" if @secondary_sale && policy(@secondary_sale).approve_offers? %>
 
-    </span>
-</div>
-
-
-
-<% 
-    lazy_load_data ||= false 
-    import_upload_id ||= params[:import_upload_id]
-%>
-
-<% 
-    data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) 
-
-    col_params = {no_fund: true}
-    if current_user.curr_role == "investor"
-      col_params[:column_names] = Offer::INVESTOR_COLUMN_NAMES
-      col_params[:column_fields] = Offer::INVESTOR_COLUMN_FIELDS
-    end
-    column_names, field_list = get_columns(Offer, params: col_params) 
-%>
-
-<div data-controller="offers" 
-     data-offers-lazy-load-data-value=<%= false %>
-     data-offers-table-name-value="#offers"
-     data-offers-field-list-value=<%=field_list%>>
-  
-    <div class="table-responsive">
-
-        <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->offers#loadData"><span>Load Data</span></a>
-        <% end %>
-
-        <%= render CustomTable.new(data_source:, id: "offers", column_names:) %>
-
+        </span>
     </div>
 
-</div>
+    <% 
+        lazy_load_data ||= false 
+        import_upload_id ||= params[:import_upload_id]
+    %>
+
+    <% 
+        data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) 
+
+        col_params = {no_fund: true}
+        if current_user.curr_role == "investor"
+        col_params[:column_names] = Offer::INVESTOR_COLUMN_NAMES
+        col_params[:column_fields] = Offer::INVESTOR_COLUMN_FIELDS
+        end
+        column_names, field_list = get_columns(Offer, params: col_params) 
+    %>
+
+    <div data-controller="offers" 
+        data-offers-lazy-load-data-value=<%= false %>
+        data-offers-table-name-value="#offers"
+        data-offers-field-list-value=<%=field_list%>>
+    
+        <div class="table-responsive">
+
+            <% if lazy_load_data %>
+            <a class="load_data_link" data-action="click->offers#loadData"><span>Load Data</span></a>
+            <% end %>
+
+            <%= render CustomTable.new(data_source:, id: "offers", column_names:) %>
+
+        </div>
+
+    </div>
+<% end %>

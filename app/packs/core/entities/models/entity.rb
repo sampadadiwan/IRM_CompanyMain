@@ -277,4 +277,8 @@ class Entity < ApplicationRecord
   def folder_path
     root_folder.full_path.to_s
   end
+
+  def default_currency_units
+    currency == "INR" ? "Crores" : "Million"
+  end
 end

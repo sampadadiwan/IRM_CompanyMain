@@ -89,9 +89,9 @@ class ApplicationController < ActionController::Base
   def setup_custom_fields(model, type: nil)
     # Custom form fields
     form_type = if type.present?
-                  FormType.where(entity_id: model.entity_id, name: type).first
+                  FormType.where(entity_id: model.entity_id, name: type).last
                 else
-                  FormType.where(entity_id: model.entity_id, name: model.class.name).first
+                  FormType.where(entity_id: model.entity_id, name: model.class.name).last
                 end
     model.form_type = form_type
   end
