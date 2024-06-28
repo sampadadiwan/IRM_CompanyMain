@@ -195,12 +195,20 @@ export default class BoardController extends Controller {
 
   reorderCards(dropTarget, draggedCard, event) {
     const target = event.target.closest(".kanban-card");
+    const parentElement = target.parentElement;
     const cards = Array.from(event.currentTarget.getElementsByClassName("kanban-card"));
     const targetIndex = cards.indexOf(target);
-    target.parentElement.insertBefore(draggedCard, cards[targetIndex]);
+    if((cards.indexOf(draggedCard) + 1) == targetIndex) {
+      parentElement.insertBefore(draggedCard, target.nextSibling);
+    } else {
+      parentElement.insertBefore(draggedCard, target);
+    }
+    const updatedCards = Array.from(event.currentTarget.getElementsByClassName("kanban-card"));
     this.disableCardMovement();
-    this.sendReorderCardRequest(draggedCard.dataset.kanbanCardId, targetIndex);
+    const sequence = updatedCards.indexOf(draggedCard) + 1;
+    this.sendReorderCardRequest(draggedCard.dataset.kanbanCardId, sequence);
   }
+
 
   moveToTopOfColumn(event) {
     const draggedCard = event.target.closest(".kanban-card");
