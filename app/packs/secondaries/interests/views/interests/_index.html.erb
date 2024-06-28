@@ -3,7 +3,7 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Interests</h1>
-    <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), 
+    <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id),
         {class: "btn btn-outline-primary" } if @secondary_sale %>
 </div>
 
@@ -16,7 +16,7 @@
             <th>
                 Interest Entity
             </th>
-            
+
             <th>
                 User
             </th>
@@ -24,7 +24,7 @@
             <th>
                 Type
             </th>
-        
+
             <th>
                 Quantity
             </th>
@@ -32,7 +32,7 @@
                 Interest Price
             </th>
             <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>
-            
+
                 <th>
                     Potential Allocation
                 </th>
@@ -50,7 +50,7 @@
             <th>
                 Allocation Amount
             </th>
-            
+
             <th>
                 Shortlisted
             </th>

@@ -1,68 +1,74 @@
   <%= render "/secondary_sales/stats", secondary_sale: @secondary_sale if policy(@secondary_sale).owner? %>
   <%= render "/secondary_sales/show", secondary_sale: @secondary_sale %>
 
-  <div>    
+  <div>
     <% if policy(@secondary_sale).update? %>
 
       <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } %> 
+          <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } %>
 
           <%# label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
           <%# popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external investment advisors" : "This will allow external investment advisors to view this sale and place interests for buying." %>
 
-          <%#= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
-              class: "dropdown-item" , 
-              data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, title: label, method: "patch"}  %> 
-          
-          <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale), 
+          <%#= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch,
+              class: "dropdown-item" ,
+              data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, title: label, method: "patch"}  %>
+
+          <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale),
               class: "dropdown-item" if policy(@secondary_sale).finalize_allocation? %>
 
-          <%= button_to "Delete" , @secondary_sale, method: :delete, class: "dropdown-item" , 
+          <%= button_to "Delete" , @secondary_sale, method: :delete, class: "dropdown-item" ,
               form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-              
 
-          <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), 
-              method: :patch, class: "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %> 
 
-          <%= button_to "Generate All SPAs" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class: 
+          <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale),
+              method: :patch, class: "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %>
+          <%
+              document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
+              doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
+              %>
+
+          <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
+
+          <%= button_to "Generate All SPAs" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class:
             "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",
-            msg: "This will kick off the SPA generation process for all offers, which will take a few mins. Note existing SPAs will be deleted and regenerated."} if policy(@secondary_sale).generate_spa?  %> 
+            msg: "This will kick off the SPA generation process for all offers, which will take a few mins. Note existing SPAs will be deleted and regenerated."} if policy(@secondary_sale).generate_spa?  %>
         </div>
       </div>
     </div>
 
-      
-      
-    <% end %>    
 
-    
-                              
+
+    <% end %>
+
+
+
 
 
     <%  if policy(@secondary_sale).view_allocations? %>
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           View Allocations
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <%= link_to "Offer Allocations",
-              finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
-              {class: "dropdown-item" } %> 
+              finalize_offer_allocation_secondary_sale_path(@secondary_sale),
+              {class: "dropdown-item" } %>
           <%= link_to "Interest Allocations",
-              finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
-              {class: "dropdown-item" } %> 
+              finalize_interest_allocation_secondary_sale_path(@secondary_sale),
+              {class: "dropdown-item" } %>
 
-          <%= link_to "Add Investor Notice" , 
-                new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id, 
+          <%= link_to "Add Investor Notice" ,
+                new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id,
                 "investor_notice[owner_type]": "SecondarySale"), {class: "dropdown-item" } %>
         </div>
       </div>
@@ -71,28 +77,30 @@
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Reports
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <%= link_to "Generated Docs",
-              documents_path({"q"=>{"c"=>{"0"=>{"a"=>{"0"=>{"name"=>"owner_tag"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"Generated"}}}, "1"=>{"a"=>{"0"=>{"name"=>"approved"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"false"}}}}}, "no_folders"=>"true", "folder_id"=>"#{@secondary_sale.document_folder_id}", "button"=>""}), 
-              {class: "dropdown-item" } %> 
+              documents_path({"q"=>{"c"=>{"0"=>{"a"=>{"0"=>{"name"=>"owner_tag"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"Generated"}}}, "1"=>{"a"=>{"0"=>{"name"=>"approved"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"false"}}}}}, "no_folders"=>"true", "folder_id"=>"#{@secondary_sale.document_folder_id}", "button"=>""}),
+              {class: "dropdown-item" } %>
 
           <div class="dropdown-divider"></div>
-          
+
           <%= link_to "View Payments",
-              payments_secondary_sale_path(@secondary_sale), 
-              {class: "dropdown-item" } %> 
+              payments_secondary_sale_path(@secondary_sale),
+              {class: "dropdown-item" } %>
 
-          <%= link_to "Offers Completion Report", 
-              offers_secondary_sale_path(@secondary_sale, report: "completion_report"), 
+          <%= link_to "Offers Completion Report",
+              offers_secondary_sale_path(@secondary_sale, report: "completion_report"),
               class: "dropdown-item" %>
 
-          <%= link_to "Interests Completion Report", 
-              interests_secondary_sale_path(@secondary_sale, report: "completion_report"), 
+          <%= link_to "Interests Completion Report",
+              interests_secondary_sale_path(@secondary_sale, report: "completion_report"),
               class: "dropdown-item" %>
+
+          <%= link_to "E-Signatures Report" , report_secondary_sale_path(id: @secondary_sale.id, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
 
         </div>
       </div>
@@ -100,59 +108,59 @@
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Notifications
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          
-          <%= button_to "Send Sale Open : To Sellers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_offers"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all sellers notifying that the sale is open", 
-                      method: :patch }  %>   
 
-          <%= button_to "Send Offer Reminder : To Sellers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all sellers notifying that the offer date is approaching", 
-                      method: :patch }  %>   
-        
-          <%= button_to "Send Sale Open : To Buyers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_interests"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all buyers notifying that the sale is open for interests", 
-                      method: :patch }  %>   
+          <%= button_to "Send Sale Open : To Sellers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_offers"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all sellers notifying that the sale is open",
+                      method: :patch }  %>
 
-          <%= button_to "Send Interest Reminder : To Buyers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_interests"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all buyers notifying that they need to enter their interest", 
-                      method: :patch }  %>   
-                  
+          <%= button_to "Send Offer Reminder : To Sellers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all sellers notifying that the offer date is approaching",
+                      method: :patch }  %>
 
-          <%= button_to "Allocation Notification : To All", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_allocation"),    
-              class: "dropdown-item", 
-              data: {action: "click->confirm#popup", 
-              msg: "Send email to all participants notifying that the allocation is complete & documents need to be uploaded", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
-          
+          <%= button_to "Send Sale Open : To Buyers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_interests"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all buyers notifying that the sale is open for interests",
+                      method: :patch }  %>
 
-          <%= button_to "Confirm SPA Notification : To Sellers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_sellers"),    
-              class: "dropdown-item", 
-              data: {action: "click->confirm#popup", 
-              msg: "Send email to all veriied sellers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
-          
-          <%= button_to "Confirm SPA Notification : To Buyers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_buyers"),    
-              class: "dropdown-item", 
-              data: {action: "click->confirm#popup", 
-              msg: "Send email to all buyers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
+          <%= button_to "Send Interest Reminder : To Buyers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_interests"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all buyers notifying that they need to enter their interest",
+                      method: :patch }  %>
+
+
+          <%= button_to "Allocation Notification : To All",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_allocation"),
+              class: "dropdown-item",
+              data: {action: "click->confirm#popup",
+              msg: "Send email to all participants notifying that the allocation is complete & documents need to be uploaded", method: :patch } if policy(@secondary_sale).notify_allocations? %>
+
+
+          <%= button_to "Confirm SPA Notification : To Sellers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_sellers"),
+              class: "dropdown-item",
+              data: {action: "click->confirm#popup",
+              msg: "Send email to all veriied sellers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %>
+
+          <%= button_to "Confirm SPA Notification : To Buyers",
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_buyers"),
+              class: "dropdown-item",
+              data: {action: "click->confirm#popup",
+              msg: "Send email to all buyers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %>
 
         </div>
       </div>
@@ -162,7 +170,7 @@
 
   </div>
 
-  <%#= render "/layouts/steps", steps: ["Setup Access Rights", "View / Approve Offers", 
+  <%#= render "/layouts/steps", steps: ["Setup Access Rights", "View / Approve Offers",
              "View / Shortlist Interests", "Finalize Sale Price", "Allocate Sale & Edit Allocations"].freeze if belongs_to_entity_id?(current_user, @secondary_sale.entity_id) %>
 
   <%= render "/secondary_sales/secondary_sale_details" , secondary_sale: @secondary_sale %>

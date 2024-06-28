@@ -175,7 +175,19 @@ class Offer < ApplicationRecord
   end
 
   def generate_spa(user = nil)
+    validate_spa_generation
+    return false if errors.present?
+
     OfferSpaJob.perform_later(id, user_id: user&.id) if saved_change_to_verified? && verified
+    true
+  end
+
+  def validate_spa_generation
+    errors.add(:base, "Offer #{id} is not assiciated with any interest!") if interest.blank?
+    errors.add(:base, "No Offer Template found for Offer #{id}") if secondary_sale.documents&.where(owner_tag: "Offer Template").blank?
+
+    errors.add(:base, "Offer #{id} does not have any Seller Signatories!") if seller_signatories.blank?
+    errors.add(:base, "Intrest #{interest&.id} for offer #{id} does not have any Buyer Signatories!") if buyer_signatories.blank?
   end
 
   def compute_fees(fees)
@@ -227,7 +239,7 @@ class Offer < ApplicationRecord
   ################# eSign stuff follows ###################
 
   def buyer_signatories
-    buyer_signatory_emails&.split(",")
+    self&.interest&.buyer_signatory_emails&.split(",")
   end
 
   def seller_signatories

@@ -555,6 +555,7 @@ FactoryBot.define do
     contact_name {Faker::Name.name}
     email {Faker::Internet.email}
     PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
+    buyer_signatory_emails {Faker::Internet.email}
   end
 
 
@@ -568,6 +569,7 @@ FactoryBot.define do
     bank_routing_info {Faker::Bank.routing_number}
     full_name {Faker::Name.first_name + " " + Faker::Name.last_name}
     ifsc_code {Faker::Bank.swift_bic}
+    seller_signatory_emails {Faker::Internet.email}
   end
 
   factory :secondary_sale do

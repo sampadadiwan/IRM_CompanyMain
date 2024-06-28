@@ -62,6 +62,7 @@ class ESignaturesController < ApplicationController
   def set_e_signature
     @e_signature = ESignature.find(params[:id])
     authorize @e_signature
+    @bread_crumbs = { "#{@e_signature.document.name}": document_path(@e_signature.document), eSignature: e_signature_path(@e_signature) }
   end
 
   # Only allow a list of trusted parameters through.

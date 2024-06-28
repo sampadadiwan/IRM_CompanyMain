@@ -1,5 +1,5 @@
 
-<%= render "/layouts/steps", steps: ["Setup Secondary Sales", "Customize Sale", "Setup Access Rights", 
+<%= render "/layouts/steps", steps: ["Setup Secondary Sales", "Customize Sale", "Setup Access Rights",
                         "View/Approve Offers", "Receive/Shortlist Interests"].freeze if current_user.has_cached_role?(:employee) %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -45,7 +45,7 @@
       </thead>
 
       <tbody>
-        <% @secondary_sales.each do |secondary_sale| %>
+      <% @secondary_sales.each do |secondary_sale| %>
           <%= render secondary_sale %>
         <% end %>
       </tbody>

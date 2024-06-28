@@ -1,7 +1,7 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
                                               send_notification spa_upload lock_allocations offers interests payments approve_offers
-                                              finalize_offer_allocation finalize_interest_allocation generate_spa]
+                                              finalize_offer_allocation finalize_interest_allocation generate_spa report]
 
   after_action :verify_policy_scoped, only: []
 
@@ -155,6 +155,10 @@ class SecondarySalesController < ApplicationController
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Allocation in progress, checkback in a few minutes. Please use the Dowload button once allocation is complete." }
       format.json { render :show, status: :ok, location: @secondary_sale }
     end
+  end
+
+  def report
+    render "secondary_sales/#{params[:report]}"
   end
 
   def generate_spa

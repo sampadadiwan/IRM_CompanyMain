@@ -9,6 +9,8 @@ class SaleBasePolicy < ApplicationPolicy
         scope.for_employee(user)
       elsif user.curr_role == 'holding'
         scope.for_investor(user).distinct
+      else
+        scope.none
       end
     end
   end

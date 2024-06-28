@@ -3,13 +3,13 @@
   Given('I am at the sales page') do
     visit(secondary_sales_path)
   end
-  
+
   When('I create a new sale {string}') do |arg1|
     @input_sale = FactoryBot.build(:secondary_sale)
     key_values(@input_sale, arg1)
     puts "\n####Input Sale####\n"
     puts @input_sale.to_json
-    
+
     click_on("New Secondary Sale")
     fill_in("secondary_sale_name", with: @input_sale.name)
     fill_in("secondary_sale_start_date", with: @input_sale.start_date)
@@ -17,18 +17,18 @@
     fill_in("secondary_sale_end_date", with: @input_sale.end_date)
     fill_in("secondary_sale_percent_allowed", with: @input_sale.percent_allowed)
     fill_in("secondary_sale_support_email", with: @input_sale.support_email)
-    click_on("Next")    
+    click_on("Next")
     fill_in("secondary_sale_min_price", with: @input_sale.min_price)
     fill_in("secondary_sale_max_price", with: @input_sale.max_price)
     click_on("Next")
-    click_on("Save") 
-    sleep(1)  
+    click_on("Save")
+    sleep(1)
   end
 
   When('I visit the sale details page') do
     visit(secondary_sale_path(@sale))
   end
-  
+
   Then('an sale should be created') do
     @sale = SecondarySale.last
     puts "\n####Sale####\n"
@@ -39,10 +39,10 @@
     @sale.end_date.should == @input_sale.end_date
     @sale.percent_allowed.should == @input_sale.percent_allowed
     @sale.min_price.should == @input_sale.min_price
-    @sale.max_price.should == @input_sale.max_price    
+    @sale.max_price.should == @input_sale.max_price
     @sale.visible_externally.should == false
   end
-  
+
   Then('I should see the sale details on the details page') do
     visit(secondary_sale_path(@sale))
     find(".show_details_link").click
@@ -59,7 +59,7 @@
     puts "\n####Sale####\n"
     puts @sale.to_json
   end
-  
+
   Then('I should see the sale in all sales page') do
     visit(secondary_sales_path)
     @input_sale ||= @sale # This is for times when the sale is not created from the ui in tests
@@ -68,13 +68,13 @@
     expect(page).to have_content(@input_sale.start_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
-      # expect(page).to have_content(@input_sale.percent_allowed) 
+      # expect(page).to have_content(@input_sale.percent_allowed)
       expect(page).to have_content(@input_sale.min_price)
       expect(page).to have_content(@input_sale.max_price)
     end
   end
-  
-  
+
+
   Then('the sale should become externally visible') do
     sleep(1)
     @sale = SecondarySale.first
@@ -86,10 +86,10 @@
         expect(page).to have_content("Yes")
     end
   end
-  
+
   Given('there is a sale {string}') do |arg1|
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
-    @sale.start_date = Time.zone.today    
+    @sale.start_date = Time.zone.today
     key_values(@sale, arg1)
     SecondarySaleCreate.wtf?(secondary_sale: @sale)
     @sale.reload
@@ -97,11 +97,11 @@
     puts @sale.to_json
     puts "@sale.active? = #{@sale.active?}"
   end
-  
+
   Given('I am at the sales details page') do
     visit secondary_sale_path(@sale)
   end
-  
+
   Then('I should see the holdings') do
     Holding.all.each do |h|
         within("tr#holding_#{h.id}") do
@@ -114,13 +114,13 @@
         end
     end
   end
-  
+
 
 
 Given('I have {string} access to the sale') do |metadata|
-  
+
   investor = Investor.where(investor_entity_id: @user.entity_id, entity_id: @entity.id).first
-  ar = AccessRight.create!(entity: @entity, owner: @sale, access_type: "SecondarySale", 
+  ar = AccessRight.create!(entity: @entity, owner: @sale, access_type: "SecondarySale",
           access_to_investor_id: investor.id, metadata: metadata)
 
   puts "\n####AccessRight####\n"
@@ -132,7 +132,7 @@ end
 
 Then('the sales total_offered_quantity should be {string}') do |arg|
   @sale.reload
-  @sale.total_offered_quantity.should == arg.to_i  
+  @sale.total_offered_quantity.should == arg.to_i
 end
 
 
@@ -145,7 +145,7 @@ Given('another user should have {string} access to the sale {string}') do |acces
 end
 
 Given('employee investor should have {string} access to the sale {string}') do |access_type, arg|
-  @employee_investor = @investor_entity.employees.first    
+  @employee_investor = @investor_entity.employees.first
   Pundit.policy(@employee_investor, @sale).send("#{access_type}?").to_s.should == arg
 end
 
@@ -154,10 +154,10 @@ Given('employee investor has {string} access rights to the sale') do |metadata|
   ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: metadata,
     entity: @entity, access_to_investor_id: @holdings_investor.id)
 
-  
+
   puts "\n####AccessRight####\n"
   puts ar.to_json
-    
+
 end
 
 
@@ -169,10 +169,10 @@ Given('existing investors have {string} access rights to the sale') do |metadata
         entity: @entity, access_to_investor_id: inv.id)
 
       inv.investor_entity.employees.each do |emp|
-        ia = InvestorAccess.create(investor:inv, user: emp, 
-                    last_name: emp.last_name, 
-                    first_name: emp.first_name, 
-                    email: emp.email,  approved: true, 
+        ia = InvestorAccess.create(investor:inv, user: emp,
+                    last_name: emp.last_name,
+                    first_name: emp.first_name,
+                    email: emp.email,  approved: true,
                     entity_id: @sale.entity_id)
         puts "\n####InvestorAccess####\n"
         puts ia.to_json
@@ -180,7 +180,7 @@ Given('existing investors have {string} access rights to the sale') do |metadata
 
       puts "\n####Investor AccessRight####\n"
       puts @access_right.to_json
-      
+
     else
       puts "Skipping access right for investor #{inv.investor_name}, alread has access"
     end
@@ -193,24 +193,24 @@ end
 
 ############################################################################
 ############################################################################
-#######################  Investor related test steps #############################  
+#######################  Investor related test steps #############################
 ############################################################################
 ############################################################################
 
 
 Given('my firm is an investor in the company') do
   @company = Entity.startups.first
-  @investor = Investor.create!(investor_name: @entity.name, pan: @entity.pan, 
-                               primary_email: @entity.primary_email, entity: @company, 
+  @investor = Investor.create!(investor_name: @entity.name, pan: @entity.pan,
+                               primary_email: @entity.primary_email, entity: @company,
                                investor_entity: @entity, category: "Lead Investor")
 
-  InvestorAccess.create!(investor:@investor, user: @user, 
-    first_name: @user.first_name, 
+  InvestorAccess.create!(investor:@investor, user: @user,
+    first_name: @user.first_name,
     last_name: @user.last_name,
-    email: @user.email, approved: true, 
+    email: @user.email, approved: true,
     entity_id: @company.id)
 
-  
+
 end
 
 Given('I should not see the sale in all sales page') do
@@ -231,8 +231,8 @@ Given('the investor has {string} access rights to the sale') do |metadata|
 end
 
 Given('there are {string} investments {string} in the company') do |count, args|
-  (1..count.to_i).each do 
-    i = FactoryBot.build(:investment, entity: @company, investor: @investor, 
+  (1..count.to_i).each do
+    i = FactoryBot.build(:investment, entity: @company, investor: @investor,
       funding_round: @funding_round)
     key_values(i, args)
     SaveInvestment.wtf?(investment: i).success?.should == true
@@ -254,7 +254,7 @@ Given('I should see my holdings in the holdings tab') do
         expect(page).to have_content(h.price)
         # expect(page).to have_content(money_to_currency(h.value))
         expect(page).to have_content("Offer")
-        
+
       end
     end
   end
@@ -267,10 +267,10 @@ Given('when I make an offer for my holdings') do
   puts h.to_json
 
   within("#holding_#{h.id}") do
-    click_on("Offer")   
+    click_on("Offer")
   end
   sleep(1)
-  
+
   @new_offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
     secondary_sale_id: @sale.id, investor_id: h.investor_id)
   @new_offer.quantity = @new_offer.allowed_quantity
@@ -283,7 +283,7 @@ end
 
 Then('I should see the offer') do
   h = Holding.first
-  
+
   @offer = Offer.last
 
   @offer.user_id.should == @user.id
@@ -303,13 +303,13 @@ end
 Then('the sale offer amount must not be updated') do
   @sale.reload
   puts @sale.to_json
-  @sale.total_offered_quantity.should_not == @offer.quantity  
+  @sale.total_offered_quantity.should_not == @offer.quantity
 end
 
 Then('the sale offer amount must be updated') do
   @sale.reload
   puts @sale.to_json
-  @sale.total_offered_quantity.should == @offer.quantity  
+  @sale.total_offered_quantity.should == @offer.quantity
 end
 
 Then('when the offer is approved') do
@@ -324,7 +324,7 @@ Given('there are approved offers for the sale') do
     Given there are "3" exisiting investments "" from another firm in startups
   )
   Holding.all.each do |h|
-    offer = FactoryBot.create(:offer, holding: h, entity: h.entity, secondary_sale: @sale, 
+    offer = FactoryBot.create(:offer, holding: h, entity: h.entity, secondary_sale: @sale,
                           user: h.entity.employees.sample, investor: h.investor,
                           quantity: h.quantity * @sale.percent_allowed / 100, approved: true)
   end
@@ -333,7 +333,7 @@ end
 
 Given('there are offers {string} for the sale') do |args|
   Holding.all.each do |h|
-    offer = FactoryBot.build(:offer,holding: h, entity: h.entity, secondary_sale: @sale, 
+    offer = FactoryBot.build(:offer,holding: h, entity: h.entity, secondary_sale: @sale,
                           user: h.entity.employees.sample, investor: h.investor)
 
 
@@ -342,7 +342,7 @@ Given('there are offers {string} for the sale') do |args|
     OfferCreate.wtf?(offer: offer, current_user: @user).success?
     OfferApprove.wtf?(offer: offer, current_user: @user) if approved
     puts "\n####Offer Created####\n"
-    puts offer.to_json                      
+    puts offer.to_json
   end
 end
 
@@ -353,15 +353,15 @@ Given('there are {string} offers for the sale') do |approved_flag|
   )
   approved = approved_flag == "approved"
   Holding.all.each do |h|
-    offer = Offer.new(holding: h, entity: h.entity, secondary_sale: @sale, 
+    offer = Offer.new(holding: h, entity: h.entity, secondary_sale: @sale,
                           user: h.entity.employees.sample, investor: h.investor, user_id: h.user_id,
                           quantity: h.quantity * @sale.percent_allowed / 100, approved: approved)
 
     OfferCreate.wtf?(offer: offer, current_user: @user).success?.should == true
     OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true if approved
-        
+
     puts "\n####Offer Created####\n"
-    puts offer.to_json                      
+    puts offer.to_json
   end
 end
 
@@ -386,13 +386,13 @@ Given('there are {string} interests {string} for the sale') do |count, args|
   (1..count.to_i).each do
     investor_entity = FactoryBot.create(:entity, entity_type: "Family Office")
     investor = FactoryBot.create(:investor, entity: @sale.entity, investor_entity: investor_entity)
-    
+
     ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: "Buyer",
     entity: @entity, access_to_investor_id: investor.id)
 
     puts "\n####AccessRight####\n"
     puts ar.to_json
-    
+
 
     user = FactoryBot.create(:user, entity: investor_entity)
     ia = InvestorAccess.create!(entity: @entity, investor: investor,
@@ -402,20 +402,45 @@ Given('there are {string} interests {string} for the sale') do |count, args|
     puts "\n####Investor Access####\n"
     puts ia.to_json
 
-    interest = Interest.new(secondary_sale: @sale, 
-                  user: user, 
-                  quantity: @sale.total_offered_quantity, 
+    interest = Interest.new(secondary_sale: @sale,
+                  user: user,
+                  quantity: @sale.total_offered_quantity,
                   price: @sale.min_price,
                   entity: @entity,
                   interest_entity: investor_entity,
-                  short_listed: true)
+                  short_listed: true,
+                  buyer_signatory_emails: "shrikant.gour@caphive.com")
 
     key_values(interest, args)
     interest.save!
     puts "\n####Interest Created####\n"
-    puts interest.to_json    
+    puts interest.to_json
   end
 
+end
+
+Given('the offers have no signatories') do
+  @sale.offers.update_all(seller_signatory_emails: nil)
+end
+
+Given('the interests have no signatories') do
+  @sale.interests.update_all(buyer_signatory_emails: nil)
+end
+
+Then('when the last offer is allocated') do
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+  visit(secondary_sale_path(@sale))
+  visit("/secondary_sales/#{@sale.id}/finalize_offer_allocation")
+  # click on edit
+  find(:xpath, '/html/body/div[2]/div[1]/div[1]/div/div[6]/div[1]/div[2]/turbo-frame[1]/div[14]/a[2]').click
+  # check verified
+  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[6]/div/div[2]/turbo-frame[1]/form/div[12]/input[2]').click
+  # click save
+  find(:xpath, '/html/body/div[2]/div[1]/div[1]/div/div[6]/div[1]/div[2]/turbo-frame[1]/form/div[14]/input').click
+  sleep(2)
 end
 
 Then('when the allocation is done') do
@@ -430,20 +455,20 @@ Then('the sale allocation percentage must be {string}') do |arg|
   puts @sale.interests.eligible(@sale).to_json
   # puts "\n####All Interests####\n"
   # puts @sale.interests.to_json
-  @sale.cmf_allocation_percentage[""].should == arg.to_f  
+  @sale.cmf_allocation_percentage[""].should == arg.to_f
 end
 
 
-Then('the sale must be allocated correctly') do  
+Then('the sale must be allocated correctly') do
   @sale.total_offered_quantity.should == @sale.offers.approved.sum(:quantity)
   # @sale.total_offered_amount_cents.should == @sale.offers.approved.sum(:amount_cents)
   # @sale.total_interest_amount_cents.should == @sale.interests.short_listed.sum(:amount_cents)
   @sale.total_interest_quantity.should == @sale.interests.short_listed.sum(:quantity)
   @sale.offer_allocation_quantity.should == @sale.offers.approved.sum(:allocation_quantity)
   @sale.interest_allocation_quantity.should == @sale.interests.short_listed.sum(:allocation_quantity)
-  @sale.allocation_interest_amount_cents.should == @sale.interests.short_listed.sum(:allocation_amount_cents) 
-  
-  @sale.allocation_offer_amount_cents.should == @sale.offers.approved.sum(:allocation_amount_cents)  
+  @sale.allocation_interest_amount_cents.should == @sale.interests.short_listed.sum(:allocation_amount_cents)
+
+  @sale.allocation_offer_amount_cents.should == @sale.offers.approved.sum(:allocation_amount_cents)
 end
 
 
@@ -453,7 +478,7 @@ Then('the offers must be allocated correctly') do
       offer.allocation_percentage.should == @sale.cmf_allocation_percentage[offer.custom_matching_vals] * 100
     else
       offer.allocation_percentage.should == 100.0
-    end 
+    end
     # puts offer.to_json
     offer.allocation_quantity.should == (offer.quantity * offer.allocation_percentage / 100).ceil
   end
@@ -465,7 +490,7 @@ Then('the interests must be allocated correctly') do
       interest.allocation_percentage.should == 100.0
     else
       interest.allocation_percentage.should be_within(0.1).of(100.0 / @sale.cmf_allocation_percentage[interest.custom_matching_vals])
-    end 
+    end
     # puts interest.to_json
     interest.allocation_quantity.should  == (interest.quantity * interest.allocation_percentage / 100).ceil
   end
@@ -530,12 +555,12 @@ Given('advisor is {string} advisor access to the sale') do |given|
   @user = @employee_investor
 
     if given == "given" || given == "yes"
-      
+
           # Create the Investor Advisor
           investor_advisor = InvestorAdvisor.create!(entity_id: @entity.id, email: @user.email)
           investor_advisor.permissions.set(:enable_secondary_sale)
           investor_advisor.save
-          
+
           puts "\n####Investor Advisor####\n"
           puts investor_advisor.to_json
 
@@ -545,7 +570,7 @@ Given('advisor is {string} advisor access to the sale') do |given|
           # Create the Access Right
           @access_right = AccessRight.create!(entity_id: @entity.id, owner: @sale, user_id: @user.id, metadata: "Investor Advisor")
           @access_right.save
-          
+
 
           puts "\n####Access Right####\n"
           ap @access_right
@@ -625,8 +650,8 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
   all_emails = @sale.investor_users("Seller").collect(&:email).flatten +
                  @sale.employee_users("Seller").collect(&:email).flatten
 
-  puts "All emails #{all_emails.uniq}"  
-  
+  puts "All emails #{all_emails.uniq}"
+
   @sale.investor_users("Seller").collect(&:email).each do |email|
     puts "Checking investor email #{email} with subject #{subject}"
     open_email(email)
@@ -711,11 +736,11 @@ end
 
 Given('the investors are added to the sale') do
   @user.entity.investors.not_holding.not_trust.each do |inv|
-    ar = AccessRight.create!( owner: @sale, access_type: "SecondarySale", 
+    ar = AccessRight.create!( owner: @sale, access_type: "SecondarySale",
                              access_to_investor_id: inv.id, entity: @user.entity)
 
 
     puts "\n####Granted Access####\n"
-    puts ar.to_json                            
-  end 
+    puts ar.to_json
+  end
 end

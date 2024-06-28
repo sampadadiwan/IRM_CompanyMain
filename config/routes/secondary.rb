@@ -31,4 +31,5 @@ resources :secondary_sales do
   get 'finalize_offer_allocation', on: :member
   get 'finalize_interest_allocation', on: :member
   get 'payments', on: :member
+  get 'report', on: :member
 end

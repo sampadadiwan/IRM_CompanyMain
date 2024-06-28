@@ -8,10 +8,14 @@ class OfferSpaJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       offer = Offer.find(offer_id)
       send_notification("Starting SPA generation for user #{offer.user}, Offer Id #{offer.id}", user_id, "info") if user_id.present?
+      raise "No Offer Template found for Offer #{offer.id}" if offer.secondary_sale.documents.where(owner_tag: "Offer Template").blank?
+
       offer.secondary_sale.documents.where(owner_tag: "Offer Template").find_each do |template|
         OfferSpaGenerator.new(offer, template)
         succeeded = true
-      rescue StandardError
+      rescue StandardError => e
+        send_notification("Error generating SPA for user #{offer.user}, Offer Id #{offer.id} - #{e.message}", user_id, "danger") if user_id.present?
+        ExceptionNotifier.notify_exception(e)
         succeeded = false
       end
 

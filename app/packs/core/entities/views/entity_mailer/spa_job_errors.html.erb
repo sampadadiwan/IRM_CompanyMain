@@ -1,0 +1,14 @@
+<div>
+    The following errors were detected:
+    <ol>
+        <% @error_msg.each do |error| %>
+            <li>
+                <ul>
+                    <% error.each do |k, v| %>
+                        <li><%= k.to_s.humanize %>: <%= v %></li>
+                    <% end %>
+                </ul>
+            </li>
+        <% end %>
+    </ol>
+</div>

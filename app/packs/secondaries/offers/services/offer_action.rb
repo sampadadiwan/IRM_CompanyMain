@@ -13,6 +13,16 @@ class OfferAction < Trailblazer::Operation
     offer.valid?
   end
 
+  def handle_spa_errors(ctx, offer:, **)
+    offer.errors.clear
+    offer.validate_spa_generation
+    if offer.errors.any?
+      ctx[:errors] = offer.errors.full_messages.join(", ")
+      Rails.logger.error("Errors: #{offer.errors.full_messages}")
+    end
+    offer.errors.none?
+  end
+
   def validate_pan_card(_ctx, offer:, **)
     offer.validate_pan_card unless offer.secondary_sale.disable_pan_kyc
     true
@@ -24,8 +34,11 @@ class OfferAction < Trailblazer::Operation
   end
 
   def generate_spa(ctx, offer:, **)
-    offer.generate_spa(ctx[:current_user]) if offer.verified # offer.final_agreement && offer.saved_change_to_final_agreement?
-    true
+    if offer.verified # offer.final_agreement && offer.saved_change_to_final_agreement?
+      offer.generate_spa(ctx[:current_user])
+    else
+      true
+    end
   end
 
   def notify_accept_spa(_ctx, offer:, **)
