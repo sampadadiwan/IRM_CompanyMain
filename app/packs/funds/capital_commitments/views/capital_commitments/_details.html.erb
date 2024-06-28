@@ -109,7 +109,7 @@
           params[:fund_id] = capital_commitment.fund_id 
         %>
         <%= render "/account_entries/index", 
-                lazy_load_data: false, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
+                lazy_load_data: true, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
       </div>     
     </div>
 

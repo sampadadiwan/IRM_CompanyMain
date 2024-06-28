@@ -12,6 +12,8 @@ class AccountEntriesController < ApplicationController
 
   # GET /account_entries or /account_entries.json
   def index
+    authorize AccountEntry
+
     @q = AccountEntry.ransack(params[:q])
 
     @account_entries = apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)

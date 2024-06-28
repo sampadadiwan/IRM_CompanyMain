@@ -5,12 +5,9 @@ set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
 every 1.day, at: '02:01 am', roles: [:primary] do
-  runner "ElasticImporterJob.perform_now"
+  # runner "ElasticImporterJob.perform_now"
   runner "VestedJob.perform_now"
-  # runner "ClearMessagesCountJob.perform_now"
   runner "Entity.recompute_all"
-  # runner "InvestmentSnapshotJob.perform_now"
-  # runner "ResendConfirmationJob.perform_now"
   runner "DocumentEsignUpdateJob.perform_now"
   # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"

@@ -1,6 +1,6 @@
 class AccountEntryPolicy < FundBasePolicy
   def index?
-    true
+    user.curr_role != "investor"
   end
 
   def report?

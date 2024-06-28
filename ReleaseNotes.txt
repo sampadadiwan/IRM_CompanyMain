@@ -1,9 +1,24 @@
-V7.1.32
+
+
+V7.1.33
 #####################################
-1129bbe6f (HEAD -> main, origin/main, origin/HEAD) Fixed .env.development, removed ngrok
-ae25d742a Send grid, now receives incoming email (#306)
+0fc1fc7da Secondary sales esign fix (#311)
+1454b1825 (tag: V7.1.32) Deals/fixes (#312)
+497eda468 Fixed buttons for offer card view
+1b8423aa0 Fixed issue with blank instrument_ids in valuations
+72adaef71 Fixed bug in documents_bulk_actions job
+ef29b136c Sort aggregate portfolio's Pre share value chart's dates (#310)
+dbf524144 Offer card view for investors (#309)
+919617612 Deals additional features (#308)
+437570230 Fixed administrate upgrade
+e3a187e7e Backup, fixed templates for admin
+787802921 Upgraded gems and ruby 3.3.3
+f46488d95 Changed Staging SES key
+1129bbe6f Fixed .env.development, removed ngrok
+ae25d742a Send grid (#306)
 f6c669a09 Kanban fixes iter3 (#305)
-12ba6725f Account entry Elastic Search enabled (#303)
+12ba6725f Account entry es (#303)
+
 
 V7.1.31
 #####################################
