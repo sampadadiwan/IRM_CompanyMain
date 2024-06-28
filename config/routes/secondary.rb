@@ -24,7 +24,7 @@ resources :secondary_sales do
   patch 'generate_spa', on: :member
   patch 'send_notification', on: :member
   get 'spa_upload', on: :member
-  get 'lock_allocations', on: :member
+  patch 'lock_allocations', on: :member
   get 'offers', on: :member
   patch 'approve_offers', on: :member
   get 'interests', on: :member

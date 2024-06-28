@@ -41,6 +41,8 @@ class ValuationsController < ApplicationController
     # We need to create a valuation for each investment instrument
     Valuation.transaction do
       params[:investment_instrument_ids].each do |investment_instrument_id|
+        next if investment_instrument_id.blank?
+
         @valuation = Valuation.new(valuation_params)
         @valuation.investment_instrument_id = investment_instrument_id
         @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id

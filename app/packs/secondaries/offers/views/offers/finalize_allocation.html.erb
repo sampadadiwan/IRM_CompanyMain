@@ -50,8 +50,8 @@
               {class: "btn btn-outline-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
-            <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
-                        class: "btn btn-outline-danger" if policy(@secondary_sale).lock_allocations? %> 
+            <%= button_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
+                        class: "btn btn-outline-danger", method: :patch if policy(@secondary_sale).lock_allocations? %> 
         
         <% end %>
         <form class="d-sm-inline-block form-inline" action="<%= search_offers_path %>">

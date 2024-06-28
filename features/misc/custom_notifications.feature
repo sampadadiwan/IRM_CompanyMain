@@ -77,3 +77,20 @@ Scenario Outline: Capital call with custom notification
   Examples:
     | custom_notification_new|
     | subject=Remittance is due for fund;email_method=notify_capital_remittance |
+
+
+
+Scenario Outline: Incoming Email for a capital commitment
+  Given there is a user "" for an entity "<entity>"    
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  When we receive an incoming email "<email>" for the commitments fom sendgrid
+  Then an incoming email is created for the commitments
+  And the documents are attached to the incoming email
+
+  Examples:
+    | entity               | fund               | email |
+    | entity_type=Company  | name=SAAS Fund     | subject=Incoming Email 1;body=Incoming Email 1;attachment=capital_commitments.xlsx |
+    | entity_type=Company  | name=SAAS Fund     | subject=Incoming Email 2;body=Incoming Email 2;attachment=capital_commitments.xlsx |
