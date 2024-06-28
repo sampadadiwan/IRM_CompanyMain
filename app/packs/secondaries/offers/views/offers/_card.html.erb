@@ -33,7 +33,7 @@
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "This will mark your acceptance of the SPA. Proceed?"}) if policy(offer).accept_spa? 
     
-    steps = ["Please #{link_to 'Review', offer_path(offer)} the SPA #{spas.join(' ')}".html_safe, 
+    steps = ["Please #{link_to 'Review', offer_path(offer)} the SPA </br> #{spas.join(' ')}".html_safe, 
             ("Accept the SPA #{accept_spa}".html_safe if policy(offer).accept_spa? ),
             ("Your acceptance of the SPA has already been recorded".html_safe unless policy(offer).accept_spa? ),
             "Wait for communication from #{offer.secondary_sale.entity.name}"].compact             
@@ -60,9 +60,10 @@
             </div>
             <div class="row mt-3">
               <div class="col">
-                <%= render "/layouts/steps", steps: %>
+                <%= render "/layouts/steps", steps:, progressbar: true %>
               </div>
             </div>
+
             <div class="row align-items-center">
               <div class="col-md-6">
                 <div class="hstack mb-4 pb-1">
@@ -142,6 +143,22 @@
               </div>
               
             </div>
+
+            <div class="row align-items-center">
+              <div class="col">
+                <% if policy(offer).update? %>
+                  <%= link_to "Edit" , edit_offer_path(offer), {class: "btn btn-outline-primary" } if !offer.approved %>
+                  <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>    
+                <% end %>
+
+                <%= button_to "Accept SPA" , accept_spa_offer_path(offer), method: :patch, 
+                    class: "btn btn-outline-success" , id: 'accept_spa_btn',
+                    form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+                    msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? %>      
+              
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

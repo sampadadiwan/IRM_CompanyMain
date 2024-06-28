@@ -1145,3 +1145,41 @@ h6 {
   }
 
 }
+
+
+.steps {
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+  }
+
+  .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+  }
+
+  .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+  }
+
+  .progress-bar-wrapper {
+    position: absolute;
+    bottom: 20px;
+    width: 85%;
+    padding: 0 15px; /* Adjust the padding as necessary to fit within the card */
+  }
+
+  .progress-bar {
+      height: 6px;
+  }
+
+}
