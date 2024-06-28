@@ -10,7 +10,7 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || support?
+    (user.entity_id == record.entity_id)
   end
 
   def mark_as_read?

@@ -58,7 +58,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) || support?
+    permissioned_employee?(:update)
   end
 
   def edit?

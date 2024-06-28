@@ -14,15 +14,15 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.enable_approvals &&
+    user.enable_approvals &&
       (belongs_to_entity?(user, record) ||
-        Approval.for_investor(user).where(id: record.id).present?)) || support?
+        Approval.for_investor(user).where(id: record.id).present?)
   end
 
   def create?
-    (user.enable_approvals &&
+    user.enable_approvals &&
       belongs_to_entity?(user, record) &&
-      user.has_cached_role?("company_admin")) || support?
+      user.has_cached_role?("company_admin")
   end
 
   def new?

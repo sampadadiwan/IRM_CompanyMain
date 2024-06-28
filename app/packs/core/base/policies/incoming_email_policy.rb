@@ -10,7 +10,7 @@ class IncomingEmailPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
   def create?
@@ -30,6 +30,6 @@ class IncomingEmailPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    update? || support?
   end
 end

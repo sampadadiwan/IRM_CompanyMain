@@ -4,7 +4,7 @@ class FeePolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
   def create?

@@ -10,7 +10,7 @@ class ReportPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || record.entity.nil? || support?
+    belongs_to_entity?(user, record) || record.entity.nil?
   end
 
   def create?

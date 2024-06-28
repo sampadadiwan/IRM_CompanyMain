@@ -25,7 +25,7 @@ class HoldingPolicy < ApplicationPolicy
   def show?
     (user.enable_holdings && belongs_to_entity?(user, record) && user.has_cached_role?(:employee)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
-      (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor)) || support?
+      (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
   end
 
   def offer?

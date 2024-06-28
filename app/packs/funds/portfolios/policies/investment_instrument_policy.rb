@@ -8,8 +8,8 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity.permissions.enable_fund_portfolios? &&
-    belongs_to_entity?(user, record)) || support?
+    user.entity.permissions.enable_fund_portfolios? &&
+      belongs_to_entity?(user, record)
   end
 
   def create?
@@ -22,7 +22,7 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || support?
+    create?
   end
 
   def edit?

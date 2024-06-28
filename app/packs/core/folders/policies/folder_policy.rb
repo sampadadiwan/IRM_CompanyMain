@@ -7,7 +7,7 @@ class FolderPolicy < ApplicationPolicy
     if user.investor_advisor?
       belongs_to_entity?(user, record) && record.owner && Pundit.policy(user, record.owner).show?
     else
-      belongs_to_entity?(user, record) || support?
+      belongs_to_entity?(user, record)
     end
   end
 

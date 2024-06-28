@@ -65,7 +65,7 @@ class SecondarySalePolicy < SaleBasePolicy
       true
     else
       permissioned_investor? ||
-        external_sale? || support?
+        external_sale?
     end
   end
 

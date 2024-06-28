@@ -16,7 +16,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || (user.id == record.user_id) || support?
+    belongs_to_entity?(user, record) || (user.id == record.user_id)
   end
 
   def create?

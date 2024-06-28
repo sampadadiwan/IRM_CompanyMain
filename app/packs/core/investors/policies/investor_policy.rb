@@ -17,7 +17,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def update?(emp_perm = :update)
-    create?(emp_perm) || support?
+    create?(emp_perm)
   end
 
   def merge?

@@ -9,7 +9,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? || support?
+      permissioned_investor?
   end
 
   def documents?
@@ -21,7 +21,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) 
+    permissioned_employee?(:update)
   end
 
   def transfer_fund_units?

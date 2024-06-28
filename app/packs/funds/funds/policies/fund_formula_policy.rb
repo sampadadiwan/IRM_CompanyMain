@@ -14,11 +14,12 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
+  # Only support can create / update formulas
   def create?
-    support? # || (belongs_to_entity?(user, record) && record.fund.editable_formulas)
+    support?
   end
 
   def new?
@@ -26,7 +27,7 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def update?
-    support? || belongs_to_entity?(user, record.fund)
+    create?
   end
 
   def enable_formulas?

@@ -4,8 +4,8 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.has_cached_role?(:company_admin) &&
-      (belongs_to_entity?(user, record) || user.entity_id == record.investor.investor_entity_id)) || support?
+    user.has_cached_role?(:company_admin) &&
+      (belongs_to_entity?(user, record) || user.entity_id == record.investor.investor_entity_id)
   end
 
   def create?
@@ -21,7 +21,7 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def update?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
   def approve?
@@ -33,6 +33,6 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create? || support?
+    create?
   end
 end

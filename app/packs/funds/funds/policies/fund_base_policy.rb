@@ -27,7 +27,7 @@ class FundBasePolicy < ApplicationPolicy
         end
       end
     else
-      support?
+      false
     end
   end
 

@@ -16,11 +16,11 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || (user.entity_id == record.response_entity_id) || support?
+    belongs_to_entity?(user, record) || (user.entity_id == record.response_entity_id)
   end
 
   def create?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
   def new?

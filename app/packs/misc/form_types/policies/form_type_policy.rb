@@ -14,11 +14,11 @@ class FormTypePolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || support?
+    belongs_to_entity?(user, record)
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
+    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
   end
 
   def new?

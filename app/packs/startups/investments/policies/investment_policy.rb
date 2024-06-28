@@ -16,7 +16,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if (belongs_to_entity?(user, record) && user.enable_investments) || support?
+    if belongs_to_entity?(user, record) && user.enable_investments
       true
     else
       user.enable_investments &&
