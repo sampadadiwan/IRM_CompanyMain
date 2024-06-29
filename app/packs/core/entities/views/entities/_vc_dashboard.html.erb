@@ -7,7 +7,8 @@
 
     <% cache_if(current_user != nil, cache_key("vc_dashboard", include_theme: true), expires_in: 5.day) do %>
 
-        <% if current_user.enable_funds && policy_scope(CapitalCommitment).count > 0 %>                        
+        <% if current_user.enable_funds && policy_scope(CapitalCommitment).count > 0 %>    
+
             <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>
                 <%= render "entities/vc_dashboard_menus" %>
 
@@ -19,6 +20,20 @@
             <% end %>
 
         <% end %>
+
+        <% if current_user.enable_secondary_sale && policy_scope(Offer).count > 0 %>    
+                            
+            <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do %>
+
+                <% offers = policy_scope(Offer).includes(:entity, :secondary_sale, :investor) %>
+
+                <% offers.each do |offer| %>
+                    <%= render "/offers/card", offer: %>
+                <% end %>
+            <% end %>
+
+        <% end %>
+
 
     
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>

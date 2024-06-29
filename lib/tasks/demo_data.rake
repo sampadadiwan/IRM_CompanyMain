@@ -448,7 +448,8 @@ namespace :irm do
   task generateFakeSales: :environment do
     Entity.startups.each do |e|
     
-      FactoryBot.create(:secondary_sale, entity:e, start_date:Date.today, end_date:Date.today + 10.days)
+      sale = FactoryBot.create(:secondary_sale, entity:e, start_date:Date.today, end_date:Date.today + 10.days)
+      puts sale.to_json
 
     end
   rescue Exception => e
@@ -460,6 +461,9 @@ namespace :irm do
   task generateFakeOffers: :environment do
     SecondarySale.all.each do |sale|
 
+      next if !sale.active 
+      next if sale.offers.any?
+      
       sale.entity.investors.not_holding.sample(3).each do |inv|
 
         if inv.investor_entity.employees.empty?
@@ -513,7 +517,7 @@ namespace :irm do
               quantity: qty, price: price, user_id: advisor.employees.first.id, 
               short_listed: short_listed, escrow_deposited: escrow_deposited)
           
-          interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
+          # interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
           interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
 
           interest.save!

@@ -81,7 +81,7 @@ Scenario Outline: Capital call with custom notification
 
 
 Scenario Outline: Incoming Email for a capital commitment
-  Given there is a user "" for an entity "<entity>"    
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
