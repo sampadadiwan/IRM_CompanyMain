@@ -56,20 +56,7 @@
 
       <% if current_user  %>
               
-      <tr>
-        <td>
-          Percentage
-        </td>
-        <td>
-          <%= @offer.percentage %>%
-            <% if @offer.percentage && @offer.percentage > @offer.secondary_sale.percent_allowed %>
-              <div>
-                <div class="badge bg-danger">Over Allowed Percentage</div>
-                The current sale allows you to sell only <%= @offer.secondary_sale.percent_allowed %>% of your holdings
-              </div>
-              <% end %>
-        </td>
-      </tr>
+   
         
       <tr>
         <td>
@@ -141,7 +128,7 @@
 
         <tr>
           <td>
-            Aquirer
+            Acquirer
           </td>
           <td>
             <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %> 

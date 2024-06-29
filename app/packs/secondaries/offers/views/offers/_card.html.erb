@@ -65,7 +65,7 @@
             </div>
 
             <div class="row align-items-center">
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-user text-primary fs-6"></i>
@@ -84,6 +84,8 @@
                     <p class="fs-3 mb-0">Email</p>
                   </div>
                 </div>
+              </div>
+              <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-currency-dollar text-primary fs-6"></i>
@@ -103,7 +105,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>
@@ -122,6 +124,8 @@
                     <p class="fs-3 mb-0">Amount</p>
                   </div>
                 </div>
+              </div>
+              <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>
@@ -146,6 +150,7 @@
 
             <div class="row align-items-center">
               <div class="col">
+                <%= link_to "Show" , offer_path(offer), {class: "btn btn-outline-primary" } %>
                 <% if policy(offer).update? %>
                   <%= link_to "Edit" , edit_offer_path(offer), {class: "btn btn-outline-primary" } if !offer.approved %>
                   <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>    
