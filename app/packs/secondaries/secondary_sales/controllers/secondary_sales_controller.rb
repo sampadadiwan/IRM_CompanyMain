@@ -81,7 +81,8 @@ class SecondarySalesController < ApplicationController
   end
 
   def finalize_interest_allocation
-    @interests = @secondary_sale.interests.order(allocation_quantity: :desc)
+    @q = @secondary_sale.interests.ransack(params[:q])
+    @interests = policy_scope(@q.result).order(allocation_quantity: :desc)
     @interests = @interests.page(params[:page])
     render "/interests/finalize_allocation"
   end

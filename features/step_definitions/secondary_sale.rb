@@ -435,11 +435,11 @@ Then('when the last offer is allocated') do
   visit(secondary_sale_path(@sale))
   visit("/secondary_sales/#{@sale.id}/finalize_offer_allocation")
   # click on edit
-  find(:xpath, '/html/body/div[2]/div[1]/div[1]/div/div[6]/div[1]/div[2]/turbo-frame[1]/div[14]/a[2]').click
+  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/div[13]/a[2]').click
   # check verified
-  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[6]/div/div[2]/turbo-frame[1]/form/div[12]/input[2]').click
+  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/form/div[11]/input[2]').click
   # click save
-  find(:xpath, '/html/body/div[2]/div[1]/div[1]/div/div[6]/div[1]/div[2]/turbo-frame[1]/form/div[14]/input').click
+  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/form/div[13]/input').click
   sleep(2)
 end
 

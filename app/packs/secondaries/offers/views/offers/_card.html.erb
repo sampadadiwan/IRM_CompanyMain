@@ -13,7 +13,7 @@
   
   steps = ["#{link_to 'Review', offer_path(offer)} your offer details below".html_safe, 
           "Please #{link_to 'Add', edit_offer_path(offer)} the required details".html_safe, 
-          "You will need the following docs #{offer.secondary_sale.seller_doc_list}",
+          "You may need to upload documents to complete the offer.",
           "Wait for communication from #{offer.secondary_sale.entity.name}"].freeze
 
   %>

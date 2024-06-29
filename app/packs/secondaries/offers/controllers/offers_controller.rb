@@ -5,11 +5,7 @@ class OffersController < ApplicationController
   # GET /offers or /offers.json
   def index
     # Default to policy
-    @q = Offer.ransack(params[:q])
-    @offers = policy_scope(@q.result)
-    @offers = OfferSearchService.new.fetch_rows(@offers, params)
-    @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
-
+    fetch_rows
     respond_to do |format|
       format.xlsx do
         response.headers[
@@ -19,6 +15,15 @@ class OffersController < ApplicationController
       format.html { render :index }
       format.json { render json: OfferDatatable.new(params, offers: @offers) }
     end
+  end
+
+  def fetch_rows
+    @q = Offer.ransack(params[:q])
+    @offers = policy_scope(@q.result)
+    @offers = OfferSearchService.new.fetch_rows(@offers, params)
+    @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
+    authorize(Offer)
+    @offers
   end
 
   def search_term

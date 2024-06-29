@@ -9,10 +9,14 @@
                                                     {class: "btn btn-outline-success"  } do %> 
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
-        
+
+            <%= link_to "Filter",
+                finalize_interest_allocation_secondary_sale_path(@secondary_sale, filter: true), 
+                {class: "btn btn-outline-success" } %> 
+
             <%= link_to "Offer Allocations",
                 finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
-                {class: "btn btn-outline-success" } if policy(@secondary_sale).view_allocations? %> 
+                {class: "btn btn-outline-success" }  %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
             <%= button_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
@@ -23,24 +27,29 @@
     </span>
 </div>
 
+
+<%= render "/layouts/filter", associations: [:investor], 
+    url: finalize_interest_allocation_secondary_sale_path(@secondary_sale), hidden_fields: {secondary_sale_id: @secondary_sale.id} %>
+
 <div class="table-responsive">
 
 <div class="divTable minimalistBlack">
     <div class="divTableHeading datatable jqDataTable">
         <div class="divTableRow thead">
-            <div class="divTableHead">Short Listed</div>
-            <div class="divTableHead">Entity</div>
-            <div class="divTableHead">Quantity</div>
-            <div class="divTableHead">Price %</div>
-            <div class="divTableHead">PAN</div>
-            <div class="divTableHead">Potential Allocation %</div>
-            <div class="divTableHead">Potential Allocation</div>
-            <div class="divTableHead">Potential Amount</div>
-            <div class="divTableHead">Actually Offered</div>
-            <div class="divTableHead">Actually Offered Amount</div>
-            <div class="divTableHead">Verifed</div>            
-            <div class="divTableHead">Comments</div>
+            <div class="divTableHead"><%= sort_link(@q, :short_listed, "Short Listed") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :entity, "Entity") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :quantity, "Quantity") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :price_percentage, "Price") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :pan, "PAN") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :potential_allocation_percentage, "Potential Allocation %") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :potential_allocation, "Potential Allocation") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :potential_amount, "Potential Amount") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :actually_offered, "Actually Offered") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :actually_offered_amount, "Actually Offered Amount") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :verified, "Verified") %></div>
+            <div class="divTableHead"><%= sort_link(@q, :comments, "Comments") %></div>
             <div class="divTableHead">Action</div>
+
         </div>
     </div>
     <div class="divTableBody tbody">

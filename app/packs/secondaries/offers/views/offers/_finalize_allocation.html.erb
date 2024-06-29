@@ -1,21 +1,22 @@
 <div class="table-responsive">
 
     <div class="divTable minimalistBlack">
-        <div class="divTableHeading datatable jqDataTable">
+        <div class="divTableHeading datatable">
             <div class="divTableRow thead">
-                <div class="divTableHead">Approved</div>
-                <div class="divTableHead">User</div>
-                <div class="divTableHead">Quantity</div>
-                <div class="divTableHead">PAN</div>
-                <div class="divTableHead">Bank</div>
-                <div class="divTableHead">Allocation Amount</div>
-                <div class="divTableHead">Allocation %</div>
-                <div class="divTableHead">Allocation Quantity</div>
-                <div class="divTableHead">Aquirer</div>
-                <div class="divTableHead">Accepted SPA</div>
-                <div class="divTableHead">Verifed</div>
-                <div class="divTableHead">Comments / Docs</div>
+                <div class="divTableHead"><%= sort_link(@q, :approved, "Approved") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :user_first_name, "User") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :quantity, "Quantity") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :pan, "PAN") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :bank, "Bank") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :allocation_amount_cents, "Allocation Amount") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :allocation_percentage, "Allocation %") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :allocation_quantity, "Allocation Quantity") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :aquirer, "Aquirer") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :accepted_spa, "Accepted SPA") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :verified, "Verified") %></div>
+                <div class="divTableHead"><%= sort_link(@q, :comments_or_docs, "Comments / Docs") %></div>
                 <div class="divTableHead">Action</div>
+
             </div>
         </div>
         <div class="divTableBody tbody">

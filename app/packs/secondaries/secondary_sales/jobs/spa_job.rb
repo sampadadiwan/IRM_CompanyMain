@@ -10,6 +10,13 @@ class SpaJob < ApplicationJob
       # Find the sale
       secondary_sale = SecondarySale.find(secondary_sale_id)
       @error_msg = []
+
+      # raise error if no verified offers found
+      if secondary_sale.offers.verified.blank?
+        send_notification("No verified offers found for secondary sale #{secondary_sale.id}", user_id, "success") if user_id.present?
+        raise "No verified offers found for secondary sale #{secondary_sale.id}"
+      end
+
       # For each verified offer, generate the SPA
       secondary_sale.offers.verified.each do |offer|
         check_validity(offer)
@@ -19,10 +26,7 @@ class SpaJob < ApplicationJob
           failed += 1
         end
       rescue StandardError => e
-        ExceptionNotifier.notify_exception(
-          e,
-          data: { message: "Error generating SPA for offer #{offer.id}" }
-        )
+        ExceptionNotifier.notify_exception(e, data: { message: "Error generating SPA for offer #{offer.id}" })
         Rails.logger.error "Error generating SPA for user #{offer.user}, Offer Id #{offer.id} - #{e.message}"
         send_notification("SPA failed for user #{offer.user}, Offer Id #{offer.id}  - #{e.message}", user_id, "danger") if user_id.present?
         failed += 1
@@ -40,10 +44,7 @@ class SpaJob < ApplicationJob
   end
 
   def check_validity(offer)
-    raise "Offer #{offer.id} is not assiciated with any interest!" if offer.interest.blank?
+    raise "Offer #{offer.id} is not assicoated with any interest!" if offer.interest.blank?
     raise "No Offer Template found for Offer #{offer.id}" if offer.secondary_sale.documents.where(owner_tag: "Offer Template").blank?
-
-    raise "Offer #{offer.id} does not have any Seller Signatories!" if offer.seller_signatories.blank?
-    raise "Intrest #{offer.interest.id} for offer #{offer.id} does not have any Buyer Signatories!" if offer.buyer_signatories.blank?
   end
 end

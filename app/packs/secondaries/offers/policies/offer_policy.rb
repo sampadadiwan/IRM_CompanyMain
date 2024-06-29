@@ -13,6 +13,10 @@ class OfferPolicy < SaleBasePolicy
     end
   end
 
+  def bulk_actions?
+    support? || (user.enable_secondary_sale && user.has_cached_role?(:company_admin))
+  end
+
   def index?
     user.enable_secondary_sale
   end

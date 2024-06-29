@@ -108,7 +108,7 @@ Scenario Outline: SPA error no intrest
 
   Examples:
     |allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                                                          |msg              |
-    | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  | is not assiciated with any interest!|
+    | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  | is not associated with any interest!|
 
 Scenario Outline: SPA error no offer template
     Given there is a user "first_name=Emp1" for an entity "entity_type=Company"
@@ -126,44 +126,6 @@ Scenario Outline: SPA error no offer template
 Examples:
   |allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                                                          |msg              |
   | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |No Offer Template found for Offer|
-
-Scenario Outline: SPA error no Buyer signatories
-  Given there is a user "first_name=Emp1" for an entity "entity_type=Company"
-  Given the user has role "company_admin"
-  Given there is a sale "<sale>"
-  And the sale has a SPA template
-  Given there are "2" employee investors
-  Given there is a FundingRound "name=Series A"
-  And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
-  Given there are offers "<offer>" for the sale
-  And the offers have no signatories
-  Given there are "<interest_count>" interests "<interest>" for the sale
-  Then when the allocation is done
-  Then when the last offer is allocated
-  Then I should see the "<msg>"
-
-Examples:
-  |allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                                                          |msg              |
-  | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true 	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  | does not have any Seller Signatories!|
-
-Scenario Outline: SPA error no Seller signatories
-  Given there is a user "first_name=Emp1" for an entity "entity_type=Company"
-  Given the user has role "company_admin"
-  Given there is a sale "<sale>"
-  And the sale has a SPA template
-  Given there are "2" employee investors
-  Given there is a FundingRound "name=Series A"
-  And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
-  Given there are offers "<offer>" for the sale
-  Given there are "<interest_count>" interests "<interest>" for the sale
-  And the interests have no signatories
-  Then when the allocation is done
-  Then when the last offer is allocated
-  Then I should see the "<msg>"
-
-Examples:
-  |allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                                                          |msg              |
-  | .5                   |1              |quantity=50;short_listed=true |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  | does not have any Buyer Signatories!|
 
 Scenario Outline: Sale Notifications - Employee Sellers
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"

@@ -116,4 +116,8 @@ module ApplicationHelper
               class: "dropdown-item",
               data: { msg:, action: "click->confirm#popup", method: :post }
   end
+
+  def ransack_query_params(name, predicate, value)
+    { "c" => { "0" => { "a" => { "0" => { "name" => name } }, "p" => predicate, "v" => { "0" => { "value" => value } } } } }
+  end
 end

@@ -19,7 +19,6 @@
         </div>
         <div class="divTableCell"><%= money_to_currency(@offer.allocation_amount, params) %></div>
 
-        <div class="divTableCell"><%= @offer.allocation_percentage %></div>
         <div class="divTableCell">    
             <%= form.number_field :allocation_quantity, class: "form-control"  %>
         </div>

@@ -5,6 +5,7 @@ resources :offers do
   get   'allocation_form', on: :member
   get 'search', on: :collection
   patch 'generate_esign_link', on: :member
+  post 'bulk_actions', on: :collection
 end
 
 resources :interests do
