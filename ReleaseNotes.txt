@@ -1,4 +1,11 @@
-
+V7.1.34
+#####################################
+7ce0f43e7 (HEAD -> main, tag: V7.1.34, origin/main, origin/HEAD) Offer added ransack search in allocations page (#314)
+02846692c Added misc fixes, to hide % holding etc
+4414041b8 Added offers to vc_dashboard
+87d90a603 Fixed policy for support?
+ee264b775 Fixed commitment policy to disable support from update
+934990841 Added lazy load for AE tab in commitments
 
 V7.1.33
 #####################################
