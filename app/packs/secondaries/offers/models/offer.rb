@@ -183,6 +183,7 @@ class Offer < ApplicationRecord
   end
 
   def validate_spa_generation
+    errors.add(:base, "Offer #{id} is not verified!") unless verified
     errors.add(:base, "Offer #{id} is not associated with any interest!") if interest.blank?
     errors.add(:base, "No Offer Template found for Offer #{id}") if secondary_sale.documents&.where(owner_tag: "Offer Template").blank?
   end

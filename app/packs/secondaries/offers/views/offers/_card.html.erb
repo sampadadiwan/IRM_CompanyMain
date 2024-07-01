@@ -1,6 +1,6 @@
-<% 
+<%
     steps = []
-    params[:force_units] = offer.entity.default_currency_units 
+    params[:force_units] = offer.entity.default_currency_units
     if params[:force_units] == "Crores" && offer.amount.to_d < 100_00000
         # If committed_amount is less than a crore, then show in lakhs
         params[:force_units] = "Lakhs"
@@ -9,10 +9,10 @@
 
 <% if policy(offer).update? && offer.approved %>
 
-  <% 
-  
-  steps = ["#{link_to 'Review', offer_path(offer)} your offer details below".html_safe, 
-          "Please #{link_to 'Add', edit_offer_path(offer)} the required details".html_safe, 
+  <%
+
+  steps = ["#{link_to 'Review', offer_path(offer)} your offer details below".html_safe,
+          "Please #{link_to 'Add', edit_offer_path(offer)} the required details".html_safe,
           "You may need to upload documents to complete the offer.",
           "Wait for communication from #{offer.secondary_sale.entity.name}"].freeze
 
@@ -21,22 +21,22 @@
 
 <% elsif policy(offer).show? && offer.verified %>
 
-  
-  <% 
+
+  <%
     spas = []
     offer.documents.where(owner_tag: "Generated").each do |spa|
       spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
     end
 
-    accept_spa = button_to("Accept SPA" , accept_spa_offer_path(offer), method: :patch, 
+    accept_spa = button_to("Accept" , accept_spa_offer_path(offer), method: :patch,
         class: "btn btn-outline-primary" , id: 'accept_spa_btn',
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "This will mark your acceptance of the SPA. Proceed?"}) if policy(offer).accept_spa? 
-    
-    steps = ["Please #{link_to 'Review', offer_path(offer)} the SPA </br> #{spas.join(' ')}".html_safe, 
-            ("Accept the SPA #{accept_spa}".html_safe if policy(offer).accept_spa? ),
-            ("Your acceptance of the SPA has already been recorded".html_safe unless policy(offer).accept_spa? ),
-            "Wait for communication from #{offer.secondary_sale.entity.name}"].compact             
+        msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
+
+    steps = ["Please #{link_to 'Review', offer_path(offer)} the Transaction Document(s) </br> #{spas.join(' ')}".html_safe,
+            ("Accept the Transaction Document(s) #{accept_spa}".html_safe if policy(offer).accept_spa? ),
+            ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(offer).accept_spa? ),
+            "Wait for communication from #{offer.secondary_sale.entity.name}"].compact
   %>
 
 <% end %>
@@ -145,7 +145,7 @@
                   </div>
                 </div>
               </div>
-              
+
             </div>
 
             <div class="row align-items-center">
@@ -153,14 +153,14 @@
                 <%= link_to "Show" , offer_path(offer), {class: "btn btn-outline-primary" } %>
                 <% if policy(offer).update? %>
                   <%= link_to "Edit" , edit_offer_path(offer), {class: "btn btn-outline-primary" } if !offer.approved %>
-                  <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>    
+                  <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>
                 <% end %>
 
-                <%= button_to "Accept SPA" , accept_spa_offer_path(offer), method: :patch, 
+                <%= button_to "Accept SPA" , accept_spa_offer_path(offer), method: :patch,
                     class: "btn btn-outline-success" , id: 'accept_spa_btn',
                     form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-                    msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? %>      
-              
+                    msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? %>
+
               </div>
             </div>
 
