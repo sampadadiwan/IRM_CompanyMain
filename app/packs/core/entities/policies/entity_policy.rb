@@ -42,7 +42,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.id
+    if user.entity_id == record.id || support?
       true
     else
       user.entity_id != record.id
@@ -58,7 +58,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    (user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)
+    ((user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)) || support?
   end
 
   def edit?

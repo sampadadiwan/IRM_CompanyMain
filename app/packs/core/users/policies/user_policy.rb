@@ -18,20 +18,20 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin))
+    user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
   end
 
   def create?
-    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
+    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
   end
 
   def new?
-    user.has_cached_role?(:company_admin)
+    user.has_cached_role?(:company_admin) || support?
   end
 
   def update?
     user.id == record.id ||
-      create?
+      create? || support?
   end
 
   def edit?
