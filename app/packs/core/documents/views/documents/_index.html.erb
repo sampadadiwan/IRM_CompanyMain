@@ -45,7 +45,7 @@
         <% if folder_id.present? %>
       
             <%= button_to "Download Folder", download_folder_path(id: folder_id), form_class: "deleteButton", 
-                class: "dropdown-item d-none d-sm-block", data: {action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. Proceed?"} if policy(@folder).download? %>
+                class: "dropdown-item d-none d-sm-block", data: {action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?"} if policy(@folder).download? %>
 
             <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
                 "folder[parent_id]": @folder.id), 
