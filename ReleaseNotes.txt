@@ -1,3 +1,9 @@
+V7.1.35
+#####################################
+aec90630a Now docs download has a popup alert
+fa9c3c800 Added support for entity and user policy
+68215505e Secondary sales fix 2 (#315)
+
 V7.1.34
 #####################################
 7ce0f43e7 (HEAD -> main, tag: V7.1.34, origin/main, origin/HEAD) Offer added ransack search in allocations page (#314)
