@@ -24,7 +24,7 @@
 
   <%
     spas = []
-    offer.documents.where(owner_tag: "Generated").each do |spa|
+    offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
       spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
     end
 
@@ -32,9 +32,13 @@
         class: "btn btn-outline-primary" , id: 'accept_spa_btn',
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
-
+    step2 = if policy(offer).accept_spa? && offer.documents&.where(owner_tag: "Generated", approved: true)&.present?
+            "Accept the Transaction Document(s) #{accept_spa}".html_safe
+            else
+            "Accept the Transaction Document(s)".html_safe
+            end
     steps = ["Please #{link_to 'Review', offer_path(offer)} the Transaction Document(s) </br> #{spas.join(' ')}".html_safe,
-            ("Accept the Transaction Document(s) #{accept_spa}".html_safe if policy(offer).accept_spa? ),
+            (step2),
             ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(offer).accept_spa? ),
             "Wait for communication from #{offer.secondary_sale.entity.name}"].compact
   %>
@@ -65,12 +69,12 @@
             </div>
 
             <div class="row align-items-center">
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-user text-primary fs-6"></i>
                   </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= offer.user.full_name %></h4>
                     <p class="fs-3 mb-0">User</p>
                   </div>
@@ -79,18 +83,18 @@
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-mail text-primary fs-6"></i>
                   </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= offer.user.email %></h4>
                     <p class="fs-3 mb-0">Email</p>
                   </div>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-currency-dollar text-primary fs-6"></i>
                   </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= offer.bank_account_number %></h4>
                     <p class="fs-3 mb-0">Account Number</p>
                   </div>
@@ -99,38 +103,18 @@
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-building-bank text-primary fs-6"></i>
                   </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= offer.ifsc_code %></h4>
                     <p class="fs-3 mb-0">IFSC Code</p>
                   </div>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>
                   </div>
-                  <div>
-                    <h4 class="mb-0 fs-6"><%= offer.quantity %></h4>
-                    <p class="fs-3 mb-0">Offered Quantity</p>
-                  </div>
-                </div>
-                <div class="hstack mb-4 pb-1">
-                  <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                    <i class="ti ti-grid-dots text-primary fs-6"></i>
-                  </div>
-                  <div>
-                    <h4 class="mb-0 fs-6"><%= money_to_currency(offer.amount, params) %></h4>
-                    <p class="fs-3 mb-0">Amount</p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="hstack mb-4 pb-1">
-                  <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                    <i class="ti ti-grid-dots text-primary fs-6"></i>
-                  </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= offer.allocation_quantity %></h4>
                     <p class="fs-3 mb-0">Allocation Quantity</p>
                   </div>
@@ -139,7 +123,7 @@
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>
                   </div>
-                  <div>
+                  <div class="text-wrap" >
                     <h4 class="mb-0 fs-6"><%= money_to_currency(offer.allocation_amount, params) %></h4>
                     <p class="fs-3 mb-0">Allocation Amount</p>
                   </div>
@@ -159,7 +143,7 @@
                 <%= button_to "Accept SPA" , accept_spa_offer_path(offer), method: :patch,
                     class: "btn btn-outline-success" , id: 'accept_spa_btn',
                     form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-                    msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? %>
+                    msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? && offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>
 
               </div>
             </div>

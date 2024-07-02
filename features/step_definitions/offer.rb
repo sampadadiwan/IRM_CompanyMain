@@ -182,7 +182,7 @@
     click_on("Offers")
     expect(page).to have_content(@user.full_name)
     # expect(page).to have_content(@entity.name)
-    expect(page).to have_content(@offer.quantity)
+    expect(page).to have_content(@offer.allocation_quantity)
     # within("td.approved") do
         # expect(page).to have_content("No")
     # end
@@ -264,7 +264,7 @@ Given('Given I upload a offer file') do
     ImportUpload.last.failed_row_count.should == 0
 end
 
-Then('when the offers are approved') do  
+Then('when the offers are approved') do
   @sale.reload
   @sale.offers.each do |offer|
     offer.granted_by_user_id = @user.id

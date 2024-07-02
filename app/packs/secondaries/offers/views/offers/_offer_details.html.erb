@@ -1,6 +1,6 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
-  
+
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
@@ -13,10 +13,16 @@
 
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
+        <% documents = if current_user.entity_id == @offer.entity_id
+            @offer.documents.includes(:folder)
+            else
+            @offer.documents.includes(:folder).where(owner_tag:"Generated", approved: true).or(@offer.documents.where.not(owner_tag:"Generated")).or(@offer.documents.where(owner_tag: nil))
+            end
+        %>
           <% msg = @offer.secondary_sale.seller_doc_list.present? ? "Documents Required: #{@offer.secondary_sale.seller_doc_list}" : nil %>
-          <%= render "/documents/index", documents: @offer.documents.includes(:folder), 
+          <%= render "/documents/index", documents: documents,
               owner: @offer, entity: @offer.entity, msg: msg %>
-        </div>     
+        </div>
       </div>
 
   </div>
