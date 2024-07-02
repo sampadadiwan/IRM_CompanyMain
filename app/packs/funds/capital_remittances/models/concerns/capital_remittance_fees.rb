@@ -44,12 +44,14 @@ module CapitalRemittanceFees
         end
       end
 
+      Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
+
+      self.capital_fee_cents = total_capital_fees_cents
+      self.other_fee_cents = total_other_fees_cents
+
     end
 
-    Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
-
-    self.capital_fee_cents = total_capital_fees_cents
-    self.other_fee_cents = total_other_fees_cents
+    
   end
 
   # Convinience method used in fund formulas. Not used directly in computed_amount

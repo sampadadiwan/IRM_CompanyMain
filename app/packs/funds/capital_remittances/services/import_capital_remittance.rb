@@ -18,7 +18,7 @@ class ImportCapitalRemittance < ImportUtil
       capital_remittance.verified = user_data["Verified"] == "Yes"
 
       setup_custom_fields(user_data, capital_remittance, custom_field_headers)
-      result = CapitalRemittanceCreate.call(capital_remittance:)
+      result = CapitalRemittanceCreate.wtf?(capital_remittance:)
       raise result[:errors] unless result.success?
 
       result.success?
