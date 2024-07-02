@@ -2,9 +2,10 @@
     
 <div class='row'>
     <% names = f.object.capital_call.fee_account_entry_names %>
-    <div class="form-group col">
+    <div class="form-group col" data-controller="otherselect" data-otherselect-select-id-value="#call_fee_fee_name">
         <%= f.label :name %>
-        <%= f.select :name, names, {}, class: "form-control", id: "fee_name" %>
+        <%= f.select :name, names, {include_blank: true}, class: "form-control", id: "fee_name", "data-action": "change->otherselect#checkOtherName"  %>
+        <%= f.text_field :name, class: "form-control", disabled: true, id: "other_name", hidden: true %>
     </div>
     
     <div class="form-group col">
@@ -19,7 +20,7 @@
 
     <div class="form-group col">
         <%= f.label :fee_type %>
-        <%= f.select :fee_type, CapitalCall::FEE_TYPES, {}, class: "form-control", id: "call_fee_types" %>
+        <%= f.select :fee_type, CapitalCall::FEE_TYPES, {}, class: "form-control", id: "call_fee_types"%>        
     </div>
 </div>
 <div class='row'>

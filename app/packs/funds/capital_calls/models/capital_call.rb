@@ -114,7 +114,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def fee_account_entry_names
-    fund.account_entries.where("name like '%Fee%' or name like '%Expense%'").pluck(:name).uniq
+    fund.account_entries.where("name like '%Fee%' or name like '%Expense%'").pluck(:name).uniq << "Other"
   end
 
   def call_basis_list

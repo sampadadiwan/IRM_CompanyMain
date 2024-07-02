@@ -77,7 +77,7 @@
         <%= form.label :fund_close %>
         <% if closes.length > 1 %>
           <%= form.select :fund_close, closes, {}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
-          <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name"  %>
+          <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name", hidden: true  %>
         <% else %>
           <%= form.text_field :fund_close, class: "form-control", maxlength: 30  %>
         <% end %>

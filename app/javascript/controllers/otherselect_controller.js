@@ -17,19 +17,34 @@ export default class extends Controller {
   }
 
   checkOtherName(event) {
-    console.log($(this.selectIdValue).val());
+    let selected_value = "";
+    let selected_field = null;
+    if(event){            
+      selected_field = event.target;
+      selected_value = event.target.value;
+    } else {      
+      selected_field = $(this.selectIdValue);
+      selected_value = $(this.selectIdValue).val();
+    }
 
-    if($(this.selectIdValue).length > 0) {
-      let selected = $(this.selectIdValue).val();
-      console.log(`other_name = ${$(this.otherIdValue).val().length}`);
+    console.log(`selected_value = ${selected_value}`);
+    
 
-      if (selected == "Other" || $(this.otherIdValue).val().length > 0) {
-        $(this.selectIdValue).remove();
-        $(this.otherIdValue).prop("disabled", "")
-        $(this.otherIdValue).show();
-        $(this.otherIdValue).removeAttr("hidden");
+    if(selected_value != null && selected_value.length > 0) {
+
+      let form_group = $(event.target).closest(".form-group");
+      let other_field = form_group.find(this.otherIdValue);
+      console.log(selected_field);
+      console.log(other_field);
+
+      console.log(other_field);
+      if (selected_value == "Other") {
+        $(selected_field).remove();
+        $(other_field).prop("disabled", "")
+        $(other_field).show();
+        $(other_field).removeAttr("hidden");
       } else {
-        $(this.otherIdValue).hide();
+        $(other_field).hide();
       }
     }
   }

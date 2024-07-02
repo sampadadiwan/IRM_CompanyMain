@@ -16,6 +16,7 @@ Highcharts.setOptions({
 });
 
 
+
 // https://github.com/basecamp/trix/issues/624
 addEventListener("trix-initialize", event => {
   const { toolbarElement } = event.target;

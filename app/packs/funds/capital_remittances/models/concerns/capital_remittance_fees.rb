@@ -20,12 +20,14 @@ module CapitalRemittanceFees
   def setup_call_fees
     total_capital_fees_cents = 0
     total_other_fees_cents = 0
+    json_fields["other_fees_audit"] = []
+    json_fields["capital_fees_audit"] = []
 
     if capital_call.call_fees.present?
       capital_call.call_fees.each do |call_fee|
         if call_fee.formula
           fees_cents = call_fee.calculate_formula(self)
-          fees_audit = "#{call_fee.notes} + " " + #{fees_cents}"
+          fees_audit = [call_fee.name, call_fee.start_date, fees_cents]
         else
           # Sum the amount for the fee for the commitment account_entries
           fees_cents = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
@@ -35,17 +37,11 @@ module CapitalRemittanceFees
 
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees_cents
-          json_fields["other_fees_audit"] ||= []
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         else
           total_capital_fees_cents += fees_cents
-          json_fields["capital_fees_audit"] ||= []
           json_fields["capital_fees_audit"] << fees_audit if fees_audit.present?
         end
-
-        # Flatten the array of arrays
-        json_fields["capital_fees_audit"] = json_fields["capital_fees_audit"].flatten if json_fields["capital_fees_audit"].present?
-        json_fields["other_fees_audit"] = json_fields["other_fees_audit"].flatten if json_fields["other_fees_audit"].present?
       end
 
     end
