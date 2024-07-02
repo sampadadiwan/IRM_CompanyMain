@@ -1,5 +1,5 @@
 class CapitalCallsController < ApplicationController
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs allocate_units]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs allocate_units recompute_fees]
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -12,6 +12,11 @@ class CapitalCallsController < ApplicationController
       format.html { render :index }
       format.json { render json: CapitalCallDatatable.new(params, capital_calls: @capital_calls) }
     end
+  end
+
+  def recompute_fees
+    CapitalRemittancesRecomputeFeesJob.perform_later(@capital_call.id, current_user.id)
+    redirect_to capital_call_path(@capital_call), notice: "Recompute fees job started."
   end
 
   # GET /capital_calls/1 or /capital_calls/1.json
@@ -114,6 +119,10 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES, documents_attributes: Document::NESTED_ATTRIBUTES)
+    if current_user.support?
+      params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES_WITH_FORMULA, documents_attributes: Document::NESTED_ATTRIBUTES)
+    else
+      params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES, documents_attributes: Document::NESTED_ATTRIBUTES)
+    end
   end
 end

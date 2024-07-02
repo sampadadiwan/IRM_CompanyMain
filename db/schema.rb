@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_26_014510) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_02_031347) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -427,6 +427,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_26_014510) do
     t.bigint "capital_call_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "formula", default: false
     t.index ["capital_call_id"], name: "index_call_fees_on_capital_call_id"
     t.index ["entity_id"], name: "index_call_fees_on_entity_id"
     t.index ["fund_id"], name: "index_call_fees_on_fund_id"
@@ -996,6 +997,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_26_014510) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
+    t.boolean "embedded", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -3173,6 +3175,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_26_014510) do
   add_foreign_key "doc_questions", "entities"
   add_foreign_key "document_chats", "documents"
   add_foreign_key "document_chats", "entities"
+  add_foreign_key "document_chats", "users"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"

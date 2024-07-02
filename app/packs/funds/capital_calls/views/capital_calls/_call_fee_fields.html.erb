@@ -23,7 +23,14 @@
     </div>
 </div>
 <div class='row'>
-    <div class="form-group col-md-10">
+    <% if current_user.support? %>
+        <div class="form-group col-md-2">
+            <%= f.label :formula %>
+            <%= f.check_box :formula, class: "form-check-input", id: "fee_notes" %>
+        </div>
+    <% end %>
+
+    <div class="form-group col-md-8">
         <%= f.label :notes %>
         <%= f.text_field :notes, class: "form-control", id: "fee_notes" %>
     </div>

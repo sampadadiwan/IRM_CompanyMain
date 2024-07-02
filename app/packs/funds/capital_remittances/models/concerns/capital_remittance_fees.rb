@@ -22,26 +22,31 @@ module CapitalRemittanceFees
     total_other_fees_cents = 0
 
     if capital_call.call_fees.present?
-
       capital_call.call_fees.each do |call_fee|
-        # Sum the amount for the fee for the commitment account_entries
-        fees = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
-        fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount.to_d] }
+        if call_fee.formula
+          fees_cents = call_fee.calculate_formula(self)
+          fees_audit = "#{call_fee.notes} + " " + #{fees_cents}"
+        else
+          # Sum the amount for the fee for the commitment account_entries
+          fees_cents = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
+
+          fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount.to_d] }
+        end
 
         if call_fee.fee_type == "Other Fees"
-          total_other_fees_cents += fees
+          total_other_fees_cents += fees_cents
           json_fields["other_fees_audit"] ||= []
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         else
-          total_capital_fees_cents += fees
+          total_capital_fees_cents += fees_cents
           json_fields["capital_fees_audit"] ||= []
           json_fields["capital_fees_audit"] << fees_audit if fees_audit.present?
         end
-      end
 
-      # Flatten the array of arrays
-      json_fields["capital_fees_audit"] = json_fields["capital_fees_audit"].flatten if json_fields["capital_fees_audit"].present?
-      json_fields["other_fees_audit"] = json_fields["other_fees_audit"].flatten if json_fields["other_fees_audit"].present?
+        # Flatten the array of arrays
+        json_fields["capital_fees_audit"] = json_fields["capital_fees_audit"].flatten if json_fields["capital_fees_audit"].present?
+        json_fields["other_fees_audit"] = json_fields["other_fees_audit"].flatten if json_fields["other_fees_audit"].present?
+      end
 
     end
 

@@ -68,6 +68,7 @@ resources :capital_calls do
   post 'approve', on: :member
   patch 'generate_docs', on: :member
   patch 'allocate_units', on: :member
+  patch 'recompute_fees', on: :member
 end
 
 resources :capital_commitments do

@@ -141,6 +141,7 @@ Style/OptionalBooleanParameter:
 
 Security/Eval:
   Exclude:
+    - 'app/packs/funds/capital_calls/models/call_fee.rb'
     - 'app/packs/misc/form_custom_fields/models/concerns/with_custom_field.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'

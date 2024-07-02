@@ -1,6 +1,6 @@
 class CapitalRemittanceCreate < CapitalRemittanceAction
-  step :setup_call_fees
   step :set_call_amount
+  step :setup_call_fees
   step :set_status
   step :save
   left :handle_errors, Output(:failure) => End(:failure)

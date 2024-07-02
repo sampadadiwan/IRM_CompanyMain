@@ -134,17 +134,18 @@
 
           
           <% if capital_call.call_fees.present? %>
-          <tr class="">
+          <tr class="d-none d-sm-table-row">
             <td>
               Fees
             </td>
             <td>
-              <table>
+              <table class="table dataTable">
                 <tr>
                   <td>Name</td> 
                   <td>From</td>
                   <td>To</td>
                   <td>Type</td>
+                  <td>Notes</td>
                 </tr>
 
                 <% capital_call.call_fees.each do |call_fee| %>
@@ -153,6 +154,7 @@
                       <td><%= l call_fee.start_date %></td>
                       <td><%= l call_fee.end_date %></td>
                       <td><%= call_fee.fee_type %></td>
+                      <td><%= call_fee.notes %></td>
                   </tr>
                 <% end %>
 

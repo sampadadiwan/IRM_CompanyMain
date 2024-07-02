@@ -23,6 +23,10 @@ class CapitalCallPolicy < FundBasePolicy
     update?
   end
 
+  def recompute_fees?
+    update?
+  end
+
   def generate_docs?
     update?
   end
