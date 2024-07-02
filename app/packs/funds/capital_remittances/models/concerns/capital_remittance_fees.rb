@@ -50,8 +50,6 @@ module CapitalRemittanceFees
       self.other_fee_cents = total_other_fees_cents
 
     end
-
-    
   end
 
   # Convinience method used in fund formulas. Not used directly in computed_amount

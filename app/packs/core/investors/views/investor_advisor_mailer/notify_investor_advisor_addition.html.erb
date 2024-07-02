@@ -1,0 +1,12 @@
+<h3>Dear <%= @investor.investor_name %></h3>
+
+<p>
+    This is to inform you, that <%= @investor_advisor.user.first_name %> <%= @investor_advisor.user.last_name %> is added as Investor Advisor for <%= @fund_name %>. 
+</p>
+
+
+<p class="btn btn-outline-primary">
+    <%= link_to 'View Investor Advisor', investor_advisor_url(@investor_advisor, subdomain: @investor_advisor.entity.sub_domain) %>
+</p>
+
+
