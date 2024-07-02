@@ -1004,7 +1004,7 @@ DEPENDENCIES
   rubyzip
   rupees!
   sablon
-  sanitize_email
+  sanitize_email (= 2.0.7)
   sassc-rails
   scout_apm
   selenium-webdriver

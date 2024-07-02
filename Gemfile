@@ -100,7 +100,7 @@ gem 'uppy-s3_multipart', '~> 1.1'
 gem 'cocoon'
 # Allows for soft delete
 gem "paranoia"
-gem 'sanitize_email'
+gem 'sanitize_email', "2.0.7"
 # Cron
 gem 'whenever', require: false
 
