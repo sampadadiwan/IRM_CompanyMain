@@ -1,19 +1,27 @@
-<%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
-  <% 
-    investor_advisors = InvestorAdvisor.where(user_id: current_user.id).map{ |ia| [ia.entity.name, ia.id] }
-  %>
-  <div class="form-group" data-controller="persona">
+<% 
+  investor_advisors = InvestorAdvisor.where(user_id: current_user.id).map{ |ia| [ia.entity.name, ia.id] }
+%>
 
+<%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
+  <div class="form-group" data-controller="persona">
     <% selected = params[:investor_advisor_id].present? ? params[:investor_advisor_id] : current_user.investor_advisor_id %>
-  
     <%= form.select :investor_advisor, investor_advisors, {selected: selected, include_blank: 'Self'}, 
         { id: "investor_advisor", class: "form-control", name: "id",
         data: { action: "change->persona#setPersona", toggle: "tooltip", title: "Choose Persona" } } %>
-  
   </div>
 
   <%= form.text_field :persona, id: "persona", name: "persona", hidden: true %>
+  <%= form.submit "Submit", {hidden: true, id: "submit"} %>
+<% end %>
 
-  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
-
+<% if current_user.entity_type == "Investor Advisor" %>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var investorAdvisors = <%= raw investor_advisors.to_json %>;
+      if (investorAdvisors.length > 0) {
+        document.getElementById("investor_advisor").value = investorAdvisors[0][1];
+        document.getElementById("submit").click();
+      }
+    });
+  </script>
 <% end %>

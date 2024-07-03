@@ -47,10 +47,11 @@ class ImportInvestorAdvisor < ImportUtil
   def create_user(user_data, entity)
     raise "First name not present" if user_data["First Name"].blank?
     raise "Last name not present" if user_data["Last Name"].blank?
-    raise "Password can't be blank" if user_data["Password"].blank?
 
+    password = SecureRandom.alphanumeric
     user = User.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
-                    email: user_data["Email"], entity_id: entity.id, password: user_data["Password"])
+                    email: user_data["Email"], entity_id: entity.id, password:)
+    user.confirm
     user.save!
   end
 
