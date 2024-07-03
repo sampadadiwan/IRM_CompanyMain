@@ -77,6 +77,10 @@ class KycDocGenerator
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date))
 
+
+      add_image(context, :investor_signature, investor_kyc.signature)
+      add_image(context, :profile_image, investor_kyc.documents.where(owner_tag: "Profile Image").first&.file)
+
     }
   end
 

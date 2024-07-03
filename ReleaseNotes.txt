@@ -1,3 +1,11 @@
+V7.1.36
+#####################################
+4fb8bd349 (HEAD -> main, origin/main, origin/HEAD) Fixed tests for remittance
+e2f37ce32 Fixed SANDBOX_EMAIL
+c84777c8c Fixed other_select for call fees
+68766a12e Call recompute and formulas (#316)
+fc9cedd67 Fixed matched_offers
+
 V7.1.35
 #####################################
 aec90630a Now docs download has a popup alert

@@ -240,6 +240,10 @@ class InvestorKyc < ApplicationRecord
     end
   end
 
+  def profile_image
+    documents.where("owner_tag = ?", "Profile Image").last&.file
+  end
+
   def total_fund_units
     # Find all the committments this kyc is tied to
     entity.fund_units.joins(capital_commitment: :investor_kyc).where("investor_kycs.id=?", id).sum(:quantity)

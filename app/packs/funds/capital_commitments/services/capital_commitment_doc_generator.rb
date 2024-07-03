@@ -40,7 +40,7 @@ class CapitalCommitmentDocGenerator
 
     # Can we have more than one LP signer ?
     add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
-    add_image(context, :investor_photo, capital_commitment.documents.where(name: "Investor Photo").first&.file)
+    add_image(context, :profile_image, capital_commitment.investor_kyc.documents.where(owner_tag: "Profile Image").first&.file)
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = generated_file_name(capital_commitment)
