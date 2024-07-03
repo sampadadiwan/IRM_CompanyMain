@@ -10,9 +10,11 @@
 
 class InvestorAdvisor < ApplicationRecord
   include UserEnabled
+  include Trackable.new
 
   belongs_to :entity
   belongs_to :user
+  belongs_to :import_upload, optional: true
 
   before_validation :ensure_user
   validates_uniqueness_of :email, scope: :entity_id
