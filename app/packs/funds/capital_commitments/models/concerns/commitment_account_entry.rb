@@ -97,4 +97,15 @@ module CommitmentAccountEntry
 
     entries.not_cumulative.where(reporting_date: start_of_financial_year..end_date).sum(:amount_cents)
   end
+
+  def management_fee_start_end(start_date, end_date, exclude_call_name: nil)
+    management_fees = 0
+    remittances = capital_remittances.joins(:capital_call)
+    remittances = remittances.where.not("capital_calls.name = ?", exclude_call_name) if exclude_call_name
+    remittances = remittances.where(remittance_date: @start_date..@end_date);
+    remittances.each do |cr|
+      management_fees += cr.call_amount_cents * (fund_unit_setting.management_fee * ( (end_date - start_date ).to_i + 1 ) / 365 ) / 100 
+    end
+    management_fees
+  end
 end
