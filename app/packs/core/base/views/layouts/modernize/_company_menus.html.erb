@@ -47,6 +47,7 @@
             <span class="fs-2 d-block text-body-secondary">Company Employees</span>
             </div>
         </a>
+        <% if current_user.enable_investor_advisors %>
         <a href="<%= investor_advisors_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-user-check"></i>
@@ -56,6 +57,7 @@
             <span class="fs-2 d-block text-body-secondary">External Company Advisors</span>
             </div>
         </a>
+        <% end %>
 
         <% if current_user.curr_role != "investor" %>
 
@@ -69,6 +71,7 @@
             </div>
         </a>
 
+        <% if current_user.enable_form_types %>
         <a href="<%= form_types_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-forms"></i>
@@ -78,6 +81,7 @@
             <span class="fs-2 d-block text-body-secondary"> Design Personalized Form</span>
             </div>
         </a>
+        <% end %>
 
         <a href="<%= investor_notices_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
@@ -89,6 +93,7 @@
             </div>
         </a>
 
+        <% if current_user.enable_import_uploads %>
         <a href="<%= import_uploads_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-upload"></i>
@@ -98,6 +103,7 @@
             <span class="fs-2 d-block text-body-secondary">Bulk Upload Data</span>
             </div>
         </a>
+        <% end %>
 
         <a href="<%= exchange_rates_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">

@@ -6,7 +6,7 @@ class FormTypePolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.enable_form_types
   end
 
   def search?
@@ -14,7 +14,7 @@ class FormTypePolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    index? && belongs_to_entity?(user, record)
   end
 
   def create?

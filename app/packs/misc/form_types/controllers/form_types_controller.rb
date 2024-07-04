@@ -3,6 +3,7 @@ class FormTypesController < ApplicationController
 
   # GET /form_types or /form_types.json
   def index
+    authorize(FormType)
     @form_types = policy_scope(FormType)
   end
 

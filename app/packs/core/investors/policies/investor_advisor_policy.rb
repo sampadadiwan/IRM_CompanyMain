@@ -6,11 +6,11 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.enable_investor_advisors
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    index? && belongs_to_entity?(user, record)
   end
 
   def create?
