@@ -77,7 +77,6 @@ class KycDocGenerator
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date))
     }
-
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"

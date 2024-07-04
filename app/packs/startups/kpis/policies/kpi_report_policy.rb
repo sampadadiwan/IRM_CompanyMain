@@ -5,8 +5,7 @@ class KpiReportPolicy < KpiPolicyBase
         # for_investor_sql = scope.for_investor(user).to_sql
         # all_my_kpi_reports_sql = KpiReport.where(entity_id: user.entity_id).to_sql
         # sql = "#{for_investor_sql} UNION #{all_my_kpi_reports_sql}"
-        # scope.from("(#{sql}) as kpi_reports")
-        (scope.for_investor(user) UNION scope.where(entity_id: user.entity_id).where(owner_id: nil))
+        scope.for_investor(user)
       else
         scope.where(entity_id: user.entity_id).where(owner_id: nil)
       end

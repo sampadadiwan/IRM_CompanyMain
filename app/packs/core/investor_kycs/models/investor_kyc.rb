@@ -241,7 +241,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def profile_image
-    documents.where("owner_tag = ?", "Profile Image").last&.file
+    documents.where(owner_tag: "Profile Image").last&.file
   end
 
   def total_fund_units

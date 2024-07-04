@@ -11,6 +11,10 @@ class CapitalRemittancesCountersJob < BulkActionJob
     # Then we hae to rollup the KYCs
     investor_kyc_ids = CapitalCommitment.where(fund_id: fund_ids).pluck(:investor_kyc_id).uniq
     CapitalRemittance.counter_culture_fix_counts where: { id: investor_kyc_ids }, only: [%i[capital_commitment investor_kyc]]
+
+    # We need to change the status to "Paid" for the Capital Remittances where the call_amount_cents = collected_amount_cents
+    CapitalRemittance.where.not(status: "Paid").where(fund_id: fund_ids).where("call_amount_cents = collected_amount_cents").update_all(status: "Paid")
+
     send_notification("Recalculating counters completed for Capital Remittances", user_id, :success) if user_id
   end
 end
