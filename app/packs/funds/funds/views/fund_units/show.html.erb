@@ -92,6 +92,17 @@
         </td>
       </tr>
 
+      <% if @fund_unit.transfer.present? %>
+      <tr>
+        <td>
+          Transfer
+        </td>
+        <td>
+          <%= @fund_unit.transfer&.titleize %>
+        </td>
+      </tr>
+      <% end %>
+
       <tr>
         <td>
           Reason
@@ -119,7 +130,7 @@
 
 <div>
   <% if policy(@fund_unit).update? %>
-    <%= link_to "Edit", edit_fund_unit_path(@fund_unit), {class: "btn btn-outline-primary"} %> 
+    <%= link_to "Edit", edit_fund_unit_path(@fund_unit), {class: "btn btn-outline-primary"} %>
     <%= button_to "Delete", @fund_unit, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

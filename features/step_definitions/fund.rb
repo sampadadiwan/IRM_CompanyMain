@@ -447,7 +447,7 @@ Then('the remittance rollups should be correct') do
       cc.folio_collected_amount_cents.should == cc.capital_remittances.verified.sum(:folio_collected_amount_cents)
       cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
       cc.folio_call_amount_cents.should == cc.capital_remittances.sum(:folio_call_amount_cents)
-    
+
       # KYC rollups
       folio_remittances = CapitalRemittance.where(folio_id: cc.folio_id)
       if cc.investor_kyc
@@ -1477,17 +1477,17 @@ Then('There should be {string} fund unit settings created with data in {string}'
   fund_unit_settings = FundUnitSetting.all.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
-    
+
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
     fus = fund_unit_settings[idx-1]
     puts "Checking import of #{fus.to_json}"
-    
+
     fus.fund_id.should == Fund.find_by(name: row_data["Fund"]).id
     fus.name.should == row_data["Class/Series"]
     fus.management_fee.should == row_data["Management Fee %"]
     fus.setup_fee.should == row_data["Setup Fee %"]
-    fus.carry.should == row_data["Carry %"]      
+    fus.carry.should == row_data["Carry %"]
 
     # Check that the custom fields got imported
     custom_field_headers.each do |cf_header|
@@ -1752,10 +1752,13 @@ Then('I should be able to see the transferred fund units') do
   expect(page).to have_content(from_fu.price)
   expect(page).to have_content(from_fu.premium)
   expect(page).to have_content(from_fu.reason)
+  expect(page).to have_content(from_fu.transfer&.titleize)
+
 
   visit(fund_unit_path(to_fu))
   expect(page).to have_content(to_fu.quantity)
   expect(page).to have_content(to_fu.price)
   expect(page).to have_content(to_fu.premium)
   expect(page).to have_content(to_fu.reason)
+  expect(page).to have_content(to_fu.transfer&.titleize)
 end

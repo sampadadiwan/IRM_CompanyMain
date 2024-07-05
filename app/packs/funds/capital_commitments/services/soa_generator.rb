@@ -131,10 +131,24 @@ class SoaGenerator
   end
 
   def fund_units(capital_commitment, start_date, end_date)
+    transfer_in_amount = Money.new(0)
+    transfer_amount = Money.new(0)
+    transfer_out_amount = Money.new(0)
+    capital_commitment.fund_units.where(issue_date: ..end_date, transfer: %w[out in]).find_each do |fu|
+      transfer_amount += fu.amount
+      if fu.transfer == "in"
+        transfer_in_amount += fu.amount
+      else
+        transfer_out_amount += fu.amount
+      end
+    end
     OpenStruct.new({
                      current: capital_commitment.fund_units.sum(:quantity),
                      before_end_date: capital_commitment.fund_units.where(issue_date: ..end_date).sum(:quantity),
-                     between_dates: capital_commitment.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
+                     between_dates: capital_commitment.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity),
+                     transfer_in_amount:,
+                     transfer_out_amount:,
+                     transfer_amount:
                    })
   end
 
