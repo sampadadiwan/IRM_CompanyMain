@@ -16,7 +16,11 @@ class KanbanBoardPolicy < ApplicationPolicy
   end
 
   def show?
-    (permissioned_employee? || "#{record.owner_type}Policy".constantize.new(user, record.owner).show?) && user.enable_kanban
+    if record.self_owned?
+      permissioned_employee? && user.enable_kanban
+    else
+      (permissioned_employee? || "#{record.owner_type}Policy".constantize.new(user, record.owner).show?) && user.enable_kanban
+    end
   end
 
   def create?

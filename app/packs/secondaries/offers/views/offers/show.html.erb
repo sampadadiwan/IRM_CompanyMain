@@ -19,7 +19,7 @@
 
   <%
     spas = []
-    @offer.documents.where(owner_tag: "Generated").each do |spa|
+    @offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
       spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
     end
 
@@ -27,9 +27,13 @@
         class: "btn btn-outline-primary" , id: 'accept_spa_btn',
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(@offer).accept_spa?
-
+    step2 = if policy(@offer).accept_spa? && @offer.documents&.where(owner_tag: "Generated", approved: true)&.present?
+            "Accept the Transaction Document(s) #{accept_spa}".html_safe
+            else
+            "Accept the Transaction Document(s)".html_safe
+            end
     steps = ["Please review the Transaction Document(s) #{spas.join(' ')}".html_safe,
-            ("Accept the Transaction Document(s) #{accept_spa}".html_safe if policy(@offer).accept_spa? ),
+            (step2),
             ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(@offer).accept_spa? ),
             "Wait for communication from #{@offer.secondary_sale.entity.name}"].compact
   %>
@@ -55,7 +59,7 @@
     <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch,
         class: "btn btn-outline-success" , id: 'accept_spa_btn',
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? %>
+        msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? && @offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>
 
     <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-outline-primary" } %>
   </div>

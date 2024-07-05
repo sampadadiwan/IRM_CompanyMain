@@ -1183,3 +1183,9 @@ h6 {
   }
 
 }
+
+.text-wrap {
+  white-space: nowrap; /* Prevent text from overflowing */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Add ellipsis for overflow text */
+}
