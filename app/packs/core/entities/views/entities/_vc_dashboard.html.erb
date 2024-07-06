@@ -25,7 +25,7 @@
                             
             <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do %>
 
-                <% offers = policy_scope(Offer).includes(:entity, :secondary_sale, :investor) %>
+                <% offers = policy_scope(Offer).includes(:entity, :secondary_sale, :investor, :holding).where("secondary_sales.active=?", true) %>
 
                 <% offers.each do |offer| %>
                     <%= render "/offers/card", offer: %>

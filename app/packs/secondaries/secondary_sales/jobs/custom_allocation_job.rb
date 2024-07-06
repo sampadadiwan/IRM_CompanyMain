@@ -1,12 +1,15 @@
 class CustomAllocationJob < AllocationBase
-  def perform(secondary_sale_id)
+  def perform(secondary_sale_id, user_id)
     Chewy.strategy(:sidekiq) do
       secondary_sale = SecondarySale.find(secondary_sale_id)
 
-      unless secondary_sale.lock_allocations
+      if secondary_sale.lock_allocations
+        send_notification("Sale is locked, cannot allocate!", user_id, :danger)
+      else
 
         begin
           init(secondary_sale)
+          send_notification("Matching buys and sells ...", user_id, :info)
           match(secondary_sale)
           update_sale(secondary_sale)
           secondary_sale.allocation_status = "Completed"
@@ -17,7 +20,7 @@ class CustomAllocationJob < AllocationBase
         end
 
         secondary_sale.save
-
+        send_notification("Sale allocation completed successfully.", user_id, :success)
       end
     end
   end

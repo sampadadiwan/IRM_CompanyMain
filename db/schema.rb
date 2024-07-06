@@ -1505,6 +1505,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_04_142959) do
     t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.date "issue_date"
     t.bigint "import_upload_id"
+    t.string "transfer", limit: 8
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"

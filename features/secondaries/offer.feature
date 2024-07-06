@@ -102,5 +102,6 @@ Scenario Outline: Import offer to sale
   And when the holdings are approved
   And Given I upload a offer file
   Then I should see the "Import in progress"
+  And the offers must have the data in the sheet
   And when the offers are approved
   And the sale offered quantity should be "120"

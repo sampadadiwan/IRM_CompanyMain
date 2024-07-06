@@ -1,5 +1,5 @@
 class AllocationJob < AllocationBase
-  def perform(secondary_sale_id)
+  def perform(secondary_sale_id, _user_id)
     Chewy.strategy(:sidekiq) do
       secondary_sale = SecondarySale.find(secondary_sale_id)
 

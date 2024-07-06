@@ -89,6 +89,11 @@ export default class extends Controller {
                     console.log(`Not valid: ${input_id} ${input_type}`);
                     isValid = false;
                     $(jq_input_id).closest(".form-group").addClass("field_with_errors");
+                    scrollTop: $(jq_input_id).focus();
+                    $('html, body').animate({                        
+                        scrollTop: $(jq_input_id).offset().top - 120
+                    }, 100);
+
                 } else {
                     $(jq_input_id).closest(".form-group").removeClass("field_with_errors");
                 }

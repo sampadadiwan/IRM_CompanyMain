@@ -91,7 +91,7 @@
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
     @sale.start_date = Time.zone.today
     key_values(@sale, arg1)
-    SecondarySaleCreate.wtf?(secondary_sale: @sale)
+    SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)
     @sale.reload
     puts "\n####Sale####\n"
     puts @sale.to_json
@@ -444,7 +444,7 @@ Then('when the last offer is allocated') do
 end
 
 Then('when the allocation is done') do
-  CustomAllocationJob.perform_now(@sale.id)
+  CustomAllocationJob.perform_now(@sale.id, @user.id)
   @sale.reload
   puts "\n####Sale Reloaded####\n"
   puts @sale.to_json

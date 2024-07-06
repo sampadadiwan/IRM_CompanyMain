@@ -6,9 +6,9 @@ class HoldingPolicy < ApplicationPolicy
       else
         case user.curr_role
         when "employee"
-          scope.where("entity_id=?", user.entity_id)
+          scope.where("holdings.entity_id=?", user.entity_id)
         when "holding"
-          scope.approved.where("user_id=?", user.id)
+          scope.approved.where("holdings.user_id=?", user.id)
         when "investor"
           scope.joins(:investor).where("investors.investor_entity_id=?", user.entity_id)
         else

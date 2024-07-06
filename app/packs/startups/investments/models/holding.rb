@@ -107,4 +107,12 @@ class Holding < ApplicationRecord
       "Approved"
     end
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[holding_type investment_instrument employee_id cancelled approved quantity].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor user funding_round]
+  end
 end

@@ -61,7 +61,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def show?
-    if belongs_to_entity?(user, record) && user.enable_secondary_sale
+    if (belongs_to_entity?(user, record) && user.enable_secondary_sale) || support?
       true
     else
       permissioned_investor? ||

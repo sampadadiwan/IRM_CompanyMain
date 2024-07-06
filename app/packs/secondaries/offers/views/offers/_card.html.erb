@@ -1,49 +1,4 @@
-<%
-    steps = []
-    params[:force_units] = offer.entity.default_currency_units
-    if params[:force_units] == "Crores" && offer.amount.to_d < 100_00000
-        # If committed_amount is less than a crore, then show in lakhs
-        params[:force_units] = "Lakhs"
-    end
-%>
 
-<% if policy(offer).update? && offer.approved %>
-
-  <%
-
-  steps = ["#{link_to 'Review', offer_path(offer)} your offer details below".html_safe,
-          "Please #{link_to 'Add', edit_offer_path(offer)} the required details".html_safe,
-          "You may need to upload documents to complete the offer.",
-          "Wait for communication from #{offer.secondary_sale.entity.name}"].freeze
-
-  %>
-
-
-<% elsif policy(offer).show? && offer.verified %>
-
-
-  <%
-    spas = []
-    offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
-      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
-    end
-
-    accept_spa = button_to("Accept" , accept_spa_offer_path(offer), method: :patch,
-        class: "btn btn-outline-primary" , id: 'accept_spa_btn',
-        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
-    step2 = if policy(offer).accept_spa? && offer.documents&.where(owner_tag: "Generated", approved: true)&.present?
-            "Accept the Transaction Document(s) #{accept_spa}".html_safe
-            else
-            "Accept the Transaction Document(s)".html_safe
-            end
-    steps = ["Please #{link_to 'Review', offer_path(offer)} the Transaction Document(s) </br> #{spas.join(' ')}".html_safe,
-            (step2),
-            ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(offer).accept_spa? ),
-            "Wait for communication from #{offer.secondary_sale.entity.name}"].compact
-  %>
-
-<% end %>
 
 
   <div class="col-lg-12">
@@ -62,14 +17,14 @@
                 </span>
               </div>
             </div>
-            <div class="row mt-3">
+            <div class="row mt-3 mb-3">
               <div class="col">
-                <%= render "/layouts/steps", steps:, progressbar: true %>
+                <%= render "/offers/offer_steps", offer:, progressbar: true %>
               </div>
             </div>
 
             <div class="row align-items-center">
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-user text-primary fs-6"></i>
@@ -89,7 +44,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-currency-dollar text-primary fs-6"></i>
@@ -109,7 +64,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="d-none col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>
@@ -129,7 +84,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <div class="hstack mb-4 pb-1">
                   <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                     <i class="ti ti-grid-dots text-primary fs-6"></i>

@@ -1,0 +1,49 @@
+<%
+    progressbar ||= false
+    steps = []
+    params[:force_units] = offer.entity.default_currency_units
+    if params[:force_units] == "Crores" && offer.amount.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+%>
+
+<% if policy(offer).update? && offer.approved %>
+
+  <%
+
+  steps = ["Complete your offer details using the button below".html_safe,
+          "You may need to upload documents to complete the offer.",
+          "Wait for communication from #{offer.secondary_sale.entity.name}"].freeze
+
+  %>
+
+  <%= render "/layouts/steps", steps:  %>
+
+<% elsif policy(offer).show? && offer.verified %>
+
+
+  <%
+    spas = []
+    offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
+      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
+    end
+
+    if spas.present? 
+      accept_spa = button_to("Accept" , accept_spa_offer_path(offer), method: :patch,
+          class: "btn btn-outline-primary" , id: 'accept_spa_btn',
+          form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+          msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
+              
+      steps = ["Please review the Transaction Document(s) </br> #{spas.join(' ')}".html_safe,
+              "Accept the Transaction Document(s) <br> #{accept_spa}".html_safe,
+              ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(offer).accept_spa? ),
+              "Wait for communication from #{offer.secondary_sale.entity.name}"].compact
+    else
+      steps = ["Your offer is being processed.", "The next step will be to accept your transaction documents.", "Wait for communication from #{offer.secondary_sale.entity.name}."]
+    end
+  %>
+
+  <%= render "/layouts/steps", steps:, progressbar:  %>
+
+<% end %>

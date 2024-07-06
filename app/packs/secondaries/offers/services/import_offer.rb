@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Seller Signatory Emails", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -10,10 +10,11 @@ class ImportOffer < ImportUtil
 
     email = user_data["Email"]
     update_only = user_data["Update Only"] == "Yes"
+    offer_type = user_data["Founder/Employee/Investor"]
     user = User.find_by(email:)
     raise "User #{email} not found" unless user
 
-    if user_data["Founder/Employee/Investor"] == "Investor"
+    if offer_type == "Investor"
       # This offer is for an investor
       investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
       raise "Investor #{user_data['Investor']} not found" unless investor
@@ -46,8 +47,7 @@ class ImportOffer < ImportUtil
         offer = Offer.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, secondary_sale_id: secondary_sale.id, holding_id: holding.id)
       end
 
-      offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"],
-                              demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:)
+      offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"], demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:, offer_type:, seller_signatory_emails: user_data["Seller Signatory Emails"])
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 

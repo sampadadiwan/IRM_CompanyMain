@@ -29,4 +29,8 @@ class FundingRound < ApplicationRecord
   def to_s
     name
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name status]
+  end
 end

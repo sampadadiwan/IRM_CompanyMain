@@ -182,7 +182,8 @@
     click_on("Offers")
     expect(page).to have_content(@user.full_name)
     # expect(page).to have_content(@entity.name)
-    expect(page).to have_content(@offer.quantity)
+    # expect(page).to have_content(@offer.quantity)
+    expect(page).to have_content(@offer.allocation_quantity)
     # within("td.approved") do
         # expect(page).to have_content("No")
     # end
@@ -275,4 +276,33 @@ end
 Then('the sale offered quantity should be {string}') do |quantity|
   @sale.reload
   @sale.total_offered_quantity.should == quantity.to_i
+end
+
+
+Then('the offers must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/offers.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  offers = @sale.offers.order(id: :asc).to_a
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    offer = offers[idx-1]
+    puts "Checking import of #{offer}"
+    offer.quantity.should == user_data["Offer Quantity"]
+    offer.offer_type.should == user_data["Founder/Employee/Investor"]
+    offer.investor.investor_name.should == user_data["Investor"] if offer.offer_type == "Investor"
+    offer.user.email.should == user_data["Email"] 
+    offer.address.should == user_data["Address"]
+    offer.PAN.should == user_data["Pan"]
+    offer.seller_signatory_emails.should == user_data["Seller Signatory Emails"]
+    offer.bank_account_number.should == user_data["Bank Account"].to_s
+    offer.ifsc_code.should == user_data["Ifsc Code"]
+    offer.demat.should == user_data["Demat"].to_s
+    offer.city.should == user_data["City"]    
+  end
 end

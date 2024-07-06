@@ -238,40 +238,39 @@ class AccountEntryAllocationEngine
   end
 
   def create_account_entry(account_entry, fund_formula, capital_commitment, parent, bdg, save_now: false)
-    begin
-      account_entry.capital_commitment = capital_commitment
-      account_entry.folio_id = capital_commitment.folio_id
-      account_entry.amount_cents = @helper.safe_eval(fund_formula.formula, bdg)
+    account_entry.capital_commitment = capital_commitment
+    account_entry.folio_id = capital_commitment.folio_id
+    account_entry.amount_cents = @helper.safe_eval(fund_formula.formula, bdg)
 
-      account_entry.explanation = []
-      account_entry.explanation << fund_formula.formula
-      account_entry.explanation << fund_formula.description
-      account_entry.explanation << fund_formula.parse_statement(bdg).to_json if @explain
+    account_entry.explanation = []
+    account_entry.explanation << fund_formula.formula
+    account_entry.explanation << fund_formula.description
+    account_entry.explanation << fund_formula.parse_statement(bdg).to_json if @explain
 
-      account_entry.parent = parent
-      account_entry.generated = true
-      account_entry.commitment_type = fund_formula.commitment_type
-      account_entry.fund_formula = fund_formula
+    account_entry.parent = parent
+    account_entry.generated = true
+    account_entry.commitment_type = fund_formula.commitment_type
+    account_entry.fund_formula = fund_formula
 
-      if save_now
-        # Save the account entry
-        account_entry.save!
-      else
-        # Validate the account entry
-        account_entry.validate!
-        account_entry.run_callbacks(:save)
-        # Add the account entry to the bulk insert records
-        ae_attributes = account_entry.attributes.except("id", "created_at", "updated_at", "generated_deleted")
-        ae_attributes[:created_at] = Time.zone.now
-        ae_attributes[:updated_at] = Time.zone.now
-        @bulk_insert_records << ae_attributes
-      end
-
-      @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
-    rescue SkipRule => e
-      Rails.logger.debug { "Skipping #{fund_formula.name} for #{capital_commitment}: #{e.message}" }
+    if save_now
+      # Save the account entry
+      account_entry.save!
+    else
+      # Validate the account entry
+      account_entry.validate!
+      account_entry.run_callbacks(:save)
+      # Add the account entry to the bulk insert records
+      ae_attributes = account_entry.attributes.except("id", "created_at", "updated_at", "generated_deleted")
+      ae_attributes[:created_at] = Time.zone.now
+      ae_attributes[:updated_at] = Time.zone.now
+      @bulk_insert_records << ae_attributes
     end
+
+    @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
     account_entry
+  rescue SkipRule => e
+    Rails.logger.debug { "Skipping #{fund_formula.name} for #{capital_commitment}: #{e.message}" }
+    nil
   end
 
   # Generate account entries of the fund, to the various capital commitments in the fund based on formulas

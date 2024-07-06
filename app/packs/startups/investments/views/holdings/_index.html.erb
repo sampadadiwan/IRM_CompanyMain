@@ -107,13 +107,13 @@
         <thead>
             <tr>
                 <th>
-                    Funding Round
+                    <%= sort_link @q, :funding_round_name, "Funding Round" %>
                 </th>
                 <th>
-                    Type
+                    <%= sort_link @q, :holding_type, "Type" %>
                 </th>
                 <th>
-                    Investor
+                    <%= sort_link @q, :investor_investor_name, "Investor" %>
                 </th>
                 <% unless investor_view %>
                     <th>
@@ -126,7 +126,7 @@
                     </th>
                 <% end %>
                 <th>
-                    Quantity
+                    <%= sort_link @q, :quantity, "Quantity" %>
                 </th>
                 <th>
                     Status
@@ -152,11 +152,11 @@
                     </th> 
                 
                 <% else %>
-                    <th> Date </th>
+                    <th> <%= sort_link @q, :created_at, "Date" %> </th>
                 <% end %>
 
                 <th>
-                    Price
+                    <%= sort_link @q, :price_cents, "Price" %>
                 </th>
                 <th>
                 </th>

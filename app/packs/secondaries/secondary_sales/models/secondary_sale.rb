@@ -53,8 +53,8 @@ class SecondarySale < ApplicationRecord
     self.show_quantity ||= "Actual"
   end
 
-  def allocate_sale
-    CustomAllocationJob.perform_later(id) if finalized && final_price_changed?
+  def allocate_sale(user_id)
+    CustomAllocationJob.perform_later(id, user_id) if finalized && final_price_changed?
   end
 
   def active?
