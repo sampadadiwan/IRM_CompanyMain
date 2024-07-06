@@ -91,7 +91,7 @@ export default class extends Controller {
                     $(jq_input_id).closest(".form-group").addClass("field_with_errors");
                     scrollTop: $(jq_input_id).focus();
                     $('html, body').animate({                        
-                        scrollTop: $(jq_input_id).offset().top - 120
+                        scrollTop: $(jq_input_id).offset().top - 140
                     }, 100);
 
                 } else {

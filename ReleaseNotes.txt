@@ -1,3 +1,16 @@
+V7.1.38
+#####################################
+a13527443 (HEAD -> sale_fixes_1, origin/sale_fixes_1) Added offer_steps
+b12d2a350 Added offer_steps
+a02f4a1eb Fixed rubocop errors
+ede123ff6 Allocation job now gives realtime updates on progress
+9eb697e3a Changed steps for offer card
+a7e6b644d Show investors offers on dashboard, for only active sales
+e9cd0f0bf Added ransack for holdings
+cc556ba0e Allow support to edit and view sale for admin
+9f4181ad4 Better message for Accept SPA email
+          Better support for unfilled mandatory custom fields, errors
+
 V7.1.36
 #####################################
 4fb8bd349 (HEAD -> main, origin/main, origin/HEAD) Fixed tests for remittance

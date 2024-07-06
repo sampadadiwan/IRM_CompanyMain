@@ -26,7 +26,7 @@
   <%
     spas = []
     offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
-      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-success")
+      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-primary")
     end
 
     if spas.present? 

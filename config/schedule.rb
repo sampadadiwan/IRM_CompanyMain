@@ -12,6 +12,7 @@ every 1.day, at: '02:01 am', roles: [:primary] do
   # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
+  runner "SecondarySale.where(active: true, end_date: ..Date.today).update(active: false)"
 end
 
 every 1.hour, roles: [:primary] do

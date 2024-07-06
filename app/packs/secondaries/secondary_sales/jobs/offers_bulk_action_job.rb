@@ -7,7 +7,8 @@ class OffersBulkActionJob < BulkActionJob
     case bulk_action.downcase
 
     when "verify"
-      offer.update(verified: true)
+      result = OfferVerify.wtf?(offer:, current_user: User.find(user_id))
+      send_notification(result[:errors], user_id, :error) if result.failure?
     when "unverify"
       offer.update(verified: false)
     when "generate spa"
