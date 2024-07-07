@@ -196,7 +196,9 @@
             PAN
           </td>
           <td>
-            <%= @offer.PAN %>          
+            <%= @offer.PAN %>  
+            <br>
+            <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>        
           </td>
         </tr>
 
