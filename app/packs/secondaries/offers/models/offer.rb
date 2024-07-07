@@ -167,7 +167,7 @@ class Offer < ApplicationRecord
   end
 
   def validate_pan_card
-    VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
+    VerifyOfferPanJob.perform_later(id) if (saved_change_to_PAN? || saved_change_to_full_name?) && pan_card.present?
   end
 
   def validate_bank
