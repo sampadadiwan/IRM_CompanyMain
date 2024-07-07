@@ -163,7 +163,16 @@ class Offer < ApplicationRecord
   end
 
   def document_list
-    secondary_sale.seller_doc_list&.split(",")
+    doc_list = []
+    doc_list += secondary_sale.seller_doc_list&.split(",") if secondary_sale.seller_doc_list.present?
+
+    # We also add the secondary_sale templates headers and footers
+    secondary_sale.documents.where(owner_tag: "Offer Template").find_each do |doc|
+      doc_list << ("#{doc.name} Header")
+      doc_list << ("#{doc.name} Footer")
+    end
+
+    doc_list << "Other"
   end
 
   def validate_pan_card
