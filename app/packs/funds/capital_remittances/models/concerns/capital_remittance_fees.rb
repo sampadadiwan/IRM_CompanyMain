@@ -1,5 +1,6 @@
 module CapitalRemittanceFees
   extend ActiveSupport::Concern
+  include CurrencyHelper
 
   def convert_fees
     if capital_call.call_basis == "Upload"
@@ -22,7 +23,6 @@ module CapitalRemittanceFees
     total_other_fees_cents = 0
     json_fields["other_fees_audit"] = []
     json_fields["capital_fees_audit"] = []
-
     if capital_call.call_fees.present?
       capital_call.call_fees.each do |call_fee|
         if call_fee.formula
@@ -34,9 +34,11 @@ module CapitalRemittanceFees
 
           fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount.to_d] }
         end
+        next if fees_audit.blank?
 
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees_cents
+          json_fields[custom_field_name(call_fee, fees_audit)] = currency_from_cents(fees_cents, fund.currency, {})
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         else
           total_capital_fees_cents += fees_cents
@@ -45,10 +47,9 @@ module CapitalRemittanceFees
       end
 
       Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
-
       self.capital_fee_cents = total_capital_fees_cents
       self.other_fee_cents = total_other_fees_cents
-
+      json_fields["total_drawdown_amount"] = currency_from_cents(call_amount_cents + other_fee_cents, fund.currency, {})
     end
   end
 
@@ -62,5 +63,11 @@ module CapitalRemittanceFees
     else
       0
     end
+  end
+
+  private
+
+  def custom_field_name(call_fee, fees_audit)
+    "#{call_fee.fee_type.parameterize(separator: '_').underscore}_#{fees_audit[0].parameterize(separator: '_').underscore}"
   end
 end

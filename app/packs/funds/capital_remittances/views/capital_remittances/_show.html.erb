@@ -95,14 +95,25 @@
         <% end %>
 
         <% if capital_remittance.other_fee_cents > 0 %>
-        <tr>
-          <td>
-            Other Fees
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.other_fee, params %>
-          </td>
-        </tr>
+          <tr>
+            <% # Have added styles here as it's not working by adding this class %>
+            <td class="vertical-align-top" style="vertical-align: top;">
+              Other Fees
+            </td>
+            <td>
+              <div class="money-wrapper">
+                <span><%= money_to_currency capital_remittance.other_fee, params %></span>
+              </div>
+              <ul class="fees-list">
+                <% @capital_remittance.json_fields["other_fees_audit"]&.each do |fee| %>
+                  <li class="fee-item">
+                    <span><%= fee[0] %></span>
+                    <span><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                  </li>
+                <% end %>
+              </ul>
+            </td>
+          </tr>
         <% end %>
 
         <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>

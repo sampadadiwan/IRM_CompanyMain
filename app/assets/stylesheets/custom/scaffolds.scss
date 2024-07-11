@@ -1189,3 +1189,20 @@ h6 {
   overflow: hidden; /* Hide overflow text */
   text-overflow: ellipsis; /* Add ellipsis for overflow text */
 }
+
+.vertical-align-top {
+  vertical-align: top;
+}
+
+.fees-list {
+  list-style-type: none;
+  padding-left: 0;
+  font-weight: lighter;
+  margin-top: 8px;
+}
+
+.fee-item {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
