@@ -10,4 +10,6 @@ class AccountEntryIndex < Chewy::Index
   field :entry_type
   field :name
   field :entity_id
+  field :capital_commitment_id
+  field :fund_id
 end
