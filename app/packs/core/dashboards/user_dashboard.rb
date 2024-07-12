@@ -19,6 +19,7 @@ class UserDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     email: Field::String,
+    entity_type: Field::String,
     permissions: ActiveFlagField,
     password: Field::String.with_options(searchable: false),
     password_confirmation: Field::String.with_options(searchable: false),
@@ -66,6 +67,7 @@ class UserDashboard < Administrate::BaseDashboard
     sign_in_count
     confirmed_at
     curr_role
+    entity_type
     advisor_entity
     advisor_entity_roles
     roles
@@ -87,6 +89,7 @@ class UserDashboard < Administrate::BaseDashboard
     active
     enable_support
     curr_role
+    entity_type
     advisor_entity
     advisor_entity_roles
     roles

@@ -13,7 +13,7 @@
                   <%= link_to "#{offer.secondary_sale.name}: #{offer.entity.name}", offer %>
                 </h4>
                 <span class="fs3 mb-1">
-                  <%= offer.investor.investor_name if offer.investor %>
+                  <%= offer.full_name || offer.investor&.investor_name %>
                 </span>
               </div>
             </div>
