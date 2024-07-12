@@ -79,6 +79,12 @@
         </div>
 
         <div class="form-group">
+            <%= form.label :explain %>
+            <%= form.check_box :explain, class: "form-check-input"  %>
+            <small>Enable if this formula will be explained in detail</small>
+        </div>
+
+        <div class="form-group">
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         </div>
       <% end %>

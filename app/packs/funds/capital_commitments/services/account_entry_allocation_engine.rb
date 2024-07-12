@@ -245,7 +245,7 @@ class AccountEntryAllocationEngine
     account_entry.explanation = []
     account_entry.explanation << fund_formula.formula
     account_entry.explanation << fund_formula.description
-    account_entry.explanation << fund_formula.parse_statement(bdg).to_json if @explain
+    account_entry.explanation << fund_formula.parse_statement(bdg).to_json if @explain && fund_formula.explain
 
     account_entry.parent = parent
     account_entry.generated = true
