@@ -290,8 +290,11 @@ class Offer < ApplicationRecord
       Document.find_or_create_by(name: doc.name, file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id) if doc
 
       # Extract the PAN and signature
-      Document.find_or_create_by(name: "Signature", file_data: from_offer.signature_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
-      Document.find_or_create_by(name: "PAN", file_data: from_offer.pan_card_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+      doc = from_offer.documents.where("name like ?", "%Signature%").last
+      Document.find_or_create_by(name: "Signature", file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+
+      doc = from_offer.documents.where("name like ?", "%PAN%").last
+      Document.find_or_create_by(name: "PAN", file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
     end
   end
 end
