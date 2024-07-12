@@ -27,18 +27,18 @@ module CapitalRemittanceFees
       capital_call.call_fees.each do |call_fee|
         if call_fee.formula
           fees_cents = call_fee.calculate_formula(self)
-          fees_audit = [call_fee.name, call_fee.start_date, fees_cents]
+          fees_audit = [[call_fee.name, call_fee.start_date, fees_cents]]
         else
           # Sum the amount for the fee for the commitment account_entries
           fees_cents = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
 
-          fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount.to_d] }
+          fees_audit = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).map { |a| [a.name, a.reporting_date, a.amount_cents] }
         end
         next if fees_audit.blank?
 
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees_cents
-          json_fields[custom_field_name(call_fee, fees_audit)] = currency_from_cents(fees_cents, fund.currency, {})
+          json_fields[FormCustomField.to_name(call_fee.name)] = currency_from_cents(fees_cents, fund.currency, {})
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         else
           total_capital_fees_cents += fees_cents

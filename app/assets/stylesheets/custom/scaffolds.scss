@@ -1206,3 +1206,15 @@ h6 {
   display: flex;
   justify-content: space-between;
 }
+
+.fee-item .fee-name {
+  flex: 1;
+}
+
+.fee-item .fee-description {
+  flex: 1;
+}
+
+.fee-item .fee-amount {
+  flex: 1;
+}
