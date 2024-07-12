@@ -67,7 +67,11 @@ When('I fill and submit the new document page') do
   find("#doc_actions").click
   click_on("New Document")
   sleep(4)
-  fill_in("document_name", with: @document.name)
+  if page.has_css?("#document_name") 
+    fill_in("document_name", with: @document.name)
+  elsif page.has_css?("#other_name") 
+    fill_in("other_name", with: @document.name)
+  end
 
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)

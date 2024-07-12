@@ -1,3 +1,12 @@
+V7.1.40
+#####################################
+a216e8e63 Fixed Account entry search, with filters for fund and commitment id
+2f51c1049 Custom fields for remittances (#326)
+2e9015e44 Renamed to call_amount_cents_start_end
+73899599f Sequence migration (#325)
+6bf38a31d Added pan verification partial to offer view
+450f9ff67 Added template header and footer to offer
+
 V7.1.38
 #####################################
 a13527443 (HEAD -> sale_fixes_1, origin/sale_fixes_1) Added offer_steps

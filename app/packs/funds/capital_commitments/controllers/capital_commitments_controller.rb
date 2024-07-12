@@ -49,9 +49,10 @@ class CapitalCommitmentsController < ApplicationController
     # Only return first 100 results
     index_search = CapitalCommitmentIndex.filter(term:)
                                          .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' }).per(100)
+                                                                query:, default_operator: 'and' })
 
     index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
+    index_search = index_search.per(100)
 
     index_search.map(&:id)
   end
