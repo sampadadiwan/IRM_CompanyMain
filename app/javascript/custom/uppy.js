@@ -24,52 +24,52 @@ export function uppyInstance({ id, types, server }) {
   }
 
 
-  // // Get all submit buttons
-  // const submitBtns = document.querySelectorAll('input[type="submit"]');
-  // $(".uppy_wait_info").hide();
+  // Get all submit buttons
+  const submitBtns = document.querySelectorAll('input[type="submit"]');
+  $(".uppy_wait_info").hide();
+  
+  // Function to disable all submit buttons
+  function disableSubmitButtons() {
+    submitBtns.forEach(btn => {
+      btn.disabled = true;
+    });
+    $(".uppy_wait_info").show();
+  }
 
-  // // Function to disable all submit buttons
-  // function disableSubmitButtons() {
-  //   submitBtns.forEach(btn => {
-  //     btn.disabled = true;
-  //   });
-  //   $(".uppy_wait_info").show();
-  // }
+  // Function to enable all submit buttons
+  function enableSubmitButtons() {
+    submitBtns.forEach(btn => {
+      btn.disabled = false;
+    });
+    $(".uppy_wait_info").hide();
+  }
 
-  // // Function to enable all submit buttons
-  // function enableSubmitButtons() {
-  //   submitBtns.forEach(btn => {
-  //     btn.disabled = false;
-  //   });
-  //   $(".uppy_wait_info").hide();
-  // }
+  // Disable submit buttons before the file is uploaded
+  uppy.on('upload', () => {
+    console.log('Before upload');
+    disableSubmitButtons();
+    // Optionally, you can show a loading indicator here
+  });
 
-  // // Disable submit buttons before the file is uploaded
-  // uppy.on('upload', () => {
-  //   console.log('Before upload');
-  //   disableSubmitButtons();
-  //   // Optionally, you can show a loading indicator here
-  // });
+  // Re-enable submit buttons after the file is uploaded successfully
+  uppy.on('upload-success', (file, response) => {
+    console.log('Upload complete', file, response);
+    enableSubmitButtons();
+    // Optionally, hide the loading indicator and show a success message
+  });
 
-  // // Re-enable submit buttons after the file is uploaded successfully
-  // uppy.on('upload-success', (file, response) => {
-  //   console.log('Upload complete', file, response);
-  //   enableSubmitButtons();
-  //   // Optionally, hide the loading indicator and show a success message
-  // });
+  // Re-enable submit buttons if the upload fails
+  uppy.on('upload-error', (file, error, response) => {
+    console.error('Upload error', file, error, response);
+    enableSubmitButtons();
+    // Optionally, hide the loading indicator and show an error message
+  });
 
-  // // Re-enable submit buttons if the upload fails
-  // uppy.on('upload-error', (file, error, response) => {
-  //   console.error('Upload error', file, error, response);
-  //   enableSubmitButtons();
-  //   // Optionally, hide the loading indicator and show an error message
-  // });
-
-  // // Handle file addition
-  // uppy.on('file-added', (file) => {
-  //   console.log('File added', file);
-  //   // Optionally, you can perform any actions upon file addition
-  // });
+  // Handle file addition
+  uppy.on('file-added', (file) => {
+    console.log('File added', file);
+    // Optionally, you can perform any actions upon file addition
+  });
 
 
   return uppy
