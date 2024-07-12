@@ -1,4 +1,7 @@
 class AccountEntry < ApplicationRecord
+  
+  update_index('account_entry') { self if index_record? }
+
   include WithCustomField
   include WithExchangeRate
   include ForInvestor
