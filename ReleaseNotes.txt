@@ -1,3 +1,17 @@
+V7.1.41
+#####################################
+60e361d6e Changed offer copy_docs to use attached docs
+73c2779ad Allow support to edit investor
+105627715 Other fee breakdown (#330)
+47c57cdc3 Show offer full name in card, if present
+20b9a1917 Added sanitization of doc names in docs_to_generate for offer SPA
+c5cb3a155 Added docs_to_generate custom field for offer SPA generation (#329)
+b8f67d7df Added CapitalRemittancesCountersJob to remittance import
+6a3e56fd0 Added explain to each formula (#328)
+336db1793 Added index to the model
+c60e75d56 Fixed test case
+2926e9df2 Used fund reference to get APIs in stats (#327)
+
 V7.1.40
 #####################################
 a216e8e63 Fixed Account entry search, with filters for fund and commitment id
