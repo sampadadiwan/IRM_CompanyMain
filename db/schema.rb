@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_14_061209) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -226,7 +226,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.string "investment_type"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.string "commitment_type", limit: 10, default: "Pool"
@@ -235,6 +235,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.bigint "investment_instrument_id"
     t.bigint "form_type_id"
     t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2
+    t.decimal "transfer_quantity", precision: 20, scale: 2
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_aggregate_portfolio_investments_on_form_type_id"
@@ -997,7 +1000,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
-    t.boolean "embedded", default: false
+    t.datetime "last_status_updated_at"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1135,6 +1138,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
     t.json "kanban_steps"
+    t.string "esign_provider", limit: 15, default: "Digio"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
@@ -1958,6 +1962,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.boolean "whatsapp_enabled", default: false
     t.string "cc"
     t.bigint "import_upload_id"
+    t.string "call_code", limit: 3
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
@@ -2568,6 +2573,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
     t.bigint "exchange_rate_id"
     t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_quantity", precision: 20, scale: 2
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -3179,7 +3189,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_12_050712) do
   add_foreign_key "doc_questions", "entities"
   add_foreign_key "document_chats", "documents"
   add_foreign_key "document_chats", "entities"
-  add_foreign_key "document_chats", "users"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"

@@ -71,10 +71,10 @@ include CurrencyHelper
     @api = AggregatePortfolioInvestment.last
     @api.quantity.should == PortfolioInvestment.all.sum(:quantity)
     @api.bought_quantity.should == PortfolioInvestment.buys.sum(:quantity)
-    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:amount_cents)
+    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:net_amount_cents)
     @api.sold_quantity.should == PortfolioInvestment.sells.sum(:quantity)
-    @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:amount_cents)
-    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
+    @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:net_amount_cents)
+    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:net_amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
 
   end
 
@@ -251,8 +251,11 @@ Then('the Portfolio investments must be adjusted') do
     cpi.amount_cents.should == opi.amount_cents
     # cpi.fmv_cents.should be_within(100).of(opi.fmv_cents)
     cpi.cost_of_sold_cents.should == opi.cost_of_sold_cents
+    
     cpi.net_quantity.should == opi.net_quantity * @stock_adjustment.adjustment
-    cpi.gain_cents.should be_within(100).of(opi.gain_cents)
+    net_amount_cents = opi.buy? ? opi.net_quantity * opi.cost_cents : opi.amount_cents
+    opi.net_amount_cents.should == net_amount_cents
+    cpi.gain_cents.should be_within(100).of(opi.gain_cents)    
   end
 end
 

@@ -28,7 +28,7 @@ class PortfolioInvestment < ApplicationRecord
 
   monetize :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
-  monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_bought_amount_cents, :net_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   # We rollup net quantity to the API quantity, only for buys. This takes care of sells and transfers
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "quantity" : nil }, delta_column: 'net_quantity', column_names: {
@@ -37,6 +37,10 @@ class PortfolioInvestment < ApplicationRecord
   }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'transfer_amount_cents', delta_column: 'transfer_amount_cents'
+  counter_culture :aggregate_portfolio_investment, column_name: 'transfer_quantity', delta_column: 'transfer_quantity'
+
+  counter_culture :aggregate_portfolio_investment, column_name: 'cost_of_remaining_cents', delta_column: 'cost_of_remaining_cents'
+  counter_culture :aggregate_portfolio_investment, column_name: 'unrealized_gain_cents', delta_column: 'unrealized_gain_cents'
 
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 
@@ -49,14 +53,26 @@ class PortfolioInvestment < ApplicationRecord
   validates :portfolio_company_name, length: { maximum: 100 }
   # validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
-  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_quantity" : "sold_quantity" }, delta_column: 'quantity', column_names: {
-    ["portfolio_investments.quantity > ?", 0] => 'bought_quantity',
+  # For sells, roll up the amount_cents to the aggregate portfolio investment sold_amount_cents
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? nil : "sold_amount_cents" }, delta_column: 'amount_cents', column_names: {
+    ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'
+  }
+
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? nil : "sold_quantity" }, delta_column: 'quantity', column_names: {
     ["portfolio_investments.quantity < ?", 0] => 'sold_quantity'
   }
 
-  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.quantity.positive? ? "bought_amount_cents" : "sold_amount_cents" }, delta_column: 'amount_cents', column_names: {
-    ["portfolio_investments.quantity > ?", 0] => 'bought_amount_cents',
-    ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'
+  # For buys, roll up the net_bought_amount_cents to the aggregate portfolio investment bought_amount_cents
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_amount_cents" : nil }, delta_column: 'amount_cents', column_names: {
+    ["portfolio_investments.quantity > ?", 0] => 'bought_amount_cents'
+  }
+
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "net_bought_amount_cents" : nil }, delta_column: 'net_bought_amount_cents', column_names: {
+    ["portfolio_investments.quantity > ?", 0] => 'net_bought_amount_cents'
+  }
+
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_quantity" : nil }, delta_column: 'quantity', column_names: {
+    ["portfolio_investments.quantity > ?", 0] => 'bought_quantity'
   }
 
   scope :buys, -> { where("portfolio_investments.quantity > 0") }
@@ -118,18 +134,6 @@ class PortfolioInvestment < ApplicationRecord
   # This method is used to setup which sells are linked to which buys for purpose of attribution
   def setup_attribution
     AttributionService.new(self).setup_attribution
-  end
-
-  def cost_cents
-    quantity.positive? ? (amount_cents / quantity).abs : 0
-  end
-
-  def unrealized_gain
-    fmv - (net_quantity * cost)
-  end
-
-  def base_cost_cents
-    quantity.positive? ? (base_amount_cents / quantity).abs : 0
   end
 
   def buy_sell

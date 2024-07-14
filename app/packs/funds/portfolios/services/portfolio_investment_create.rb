@@ -6,7 +6,7 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   left :handle_setup_aggregate_errors, Output(:failure) => End(:failure)
   step :create_valuation
   left :handle_valuation_errors, Output(:failure) => End(:failure)
-  step :compute_fmv
+  step :compute_all_numbers
   step :compute_quantity_as_of_date
   step :save
   left :handle_errors, Output(:failure) => End(:failure), Output(:failure) => End(:failure)

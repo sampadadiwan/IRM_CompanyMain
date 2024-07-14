@@ -8,8 +8,8 @@ class PortfolioInvestmentAction < Trailblazer::Operation
     portfolio_investment.compute_quantity_as_of_date
   end
 
-  def compute_fmv(_ctx, portfolio_investment:, **)
-    portfolio_investment.compute_fmv
+  def compute_all_numbers(_ctx, portfolio_investment:, **)
+    portfolio_investment.compute_all_numbers
   end
 
   def compute_avg_cost(_ctx, portfolio_investment:, **)

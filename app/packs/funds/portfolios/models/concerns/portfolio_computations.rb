@@ -38,21 +38,48 @@ module PortfolioComputations
     end
   end
 
-  # This method is memoized to avoid multiple calls to the database
-  def compute_fmv
-    # For buys setup net_quantity, note sold_quantity is -ive
+  def cost_cents
+    quantity.positive? ? (amount_cents / quantity).abs : 0
+  end
+
+  def base_cost_cents
+    quantity.positive? ? (base_amount_cents / quantity).abs : 0
+  end
+
+  def compute_all_numbers
+    # We have amount_cents and quantity as stable entered values.
+    # cost_cents = amount_cents / quantity and is stable
+    # We also have transfer_amount and transfer_quantity as stable values post transfer
+    # We also have sold_quantity as stable value based on PA rollups of pa.quantity
     if buy?
       self.net_quantity = (quantity + sold_quantity - transfer_quantity)
-      self.fmv_cents = compute_fmv_cents_on(Time.zone.today)
+      self.net_bought_quantity = quantity - transfer_quantity
+      # net_amount_cents is cost of remaining
+      self.net_amount_cents = net_quantity * cost_cents
+      self.net_bought_amount_cents = net_bought_quantity * cost_cents
+      self.cost_of_remaining_cents = net_quantity * cost_cents
     else
       self.net_quantity = quantity
-      self.fmv_cents = 0
+      self.net_bought_quantity = 0
+      self.net_amount_cents = amount_cents
+      self.net_bought_amount_cents = 0
+      self.cost_of_remaining_cents = 0
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
     end
 
-    # self.net_quantity = buy? ? (quantity + sold_quantity - transfer_quantity) : quantity
-    # self.gain_cents = amount_cents.abs + cost_of_sold_cents if sell?
-    # self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today) : 0
+    compute_fmv
+
+    self.unrealized_gain_cents = fmv_cents - net_amount_cents
+  end
+
+  # This method is memoized to avoid multiple calls to the database
+  def compute_fmv
+    # For buys setup net_quantity, note sold_quantity is -ive
+    self.fmv_cents = if buy?
+                       compute_fmv_cents_on(Time.zone.today)
+                     else
+                       0
+                     end
   end
 
   # This method is memoized to avoid multiple calls to the database

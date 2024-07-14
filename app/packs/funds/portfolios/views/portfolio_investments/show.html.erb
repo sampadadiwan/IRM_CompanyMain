@@ -66,6 +66,18 @@
           <%= money_to_currency @portfolio_investment.amount, params %>
         </td>
       </tr>
+
+      <% if @portfolio_investment.amount_cents != @portfolio_investment.net_amount_cents %>
+      <tr>
+        <td>
+          Net Amount
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.net_amount, params %>
+        </td>
+      </tr>
+      <% end %>
+
       <tr>
         <td>
           Quantity
@@ -84,6 +96,7 @@
             <%= @portfolio_investment.sold_quantity %>
           </td>
         </tr>
+        
         <tr>
           <td>
             Transfer Quantity
