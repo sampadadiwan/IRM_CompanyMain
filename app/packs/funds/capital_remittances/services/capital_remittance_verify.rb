@@ -8,12 +8,12 @@ class CapitalRemittanceVerify < CapitalRemittanceAction
   step :payment_received_notification
   step :touch_investor
 
-  def toggle_verify(ctx, capital_remittance:, **)
+  def toggle_verify(_ctx, capital_remittance:, **)
     if capital_remittance.collected_amount_cents.positive?
       capital_remittance.verified = !capital_remittance.verified
       true
     else
-      ctx[:error] = 'No payment received. Collected amount is 0'
+      capital_remittance.errors.add(:collected_amount_cents, "must be greater than 0 for verification")
       false
     end
   end
