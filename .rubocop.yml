@@ -181,6 +181,7 @@ Metrics/ModuleLength:
   Enabled: true
   Exclude:
     - 'app/packs/core/entity/models/concerns/entity_enabled.rb'
+    - 'app/packs/funds/portfolios/models/concerns/portfolio_computations.rb'
         
 Metrics/ParameterLists:
   Description: 'Pass no more than four parameters into a method.'

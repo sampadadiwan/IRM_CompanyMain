@@ -1,5 +1,5 @@
 class AccountEntry < ApplicationRecord
-  update_index('account_entry') { self if index_record? }
+  # update_index('account_entry') { self if index_record? }
 
   include WithCustomField
   include WithExchangeRate
@@ -85,7 +85,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[amount commitment_type cumulative entry_type folio_id generated name period reporting_date].sort
+    %w[capital_commitment_id amount commitment_type cumulative entry_type folio_id generated name period reporting_date].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -94,5 +94,12 @@ class AccountEntry < ApplicationRecord
 
   def template_field_name
     name.titleize.delete(' :,;').underscore
+  end
+
+  def index_reporting_date
+    entries_to_index = fund.account_entries.includes(:fund, :entity).where(reporting_date:)
+    Rails.logger.debug { "Indexing #{entries_to_index.count} account entries for reporting date #{reporting_date}" }
+    entries_to_index.each(&:run_chewy_callbacks)
+    Rails.logger.debug { "Indexing completed. #{entries_to_index.count} account entries indexed for reporting date #{reporting_date}" }
   end
 end

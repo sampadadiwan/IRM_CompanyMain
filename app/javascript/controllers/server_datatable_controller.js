@@ -39,6 +39,8 @@ export default class ServerDatatableController extends Controller {
         search: {
           // return: true,
         },
+
+        searching: this.searchEnabled(),
         
         "ajax": {
           "url": $(table_id).data('source')
@@ -85,6 +87,10 @@ export default class ServerDatatableController extends Controller {
   }
 
   showDetailsResponsive() {
+    return true;
+  }
+
+  searchEnabled() {
     return true;
   }
 

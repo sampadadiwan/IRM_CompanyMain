@@ -3,6 +3,9 @@ import ServerDatatableController from "controllers/server_datatable_controller"
 
 export default class extends ServerDatatableController {
 
+  searchEnabled() {
+    return false;
+  }
 
   filterData(event) {
     console.log("filterData called");

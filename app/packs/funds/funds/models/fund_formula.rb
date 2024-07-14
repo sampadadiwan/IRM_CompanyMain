@@ -79,7 +79,7 @@ class FundFormula < ApplicationRecord
   end
 
   def skip_statement(exp, val)
-    val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) || val.is_a?(ActiveRecord::Relation) || exp.delete("\"").strip == val
+    val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) || val.is_a?(ActiveRecord::Relation) || val.is_a?(Array) || exp.delete("\"").strip == val
   end
 
   def find_expressions(node, expressions)

@@ -34,36 +34,40 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
 
-    <%  
-      if params[:capital_commitment_id].present? || params[:fund_id].present?
-          account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
-          account_entry.entity_id =current_user.entity_id
-              
-    %>
+    <span>  
+      <%  
+        if params[:capital_commitment_id].present? || params[:fund_id].present?
+            account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
+            account_entry.entity_id =current_user.entity_id
+                
+      %>
 
-    <span>
-      <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
+      
+        <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
 
-      <%= link_to "Upload", 
-                    new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
-                    "import_upload[owner_type]": "Fund", 
-                    "import_upload[import_type]": "AccountEntry", 
-                    "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                    { class: "btn btn-outline-primary"}   %> 
+        <%= link_to "Upload", 
+                      new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
+                      "import_upload[owner_type]": "Fund", 
+                      "import_upload[import_type]": "AccountEntry", 
+                      "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
+                      { class: "btn btn-outline-primary"}   %> 
 
 
-      <%= link_to "Download", xl_link, 
-                              class: "btn btn-outline-success" %>
+        <%= link_to "Download", xl_link, 
+                                class: "btn btn-outline-success" %>
 
-      <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
+
+      <% else %>
+        <%= link_to "Download", xl_link, class: "btn btn-outline-success" %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
+      <% end %>
+
+
+      <%= link_to "Filter", account_entries_path(fund_id: params[:fund_id], q: ransack_query_params("capital_commitment_id", :eq, params[:capital_commitment_id])), {class: "btn btn-outline-success" }  %>
+
+
     </span>
-
-    <% else %>
-        <span>`
-            <%= link_to "Download", xl_link, class: "btn btn-outline-success" %>
-            <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
-        </span>
-    <% end %>
 
     
   </div>
