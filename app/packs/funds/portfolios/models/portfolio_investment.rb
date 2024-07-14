@@ -54,11 +54,11 @@ class PortfolioInvestment < ApplicationRecord
   # validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
   # For sells, roll up the amount_cents to the aggregate portfolio investment sold_amount_cents
-  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? nil : "sold_amount_cents" }, delta_column: 'amount_cents', column_names: {
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? "sold_amount_cents" : nil }, delta_column: 'amount_cents', column_names: {
     ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'
   }
 
-  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? nil : "sold_quantity" }, delta_column: 'quantity', column_names: {
+  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? "sold_quantity" : nil }, delta_column: 'quantity', column_names: {
     ["portfolio_investments.quantity < ?", 0] => 'sold_quantity'
   }
 

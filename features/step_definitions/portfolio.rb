@@ -71,11 +71,10 @@ include CurrencyHelper
     @api = AggregatePortfolioInvestment.last
     @api.quantity.should == PortfolioInvestment.all.sum(:quantity)
     @api.bought_quantity.should == PortfolioInvestment.buys.sum(:quantity)
-    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:net_amount_cents)
+    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:net_bought_amount_cents)
     @api.sold_quantity.should == PortfolioInvestment.sells.sum(:quantity)
     @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:net_amount_cents)
-    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:net_amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
-
+    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
   end
 
   Then('I should see the aggregate portfolio investment details on the details page') do
@@ -217,9 +216,9 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
   @fund.reload
   @fund.portfolio_investments.sells.each do |pi|
     api = pi.aggregate_portfolio_investment
-    puts "Cost: #{api.cost} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
+    puts "Cost: #{api.cost_of_remaining_cents} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
     api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)
-    api.cost_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
+    api.cost_of_remaining_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
   end
 end
 
@@ -369,7 +368,7 @@ Then('the from portfolio investments must be adjusted') do
   # Check the api
   api = @from_portfolio_investment.aggregate_portfolio_investment
   api.transfer_amount_cents.should == @from_portfolio_investment.aggregate_portfolio_investment.portfolio_investments.sum(:transfer_amount_cents)
-  api.cost_cents.should == api.bought_amount_cents + api.transfer_amount_cents + api.cost_of_sold_cents
+  api.cost_of_remaining_cents.should == api.bought_amount_cents + api.transfer_amount_cents + api.cost_of_sold_cents
 end
 
 Then('the to portfolio investments must be created') do

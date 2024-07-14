@@ -51,10 +51,16 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.quantity = pis.sum(:quantity)
     api.bought_quantity = pis.buys.sum(:quantity)
     api.bought_amount_cents = pis.buys.sum(:amount_cents)
+    api.net_bought_amount_cents = pis.buys.sum(:net_bought_amount_cents)
+
     api.sold_quantity = pis.sells.sum(:quantity)
     api.sold_amount_cents = pis.sells.sum(:amount_cents)
+    api.unrealized_gain_cents = pis.sum(:unrealized_gain_cents)
+
+    api.transfer_quantity = pis.sum(:transfer_quantity)
 
     api.cost_of_sold_cents = pis.sells.sum(:cost_of_sold_cents)
+    api.cost_of_remaining_cents = pis.sum(:cost_of_remaining_cents)
     api.compute_avg_cost
 
     # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date

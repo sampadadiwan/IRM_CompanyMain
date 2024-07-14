@@ -235,9 +235,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_14_061209) do
     t.bigint "investment_instrument_id"
     t.bigint "form_type_id"
     t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "unrealized_gain_cents", precision: 20, scale: 2
-    t.decimal "transfer_quantity", precision: 20, scale: 2
-    t.decimal "net_bought_amount_cents", precision: 20, scale: 2
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_aggregate_portfolio_investments_on_form_type_id"
@@ -2576,8 +2576,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_14_061209) do
     t.decimal "net_amount_cents", precision: 20, scale: 2
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2
     t.decimal "net_bought_quantity", precision: 20, scale: 2
-    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2
-    t.decimal "unrealized_gain_cents", precision: 20, scale: 2
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"

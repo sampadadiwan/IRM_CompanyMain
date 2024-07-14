@@ -1762,3 +1762,10 @@ Then('I should be able to see the transferred fund units') do
   expect(page).to have_content(to_fu.reason)
   expect(page).to have_content(to_fu.transfer&.titleize)
 end
+
+
+Given('there are payments for each remittance') do
+  CapitalRemittance.all.each do |cr|
+    cr.capital_remittance_payments.create!(fund_id: cr.fund_id, entity_id: cr.entity_id, folio_amount_cents: cr.folio_call_amount_cents, payment_date: cr.remittance_date, reference_no: "Test Payment")
+  end
+end

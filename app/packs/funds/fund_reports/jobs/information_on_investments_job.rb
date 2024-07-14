@@ -48,7 +48,7 @@ class InformationOnInvestmentsJob
       # bought_amount = pis.buys.sum(&:amount)
       # cost_of_sold = pis.sells.sum(&:cost_of_sold)
       # cost = bought_amount + cost_of_sold
-      data[index]["Amount Invested (for all investments including offshore) (Rs. Cr)"]["Value"] = money_to_currency(api_as_of_date.cost)
+      data[index]["Amount Invested (for all investments including offshore) (Rs. Cr)"]["Value"] = money_to_currency(api_as_of_date.cost_of_remaining)
 
       data[index]["Amount invested (for offshore investment only) in $Mn"]["Value"] = money_to_currency(Money.new(0))
 
@@ -94,7 +94,7 @@ class InformationOnInvestmentsJob
         sector = inv_instrument.custom_fields.sector
 
         api_as_of_date = api.as_of(nil, end_date)
-        amount_invested = api_as_of_date.cost.amount.to_d
+        amount_invested = api_as_of_date.cost_of_remaining.to_d
 
         amount_invested_in_offshore = Money.new(0).amount.to_d
         # Money.new(api_as_of_date.portfolio_investments.where("investment_date <= ?", end_date).where("quantity > 0").where(investment_domicile: "Overseas").sum(&:amount)).amount.to_d
