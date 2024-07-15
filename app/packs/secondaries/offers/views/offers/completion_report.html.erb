@@ -67,17 +67,17 @@
                 <td><%= o.user&.sign_in_count %></td>
                 <td><%= display_boolean o.verified %></td>
                 <td>
-                    <%= display_boolean (o.documents.any?{|d| d.name.include? "Signature"}) %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.downcase.include? "signature"}) %>
                 </td>
                 <td>
-                    <%= display_boolean (o.documents.any?{|d| d.name.include? "PAN"}) %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.downcase.include? "pan"}) %>
                 </td>
                 <td>
                     <%= display_boolean o.final_agreement %>
                     <%= link_to "SPA", o.spa.url if o.spa %>
                 </td>
                 <td>
-                    <%= display_boolean (o.documents.any?{|d| d.name.include? "Stamp Paper"}) %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.downcase.include? "stamp paper"}) %>
                 </td>
                 <td>
                     <%= o.documents.collect(&:name).join(", ") %>
