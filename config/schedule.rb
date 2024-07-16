@@ -9,10 +9,14 @@ every 1.day, at: '02:01 am', roles: [:primary] do
   runner "VestedJob.perform_now"
   runner "Entity.recompute_all"
   runner "DocumentEsignUpdateJob.perform_now"
+
   # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "SecondarySale.where(active: true, end_date: ..Date.today).update(active: false)"
+
+  # Generate Key Biz Metrics
+  runner "KeyBizMetricsJob.perform_now"
 end
 
 every 1.hour, roles: [:primary] do

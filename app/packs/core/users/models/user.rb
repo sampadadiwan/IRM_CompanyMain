@@ -212,6 +212,11 @@ class User < ApplicationRecord
     has_cached_role?(:support) || support_user_id.present?
   end
 
+  def super?
+    # Check if the user has the support role or is support impoersonating some user
+    has_cached_role?(:super)
+  end
+
   def investor_advisor?
     advisor_entity_id.present? && advisor_entity_id != entity_id
   end

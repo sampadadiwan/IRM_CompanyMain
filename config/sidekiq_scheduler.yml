@@ -3,4 +3,4 @@ check_replication_status:
   class: ReplicationHealthJob
   queue: low
   args: 
-  description: "This job checks if replication is healthy"
+  description: "This job checks if replication is healthy"  

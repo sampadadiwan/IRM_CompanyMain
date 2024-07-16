@@ -1,0 +1,85 @@
+<%= render FormCard.new(title: "#{@key_biz_metric}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @key_biz_metric.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Metric Type
+      </td>
+      <td>
+        <%= @key_biz_metric.metric_type %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Value
+      </td>
+      <td>
+        <%= @key_biz_metric.value %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Display Value
+      </td>
+      <td>
+        <%= @key_biz_metric.display_value %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Date
+      </td>
+      <td>
+        <%= l @key_biz_metric.run_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @key_biz_metric.notes %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Query
+      </td>
+      <td>
+        <%= @key_biz_metric.query %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Created
+      </td>
+      <td>
+        <%= l @key_biz_metric.created_at %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Updated
+      </td>
+      <td>
+        <%= l @key_biz_metric.updated_at %>
+      </td>
+    </tr>
+
+  </table>
+  <div class="associated_entity">
+    <% if policy(@key_biz_metric).update? %>
+      <%= link_to "Edit", edit_key_biz_metric_path(@key_biz_metric), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @key_biz_metric, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

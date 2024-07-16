@@ -115,4 +115,9 @@ module ApplicationHelper
   def ransack_query_params(name, predicate, value)
     { "c" => { "0" => { "a" => { "0" => { "name" => name } }, "p" => predicate, "v" => { "0" => { "value" => value } } } } }
   end
+
+  def deep_locate(params, key, value)
+    result = params.to_unsafe_h.extend(Hashie::Extensions::DeepLocate).deep_locate ->(k, v, _object) { k == key && v.include?(value) }
+    result.present?
+  end
 end

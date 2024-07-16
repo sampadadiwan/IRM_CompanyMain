@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :key_biz_metrics
   resources :incoming_emails
   resources :doc_questions
   mount Rswag::Ui::Engine => '/api-docs'

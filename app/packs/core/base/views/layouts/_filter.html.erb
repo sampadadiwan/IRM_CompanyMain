@@ -6,6 +6,8 @@
     state ||= "show"
     css_class||= "show_filter"
     url ||= polymorphic_path(@q.klass.new) 
+    page_size ||= false
+    page_size_options ||= [["", ""], 10, 20, 50, 100]
   %>
 
   <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state) do %>
@@ -43,6 +45,10 @@
               <input class="form-check-input" type="checkbox" id="grid_view" name="grid_view" value="true" <%= params[:grid_view].present? ? "checked" : nil %> >
               <label class="form-check-label" for="grid_view">Grid View</label>
             </div>
+            <% end %>
+
+            <% if page_size %>
+            <%= select_tag :page_size, options_for_select(page_size_options, selected: params[:page_size]), class: "form-control mt-2", style: "width:unset;display:unset;" %>
             <% end %>
 
             <% if  %w[boards].include?(params[:controller]) %>

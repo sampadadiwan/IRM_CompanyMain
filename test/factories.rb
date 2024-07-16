@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :key_biz_metric do
+    name { "MyString" }
+    metric_type { "MyString" }
+    value { "9.99" }
+    display_value { "MyString" }
+    notes { "MyString" }
+    query { "MyText" }
+  end
+
   factory :incoming_email do
     from { "MyString" }
     to { "MyString" }

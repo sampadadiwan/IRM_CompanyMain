@@ -1,0 +1,53 @@
+<%= render "layouts/filter", associations: [], hidden_fields: {card: params[:card]}, page_size: true, page_size_options: [["", ""], 12,24,36,64,128] %>
+
+<% if params[:card].present? %>
+  <div class="row">
+    <% @key_biz_metrics.each do |key_biz_metric| %>
+      <%= render partial: "key_biz_metrics/card", locals: { key_biz_metric: key_biz_metric } %>
+    <% end %>
+  </div>
+<% else %>
+  <%= render "/key_biz_metrics/index" %>
+<% end %>
+
+<%= paginate @key_biz_metrics %>
+
+<% if params[:q].present? && 
+      deep_locate(params, "name", "name") &&
+      deep_locate(params, "name", "metric_type") %>
+
+<div class="associated_entity">
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+
+            <!-- Illustrations -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"> <%= "Metrics" %> </h6>
+                </div>
+                <div class="card-body">
+                    <% id = params[:key_biz_metric_id] || "Metrics" %>
+                    <%= kpi_biz_metrics_lines_by_date(@key_biz_metrics, id:) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+
+            <!-- Illustrations -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"> <%= "Cumulative Metrics" %> </h6>
+                </div>
+                <div class="card-body">
+                    <% id = params[:key_biz_metric_id] || "Metrics Cumulative" %>
+                    <%= kpi_biz_metrics_cumulative_by_date(@key_biz_metrics, id:) %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<% end %>

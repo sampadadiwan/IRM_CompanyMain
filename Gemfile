@@ -50,6 +50,7 @@ gem "sidekiq-scheduler"
 
 gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
+gem 'hashie'
 gem 'has_scope'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"

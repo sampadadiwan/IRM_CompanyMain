@@ -964,6 +964,7 @@ DEPENDENCIES
   friendly_id (~> 5.5.0)
   groupdate
   has_scope
+  hashie
   hightop
   htmlbeautifier
   httparty

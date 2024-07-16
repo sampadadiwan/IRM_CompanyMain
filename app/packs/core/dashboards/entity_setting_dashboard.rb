@@ -42,7 +42,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     append_to_commitment_agreement: Field::String,
-    regulatory_env: Field::String
+    regulatory_env: Field::String,
+    test_account: Field::BooleanEmoji
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -75,6 +76,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     entity
+    test_account
     regulatory_env
     custom_dashboards
     sandbox
@@ -114,6 +116,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     regulatory_env
+    test_account
     sandbox
     sandbox_emails
     from_email

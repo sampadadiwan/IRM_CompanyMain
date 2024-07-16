@@ -1,0 +1,45 @@
+<% type = ["note-social", "note-important", "note-business"].sample %>
+<div class="col-md-4 single-note-item all-category <%= type %>">
+  <div class="card card-body">
+    <span class="side-stick"></span>
+    
+    <div class="note-content text-center">        
+        <% label = key_biz_metric.display_value %>
+        <p class="fs-10"> <%= link_to label, key_biz_metric, class: "text-primary" %> </p>
+        
+        <p class="note-title mb-0"> <%= link_to key_biz_metric.name, key_biz_metric, class: "text-primary" %></p>
+        <p class="note-date fs-1 mb-0"><%= "#{key_biz_metric.metric_type}: #{l(key_biz_metric.run_date.to_date)}" || "N/A" %></p>
+        <p class="note-date fs-1">
+            Updated: <%= l key_biz_metric.updated_at %> 
+        </p>
+    </div>
+    <div class="d-flex align-items-center">
+      <div class="ms-auto">
+        <div class="category-selector btn-group">
+          <a class="nav-link category-dropdown label-group p-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="true">
+            <div class="category">
+              <div class="category-business"></div>
+              <div class="category-social"></div>
+              <div class="category-important"></div>
+              <span class="more-options text-dark">
+                <i class="ti ti-dots-vertical fs-5"></i>
+              </span>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right category-menu">
+            <a class="
+                                  note-business
+                                  badge-group-item badge-business
+                                  dropdown-item
+                                  position-relative
+                                  category-business
+                                  d-flex
+                                  align-items-center
+                                " href="<%= key_biz_metric_path(key_biz_metric) %>">Show</a>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

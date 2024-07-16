@@ -1,0 +1,34 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Key Biz Metrics</h1>
+  <%= link_to "New Key Biz Metric", new_key_biz_metric_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<div class="table-responsive">
+
+  <table id="key_biz_metrics" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          <%= sort_link @q, :name, "Name" %>
+        </th>
+        <th>
+          <%= sort_link @q, :metric_type, "Type" %>
+        </th>
+        <th>
+          <%= sort_link @q, :value, "Value" %>
+        </th>
+        <th>
+          <%= sort_link @q, :run_date, "For" %>
+        </th>      
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @key_biz_metrics.each do |key_biz_metric| %>
+      <%= render key_biz_metric %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>
