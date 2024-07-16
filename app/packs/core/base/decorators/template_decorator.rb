@@ -38,6 +38,14 @@ class TemplateDecorator < ApplicationDecorator
       attr_name = method_name.to_s.gsub("list_", "")
       return send(attr_name)&.join("; ")
 
+    elsif method_name.to_s.include?("indian_words_")
+      attr_name = method_name.to_s.gsub("indian_words_", "")
+      return send(attr_name).to_i.rupees.humanize
+
+    elsif method_name.to_s.include?("words_")
+      attr_name = method_name.to_s.gsub("words_", "")
+      return send(attr_name).humanize
+
     end
     super
   rescue StandardError => e

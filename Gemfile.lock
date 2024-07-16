@@ -454,6 +454,7 @@ GEM
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
+    humanize (3.1.0)
     i18n (1.14.5)
       concurrent-ruby (~> 1.0)
     image_processing (1.12.2)
@@ -968,6 +969,7 @@ DEPENDENCIES
   hightop
   htmlbeautifier
   httparty
+  humanize
   image_processing (~> 1.2)
   importmap-rails
   jbuilder

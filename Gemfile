@@ -225,4 +225,5 @@ end
 gem "marginalia", "~> 1.11"
 # gem 'newrelic_rpm'
 gem 'friendly_id', '~> 5.5.0'
+gem 'humanize'
 gem 'sendgrid-ruby'
