@@ -69,7 +69,7 @@
 
   
   Then('when I view the KPI report for the portfolio company in grid view as owner') do
-    visit(kpi_reports_path(entity_id: @portfolio_company.investor_entity_id, grid_view: true, owner_id: @user.entity_id))
+    visit(kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true, entity_id: @user.entity_id))
   end
 
   Then('when I view the KPI report in grid view') do

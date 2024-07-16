@@ -18,6 +18,9 @@ class KpiReport < ApplicationRecord
 
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
+  scope :for_user, ->(user) { where(entity_id: user.entity_id) }
+  scope :for_both, ->(user) { KpiReport.from("(#{for_investor(user).to_sql} UNION #{for_user(user).to_sql}) as kpi_reports") }
+
   def self.custom_fields
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
   end

@@ -1,7 +1,9 @@
+<% 
+  @portfolio_company ||= nil 
+%>
 <%= form_with(model: nil, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
     
-  <input name="entity_id" value="<%= params[:entity_id] %>" hidden="hidden">
-  <input name="portfolio_company_id" value="<%= params[:portfolio_company_id] %>" hidden="hidden">
+  <input name="portfolio_company_id" value="<%= @portfolio_company&.id %>" hidden="hidden">
   <input name="grid_view" value="true" hidden="hidden">
 
   <div class="form-group col-md-1">    
@@ -15,11 +17,10 @@
     <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control" %>        
   </div>
 
-  <% entity ||= nil %>
-  <% if entity %>
+  <% if @portfolio_company %>
     <div class="form-group col-md-1">    
-      <% owner_id = params[:owner_id] %>
-      <%= form.select :owner_id, [[entity.name, nil], [current_user.entity.name, current_user.entity.id], ["All", :all]], {selected: owner_id}, class: "form-control" %>        
+      <% entity_id = params[:entity_id] %>
+      <%= form.select :entity_id, [[@portfolio_company.name, @portfolio_company.investor_entity_id], [current_user.entity.name, current_user.entity.id], ["All", nil]], {selected: entity_id}, class: "form-control" %>        
     </div>
   <% end %>
 

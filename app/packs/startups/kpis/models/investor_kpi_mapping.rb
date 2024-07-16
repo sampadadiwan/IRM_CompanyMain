@@ -12,7 +12,11 @@ class InvestorKpiMapping < ApplicationRecord
   end
 
   def self.create_from(entity, kpi_report)
-    investor = entity.investors.where(investor_entity_id: kpi_report.entity_id).first
+    investor = if kpi_report.portfolio_company_id.present?
+                 kpi_report.portfolio_company
+               else
+                 entity.investors.where(investor_entity_id: kpi_report.entity_id).first
+               end
     kpi_report.kpis.each do |kpi|
       ikm = InvestorKpiMapping.find_or_initialize_by(entity:, investor:, reported_kpi_name: kpi.name, standard_kpi_name: kpi.name)
       if ikm.new_record?

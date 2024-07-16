@@ -1,3 +1,10 @@
+V7.1.44
+#####################################
+4e66fa927 Fixed better case insensitive check for offer completion
+6fba756ce Fixed tests for remittance
+4cb261729 Deal funnel chart label color (#333)
+bda1cd61a Remove account entry search index (#332)
+
 V7.1.41
 #####################################
 60e361d6e Changed offer copy_docs to use attached docs

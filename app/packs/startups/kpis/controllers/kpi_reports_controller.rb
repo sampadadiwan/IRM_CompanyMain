@@ -12,16 +12,23 @@ class KpiReportsController < ApplicationController
       @kpi_reports = @kpi_reports.where(as_of: date..)
     end
 
+    if params[:entity_id].present?
+      @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id])
+      @portfolio_company = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).last if current_user.curr_role == "investor"
+    end
     @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
     @kpi_reports = @kpi_reports.where(tag_list: params[:tag_list]) if params[:tag_list].present?
-    @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    if params[:owner_id].present? && params[:owner_id] != "all"
-      @kpi_reports = @kpi_reports.where(owner_id: params[:owner_id])
-    elsif params[:owner_id].blank?
-      @kpi_reports = @kpi_reports.where(owner_id: nil)
-    end
     @kpi_reports = @kpi_reports.where(owner_type: params[:owner_type]) if params[:owner_type].present?
-    @kpi_reports = @kpi_reports.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+
+    if params[:portfolio_company_id].present?
+      @portfolio_company = Investor.find(params[:portfolio_company_id])
+      # Now either the portfolio_company has uploaded and given access to the kpi_reports
+      # Or the fund company has uploaded the kpi_reports for the portfolio_company
+      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
+    else
+      # Show only the ones where the portfolio_company_id is nil
+      @kpi_reports = @kpi_reports.where(portfolio_company_id: nil)
+    end
 
     respond_to do |format|
       format.html { render :index }

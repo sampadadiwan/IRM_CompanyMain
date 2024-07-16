@@ -39,7 +39,7 @@ class InvestorKpiMappingsController < ApplicationController
 
   def generate
     investor = Investor.find(params[:investor_id])
-    kpi_report = KpiReport.where(entity_id: investor.investor_entity_id).last
+    kpi_report = policy_scope(KpiReport).where(entity_id: investor.investor_entity_id).or(policy_scope(KpiReport).where(portfolio_company_id: investor.id)).last
     InvestorKpiMapping.create_from(current_user.entity, kpi_report)
     redirect_to investor_path(investor.id, tab: "kpi-mappings-tab"), notice: "Investor KPI Mappings generated"
   end

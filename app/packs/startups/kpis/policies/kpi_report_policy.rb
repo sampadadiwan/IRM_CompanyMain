@@ -2,12 +2,11 @@ class KpiReportPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
       if user.curr_role == "investor"
-        # for_investor_sql = scope.for_investor(user).to_sql
-        # all_my_kpi_reports_sql = KpiReport.where(entity_id: user.entity_id).to_sql
-        # sql = "#{for_investor_sql} UNION #{all_my_kpi_reports_sql}"
-        scope.for_investor(user)
+        # Get the kpi reports as investor and uploader of kpi reports (investors can also upload kpi reports)
+        scope.for_both(user)
       else
-        scope.where(entity_id: user.entity_id).where(owner_id: nil)
+        # Get the kpi reports as uploader of kpi reports
+        scope.for_user(user)
       end
     end
   end

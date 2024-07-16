@@ -71,11 +71,9 @@ module ForInvestor
       join_clause = join_clause.merge(filter)
                                .where("investors.investor_entity_id=?", user.entity_id)
 
-      unless %w[KpiReport Kpi].include?(name)
-        # Ensure the investor access is approved
-        join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
-      end
-
+      # Ensure the investor access is approved
+      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+      
       join_clause
     }
   end
