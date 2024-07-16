@@ -73,7 +73,7 @@ module ForInvestor
 
       # Ensure the investor access is approved
       join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
-      
+
       join_clause
     }
   end

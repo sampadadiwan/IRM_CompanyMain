@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_07_15_155852) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_16_021254) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2926,6 +2926,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_15_155852) do
     t.integer "assigned_to_id"
     t.string "tags", limit: 50
     t.text "response"
+    t.boolean "for_support", default: false
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"

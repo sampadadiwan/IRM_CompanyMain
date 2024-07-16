@@ -1,7 +1,13 @@
 class TaskPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id)
+      if user.support?
+        # Support user
+        scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id)
+      else
+        # Show tasks which are not for support only
+        scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id).not_for_support
+      end
     end
   end
 
@@ -10,7 +16,11 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def show?
-    create? # || (record.owner && Pundit.policy(user, record.owner).show?)
+    if support?
+      create?
+    else
+      create? && record.for_support == false
+    end
   end
 
   def create?

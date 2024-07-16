@@ -18,6 +18,8 @@ class Task < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
+  scope :for_support, -> { where(for_support: true) }
+  scope :not_for_support, -> { where(for_support: false) }
 
   # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 

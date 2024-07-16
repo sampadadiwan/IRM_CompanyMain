@@ -25,6 +25,7 @@ class TasksController < ApplicationController
     end
 
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
+    @tasks = @tasks.where(for_support: true) if params[:for_support].present?
     # Hack to filter by for_entity_id for documents
     @tasks = @tasks.where(for_entity_id: params[:for_entity_id]) if params[:for_entity_id].present?
     @tasks = @tasks.where(assigned_to_id: params[:assigned_to_id]) if params[:assigned_to_id].present?
@@ -136,7 +137,7 @@ class TasksController < ApplicationController
   # Only allow a list of trusted parameters through.
   def task_params
     params.require(:task).permit(:details, :response, :entity_id, :for_entity_id, :owner_id, :owner_type,
-                                 :due_date, :form_type_id, :completed, :user_id, :tags,
+                                 :due_date, :form_type_id, :completed, :user_id, :tags, :for_support,
                                  :assigned_to_id, properties: {}, reminders_attributes: Reminder::NESTED_ATTRIBUTES)
   end
 end

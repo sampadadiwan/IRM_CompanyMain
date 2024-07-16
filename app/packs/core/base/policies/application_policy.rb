@@ -43,9 +43,7 @@ class ApplicationPolicy
     extenal ? extenal.set?(action) : false
   end
 
-  def support?
-    user.has_cached_role?(:support) || user.support_user_id.present?
-  end
+  delegate :support?, to: :user
 
   def super_user?
     user.has_cached_role?(:super)

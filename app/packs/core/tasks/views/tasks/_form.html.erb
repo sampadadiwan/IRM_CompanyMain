@@ -67,6 +67,15 @@
 
       <% end %>
 
+      <% 
+        if current_user.support? 
+      %>
+        <div class="form-group">
+          <%= form.label :for_support %>
+          <%= form.check_box :for_support, class: "form-check-input"  %>
+        </div>
+      <% end %>
+
       <div class="form-group">    
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>

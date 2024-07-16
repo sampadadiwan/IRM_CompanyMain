@@ -81,6 +81,18 @@
             <%= display_boolean(task.completed) %>
           </td>
         </tr>
+
+        <% if task.for_support %>
+        <tr>
+          <td>
+            For Support
+          </td>
+          <td>
+            <%= display_boolean(task.for_support) %>
+          </td>
+        </tr>
+        <% end %>
+
         <tr>
           <td>
             User
