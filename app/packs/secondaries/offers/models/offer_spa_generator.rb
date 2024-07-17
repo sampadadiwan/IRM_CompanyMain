@@ -39,6 +39,8 @@ class OfferSpaGenerator
 
     context.store  :secondary_sale, TemplateDecorator.decorate(offer.secondary_sale)
     context.store  :interest, TemplateDecorator.decorate(offer.interest)
+    offer_custom_fields = TemplateDecorator.decorate(context[:offer].custom_fields)
+    context.store :offer_custom_fields, offer_custom_fields
 
     amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
     context.store :offer_allocation_amount_words, amount_in_words
