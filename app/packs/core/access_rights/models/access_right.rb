@@ -177,7 +177,7 @@ class AccessRight < ApplicationRecord
   # rubocop:enable Rails/SkipsModelValidations
 
   after_destroy lambda {
-    AccessRightsDeletedJob.perform_later(owner_id, owner_type, id) if owner.respond_to?(:document_folder)
+    AccessRightsDeletedJob.perform_later(owner_id, owner_type, id) if owner.respond_to?(:document_folder) || owner_type == "Folder"
   }
 
   def investors

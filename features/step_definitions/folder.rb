@@ -38,3 +38,38 @@
     puts @child_folder.access_rights.to_json
     @child_folder.access_rights.length.should == @data_room.access_rights.length
   end
+
+
+
+  
+Given('the folder has children {string}') do |string|
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Given('each folder has a document') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+When('the root folder is given access rights') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Then('the child folders should have the same access rights') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Then('the documents should have the same access rights') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+When('the root folder access right is deleted') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Then('the child folders access_rights should be deleted') do
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Then('the documents access_rights should be deleted') do
+  pending # Write code here that turns the phrase above into concrete actions
+end

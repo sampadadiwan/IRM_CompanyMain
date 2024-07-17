@@ -23,3 +23,24 @@ Scenario Outline: Create new folder
   	|user	    |entity               |
   	|  	        |entity_type=Company  |
     |  	        |entity_type=Company  |
+
+
+
+Scenario Outline: Add and delete cascading access rights to folder
+  Given there is a user "<user>" for an entity "<entity>"
+  Given the entity has a folder "name=Test Folder"
+  Then the folder should have no owner
+  Then the folder should have no access_rights
+  Given the folder has children "<child_folders>"
+  Given each folder has a document 
+  When the root folder is given access rights
+  Then the child folders should have the same access rights
+  And the documents should have the same access rights
+  When the root folder access right is deleted
+  Then the child folders access_rights should be deleted
+  And the documents access_rights should be deleted
+  
+  Examples:
+  	|user	    |entity               | child_folders |
+  	|  	        |entity_type=Company  | A/B/C/D |
+    |  	        |entity_type=Company  | X/Y/Z   |
