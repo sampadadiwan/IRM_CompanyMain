@@ -22,12 +22,10 @@ class DocumentsBulkActionJob < BulkActionJob
       else
         msg = if document.approved
                 "Document #{document.name} is already approved."
+              elsif document.subject_to_approval?
+                "Document #{document.name} is not generated, does not require approval."
               else
-                if document.subject_to_approval?
-                  "Document #{document.name} is not generated, does not require approval."
-                else
-                  "Document #{document.name} is not ready for approval."
-                end
+                "Document #{document.name} is not ready for approval."
               end
         set_error(msg, document, user_id)
       end

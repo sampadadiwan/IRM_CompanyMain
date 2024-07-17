@@ -25,7 +25,6 @@ class ElasticImporterJob < ApplicationJob
     InvestorKycIndex.import
     KanbanCardIndex.import
     AggregatePortfolioInvestmentIndex.import
-    AccountEntryIndex.import
   end
 
   def reset
@@ -52,7 +51,6 @@ class ElasticImporterJob < ApplicationJob
     InvestorKycIndex.reset!
     KanbanCardIndex.reset!
     AggregatePortfolioInvestmentIndex.reset!
-    AccountEntryIndex.reset!
   end
 
   def create
@@ -79,6 +77,5 @@ class ElasticImporterJob < ApplicationJob
     InvestorKycIndex.create
     KanbanCardIndex.create
     AggregatePortfolioInvestmentIndex.create
-    AccountEntryIndex.create
   end
 end

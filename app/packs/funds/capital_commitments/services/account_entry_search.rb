@@ -9,6 +9,8 @@ class AccountEntrySearch
       query = "#{params[:search][:value]}*"
       entity_ids = [current_user.entity_id]
 
+      # Note we have disabled AccountEntryIndex, its too much data
+      # Use filters to search for AccountEntry
       search_results = AccountEntryIndex.filter(terms: { entity_id: entity_ids }).query(query_string: { fields: AccountEntryIndex::SEARCH_FIELDS, query:, default_operator: 'and' })
 
       search_results = search_results.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
