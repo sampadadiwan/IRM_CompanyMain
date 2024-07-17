@@ -38,3 +38,60 @@
     puts @child_folder.access_rights.to_json
     @child_folder.access_rights.length.should == @data_room.access_rights.length
   end
+
+
+
+  
+Given('the folder has children {string}') do |string|
+  child_folders = string.split("/")
+  child_folders.each do |name|
+    child = @folder.children.create(name:, entity: @folder.entity)
+  end
+end
+
+Given('each folder has a document') do
+  @folder.reload.descendants.each do |folder|
+    Document.create!(entity: @folder.entity, name: "Doc #{folder.name}", text: Faker::Company.catch_phrase, user: @user, folder:, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
+  end
+end
+
+When('the root folder is given access rights') do
+  AccessRight.create!(owner: @folder, user_id: @user.id, cascade: true, entity_id: @folder.entity_id)
+end
+
+Then('the child folders should have the same access rights') do
+  @folder.reload.descendants.each do |folder|
+    puts "Checking folder #{folder.name} access rights #{folder.access_rights.first}"
+    folder.access_rights.length.should == 1
+    folder.access_rights.first.user_id.should == @user.id
+    folder.access_rights.first.cascade.should == true    
+    folder.access_rights.first.entity_id.should == @folder.entity_id
+  end
+end
+
+Then('the documents should have the same access rights') do
+  Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
+    puts "Checking document #{doc.name} access rights #{doc.access_rights.first}"
+    doc.access_rights.length.should == 1
+    doc.access_rights.first.user_id.should == @user.id    
+    doc.access_rights.first.entity_id.should == @folder.entity_id  
+  end
+end
+
+When('the root folder access right is deleted') do
+  @folder.access_rights.destroy_all
+end
+
+Then('the child folders access_rights should be deleted') do
+  @folder.reload.descendants.each do |folder|
+    puts "Checking post delete folder #{folder.name} access rights #{folder.access_rights.first}"
+    folder.access_rights.length.should == 0
+  end
+end
+
+Then('the documents access_rights should be deleted') do
+  Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
+    puts "Checking post delete document #{doc.name} access rights #{doc.access_rights.first}"
+    doc.access_rights.length.should == 0
+  end
+end
