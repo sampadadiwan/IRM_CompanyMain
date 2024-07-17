@@ -21,9 +21,13 @@ class DocumentsBulkActionJob < BulkActionJob
         document.update(approved: true, approved_by_id: user_id)
       else
         msg = if document.approved
-                "Document #{document.name} is already approved"
+                "Document #{document.name} is already approved."
               else
-                "Document #{document.name} is not ready for approval"
+                if document.subject_to_approval?
+                  "Document #{document.name} is not generated, does not require approval."
+                else
+                  "Document #{document.name} is not ready for approval."
+                end
               end
         set_error(msg, document, user_id)
       end
