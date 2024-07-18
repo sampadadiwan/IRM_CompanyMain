@@ -191,7 +191,7 @@
 
     <%= button_to "Mark Payments Completed" , payments_completed_capital_distribution_path(@capital_distribution),
         method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "This mark all payments in this distribution as completed. Please ensure you have verified each payment before doing this."} if policy(@capital_distribution).approve? %>
+        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "This mark all payments in this distribution as completed. Please ensure you have verified each payment before doing this."} if policy(@capital_distribution).mark_payments_completed? %>
 
     <%= button_to "Redeem Units" , 
         redeem_units_capital_distribution_path(@capital_distribution),    
