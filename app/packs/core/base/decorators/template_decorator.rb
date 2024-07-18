@@ -46,6 +46,10 @@ class TemplateDecorator < ApplicationDecorator
       attr_name = method_name.to_s.gsub("words_", "")
       return send(attr_name).humanize
 
+    elsif method_name.to_s.include?("sanitized_")
+      attr_name = method_name.to_s.gsub("sanitized_", "")
+      return send(attr_name).tr("\n", " ")
+
     end
     super
   rescue StandardError => e
