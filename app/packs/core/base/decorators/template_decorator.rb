@@ -48,7 +48,7 @@ class TemplateDecorator < ApplicationDecorator
 
     elsif method_name.to_s.include?("sanitized_")
       attr_name = method_name.to_s.gsub("sanitized_", "")
-      return send(attr_name).tr("\n", " ")
+      return send(attr_name).gsub(/\r?\n/, ' ')
 
     end
     super
