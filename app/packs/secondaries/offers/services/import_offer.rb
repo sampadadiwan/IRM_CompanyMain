@@ -49,7 +49,7 @@ class ImportOffer < ImportUtil
 
       offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"], demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:, offer_type:, seller_signatory_emails: user_data["Seller Signatory Emails"])
 
-      setup_custom_fields(user_data, offer, custom_field_headers)
+      setup_custom_fields(user_data, offer, custom_field_headers - ["Offer Id", "Update Only"])
 
       offer.save!
     else
