@@ -2,6 +2,7 @@ class CapitalRemittancePayment < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include ForInvestor
+  include Trackable.new
 
   belongs_to :fund
   belongs_to :capital_remittance

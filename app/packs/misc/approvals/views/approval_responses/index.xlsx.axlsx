@@ -1,8 +1,15 @@
 wb = xlsx_package.workbook
 
 form_type, custom_field_names, custom_headers = get_form_type("ApprovalResponse")
-
 wb.add_worksheet(name: "ApprovalResponses") do |sheet|
+  if @approval_responses.present?
+    title = @approval_responses[0].approval.title
+    header_style = wb.styles.add_style bg_color: 'ADD8E6'
+    sheet.add_row [title, '', '', ''], style: header_style
+    sheet.merge_cells('A1:D1')
+    sheet.add_row []
+  end
+
   # Create the header row
   sheet.add_row(["Investor", "Category", "Tags", "Name", "Email", "Phone", "Status", "Updated On", "Kyc Count"] + custom_headers)
 

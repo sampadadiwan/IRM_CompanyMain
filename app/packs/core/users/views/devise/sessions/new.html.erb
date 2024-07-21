@@ -1,3 +1,7 @@
+<% 
+    @current_entity ||= nil 
+    @no_password_login = @current_entity&.entity_setting&.custom_flags&.no_password_login?
+%>
 <div id="login_page_x" data-controller="login">
 
         <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
@@ -15,6 +19,7 @@
                             <div class="row">
                                 <div class="col-sm bg-login-image login-right">
                                     <div class="p-5 text-center">
+                                        <% unless @no_password_login  %>
                                         
                                         <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
 
@@ -49,6 +54,8 @@
                                         <% end %>                                        
 
                                         <div class="title-line"><span>OR</span></div>
+
+                                        <% end %>
 
                                         <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass"}) do |f| %>
                                         

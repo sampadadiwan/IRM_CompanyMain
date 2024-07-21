@@ -1,3 +1,11 @@
+V7.1.48
+#####################################
+13251803e Added title to approval response xl download
+c2312612c Check for duplicate headers
+2e1e7bd19 Added no password login to entity setting
+53db01b29 Added cc to error emails
+e1196af59 Added CommitmentTemplateDecorator
+
 V7.1.44
 #####################################
 4e66fa927 Fixed better case insensitive check for offer completion

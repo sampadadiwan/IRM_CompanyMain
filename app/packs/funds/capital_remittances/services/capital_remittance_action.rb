@@ -27,4 +27,9 @@ class CapitalRemittanceAction < Trailblazer::Operation
   def touch_investor(_ctx, capital_remittance:, **)
     capital_remittance.touch_investor
   end
+
+  def set_payment_date(_ctx, capital_remittance:, **)
+    capital_remittance.set_payment_date
+    true
+  end
 end
