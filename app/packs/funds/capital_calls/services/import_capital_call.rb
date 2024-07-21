@@ -25,13 +25,13 @@ class ImportCapitalCall < ImportUtil
         generate_remittances = user_data["Generate Remittances"]&.downcase == "yes"
         generate_remittances_verified = user_data["Remittances Verified"]&.downcase == "yes"
         fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].split(",") : ["All"]
-
+        percentage_called = user_data["Percentage Called"] || 0
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"],
                                        call_date: user_data["Call Date"],
                                        fund_closes:, commitment_type: user_data["Type"],
-                                       percentage_called: user_data["Percentage Called"],
+                                       percentage_called:,
                                        manual_generation: true, call_basis: user_data["Call Basis"],
                                        import_upload_id: import_upload.id,
                                        generate_remittances:, generate_remittances_verified:)
@@ -43,7 +43,7 @@ class ImportCapitalCall < ImportUtil
         setup_unit_prices(user_data, capital_call)
 
         result = CapitalCallCreate.call(capital_call:, import_upload:)
-        raise result["errors"].full_messages.join(",") unless result.success?
+        raise result["errors"] unless result.success?
 
         result.success?
       end

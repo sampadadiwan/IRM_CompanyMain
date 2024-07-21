@@ -21,7 +21,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def mark_payments_completed?
-    update? 
+    update?
   end
 
   def approve?
