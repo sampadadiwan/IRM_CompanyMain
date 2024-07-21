@@ -15,6 +15,9 @@ class Offer < ApplicationRecord
   # Make all models searchable
   update_index('offer') { self if index_record? }
 
+  # Normalize the address to remove newline chars
+  normalizes :address, with: ->(address) { address.gsub(/\r?\n/, ' ') }
+
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :investor

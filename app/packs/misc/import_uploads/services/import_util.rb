@@ -26,6 +26,7 @@ class ImportUtil < Trailblazer::Operation
   def validate_headers(_ctx, import_upload:, headers:, **)
     valid = true
     if respond_to?(:standard_headers)
+      # Check if all the standard headers are present
       standard_headers.each do |header_name|
         next if headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
 
@@ -34,6 +35,15 @@ class ImportUtil < Trailblazer::Operation
         import_upload.save
         valid = false
         break
+      end
+      # Check there are no duplicate column names
+      if headers.uniq.length != headers.length
+        valid = false
+        # Get the duplicate column names
+        dups = h.select { |e| h.count(e) > 1 }.uniq
+        import_upload.status = "Duplicate columns found #{dups}"
+        import_upload.failed_row_count = import_upload.total_rows_count
+        import_upload.save
       end
     end
     valid

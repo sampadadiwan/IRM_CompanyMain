@@ -100,9 +100,19 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
+  end
+
+  def set_payment_date
     # The payment date is either the last capital_remittance_payments date
     last_payment = capital_remittance_payments.order("capital_remittance_payments.payment_date asc").last
-    self.payment_date = last_payment.payment_date if last_payment
+    if last_payment
+      # We have a payment, lets use its payment_date
+      self.payment_date = last_payment.payment_date
+    else
+      # We have no payments, but we may have deleted all payments.
+      payments_deleted = capital_remittance_payments.with_deleted.order("capital_remittance_payments.payment_date asc")
+      self.payment_date = nil if payments_deleted.exists?
+    end
     # Or the payment_date is when the capital_remittance is verified and there are no payments uploaded
     self.payment_date ||= capital_call.due_date if verified
   end

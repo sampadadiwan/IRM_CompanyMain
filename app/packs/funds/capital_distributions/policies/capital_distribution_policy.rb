@@ -20,8 +20,12 @@ class CapitalDistributionPolicy < FundBasePolicy
     update?
   end
 
+  def mark_payments_completed?
+    update?
+  end
+
   def approve?
-    !record.approved && create? && user.has_cached_role?(:approver)
+    !record.approved && create?
   end
 
   def redeem_units?

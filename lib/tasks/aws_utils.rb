@@ -123,7 +123,7 @@ module AwsUtils
     puts "Found #{amis.length} AMIs with name: #{name_tag}. Retaining 10"
 
     # Retain the last 10 AMIs, delete the rest
-    number_to_keep = 10
+    number_to_keep = 5
     if amis.length > number_to_keep
       puts "Deleting #{amis.length - number_to_keep} old AMIs"
       amis_to_delete = amis[0...(amis.length - number_to_keep)]

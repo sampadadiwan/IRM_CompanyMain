@@ -4,7 +4,9 @@
 1. git clone https://github.com/ausangshukla/IRM
 2. git clone https://github.com/ausangshukla/IRM-infra
 3. Ensure you have pulumi installed (https://www.pulumi.com/)
-4. You have the AWS_
+    a. pulumi install plugin resurce aws
+    
+4. You have the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY 
 
 ## Philosophy
 1. We will use IRM-infra to setup the entire infra

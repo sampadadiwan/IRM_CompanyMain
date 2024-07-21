@@ -1,6 +1,9 @@
 module CommitmentAccountEntry
   extend ActiveSupport::Concern
 
+  # These are set by the SOA generator
+  attr_accessor :start_date, :end_date
+
   def reset_committed_amount(new_folio_committed_amount)
     # Zero everything out
     self.committed_amount_cents = 0
@@ -63,6 +66,15 @@ module CommitmentAccountEntry
     ae
   end
 
+  def start_of_financial_year_date(end_date)
+    date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
+    (date + 3.months)
+  end
+
+  def start_of_financial_year(name, _entry_type, end_date)
+    get_account_entry(name, start_of_financial_year_date(end_date), raise_error: false)
+  end
+
   def on_date(name, entry_type, end_date)
     entries = account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
@@ -70,6 +82,7 @@ module CommitmentAccountEntry
 
     entries.where(reporting_date: end_date).sum(:amount_cents)
   end
+  alias as_on_date on_date
 
   def quarterly(name, entry_type, _start_date, end_date)
     entries = account_entries
@@ -78,6 +91,7 @@ module CommitmentAccountEntry
 
     entries.where(reporting_date: end_date.beginning_of_quarter..end_date).sum(:amount_cents)
   end
+  alias period quarterly
 
   def since_inception(name, entry_type, _start_date, end_date)
     entries = account_entries
@@ -92,10 +106,7 @@ module CommitmentAccountEntry
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 
-    date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
-    start_of_financial_year = (date + 3.months)
-
-    entries.not_cumulative.where(reporting_date: start_of_financial_year..end_date).sum(:amount_cents)
+    entries.not_cumulative.where(reporting_date: start_of_financial_year_date(end_date)..end_date).sum(:amount_cents)
   end
 
   def call_amount_cents_start_end(_start_date, _end_date, exclude_call_name: nil)

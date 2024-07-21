@@ -168,6 +168,7 @@ Metrics/PerceivedComplexity:
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'
     - 'app/packs/core/uploaders/file_uploader.rb'
     - 'app/packs/secondaries/offers/services/offer_search_service.rb'
+    - 'app/packs/core/base/decorators/template_decorator.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 200 lines of code.'
   Max: 220
@@ -204,6 +205,8 @@ Metrics/MethodLength:
     - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
     - 'app/packs/funds/funds/services/fund_doc_generator.rb'
     - 'app/packs/core/base/decorators/template_decorator.rb'
+    - 'app/packs/funds/capital_commitments/decorators/capital_commitment_template_decorator.rb'
+    - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
   
 Metrics/BlockNesting:
   Exclude:
@@ -213,14 +216,13 @@ Metrics/BlockLength:
   CountComments: false
   Max: 25
   Exclude:
-    - 'app/packs/secondaries/secondary_sales/views/secondary_sales/download.xlsx.axlsx'
     - 'app/packs/misc/import_uploads/jobs/import_upload_job.rb'
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
     - 'app/controllers/concerns/investment_concern.rb'
     - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
-    - 'app/packs/secondaries/secondary_sales/views/secondary_sales/payments.xlsx.axlsx'
+    - '**/index.xlsx.axlsx'
   AllowedMethods:
     - context
     - describe

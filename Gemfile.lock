@@ -610,6 +610,11 @@ GEM
       pry (>= 0.13, < 0.15)
     psych (5.1.2)
       stringio
+    public_activity (3.0.1)
+      actionpack (>= 6.1.0)
+      activerecord (>= 6.1)
+      i18n (>= 0.5.0)
+      railties (>= 6.1.0)
     public_suffix (6.0.0)
     puma (5.6.8)
       nio4r (~> 2.0)
@@ -988,6 +993,7 @@ DEPENDENCIES
   packs-rails
   paranoia
   pry-byebug
+  public_activity
   puma (~> 5.0)
   pundit!
   rack-attack

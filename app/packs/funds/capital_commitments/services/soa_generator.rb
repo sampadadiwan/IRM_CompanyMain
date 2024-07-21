@@ -30,6 +30,9 @@ class SoaGenerator
   end
 
   def prepare_context(capital_commitment, start_date, end_date)
+    capital_commitment.start_date = Time.zone.parse(start_date)
+    capital_commitment.end_date = Time.zone.parse(end_date)
+
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
     remittances = capital_commitment.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
 
@@ -42,13 +45,13 @@ class SoaGenerator
     committed_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), capital_commitment.fund.currency)
     committed_amounts_between_dates = committed_amounts_before_end_date - committed_amounts_before_start_date
 
-    {
+    @context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
       format_start_date: Time.zone.parse(start_date).strftime("%d %B %Y"),
       end_date:,
       format_end_date: Time.zone.parse(end_date).strftime("%d %B %Y"),
-      capital_commitment: TemplateDecorator.decorate(capital_commitment),
+      capital_commitment: CapitalCommitmentTemplateDecorator.decorate(capital_commitment),
       # Sometimes we need committed_amounts before start and end date
       committed_amounts: TemplateDecorator.decorate(OpenStruct.new(
                                                       before_start_date: committed_amounts_before_start_date,
@@ -92,6 +95,8 @@ class SoaGenerator
 
       commitment_amount_words: amount_in_words
     }
+
+    @context
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
