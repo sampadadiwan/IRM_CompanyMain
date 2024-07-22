@@ -28,7 +28,10 @@ class AccountEntriesController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.xlsx
+      format.xlsx do
+        template = params[:template] || "index"
+        render xlsx: template, filename: "account_entries.xlsx"
+      end
       format.json do
         render json: AccountEntryDatatable.new(params, account_entries: @account_entries) if params[:jbuilder].blank?
       end

@@ -2,6 +2,10 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Advisor Payouts</h1>
+
+  <span>
+        <%= link_to "Download" , account_entries_path(fund_id: @fund.id, cumulative: false, entry_type: "Advisor Payout", format: :xlsx, template: "advisor_payouts"), {class: "btn btn-outline-primary" } %>
+  </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
@@ -30,6 +34,9 @@
         <th>
           Reporting Date
         </th>
+        <th>
+          Actions
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -55,6 +62,9 @@
           </td>
           <td>
             <%= l account_entry.reporting_date %>
+          </td>
+          <td>
+            <%= link_to "Show", account_entry, class: "btn btn-outline-primary" %>
           </td>
         </tr>
       <% end %>

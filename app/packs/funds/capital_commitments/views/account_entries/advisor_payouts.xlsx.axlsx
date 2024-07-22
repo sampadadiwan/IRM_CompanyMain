@@ -1,0 +1,16 @@
+wb = xlsx_package.workbook
+wrap = wb.styles.add_style alignment: { wrap_text: true }
+
+get_form_type("AccountEntry")
+
+wb.add_worksheet(name: "Advisor Payouts") do |sheet|
+  # Create the header row
+  sheet.add_row(["Advisor Name", "Investor", "Committed Amount", "Folio", "Fees Payable", "For", "Reporting Date"])
+
+  # Create entries for each item
+  @account_entries.each do |ae|
+    amount = ae.name.include?("Percentage") ? ae.amount_cents : ae.amount.to_f
+    reporting_date = l ae.reporting_date
+    sheet.add_row [ae.capital_commitment.json_fields["advisor_name"], ae.capital_commitment.investor_name, ae.capital_commitment.committed_amount.to_f, ae.capital_commitment.folio_id, amount, ae.name, reporting_date], style: wrap
+  end
+end
