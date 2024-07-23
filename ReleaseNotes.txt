@@ -5,6 +5,18 @@ c2312612c Check for duplicate headers
 2e1e7bd19 Added no password login to entity setting
 53db01b29 Added cc to error emails
 e1196af59 Added CommitmentTemplateDecorator
+6507fdd0c Added policy to enable employees to see unapproved docs
+240f81ec7 Added ExchangeRatePortfolioInvestmentJob
+56a01afb4 Added advisor payout show and download
+21db032de Better check for percentage_complete in import_calls
+4a70cb804 Soa template methods (#344)
+a918f3c15 Testing for Infra setup
+ea72cbe61 added sanitize to TD
+c2be2b8a2 Allow CD approval by company admin
+7d2461a46 Remove Offer Id and Update Only from custom fields headers
+44166f06b Normalize offer address
+524025e0b Santized property in template decorator (#342)
+
 
 V7.1.44
 #####################################

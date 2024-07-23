@@ -81,7 +81,12 @@ class DefaultUnitAllocationEngine
     fund_unit.premium = (premium_cents / 100)
     fund_unit.total_premium_cents = (premium_cents * quantity)
     fund_unit.reason = reason
-    fund_unit.issue_date = [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
+    
+    if capital_remittance.payment_date
+      fund_unit.issue_date = [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
+    else
+      fund_unit.issue_date = capital_remittance.capital_call.due_date
+    end
 
     if fund_unit.save
       [fund_unit, []]
