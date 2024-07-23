@@ -8,14 +8,9 @@ FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
 WORKDIR /rails
 
 # Set production environment
-# ENV RAILS_ENV="production" \
-#     BUNDLE_DEPLOYMENT="1" \
-#     BUNDLE_PATH="/usr/local/bundle" \
-#     BUNDLE_WITHOUT="development"
-
 ENV RAILS_ENV="development" \
     BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" 
+    BUNDLE_PATH="/usr/local/bundle"
 
 # Throw-away build stage to reduce size of final image
 FROM base as build
@@ -39,7 +34,6 @@ RUN bundle exec bootsnap precompile app/ lib/
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
-
 # Final stage for app image
 FROM base
 
@@ -52,14 +46,21 @@ RUN apt-get update -qq && \
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
 
+# Copy the credentials key file into the container
+COPY config/credentials/development.key /rails/config/credentials/development.key
+
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
+    chown -R rails:rails db log storage tmp config/credentials/development.key
 USER rails:rails
+
+# Set the MASTER_KEY environment variable by reading from the key file
+RUN echo "export MASTER_KEY=$(cat /rails/config/credentials/development.key)" >> /home/rails/.bashrc
 
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD ["./bin/rails", "server"]
+CMD ["bash", "-c", "source /home/rails/.bashrc && ./bin/rails server -b 0.0.0.0"]
+

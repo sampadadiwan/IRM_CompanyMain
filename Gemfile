@@ -91,7 +91,6 @@ gem 'administrate-field-shrine'
 # This generates rails based datatables
 gem 'ajax-datatables-rails'
 gem 'draper'
-gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 
 # This is the S3 upload gem
 gem 'shrine', '~> 3.3'
@@ -157,6 +156,8 @@ group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
   gem 'net-ssh'
+  gem "net-pop", github: "ruby/net-pop"
+
   # gem 'parallel_tests'
   gem 'htmlbeautifier'
   gem 'pry-byebug'
@@ -179,7 +180,7 @@ group :development do
   gem 'annotate'
   gem 'bullet'
   gem "letter_opener", group: :development
-  gem 'overcommit', '~> 0.58.0'
+  gem 'overcommit', '~> 0.58.0', require: false
   gem "web-console"
 
   gem "better_errors"

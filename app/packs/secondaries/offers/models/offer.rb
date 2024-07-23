@@ -259,7 +259,7 @@ class Offer < ApplicationRecord
   ################# ransack stuff follows ###################
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified final_agreement matched interest_id].sort
+    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified final_agreement matched interest_id updated_at created_at].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

@@ -19,6 +19,13 @@ GIT
       rails (>= 6.0.0)
 
 GIT
+  remote: https://github.com/ruby/net-pop.git
+  revision: e8d0afe2773b9eb6a23c39e9e437f6fc0fc7c733
+  specs:
+    net-pop (0.1.2)
+      net-protocol
+
+GIT
   remote: https://github.com/seuros/capistrano-sidekiq.git
   revision: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
   ref: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
@@ -33,14 +40,6 @@ GIT
   revision: db8a7e8b7b4ae6f1728831d38cdb094c18aba30b
   specs:
     rupees (0.1.0)
-
-GIT
-  remote: https://github.com/thimmaiah/xirr
-  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
-  specs:
-    xirr (0.6.1)
-      RubyInline (~> 3)
-      activesupport (~> 7.0)
 
 GIT
   remote: https://github.com/varvet/pundit.git
@@ -60,9 +59,6 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    RubyInline (3.14.1)
-      ZenTest (~> 4.3)
-    ZenTest (4.12.1)
     actioncable (7.1.3.4)
       actionpack (= 7.1.3.4)
       activesupport (= 7.1.3.4)
@@ -543,7 +539,6 @@ GEM
     net-imap (0.4.14)
       date
       net-protocol
-    net-pop (0.1.2)
     net-protocol (0.2.2)
       timeout
     net-scp (4.0.0)
@@ -987,6 +982,7 @@ DEPENDENCIES
   memoized
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
+  net-pop!
   net-ssh
   noticed
   overcommit (~> 0.58.0)
@@ -1035,7 +1031,6 @@ DEPENDENCIES
   web-console
   webdrivers
   whenever
-  xirr!
   yajl-ruby
 
 BUNDLED WITH
