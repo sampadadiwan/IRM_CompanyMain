@@ -1,6 +1,0 @@
-check_replication_status:
-  cron: '*/5 * * * *'
-  class: ReplicationHealthJob
-  queue: low
-  args: 
-  description: "This job checks if replication is healthy"  

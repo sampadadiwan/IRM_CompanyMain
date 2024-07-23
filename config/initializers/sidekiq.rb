@@ -1,5 +1,4 @@
 require 'sidekiq'
-# require 'sidekiq-scheduler'
 
 Sidekiq.configure_server do |config|
   # edits the default capsule
@@ -12,12 +11,9 @@ Sidekiq.configure_server do |config|
     cap.queues = %w[serial doc_gen]
   end
 
-  # config.on(:startup) do
-  #   Sidekiq.schedule = YAML.load_file(File.expand_path('../sidekiq_scheduler.yml', __dir__))
-  #   SidekiqScheduler::Scheduler.instance.reload_schedule!
-  # end
-
-  Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: '*/1 * * * *', class: 'DailyMorningJob')
+  # 20:30 UTC is 2:00 am IST
+  Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 20:30', class: 'DailyMorningJob')
+  Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
 end
 
 Sidekiq.default_configuration[:max_retries] = 2
