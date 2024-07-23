@@ -15,10 +15,10 @@ class DailyMorningJob < ApplicationJob
       Rails.logger.debug "Generate Key Biz Metrics"
       KeyBizMetricsJob.perform_now
 
-      Rails.logger.debug "ReminderJob"
+      Rails.logger.debug "Send scheduled Reminders"
       ReminderJob.perform_now
 
-      Rails.logger.debug "InvestorNoticeJob"
+      Rails.logger.debug "Cleanup of InvestorNotice which are expired"
       InvestorNoticeJob.perform_now
 
       Rails.logger.debug "Disable SupportClientMappings after end_date"
