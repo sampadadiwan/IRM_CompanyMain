@@ -155,8 +155,8 @@ group :development, :test do
   gem "bundler-audit"
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
-  gem 'net-ssh'
   gem "net-pop", github: "ruby/net-pop"
+  gem 'net-ssh'
 
   # gem 'parallel_tests'
   gem 'htmlbeautifier'

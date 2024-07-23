@@ -58,7 +58,7 @@ Scenario Outline: Generate Fund Reports
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
-  And Given I upload an the portfolio companies
+  And Given I upload the portfolio companies
   And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import in progress"
   Then There should be "8" portfolio investments created
@@ -75,7 +75,7 @@ Scenario Outline: Import portfolio investments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
-  And Given I upload an the portfolio companies
+  And Given I upload the portfolio companies
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import in progress"
   Then There should be "8" portfolio investments created
@@ -88,7 +88,7 @@ Scenario Outline: Import portfolio investments failed
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
-  And Given I upload an the portfolio companies
+  And Given I upload the portfolio companies
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
   And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
@@ -100,7 +100,7 @@ Scenario Outline: Import portfolio valuations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
-  And Given I upload an the portfolio companies
+  And Given I upload the portfolio companies
   And the portfolio companies have investment instruments "name=Common Stock;category=Unlisted;sub_category=Equity;sector=Tech"
   And Given I upload "valuations.xlsx" file for portfolio companies of the fund
   Then I should see the "Import in progress"

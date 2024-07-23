@@ -48,7 +48,16 @@
       Per Share Value
     </td>
     <td>
-      <%= money_to_currency @valuation.per_share_value, params %>
+      <%= @valuation.per_share_value_cents / 100 %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Currency
+    </td>
+    <td>
+      <%= @valuation.currency %>
     </td>
   </tr>
 
