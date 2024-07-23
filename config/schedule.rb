@@ -48,10 +48,23 @@ end
 
 every :reboot, roles: [:app] do
   bundle "sidekiq"
-  bundle "puma --yjit -C /home/ubuntu/IRM/shared/puma.rb"
+  bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
 end
 
+# Note times are in UTC, as our users are in IST 8:30 pm UTC is 2:00 am IST
 every 1.day, at: '08:30 pm', roles: [:all] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
+end
+
+# Reboot servers
+# Note times are in UTC, as our users are in IST 10:30 pm UTC is 4:00 am IST
+if Rails.env == "production"
+  every :saturday, at: '10:30 pm', roles: [:app] do
+    command 'sudo reboot'
+  end
+else
+  every 1.day, at: '10:30 pm', roles: [:app] do
+    command 'sudo reboot'
+  end
 end
