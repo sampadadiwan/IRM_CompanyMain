@@ -11,6 +11,7 @@ class DocumentPolicy < ApplicationPolicy
     record.public_visibility ||
       (user && (
         (user.enable_documents && belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
+        (user.enable_documents && belongs_to_entity?(user, record) && record.owner && owner_policy.show?) ||
         (user.enable_documents && show_investor? && !user.investor_advisor?) ||
         (record.owner && owner_policy.show? && not_generated_or_approved) ||
         allow_external?(:read)
