@@ -4,7 +4,8 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
-every 1.day, at: '02:01 am', roles: [:primary] do
+# Note times are in UTC, as our users are in IST 8:30 pm UTC is 2:00 am IST
+every 1.day, at: '08:30 pm', roles: [:primary] do
   # runner "ElasticImporterJob.perform_now"
   runner "VestedJob.perform_now"
   runner "Entity.recompute_all"
@@ -19,6 +20,14 @@ every 1.day, at: '02:01 am', roles: [:primary] do
   runner "KeyBizMetricsJob.perform_now"
 end
 
+# Note times are in UTC, as our users are in IST 9:30 pm UTC is 3:00 am IST
+every 1.day, at: '09:30 pm', roles: [:primary] do
+  runner "ReminderJob.perform_now"
+  runner "InvestorNoticeJob.perform_now"
+  runner "SignatureWorkflowJob.perform_now"
+  runner "Notification.where(created_at: ..(Date.today - 1.month)).each(&:destroy)"
+end
+
 every 1.hour, roles: [:primary] do
   # Backup the database
   rake "db:backup"
@@ -28,14 +37,9 @@ every 1.hour, roles: [:primary] do
   rake "s3:check_latest_file"
 end
 
-every 1.day, at: '23:30 am', roles: [:primary] do
-  runner "ReminderJob.perform_now"
-  runner "InvestorNoticeJob.perform_now"
-  runner "SignatureWorkflowJob.perform_now"
-  runner "Notification.where(created_at: ..(Date.today - 1.month)).each(&:destroy)"
-end
 
-every 1.week, at: '02:30 am', roles: [:primary] do
+
+every 1.week, at: '09:00 pm', roles: [:primary] do
   # Ensure that enable is set to false for all SupportClientMappings after end_date
   runner "SupportClientMapping.disable_expired"
   rake '"aws:create_and_copy_ami[AppServer]"'
@@ -48,6 +52,6 @@ every :reboot, roles: [:app] do
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
 end
 
-every 1.day, at: '02:01 am', roles: [:all] do
+every 1.day, at: '08:30 pm', roles: [:all] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
