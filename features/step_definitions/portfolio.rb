@@ -268,7 +268,7 @@ Then('the Portfolio attributions must be adjusted') do
 end
 
 
-Given('Given I upload an the portfolio companies') do
+Given('Given I upload the portfolio companies') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
