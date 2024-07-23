@@ -59,12 +59,6 @@ end
 
 # Reboot servers
 # Note times are in UTC, as our users are in IST 10:30 pm UTC is 4:00 am IST
-if Rails.env == "production"
-  every :saturday, at: '10:30 pm', roles: [:app] do
-    command 'sudo reboot'
-  end
-else
-  every 1.day, at: '10:30 pm', roles: [:app] do
-    command 'sudo reboot'
-  end
+every :saturday, at: '10:30 pm', roles: [:app] do
+  command 'sudo reboot'
 end
