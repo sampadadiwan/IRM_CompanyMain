@@ -1,3 +1,14 @@
+V7.1.50
+#####################################
+bea0ffbc2 Fixed document policy, to support employee users
+ac900d3ec Added file deletion in ensure at end of db backup (#351)
+a7cb30ff6 Merge pull request #350 from ausangshukla/sidekiq-cron
+d4e4e887c Added better way to generate variable names from ae.name
+9998784f1 Moved rake jobs methods to Jobs for sidekiq cron
+ac758a1ef Cleanup of dead code
+06aeb5774 Moved all morning jobs to DailyMorningJob and using sidekiq-cron
+32176795c Changed cron times to be reflective of IST
+
 V7.1.48
 #####################################
 13251803e Added title to approval response xl download

@@ -10,7 +10,7 @@ class S3CheckJob < ApplicationJob
     source_s3 = Aws::S3::Resource.new(client:)
 
     # Get the latest file from the source bucket
-    source_bucket_name = "#{ENV.fetch('AWS_S3_BUCKET', nil)}.#{Rails.env}"
+    source_bucket_name = "#{ENV.fetch('AWS_S3_BUCKET', nil)}"
     Rails.logger.debug { "Checking for the latest file in the source bucket #{source_bucket_name}" }
 
     source_bucket = source_s3.bucket(source_bucket_name)
