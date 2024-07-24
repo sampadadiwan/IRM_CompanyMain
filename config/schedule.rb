@@ -4,7 +4,7 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
-every 1.week, at: '09:00 pm', roles: [:primary] do
+every 1.week, at: '02:00 am', roles: [:primary] do
   # Ensure that enable is set to false for all SupportClientMappings after end_date
   rake '"aws:create_and_copy_ami[AppServer]"'
   rake '"aws:create_and_copy_ami[DB-Redis-ES]"'
@@ -17,12 +17,12 @@ every :reboot, roles: [:app] do
 end
 
 # Note times are in UTC, as our users are in IST 8:30 pm UTC is 2:00 am IST
-every 1.day, at: '08:30 pm', roles: [:all] do
+every 1.day, at: '02:30 am', roles: [:all] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
 
 # Reboot servers
 # Note times are in UTC, as our users are in IST 10:30 pm UTC is 4:00 am IST
-every :saturday, at: '10:30 pm', roles: [:app] do
+every :saturday, at: '3:00 am', roles: [:app] do
   command 'sudo reboot'
 end
