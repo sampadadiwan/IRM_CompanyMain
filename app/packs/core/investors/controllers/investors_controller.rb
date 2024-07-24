@@ -92,6 +92,7 @@ class InvestorsController < ApplicationController
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @investor.errors, status: :unprocessable_entity }
         format.turbo_stream do
+          @frame = params[:turbo_frame] || "new_deal_investor"
           @alert = "Investor could not be created!"
           @alert += " #{@investor.errors.full_messages.join(', ')}"
           render turbo_stream: [

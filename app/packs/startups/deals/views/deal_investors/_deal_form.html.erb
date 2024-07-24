@@ -34,11 +34,19 @@
             <div class="form-group">
             <%= form.label :investor_id, "Stakeholder" %>
             <%= form.select :investor_id, deal_investor.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
-             <small class="text-muted">
-                Create <%= link_to new_investor_path("investor[entity_id]": current_user.entity_id,
-                    "back_to": "deal_investors/blank", turbo: true, object: deal_investor),
-                    data: { turbo_frame: "new_deal_investor", turbo: true } do %>
-                    <span>New Stakeholder</span>
+                <% new_investor = Investor.new(entity_id: current_user.entity_id)%>
+                <% if InvestorPolicy.new(current_user, new_investor).new? %>
+                    <small class="text-muted">
+                    Create <%= link_to new_investor_path("investor[entity_id]": new_investor.entity_id,
+                        "back_to": "deal_investors/blank", turbo: true, object: deal_investor),
+                        data: { turbo_frame: "new_deal_investor", turbo: true } do %>
+                        <span>New Stakeholder</span>
+                    <% end %>
+                    </small>
+                <% else %>
+                    <small class="text-muted" data-toggle="tooltip" title="You need permission for this">
+                        Create New Stakeholder
+                    </small>
                 <% end %>
             </div>
 
