@@ -93,6 +93,8 @@ Rails/SkipsModelValidations:
     - 'app/packs/misc/investor_notices/models/investor_notice.rb'
     - 'app/packs/funds/funds/jobs/fund_ratios_job.rb'
     - 'app/packs/core/folders/jobs/folder_defaults_job.rb'
+    - 'app/packs/core/base/jobs/backup_db_job.rb'
+    
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'
@@ -207,6 +209,8 @@ Metrics/MethodLength:
     - 'app/packs/core/base/decorators/template_decorator.rb'
     - 'app/packs/funds/capital_commitments/decorators/capital_commitment_template_decorator.rb'
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
+    - 'app/packs/core/base/jobs/backup_db_job.rb'
+    - 'app/packs/core/base/jobs/s3_check_job.rb'
   
 Metrics/BlockNesting:
   Exclude:
