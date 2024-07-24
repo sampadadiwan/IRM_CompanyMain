@@ -46,7 +46,7 @@ gem "redis", "~> 4.0"
 # Background Jobs
 gem 'memoized'
 gem "sidekiq"
-gem "sidekiq-scheduler"
+gem "sidekiq-cron"
 
 gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'

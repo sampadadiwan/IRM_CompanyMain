@@ -86,7 +86,11 @@ class AccountEntryAllocationHelper
   def add_to_computed_fields_cache(capital_commitment, account_entry)
     @cached_generated_fields[capital_commitment.id] ||= {}
     cached_commitment_fields = @cached_generated_fields[capital_commitment.id]
-    cached_commitment_fields[account_entry.name.titleize.delete(' ').underscore] = account_entry.amount_cents
+    cached_commitment_fields[to_varable_name(account_entry.name)] = account_entry.amount_cents
+  end
+
+  def to_varable_name(name)
+    name.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '').squeeze("_")
   end
 
   def print_formula(fund_formula, bdg)

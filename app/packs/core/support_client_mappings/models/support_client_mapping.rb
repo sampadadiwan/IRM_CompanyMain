@@ -8,9 +8,7 @@ class SupportClientMapping < ApplicationRecord
   end
 
   def self.disable_expired
-    SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).find_each do |scm|
-      scm.user.disable_support
-    end
+    SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).find_each(&:disable_support)
   end
 
   after_commit :enable_disable
