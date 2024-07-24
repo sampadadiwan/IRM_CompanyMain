@@ -139,8 +139,6 @@ class BackupDbJob < ApplicationJob
     object = s3.bucket(bucket_name).object("#{backup_filename}.gz")
     object.upload_file("tmp/#{backup_filename}.gz")
     Rails.logger.debug "Upload completed successfully"
-    # remove local backup file
-    `rm -f tmp/#{backup_filename}.gz`
 
     # Removing old backups
     Rails.logger.debug "Deleting old backups"
@@ -150,5 +148,13 @@ class BackupDbJob < ApplicationJob
         obj.delete
       end
     end
+  rescue StandardError => e
+    Rails.logger.error { "Error backing up database: #{e.message}" }
+    Rails.logger.error { e.backtrace.join("\n") }
+    ExceptionNotifier.notify_exception(e, data: { message: "Error backing up database" })
+  ensure
+    # remove local backup file
+    Rails.logger.debug "Removing local backup file"
+    `rm -f tmp/#{backup_filename}.gz` if File.exist?("tmp/#{backup_filename}.gz")
   end
 end
