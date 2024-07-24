@@ -4,14 +4,6 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
-every 1.hour, roles: [:primary] do
-  # Backup the database
-  rake "db:backup"
-  # Replace with Incremental DB backup # Add Full DB backup https://www.percona.com/mysql/software/percona-xtrabackup
-
-  # Check if the latest file in the source bucket is present in the destination bucket
-  rake "s3:check_latest_file"
-end
 
 every 1.week, at: '09:00 pm', roles: [:primary] do
   # Ensure that enable is set to false for all SupportClientMappings after end_date

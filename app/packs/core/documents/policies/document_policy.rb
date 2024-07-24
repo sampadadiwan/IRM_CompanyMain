@@ -15,7 +15,7 @@ class DocumentPolicy < ApplicationPolicy
           (user.has_cached_role?(:company_admin) || (record.owner && owner_policy.show?))
         ) ||
         (user.enable_documents && show_investor? && !user.investor_advisor?) ||
-        (record.owner && owner_policy.show? && not_generated_or_approved) 
+        (record.owner && owner_policy.show? && not_generated_or_approved)
       ))
   end
 
