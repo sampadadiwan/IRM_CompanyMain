@@ -1,5 +1,5 @@
 class TemplateDecorator < ApplicationDecorator
-  METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_].freeze
+  METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)
     object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
@@ -51,6 +51,9 @@ class TemplateDecorator < ApplicationDecorator
     elsif method_name.to_s.starts_with?("sanitized_")
       attr_name = method_name.to_s.gsub("sanitized_", "")
       return send(attr_name).gsub(/\r?\n/, ' ')
+    elsif method_name.to_s.starts_with?("boolean_custom_field_")
+      attr_name = method_name.to_s.gsub("boolean_custom_field_", "")
+      return %w[true yes 1].include? custom_fields.send(attr_name).to_s.downcase
     end
     super
   rescue StandardError => e
@@ -59,6 +62,7 @@ class TemplateDecorator < ApplicationDecorator
     raise msg
   end
 
+  public
   def respond_to_missing?(method_name, include_private = false)
     METHODS_START_WITH.any? { |prefix| method_name.to_s.starts_with?(prefix) } || super
   end
