@@ -10,22 +10,29 @@ class DocumentDownloadJob < ApplicationJob
       @tmp_dir = "tmp/#{folder_id}"
       FileUtils.mkdir_p @tmp_dir
 
-      File.open("#{@tmp_dir}/download_#{user_id}.zip", "w+") do |zip_file|
-        folder_ids = folder.descendant_ids
-        folder_ids << folder_id
+      begin
+        File.open("#{@tmp_dir}/download_#{user_id}.zip", "w+") do |zip_file|
+          folder_ids = folder.descendant_ids
+          folder_ids << folder_id
 
-        Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
-          add_documents(zipfile, user, folder_ids)
+          Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
+            add_documents(zipfile, user, folder_ids)
+          end
+
+          uploaded_document = upload(user, folder, zip_file.path)
+          msg = "Zipfile of folder #{folder.name} created. Please download."
+          DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
+          send_notification(msg, user_id)
         end
-
-        uploaded_document = upload(user, folder, zip_file.path)
-        msg = "Zipfile of folder #{folder.name} created. Please download."
-        DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
-        send_notification(msg, user_id)
+      rescue StandardError => e
+        Rails.logger.error { "Error in creating zip file: #{e.message}" }
+        send_notification("Error in creating zip file: #{e.message}", user_id)
+        Rails.logger.error { e.backtrace.join("\n") }
+        raise e
+      ensure
+        Rails.logger.debug { "Removing tmp folder #{@tmp_dir}" }
+        FileUtils.rm_rf(@tmp_dir)
       end
-
-      Rails.logger.debug { "Removing tmp folder #{@tmp_dir}" }
-      FileUtils.rm_rf(@tmp_dir)
     end
   end
 
