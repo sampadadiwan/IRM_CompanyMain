@@ -50,7 +50,7 @@ class TemplateDecorator < ApplicationDecorator
 
     elsif method_name.to_s.starts_with?("sanitized_")
       attr_name = method_name.to_s.gsub("sanitized_", "")
-      return send(attr_name).gsub(/\r?\n/, ' ')
+      return send(attr_name)&.gsub(/\r?\n/, ' ').to_s
     elsif method_name.to_s.starts_with?("boolean_custom_field_")
       attr_name = method_name.to_s.gsub("boolean_custom_field_", "")
       return %w[true yes 1].include? custom_fields.send(attr_name).to_s.downcase
