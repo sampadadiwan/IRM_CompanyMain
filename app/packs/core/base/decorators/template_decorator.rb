@@ -62,7 +62,6 @@ class TemplateDecorator < ApplicationDecorator
     raise msg
   end
 
-  public
   def respond_to_missing?(method_name, include_private = false)
     METHODS_START_WITH.any? { |prefix| method_name.to_s.starts_with?(prefix) } || super
   end

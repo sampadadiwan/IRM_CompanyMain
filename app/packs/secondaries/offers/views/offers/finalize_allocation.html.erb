@@ -34,7 +34,7 @@
                     <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, q: ransack_query_params("interest_id", :null, false)), {class: "dropdown-item" }  %>
                     <% if params[:q].present? %>
                     <div class="dropdown-divider"></div>
-                        <%= render "offers/bulk_actions" %>
+                        <%= render "offers/bulk_actions", secondary_sale: @secondary_sale %>
                     <% end %>
                 </div>
             </div>

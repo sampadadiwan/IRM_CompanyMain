@@ -19,7 +19,7 @@ class OffersController < ApplicationController
 
   def fetch_rows
     @q = Offer.ransack(params[:q])
-    @offers = policy_scope(@q.result)
+    @offers = policy_scope(@q.result).includes(:user)
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)

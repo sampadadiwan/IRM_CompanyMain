@@ -91,7 +91,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def generate_spa?
-    create?
+    create? && record.active
   end
 
   def finalize_allocation?
