@@ -78,4 +78,12 @@ class ImportUpload < ApplicationRecord
   def form_type_names
     import_type == "InvestorKyc" ? %w[IndividualKyc NonIndividualKyc] : [import_type]
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at failed_row_count import_type name processed_row_count status total_rows_count updated_at user_id]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    ["user"]
+  end
 end
