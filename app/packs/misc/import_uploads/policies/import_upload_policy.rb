@@ -14,7 +14,7 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    index? && belongs_to_entity?(user, record)
   end
 
   def new?
@@ -22,7 +22,7 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def update?
-    belongs_to_entity?(user, record)
+    create?
   end
 
   def edit?

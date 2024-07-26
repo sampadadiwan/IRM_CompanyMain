@@ -357,9 +357,28 @@ When('I click on the delete button on offcanvas') do
   sleep(5)
 end
 
-Then('The card is deleted fromt the kanban board') do
+Then('The card is deleted from the kanban board') do
   expect(page).to have_no_content(@deal_investor.name)
   expect(all(".kanban-card").count).to(eq(1))
+end
+
+When('I click on the Add Item and select previously deleted Investor and save') do
+  visit(page.current_url)
+  @inv = Investor.find 1
+  select_investor_by_name_and_save(@inv.investor_name, "some tag")
+  sleep(1)
+end
+
+def select_investor_by_name_and_save(name, tags)
+  sleep(2)
+  first('button', text: "Add Item").click
+  sleep(1)
+  select(name, from: "deal_investor_investor_id")
+  input_field = find_by_id('deal_investor_tags')
+  input_field.set(tags)
+  sleep(0.5)
+  click_button('Save')
+  sleep(1)
 end
 
 When('I click on the action dropdown and create a Kanban Column') do

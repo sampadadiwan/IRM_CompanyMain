@@ -42,7 +42,28 @@ Scenario: Delete deal investor from kanban board
     When I click on a Kanban Card
     Then The offcanvas opens
     When I click on the delete button on offcanvas
-    Then The card is deleted fromt the kanban board
+    Then The card is deleted from the kanban board
+
+    Examples:
+  	|user	      |entity               |deal                             |msg	|
+  	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
+
+Scenario: Delete and Add same deal investor from kanban board
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    And I am at the deals page
+    When I have Boards Permissions
+    When I create a new deal "<deal>"
+    Then I should see the "<msg>"
+    And an deal should be created
+    When I click on the Add Item and select any Investor and save
+    When I click on a Kanban Card
+    Then The offcanvas opens
+    When I click on the delete button on offcanvas
+    Then The card is deleted from the kanban board
+    When I click on the Add Item and select previously deleted Investor and save
+    When I click on a Kanban Card
+    Then The offcanvas opens
 
     Examples:
   	|user	      |entity               |deal                             |msg	|
