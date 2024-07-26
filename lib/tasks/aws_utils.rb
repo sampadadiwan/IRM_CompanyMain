@@ -169,8 +169,8 @@ module AwsUtils
       puts "Snapshot created: #{snapshot_id}"
       # Wait for snapshot completion
       ec2_client.wait_until(:snapshot_completed, snapshot_ids: [snapshot_id]) do |w|
-        w.max_attempts = 20  # Adjust max attempts and delay as needed
-        w.delay = 10
+        w.max_attempts = 30  # Adjust max attempts and delay as needed
+        w.delay = 40
       end
       ec2.create_tags({
         resources: [snapshot_id],
@@ -242,8 +242,8 @@ module AwsUtils
 
     # Wait for the AMI to be available
     dest_ec2_client.wait_until(:image_available, image_ids: [copy_response.image_id]) do |w|
-      w.max_attempts = 10
-      w.delay = 60
+      w.max_attempts = 20
+      w.delay = 120
       puts "Waiting for AMI to be available..."
     end
 
