@@ -63,6 +63,33 @@ namespace :puma do
   end
 end
 
+namespace :nginx do
+  desc 'Switch nginx configuration to maintenance or IRM_production'
+  task :switch_maintenance do
+    on roles(:app) do
+      within release_path do        
+        execute :rake, "\"nginx:switch[maintenance]\" RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
+  before 'nginx:switch_maintenance', 'sidekiq:stop'
+  before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
+  before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
+
+  task :switch_app do
+    on roles(:app) do
+      within release_path do        
+        execute :rake, "\"nginx:switch[IRM_#{fetch(:stage)}]\" RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
+  after 'nginx:switch_app', 'sidekiq:restart'
+  before 'nginx:switch_app', 'sidekiq:monit:monitor'
+  before 'nginx:switch_app', 'puma:monit:monitor'
+end
+
 # These recovery tasks are to be invoked ONLY if you are rebuilding an environment from scratch
 # For example, if you are setting up a new environment or if you are recovering from a disaster
 # This is not to be used for regular deployments

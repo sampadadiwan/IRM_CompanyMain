@@ -1,3 +1,15 @@
+V7.1.51
+#####################################
+2ed4d00ad Fixed timeouts for AMI creation
+c0fb32bb7 Fixed errors in offer bulk actions
+963aced42 Handled nil case for sanitized address for offers (#353)
+f0072f8c3 Added boolean_custom_field_ to TD
+732502f33 (origin/iu_filters, iu_filters) Added ransack to Import uploads
+eea00e8b4 Added json_fields copy in PI conversion
+f85778c7e Fixed bug with Document Downloader Job
+8947b8957 Changed cron times back to IST
+8f2ee9f45 Fixed bug in S3CheckJob, source bucket name
+
 V7.1.50
 #####################################
 bea0ffbc2 Fixed document policy, to support employee users

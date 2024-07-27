@@ -142,7 +142,28 @@
   <script src="https://code.highcharts.com/modules/exporting.js"></script>
   <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
 
-
+  
+    <!-- User segmentation start -->
+    <% if current_user && ENV['DAP'].present? %>
+    <script>
+      window.usetifulTags = { role : "<%=current_user.curr_role%>", segment: "<%=current_user.entity_type%>" };
+    </script>
+    <!-- User segmentation end -->
+    <!-- Usetiful script start -->
+    <script>
+      (function (w, d, s) {
+          var a = d.getElementsByTagName('head')[0];
+          var r = d.createElement('script');
+          r.async = 1;
+          r.src = s;
+          r.setAttribute('id', 'usetifulScript');
+          r.dataset.token = "3ad4cabd59d644a646d45ec4fd793271";
+                              a.appendChild(r);
+        })(window, document, "https://www.usetiful.com/dist/usetiful.js");
+    </script>
+    <!-- Usetiful script end -->
+    <% end %>
+    
 </body>
 
 </html>
