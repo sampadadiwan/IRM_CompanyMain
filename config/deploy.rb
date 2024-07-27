@@ -73,9 +73,11 @@ namespace :nginx do
     end
   end
 
-  before 'nginx:switch_maintenance', 'sidekiq:stop'
+
   before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
   before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
+  before 'nginx:switch_maintenance', 'sidekiq:stop'
+  before 'nginx:switch_maintenance', 'puma:stop'
 
   task :switch_app do
     on roles(:app) do
@@ -86,6 +88,7 @@ namespace :nginx do
   end
 
   after 'nginx:switch_app', 'sidekiq:restart'
+  after 'nginx:switch_app', 'puma:restart'
   before 'nginx:switch_app', 'sidekiq:monit:monitor'
   before 'nginx:switch_app', 'puma:monit:monitor'
 end

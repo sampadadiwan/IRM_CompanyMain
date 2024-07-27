@@ -317,8 +317,12 @@ module AwsUtils
     # Deploy the app
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} recovery:delete_old_assets")
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} deploy")
+    # Now stop sidekiq, puma and monitoring and switch to maintenance mode
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} nginx:switch_maintenance")
     # Load the DB from backups and create the replica
     run_cmd("branch=#{branch_name} bundle exec cap #{stack} recovery:load_db_from_backups")
+    # Switch back to the app and remove maintenance mode
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} nginx:switch_app")
   end
 
 end
