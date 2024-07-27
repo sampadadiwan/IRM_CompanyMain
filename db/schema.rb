@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_07_21_050007) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_26_073102) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -879,6 +879,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_21_050007) do
     t.json "json_fields"
     t.bigint "form_type_id"
     t.string "slug"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
@@ -886,7 +887,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_21_050007) do
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
-    t.index ["investor_id", "deal_id"], name: "index_deal_investors_on_investor_id_and_deal_id", unique: true
+    t.index ["investor_id", "deal_id", "generated_deleted"], name: "unique_deal_investor", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end

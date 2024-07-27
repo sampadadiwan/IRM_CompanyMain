@@ -42,6 +42,14 @@ GIT
     rupees (0.1.0)
 
 GIT
+  remote: https://github.com/thimmaiah/xirr.git
+  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
+  specs:
+    xirr (0.6.1)
+      RubyInline (~> 3)
+      activesupport (~> 7.0)
+
+GIT
   remote: https://github.com/varvet/pundit.git
   revision: e5f88356c0ad366100b35ae2e3ae7327f8fb9002
   specs:
@@ -59,6 +67,9 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    RubyInline (3.14.1)
+      ZenTest (~> 4.3)
+    ZenTest (4.12.2)
     actioncable (7.1.3.4)
       actionpack (= 7.1.3.4)
       activesupport (= 7.1.3.4)
@@ -1029,6 +1040,7 @@ DEPENDENCIES
   web-console
   webdrivers
   whenever
+  xirr!
   yajl-ruby
 
 BUNDLED WITH
