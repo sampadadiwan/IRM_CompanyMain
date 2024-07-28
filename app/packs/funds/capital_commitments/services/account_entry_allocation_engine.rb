@@ -2,7 +2,7 @@ class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
   def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, run_allocations: true, explain: false,
-                 generate_soa: false, template_name: nil, fund_ratios: false, sample: false)
+                 generate_soa: false, template_name: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
@@ -16,6 +16,8 @@ class AccountEntryAllocationEngine
     @rule_for = rule_for
     @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
     @bulk_insert_records = []
+    @allocation_run = nil
+    @allocation_run = AllocationRun.find(allocation_run_id) if allocation_run_id.present?
   end
 
   # There are 3 types of formulas - we need to run them in the sequence defined
@@ -43,12 +45,15 @@ class AccountEntryAllocationEngine
         # Provide notification
         @helper.notify("Completed #{index + 1} of #{@formula_count}: #{fund_formula.name}", :success, @user_id)
       rescue Exception => e
-        @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
-        Rails.logger.debug { "Error in #{fund_formula.name} : #{e.message}" }
+        error_message = "Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}"
+        @helper.notify(error_message, :danger, @user_id)
+        Rails.logger.debug { error_message }
+        @allocation_run&.update_column(:status, error_message)
         raise e
       end
       time_taken = ((Time.zone.now - run_start_time)).to_i
       @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken} seconds", :success, @user_id)
+      @allocation_run&.update_column(:status, "Success")
     end
 
     @helper.generate_fund_ratios if @fund_ratios

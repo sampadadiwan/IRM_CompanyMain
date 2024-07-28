@@ -1,3 +1,12 @@
+V7.1.52
+#####################################
+3029e9cb8 Added get_account_entry_or_zero for cc account entries
+22dbca68a Added xirr gem back
+5ecc9d461 Added maintenance mode in recovery
+93ae818c1 Usetiful integration and nginx rake (#358)
+4be29d7ef Deal investors index fix (#357)
+2ed4d00ad Fixed timeouts for AMI creation
+
 V7.1.51
 #####################################
 2ed4d00ad Fixed timeouts for AMI creation
