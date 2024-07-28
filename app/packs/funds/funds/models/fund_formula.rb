@@ -72,14 +72,18 @@ class FundFormula < ApplicationRecord
     find_expressions(ast, expressions)
     expression_map = {}
     expressions.each do |exp|
-      val = eval(exp, binding)
-      expression_map[exp] = val unless skip_statement(exp, val)
+      unless exp.include?("SkipRule")
+        val = eval(exp, binding)
+        expression_map[exp] = val unless skip_statement(exp, val)
+      end
     end
     expression_map
   end
 
   def skip_statement(exp, val)
-    val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) || val.is_a?(ActiveRecord::Relation) || val.is_a?(Array) || exp.delete("\"").strip == val
+    val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) ||
+      val.is_a?(ActiveRecord::Relation) || val.is_a?(ActiveRecord::QueryMethods::WhereChain) ||
+      val.is_a?(Array) || exp.delete("\"").strip == val
   end
 
   def find_expressions(node, expressions)

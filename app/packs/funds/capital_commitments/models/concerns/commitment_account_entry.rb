@@ -66,6 +66,10 @@ module CommitmentAccountEntry
     ae
   end
 
+  def get_account_entry_or_zero(name, date)
+    get_account_entry(name, date, raise_error: false) || AccountEntry.new(name:, entity_id:, fund_id:, amount_cents: 0)
+  end
+
   def start_of_financial_year_date(end_date)
     date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
     (date + 3.months)
