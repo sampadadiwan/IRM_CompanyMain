@@ -67,12 +67,11 @@ namespace :nginx do
   desc 'Switch nginx configuration to maintenance or IRM_production'
   task :switch_maintenance do
     on roles(:app) do
-      within release_path do        
+      within release_path do
         execute :rake, "\"nginx:switch[maintenance]\" RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
-
 
   before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
   before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
@@ -81,7 +80,7 @@ namespace :nginx do
 
   task :switch_app do
     on roles(:app) do
-      within release_path do        
+      within release_path do
         execute :rake, "\"nginx:switch[IRM_#{fetch(:stage)}]\" RAILS_ENV=#{fetch(:stage)}"
       end
     end

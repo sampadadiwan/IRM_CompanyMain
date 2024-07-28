@@ -79,8 +79,8 @@ gem 'hightop'
 gem 'eu_central_bank'
 gem 'money-rails', '~>1.12'
 gem 'rupees', git: "https://github.com/thimmaiah/rupees.git"
-gem 'xirr', git: "https://github.com/thimmaiah/xirr.git"
 gem 'to_words'
+gem 'xirr', git: "https://github.com/thimmaiah/xirr.git"
 
 # Admin screens
 gem "administrate"
