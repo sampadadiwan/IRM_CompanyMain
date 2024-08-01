@@ -29,6 +29,7 @@ class ImportFundDocs < ImportUtil
     rescue StandardError => e
       Rails.logger.debug e.backtrace
       row << "Error #{e.message}"
+      row << e.backtrace
       import_upload.failed_row_count += 1
     end
   end

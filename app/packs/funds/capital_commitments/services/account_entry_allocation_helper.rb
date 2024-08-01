@@ -20,11 +20,16 @@ class AccountEntryAllocationHelper
   end
 
   # Remove all prev allocations for this period, as we will recompute it
-  def cleaup_prev_allocation(rule_for: nil)
+  def cleaup_prev_allocation(rule_for: nil, fund_formula: nil)
     ae = AccountEntry.where(fund_id: @fund.id, generated: true, reporting_date: @start_date..@end_date)
     ae = ae.where(rule_for:) if rule_for.present?
+    ae = ae.where(fund_formula_id: fund_formula.id) if fund_formula.present?
     ae.delete_all
-    notify("Cleaned up prev allocated entries", :success, @user_id)
+    # if fund_formula.present?
+    #   notify("Cleaned up #{count} prev generated entries for #{@fund.name} by formula #{fund_formula.name} between #{@start_date} #{@end_date}", :success, @user_id)
+    # else
+    #   notify("Cleaned up #{count} prev generated entries for #{@fund} between #{@start_date} #{@end_date}", :success, @user_id)
+    # end
   end
 
   # generate the SOAs if the user has requested it, kick off SOA generation jobs

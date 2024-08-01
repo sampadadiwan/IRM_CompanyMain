@@ -18,3 +18,5 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.default_configuration[:max_retries] = 2
+
+# Sidekiq.redis(&:flushdb)

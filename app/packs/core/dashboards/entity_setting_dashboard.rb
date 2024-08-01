@@ -43,6 +43,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     append_to_commitment_agreement: Field::String,
     regulatory_env: Field::String,
+    formula_tag_list: Field::String,
     test_account: Field::BooleanEmoji
   }.freeze
 
@@ -106,6 +107,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     whatsapp_templates
     whatsapp_token
     whatsapp_endpoint
+    formula_tag_list
     custom_flags
     created_at
     updated_at
@@ -144,6 +146,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kpi_reminder_frequency
     kpi_reminder_before
     append_to_commitment_agreement
+    formula_tag_list
     custom_flags
   ].freeze
 

@@ -43,6 +43,15 @@
       <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
     </div>
 
+    <% if @fund.entity.entity_setting.formula_tag_list.present? %>
+      <% tag_list = @fund.entity.entity_setting.formula_tag_list.split(",").map(&:strip) %>
+      <div class="form-group">
+        <% selected = params[:tag_list]&.split(",") || [] %>
+        <%= form.label :tag_list %>
+        <%= form.select :tag_list, tag_list, {include_hidden: false, selected: selected}, class: "form-control select2", multiple: true, name: "tag_list[]" %>
+      </div>
+    <% end %>
+
     <div class="form-group">
       <%= form.label :fund_ratios, "Generate Fund Ratios" %>
       <%= form.check_box :fund_ratios, class: "form-check-input", name: "fund_ratios", value: true %>
@@ -144,7 +153,8 @@
             <%= runs.user.full_name %>
           </td>
           <td>
-            <%= runs.rule_for.presence || "Both" %>
+            <%= runs.rule_for.presence || "Both" %> <br>
+            <%= runs.tag_list %>
           </td>
           <td>
             <%= runs.status %>

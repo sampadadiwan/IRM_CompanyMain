@@ -39,6 +39,14 @@
           <%= form.select :rule_for, FundFormula.rule_fors.invert, {}, class: "form-control" %>
         </div>
 
+        <% if fund_formula.entity.entity_setting.formula_tag_list.present? %>
+          <% tag_list = fund_formula.entity.entity_setting.formula_tag_list.split(",").map(&:strip) %>
+          <div class="form-group">
+            <%= form.label :tag_list %>
+            <%= form.select :tag_list, tag_list, {include_hidden: false}, class: "form-control select2", multiple: true %>
+          </div>
+        <% end %>
+
         <div class="form-group">
           <%= form.label :commitment_type, "For" %>
           <%= form.select :commitment_type, ["All", "Pool", "CoInvest"], {}, class: "form-control" %>

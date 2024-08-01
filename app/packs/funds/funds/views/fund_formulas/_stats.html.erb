@@ -1,12 +1,11 @@
-<% cache_if(current_user != nil, cache_key("formula_stats"), expires_in: 5.day) do %>
   <% colors = ["success", "warning", "danger", "info"].freeze %>
 
   <% cards_data = [
-    { path: fund_formulas_path(fund_id:), stat: policy_scope(FundFormula).where(fund_id:).count, subtitle: "All", progress_bar_color: "success" },
-    { path: fund_formulas_path(fund_id:, rule_for: 'accounting'), stat: policy_scope(FundFormula).where(fund_id:).accounting.count, subtitle: "Accounting", progress_bar_color: "warning"},
-    { path: fund_formulas_path(fund_id:, rule_for: 'reporting'), stat: policy_scope(FundFormula).where(fund_id:).reporting.count, subtitle: "Reporting", progress_bar_color: "danger"},
-    { path: fund_formulas_path(fund_id:, enabled: true), stat: policy_scope(FundFormula).where(fund_id:).enabled.count, subtitle: "Enabled", progress_bar_color: "success"},
-    { path: fund_formulas_path(fund_id:, enabled: false), stat: policy_scope(FundFormula).where(fund_id:).disabled.count, subtitle: "Disabled", progress_bar_color: "warning"}
+    { path: fund_formulas_path(fund_id:), stat: @fund_formulas.count, subtitle: "All", progress_bar_color: "success" },
+    { path: fund_formulas_path(fund_id:, rule_for: 'accounting'), stat: @fund_formulas.accounting.count, subtitle: "Accounting", progress_bar_color: "warning"},
+    { path: fund_formulas_path(fund_id:, rule_for: 'reporting'), stat: @fund_formulas.reporting.count, subtitle: "Reporting", progress_bar_color: "danger"},
+    { path: fund_formulas_path(fund_id:, enabled: true), stat: @fund_formulas.enabled.count, subtitle: "Enabled", progress_bar_color: "success"},
+    { path: fund_formulas_path(fund_id:, enabled: false), stat: @fund_formulas.disabled.count, subtitle: "Disabled", progress_bar_color: "warning"}
   ] %>
 
   <div class="row">
@@ -19,4 +18,3 @@
       )) %>
     <% end %>
   </div>
-<% end %>

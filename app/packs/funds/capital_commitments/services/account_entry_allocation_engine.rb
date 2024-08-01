@@ -1,8 +1,7 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, run_allocations: true, explain: false,
-                 generate_soa: false, template_name: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
+  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, tag_list: nil, run_allocations: true, explain: false, generate_soa: false, template_name: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
@@ -14,6 +13,7 @@ class AccountEntryAllocationEngine
     @fund_ratios = fund_ratios
     @sample = sample
     @rule_for = rule_for
+    @tag_list = tag_list
     @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
     @bulk_insert_records = []
     @allocation_run = nil
@@ -24,13 +24,16 @@ class AccountEntryAllocationEngine
   def run_formulas
     if @run_allocations
       run_start_time = Time.zone.now
-      # Clear all the previous allocations
-      @helper.cleaup_prev_allocation(rule_for: @rule_for)
+      # # Clear all the previous allocations
+      # @helper.cleaup_prev_allocation(rule_for: @rule_for)
+
       # Get the fund unit settings mapped by name
       fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
       # Pick only the enabled formulas
       formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
       formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
+      formulas = formulas.with_tags(@tag_list.split(",")) if @tag_list.present?
+
       @formula_count = formulas.count
 
       formulas.each_with_index do |fund_formula, index|
@@ -52,7 +55,7 @@ class AccountEntryAllocationEngine
         raise e
       end
       time_taken = ((Time.zone.now - run_start_time)).to_i
-      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date} in #{time_taken} seconds", :success, @user_id)
+      @helper.notify("Done running #{formulas.count} formulas for #{@start_date} - #{@end_date} in #{time_taken} seconds", :success, @user_id)
       @allocation_run&.update_column(:status, "Success")
     end
 
@@ -62,6 +65,9 @@ class AccountEntryAllocationEngine
 
   def run_formula(fund_formula, fund_unit_settings)
     @bulk_insert_records = []
+    # Clear all the previous allocations
+    @helper.cleaup_prev_allocation(fund_formula:)
+
     existing_record_count = @fund.account_entries.generated.count
     puts { "Running formula #{fund_formula.name}" }
 

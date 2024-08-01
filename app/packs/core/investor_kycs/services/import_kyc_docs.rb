@@ -1,4 +1,6 @@
 class ImportKycDocs < ImportUtil
+  step nil, delete: :create_custom_fields
+
   STANDARD_HEADERS = ["Investor", "PAN", "Document Type", "Document Name", "File Name", "Tags"].freeze
   attr_accessor :commitments
 
@@ -28,6 +30,7 @@ class ImportKycDocs < ImportUtil
     rescue StandardError => e
       Rails.logger.debug e.backtrace
       row << "Error #{e.message}"
+      row << e.backtrace
       import_upload.failed_row_count += 1
     end
   end

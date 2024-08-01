@@ -20,11 +20,27 @@ class FundFormula < ApplicationRecord
   validates :formula, :entry_type, :name, :rule_type, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
 
+  validates :tag_list, length: { maximum: 255 }
+
+  scope :with_tags, ->(tags) { where(tags.map { |_tag| "tag_list LIKE ?" }.join(" OR "), *tags.map { |tag| "%#{tag}%" }) }
+
   delegate :to_s, to: :name
 
   validate :formula_kosher?
   def formula_kosher?
     errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  def tag_list=(tags)
+    self[:tag_list] = if tags.is_a?(Array)
+                        tags.join(",")
+                      else
+                        tags
+                      end
+  end
+
+  def tag_list
+    self[:tag_list].split(",") if self[:tag_list].present?
   end
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok

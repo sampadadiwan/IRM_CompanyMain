@@ -5,13 +5,13 @@ class AccountEntryAllocationJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(fund_id, start_date, end_date, user_id: nil, run_allocations: true, explain: false,
-              generate_soa: nil, template_name: nil, fund_ratios: nil, sample: nil, rule_for: nil, allocation_run_id: nil)
+              generate_soa: nil, template_name: nil, fund_ratios: nil, sample: nil, rule_for: nil, tag_list: nil, allocation_run_id: nil)
 
     Chewy.strategy(:sidekiq) do
       fund = Fund.find(fund_id)
       user = User.find(user_id)
       Audited.audit_class.as_user(user) do
-        AccountEntryAllocationEngine.new(fund, start_date, end_date, run_allocations:, explain:, user_id:, generate_soa:, rule_for:, template_name:, fund_ratios:, sample:, allocation_run_id:).run_formulas
+        AccountEntryAllocationEngine.new(fund, start_date, end_date, run_allocations:, explain:, user_id:, generate_soa:, rule_for:, tag_list:, template_name:, fund_ratios:, sample:, allocation_run_id:).run_formulas
       end
     end
   end

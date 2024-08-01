@@ -146,6 +146,7 @@ class ImportUtil < Trailblazer::Operation
       Rails.logger.error e.message
       Rails.logger.error e.backtrace
       row << "Error #{e.message}"
+      row << e.backtrace
       Rails.logger.debug user_data
       Rails.logger.debug row
       import_upload.failed_row_count += 1

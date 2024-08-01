@@ -14,6 +14,7 @@ class FundFormulasController < ApplicationController
 
   def fetch_rows
     @fund_formulas = policy_scope(FundFormula).includes(:fund)
+    @fund_formulas = @fund_formulas.merge(FundFormula.with_tags([params[:tag]])) if params[:tag].present?
 
     @fund_formulas = @fund_formulas.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_formulas = @fund_formulas.where(enabled: true) if params[:enabled].present? && params[:enabled] == 'true'
@@ -104,9 +105,9 @@ class FundFormulasController < ApplicationController
   def fund_formula_params
     if current_user.support?
       # Only support can change the formula
-      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for, :formula, :explain)
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for, :formula, :explain, tag_list: [])
     else
-      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for, :explain)
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for, :explain, tag_list: [])
     end
   end
 end
