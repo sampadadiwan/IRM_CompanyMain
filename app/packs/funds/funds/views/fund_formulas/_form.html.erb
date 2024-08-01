@@ -93,6 +93,12 @@
         </div>
 
         <div class="form-group">
+            <%= form.label :is_template %>
+            <%= form.check_box :is_template, class: "form-check-input"  %>
+            <small>Enable if this formula should show up on the right as a template</small>
+        </div>
+
+        <div class="form-group">
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         </div>
       <% end %>
@@ -102,27 +108,37 @@
 
   <div class="col-lg-6 mb-4">
     <div class="row">
-      <div class="col-12">
+      <div class="col-12" data-controller="datatable ">
         <%= render FormCard.new(title: "Formula Templates") do %>
-          <table class="table table-bordered dataTable">
+          <table class="table table-bordered dataTable jqDataTable">
             
             <thead>
               <th>Name</th>
               <th>Formula</th>
             </thead>
+            
+            <% 
+              templates =  fund_formula.new_record? ? FundFormula.templates : FundFormula.templates.where(name: fund_formula.name) 
+
+              templates = FundFormula.templates if templates.empty?
+            %>
                         
-            <% FundFormula.where(entity_id: nil).to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
+            <% templates.to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
               <% formulas.each_with_index do |formula, index| %>
                 <% attrs = formula.attributes.slice("name", "entry_type", "description", "formula", "rule_type", "rule_for", "roll_up").map{|k,v| ["fund_formula[#{k}]", v]}.to_h %>
 
                 <tr class="explanation <%=rule_type%>">
-                  <td><%=formula.name%></td>
+                  <td><%= link_to formula.name, formula %></td>
                   <td>
                     <ul>                  
-                      <li> <%= formula.formula %></li>
+                      <li id="formula_<%="#{formula.id}"%>"> <%= formula.formula %></li>
                       <li>
                         <small class="text-muted"><%= formula.description %></small>
-                        <%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary float-right" %>
+                        <span class="float-right">
+                          <%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %>
+
+                          <i class="fas fa-lg fa-copy text-primary" data-action="click->confirm#copy" data-target="#formula_<%="#{formula.id}"%>" data-notify="#imp_links_notice" title="Copy Formula"></i>
+                        </span>
                       </li>
                     </ul>
                   </td>
@@ -259,3 +275,4 @@
       </div>
     </div>
   </div>
+</div>
