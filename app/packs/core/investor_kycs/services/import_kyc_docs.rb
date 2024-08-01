@@ -42,7 +42,7 @@ class ImportKycDocs < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
     name = user_data["Document Name"]
-    model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["Pan"]).first if user_data["Document Type"] == "KYC"
+    model = InvestorKyc.where(investor_id: investor&.id, PAN: user_data["Pan"]).first if user_data["Document Type"] == "KYC"
     send_email = user_data["Send Email"] == "Yes"
 
     if investor && model && File.exist?(file_name)
@@ -63,10 +63,10 @@ class ImportKycDocs < ImportUtil
         status = saved ? "Success" : doc.errors.full_messages
         [saved, status]
       end
-    elsif model.nil?
-      [false, "#{user_data['Document Type']} not found"]
     elsif investor.nil?
       [false, "Investor not found"]
+    elsif model.nil?
+      [false, "KYC not found"]
     else
       [false, "File name #{user_data['File Name']} not found in zip, please include this file and upload."]
     end
