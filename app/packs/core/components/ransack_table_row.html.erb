@@ -1,0 +1,9 @@
+<% @columns.each do |column_name, attribute| %>
+    <td>
+      <% if attribute.start_with?("custom_fields.") %>
+        <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
+      <% else %>
+        <%= @model.send(attribute) %>
+      <% end %>
+    </td>
+<% end %>

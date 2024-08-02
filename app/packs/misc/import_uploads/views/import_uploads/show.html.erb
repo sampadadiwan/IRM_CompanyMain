@@ -23,7 +23,7 @@
 
   <div class="associated_entity">
       <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-      <% if ["holdings"].include?(model_class) %>
+      <% if ["holdings", "investor"].include?(model_class) %>
         <!-- These are loaded via turbo frames lazily as they have ransack sort enabled -->
       <% else %>
         <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>

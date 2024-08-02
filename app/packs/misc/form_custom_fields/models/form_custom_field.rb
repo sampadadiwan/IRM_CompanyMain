@@ -24,6 +24,7 @@ class FormCustomField < ApplicationRecord
   scope :not_internal, -> { where(internal: false) }
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
+
   def meta_data_kosher?
     errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(SAFE_EVAL_REGEX)
   end

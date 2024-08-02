@@ -1,0 +1,26 @@
+<h1>Edit Custom Grid View Preferences</h1>
+
+<%= form_with(model: @custom_grid_view, local: true) do |form| %>
+  <div class="custom_grid_view" data-controller="draggable-row" data-custom-grid-view-id="<%= @custom_grid_view.id %>">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Present in Grid View Preference</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @custom_grid_view.grid_preferences.each do |key, value| %>
+          <% preference = @custom_grid_view.grid_view_preferences.find_by(id: key) %>
+          <tr class="column column_<%= value %>" data-draggable-row-target="column" draggable="true" data-key="<%= value %>">
+            <td><%= value.to_s.titleize %></td>
+            <td>
+              <%= check_box_tag 'custom_grid_view[grid_view_preferences][]', key, preference&.selected, id: key, class: 'form-check-input' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= form.submit 'Save Changes', class: 'btn btn-primary' %>
+<% end %>

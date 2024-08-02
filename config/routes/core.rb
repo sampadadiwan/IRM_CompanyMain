@@ -3,7 +3,6 @@ resources :quick_links
 resources :custom_notifications
 resources :reports
 resources :audits
-
 resources :reminders
 resources :favorites
 

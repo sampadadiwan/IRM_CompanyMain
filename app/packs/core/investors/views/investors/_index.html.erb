@@ -1,20 +1,20 @@
-<% 
-  lazy_load_data ||= false 
+<%
+  lazy_load_data ||= false
   import_upload_id ||= params[:import_upload_id]
 %>
-<% 
-  data_source ||= investors_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm]) 
-%>    
+<%
+  data_source ||= investors_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm])
+%>
 
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <% header=defined?(title) ? title : "Stakeholders" %>
+  <% header = defined?(title) ? title : "Stakeholders" %>
 
-    <h1 class="h3 mb-0 text-gray-800">
-      <%= header %>
-    </h1>
+  <h1 class="h3 mb-0 text-gray-800">
+    <%= header %>
+  </h1>
 
-    <span>
+  <div class="d-flex align-items-center ms-auto">
     <% investor = Investor.new(entity_id: current_user.entity_id) %>
     <%= link_to "New" , new_investor_path("investor[entity_id]": current_user.entity_id),
       {class: "btn btn-outline-primary" } if policy(investor).new? %>
@@ -24,70 +24,51 @@
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        
+
           <%= link_to "Download" , investors_path(format: "xlsx", all: true),
             {class: "dropdown-item" } %>
 
-          <%= link_to "Upload", 
-            new_import_upload_path( 
-                "import_upload[import_type]": "Investor", 
-                "sample_upload": "INVESTORS_SAMPLE"), 
-                { class: "dropdown-item"} if policy(investor).upload? %> 
-          
-          
+          <%= link_to "Upload",
+            new_import_upload_path(
+                "import_upload[import_type]": "Investor",
+                "sample_upload": "INVESTORS_SAMPLE"),
+                { class: "dropdown-item"} if policy(investor).upload? %>
 
-            <%= link_to "Add Stakeholder Notice" , 
-                new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id, 
+
+
+            <%= link_to "Add Stakeholder Notice" ,
+                new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id,
                                           "investor_notice[owner_type]": "Entity"), {class: "dropdown-item" } %>
-      
+
         </div>
       </div>
     </div>
 
-  </span>
+  </div>
 </div>
 
-<div class="table-responsive" data-controller="investors" data-investors-lazy-load-data-value=<%= lazy_load_data %> data-investors-table-name-value="#investors">
+<%=render SearchComponent.new %>
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
-    <% end %>
-    
-    <table id="investors" class="table table-bordered dataTable action_table hover" 
-        data-source="<%= data_source %>" style="width:100%" >
-      <thead>
-        <tr>          
-          <th>
-            Stakeholder
-          </th>
-          <th>
-            Pan
-          </th>
-          <th>
-            Tags
-          </th>
-          <th>
-            Category
-          </th>
-          <th>
-            City
-          </th>
-          <th>
-            Access
-          </th>
-          <th>
-          </th>
-        </tr>
-      </thead>
+<div class="table-responsive">
+    <table id="investors" class="table table-bordered dataTable action_table hover">
+      <% entity = owner_entity(@investors.last, current_user) %>
+      <% ransack_table_header = RansackTableHeader.new(q: @q, entity: entity) %>
+      <%= render ransack_table_header %>
 
       <tbody>
+        <% @investors.each do |investor| %>
+          <%= render "investors/investor",  investor: investor.decorate, columns: ransack_table_header.columns%>
+        <% end %>
       </tbody>
 
     </table>
+
+    <%= page_entries_info @investors, entry_name: 'item' %>
+    <%= paginate @investors %>
 
 </div>

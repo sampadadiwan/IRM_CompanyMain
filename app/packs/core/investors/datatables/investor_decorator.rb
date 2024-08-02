@@ -3,11 +3,11 @@ class InvestorDecorator < ApplicationDecorator
     h.raw object.tag_list&.split(",")&.collect { |tag| h.link_to(tag, h.search_investors_path(query: tag)) }&.join(", ") if object.tag_list
   end
 
-  def investor_link
+  def investor_name
     h.link_to object.investor_name, h.investor_path(id: object.id)
   end
 
-  def access
+  def investor_access_count
     h.render partial: "/investors/access", locals: { investor: object }, formats: [:html]
   end
 

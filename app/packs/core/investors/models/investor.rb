@@ -119,6 +119,7 @@ class Investor < ApplicationRecord
   scope :perms, ->(p) { joins(:investor_entity).merge(Entity.perms(p)) }
   scope :no_perms, ->(p) { joins(:investor_entity).merge(Entity.no_perms(p)) }
 
+  STANDARD_COLUMNS = { "Stakeholder" => "investor_name", "PAN" => "pan", "Tags" => "tag_list", "Category" => "category", "City" => "city", "Access" => "investor_access_count" }.freeze
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)
@@ -234,7 +235,7 @@ class Investor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[category investor_name tag_list].sort
+    %w[pan city category investor_name tag_list investor_access_count].sort
   end
 
   def update_investor_name(name)

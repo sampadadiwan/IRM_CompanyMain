@@ -47,3 +47,7 @@ resources :kanban_columns do
 end
 
 resources :kanban_boards, controller: "boards"
+resources :custom_grid_views do
+  patch 'update_column_sequence', on: :member
+  post 'configure', on: :collection
+end

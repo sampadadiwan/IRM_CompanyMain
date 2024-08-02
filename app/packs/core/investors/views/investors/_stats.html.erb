@@ -5,7 +5,7 @@
   <% cards_data = [] %>
   <% policy_scope(Investor).group(:category).count.each do |category, count| %>
     <% color = colors[index % colors.length]; index += 1 %>
-    <% cards_data << { path: investors_path(category: category), stat: count, subtitle: category, progress_bar_color: color, text_info: nil } %>
+    <% cards_data << { path: investors_path(q: ransack_query_params(:category, :eq, category)), stat: count, subtitle: category, progress_bar_color: color, text_info: nil } %>
   <% end %>
 
   <div class="row">
