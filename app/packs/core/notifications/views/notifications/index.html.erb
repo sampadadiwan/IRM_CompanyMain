@@ -14,6 +14,7 @@
           <%= link_to "View All", notifications_path(all: true), class: "dropdown-item" %>
           <%= link_to "Mark All As Read", notifications_path(mark_as_read: true), class: "dropdown-item" %>
           <%= link_to "Filter", notifications_path(filter: true), class: "dropdown-item" %>
+          <%= link_to "Filter Sent", notifications_path(filter: true, all: true, entity_id: current_user.entity_id), class: "dropdown-item" %>
         </div>
       </div>
     </div>
