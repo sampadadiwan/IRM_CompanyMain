@@ -22,6 +22,18 @@ module NotificationExtensions
   end
 end
 
+Rails.application.config.after_initialize do
+  Rails.logger.debug "Patching Noticed::Notification"
+
+  module Noticed
+    class Notification < ApplicationRecord
+      def self.ransackable_attributes(_auth_object = nil)
+        %w[created_at email email_sent read_at whatsapp whatsapp_sent].sort
+      end
+    end
+  end
+end
+
 Rails.application.config.to_prepare do
   # You can extend Noticed::Event or Noticed::Notification here
   Noticed::Event.include EventExtensions

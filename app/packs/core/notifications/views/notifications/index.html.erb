@@ -1,3 +1,4 @@
+<%= render "layouts/filter", associations: [] %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Notifications</h1>
@@ -12,10 +13,12 @@
           <%= link_to "View Unread", notifications_path(), class: "dropdown-item" %>          
           <%= link_to "View All", notifications_path(all: true), class: "dropdown-item" %>
           <%= link_to "Mark All As Read", notifications_path(mark_as_read: true), class: "dropdown-item" %>
+          <%= link_to "Filter", notifications_path(filter: true), class: "dropdown-item" %>
         </div>
       </div>
     </div>
     <%= link_to "Sent", notifications_path(all: true, entity_id: current_user.entity_id), class: "btn btn-outline-warning" %>
+    
   
     <%= link_to "Custom Notifications", custom_notifications_path, {class: "btn btn-outline-success"}  if current_user.curr_role_employee? %>
   

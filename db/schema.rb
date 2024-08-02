@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_02_131729) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -777,6 +777,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
+  create_table "custom_grid_views", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "owner_id", null: false
+    t.string "owner_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "custom_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "subject"
     t.text "body"
@@ -916,7 +923,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
     t.json "json_fields"
     t.string "investment_opportunity_link"
     t.json "card_view_attrs"
-    t.string "tags", limit: 50
+    t.string "tags", limit: 100
     t.string "slug"
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
@@ -1375,9 +1382,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
     t.boolean "explain", default: true
     t.string "tag_list"
     t.boolean "is_template", default: false
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
+    t.index ["owner_type", "owner_id"], name: "index_fund_formulas_on_owner"
   end
 
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1618,6 +1628,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
     t.index ["slug"], name: "index_funds_on_slug", unique: true
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
+  end
+
+  create_table "grid_view_preferences", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "custom_grid_view_id", null: false
+    t.string "name"
+    t.string "key"
+    t.boolean "selected"
+    t.integer "sequence"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
   end
 
   create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1969,7 +1990,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
     t.boolean "is_investor_advisor", default: false
     t.string "phone", limit: 15
     t.boolean "whatsapp_enabled", default: false
-    t.string "cc"
+    t.text "cc"
     t.bigint "import_upload_id"
     t.string "call_code", limit: 3
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
@@ -3267,6 +3288,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_01_051213) do
   add_foreign_key "funds", "import_uploads"
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
+  add_foreign_key "grid_view_preferences", "custom_grid_views"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"
