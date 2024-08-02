@@ -1,0 +1,16 @@
+Feature: Custom Grid View
+  Can create custom grid views
+
+Scenario Outline: Create custom grid view
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the form type page
+  When I create a form type and custom grid view
+  And I visit Investor Page and find 6 columns in the grid
+	When I visit Custom Grid View page and uncheck city
+	And I should not find city column in the Investor Grid
+
+Examples:
+  |user	      |entity|
+  |  	        |entity_type=Company|
+  |  	        |entity_type=Company|
