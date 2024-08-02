@@ -1,0 +1,5 @@
+<small class="text-muted">
+    <% start_val = @objects.total_count > 0 ? @objects.offset_value + 1 : 0 %>
+    Showing <%= start_val %> to <%= [@objects.offset_value + @objects.limit_value, @objects.total_count].min %> out of <%= @objects.total_count %>
+</small>
+<br>

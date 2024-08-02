@@ -163,7 +163,7 @@ Metrics/CyclomaticComplexity:
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
     - 'app/packs/secondaries/offers/services/offer_search_service.rb'
 Metrics/PerceivedComplexity:
-  Max: 15
+  Max: 20
   Exclude:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
@@ -215,6 +215,10 @@ Metrics/MethodLength:
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'
+
+Naming/MethodParameterName:
+  Exclude:
+    - 'app/packs/core/components/ransack_table_header.rb'
 
 Metrics/BlockLength:
   CountComments: false

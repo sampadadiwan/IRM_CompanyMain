@@ -1226,3 +1226,30 @@ h6 {
     }
   }
 }
+
+.search-container {
+  max-width: 400px; /* Set a max-width if needed */
+  flex-grow: 1; /* Allow the container to grow */
+  position: relative; // Ensure the spinner is positioned relative to this container
+}
+
+#search_spinner {
+  display: none; /* Hide the spinner by default */
+  width: 1.0rem; // Adjust size as needed
+  height: 1.0rem; // Adjust size as needed
+  position: absolute;
+  right: 10px;
+  top: 32%; // Vertically center the spinner - currently centering it in the parent container (maybe)
+  transform: translateY(-50%); // Vertically center the spinner
+  animation: spin 0.75s linear infinite;
+}
+
+// Define the keyframes for spinning animation
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

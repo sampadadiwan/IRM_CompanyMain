@@ -17,6 +17,16 @@ module ApplicationHelper
       (user.entity_type == "Group Company" && user.entity.child_ids.include?(entity_id))
   end
 
+  def owner_entity(model_record, current_user)
+    return if model_record.blank?
+
+    if model_record.instance_of?(Investor)
+      current_user.entity
+    else
+      model_record.entity
+    end
+  end
+
   def download_xl_link(data_source)
     uri = URI.parse(data_source)
     query = Rack::Utils.parse_query(uri.query)
@@ -38,18 +48,20 @@ module ApplicationHelper
     [grid_column_names&.meta_data&.split(","), grid_column_values&.meta_data&.split(",")]
   end
 
+  def get_columns_as_hash(model_class, _params: {})
+    column_names, field_list = get_columns(model_class, params: {})
+    column_names.split(",").zip(field_list.split(",")).to_h
+  end
+
   def get_columns(model_class, params: {})
     # Default Columns for KYC
     column_names ||= params[:column_names].presence || model_class::STANDARD_COLUMN_NAMES
     field_list ||= params[:column_fields].presence || model_class::STANDARD_COLUMN_FIELDS
-
     # Custom Columns if applicable
     entity = @current_entity.presence || current_user.entity
-    custom_cols = if entity.customization_flags.respond_to?(:"#{model_class.name.underscore}_custom_cols?")
-                    entity.customization_flags.send(:"#{model_class.name.underscore}_custom_cols?")
-                  else
-                    false
-                  end
+    # Ex : investor_custom_cols or individual_kyc_custom_cols
+    customization_flag_name = :"#{model_class.name.underscore}_custom_cols"
+    custom_cols = entity.customization_flags.set?(customization_flag_name)
     column_names, field_list = custom_grid_columns(entity, model_class.name) if custom_cols
 
     add_remove_custom_columns(params, column_names, field_list)

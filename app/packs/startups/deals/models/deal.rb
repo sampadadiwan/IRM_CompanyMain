@@ -30,6 +30,7 @@ class Deal < ApplicationRecord
 
   validates :name, :amount_cents, :status, :currency, presence: true
   validates :status, length: { maximum: 20 }
+  validates :tags, length: { maximum: 100 }
   validates :currency, length: { maximum: 10 }
   validates :units, length: { maximum: 15 }
 
