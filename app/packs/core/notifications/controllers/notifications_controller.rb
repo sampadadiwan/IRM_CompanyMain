@@ -3,7 +3,8 @@ class NotificationsController < ApplicationController
 
   # GET /notifications or /notifications.json
   def index
-    @notifications = policy_scope(Noticed::Notification)
+    @q = Noticed::Notification.ransack(params[:q])
+    @notifications = policy_scope(@q.result)
     # Filter by entity
     @notifications = if params[:entity_id].present?
                        @notifications.joins(:event).where("JSON_UNQUOTE(JSON_EXTRACT(noticed_events.params, '$.entity_id')) = ?", params[:entity_id])

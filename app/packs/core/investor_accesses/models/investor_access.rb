@@ -63,6 +63,21 @@ class InvestorAccess < ApplicationRecord
                          where("investor_accesses.user_id=? and investor_accesses.entity_id=? and investor_accesses.approved=?", user.id, entity.id, true)
                        }
 
+  EMAIL_REGEX = URI::MailTo::EMAIL_REGEXP
+  validate :cc_must_contain_valid_emails
+  def cc_must_contain_valid_emails
+    return if cc.blank?
+
+    # Split the emails by comma, remove any leading or trailing spaces and reject any blanks
+    emails = cc.split(',').map(&:strip).compact_blank
+    email_regex = URI::MailTo::EMAIL_REGEXP
+    invalid_emails = emails.grep_v(email_regex)
+
+    errors.add(:cc, "contains invalid emails: #{invalid_emails.join(', ')}") if invalid_emails.any?
+    # Remove duplicates and join them back
+    self.cc = emails.uniq.join(",")
+  end
+
   before_validation :update_user
   validate :ensure_entity_id
 
@@ -106,7 +121,6 @@ class InvestorAccess < ApplicationRecord
     end
     self.user = u
     self.is_investor_advisor = user.investor_advisor?
-    self.cc = parse_cc if cc
   end
 
   def send_notification

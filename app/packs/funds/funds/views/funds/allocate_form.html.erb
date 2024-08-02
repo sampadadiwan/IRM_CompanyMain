@@ -8,7 +8,7 @@
 
 <%= render NewCard.new do %>
 
-  <%= render FormCard.new(title:) do %>
+  <%= render FormCard.new(title:, header_css_class: "fs-5") do %>
 
   <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
     

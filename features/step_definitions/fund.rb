@@ -1277,7 +1277,7 @@ Then('I should see that the duplicate account entries are not uploaded') do
   data.each_with_index do |row, idx|
     next if idx < 21 # skip rows
     # column after headers should have error "Duplicate, already present"
-    row[headers.length - 1].include?("Duplicate, already present").should == true
+    row[headers.length - 2].include?("Duplicate, already present").should == true
   end
 end
 
