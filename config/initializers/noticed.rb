@@ -28,7 +28,28 @@ Rails.application.config.after_initialize do
   module Noticed
     class Notification < ApplicationRecord
       def self.ransackable_attributes(_auth_object = nil)
-        %w[created_at email email_sent read_at whatsapp whatsapp_sent].sort
+        %w[created_at user_email email_sent read_at whatsapp whatsapp_sent].sort
+      end
+
+      def self.ransackable_associations(_auth_object = nil)
+        []
+      end
+
+      scope :with_user_email, lambda { |email|
+        joins("INNER JOIN users ON noticed_notifications.recipient_id = users.id AND noticed_notifications.recipient_type = 'User'")
+          .where('users.email LIKE ?', "%#{email}%")
+      }
+
+      ransacker :user_email, formatter: proc { |v| v.downcase } do |_parent|
+        Arel.sql(<<-SQL.squish)
+          CASE
+            WHEN noticed_notifications.recipient_type = 'User' THEN (
+              SELECT LOWER(users.email)
+              FROM users
+              WHERE users.id = noticed_notifications.recipient_id
+            )
+          END
+        SQL
       end
     end
   end
