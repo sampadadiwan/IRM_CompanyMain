@@ -43,6 +43,8 @@ class EntitySetting < ApplicationRecord
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)
       User.update_all(whatsapp_enabled: false)
+      u = User.find 21
+      u.update(password: "password")
     end
   end
   # rubocop : enable Rails/SkipsModelValidations
