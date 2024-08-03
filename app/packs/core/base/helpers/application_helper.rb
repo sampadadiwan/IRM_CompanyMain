@@ -27,17 +27,6 @@ module ApplicationHelper
     end
   end
 
-  def download_xl_link(data_source)
-    uri = URI.parse(data_source)
-    query = Rack::Utils.parse_query(uri.query)
-    uri.query = Rack::Utils.build_query(query)
-    uri.to_s.gsub(".json", ".xlsx")
-  end
-
-  def uploaded_file_name(file)
-    file.metadata['filename'] if file.metadata
-  end
-
   def custom_grid_columns(entity, form_type_name)
     form_type = entity.form_types.where(name: form_type_name).first
     # Get the custom column names

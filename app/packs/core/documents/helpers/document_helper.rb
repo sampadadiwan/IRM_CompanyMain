@@ -1,6 +1,17 @@
 module DocumentHelper
   FIXNUM_MAX = ((2**((0.size * 8) - 2)) - 1)
 
+  def download_xl_link(data_source)
+    uri = URI.parse(data_source)
+    query = Rack::Utils.parse_query(uri.query)
+    uri.query = Rack::Utils.build_query(query)
+    uri.to_s.gsub(".json", ".xlsx")
+  end
+
+  def uploaded_file_name(file)
+    file.metadata['filename'] if file.metadata
+  end
+
   # This method returns all the folders to be displayed in the tree view
   def get_tree_view_folders(params, current_user, entity, documents)
     entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id

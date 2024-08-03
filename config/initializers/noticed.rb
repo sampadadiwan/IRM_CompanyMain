@@ -35,11 +35,6 @@ Rails.application.config.after_initialize do
         []
       end
 
-      scope :with_user_email, lambda { |email|
-        joins("INNER JOIN users ON noticed_notifications.recipient_id = users.id AND noticed_notifications.recipient_type = 'User'")
-          .where('users.email LIKE ?', "%#{email}%")
-      }
-
       ransacker :user_email, formatter: proc { |v| v.downcase } do |_parent|
         Arel.sql(<<-SQL.squish)
           CASE

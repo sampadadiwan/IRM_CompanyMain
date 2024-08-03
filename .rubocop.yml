@@ -48,6 +48,10 @@ Rails/FilePath:
   Exclude:
     - 'config/application.rb'
 
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'config/initializers/noticed.rb'
+
 Lint/UselessAssignment:
   Exclude:
     - 'app/packs/funds/capital_commitments/services/import_account_entry.rb'
@@ -159,6 +163,7 @@ Metrics/CyclomaticComplexity:
   Max: 15
   Enabled: true
   Exclude:
+    - 'app/packs/core/base/decorators/template_decorator.rb'
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
     - 'app/packs/secondaries/offers/services/offer_search_service.rb'
