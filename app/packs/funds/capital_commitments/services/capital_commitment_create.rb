@@ -15,8 +15,10 @@ class CapitalCommitmentCreate < CapitalCommitmentAction
     true
   end
 
-  def give_access_rights(_ctx, capital_commitment:, **)
-    AccessRight.create(entity_id: capital_commitment.entity_id, owner: capital_commitment.fund, investor: capital_commitment.investor, access_type: "Fund", metadata: "Investor")
+  def give_access_rights(ctx, capital_commitment:, **)
+    # Note that when commitments are imported this causes deadlock issues
+    # ImportCapitalCommitment will handle this at the end of the import
+    capital_commitment.grant_access_to_fund if ctx[:import_upload].blank?
     true
   end
 end

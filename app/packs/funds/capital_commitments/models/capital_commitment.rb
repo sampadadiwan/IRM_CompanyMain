@@ -283,6 +283,10 @@ class CapitalCommitment < ApplicationRecord
     get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
   end
 
+  def grant_access_to_fund
+    AccessRight.create(entity_id:, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
+  end
+
   def committed_amount_cents_before(date)
     date = Date.parse(date) if date.is_a?(String)
 

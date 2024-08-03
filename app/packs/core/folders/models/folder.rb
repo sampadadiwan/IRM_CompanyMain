@@ -63,9 +63,7 @@ class Folder < ApplicationRecord
   # This is triggered when the access rights change
   def access_rights_changed(access_right)
     access_right = AccessRight.where(id: access_right.id).first
-    if access_right&.cascade && (self.documents.any? || self.children.any?)
-      FolderAccessJob.perform_later(id, access_right.id) 
-    end
+    FolderAccessJob.perform_later(id, access_right.id) if access_right&.cascade && (documents.any? || children.any?)
   end
 
   # This is required when really destroying a folder.

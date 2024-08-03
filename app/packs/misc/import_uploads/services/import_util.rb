@@ -141,6 +141,9 @@ class ImportUtil < Trailblazer::Operation
         row << "Error"
       end
     rescue ActiveRecord::Deadlocked => e
+      import_upload.status = "Deadlock: #{e.message}"
+      import_upload.error_text = e.backtrace
+      import_upload.save
       raise e
     rescue StandardError => e
       Rails.logger.error e.message
