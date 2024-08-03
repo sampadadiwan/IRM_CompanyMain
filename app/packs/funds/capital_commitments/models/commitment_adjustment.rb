@@ -7,6 +7,11 @@ class CommitmentAdjustment < ApplicationRecord
   ADJUST_COMMITMENT_TYPES = ["Top Up", "Exchange Rate"].freeze
   ADJUST_ARREAR_TYPES = ["Arrear"].freeze
 
+
+  scope :top_up, -> { where(adjustment_type: "Top Up") }
+  scope :arrear, -> { where(adjustment_type: "Arrear") }
+  scope :exchange_rate, -> { where(adjustment_type: "Exchange Rate") }
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
