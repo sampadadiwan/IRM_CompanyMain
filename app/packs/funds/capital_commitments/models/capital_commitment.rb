@@ -290,7 +290,7 @@ class CapitalCommitment < ApplicationRecord
       # If the commitment date is after the date, then there is no commitment before the date
       0
     else
-      # Get the adjustments before the date
+      # Get the top up adjustments before the date
       adjustment_amount_cents_before_date = commitment_adjustments.top_up.where(as_of: ..date).sum(:amount_cents)
       # Get the committed amount before the date
       orig_committed_amount_cents + adjustment_amount_cents_before_date
