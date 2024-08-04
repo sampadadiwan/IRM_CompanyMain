@@ -63,7 +63,7 @@ module CurrencyHelper
                   when "USD"
                     money.format(format: FORMAT)
                   else
-                    money.format(format: FORMAT, south_asian_number_formatting: sanf)
+                    money.format(format: FORMAT)
                   end
 
     units.present? ? "#{display_val} #{units}" : display_val

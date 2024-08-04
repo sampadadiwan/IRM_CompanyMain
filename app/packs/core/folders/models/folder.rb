@@ -7,7 +7,7 @@ class Folder < ApplicationRecord
   enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", optional: true
-  belongs_to :entity 
+  belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
 
   has_many :documents, dependent: :destroy
@@ -54,7 +54,6 @@ class Folder < ApplicationRecord
       save
     end
   end
-
 
   # This is triggered when the access rights change
   def access_rights_changed(access_right)
