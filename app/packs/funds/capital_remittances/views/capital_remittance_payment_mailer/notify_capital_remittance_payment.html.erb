@@ -1,0 +1,23 @@
+<h3>Dear <%= @capital_remittance_payment.capital_remittance.investor_name %></h3>
+
+<% if @custom_notification %>
+
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/capital_remittance_payments/show", capital_remittance_payment: @capital_remittance_payment, current_user: nil, params: {} if @custom_notification.show_details %>
+    <% end %>    
+
+<% else %>
+    <p>
+        This is confirmation for the payment made by you, for the amount <%= money_to_currency @capital_remittance_payment.amount %>, towards the capital call of the fund <%= @capital_remittance_payment.fund.name %> 
+    </p>
+
+    <p>
+        <%= render "/capital_remittance_payments/show", capital_remittance_payment: @capital_remittance_payment, current_user: nil, params: {} %>
+    </p>
+
+    <p>
+        Please contact the fund for further details.
+    </p>
+<% end %>
+
+<p class="btn btn-outline-primary"><%= link_to 'View Remittance', capital_remittance_payment_url(@capital_remittance_payment, subdomain: @capital_remittance_payment.entity.sub_domain) %></p>

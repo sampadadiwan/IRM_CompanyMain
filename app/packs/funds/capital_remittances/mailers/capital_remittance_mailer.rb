@@ -10,22 +10,6 @@ class CapitalRemittanceMailer < ApplicationMailer
     @additional_ccs = @capital_remittance.capital_commitment.cc
   end
 
-  # def send_notification
-  #   subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
-  #   # Check for attachments
-  #   @capital_remittance.documents.generated.each do |doc|
-  #     # This password protects the file if required and attachs it
-  #     pw_protect_attach_file(doc, @custom_notification)
-  #   end
-
-  #   send_mail(subject:)
-
-  #   Chewy.strategy(:sidekiq) do
-  #     @capital_remittance.notification_sent = true
-  #     @capital_remittance.save
-  #   end
-  # end
-
   def notify_capital_remittance
     subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
     # Check for attachments
@@ -49,11 +33,6 @@ class CapitalRemittanceMailer < ApplicationMailer
              end
       attachments["#{doc.name}.pdf"] = file.read
     end
-    send_mail(subject:)
-  end
-
-  def payment_received
-    subject = "Payment Confirmation for capital call #{@capital_remittance.fund.name}"
     send_mail(subject:)
   end
 end

@@ -11,12 +11,11 @@ class AccessRightsController < ApplicationController
 
     @access_rights = @access_rights.deals.where(access_to_investor_id: params[:access_to_investor_id]) if params[:access_to_investor_id].present?
 
+    @access_rights = @access_rights.where(owner_id: params[:owner_id], owner_type: params[:owner_type]) if params[:owner_id].present? && params[:owner_type].present?
+
     if params[:investor_id].present?
       investor = Investor.find(params[:investor_id])
       @access_rights = @access_rights.for_investor(investor)
-    else
-      @access_rights = @access_rights.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-      @access_rights = @access_rights.where(owner_type: params[:owner_type]) if params[:owner_type].present?
     end
 
     @access_rights = @access_rights.page(params[:page])

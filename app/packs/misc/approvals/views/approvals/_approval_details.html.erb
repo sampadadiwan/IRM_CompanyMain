@@ -47,14 +47,8 @@
         <div id="access-tab" class="tab-pane fade">
           <div id="access_rights" class="associated_entity">
 
-              <%  access_right = AccessRight.new(
-                owner_id: approval.id, 
-                access_type: "Approval", 
-                owner_type: "Approval", 
-                entity_id: approval.entity_id) %> 
-
-              <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), 
-                          access_right: access_right %>
+              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: approval.id, owner_type: "Approval", entity_id: approval.entity_id) do %>
+              <% end %>
 
           </div>  
         </div>

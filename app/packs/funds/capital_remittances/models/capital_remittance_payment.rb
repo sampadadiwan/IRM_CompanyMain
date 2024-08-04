@@ -6,6 +6,9 @@ class CapitalRemittancePayment < ApplicationRecord
 
   belongs_to :fund
   belongs_to :capital_remittance
+  delegate :capital_call, to: :capital_remittance
+  delegate :investor, to: :capital_remittance
+  delegate :capital_commitment, to: :capital_remittance
   belongs_to :entity
 
   include FileUploader::Attachment(:payment_proof)
@@ -35,6 +38,29 @@ class CapitalRemittancePayment < ApplicationRecord
     # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
     self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency,
                                          folio_amount_cents, payment_date)
+  end
+
+  after_create_commit :notify_capital_remittance_payment
+  # Called after create, and also after remittance is verified (CapitalRemittanceVerify)
+  def notify_capital_remittance_payment
+    # Check before sending notification
+    # 1. if the capital call has the send_payment_notification_flag set to true and
+    # 2. if the capital remittance is verified
+    # 3. if the payment notification has not been sent
+    if  capital_call.send_payment_notification_flag &&
+        capital_remittance.verified &&
+        !payment_notification_sent
+      # Send email notification to all approved users of the investor
+      investor.approved_users.each do |user|
+        email_method = :notify_capital_remittance_payment
+        CapitalRemittancePaymentNotifier.with(entity_id:, capital_remittance_payment: self, email_method:).deliver_later(user)
+      end
+
+      # Mark this as sent, so we dont resend duplicate notifications
+      # rubocop:disable Rails/SkipsModelValidations
+      update_column(:payment_notification_sent, true)
+      # rubocop:enable Rails/SkipsModelValidations
+    end
   end
 
   def unverify_remittance

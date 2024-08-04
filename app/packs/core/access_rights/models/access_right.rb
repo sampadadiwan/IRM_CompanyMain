@@ -170,7 +170,7 @@ class AccessRight < ApplicationRecord
     # Update the investors entity to bust any cache
     Entity.where(id: investors.pluck(:investor_entity_id)).update_all(updated_at: Time.zone.now)
     # Update the owner to bust any cache
-    owner.touch
+    # owner.touch
     # Tell the owner that the access rights have changed
     owner.access_rights_changed(self) if owner.respond_to?(:access_rights_changed)
   end

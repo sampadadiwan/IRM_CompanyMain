@@ -76,7 +76,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def send_notification
-    CapitalCallJob.perform_later(id, "Notify") if !manual_generation && saved_change_to_approved?
+    CapitalCallJob.perform_later(id, "Notify") if send_call_notice_flag && !manual_generation && saved_change_to_approved?
   end
 
   def folder_path

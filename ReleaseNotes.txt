@@ -1,3 +1,10 @@
+
+11bb4c84a Hide fields in remittance show which are not filled
+aeefe1aea Added payment_notification_sent to remittance payment to avoid dups
+105bd955a Added CapitalRemittancePaymentMailer
+247e8a354 Added send_notification_flag and send_payment_notification_flag to call (Also for Import Uploads)
+
+
 V7.1.52
 #####################################
 3029e9cb8 Added get_account_entry_or_zero for cc account entries

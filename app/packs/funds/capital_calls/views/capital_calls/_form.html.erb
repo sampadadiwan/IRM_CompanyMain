@@ -104,6 +104,18 @@
       <%= custom_form_fields(capital_call, form) %>
 
       <div class="form-group">
+        <%= form.label :send_call_notice_flag, "Send Call Notice" %>
+        <%= form.check_box :send_call_notice_flag, class: "form-check-input" %>
+        <small class="text-muted">Send call notice to investors when call is approved</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :send_payment_notification_flag, "Send Payment Notification" %>
+        <%= form.check_box :send_payment_notification_flag, class: "form-check-input" %>
+        <small class="text-muted">Send payment notifications to investors when remittance is verified</small>
+      </div>
+
+      <div class="form-group">
         <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
         <%= form.rich_text_area :notes, class: "form-control"  %>
       </div>

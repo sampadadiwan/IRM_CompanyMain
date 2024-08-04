@@ -60,13 +60,10 @@
 
         <% cache([secondary_sale, "access_rights"]) do %>
           <div id="access_rights" class="associated_entity" data-controller="datatable">
-            <% access_right = AccessRight.new(
-                owner_id: secondary_sale.id, 
-                access_type: "SecondarySale", 
-                owner_type: "SecondarySale", 
-                entity_id: secondary_sale.entity_id) %>
-                
-            <%= render "/access_rights/index", access_rights: secondary_sale.access_rights.includes(:investor, :owner), access_right: access_right %>
+
+            <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: secondary_sale.id, owner_type: "SecondarySale", entity_id: secondary_sale.entity_id) do %>
+              <% end %>
+
           </div>
         <% end %>
       </div>

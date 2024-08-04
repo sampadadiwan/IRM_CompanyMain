@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_02_131729) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_03_080420) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -478,6 +478,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_02_131729) do
     t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.boolean "send_call_notice_flag", default: true
+    t.boolean "send_payment_notification_flag", default: true
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -641,6 +643,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_02_131729) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
+    t.boolean "payment_notification_sent", default: false
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["deleted_at"], name: "index_capital_remittance_payments_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
@@ -1382,12 +1385,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_02_131729) do
     t.boolean "explain", default: true
     t.string "tag_list"
     t.boolean "is_template", default: false
-    t.string "owner_type"
-    t.bigint "owner_id"
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
-    t.index ["owner_type", "owner_id"], name: "index_fund_formulas_on_owner"
   end
 
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

@@ -33,6 +33,7 @@
           </td>
         </tr>    
 
+        <% if capital_remittance.payment_date %>
         <tr>
           <td>
             Payment Date
@@ -41,6 +42,7 @@
             <%= l capital_remittance.payment_date if capital_remittance.payment_date %>
           </td>
         </tr>
+        <% end %>
 
         <tr>
           <td>
@@ -73,7 +75,7 @@
           </td>
         </tr>
 
-
+        <% if capital_remittance.percentage > 0 %>
         <tr>
           <td>
             Percentage
@@ -82,6 +84,7 @@
             <%= capital_remittance.percentage %> %
           </td>
         </tr>
+        <% end %>
 
         <% if capital_remittance.capital_fee_cents > 0 %>
         <tr>

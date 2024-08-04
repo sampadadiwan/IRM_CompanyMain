@@ -13,14 +13,10 @@
     <div class="tab-content" data-controller="datatable">
         <div id="access-rights-tab" class="tab-pane fade">
           <div id="access_rights" class="associated_entity">
-            <%  access_right = AccessRight.new(
-                owner_id: folder.id, 
-                access_type: "Folder", 
-                owner_type: "Folder", 
-                entity_id: folder.entity_id) %> 
+            
+              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: folder.id, owner_type: "Folder", entity_id: folder.entity_id) do %>
+              <% end %>
 
-            <% params[:form_type] = "document_form" %>
-            <%= render "/access_rights/index", access_rights: folder.access_rights.includes(:investor, :owner), access_right: access_right %>
           </div>
         </div>
     

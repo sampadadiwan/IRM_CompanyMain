@@ -77,7 +77,7 @@ class CapitalCallJob < ApplicationJob
     @capital_call = CapitalCall.find(capital_call_id)
     @capital_call.capital_remittances.each do |cr|
       # Send notifications to the LPs only if the CapitalCall has been approved
-      cr.send_notification if @capital_call.approved
+      cr.send_notification if @capital_call.approved && @capital_call.send_call_notice_flag
     end
   end
 end
