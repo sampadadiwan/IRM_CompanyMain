@@ -7,7 +7,7 @@ class Folder < ApplicationRecord
   enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", optional: true
-  belongs_to :entity # , touch: true
+  belongs_to :entity 
   belongs_to :owner, polymorphic: true, optional: true
 
   has_many :documents, dependent: :destroy
@@ -19,7 +19,6 @@ class Folder < ApplicationRecord
 
   before_create :set_defaults
   after_create :set_parent_permissions, if: :parent
-  # after_destroy :touch_root
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }
   scope :for_entity, ->(entity) { where("folders.entity_id=?", entity.id).order("full_path asc") }
@@ -56,9 +55,6 @@ class Folder < ApplicationRecord
     end
   end
 
-  def touch_root
-    Folder.where(entity_id:, level: 0).first.touch
-  end
 
   # This is triggered when the access rights change
   def access_rights_changed(access_right)
