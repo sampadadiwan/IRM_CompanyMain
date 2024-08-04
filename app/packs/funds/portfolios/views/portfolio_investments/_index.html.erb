@@ -1,7 +1,7 @@
 <% aggregate_portfolio_investment ||= nil %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Portfolio Investments</h1>
+  <h1 class="h3 mb-0 text-gray-800"><%= params[:title] || "Portfolio Investments" %></h1>
 
   <span>
     <% if aggregate_portfolio_investment && policy(aggregate_portfolio_investment).add_investment? %>

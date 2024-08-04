@@ -1,4 +1,6 @@
-<%= turbo_frame_tag "portfolio_investments_list", target: "_top" do %>
-    <%= render "/layouts/filter", associations: [:investment_instrument] %>        
-    <%= render "/portfolio_investments/index", portfolio_investments: @portfolio_investments %>
+<%= render "/layouts/filter", associations: [:investment_instrument] %>        
+<%= render ReportingComponent.new do %>
+    <%= turbo_frame_tag "portfolio_investments_list", target: "_top" do %>
+        <%= render "/portfolio_investments/index", portfolio_investments: @portfolio_investments %>
+    <% end %>
 <% end %>
