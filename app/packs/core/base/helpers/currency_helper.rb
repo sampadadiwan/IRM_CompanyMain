@@ -58,10 +58,6 @@ module CurrencyHelper
     display_val = case money.currency.iso_code
                   when "INR"
                     money.format(format: FORMAT, south_asian_number_formatting: sanf)
-                  when "SGD"
-                    money.format(format: FORMAT)
-                  when "USD"
-                    money.format(format: FORMAT)
                   else
                     money.format(format: FORMAT)
                   end
