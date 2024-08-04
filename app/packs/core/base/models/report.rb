@@ -12,6 +12,7 @@ class Report < ApplicationRecord
       'Fund Units': "/fund_units?filter=true",
       KYCs: "/investor_kycs?filter=true",
       'Portfolio Investments': "/portfolio_investments?filter=true",
+      'Aggregate Portfolio Investments': "/aggregate_portfolio_investments?filter=true",
       Distributions: "/capital_distributions?filter=true" }
   end
 
