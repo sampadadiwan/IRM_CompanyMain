@@ -118,4 +118,13 @@ class AggregatePortfolioInvestment < ApplicationRecord
       pi.split(stock_split_ratio)
     end
   end
+
+  include RansackerAmounts.new(fields: %w[avg_cost bought_amount sold_amount fmv cost_of_remaining cost_of_sold net_bought_amount transfer_amount unrealized_gain])
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[avg_cost bought_amount bought_quantity commitment_type cost_of_remaining cost_of_sold fmv net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund investment_instrument portfolio_company]
+  end
 end

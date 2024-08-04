@@ -1,5 +1,7 @@
-<%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+<%= render "/layouts/filter", associations: [:investment_instrument] %>
 
-    <%= render "/aggregate_portfolio_investments/index", aggregate_portfolio_investments: @aggregate_portfolio_investments , show_fund_name: @show_fund_name%>
-
+<%= render ReportingComponent.new do %>
+    <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+        <%= render "/aggregate_portfolio_investments/index", aggregate_portfolio_investments: @aggregate_portfolio_investments , show_fund_name: @show_fund_name%>
+    <% end %>
 <% end %>

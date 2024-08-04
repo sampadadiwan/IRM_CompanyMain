@@ -4,8 +4,8 @@ class AggregateInvestmentsController < ApplicationController
 
   # GET /aggregate_investments or /aggregate_investments.json
   def index
-    @aggregate_investments = AggregateInvestment.ransack(params[:q]).result(distinct: true)
-    @aggregate_investments = policy_scope(@aggregate_investments)
+    @q = AggregateInvestment.ransack(params[:q])
+    @aggregate_investments = policy_scope(@q.result)
 
     @entity = current_user.entity
 
