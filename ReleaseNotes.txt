@@ -1,8 +1,15 @@
-
-11bb4c84a Hide fields in remittance show which are not filled
-aeefe1aea Added payment_notification_sent to remittance payment to avoid dups
-105bd955a Added CapitalRemittancePaymentMailer
-247e8a354 Added send_notification_flag and send_payment_notification_flag to call (Also for Import Uploads)
+V7.1.56
+#####################################
+6d7876f47 Added filters for API
+4132f9201 Added ReportingComponent to portfolio
+6a73ac5b1 Call notice flag (#369)
+8f046902c Added millions formatting to other currencies
+f8a1b11c2 Lazy load access rights (#368)
+3f09e6210 Added grant_access_to_fund to commitment, and handle in post process in import
+d5eb034ed Check for cascade and folders or docs before FolderAccessJob
+ba41c4005 Fixed error for committed_amount_cents_before now takes only topup adjustments
+81757bd24 Cleanup of rubocop issues
+c6ca413cc Fixed ordering off documents appended to commitment doc gen
 
 
 V7.1.52

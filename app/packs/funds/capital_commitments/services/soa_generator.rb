@@ -35,6 +35,7 @@ class SoaGenerator
 
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
     remittances = capital_commitment.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
+    remittance_payments = capital_commitment.capital_remittance_payments.includes(:capital_remittance, :fund).order(:payment_date)
 
     distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
     account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
@@ -70,6 +71,10 @@ class SoaGenerator
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
+
+      capital_remittance_payments: TemplateDecorator.decorate_collection(remittance_payments),
+      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: ..end_date)),
 
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, capital_commitment.fund.currency)),
       remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), capital_commitment.fund.currency)),
