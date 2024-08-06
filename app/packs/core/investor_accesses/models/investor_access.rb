@@ -103,7 +103,7 @@ class InvestorAccess < ApplicationRecord
     if u.blank?
       # Setup a new user for this investor_entity_id
       u = User.new(first_name:, last_name:, email:, active: true,
-                   phone:, whatsapp_enabled:, system_created: true,
+                   phone:, whatsapp_enabled: true, system_created: true,
                    entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
       u.call_code = call_code if call_code.present?
 

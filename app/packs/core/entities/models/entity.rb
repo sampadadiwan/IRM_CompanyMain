@@ -113,7 +113,6 @@ class Entity < ApplicationRecord
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
-  PLANS = ENV['PLANS'].split(",")
 
   default_scope { order(name: :asc) }
   scope :holdings, -> { where(entity_type: "Holding") }
@@ -135,10 +134,6 @@ class Entity < ApplicationRecord
     self.logo_url = "http://#{logo_url}" if logo_url.present? &&
                                             !(logo_url.starts_with?("http") || logo_url.starts_with?("https"))
   end
-
-  after_create_commit lambda { |_entity|
-    # EntityMailer.with(id:).notify_created.deliver_later if id.present?
-  }
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
   def run_post_process

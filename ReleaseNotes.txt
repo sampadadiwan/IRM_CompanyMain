@@ -1,3 +1,11 @@
+V7.1.58
+#####################################
+290fc2671  Document zip download (#377)
+cfefe6068 Misc fixes
+277dd9558 Added call common fields into partial
+de4f3c180 Delete notifications when CRP is deleted
+14c01039d (tasks_engine) Calc call fee (#372)
+
 V7.1.57
 #####################################
 2b1b4e90a Added enable_exchange_rate_commitment_adjustment to entity permissions
