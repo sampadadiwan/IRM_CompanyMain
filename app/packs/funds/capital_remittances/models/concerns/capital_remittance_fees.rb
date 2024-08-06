@@ -23,8 +23,9 @@ module CapitalRemittanceFees
     total_other_fees_cents = 0
     json_fields["other_fees_audit"] = []
     json_fields["capital_fees_audit"] = []
-    if capital_call.call_fees.present?
-      capital_call.call_fees.each do |call_fee|
+    # We generally have call_fees which are either setup or selected as template
+    if capital_call.all_call_fees.present?
+      capital_call.all_call_fees.each do |call_fee|
         if call_fee.formula
           fees_cents = call_fee.calculate_formula(self)
           fees_audit = [[call_fee.name, call_fee.start_date, fees_cents]]

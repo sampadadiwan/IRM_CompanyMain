@@ -24,8 +24,12 @@ class CapitalCall < ApplicationRecord
   serialize :fund_closes, type: Array
 
   has_many :capital_remittances, dependent: :destroy
+
+  # This is the list of call_fees to be pulled out of account entries for the folio
   has_many :call_fees, dependent: :destroy
   accepts_nested_attributes_for :call_fees, allow_destroy: true
+  # This stores any formulas selected by the user, to be used for call_fee computation for the folio
+  serialize :fee_formula_ids, type: Array
 
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
@@ -131,5 +135,13 @@ class CapitalCall < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     ["fund"]
+  end
+
+  def fee_formulas
+    fee_formula_ids.present? ? CallFee.where(id: fee_formula_ids) : CallFee.none
+  end
+
+  def all_call_fees
+    call_fees + fee_formulas
   end
 end

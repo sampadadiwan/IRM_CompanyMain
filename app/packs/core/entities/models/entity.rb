@@ -48,9 +48,6 @@ class Entity < ApplicationRecord
   has_many :funding_rounds, dependent: :destroy
   has_many :valuations, dependent: :destroy
   has_many :investor_notices, dependent: :destroy
-  # has_many :esigns, dependent: :destroy
-
-  # Will have many employees
 
   has_many :documents, dependent: :destroy
   has_many :holdings, dependent: :destroy
@@ -65,7 +62,6 @@ class Entity < ApplicationRecord
   has_many :investor_advisors, dependent: :destroy
   has_many :investor_entities, through: :investors
   has_many :investor_kyc_sebi_datas, dependent: :destroy
-  # List of investor records in which this company is an investee
 
   # List of investors where this entity is an investor
   has_many :investees, foreign_key: "investor_entity_id", class_name: "Investor", dependent: :destroy
@@ -85,6 +81,7 @@ class Entity < ApplicationRecord
   has_many :funds, dependent: :destroy, inverse_of: :entity
   has_many :account_entries, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
+  has_many :call_fees, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_remittance_payments, dependent: :destroy

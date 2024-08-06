@@ -133,7 +133,7 @@
 
 
           
-          <% if capital_call.call_fees.present? %>
+          <% if capital_call.call_fees.present? || capital_call.fee_formulas.present? %>
           <tr class="d-none d-sm-table-row">
             <td>
               Fees
@@ -153,6 +153,16 @@
                     <td><%= call_fee.name %></td>
                       <td><%= l call_fee.start_date %></td>
                       <td><%= l call_fee.end_date %></td>
+                      <td><%= call_fee.fee_type %></td>
+                      <td><%= call_fee.notes %></td>
+                  </tr>
+                <% end %>
+
+                <% capital_call.fee_formulas&.each do |call_fee| %>
+                  <tr>            
+                    <td><%= call_fee.name %></td>
+                      <td></td>
+                      <td></td>
                       <td><%= call_fee.fee_type %></td>
                       <td><%= call_fee.notes %></td>
                   </tr>

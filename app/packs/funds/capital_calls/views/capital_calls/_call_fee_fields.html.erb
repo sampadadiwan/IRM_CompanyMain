@@ -1,7 +1,10 @@
 <div class='nested-fields'>
     
 <div class='row'>
-    <% names = f.object.capital_call.fee_account_entry_names %>
+    <% 
+        capital_call = f.object.capital_call
+        names = capital_call.fee_account_entry_names 
+    %>
     <div class="form-group col" data-controller="otherselect" data-otherselect-select-id-value="#call_fee_fee_name">
         <%= f.label :name %>
         <%= f.select :name, names, {include_blank: true}, class: "form-control", id: "fee_name", "data-action": "change->otherselect#checkOtherName"  %>

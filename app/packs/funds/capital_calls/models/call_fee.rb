@@ -9,6 +9,8 @@ class CallFee < ApplicationRecord
 
   before_validation :setup_entity
 
+  scope :formulas, -> { where(formula: true) }
+
   def setup_entity
     self.entity_id = capital_call.entity_id
     self.fund_id = capital_call.fund_id

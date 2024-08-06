@@ -40,7 +40,7 @@ class ImportUtil < Trailblazer::Operation
       if headers.uniq.length != headers.length
         valid = false
         # Get the duplicate column names
-        dups = h.select { |e| h.count(e) > 1 }.uniq
+        dups = headers.select { |e| headers.count(e) > 1 }.uniq
         import_upload.status = "Duplicate columns found #{dups}"
         import_upload.failed_row_count = import_upload.total_rows_count
         import_upload.save
