@@ -1,10 +1,11 @@
+# rubocop:disable Metrics/ClassLength
 class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress]
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
-  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions]
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download]
   after_action :verify_policy_scoped, only: []
 
   def signature_progress
@@ -172,6 +173,12 @@ class DocumentsController < ApplicationController
     end
   end
 
+  def download
+    rows = fetch_rows
+    DocumentDownloadJob.perform_later(params[:folder_id], current_user.id, rows.pluck(:id))
+    redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
+  end
+
   # PATCH/PUT /documents/1 or /documents/1.json
   def update
     respond_to do |format|
@@ -285,3 +292,4 @@ class DocumentsController < ApplicationController
                                      :tag_list, :folder_id, :file, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
   end
 end
+# rubocop:enable Metrics/ClassLength

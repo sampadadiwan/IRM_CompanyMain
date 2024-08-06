@@ -1,15 +1,16 @@
 <% folder_id ||= params[:folder_id] %>
 
 <% if params[:q].present? %>
-      
+
     <%= bulk_action_button("Approve", "This will approve each document in the search results (including results on other pages). Proceed?", folder_id: folder_id) %>
     <%= bulk_action_button("Send For eSignatures", "This will send each document in the search results (including results on other pages) for eSignatures. Proceed?", folder_id: folder_id) %>
+
     <%= bulk_action_button("Delete", "This will send delete all documents in the search results (including results on other pages). Proceed?", folder_id: folder_id) %>
-  
+
     <div class="dropdown-divider"></div>
-  
+
     <span class="dropdown-item-text">Email Using Template:</span>
-    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup. Proceed?" %>  
+    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup. Proceed?" %>
 
     <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
         <%= bulk_action_button("Send Document", msg, folder_id: folder_id, custom_notification_id: cust_not.id, label: cust_not.subject) if params[:q].present? %>

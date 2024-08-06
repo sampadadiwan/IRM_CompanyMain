@@ -18,7 +18,7 @@ class FoldersController < ApplicationController
 
   def download
     DocumentDownloadJob.perform_later(@folder.id, current_user.id)
-    redirect_to documents_url(folder_id: @folder.id), notice: "You will be sent a download link for the documents in a few minutes."
+    redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
   end
 
   # GET /folders/1/edit

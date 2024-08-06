@@ -1,13 +1,13 @@
-<% 
-  @entity ||= nil   
+<%
+  @entity ||= nil
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4" id="docs_index">
   <% if params[:folder_id].present? %>
-    <% 
+    <%
       # Get the folder
-      @folder = Folder.find(params[:folder_id]) 
+      @folder = Folder.find(params[:folder_id])
       # link for users or just path for investors
-      link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name 
+      link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name
     %>
     <h4 class="mb-0 text-gray-800 d-none d-sm-block">
       Documents: <%= link %>
@@ -18,7 +18,7 @@
     </h4>
   <% end %>
 
-  <% 
+  <%
     owner ||= nil
     entity_id = @entity&.id
     entity_id ||= owner&.entity_id
@@ -28,7 +28,7 @@
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
 
     @folder ||= nil
-    folder_id = @folder&.id || owner&.document_folder_id 
+    folder_id = @folder&.id || owner&.document_folder_id
     @folder ||= Folder.find(folder_id) if folder_id.present?
   %>
 
@@ -43,30 +43,33 @@
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
         <% if folder_id.present? %>
-      
-            <%= link_to "Download Folder", download_folder_path(id: folder_id), form_class: "deleteButton", 
-                class: "dropdown-item d-none d-sm-block", data: {action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?"} if policy(@folder).download? %>
+          <% if params[:q].present? %>
+            <%= button_to "Download ZIP", download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id), class: "dropdown-item", data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } %>
+          <% else %>
+            <%= button_to "Download Folder", download_folder_path(id: folder_id, back_to: request.original_url),
+                class: "dropdown-item d-none d-sm-block", data: {action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get } if policy(@folder).download? %>
+          <% end %>
 
-            <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
-                "folder[parent_id]": @folder.id), 
-                class: "dropdown-item" if policy(@folder).create?   %> 
+            <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id,
+                "folder[parent_id]": @folder.id),
+                class: "dropdown-item" if policy(@folder).create?   %>
 
-            <%= link_to "New Document", new_document_path( 
-                        document: doc_attributes, 
-                        "document[folder_id]": folder_id), 
+            <%= link_to "New Document", new_document_path(
+                        document: doc_attributes,
+                        "document[folder_id]": folder_id),
                         {class: "dropdown-item" }  if policy(document).create? %>
 
 
-            <%= link_to "Bulk Upload", 
-                new_import_upload_path("import_upload[owner_id]": folder_id, 
-                    "import_upload[owner_type]": "Folder", 
-                    "import_upload[import_type]": "Documents", 
-                    "sample_upload": "DOCS_SAMPLE"), 
-                    { class: "dropdown-item d-none d-sm-block"} if policy(@folder).update? %> 
+            <%= link_to "Bulk Upload",
+                new_import_upload_path("import_upload[owner_id]": folder_id,
+                    "import_upload[owner_type]": "Folder",
+                    "import_upload[import_type]": "Documents",
+                    "sample_upload": "DOCS_SAMPLE"),
+                    { class: "dropdown-item d-none d-sm-block"} if policy(@folder).update? %>
 
 
             <div class="dropdown-divider"></div>
-            
+
             <% if params[:q].present? %>
               <%= render "documents/bulk_actions", folder_id: folder_id %>
             <% else %>
@@ -74,31 +77,31 @@
             <% end %>
 
             <%#  remove later once the above one is fixed %>
-            <%= button_to "Send For eSignatures" , 
-              send_all_for_esign_documents_path(folder_id: folder_id), 
+            <%= button_to "Send For eSignatures" ,
+              send_all_for_esign_documents_path(folder_id: folder_id),
               data: {action: "click->confirm#popup", msg: "This will send all the approved documents ready for esigning to the esign provider.", method: :patch},
               class: "dropdown-item" if false && policy(Document).send_all_for_esign? %>
 
           <% else %>
-            <%= link_to "New Document", new_document_path( 
-                              document: doc_attributes), 
+            <%= link_to "New Document", new_document_path(
+                              document: doc_attributes),
                               {class: "dropdown-item" }  if document && policy(document).create? %>
 
             <%= render "documents/bulk_actions" %>
-            
+
           <% end %>
 
         </div>
       </div>
-    </div>      
-    <% 
-      owner ||= nil 
+    </div>
+    <%
+      owner ||= nil
       @deal  ||= nil
       if owner && ["Deal", "DealInvestor"].include?(owner.class.name)
-        @deal = owner.is_a?(Deal) ? owner : owner.deal 
+        @deal = owner.is_a?(Deal) ? owner : owner.deal
       end
     %>
-    <%= link_to "Data Room", 
+    <%= link_to "Data Room",
         folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id), {class: "btn btn-outline-primary" }  if @deal %>
 
   </span>
@@ -135,7 +138,7 @@
 </div>
 
 
-<% 
+<%
 msg ||= nil
 if false && msg.present?
 %>

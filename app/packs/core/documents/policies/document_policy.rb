@@ -34,6 +34,10 @@ class DocumentPolicy < ApplicationPolicy
     create?
   end
 
+  def download?
+    index?
+  end
+
   def update?
     (
       create? ||
