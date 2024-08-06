@@ -36,7 +36,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   before_save :compute_avg_cost, if: -> { bought_quantity.positive? }
   def compute_avg_cost
-    self.avg_cost_cents = bought_amount_cents / bought_quantity
+    self.avg_cost_cents = bought_amount_cents / bought_quantity if bought_quantity.positive?
   end
 
   # This is used extensively in the AccountEntryAllocationEngine
