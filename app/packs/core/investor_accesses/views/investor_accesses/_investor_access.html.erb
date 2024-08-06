@@ -19,11 +19,10 @@
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
   </td>
   <td>
+    <%= display_boolean investor_access.whatsapp_enabled %>    
+  </td>
+  <td>
     <%= display_boolean investor_access.user.whatsapp_enabled %>
-    <% unless investor_access.user.whatsapp_enabled %>
-    <br>
-    <small class="text-muted"><%= "User must enable" %></small>
-    <% end %>
   </td>
   <td>
     <%= display_boolean investor_access.approved %>
