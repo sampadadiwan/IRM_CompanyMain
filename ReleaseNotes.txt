@@ -1,3 +1,8 @@
+V7.1.57
+#####################################
+2b1b4e90a Added enable_exchange_rate_commitment_adjustment to entity permissions
+e907a8143 Added capital_remittance_payments_before_end_date to SOA generator
+
 V7.1.56
 #####################################
 6d7876f47 Added filters for API
