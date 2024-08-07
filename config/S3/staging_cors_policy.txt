@@ -1,0 +1,27 @@
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "PUT",
+            "GET",
+            "POST",
+            "DELETE"
+        ],
+        "AllowedOrigins": [
+            "http://*.altconnects.com",
+            "https://*.altconnects.com"
+        ],
+        "ExposeHeaders": [
+            "x-amz-server-side-encryption",
+            "x-amz-request-id",
+            "x-amz-id-2",
+            "Authorization",
+            "x-amz-date",
+            "x-amz-content-sha256",
+            "content-type"
+        ],
+        "MaxAgeSeconds": 3000
+    }
+]
