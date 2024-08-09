@@ -1,0 +1,185 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Remittance: <%= @capital_remittance.investor.investor_entity.name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
+        <tr>
+          <td>
+            Capital Call
+          </td>
+          <td>
+            <%= @capital_remittance.capital_call.name %>
+          </td>
+        </tr>   
+
+        <% if @capital_remittance.payment_date %>
+        <tr>
+          <td>
+            Payment Date
+          </td>
+          <td>
+            <%= l @capital_remittance.payment_date if @capital_remittance.payment_date %>
+          </td>
+        </tr>
+        <% end %>
+
+        <tr>
+          <td>
+            Investor
+          </td>
+          <td>
+            <% if current_user %>
+              <%= link_to @capital_remittance.investor_name, investor_url(id: @capital_remittance.investor_id) %>
+            <% else %>
+              <%= @capital_remittance.investor_name %>
+            <% end %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Folio No
+          </td>
+          <td>
+            <%= link_to @capital_remittance.folio_id, @capital_remittance.capital_commitment %>
+          </td>
+        </tr> 
+        
+        <tr>
+          <td>
+            Call Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.call_amount, params %>
+          </td>
+        </tr>
+
+        <% if @capital_remittance.capital_fee_cents > 0 %>
+        <tr>
+          <td>
+            Capital Fees
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.capital_fee, params %>
+          </td>
+        </tr>
+        <% end %>
+
+        <% if @capital_remittance.other_fee_cents > 0 %>
+          <tr>
+            <% # Have added styles here as it's not working by adding this class %>
+            <td class="vertical-align-top" style="vertical-align: top;">
+              Other Fees
+            </td>
+            <td>
+              <div class="money-wrapper">
+                <span><%= money_to_currency @capital_remittance.other_fee, params %></span>
+              </div>
+              <ul class="fees-list">
+              <% @capital_remittance.json_fields["other_fees_audit"]&.each do |fee_array| %>
+                  <% fee_array.each do |fee| %>
+                    <li class="fee-item">
+                      <span class="fee-name"><%= fee[0] %></span>
+                      <span class="fee-description"><%= fee[1] %></span>
+                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                    </li>
+                  <% end %>
+                <% end %>                
+              </ul>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @capital_remittance.call_amount != @capital_remittance.folio_call_amount %>
+          <tr>
+            <td>
+              Folio Call Amount
+            </td>
+            <td>
+              <%= money_to_currency @capital_remittance.folio_call_amount, params %>
+            </td>
+          </tr>
+
+          
+        <% end %>
+        
+        <tr>
+          <td>
+            Collected Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.collected_amount, params %>
+          </td>
+        </tr>
+
+        <% if @capital_remittance.collected_amount != @capital_remittance.folio_collected_amount %>
+        <tr>
+          <td>
+            Folio Collected Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.folio_collected_amount, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Exchange Rate
+          </td>
+          <td>
+            <%= link_to @capital_remittance.exchange_rate if @capital_remittance.exchange_rate %>
+          </td>
+        </tr>
+
+        <% end %>
+
+        
+        <tr>
+          <td>
+            Due Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.due_amount, params %>
+          </td>
+        </tr>
+
+
+        <% if @capital_remittance.has_arrears? %>
+          <tr>
+            <td>
+              Arrear Amount
+            </td>
+            <td>
+              <%= money_to_currency @capital_remittance.arrear_amount, params %>
+            </td>
+          </tr>
+
+          <% if @capital_remittance.collected_amount != @capital_remittance.folio_collected_amount %>
+          <tr>
+            <td>
+              Folio Arrear Amount
+            </td>
+            <td>
+              <%= money_to_currency @capital_remittance.folio_arrear_amount, params %>
+            </td>
+          </tr>
+          <% end %>
+
+          <% if @capital_remittance.collected_amount != @capital_remittance.folio_collected_amount %>
+          <tr>
+            <td>
+              Net Folio Collected Amount
+            </td>
+            <td>
+              <%= money_to_currency @capital_remittance.net_folio_collected_amount, params %>
+            </td>
+          </tr>
+          <% end %>
+
+        <% end %>
+    </table>
+  </div>
+</div>

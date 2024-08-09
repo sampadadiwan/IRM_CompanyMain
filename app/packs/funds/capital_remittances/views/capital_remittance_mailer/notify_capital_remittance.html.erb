@@ -1,23 +1,19 @@
 <% if @custom_notification %>
-
-    <%= render "/custom_notifications/mail" do %>
-        <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} if @custom_notification.show_details %>
-    <% end %>    
-
+  <%= render "/custom_notifications/mail" do %>
+    <%= render "capital_remittance_mailer/capital_remittance_details", capital_remittance: @capital_remittance, current_user: nil, params: {} if @custom_notification.show_details %>
+  <% end %>
 <% else %>
+  <h3>Dear <%= @capital_remittance.investor_name %></h3>
 
-    <h3>Dear <%= @capital_remittance.investor_name %></h3>
-
-    <p>
-        A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %> 
-    </p>
-    <p>
-        <%= @capital_remittance.capital_call.notes&.html_safe %>
-    </p>
-    <p>
-        Please refer the attached notice for further details or click on the link below.
-    </p>
-
+  <p>
+    A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %>.
+  </p>
+  <p>
+    <%= @capital_remittance.capital_call.notes&.html_safe %>
+  </p>
+  <p>
+    Please refer to the attached notice for further details or click on the link below.
+  </p>
 <% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Call', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>
