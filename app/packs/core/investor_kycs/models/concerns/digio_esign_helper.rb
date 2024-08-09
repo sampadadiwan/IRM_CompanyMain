@@ -238,7 +238,7 @@ class DigioEsignHelper
   end
 
   def signature_completed(doc)
-    tmpfile = Tempfile.new("#{doc.name}.pdf", encoding: 'ascii-8bit')
+    tmpfile = Tempfile.new([doc.name.to_s, ".pdf"], encoding: 'ascii-8bit')
     auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
                    doc.entity.entity_setting.digio_auth_token
                  else
