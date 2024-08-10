@@ -26,6 +26,8 @@ class CapitalCommitmentDocJob < ApplicationJob
         msg = "Document generation completed for #{capital_commitment.investor_name}"
         send_notification(msg, user_id, :success)
       end
+
+      send_notification("No templates found for #{capital_commitment.investor_name}", user_id, :danger) if templates.blank?
     end
 
     error_msg
