@@ -80,6 +80,10 @@ class SoaGenerator
       remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), capital_commitment.fund.currency)),
       remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), capital_commitment.fund.currency)),
 
+      remittance_payments_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, capital_commitment.fund.currency)),
+      remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date), capital_commitment.fund.currency)),
+      remittance_payments_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), capital_commitment.fund.currency)),
+
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
@@ -130,6 +134,15 @@ class SoaGenerator
                      call_amount: Money.new(call_amount_cents, currency),
                      collected_amount: Money.new(collected_amount_cents, currency),
                      uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
+                   })
+  end
+
+  def remittance_payments_amounts(remittance_payments, currency)
+    amount_cents = remittance_payments.sum(:amount_cents)
+    folio_amount_cents = remittance_payments.sum(:folio_amount_cents)
+    OpenStruct.new({
+                     amount: Money.new(amount_cents, currency),
+                     folio_amount: Money.new(folio_amount_cents, currency)
                    })
   end
 
