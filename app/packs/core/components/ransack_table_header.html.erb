@@ -1,16 +1,20 @@
-<thead>
-    <tr>
-        <% @columns.each do |column_name, attribute| %>
+<% cache_if((current_user != nil), ["InvestorHeader", entity]) do %>
+    <thead>
+        <tr>
+            <% @columns = get_columns(entity) %>
+            <% @columns = @columns.blank? ? @model::STANDARD_COLUMNS : @columns %>
+            <% @columns.each do |column_name, attribute| %>
+                <th>
+                    <% if attribute.present? && !attribute.starts_with?("custom_field") %>
+                        <%= sort_link @q, attribute, column_name %>
+                    <% else %>
+                        <%= column_name %>
+                    <% end %>
+                </th>
+            <% end %>
             <th>
-                <% if attribute.present? && !attribute.starts_with?("custom_field") %>
-                    <%= sort_link @q, attribute, column_name %>
-                <% else %>
-                    <%= column_name %>
-                <% end %>
+                <!-- Actions -->
             </th>
-        <% end %>
-        <th>
-            <!-- Actions -->
-        </th>
-    </tr>
-</thead>
+        </tr>
+    </thead>
+<% end %>

@@ -1,4 +1,3 @@
-# Will delete this file in followup PR. Need this to run migration in current PR properly
 class CustomGridView < ApplicationRecord
   belongs_to :owner, polymorphic: true
   has_many :grid_view_preferences, -> { order(:sequence) }, dependent: :destroy

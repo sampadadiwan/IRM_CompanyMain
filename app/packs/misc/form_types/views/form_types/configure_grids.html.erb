@@ -1,0 +1,34 @@
+<h1>Configure Grid View Preferences</h1>
+<%= render FormCard.new(title: "Add New Field") do %>
+  <%= form_with(url: grid_view_preferences_path, method: :post, validate: true, id: "grid_view_form", data: { controller: "grid-view", grid_view_target: "form" }, local: true) do |form| %>
+
+    <div class="form-group">
+      <%= form.label :key, "Select Grid View Name" %>
+      <%= form.select :key, options_for_select(@field_options.to_a), { prompt: 'Select the column to add' }, class: "form-control", id: "grid_view_name_select", data: { grid_view_target: "select" } %>
+    </div>
+
+    <%= form.hidden_field :form_type_id, value: @form_type.id %>
+  <% end %>
+<% end %>
+
+<div class="custom_grid_view" data-controller="draggable-row" data-form-type-id="<%= @form_type.id %>">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @form_type.grid_view_preferences.order(:sequence).each do |preference| %>
+        <tr class="column column_<%= preference.key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.key %>" data-row-id="<%= preference.id %>">
+          <td><i class="fas fa-arrows-alt handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
+          <td>
+            <%= button_to "Delete", preference, method: :delete, class: "btn btn-outline-danger",
+              form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
