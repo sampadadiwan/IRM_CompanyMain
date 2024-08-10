@@ -30,7 +30,7 @@ class CapitalRemittanceDocJob < ApplicationJob
           handle_error(msg, fund_doc_template, @capital_commitment, @investor_kyc, user_id, error_msg)
         end
 
-        raise "No Call templates found for #{@capital_remittance}" if @templates.blank?
+        handle_error("No Call templates found for #{@capital_remittance}", nil, @capital_commitment, @investor_kyc, user_id, error_msg) if @templates.blank?
 
       end
     end
@@ -51,6 +51,7 @@ class CapitalRemittanceDocJob < ApplicationJob
   def handle_error(msg, fund_doc_template, capital_commitment, _investor_kyc, user_id, error_msg)
     Rails.logger.error { msg }
     send_notification(msg, user_id, :danger)
+
     error_msg << { msg:, template: fund_doc_template&.name, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.to_s }
     # Sleep so user can see this error before the next doc is tried
     sleep(2)
