@@ -10,8 +10,19 @@ When('I create a form type and custom grid view') do
   sleep(0.5)
   click_on('Configure Grids')
   sleep(1)
-  expect(CustomGridView.count).to(eq(1))
-  expect(GridViewPreference.count).to(eq(6))
+end
+
+When("I select each option and click Add") do
+
+  select_box = find('select#grid_view_name_select')
+  options = select_box.all('option').map(&:text)
+
+  options.each do |option_text|
+    select option_text, from: 'grid_view_name_select'
+    sleep 0.25
+
+    select_box = find('select#grid_view_name_select')
+  end
 end
 
 Given('I visit Investor Page and find 6 columns in the grid') do
@@ -23,14 +34,14 @@ Given('I visit Investor Page and find 6 columns in the grid') do
 end
 
 When('I visit Custom Grid View page and uncheck city') do
-  @custom_grid_view = CustomGridView.first
-  visit custom_grid_view_path(@custom_grid_view)
+  form_type = FormType.first
+  visit "/form_types/#{form_type.id}/configure_grids"
   sleep(0.25)
-  click_on('Edit')
+  within(:xpath, "//tr[contains(@class, 'column_city')]") do
+    find("form.deleteButton button").click
+  end
+  click_on('Proceed')
   sleep(0.25)
-  checkbox = find('tr.column_City input[type="checkbox"]')
-  checkbox.uncheck
-  click_on('Save Changes')
 end
 
 Given('I should not find city column in the Investor Grid') do

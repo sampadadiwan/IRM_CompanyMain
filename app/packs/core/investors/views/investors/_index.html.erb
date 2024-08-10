@@ -56,10 +56,8 @@
 
 <div class="table-responsive">
     <table id="investors" class="table table-bordered dataTable action_table hover">
-      <% entity = owner_entity(@investors&.last, current_user) %>
-      <% ransack_table_header = RansackTableHeader.new(Investor, q: @q, entity: entity) %>
-      <%= render ransack_table_header %>
-
+        <% ransack_table_header = RansackTableHeader.new(Investor, q: @q, entity: current_user.entity, current_user: current_user) %>
+        <%= render ransack_table_header %>
       <tbody>
         <% @investors&.each do |investor| %>
           <%= render "investors/investor",  investor: investor.decorate, columns: ransack_table_header.columns%>

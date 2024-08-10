@@ -37,10 +37,10 @@ export default class DraggableRowController extends Controller {
     const draggingElement = document.querySelector('.dragging');
     draggingElement.classList.remove('dragging');
     
-    this.sendColumnInfo(event.srcElement.closest(".custom_grid_view").dataset.customGridViewId, draggingElement);
+    this.sendColumnInfo(draggingElement);
   }
 
-  sendColumnInfo(customGridViewId, draggingElement) {
+  sendColumnInfo(draggingElement) {
     const targetClass = `column_${draggingElement.dataset.key}`
     const updatedColumns = Array.from(document.getElementsByClassName('column'))
     const draggedIndex = updatedColumns.findIndex(column => 
@@ -53,7 +53,7 @@ export default class DraggableRowController extends Controller {
     };
 
     $.ajax({
-      url: `/custom_grid_views/${customGridViewId}/update_column_sequence.json`,
+      url: `/grid_view_preferences/${draggingElement.dataset.rowId}/update_column_sequence.json`,
       type: 'PATCH',
       dataType: 'json',
       data: columnInfo,

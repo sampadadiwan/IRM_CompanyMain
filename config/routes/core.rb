@@ -15,6 +15,7 @@ resources :form_custom_fields
 resources :form_types do
   get 'clone', on: :member
   patch 'rename_fcf', on: :member
+  get 'configure_grids', on: :member
 end
 
 resources :e_signatures

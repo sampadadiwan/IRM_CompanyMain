@@ -41,6 +41,10 @@ class FormTypePolicy < ApplicationPolicy
     update?
   end
 
+  def configure_grids?
+    update?
+  end
+
   def clone?
     true
   end

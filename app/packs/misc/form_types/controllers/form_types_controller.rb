@@ -1,5 +1,5 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf]
+  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids]
 
   # GET /form_types or /form_types.json
   def index
@@ -110,6 +110,12 @@ class FormTypesController < ApplicationController
       notice = "Field name #{old_name} not found."
     end
     redirect_to form_type_url(@form_type), notice:
+  end
+
+  def configure_grids
+    @standard_column_fields = @form_type.name.constantize::STANDARD_COLUMNS
+    @custom_field_names = @form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
+    @field_options = (@standard_column_fields.map { |name, value| [name, value] } + @custom_field_names.map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
   end
 
   private
