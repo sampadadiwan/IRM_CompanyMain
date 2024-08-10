@@ -30,7 +30,11 @@ class OfferSpaJob < ApplicationJob
         succeeded = false
       end
 
-      send_notification("SPA generated for user #{offer.user}, Offer Id #{offer.id}", user_id, "success") if user_id.present?
+      if templates.blank?
+        send_notification("No templates found for Offer Id #{offer.id}", user_id, "danger") if user_id.present?
+      elsif user_id.present?
+        send_notification("SPA generated for user #{offer.user}, Offer Id #{offer.id}", user_id, "success")
+      end
       succeeded
     end
   end

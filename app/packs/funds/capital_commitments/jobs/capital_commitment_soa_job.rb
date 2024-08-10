@@ -29,6 +29,8 @@ class CapitalCommitmentSoaJob < ApplicationJob
         ExceptionNotifier.notify_exception(e, data: { capital_commitment_id:, start_date:, end_date:, user_id:, template_name: })
         raise e
       end
+
+      send_notification("No SOA templates found for Capital Commitment #{@capital_commitment}", user_id, :danger) if @templates.blank?
     end
 
     nil

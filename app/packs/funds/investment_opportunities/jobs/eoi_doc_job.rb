@@ -27,6 +27,8 @@ class EoiDocJob < ApplicationJob
         Rails.logger.error e.backtrace.join("\n")
         send_notification("Error generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{@investor_kyc&.full_name}. #{e.message}", user_id, :danger)
       end
+
+      send_notification("No templates found for #{@investment_opportunity}", user_id, "danger") if @templates.blank?
     end
 
     nil

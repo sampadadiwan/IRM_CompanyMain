@@ -29,6 +29,9 @@ class CapitalRemittanceDocJob < ApplicationJob
           msg = "Error generating template #{fund_doc_template.name} for fund #{@capital_remittance.folio_id}, for #{@capital_commitment.investor_name}: #{e.message}"
           handle_error(msg, fund_doc_template, @capital_commitment, @investor_kyc, user_id, error_msg)
         end
+
+        raise "No Call templates found for #{@capital_remittance}" if @templates.blank?
+
       end
     end
 
