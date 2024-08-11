@@ -232,7 +232,9 @@ end
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
   InvestorAccess.all.each do |ia|
-    ia.whatsapp_enabled.should == ia.user.whatsapp_enabled
+    # Now ia.whatsapp_enabled can be different from user.whatsapp_enabled and both need to be set to send WA
+    # ia.whatsapp_enabled.should == ia.user.whatsapp_enabled
+    ia.user.whatsapp_enabled.should == true
     puts "Checking import of #{ia.first_name} #{ia.last_name} #{ia.email} #{ia.phone} #{ia.approved} #{ia.whatsapp_enabled}"
     ia.first_name.should == ia.user.first_name
     ia.last_name.should == ia.user.last_name

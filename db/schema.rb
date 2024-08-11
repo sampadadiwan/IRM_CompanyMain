@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_06_052538) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1632,14 +1632,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_06_052538) do
   end
 
   create_table "grid_view_preferences", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "custom_grid_view_id", null: false
+    t.bigint "custom_grid_view_id"
     t.string "name"
     t.string "key"
     t.boolean "selected"
     t.integer "sequence"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
+    t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
+    t.index ["owner_id", "owner_type"], name: "index_grid_view_preferences_on_owner_id_and_owner_type"
+    t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
+    t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
   create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3290,6 +3297,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_06_052538) do
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "grid_view_preferences", "custom_grid_views"
+  add_foreign_key "grid_view_preferences", "entities"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"
