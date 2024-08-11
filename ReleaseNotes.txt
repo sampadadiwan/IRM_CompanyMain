@@ -1,9 +1,20 @@
+V7.1.60
+#####################################
+28624d2bf Removed after_create send email for capital_remittance
+f67c4b453 Updates call approve msg
+14624beeb Renamed title to Distribution from CApital Distribution
+79033582c Fixed the color for header and footer for emails
+325550bc4 Added tag list import for fund formulas
+89efc3769 Added Folio currency to commitment ransack search
+8dedd135b Added InvestorKycConcern
+2d7541cb9 Moved card btn to point to fund instead of commitment
+fdb609c86 Added validation to base amount
+
 V7.1.59
 #####################################
 41062f5b5 Basic fixes for 'Stakeholder' label
 e1db653e4 Grid view main (#394)
 0a5610db6 Add no template error notification (#393)
-1aadce51c Merge branch 'main' of github.com:ausangshukla/IRM into main
 278d21244 Added remittance payments amounts in soa generator (#390)
 e9006f041 Check deleted or destroyed for after_commit callback (#376)
 079087c74 Added error notification if no template found for commitment job, call job, soa job, eoi job, spa job (#391)
