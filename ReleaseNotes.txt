@@ -1,3 +1,16 @@
+V7.1.59
+#####################################
+41062f5b5 Basic fixes for 'Stakeholder' label
+e1db653e4 Grid view main (#394)
+0a5610db6 Add no template error notification (#393)
+1aadce51c Merge branch 'main' of github.com:ausangshukla/IRM into main
+278d21244 Added remittance payments amounts in soa generator (#390)
+e9006f041 Check deleted or destroyed for after_commit callback (#376)
+079087c74 Added error notification if no template found for commitment job, call job, soa job, eoi job, spa job (#391)
+cb9efc3e9 Removed remittance computation display
+4ab349e27 Download zip fix (#388)
+d2ceafef3 (origin/ia_wa, ia_wa) Now we need both IA and user WA enabled to send WA msgs
+
 V7.1.58
 #####################################
 290fc2671  Document zip download (#377)

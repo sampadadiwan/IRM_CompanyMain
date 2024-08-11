@@ -25,6 +25,7 @@ class PortfolioInvestment < ApplicationRecord
   has_many :stock_conversions, foreign_key: :from_portfolio_investment_id, dependent: :destroy
 
   validates :investment_date, :quantity, :amount_cents, presence: true
+  validates :base_amount, :amount_cents, numericality: { greater_than_or_equal_to: 0 }
 
   monetize :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
