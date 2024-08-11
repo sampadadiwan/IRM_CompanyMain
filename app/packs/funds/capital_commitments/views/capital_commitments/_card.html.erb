@@ -16,7 +16,7 @@
 
                     <span class="col">
                     <h4 class="card-title fw-semibold">
-                        <%= link_to "#{capital_commitment.fund.name}: #{capital_commitment.entity.name}", capital_commitment %> 
+                        <%= link_to "#{capital_commitment.fund.name}: #{capital_commitment.entity.name}", capital_commitment.fund %> 
                     </h4>                
 
                     <span class="fs3 mb-1">
@@ -79,7 +79,7 @@
                 <div>
                     
                     <div class="text-center">
-                        <a href="<%= capital_commitment_path(capital_commitment) %>" class="btn btn-outline-primary w-100">
+                        <a href="<%= fund_path(capital_commitment.fund) %>" class="btn btn-outline-primary w-100">
                             View Details
                         </a>
                     </div>
