@@ -127,6 +127,11 @@ module UpdateInvestor
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
+    investor_kycs.each do |kyc|
+      kyc.document_folder.name = kyc.folder_path.split("/")[-1]
+      kyc.document_folder.set_defaults
+      kyc.document_folder.save
+    end
   end
 
   private
