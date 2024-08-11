@@ -6,9 +6,9 @@ module DeliveryMethods
       # Get the user we are sending the message to
       recipient = notification.recipient
       # Get the investor access for the recipient as setup by the entity
-      investor_access = entity.investor_accesses.find_by(email: recipient.email).first
+      investor_access = entity.investor_accesses.where(email: recipient.email).first
 
-      whatsapp_enabled = recipient.whatsapp_enabled && investor_access.whatsapp_enabled && entity.permissions.enable_whatsapp?
+      whatsapp_enabled = recipient.whatsapp_enabled && investor_access&.whatsapp_enabled && entity.permissions.enable_whatsapp?
 
       if whatsapp_enabled
 
