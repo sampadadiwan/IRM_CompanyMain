@@ -41,7 +41,6 @@ class CapitalRemittancePayment < ApplicationRecord
                                          folio_amount_cents, payment_date)
   end
 
-  after_create_commit :notify_capital_remittance_payment
   # Called after create, and also after remittance is verified (CapitalRemittanceVerify)
   def notify_capital_remittance_payment
     # Check before sending notification
