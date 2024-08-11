@@ -20,6 +20,6 @@ class RansackTableHeader < ViewComponent::Base
   def fetch_custom_columns(entity)
     form_type = entity.form_types.includes(:grid_view_preferences)
                       .find_by(name: @model.to_s)
-    form_type.selected_columns
+    form_type&.selected_columns
   end
 end
