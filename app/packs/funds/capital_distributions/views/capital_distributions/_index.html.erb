@@ -1,6 +1,6 @@
   <% owner = params[:fund_id].present? ? Fund.find(params[:fund_id]) : current_user.entity %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Capital Distributions</h1>
+    <h1 class="h3 mb-0 text-gray-800">Distributions</h1>
 
     <span>
       <%= link_to "New Distribution" , new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary" } if params[:fund_id].present? %>
