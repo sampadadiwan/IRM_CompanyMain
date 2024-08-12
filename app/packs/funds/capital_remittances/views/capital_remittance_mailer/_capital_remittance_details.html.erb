@@ -1,6 +1,6 @@
 <div class="card shadow mb-4">
   <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Remittance: <%= @capital_remittance.investor.investor_entity.name %></h6>
+      <h6 class="m-0 font-weight-bold text-primary">Remittance: <%= @capital_remittance.capital_commitment.investor_kyc&.full_name %></h6>
       <span>
       </span>
   </div>
@@ -25,19 +25,6 @@
           </td>
         </tr>
         <% end %>
-
-        <tr>
-          <td>
-            Investor
-          </td>
-          <td>
-            <% if current_user %>
-              <%= link_to @capital_remittance.investor_name, investor_url(id: @capital_remittance.investor_id) %>
-            <% else %>
-              <%= @capital_remittance.investor_name %>
-            <% end %>
-          </td>
-        </tr>
 
         <tr>
           <td>
