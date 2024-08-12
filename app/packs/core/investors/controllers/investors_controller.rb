@@ -37,6 +37,7 @@ class InvestorsController < ApplicationController
   end
 
   def search
+    authorize(Investor)
     query = params[:query]
     if query.present?
       @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })

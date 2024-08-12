@@ -3,6 +3,10 @@ class InvestorPolicy < ApplicationPolicy
     user.enable_investors
   end
 
+  def search?
+    index?
+  end
+
   def show?
     user.enable_investors &&
       ((belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) || user.entity_id == record.investor_entity_id || permissioned_employee?)
