@@ -25,6 +25,18 @@ class AggregatePortfolioInvestment < ApplicationRecord
   validates :commitment_type, length: { maximum: 10 }
   validates :investment_domicile, length: { maximum: 10 }
 
+  STANDARD_COLUMNS = {
+    "For" => "commitment_type",
+    "Portfolio Company" => "portfolio_company_name",
+    "Fund Name" => "fund_name",
+    "Instrument" => "investment_instrument",
+    "Net Bought Amount" => "bought_amount",
+    "Sold Amount" => "sold_amount",
+    "Current Quantity" => "current_quantity",
+    "Fmv" => "fmv",
+    "Avg Cost / Share" => "avg_cost"
+  }.freeze
+
   before_create :update_name
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name

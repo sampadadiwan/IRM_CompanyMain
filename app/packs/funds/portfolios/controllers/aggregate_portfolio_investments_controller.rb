@@ -8,6 +8,10 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
     @aggregate_portfolio_investments = AggregatePortfolioInvestmentSearch.perform(@aggregate_portfolio_investments, current_user, params)
+    if params[:all].blank?
+      @aggregate_portfolio_investments = @aggregate_portfolio_investments.page(params[:page])
+      @aggregate_portfolio_investments = @aggregate_portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
+    end
     @show_fund_name = params["show_fund_name"] || false
     respond_to do |format|
       format.html

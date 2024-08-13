@@ -41,6 +41,14 @@ Given('I visit PortfolioInvestment Page and find 6 columns in the grid') do
   end
 end
 
+Given('I visit AggregatePortfolioInvestment Page and find 6 columns in the grid') do
+  visit('/aggregate_portfolio_investments')
+  @expected_columns = ["For", "Portfolio Company", "Fund Name", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share"]
+  @expected_columns.each do |column_name|
+    expect(page).to have_text(column_name)
+  end
+end
+
 When('I visit Custom Grid View page and uncheck {string}') do |column_name|
   form_type = FormType.first
   visit "/form_types/#{form_type.id}/configure_grids"

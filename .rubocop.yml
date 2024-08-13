@@ -199,6 +199,7 @@ Metrics/ParameterLists:
     - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/funds/services/fund_unit_transfer_service.rb'
+    - 'app/packs/core/components/ransack_table_header.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'

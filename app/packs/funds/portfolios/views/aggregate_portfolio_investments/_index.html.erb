@@ -49,27 +49,25 @@
 
 <%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: %>
 
-<%
-    import_upload_id ||= params[:import_upload_id]
-    lazy_load_data ||= false
-    data_source ||= aggregate_portfolio_investments_path( params: params.to_unsafe_h,
-                          import_upload_id:, format: :json, all: true)
-    col_params = {no_fund: true}
-    column_names, field_list = get_columns(AggregatePortfolioInvestment, params: col_params)
-  %>
+<%=render SearchComponent.new %>
 
-  <div class="table-responsive" data-controller="aggregate-portfolio-investments"
-   data-aggregate-portfolio-investments-lazy-load-data-value=<%= lazy_load_data %>
-   data-aggregate-portfolio-investments-table-name-value="#aggregate_portfolio_investments"
-   data-aggregate-portfolio-investments-field-list-value=<%=field_list%>>
+<div class="table-responsive">
+    <table id="aggregate_portfolio_investments" class="table table-bordered dataTable action_table hover">
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->aggregate-portfolio-investments#loadData"><span>Load Data</span></a>
+        <% ransack_table_header = RansackTableHeader.new(AggregatePortfolioInvestment, q: @q, current_user: current_user, records: aggregate_portfolio_investments) %>
+        <%= render ransack_table_header %>
+      <tbody>
+        <% aggregate_portfolio_investments.each do |aggregate_portfolio_investment| %>
+          <%= render "aggregate_portfolio_investments/aggregate_portfolio_investment",  aggregate_portfolio_investment: aggregate_portfolio_investment.decorate, columns: ransack_table_header.columns%>
+        <% end %>
+      </tbody>
+    </table>
+    <% if aggregate_portfolio_investments.present? %>
+      <%= page_entries_info aggregate_portfolio_investments, entry_name: 'item' %>
+      <%= paginate aggregate_portfolio_investments %>
     <% end %>
+</div>
 
-    <%= render CustomTable.new(data_source:, id: "aggregate_portfolio_investments", column_names:)%>
-  </div>
-
-  <div class="associated_entity">
-    <%= render "aggregate_portfolio_investments/index_charts" %>
-  </div>
+<div class="associated_entity">
+  <%= render "aggregate_portfolio_investments/index_charts" %>
+</div>

@@ -1,4 +1,6 @@
 class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
+  include CurrencyHelper
+
   def company_link
     h.link_to object.portfolio_company_name, object.portfolio_company
   end
@@ -11,18 +13,7 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
     h.link_to object.fund, object
   end
 
-  def dt_actions
-    links = []
-    links << h.link_to('Show', h.aggregate_portfolio_investment_path(object), class: "btn btn-outline-primary")
-    if h.policy(object).add_valuation?
-      valuation_params = {
-        'valuation[owner_id]': object.portfolio_company_id,
-        'valuation[owner_type]': 'Investor',
-        'valuation[investment_instrument_id]': object.investment_instrument_id
-      }
-      valuation_path = h.new_valuation_path(valuation_params)
-      links << h.link_to('Add Valuation', valuation_path, class: "btn btn-outline-success")
-    end
-    h.safe_join(links, '')
+  def current_quantity
+    custom_format_number(aggregate_portfolio_investment.quantity)
   end
 end
