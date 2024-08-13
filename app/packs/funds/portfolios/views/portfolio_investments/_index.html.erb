@@ -28,51 +28,21 @@
   </span>
 </div>
 
-<div class="table-responsive" data-controller="datatable" 
-  data-datatable-money-columns-value="3,5,6,7" 
-  data-datatable-responsive-details-value=true>
-  
-  <table id="portfolio_investments" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th>
-          For
-        </th>
-        <th>
-          Company Name
-        </th>
-        <th>
-          Investment Date
-        </th>
-        <th>
-          Amount
-        </th>
-        <th>
-          Quantity
-        </th>
-        <th>
-          Cost Per Share
-        </th>
-        <th>
-          FMV
-        </th>
-        <th>
-          FIFO Cost
-        </th>
-        <th>
-          Investment Type
-        </th>
-        <th>
-          Notes
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% portfolio_investments.each do |portfolio_investment| %>
-        <%= render portfolio_investment %>
-      <% end %>
-    </tbody>
-  </table>
+<%=render SearchComponent.new %>
+
+<div class="table-responsive">
+    <table id="portfolio_investments" class="table table-bordered dataTable action_table hover">
+
+        <% ransack_table_header = RansackTableHeader.new(PortfolioInvestment, q: @q, current_user: current_user, records: portfolio_investments) %>
+        <%= render ransack_table_header %>
+      <tbody>
+        <% portfolio_investments.each do |portfolio_investment| %>
+          <%= render "portfolio_investments/portfolio_investment",  portfolio_investment: portfolio_investment.decorate, columns: ransack_table_header.columns%>
+        <% end %>
+      </tbody>
+    </table>
+    <% if portfolio_investments.present? %>
+      <%= page_entries_info portfolio_investments, entry_name: 'item' %>
+      <%= paginate portfolio_investments %>
+    <% end %>
 </div>

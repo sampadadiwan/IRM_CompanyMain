@@ -3,9 +3,9 @@ Given('I am at the form type page') do
   sleep(0.5)
 end
 
-When('I create a form type and custom grid view') do
+When('I create a form type and custom grid view for {string}') do |form_type|
   click_link('New Form Type')
-  find('select[name="form_type[name]"]').select('Investor')
+  find('select[name="form_type[name]"]').select(form_type)
   click_on('Save')
   sleep(0.5)
   click_on('Configure Grids')
@@ -33,19 +33,33 @@ Given('I visit Investor Page and find 6 columns in the grid') do
   end
 end
 
-When('I visit Custom Grid View page and uncheck city') do
+Given('I visit PortfolioInvestment Page and find 6 columns in the grid') do
+  visit('/portfolio_investments')
+  @expected_columns = ["For", "Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Investment Type", "Notes"]
+  @expected_columns.each do |column_name|
+    expect(page).to have_text(column_name)
+  end
+end
+
+When('I visit Custom Grid View page and uncheck {string}') do |column_name|
   form_type = FormType.first
   visit "/form_types/#{form_type.id}/configure_grids"
   sleep(0.25)
-  within(:xpath, "//tr[contains(@class, 'column_city')]") do
+  within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
   end
+  
   click_on('Proceed')
   sleep(0.25)
 end
 
-Given('I should not find city column in the Investor Grid') do
+
+Given('I should not find {string} column in the Investor Grid') do |column_name|
   visit('/investors')
   sleep(0.25)
-  expect(page).not_to have_selector('thead th', text: 'City')
+  
+  column_title = column_name.capitalize
+  
+  expect(page).not_to have_selector('thead th', text: column_title)
 end
+

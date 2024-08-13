@@ -1,36 +1,11 @@
-<tr id="<%= dom_id portfolio_investment %>">
-  <td>
-    <%= portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment) %>
-  </td>
-  <td>
-    <%= link_to portfolio_investment.portfolio_company_name, portfolio_investment.aggregate_portfolio_investment %>
-  </td>
-  <td>
-    <%= l portfolio_investment.investment_date %>
-  </td>
-  <td>
-    <%= money_to_currency portfolio_investment.amount, params %>
-  </td>
-  <td>
-    <span class="<%= portfolio_investment.quantity.positive? ? "text-success" : "text-danger"  %>"><%= portfolio_investment.quantity %><span>
-  </td>
-  <td>
-    <%= money_to_currency portfolio_investment.cost, params %>
-  </td>
-  <td>
-    <%= money_to_currency portfolio_investment.fmv, params %>
-  </td>
-  <td>
-    <%= money_to_currency portfolio_investment.cost_of_sold, params %>
-  </td>
-  <td>
-    <%= portfolio_investment.category %>
-    : <%= portfolio_investment.sub_category %>
-  </td>
-  <td>
-    <%= portfolio_investment.notes %>
-  </td>
+
+<tr id="portfolio_investment_<%= portfolio_investment.id %>">
+
+  <%= render RansackTableRow.new(model: portfolio_investment, columns:) %>
+
   <td>
     <%= link_to "Show", portfolio_investment , {class: "btn btn-outline-primary"}%>
   </td>
+
 </tr>
+

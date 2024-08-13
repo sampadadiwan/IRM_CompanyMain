@@ -8,6 +8,10 @@ class PortfolioInvestmentsController < ApplicationController
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
+    if params[:all].blank?
+      @portfolio_investments = @portfolio_investments.page(params[:page])
+      @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
+    end
   end
 
   # GET /portfolio_investments/1 or /portfolio_investments/1.json

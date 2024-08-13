@@ -85,6 +85,10 @@ class PortfolioInvestment < ApplicationRecord
   # This is used to improve the performance of the portfolio computations, in allocations
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
+  STANDARD_COLUMNS = { "For" => "for", "Company Name" => "company_name", "Investment Date" => "investment_date",
+                       "Amount" => "currency_amount", "Quantity" => "quantity", "Cost Per Share" => "cost_in_currency",
+                       "FMV" => "fmv_currency", "FIFO Cost" => "cost_of_sold_currency", "Investment Type" => "investment_type", "Notes" => "notes" }.freeze
+
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
       self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, commitment_type:, investment_instrument_id:)

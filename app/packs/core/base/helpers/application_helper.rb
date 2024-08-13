@@ -17,14 +17,10 @@ module ApplicationHelper
       (user.entity_type == "Group Company" && user.entity.child_ids.include?(entity_id))
   end
 
-  def owner_entity(model_record, current_user)
-    return if model_record.blank?
+  def owner_entity(model_records, current_user)
+    return current_user.entity if %w[company_admin employee].include?(current_user.curr_role)
 
-    if model_record.instance_of?(Investor)
-      current_user.entity
-    else
-      model_record.entity
-    end
+    model_records.first&.entity || current_user.entity
   end
 
   def custom_grid_columns(entity, form_type_name)
