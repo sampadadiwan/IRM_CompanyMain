@@ -9,8 +9,8 @@ end
 
 Then("I search for Merger") do
 	AggregatePortfolioInvestmentIndex.import!
-	fill_in 'dt-search-0', with: "Merger"
-	find('#dt-search-0').send_keys(:enter)
+	fill_in 'search_input', with: "Merger"
+	find('input#search_input').send_keys(:enter)
 	sleep(1)
 	within('tbody') do
     expect(page).to have_selector('tr', count: 1)
