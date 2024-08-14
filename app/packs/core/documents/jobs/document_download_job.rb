@@ -14,7 +14,7 @@ class DocumentDownloadJob < ApplicationJob
       FileUtils.mkdir_p @tmp_dir
 
       begin
-        File.open("#{@tmp_dir}/download_#{user_id}_#{Time.zone.now.strftime('%Y%m%d%H%M%S')}.zip", "w+") do |zip_file|
+        File.open("#{@tmp_dir}/docs_#{Time.zone.now.strftime('%m%d%H%M%S')}.zip", "w+") do |zip_file|
           folder_ids = folder.descendant_ids
           folder_ids << folder_id
 
