@@ -1,4 +1,13 @@
 <% if value.present? %>
-    <% money_val = Money.new(value.to_d * 100, model.currency) %>
-    <%= money_to_currency(money_val, params) %>
+    <%if model.respond_to?(:currency)%>
+        <% money_val = Money.new(value.to_d * 100, model.currency) %>
+        <%= money_to_currency(money_val, params) %>
+    <%else%>
+        <%= value %>
+        <div>
+            <span class="badge rounded-pill bg-warning" >
+                <small> <%= "#{model.class} has no currency"%> </small>
+            </span>
+        </div>
+    <%end%>
 <% end %>
