@@ -63,6 +63,7 @@
       <%= render "/capital_calls/common_form_fields", capital_call: capital_call, form: form %>
 
       <div class="form-group">
+        <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
       </div>
 
