@@ -5,6 +5,7 @@ class ImportUpload < ApplicationRecord
               "FUNDS_SAMPLE" => "/sample_uploads/funds.xlsx",
               "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
               "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx",
+              "INTERESTS_SAMPLE" => "/sample_uploads/interests.xlsx",
               "CAPITAL_CALL_SAMPLE" => "/sample_uploads/capital_calls.xlsx",
               "CAPITAL_REMITTANCE_SAMPLE" => "/sample_uploads/capital_remittances.xlsx",
               "CAPITAL_REMITTANCE_PAYMENT_SAMPLE" => "/sample_uploads/capital_remittance_payments.xlsx",

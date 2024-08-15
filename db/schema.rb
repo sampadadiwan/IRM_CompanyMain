@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_15_084247) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1843,6 +1843,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
     t.bigint "investor_id"
     t.json "json_fields"
     t.string "buyer_signatory_emails"
+    t.bigint "import_upload_id", null: false
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -1850,6 +1851,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
     t.index ["final_agreement_user_id"], name: "index_interests_on_final_agreement_user_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["funding_round_id"], name: "index_interests_on_funding_round_id"
+    t.index ["import_upload_id"], name: "index_interests_on_import_upload_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["investor_id"], name: "index_interests_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
@@ -1899,10 +1901,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.boolean "shareable", default: false
+    t.bigint "portfolio_company_id"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
     t.index ["funding_round_id"], name: "index_investment_opportunities_on_funding_round_id"
+    t.index ["portfolio_company_id"], name: "index_investment_opportunities_on_portfolio_company_id"
   end
 
   create_table "investment_snapshots", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2001,6 +2005,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
     t.text "cc"
     t.bigint "import_upload_id"
     t.string "call_code", limit: 3
+    t.boolean "email_enabled", default: true
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
@@ -3326,6 +3331,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_08_122427) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_opportunities", "investors", column: "portfolio_company_id"
   add_foreign_key "investment_snapshots", "entities"
   add_foreign_key "investment_snapshots", "funding_rounds"
   add_foreign_key "investment_snapshots", "investments"

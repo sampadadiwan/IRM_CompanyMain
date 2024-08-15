@@ -1,10 +1,23 @@
+<% secondary_sale = @secondary_sale %>
+
 <%= render "/interests/stats", secondary_sale: @secondary_sale if @secondary_sale && policy(@secondary_sale).owner? %>
 <%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale] %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Interests</h1>
-    <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id),
-        {class: "btn btn-outline-primary" } if @secondary_sale %>
+    <span>
+
+        <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id),
+            {class: "btn btn-outline-primary" } if @secondary_sale %>
+
+        <%= link_to "Upload Interests", 
+            new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+            "import_upload[owner_type]": "SecondarySale", 
+            "import_upload[import_type]": "Interest", 
+            "sample_upload": "INTERESTS_SAMPLE"), 
+            { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
+
+    </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
