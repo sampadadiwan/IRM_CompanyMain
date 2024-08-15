@@ -1,3 +1,12 @@
+V7.1.63
+#####################################
+da0e9a7bc Creating zip with shortened name to prevent windows extraction error (#404)
+76d117a27 Added warning to money show if no currency found (#405)
+e4f268492 Added Add Fees btn to call edit
+e2e64fada Added check for rule for when creating account entry
+86ec2a112 Added wati and esigning process documents (#402)
+880650753 Changed element path for tests (#403)
+
 V7.1.60
 #####################################
 28624d2bf Removed after_create send email for capital_remittance
