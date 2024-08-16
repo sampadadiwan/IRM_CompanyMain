@@ -72,6 +72,8 @@ class User < ApplicationRecord
 
   scope :support_users, -> { joins(:roles).where("roles.name =?", "support") }
   scope :super_users, -> { joins(:roles).where("roles.name =?", "super") }
+  scope :investor_advisors, -> { joins(:roles).where("roles.name =?", "investor_advisor") }
+  scope :not_investor_advisors, -> { where(advisor_entity_id: nil) }
 
   before_create :setup_defaults
   after_create :update_investor_access
@@ -215,6 +217,10 @@ class User < ApplicationRecord
   def super?
     # Check if the user has the support role or is support impoersonating some user
     has_cached_role?(:super)
+  end
+
+  def company_admin?
+    has_cached_role?(:company_admin)
   end
 
   def investor_advisor?

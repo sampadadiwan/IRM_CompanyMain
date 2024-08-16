@@ -51,7 +51,7 @@ class CapitalRemittancePayment < ApplicationRecord
         capital_remittance.verified &&
         !payment_notification_sent
       # Send email notification to all approved users of the investor
-      investor.approved_users.each do |user|
+      investor.notification_users(fund).each do |user|
         email_method = :notify_capital_remittance_payment
         CapitalRemittancePaymentNotifier.with(entity_id:, capital_remittance_payment: self, email_method:).deliver_later(user)
       end

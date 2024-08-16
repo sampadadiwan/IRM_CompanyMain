@@ -1,3 +1,7 @@
-<%= render NewCard.new do %>
-    <%=render "form", investor_access: @investor_access %>
+<%= turbo_frame_tag "new_investor_access" do %>
+
+    <%= render NewCard.new do %>
+        <%=render "form", investor_access: @investor_access %>
+    <% end %>
+
 <% end %>

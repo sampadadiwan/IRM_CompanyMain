@@ -5,6 +5,7 @@ class Investor < ApplicationRecord
   include WithFolder
   include WithFriendlyId
   include WithIncomingEmail
+  include Pundit::Authorization
 
   update_index('investor') { self if index_record? }
 
@@ -246,5 +247,16 @@ class Investor < ApplicationRecord
     CapitalRemittance.where(investor_id: id).update_all(investor_name:)
     CapitalDistributionPayment.where(investor_id: id).update_all(investor_name:)
     InvestorKyc.where(investor_id: id).update_all(investor_name:)
+  end
+
+  # We do this because of advisors
+  # We dont want to send notifications to all approved users, we send it only if they have at least show access to the model
+  def notification_users(model = nil)
+    if model
+      # Select all users who have show access to the model
+      approved_users.select { |user| Pundit.policy(user, model).show? }
+    else
+      approved_users
+    end
   end
 end

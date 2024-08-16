@@ -1,7 +1,7 @@
 class ImportInvestorAccess < ImportUtil
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
+  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -23,10 +23,12 @@ class ImportInvestorAccess < ImportUtil
     Rails.logger.debug user_data
     approved = user_data["Approved"] ? user_data["Approved"] == "Yes" : false
     whatsapp_enabled = user_data["Whatsapp Enabled"] ? user_data["Whatsapp Enabled"] == "Yes" : false
+    email_enabled = user_data["Email Enabled"] ? user_data["Email Enabled"] == "Yes" : true
+
     call_code = user_data["Country Code"].present? ? extract_call_code(user_data["Country Code"].to_s) : "91"
 
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"], call_code:,
-                            email: user_data["Email"], phone: user_data["Phone"].to_s,
+                            email: user_data["Email"], email_enabled:, phone: user_data["Phone"].to_s,
                             approved:, whatsapp_enabled:, cc: user_data["Cc"],
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id, import_upload_id: import_upload.id,

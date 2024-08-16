@@ -17,6 +17,10 @@ module NotificationExtensions
     Rails.env.development? ? 0 : delay_seconds
   end
 
+  def investor_access
+    model.entity.investor_accesses.where(user_id: recipient.id).first
+  end
+
   def model
     params[:"#{self.class.name.split('::').first.sub('Notifier', '').underscore}"]
   end
