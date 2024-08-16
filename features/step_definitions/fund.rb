@@ -980,6 +980,7 @@ end
 
 Then('I should be able to see my capital commitments') do
   click_on("Commitments")
+  @investor ||= @entity.investors.joins(:investor_accesses).where("investor_accesses.user_id=?", @user.id).first
   within("#capital_commitments") do
     CapitalCommitment.all.each do |cc|
 

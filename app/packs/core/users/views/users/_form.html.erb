@@ -101,17 +101,6 @@
       <%= form.check_box :enable_support, class: "form-check-input" %>
     </div>
 
-    <% if Entity::SECONDARY_BUYERS.include? user.entity&.entity_type %>
-    <div class="form-group">
-      <%= form.label :sale_notification, "Receive secondary sale notifications" %>
-      <%= form.check_box :sale_notification, class: "form-check-input" %>
-      <small class="text-muted">
-        Receive alerts on secondary sales by startups across our eco system
-      </small>
-    </div>
-    <% end %>
-
-
     <%= custom_form_fields(user, form) %>
 
 

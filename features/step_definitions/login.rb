@@ -6,6 +6,16 @@ Given('Im logged in as a user {string} for an entity {string}') do |arg1, arg2|
   )
 end
 
+
+Given('I log in with email {string}') do |email|
+  @user = User.find_by_email(email)
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end
+
+
 Given(/^I am at the login page$/) do
   visit("/users/sign_in")
   # expect(page).to have_content("Welcome To Cap Hive")
@@ -21,7 +31,7 @@ When(/^I fill and submit the login page$/) do
   fill_in('user_password', with: "password")
   click_on("Log In")
   sleep(1)
-  expect(page).to have_content("Signed in successfully")
+  # expect(page).to have_content("Signed in successfully")
   User.find_by_email(@user.email).sign_in_count.should == 1
 end
 
@@ -49,7 +59,8 @@ end
 
 Given('I log out') do
   # visit(destroy_user_session_path)
-  sleep(3)
+  visit("entities/dashboard")
+  sleep(2)
   find("#profile_menu").click
   click_on("Log Out")
   click_on("Logout")

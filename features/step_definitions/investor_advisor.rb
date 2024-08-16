@@ -8,7 +8,7 @@
     end
   end
 
-  Given('Given I upload {string} file for Investoment Advisors') do |file|
+  Given('Given I upload {string} file for Investment Advisors') do |file|
     @import_file = file
     visit(fund_path(@fund))
     click_on("Import")
@@ -20,6 +20,7 @@
     click_on("Save")
     sleep(3)
     ImportUploadJob.perform_now(ImportUpload.last.id)
+    ap InvestorAdvisor.all
   end
 
   Then('the investor advisors should be added to each investor') do
@@ -44,3 +45,14 @@
         @entity.investor_accesses.where(email: user.email).first.should_not be_nil
     end
   end
+
+
+  
+  Then('I switch to becoming the advisor for {string}') do |investor_name|
+    sleep(2)
+    # Select the investor_name from the drop down with id investor_advisor
+    within("#investor_advisors_form") do
+      select(investor_name, from: "id")
+    end
+  end
+  

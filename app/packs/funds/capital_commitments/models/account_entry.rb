@@ -62,7 +62,7 @@ class AccountEntry < ApplicationRecord
                                                amount_cents, reporting_date)
   end
 
-  before_create :setup_rule_for
+  before_save :setup_rule_for
   def setup_rule_for
     self.rule_for ||= if fund_formula.present? && fund_formula.reporting?
                         'reporting'

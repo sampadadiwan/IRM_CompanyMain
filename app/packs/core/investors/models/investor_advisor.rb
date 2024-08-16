@@ -30,7 +30,7 @@ class InvestorAdvisor < ApplicationRecord
   end
 
   def switch(user)
-    user.entity_id = entity_id
+    user.entity = entity
     user.investor_advisor_id = id
     user.setup_defaults
     user.save
