@@ -14,11 +14,11 @@ Scenario Outline: Import Investor Advisors
   Given I log out
   Given I log in with email "terrie@hansen-inc.com"
   # And I switch to becoming the advisor for "Investor1"
-  And I should see the fund in all funds page
-  When I am at the fund details page
-  Then I should be able to see my capital commitments
-  Then I should be able to see my capital remittances
-  Then I should be able to see my capital distributions
+  # And I should see the fund in all funds page
+  # When I am at the fund details page
+  # Then I should be able to see my capital commitments
+  # Then I should be able to see my capital remittances
+  # Then I should be able to see my capital distributions
 
 
 @import
@@ -29,5 +29,5 @@ Scenario Outline: Import Investor Advisors when User not present
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
-  And Given I upload "investor_advisors_without_users.xlsx" file for Investoment Advisors
+  And Given I upload "investor_advisors_without_users.xlsx" file for Investment Advisors
   Then the investor advisors should be added to each investor

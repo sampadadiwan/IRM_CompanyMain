@@ -73,7 +73,7 @@ class ImportInvestorAdvisor < ImportUtil
         # Give this user investor access in the investor
         user = investor_advisor.user
         investor.investor_accesses.where(email: user.email, entity_id: import_upload.entity_id).find_each(&:destroy)
-        investor.investor_accesses.create!(email: user.email, first_name: user.first_name, last_name: user.last_name, approved: true, send_confirmation: false, entity_id: import_upload.entity_id, granted_by: import_upload.user_id)
+        investor.investor_accesses.create!(email: user.email, first_name: user.first_name, last_name: user.last_name, email_enabled: true, approved: true, send_confirmation: false, entity_id: import_upload.entity_id, granted_by: import_upload.user_id)
         notify_investor_team(investor, investor_advisor, import_upload, user_data['Name'])
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
