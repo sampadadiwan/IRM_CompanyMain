@@ -1,3 +1,10 @@
+V7.1.64
+#####################################
+5b16111df Fixed IA defaults to email_enabled=false for advisor imports
+2b33e16d1 Reverted account entry changes
+16780e1fb No advisor emails (#406)
+fe8158575 Added import of interests
+
 V7.1.63
 #####################################
 da0e9a7bc Creating zip with shortened name to prevent windows extraction error (#404)

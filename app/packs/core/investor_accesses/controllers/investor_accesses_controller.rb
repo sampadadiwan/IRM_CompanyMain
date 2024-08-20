@@ -4,6 +4,7 @@ class InvestorAccessesController < ApplicationController
 
   # GET /investor_accesses or /investor_accesses.json
   def index
+    authorize(InvestorAccess)
     @q = InvestorAccess.ransack(params[:q])
     @investor_accesses = policy_scope(@q.result).includes(:investor, :user)
     @investor_accesses = @investor_accesses.where(approved: params[:approved]) if params[:approved].present?
