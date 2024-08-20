@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   include UserEnabled
   include WithCustomField
+  include Memoized
+
   acts_as_favoritor
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
@@ -228,7 +230,8 @@ class User < ApplicationRecord
   end
 
   def investor_advisor
-    entity.investor_advisors.where(user_id: id).first
+    @inv_adv ||= entity.investor_advisors.where(user_id: id).first
+    @inv_adv
   end
 
   def send_magic_link(current_entity_id, redirect_to)

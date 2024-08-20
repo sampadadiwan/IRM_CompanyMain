@@ -65,10 +65,10 @@ class AccountEntry < ApplicationRecord
   before_save :setup_rule_for
   def setup_rule_for
     self.rule_for = if fund_formula.present? && fund_formula.reporting?
-                        'reporting'
-                      else
-                        'accounting'
-                      end
+                      'reporting'
+                    else
+                      'accounting'
+                    end
   end
 
   def to_s
