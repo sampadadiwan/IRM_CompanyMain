@@ -14,17 +14,14 @@ class BaseNotifier < Noticed::Event
     # email_delay is a method defined in NotificationExtensions
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp" do |config|
       config.if = lambda {
-        event.entity.permissions.enable_whatsapp? && # Is WA enabled for the entity
-          investor_access.whatsapp_enabled && # Is WA enabled for the investor access specified by the entity
-          recipient.whatsapp_enabled && # Is WA enabled for the recipient
-          recipient.phone.present? # Does the recipient have a phone number
+        whatsapp_enabled
       }
       config.wait = :email_delay
     end
 
     deliver_by :email do |config|
       config.if = lambda {
-        investor_access.email_enabled # Is email enabled for the investor access specified by the entity
+        email_enabled # Is email enabled for the investor access specified by the entity
       }
       config.mailer = :mailer_name # Setup by each notifier
       config.method = :email_method # Typically the method name sent via the params :email_method

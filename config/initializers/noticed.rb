@@ -18,7 +18,25 @@ module NotificationExtensions
   end
 
   def investor_access
-    model.entity.investor_accesses.where(user_id: recipient.id).first
+    if model.respond_to?(:investor) && model.investor.present?
+      model.investor.investor_accesses.where(user_id: recipient.id).first
+    else
+      model.entity.investor_accesses.where(user_id: recipient.id).first
+    end
+  end
+
+  def email_enabled
+    # Either the recipient belongs to the model entity or the investor_access email_enabled is true
+    model.entity_id == recipient.entity_id ||
+      investor_access&.email_enabled
+  end
+
+  def whatsapp_enabled
+    (entity.permissions.enable_whatsapp? && # Is WA enabled for the entity
+      model.entity_id == recipient.entity_id) ||
+      (investor_access&.whatsapp_enabled && # Is WA enabled for the investor access specified by the entity
+      recipient.whatsapp_enabled && # Is WA enabled for the recipient
+      recipient.phone.present?) # Does the recipient have a phone number
   end
 
   def model
