@@ -9,7 +9,7 @@
       <% color = color == "info" ? "success" : "info" %>
 
       <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
-      <% subtitle = units.present? ? money_to_currency(deal.amount, {units: units}) : "#{deal.amount} #{deal.currency}"%>
+      <% subtitle = units.present? ? money_to_currency(deal.amount, {units: units}, view_cookies: cookies) : "#{deal.amount} #{deal.currency}"%>
         <%= render(NumberStatsComponent.new(
           path: deal_path(deal, kanban: true),
           amount: deal.name,

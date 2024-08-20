@@ -8,7 +8,14 @@
     <%= render "/layouts/filter", associations: [], state: filter_state, hidden_fields: {boards: true, turbo:true, board_id: kanban_board.id} %>
   </div>
   <div class="action-btn layout-top-spacing mb-8 d-flex align-items-center justify-content-between flex-wrap gap-6">
+    <h1 class="h3 mb-0 text-gray-800">
     <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
+    <% if kanban_board.owner_type == "Deal" %>
+      <%= link_to kanban_board.owner, target: "_self" do %>
+        <i class="ti ti-grid-pattern"></i>
+      <% end %>
+    <% end %>
+    </h1>
     <div class="d-flex align-items-center justify-content-end mb-7">
       <% if filtered_results %>
         <form id="clear-filter-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">

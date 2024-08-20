@@ -7,7 +7,7 @@
 
     <% cache_if(current_user != nil, cache_key("vc_dashboard", include_theme: true), expires_in: 5.day) do %>
 
-        <% if current_user.enable_funds && policy_scope(CapitalCommitment).count > 0 %>    
+        <% if current_user.enable_funds && policy_scope(CapitalCommitment).count > 0 %>
 
             <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>
                 <%= render "entities/vc_dashboard_menus" %>
@@ -21,8 +21,8 @@
 
         <% end %>
 
-        <% if current_user.enable_secondary_sale && policy_scope(Offer).count > 0 %>    
-                            
+        <% if current_user.enable_secondary_sale && policy_scope(Offer).count > 0 %>
+
             <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do %>
 
                 <% offers = policy_scope(Offer).includes(:entity, :secondary_sale, :investor, :holding).where("secondary_sales.active=?", true) %>
@@ -34,15 +34,24 @@
 
         <% end %>
 
+        <% deal_investors = policy_scope(DealInvestor).includes(:investor, :deal)%>
+        <% if current_user.enable_deals && deal_investors.count > 0 %>
 
-    
+            <%= render ToggleCard.new(title: "Deals", css_class: "show_deals") do %>
+
+                <%= render "/deal_investors/investor_view", deal_investors: deal_investors %>
+
+            <% end %>
+
+        <% end %>
+
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
         <% if investment_opportunities.count > 0 %>
             <%= render ToggleCard.new(title: "Investment Opportunities", css_class: "show_ios") do %>
                 <% investment_opportunities.each do |investment_opportunity| %>
                     <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
                 <% end %>
-            <% end %>   
+            <% end %>
         <% end %>
 
     <% end %>
@@ -53,7 +62,7 @@
 
         <div class="card shadow mb-4">
             <%= render ToggleCard.new(title: "Entities", css_class: "show_inv_entities", state: "") do %>
-                <%= render "/entities/index",  
+                <%= render "/entities/index",
                     entities:, vc_view: true %>
             <% end %>
         </div>
