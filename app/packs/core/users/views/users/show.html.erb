@@ -89,17 +89,6 @@
         </tr>
         <% end %>
 
-        <% if Entity::SECONDARY_BUYERS.include? @user.entity&.entity_type %>
-          <tr>
-            <td>
-              Secondary Sale Notifications
-            </td>
-            <td>
-              <%= @user.sale_notification ? "Yes" : "No" %>
-            </td>
-          </tr>
-        <% end %>
-
         <tr>
           <td>
             WhatsApp Enabled
