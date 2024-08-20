@@ -23,12 +23,12 @@ module CurrencyHelper
     end
   end
 
-  def money_to_currency(money, params = {}, ignore_units = false)
+  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil)
     sanf = true
     money = money.clone
 
     units = ""
-    cookies ||= nil
+    cookies ||= view_cookies
     raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units

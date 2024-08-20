@@ -1,4 +1,4 @@
-<div class="associated_entity" data-controller="tabdetails">
+<div class="associated_entity" data-controller="tabs tabdetails">
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
 
@@ -7,10 +7,10 @@
               data-action="click->tabdetails#loadData">Access Rights</a>
     <% end %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab" 
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab"
               data-action="click->tabdetails#loadData">Deal Steps</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#chat-tab" 
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#chat-tab"
               data-action="click->tabdetails#loadData">Chat</a>
 
     <% if show_tranch %>
@@ -20,21 +20,21 @@
 
 
 <div class="tab-content" data-controller="datatable">
-  
+
     <div id="docs-tab" class="tab-pane fade  in show active">
       <div id="docs" class="associated_entity">
         <% da_ids = deal_investor.deal_activities.pluck(:id) %>
-        <% sql = "#{deal_investor.documents.includes(:folder).to_sql} 
-                  # UNION #{deal_investor.deal.documents.includes(:folder).to_sql} 
+        <% sql = "#{deal_investor.documents.includes(:folder).to_sql}
+                  # UNION #{deal_investor.deal.documents.includes(:folder).to_sql}
                   UNION #{Document.includes(:folder).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
         <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
-      </div>     
+      </div>
     </div>
 
     <div id="access-rights-tab" class="tab-pane fade in">
 
           <% cache([deal_investor, "AccessRights"]) do %>
-            <div id="access_rights" class="associated_entity" data-controller="datatable">              
+            <div id="access_rights" class="associated_entity" data-controller="datatable">
 
               <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: deal_investor.id, owner_type: "DealInvestor", entity_id: deal_investor.entity_id) do %>
               <% end %>
@@ -45,20 +45,20 @@
 
     <div id="activities-tab" class="tab-pane fade">
       <div id="deal_activities" class="associated_entity">
-        <%#= render "/deal_activities/index", deal_investor:deal_investor, 
+        <%#= render "/deal_activities/index", deal_investor:deal_investor,
                     template: false, deal_activities: deal_investor.deal_activities.includes(:deal) %>
 
-        <%= link_to deal_activities_path(deal_investor_id: deal_investor.id), class: "load_data_link", 
+        <%= link_to deal_activities_path(deal_investor_id: deal_investor.id), class: "load_data_link",
           data: { turbo_frame: 'deal_activities_frame' } do %>
             <span>Loading...</span>
         <% end %>
 
         <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
         <% end %>
-        
+
       </div>
     </div>
-  
+
     <div id="chat-tab" class="tab-pane fade">
       <div id="messages" class="associated_entity">
         <%= link_to messages_path(owner_id: deal_investor.id, owner_type: "DealInvestor", investor_id: deal_investor.investor_id), class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
@@ -66,13 +66,13 @@
         <% end %>
         <%= turbo_frame_tag "messages_frame", target: "_top" do %>
         <% end %>
-      </div>  
+      </div>
     </div>
-    
+
     <div id="tranche-tab" class="tab-pane fade">
       <div id="deal_investors" class="associated_entity">
         <%= render "/deal_investors/show", deal_investor: deal_investor %>
-      </div>  
+      </div>
     </div>
 
 </div>
