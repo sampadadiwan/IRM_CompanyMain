@@ -23,11 +23,12 @@
 
   <div class="associated_entity">
       <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-      <% if ["holdings", "investor"].include?(model_class) %>
-        <!-- These are loaded via turbo frames lazily as they have ransack sort enabled -->
+      <% if ["holdings", "investors", "portfolio_investments", "aggregate_portfolio_investments"].include?(model_class) %>
+        <% paginated_data = @import_upload.imported_data.page(params[:page]).per(params["per_page"].to_i || 10 ) %>
       <% else %>
-        <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
+        <% paginated_data = @import_upload.imported_data %>
       <% end %>
+      <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": paginated_data %>
   </div>
 
 
