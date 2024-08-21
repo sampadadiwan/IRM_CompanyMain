@@ -5,6 +5,7 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
+    authorize(Task)
     @for_entity = params[:for_entity_id].present? ? Entity.find(params[:for_entity_id]) : current_user.entity
 
     if params[:owner_id].present? && params[:owner_type].present?
