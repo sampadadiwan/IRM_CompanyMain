@@ -1,6 +1,7 @@
 class InvestorAccessPolicy < ApplicationPolicy
   def index?
-    user.has_cached_role?(:company_admin)
+    # user.has_cached_role?(:company_admin)
+    !user.investor_advisor?
   end
 
   def show?

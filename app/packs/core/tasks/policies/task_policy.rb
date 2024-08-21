@@ -12,7 +12,7 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    !user.investor_advisor?
   end
 
   def show?
