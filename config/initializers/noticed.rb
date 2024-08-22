@@ -32,15 +32,20 @@ module NotificationExtensions
   end
 
   def whatsapp_enabled
-    (entity.permissions.enable_whatsapp? && # Is WA enabled for the entity
-      model.entity_id == recipient.entity_id) ||
-      (investor_access&.whatsapp_enabled && # Is WA enabled for the investor access specified by the entity
-      recipient.whatsapp_enabled && # Is WA enabled for the recipient
-      recipient.phone.present?) # Does the recipient have a phone number
+    model.entity.permissions.enable_whatsapp? && # Is WA enabled for the entity
+      (
+        model.entity_id == recipient.entity_id ||
+        (investor_access&.whatsapp_enabled && # Is WA enabled for the investor access specified by the entity
+        recipient.whatsapp_enabled && # Is WA enabled for the recipient
+        recipient.phone.present?) # Does the recipient have a phone number
+      )
   end
 
   def model
-    params[:"#{self.class.name.split('::').first.sub('Notifier', '').underscore}"]
+    # The actual model is stored in params
+    # The key is model name in lowercase
+    # To get the model name, we use the notifier name and remove the Notifier part
+    params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
   end
 end
 
