@@ -1,3 +1,13 @@
+V7.1.65
+#####################################
+dbfe9a49c (HEAD -> main, tag: V7.1.65, origin/main, origin/HEAD) Import upload custom grids fix (#415)
+475119fc2 Hide tasks ans IA from advisors
+b67a9506f Added better investor access check in noticed
+0c0e9ee07 Deals updates (#399)
+ec6ff2fe0 email_enabled set to false for investor advisor upload
+55d1f7826 Removed unwanted data from user profile
+6125a9c7f Now InvestorAccess is not visible by employees
+
 V7.1.64
 #####################################
 5b16111df Fixed IA defaults to email_enabled=false for advisor imports

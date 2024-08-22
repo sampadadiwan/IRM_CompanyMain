@@ -511,7 +511,8 @@ end
 
 Given('the fund has {string} capital call') do |count|
   (1..count.to_i).each do |i|
-    cc = FactoryBot.create(:capital_call, fund: @fund)
+    cc = FactoryBot.build(:capital_call, fund: @fund)
+    CapitalCallCreate.wtf?(capital_call: cc)
     puts "\n####CapitalCall####\n"
     puts cc.to_json
   end
@@ -534,7 +535,7 @@ Given('the capital calls are approved') do
   @fund.capital_calls.each do |cc|
     cc.approved = true
     cc.approved_by_user = @user
-    cc.save
+    CapitalCallUpdate.wtf?(capital_call: cc)    
   end
 end
 
@@ -979,18 +980,21 @@ end
 
 
 Then('I should be able to see my capital commitments') do
+  @user.reload
   click_on("Commitments")
-  @investor ||= @entity.investors.joins(:investor_accesses).where("investor_accesses.user_id=?", @user.id).first
+  @investor = @entity.investors.joins(:investor_accesses).where("investor_accesses.user_id=?", @user.id).first
   within("#capital_commitments") do
     CapitalCommitment.all.each do |cc|
 
       puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
 
       if cc.investor_id == @investor.id
+        puts "Visible"
         expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
         # expect(page).to have_content(cc.fund.name)
         expect(page).to have_content( money_to_currency(cc.committed_amount) )
       else
+        puts "Not Visible"
         expect(page).not_to have_content(cc.investor.investor_name)
       end
     end
@@ -1002,10 +1006,12 @@ Then('I should be able to see my capital remittances') do
   CapitalRemittance.all.each do |cc|
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
+      puts "Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.due_amount) )
       expect(page).to have_content( money_to_currency(cc.collected_amount) )
     else
+      puts "Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
     end
   end
@@ -1027,10 +1033,12 @@ Then('I should be able to see my capital distributions') do
   CapitalDistributionPayment.all.each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
+      puts "Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.amount) )
       expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
     else
+      puts "Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
     end
   end

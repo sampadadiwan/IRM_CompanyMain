@@ -155,7 +155,7 @@ class AccessRight < ApplicationRecord
     if user_id.present?
       [user]
     elsif access_to_investor_id.present?
-      investor.approved_users
+      investor.notification_users(owner)
     elsif access_to_category.present?
       User.joins(investor_accesses: :investor).where(entity_id:, 'investors.category': access_to_category).where("investor_accesses.approved = ? OR investors.is_holdings_entity = ?", true, true)
     else

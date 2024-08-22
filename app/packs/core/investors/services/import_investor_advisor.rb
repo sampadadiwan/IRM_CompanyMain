@@ -1,5 +1,5 @@
 class ImportInvestorAdvisor < ImportUtil
-  STANDARD_HEADERS = ["Email", "Add To", "Name", "Investor"].freeze
+  STANDARD_HEADERS = ["Email", "Add To", "Name", "Investor", "Allowed Roles"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -10,17 +10,19 @@ class ImportInvestorAdvisor < ImportUtil
     saved = true
     email = user_data['Email']
     investor_name = user_data['Investor']
+    allowed_roles = user_data['Allowed Roles'].present? ? user_data['Allowed Roles'].downcase.split(',').map(&:strip) : %w[employee investor]
+
     entity = import_upload.entity
     investor = entity.investors.where(investor_name:).first
     pre_process_investor_account(user_data)
     investor_advisor = InvestorAdvisor.where(email:, entity_id: investor.investor_entity_id).first
+
     if investor_advisor.present?
       Rails.logger.debug { "investor_advisor with email already exists for entity #{investor.investor_entity_id}" }
     else
       Rails.logger.debug user_data
       investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id,
-                                             import_upload_id: import_upload.id,
-                                             allowed_roles: %i[employee investor],
+                                             import_upload_id: import_upload.id, allowed_roles:,
                                              permissions: investor.investor_entity.permissions, extended_permissions: %i[investor_kyc_read investor_read])
       saved = investor_advisor.save!
     end
