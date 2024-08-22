@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_15_084247) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_22_125304) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1843,7 +1843,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_15_084247) do
     t.bigint "investor_id"
     t.json "json_fields"
     t.string "buyer_signatory_emails"
-    t.bigint "import_upload_id", null: false
+    t.bigint "import_upload_id"
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"

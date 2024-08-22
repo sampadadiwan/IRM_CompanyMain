@@ -1424,9 +1424,9 @@ Given('the last investor has a user {string}') do |args|
     AccessRight.create(entity_id: investor.investor_entity_id, owner: @fund, access_to_investor_id: investor.id,metadata: "Investor", user_id: u.id)
     ia = InvestorAccess.create(entity: investor.entity, investor: investor,
         first_name: u.first_name, last_name: u.last_name,
-        email: u.email, granter: u, approved: true, is_investor_advisor: true)
-    ia.update_columns(approved: true, is_investor_advisor: true)
-    end
+        email: u.email, granter: u, approved: true)
+    ia.update_columns(approved: true)
+  end
 end
 
 Given('the capital remittance whatsapp notification is sent to the first investor') do

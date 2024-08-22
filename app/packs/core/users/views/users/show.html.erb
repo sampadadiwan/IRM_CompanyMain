@@ -69,8 +69,7 @@
             Permissions
           </td>
           <td>
-            <% permissions = @user.investor_advisor? ? @user.investor_advisor.permissions : @user.permissions  %>
-            <% permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+            <% @user.permissions.map{|p| p.to_s.titleize}.each do |permission| %>
               <span class="badge bg-success"><%= permission %></span>
             <% end %>
           </td>

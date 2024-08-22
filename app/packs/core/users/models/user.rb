@@ -225,6 +225,7 @@ class User < ApplicationRecord
     has_cached_role?(:company_admin)
   end
 
+  # This checks that the user has currently switched to the investor advisor role
   def investor_advisor?
     advisor_entity_id.present? && advisor_entity_id != entity_id
   end
