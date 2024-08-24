@@ -5,7 +5,9 @@
 
 
 <%= render ReportingComponent.new do %>
-    <%= render "/investors/index", investors: @investors %>
+    <%= turbo_frame_tag "investors_frame", target: "_top" do %>
+        <%= render "/investors/index", investors: @investors %>
+    <%end%>
 <% end %>
 
 <div class="associated_entity">

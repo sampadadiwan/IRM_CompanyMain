@@ -22,15 +22,16 @@
 <% end %>
 
   <div class="associated_entity">
-      <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-      <% if ["holdings", "investors", "portfolio_investments", "aggregate_portfolio_investments"].include?(model_class) %>
-        <% paginated_data = @import_upload.imported_data.page(params[:page]).per(params["per_page"] || 10 ) %>
-      <% else %>
-        <% paginated_data = @import_upload.imported_data %>
-      <% end %>
+    <% model_class = @import_upload.model_class.name.underscore.pluralize %>
+    <% if ["holdings", "investors", "portfolio_investments"].include?(model_class) %>
+      <turbo-frame id="<%= "#{model_class}_frame" %>" 
+                   src="<%= url_for(controller: model_class, action: :index, import_upload_id: @import_upload.id) %>" 
+                   loading="lazy">
+        <p>Loading <%= model_class.humanize %>...</p>
+      </turbo-frame>
+
+
+    <% else %>
       <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": paginated_data %>
+    <% end %>
   </div>
-
-
-
-

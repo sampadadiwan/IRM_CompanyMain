@@ -12,6 +12,11 @@ class PortfolioInvestmentsController < ApplicationController
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
     end
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream { render partial: 'portfolio_investments/index', locals: { portfolio_investments: @portfolio_investments } }
+    end
   end
 
   # GET /portfolio_investments/1 or /portfolio_investments/1.json
