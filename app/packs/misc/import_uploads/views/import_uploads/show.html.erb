@@ -32,6 +32,6 @@
 
 
     <% else %>
-      <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": paginated_data %>
+      <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
     <% end %>
   </div>
