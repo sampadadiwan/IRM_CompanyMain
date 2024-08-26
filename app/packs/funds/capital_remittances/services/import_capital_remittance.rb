@@ -5,7 +5,7 @@ class ImportCapitalRemittance < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug { "Processing capital_remittance #{user_data}" }
 
     fund, capital_call, investor, folio_id, capital_commitment = inputs(import_upload, user_data)

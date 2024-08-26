@@ -6,7 +6,7 @@ class ImportPortfolioCashflow < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name = inputs(user_data, import_upload)
 
     investment_instrument = portfolio_company.investment_instruments.where(name: instrument_name).first

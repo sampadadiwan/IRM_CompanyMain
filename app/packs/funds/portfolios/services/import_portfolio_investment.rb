@@ -15,7 +15,7 @@ class ImportPortfolioInvestment < ImportUtil
     true
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     portfolio_company_name, investment_date, base_amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first

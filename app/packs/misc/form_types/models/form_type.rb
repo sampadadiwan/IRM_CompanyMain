@@ -8,7 +8,7 @@ class FormType < ApplicationRecord
   # Sometimes after we import data, we have custom fields which get imported
   # But there exists no custom form fields for the import - hence we can see it but not edit it.
   # This automatically sets up the custom form fields, given that custom fields have been imported into the record
-  def self.save_cf_from_import(custom_field_headers, import_upload)
+  def self.save_cf_from_import(custom_field_headers, import_upload, form_type_id = nil)
     newly_created_cf = []
     if custom_field_headers.present?
       # Create the form type
@@ -18,8 +18,14 @@ class FormType < ApplicationRecord
         next unless imported_row_count.positive?
 
         # Find or create the form type
-        form_type = FormType.where(name:, entity_id: import_upload.entity_id).last
-        form_type ||= FormType.create(name:, entity_id: import_upload.entity_id)
+        if form_type_id.present?
+          form_type = FormType.find(form_type_id)
+        else
+          # find the last one with the name
+          form_type = FormType.where(name:, entity_id: import_upload.entity_id).last
+          # or create it
+          form_type ||= FormType.create(name:, entity_id: import_upload.entity_id)
+        end
 
         custom_field_headers.each do |cfh|
           # Create the custom form fields for the form type

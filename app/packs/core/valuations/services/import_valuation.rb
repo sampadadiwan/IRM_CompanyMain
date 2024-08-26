@@ -5,7 +5,7 @@ class ImportValuation < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # puts "processing #{user_data}"
     valuation_date = user_data['Valuation Date']
     valuation_cents = user_data['Valuation'].to_d * 100

@@ -5,7 +5,7 @@ class ImportOptionsCustomData < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # Create the user if he does not exists
     user = User.find_by(email: user_data['Email'].strip)
     option_pool = nil

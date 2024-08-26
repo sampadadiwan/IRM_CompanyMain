@@ -10,7 +10,7 @@ class ImportExchangeRate < ImportUtil
     @exchange_rates = []
   end
 
-  def save_row(user_data, import_upload, _custom_field_headers)
+  def save_row(user_data, import_upload, _custom_field_headers, _ctx)
     Rails.logger.debug { "Processing exchange_rate #{user_data}" }
     exchange_rate_attributes = get_exchange_rate_attributes(user_data, import_upload)
 

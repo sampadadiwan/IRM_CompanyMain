@@ -53,12 +53,12 @@ class ImportUtil < Trailblazer::Operation
     true
   end
 
-  def create_custom_fields(_ctx, import_upload:, custom_field_headers:, **)
+  def create_custom_fields(ctx, import_upload:, custom_field_headers:, **)
     # Sometimes we import custom fields. Ensure custom fields get created
     result = true
     if import_upload.processed_row_count.positive?
 
-      custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload)
+      custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload, ctx[:form_type_id])
       if custom_fields_created.present?
         import_upload.custom_fields_created = custom_fields_created.join(";")
         result = import_upload.save
@@ -127,13 +127,13 @@ class ImportUtil < Trailblazer::Operation
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _ctx)
+  def process_row(headers, custom_field_headers, row, import_upload, ctx)
     # create hash from headers and cells
 
     user_data = [headers, row].transpose.to_h
     Rails.logger.debug { "#### user_data = #{user_data}" }
     begin
-      if save_row(user_data, import_upload, custom_field_headers)
+      if save_row(user_data, import_upload, custom_field_headers, ctx)
         import_upload.processed_row_count += 1
         row << "Success"
       else

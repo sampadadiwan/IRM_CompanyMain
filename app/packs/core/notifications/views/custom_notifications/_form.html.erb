@@ -71,6 +71,11 @@
 
     <% end %>
 
+    <div class="form-group">
+      <%= form.label :attachment_names %>
+      <%= form.text_field :attachment_names, class: "form-control"  %>
+    </div>
+
     <% if current_user.support? %>      
 
       <div class="form-group">

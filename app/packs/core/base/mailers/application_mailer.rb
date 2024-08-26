@@ -88,13 +88,27 @@ class ApplicationMailer < ActionMailer::Base
   def attach_custom_notification_documents
     if @custom_notification && @custom_notification.documents.present?
       @custom_notification.documents.each do |document|
-        file = document.file
-        # Check for attachments
-        attachments["#{document.name}.#{document.uploaded_file_extension}"] = file.read
-        file.close
-        File.delete(file) if file.instance_of?(::File)
+        attach_doc(document)
       end
     end
+
+    if @custom_notification && @custom_notification.attachment_names.present?
+      @custom_notification.attachment_names.split(',').each do |name|
+        # Get the document with the name from the model
+        document = @notification.model.documents.where("name like ?", "%#{name}%").first
+        # Attach it to the email
+        attach_doc(document) if document.present?
+      end
+    end
+  end
+
+  def attach_doc(document)
+    file = document.file
+    # Add the file to the document
+    attachments["#{document.name}.#{document.uploaded_file_extension}"] = file.read
+    file.close
+    # Cleanup
+    File.delete(file) if file.instance_of?(::File)
   end
 
   # Convinience method to send mail with simply the subject

@@ -5,7 +5,7 @@ class ImportCapitalDistributionPayment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug { "Processing capital_distribution_payment #{user_data}" }
 
     # Get the Fund

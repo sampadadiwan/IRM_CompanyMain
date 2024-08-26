@@ -5,7 +5,7 @@ class ImportInterest < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, ctx)
     Rails.logger.debug { "Processing interest #{user_data}" }
 
     email = user_data["Email"]
@@ -29,6 +29,10 @@ class ImportInterest < ImportUtil
     end
 
     interest.assign_attributes(address: user_data["Address"], PAN: user_data["Pan"], email: user_data["Email"], contact_name: user_data["Contact Name"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], quantity: user_data["Quantity"], price: user_data["Price"], import_upload_id: import_upload.id, short_listed:, escrow_deposited:, buyer_signatory_emails: user_data["Buyer Signatory Emails"])
+
+    # For SecondarySale we can have multiple form types. We need to set the form type for the interest
+    ctx[:form_type_id] = secondary_sale.interest_form_type_id
+    interest.form_type_id = secondary_sale.interest_form_type_id
 
     setup_custom_fields(user_data, interest, custom_field_headers - ["Interest Id", "Update Only"])
 

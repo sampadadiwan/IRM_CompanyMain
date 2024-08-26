@@ -982,9 +982,12 @@ end
 Then('I should be able to see my capital commitments') do
   @user.reload
   click_on("Commitments")
-  @investor = @entity.investors.joins(:investor_accesses).where("investor_accesses.user_id=?", @user.id).first
+  
+  
   within("#capital_commitments") do
     CapitalCommitment.all.each do |cc|
+
+      @investor = cc.entity.investors.joins(:investor_accesses).where("investor_accesses.user_id=?", @user.id).first
 
       puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
 

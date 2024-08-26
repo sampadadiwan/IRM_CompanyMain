@@ -13,7 +13,7 @@ class ImportInvestor < ImportUtil
     true
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # puts "processing #{user_data}"
     saved = true
     investor_name = user_data['Name']

@@ -5,13 +5,22 @@ class DocGenJob < ApplicationJob
   sidekiq_options retry: 1
 
   # Returns all the templates from which documents will be generated
-  def templates(model = nil); end
+  def templates(_model = nil)
+    []
+  end
 
   # Returns all the models for which documents will be generated
-  def models; end
+  def models
+    []
+  end
 
   # Validates the model before generating the document
   def validate(model); end
+
+  def signed_document_already_exists?(model, template)
+    signed_or_sent_for_esign = model.documents.signed.or(model.documents.sent_for_esign)
+    signed_or_sent_for_esign.where("name like ?", "%#{template.name}%").present?
+  end
 
   def valid_inputs
     if templates.blank?
@@ -27,7 +36,9 @@ class DocGenJob < ApplicationJob
   end
 
   # The specific Generator used for document generation
-  def generator; end
+  def generator
+    raise "Generator not specified"
+  end
 
   def cleanup_previous_docs(model, template); end
 
@@ -44,7 +55,9 @@ class DocGenJob < ApplicationJob
       templates(model).each do |template|
         # Validate the model before generating the document
         valid, msg = validate(model)
-        if valid
+        signed_document_already_exists = signed_document_already_exists?(model, template)
+
+        if valid && !signed_document_already_exists
           # Cleanup previously generated documents if required
           cleanup_previous_docs(model, template)
           # Generate the document
@@ -53,6 +66,7 @@ class DocGenJob < ApplicationJob
           send_notification("Generated #{template.name} for #{model}", user_id, "success")
           succeeded += 1
         else
+          msg = "Signed document already exists for #{model} with template #{template.name}" if signed_document_already_exists
           # Send notification if the model is not valid
           send_notification(msg, user_id, "danger")
           @error_msg << { msg:, model: }
@@ -73,7 +87,7 @@ class DocGenJob < ApplicationJob
     completed(succeeded, failed, user_id)
   end
 
-  def completed(succeeded, failed, user_id)
+  def completed(succeeded, _failed, user_id)
     # Send email if there are any errors
     if @error_msg.present?
       email_errors

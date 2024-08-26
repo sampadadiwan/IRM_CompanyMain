@@ -57,6 +57,7 @@ class Document < ApplicationRecord
   scope :not_template, -> { where(template: false) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
   scope :not_sent_for_esign, -> { where(sent_for_esign: false) }
+  scope :signed, -> { where(owner_tag: "Signed") }
 
   def to_s
     name

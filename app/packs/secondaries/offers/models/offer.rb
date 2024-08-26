@@ -41,7 +41,7 @@ class Offer < ApplicationRecord
                   column_names: -> { { Offer.approved => 'total_offered_amount_cents' } }
 
   # This is the holding owned by the user which is offered out
-  belongs_to :holding
+  belongs_to :holding, optional: true
   # This is the buyer against which this sellers quantity is matched
   belongs_to :interest, optional: true
 
@@ -69,7 +69,7 @@ class Offer < ApplicationRecord
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
-  validate :check_quantity
+  validate :check_quantity, if: proc { |o| o.holding.present? }
   validate :sale_active, on: :create
   validates :offer_type, :PAN, length: { maximum: 15 }
   validates :bank_account_number, :demat, length: { maximum: 40 }
@@ -84,21 +84,19 @@ class Offer < ApplicationRecord
 
   BUYER_STATUS = %w[Confirmed Rejected].freeze
 
-  # def already_offered
-  #   errors.add(:secondary_sale, ": An existing offer from this user already exists. Pl modify or delete that one.") if secondary_sale.offers.where(user_id:, holding_id:).first.present?
-  # end
-
   def sale_active
     errors.add(:secondary_sale, ": Is not active.") unless secondary_sale.active?
   end
 
   before_save :set_defaults
   def set_defaults
-    self.percentage = (100.0 * quantity) / total_holdings_quantity
-
-    self.investor_id = holding.investor_id
-    self.user_id = holding.user_id if holding.user_id
-    self.entity_id = holding.entity_id
+    if holding.present?
+      self.percentage = (100.0 * quantity) / total_holdings_quantity
+      self.investor_id = holding.investor_id
+      self.user_id = holding.user_id if holding.user_id
+      self.entity_id = holding.entity_id
+      self.offer_type ||= holding.holding_type
+    end
 
     self.approved = false if quantity_changed?
 
@@ -107,7 +105,6 @@ class Offer < ApplicationRecord
     self.docs_uploaded_check ||= {}
     self.bank_verification_response ||= {}
     self.pan_verification_response ||= {}
-    self.offer_type ||= holding.holding_type
 
     set_custom_matching_vals
   end
@@ -125,6 +122,8 @@ class Offer < ApplicationRecord
     end
   end
 
+  # This is used to validate the quantity of the offer
+  # This is applicable only for the offers tied to a holding
   def check_quantity
     # holding users total holding amount
     total_quantity = total_holdings_quantity
@@ -145,12 +144,20 @@ class Offer < ApplicationRecord
   end
 
   def total_holdings_quantity
-    holding.holding_type == "Investor" ? holding.investor.holdings.approved.eq_and_pref.sum(:quantity) : holding.user.holdings.approved.eq_and_pref.sum(:quantity)
+    if holding.present?
+      holding.holding_type == "Investor" ? holding.investor.holdings.approved.eq_and_pref.sum(:quantity) : holding.user.holdings.approved.eq_and_pref.sum(:quantity)
+    else
+      0
+    end
   end
 
   def allowed_quantity
-    # holding users total holding amount
-    (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
+    if holding.present?
+      # holding users total holding amount
+      (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
+    else
+      Integer::MAX
+    end
   end
 
   def notify_approval
@@ -190,7 +197,7 @@ class Offer < ApplicationRecord
     validate_spa_generation
     return false if errors.present?
 
-    OfferSpaJob.perform_later(id, user.id) if saved_change_to_verified? && verified
+    OfferSpaJob.perform_later(secondary_sale_id, id, user.id) if saved_change_to_verified? && verified
     true
   end
 

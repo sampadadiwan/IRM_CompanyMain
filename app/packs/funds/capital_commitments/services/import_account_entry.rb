@@ -11,7 +11,7 @@ class ImportAccountEntry < ImportUtil
     @account_entries = []
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug { "Processing account_entry #{user_data}" }
 
     # Get the Fund

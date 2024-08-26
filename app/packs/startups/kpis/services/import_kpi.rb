@@ -12,7 +12,7 @@ class ImportKpi < ImportUtil
     true
   end
 
-  def save_row(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers, _ctx)
     name, value, _, _, notes = get_data(user_data)
     import_upload.entity_id
 

@@ -100,7 +100,22 @@ Scenario Outline: Import offer to sale
   And Given I upload a holdings file
   Then I should see the "Import in progress"
   And when the holdings are approved
-  And Given I upload a offer file
+  And Given I upload a offer file "offers.xlsx"
+  Then I should see the "Import in progress"
+  And the offers must have the data in the sheet
+  And when the offers are approved
+  And the sale offered quantity should be "120"
+
+
+
+@import
+Scenario Outline: Import offer to sale without holdings
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"
+  And Given I upload an investors file for the company
+  And Given I upload an investor access file for employees
+  Given there is a sale "name=Summer Sale"
+  And Given I upload a offer file "offers_no_holdings.xlsx"
   Then I should see the "Import in progress"
   And the offers must have the data in the sheet
   And when the offers are approved

@@ -5,7 +5,7 @@ class ImportInvestorAdvisor < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(user_data, import_upload, _custom_field_headers)
+  def save_row(user_data, import_upload, _custom_field_headers, _ctx)
     # puts "processing #{user_data}"
     saved = true
     email = user_data['Email']

@@ -12,7 +12,7 @@ class ImportInvestorAccess < ImportUtil
     @investor_accesses = []
   end
 
-  def save_row(user_data, import_upload, _custom_field_headers)
+  def save_row(user_data, import_upload, _custom_field_headers, _ctx)
     if user_data['Investor'].present?
       investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
       raise "Investor not found" unless investor
