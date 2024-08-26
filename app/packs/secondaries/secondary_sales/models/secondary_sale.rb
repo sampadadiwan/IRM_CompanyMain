@@ -92,7 +92,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def folder_path
-    "/Secondary Sales/#{name.delete('/')}"
+    "/Secondary Sales/#{name.delete('/')}_#{id}"
   end
 
   def document_tags

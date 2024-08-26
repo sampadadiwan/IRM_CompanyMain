@@ -744,3 +744,10 @@ Given('the investors are added to the sale') do
     puts ar.to_json
   end
 end
+
+Then('the document folder should be different for the new sale') do
+  @sale_new = SecondarySale.last
+  @sale_new.id.should_not == @sale.id
+  @sale_new.name.should == @sale.name
+  @sale_new.document_folder_id.should_not == @sale.document_folder_id
+end

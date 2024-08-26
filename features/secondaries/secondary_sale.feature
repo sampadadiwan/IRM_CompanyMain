@@ -238,3 +238,21 @@ Scenario Outline: Sale To Cap Table
     |1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
     |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
     |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+
+Scenario Outline: Folder for sale with duplicate name
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    And I am at the sales page
+    When I create a new sale "<sale>"
+    Then I should see the "<msg>"
+    And an sale should be created
+    And I should see the sale details on the details page
+    And I should see the sale in all sales page
+    When I am at the sales page
+    When I create a new sale "<sale>"
+    Then I should see the "<msg>"
+    And the document folder should be different for the new sale
+
+    Examples:
+      |user	    |entity               |sale             |msg	|
+      |  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
