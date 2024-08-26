@@ -23,7 +23,7 @@ class CapitalCallsController < ApplicationController
   def show; end
 
   def generate_docs
-    CapitalCallRemittanceDocJob.perform_later(@capital_call.id, current_user.id)
+    CapitalRemittanceDocJob.perform_later(@capital_call.id, nil, current_user.id)
     redirect_to capital_call_path(@capital_call), notice: "Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached"
   end
 

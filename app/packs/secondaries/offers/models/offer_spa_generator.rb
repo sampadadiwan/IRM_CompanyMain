@@ -4,7 +4,7 @@ class OfferSpaGenerator
 
   attr_accessor :working_dir
 
-  def initialize(offer, template)
+  def initialize(offer, template, _start_date, _end_date, _user_id)
     create_working_dir(offer)
     template_path ||= download_template(template)
     generate(offer, template, template_path)

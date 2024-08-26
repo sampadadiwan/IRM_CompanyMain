@@ -1,38 +1,53 @@
-class CapitalCommitmentSoaJob < ApplicationJob
-  queue_as :doc_gen
-  sidekiq_options retry: 1
+class CapitalCommitmentSoaJob < DocGenJob
+  def templates(model = nil)
+    if model.present?
+      model.templates("SOA Template", @template_name)
+    else
+      @fund.documents.templates.where(owner_tag: "SOA Template")
+    end
+  end
+
+  def models
+    if @capital_commitment_id.present?
+      [CapitalCommitment.find(@capital_commitment_id)]
+    else
+      @fund.capital_commitments
+    end
+  end
+
+  def validate(capital_commitment)
+    return false, "No Capital Commitment found" if capital_commitment.blank?
+    return false, "No Investor KYC found" if capital_commitment.investor_kyc.blank?
+
+    [capital_commitment.investor_kyc.verified, "#{capital_commitment.investor_kyc&.full_name} is not verified"]
+  end
+
+  def generator
+    SoaGenerator
+  end
+
+  def cleanup_previous_docs(model, template)
+    # Delete any existing signed documents
+    # Do not delete signed documents
+    docs_to_destroy = model.documents.not_templates.where(name: template.name)
+    # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
+    docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
+  end
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  def perform(capital_commitment_id, start_date, end_date, user_id: nil, template_name: nil)
+  def perform(fund_id, capital_commitment_id, start_date, end_date, user_id, template_name: nil)
+    @fund_id = fund_id
+    @fund = Fund.find(fund_id)
+
+    @capital_commitment_id = capital_commitment_id
+
+    @start_date = start_date
+    @end_date = end_date
+    @user_id = user_id
+    @template_name = template_name
+
     Chewy.strategy(:sidekiq) do
-      @capital_commitment = CapitalCommitment.find(capital_commitment_id)
-      @fund = @capital_commitment.fund
-      @investor = @capital_commitment.investor
-      @investor_kyc = @capital_commitment.investor_kyc
-
-      # Try and get the template from the capital_commitment
-      @templates = @capital_commitment.templates("SOA Template", template_name)
-
-      Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
-
-      @templates.each do |fund_doc_template|
-        msg = "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}"
-        Rails.logger.debug { msg }
-        # Notify started
-        send_notification(msg, user_id, :info)
-        # Generate a new signed document
-        SoaGenerator.new(@capital_commitment, fund_doc_template, start_date, end_date, user_id)
-        # Notify completed
-        send_notification(msg.gsub("Generating", "Generated"), user_id, :success)
-      rescue Exception => e
-        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}. #{e.message}", user_id, :danger)
-        ExceptionNotifier.notify_exception(e, data: { capital_commitment_id:, start_date:, end_date:, user_id:, template_name: })
-        raise e
-      end
-
-      send_notification("No SOA templates found for Capital Commitment #{@capital_commitment}", user_id, :danger) if @templates.blank?
+      generate(@start_date, @end_date, @user_id) if valid_inputs
     end
-
-    nil
   end
 end

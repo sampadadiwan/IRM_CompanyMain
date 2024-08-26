@@ -1,59 +1,53 @@
-class CapitalRemittanceDocJob < ApplicationJob
-  queue_as :doc_gen
-  sidekiq_options retry: 1
+class CapitalRemittanceDocJob < DocGenJob
+  def templates(model = nil)
+    if @template_id.present?
+      [Document.find(@template_id)]
+    elsif model.present?
+      model.capital_commitment.templates("Call Template")
+    else
+      @fund.documents.templates.where(owner_tag: "Call Template")
+    end
+  end
+
+  def models
+    if @capital_remittance_id.present?
+      [CapitalRemittance.find(@capital_remittance_id)]
+    else
+      @capital_call.capital_remittances
+    end
+  end
+
+  def validate(capital_remittance)
+    return false, "No Capital Remittance found" if capital_remittance.blank?
+    return false, "InvestorKyc not verified" if capital_remittance.investor_kyc.blank? || !capital_remittance.investor_kyc.verified
+
+    [true, ""]
+  end
+
+  def generator
+    CapitalRemittanceDocGenerator
+  end
+
+  def cleanup_previous_docs(model, template)
+    # Delete any existing signed documents
+    model.documents.not_templates.where(name: template.name).find_each(&:destroy)
+  end
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
-  def perform(capital_remittance_id, user_id = nil)
-    error_msg = []
+  def perform(capital_call_id, _capital_remittance_id, user_id, template_id: nil)
+    @capital_call_id = capital_call_id
+    @capital_call = CapitalCall.find(capital_call_id)
+    @fund = @capital_call.fund
+
+    @start_date = Time.zone.now
+    @end_date = Time.zone.now
+    @user_id = user_id
+    @template_id = template_id
+
     Chewy.strategy(:sidekiq) do
-      @capital_remittance = CapitalRemittance.find(capital_remittance_id)
-      @capital_commitment = @capital_remittance.capital_commitment
-      @investor_kyc = @capital_commitment.investor_kyc
-      @fund = @capital_remittance.fund
-
-      if kyc_ok?(user_id, error_msg)
-        # Try and get the template from the capital_commitment
-        @templates = @capital_remittance.capital_commitment.templates("Call Template")
-
-        msg = "Generating Remittance documents for #{@capital_commitment.investor_name}, for fund #{@fund.name} and kyc #{@investor_kyc.id}"
-        send_notification(msg, user_id, :info)
-        Rails.logger.debug { msg }
-
-        @templates.each do |fund_doc_template|
-          Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_remittance.investor_name}" }
-          # Delete any existing signed documents
-          @capital_remittance.documents.not_templates.where(name: fund_doc_template.name).find_each(&:destroy)
-          # Generate a new signed document
-          CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
-        rescue Exception => e
-          msg = "Error generating template #{fund_doc_template.name} for fund #{@capital_remittance.folio_id}, for #{@capital_commitment.investor_name}: #{e.message}"
-          handle_error(msg, fund_doc_template, @capital_commitment, @investor_kyc, user_id, error_msg)
-        end
-
-        handle_error("No Call templates found for #{@capital_remittance}", nil, @capital_commitment, @investor_kyc, user_id, error_msg) if @templates.blank?
-
-      end
+      generate(@start_date, @end_date, @user_id) if valid_inputs
     end
 
-    error_msg
-  end
-
-  def kyc_ok?(user_id, error_msg)
-    if @investor_kyc.blank? || !@investor_kyc.verified
-      msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping."
-      handle_error(msg, nil, @capital_commitment, @investor_kyc, user_id, error_msg)
-      false
-    else
-      true
-    end
-  end
-
-  def handle_error(msg, fund_doc_template, capital_commitment, _investor_kyc, user_id, error_msg)
-    Rails.logger.error { msg }
-    send_notification(msg, user_id, :danger)
-
-    error_msg << { msg:, template: fund_doc_template&.name, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.to_s }
-    # Sleep so user can see this error before the next doc is tried
-    sleep(2)
+    @error_msg
   end
 end

@@ -167,6 +167,7 @@ Metrics/CyclomaticComplexity:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
     - 'app/packs/secondaries/offers/services/offer_search_service.rb'
+    - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
@@ -217,6 +218,7 @@ Metrics/MethodLength:
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/core/base/jobs/backup_db_job.rb'
     - 'app/packs/core/base/jobs/s3_check_job.rb'
+    - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
   
 Metrics/BlockNesting:
   Exclude:

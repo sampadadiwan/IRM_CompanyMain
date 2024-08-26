@@ -86,13 +86,18 @@ class ApplicationController < ActionController::Base
     stored_location_for(resource) || root_path
   end
 
-  def setup_custom_fields(model, type: nil)
-    # Custom form fields
-    form_type = if type.present?
-                  FormType.where(entity_id: model.entity_id, name: type).last
-                else
-                  FormType.where(entity_id: model.entity_id, name: model.class.name).last
-                end
+  def setup_custom_fields(model, type: nil, force_form_type: nil)
+    # I a few cases we need to force the form type Ex SecondarySale, Offer, Interest
+    form_type = force_form_type
+
+    # If the form type is not forced, we will try to find the form type based on the type
+    form_type ||= if type.present?
+                    FormType.where(entity_id: model.entity_id, name: type).last
+                  else
+                    FormType.where(entity_id: model.entity_id, name: model.class.name).last
+                  end
+
+    # set the models form type
     model.form_type = form_type
   end
 

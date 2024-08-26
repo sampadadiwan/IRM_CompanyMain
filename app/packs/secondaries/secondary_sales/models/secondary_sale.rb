@@ -25,6 +25,10 @@ class SecondarySale < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :fees, as: :owner, dependent: :destroy
 
+  belongs_to :secondary_sale_form_type, class_name: "FormType", optional: true
+  belongs_to :offer_form_type, class_name: "FormType", optional: true
+  belongs_to :interest_form_type, class_name: "FormType", optional: true
+
   serialize :cmf_allocation_percentage, type: Hash
 
   monetize :total_offered_amount_cents, :total_interest_amount_cents,
@@ -92,7 +96,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def document_tags
-    ["Buyer", "Offer Template", "Seller"]
+    ["Buyer", "Buyer Template", "Offer Template", "Seller"]
   end
 
   def signature_labels
@@ -125,5 +129,9 @@ class SecondarySale < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[active start_date]
+  end
+
+  def adhoc_notifications_to
+    ["All Sellers", "All Buyers", "Approved Sellers", "Verified Sellers", "Shortlisted Buyers"].sort
   end
 end

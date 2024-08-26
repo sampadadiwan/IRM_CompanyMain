@@ -186,11 +186,11 @@ class Offer < ApplicationRecord
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  def generate_spa(user = nil)
+  def generate_spa(user)
     validate_spa_generation
     return false if errors.present?
 
-    OfferSpaJob.perform_later(id, user_id: user&.id) if saved_change_to_verified? && verified
+    OfferSpaJob.perform_later(id, user.id) if saved_change_to_verified? && verified
     true
   end
 

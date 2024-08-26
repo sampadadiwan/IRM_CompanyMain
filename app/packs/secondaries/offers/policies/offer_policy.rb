@@ -44,6 +44,10 @@ class OfferPolicy < SaleBasePolicy
     user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end
 
+  def generate_docs?
+    belongs_to_entity?(user, record)
+  end
+
   def accept_spa?
     ((record.holding.user_id == user.id) ||
     (record.investor && record.investor.investor_entity_id == user.entity_id) ||

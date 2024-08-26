@@ -19,6 +19,10 @@ class InterestPolicy < SaleBasePolicy
       matched_offer? # The matched offers user can see the interest
   end
 
+  def generate_docs?
+    belongs_to_entity?(user, record) && record.short_listed
+  end
+
   def short_list?
     user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end

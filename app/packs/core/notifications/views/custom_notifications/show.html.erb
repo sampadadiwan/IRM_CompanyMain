@@ -1,124 +1,122 @@
 <%= render ToggleCard.new(title: "Custom Notification: #{@custom_notification.owner}", css_class: "show_custom_notification", state: "show") do %>
-
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      For
-    </td>
-    <td>
-      <%= @custom_notification.for_type.present? ? @custom_notification.for_type : link_to(@custom_notification.owner) %>
-    </td>
-  </tr>
-   <tr>
-    <td>
-      For Notification
-    </td>
-    <td>
-      <%= @custom_notification.email_method&.humanize %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Subject
-    </td>
-    <td>
-      <%= @custom_notification.subject %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Body
-    </td>
-    <td>
-      <%= @custom_notification.body.html_safe %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Whatsapp
-    </td>
-    <td>
-      <%= @custom_notification.whatsapp %>
-    </td>
-  </tr>
- 
-  <tr>
-    <td>
-      <%= @custom_notification.owner_type %>
-    </td>
-    <td>
-      <%= link_to @custom_notification.owner%>
-    </td>
-  </tr>
-
-  <% if @custom_notification.password_protect_attachment %>
-
+  <table class="table table-bordered dataTable">
     <tr>
       <td>
-        Password Protect Attachment
+        For
       </td>
       <td>
-        <%= display_boolean @custom_notification.password_protect_attachment%>
+        <%= @custom_notification.for_type.present? ? @custom_notification.for_type : link_to(@custom_notification.owner) %>
       </td>
     </tr>
+    <tr>
+      <td>
+        For Notification
+      </td>
+      <td>
+        <%= @custom_notification.email_method&.humanize %>
+      </td>
+    </tr>
+
+    <% if @custom_notification.to.present? %>
+    <tr>
+      <td>
+        To
+      </td>
+      <td>
+        <%= @custom_notification.to %>
+      </td>
+    </tr>
+    <% end %>
     
     <tr>
       <td>
-        Password
+        Subject
       </td>
       <td>
-        <%= @custom_notification.attachment_password %>
+        <%= @custom_notification.subject %>
       </td>
     </tr>
-    
-  <% end %>
-
-  <% if @custom_notification.show_details %>
     <tr>
       <td>
-        Show Details
+        Body
       </td>
       <td>
-        <%= display_boolean @custom_notification.show_details %>
+        <%= @custom_notification.body.html_safe %>
       </td>
     </tr>
-  <% end %>
-
-  <% if @custom_notification.is_erb %>
     <tr>
       <td>
-        Dynamic Template
+        Whatsapp
       </td>
       <td>
-        <%= display_boolean @custom_notification.is_erb %>
+        <%= @custom_notification.whatsapp %>
       </td>
     </tr>
-  <% end %>
-  
-
-  <tr>
-    <td>
-      Enabled
-    </td>
-    <td>
-      <%= display_boolean @custom_notification.enabled %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-      No Link
-    </td>
-    <td>
-      <%= display_boolean @custom_notification.no_link %>
-    </td>
-  </tr>
-
-</table>
-<div>
-  <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
-</div>
-
+    <tr>
+      <td>
+        <%= @custom_notification.owner_type %>
+      </td>
+      <td>
+        <%= link_to @custom_notification.owner%>
+      </td>
+    </tr>
+    <% if @custom_notification.password_protect_attachment %>
+      <tr>
+        <td>
+          Password Protect Attachment
+        </td>
+        <td>
+          <%= display_boolean @custom_notification.password_protect_attachment%>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Password
+        </td>
+        <td>
+          <%= @custom_notification.attachment_password %>
+        </td>
+      </tr>
+    <% end %>
+    <% if @custom_notification.show_details %>
+      <tr>
+        <td>
+          Show Details
+        </td>
+        <td>
+          <%= display_boolean @custom_notification.show_details %>
+        </td>
+      </tr>
+    <% end %>
+    <% if @custom_notification.is_erb %>
+      <tr>
+        <td>
+          Dynamic Template
+        </td>
+        <td>
+          <%= display_boolean @custom_notification.is_erb %>
+        </td>
+      </tr>
+    <% end %>
+    <tr>
+      <td>
+        Enabled
+      </td>
+      <td>
+        <%= display_boolean @custom_notification.enabled %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        No Link
+      </td>
+      <td>
+        <%= display_boolean @custom_notification.no_link %>
+      </td>
+    </tr>
+  </table>
+  <div>
+    <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
+  </div>
 <% end %>
-
 <%= render "custom_notifications/details", custom_notification: @custom_notification %>

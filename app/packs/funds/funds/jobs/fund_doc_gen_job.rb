@@ -1,38 +1,39 @@
-class FundDocGenJob < ApplicationJob
-  queue_as :doc_gen
-  sidekiq_options retry: 1
+class FundDocGenJob < DocGenJob
+  def templates(_model = nil)
+    @fund.documents.where(owner_tag: "Fund Template")
+  end
 
-  def perform(fund_id, start_date, end_date, user_id: nil)
-    error_msg = []
+  def models
+    [@fund]
+  end
 
-    if start_date > end_date
-      send_notification("Invalid Dates", user_id, "danger")
-    else
+  def validate(_fund)
+    [true, ""]
+  end
 
-      # Find the fund
-      fund = Fund.find(fund_id)
-      # Find the template with owner_tag "Fund Template"
-      templates = fund.documents.templates.where(owner_tag: "Fund Template")
-      Chewy.strategy(:sidekiq) do
-        # Loop through each fund and generate the documents
-        templates.each do |document_template|
-          send_notification("Generating #{document_template.name} for #{fund.name}", user_id)
-          FundDocGenerator.new(fund, document_template, start_date, end_date, user_id)
-        rescue Exception => e
-          msg = "Error generating #{document_template.name} for #{fund.name} #{e.message}"
-          send_notification(msg, user_id, "danger")
-          error_msg << { msg:, kyc: fund }
-        end
-      end
+  def generator
+    FundDocGenerator
+  end
 
-      # Send email if there are any errors
-      if error_msg.present?
-        send_notification("Documentation generation completed with #{error_msg.length} errors. Errors will be sent via email", user_id, :danger)
-        EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
-      end
+  def valid_inputs
+    return false unless super
 
-      send_notification("No templates found for #{fund.name}", user_id, "danger") if templates.blank?
+    if @start_date > @end_date
+      send_notification("Invalid Dates", @user_id, "danger")
+      return false
+    end
+    true
+  end
 
+  def perform(fund_id, start_date, end_date, user_id)
+    @fund_id = fund_id
+    @fund = Fund.find(fund_id)
+    @start_date = start_date
+    @end_date = end_date
+    @user_id = user_id
+
+    Chewy.strategy(:sidekiq) do
+      generate(@start_date, @end_date, @user_id) if valid_inputs
     end
   end
 end

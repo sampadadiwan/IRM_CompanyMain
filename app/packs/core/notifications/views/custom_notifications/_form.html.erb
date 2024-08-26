@@ -18,9 +18,18 @@
     <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
     <%= form.text_field :for_type, class: "form-control", hidden: true  %>
 
-    <div class="form-group">
-      <%= form.label :email_method, "For Notification" %>
-      <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control"  %>
+    <div data-controller="adhoc-notification">
+      <div class="form-group">
+        <%= form.label :email_method, "For Notification" %>
+        <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change"  %>
+      </div>
+
+      <% if custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
+      <div class="form-group" id="adhoc_notifications_to_form_group">
+        <%= form.label :to %>
+        <%= form.select :to, custom_notification.owner.adhoc_notifications_to.sort, {include_blank: true}, class: "form-control"  %>
+      </div>
+      <% end %>
     </div>
 
     <div class="form-group">

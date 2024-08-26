@@ -162,6 +162,14 @@
               data: {action: "click->confirm#popup",
               msg: "Send email to all buyers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %>
 
+          <% @secondary_sale.custom_notifications.adhoc_notifications.each do |adhoc_notification| %>
+            <%= button_to adhoc_notification.subject,
+              send_notification_secondary_sale_path(@secondary_sale, notification: "adhoc_notification", notification_id: adhoc_notification.id),
+              class: "dropdown-item",
+              data: {action: "click->confirm#popup",
+              msg: "Send email with selected template", method: :patch } if policy(@secondary_sale).notify_allocations? %>
+          <% end %>
+
         </div>
       </div>
     </div>

@@ -27,7 +27,7 @@ class ImportInvestorAdvisor < ImportUtil
       saved = investor_advisor.save!
     end
 
-    add_to_fund(user_data, import_upload, investor_advisor, investor)
+    add_to_owner(user_data, import_upload, investor_advisor, investor)
     saved
   end
 
@@ -57,18 +57,27 @@ class ImportInvestorAdvisor < ImportUtil
     user.save!
   end
 
-  def add_to_fund(user_data, import_upload, investor_advisor, investor)
-    Rails.logger.debug { "######## add_to_fund #{user_data['Name']} #{import_upload.owner}" }
-    # If fund name is present, add this investor_advisor to the fund
+  def add_to_owner(user_data, import_upload, investor_advisor, investor)
+    Rails.logger.debug { "######## add_to_owner #{user_data['Name']} #{import_upload.owner}" }
+
     if user_data["Add To"].present? && user_data["Name"].present?
       if user_data["Add To"] == "Fund"
+        # If fund name is present, add this investor_advisor to the fund
         Rails.logger.debug { "######## Fund present in import row #{user_data['Name']}" }
-        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Name"]).first
+        owner = Fund.where(entity_id: import_upload.entity_id, name: user_data["Name"]).first
+      elsif user_data["Add To"] == "Secondary Sale"
+        # If secondary sale name is present, add this investor_advisor to the secondary sale
+        Rails.logger.debug { "######## Secondary Sale present in import row #{user_data['Name']}" }
+        owner = SecondarySale.where(entity_id: import_upload.entity_id, name: user_data["Name"]).first
+      else
+        # If Add To is not recognized, raise an error
+        Rails.logger.debug { "######## Add To not recognized in import row #{user_data['Name']}" }
+        raise "Add To not recognized"
       end
 
-      if fund
-        # Give the investor_advisor access rights as an investor_advisor to the fund
-        ar = AccessRight.create(entity_id: investor_advisor.entity_id, owner: fund, user_id: investor_advisor.user_id, access_type: "Fund", metadata: "investor_advisor")
+      if owner
+        # Give the investor_advisor access rights as an investor_advisor to the Fund or SecondarySale
+        ar = AccessRight.create(entity_id: investor_advisor.entity_id, owner:, user_id: investor_advisor.user_id, access_type: owner.class.name, metadata: "investor_advisor")
 
         Rails.logger.debug { "Error saving AccessRight: #{ar.errors}" } if ar.errors.present?
 
@@ -78,8 +87,8 @@ class ImportInvestorAdvisor < ImportUtil
         investor.investor_accesses.create!(email: user.email, first_name: user.first_name, last_name: user.last_name, email_enabled: false, approved: true, send_confirmation: false, entity_id: import_upload.entity_id, granted_by: import_upload.user_id)
         notify_investor_team(investor, investor_advisor, import_upload, user_data['Name'])
       else
-        Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
-        raise "Fund not found #{user_data['Name']}"
+        Rails.logger.debug { "Specified #{user_data['Add To']} #{user_data['Name']} not found" }
+        raise "#{user_data['Add To']} #{user_data['Name']} not found"
       end
     end
   end

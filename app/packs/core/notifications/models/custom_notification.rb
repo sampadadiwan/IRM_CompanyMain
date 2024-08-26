@@ -5,6 +5,7 @@ class CustomNotification < ApplicationRecord
   belongs_to :owner, polymorphic: true, touch: true
 
   scope :enabled, -> { where(enabled: true) }
+  scope :adhoc_notifications, -> { where(email_method: "adhoc_notification") }
 
   validates :subject, :body, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }

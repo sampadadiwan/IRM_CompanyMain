@@ -1,4 +1,6 @@
 class TemplateDecorator < ApplicationDecorator
+  include CurrencyHelper
+
   METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)

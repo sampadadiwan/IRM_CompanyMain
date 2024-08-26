@@ -18,7 +18,7 @@ class OffersBulkActionJob < BulkActionJob
           @error_msg << { msg: error, user: offer.user }
         end
       else
-        OfferSpaJob.perform_now(offer.id, user_id:)
+        OfferSpaJob.perform_now(offer.id, user_id)
       end
     else
       msg = "Invalid bulk action"

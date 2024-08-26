@@ -52,7 +52,7 @@ class CapitalRemittancesController < ApplicationController
   def show; end
 
   def generate_docs
-    CapitalRemittanceDocJob.perform_later(@capital_remittance.id, current_user.id)
+    CapitalRemittanceDocJob.perform_later(@capital_remittance.capital_call_id, @capital_remittance.id, current_user.id)
     redirect_to capital_remittance_path(@capital_remittance), notice: "Documentation generation started, please check back in a few mins."
   end
 

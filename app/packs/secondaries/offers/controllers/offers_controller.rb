@@ -1,5 +1,5 @@
 class OffersController < ApplicationController
-  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa]
+  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa generate_docs]
   after_action :verify_authorized, except: %i[index search finalize_allocation]
 
   # GET /offers or /offers.json
@@ -80,7 +80,7 @@ class OffersController < ApplicationController
     @offer.full_name = current_user.full_name
     @offer.entity_id = @offer.secondary_sale.entity_id
     @offer.quantity = @offer.allowed_quantity
-    setup_custom_fields(@offer)
+    setup_custom_fields(@offer, force_form_type: @offer.secondary_sale.offer_form_type)
 
     authorize @offer
   end
@@ -106,7 +106,7 @@ class OffersController < ApplicationController
 
   # GET /offers/1/edit
   def edit
-    setup_custom_fields(@offer)
+    setup_custom_fields(@offer, force_form_type: @offer.secondary_sale.offer_form_type)
   end
 
   def allocate
@@ -181,6 +181,11 @@ class OffersController < ApplicationController
       format.html { redirect_to offers_url, notice: "Offer was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def generate_docs
+    OfferSpaJob.perform_later(@offer.secondary_sale_id, @offer.id, current_user.id, template_id: params[:template_id])
+    redirect_to offer_path(@offer), notice: "Documentation generation started, please check back in a few mins."
   end
 
   private

@@ -28,7 +28,7 @@
 
                         <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
                             <%= button_to template.name, 
-                                generate_documentation_fund_path(fund, template_name: template.name), 
+                                generate_documentation_fund_path(fund, template_id: template.id), 
                                 method: :patch, class: "dropdown-item" , 
                                 form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
                                 msg: } %>

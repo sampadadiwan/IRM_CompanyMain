@@ -2,7 +2,7 @@ module SecondarySaleNotifiers
   extend ActiveSupport::Concern
 
   MAX_TO_SIZE = 40
-  NOTIFICATIONS = %w[notify_open_for_offers notify_closing_offers notify_open_for_interests notify_closing_interests notify_allocation notify_spa_sellers notify_spa_buyers].freeze
+  NOTIFICATIONS = %w[notify_open_for_offers notify_closing_offers notify_open_for_interests notify_closing_interests notify_allocation notify_spa_sellers notify_spa_buyers adhoc_notification].freeze
 
   def notify_open_for_interests
     # Get all emails of investors & holding company employees
@@ -76,5 +76,57 @@ module SecondarySaleNotifiers
         SecondarySaleNotifier.with(entity_id:, secondary_sale: self, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
       end
     end
+  end
+
+  def adhoc_notification(notification_id)
+    notification = CustomNotification.find(notification_id)
+
+    case notification.to
+    when "All Sellers"
+      # Get all emails of investors & holding company employees
+      offers.each do |offer|
+        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users.each do |user|
+          adhoc(user, notification)
+        end
+      end
+
+    when "Verified Sellers"
+      offers.verified.each do |offer|
+        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users.each do |user|
+          adhoc(user, notification)
+        end
+      end
+
+    when "Approved Sellers"
+      offers.approved.each do |offer|
+        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users.each do |user|
+          adhoc(user, notification)
+        end
+      end
+
+    when "All Buyers"
+      # Get all emails of interests
+      interests.each do |interest|
+        interest.investor&.notification_users(self)&.each do |user|
+          adhoc(user, notification)
+        end
+      end
+
+    when "Shortlisted Buyers"
+      # Get all emails of interests
+      interests.short_listed.each do |interest|
+        interest.investor&.notification_users(self)&.each do |user|
+          adhoc(user, notification)
+        end
+      end
+
+    end
+  end
+
+  def adhoc(user, notification)
+    SecondarySaleNotifier.with(entity_id:, secondary_sale: self, email: user.email, email_method: notification.email_method, msg: notification.body).deliver_later(user)
   end
 end

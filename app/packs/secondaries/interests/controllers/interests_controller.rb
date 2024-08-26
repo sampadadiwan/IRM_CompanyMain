@@ -1,6 +1,6 @@
 class InterestsController < ApplicationController
   before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate
-                                        allocation_form matched_offers accept_spa]
+                                        allocation_form matched_offers accept_spa generate_docs]
 
   # GET /interests or /interests.json
   def index
@@ -44,13 +44,14 @@ class InterestsController < ApplicationController
     @interest.interest_entity_id ||= @interest.investor&.investor_entity_id || current_user.entity_id
     @interest.entity_id = @interest.secondary_sale.entity_id
     @interest.price = @interest.secondary_sale.final_price if @interest.secondary_sale.price_type == "Fixed Price"
-    setup_custom_fields(@interest)
+
+    setup_custom_fields(@interest, force_form_type: @interest.secondary_sale.interest_form_type)
     authorize @interest
   end
 
   # GET /interests/1/edit
   def edit
-    setup_custom_fields(@interest)
+    setup_custom_fields(@interest, force_form_type: @interest.secondary_sale.interest_form_type)
   end
 
   # POST /interests or /interests.json
@@ -183,6 +184,11 @@ class InterestsController < ApplicationController
       format.html { redirect_to interests_url, notice: "Interest was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def generate_docs
+    InterestDocJob.perform_later(@interest.secondary_sale_id, @interest.id, current_user.id, template_id: params[:template_id])
+    redirect_to interest_path(@interest), notice: "Documentation generation started, please check back in a few mins."
   end
 
   private

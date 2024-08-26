@@ -11,11 +11,6 @@
     
     <% end %>
 
-    
-
-
-    
-
 
     <div class="btn-group">
         <div class="dropdown">
@@ -30,7 +25,7 @@
                 data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate a notifications to your clients, if enabled. Please note only approved call notices will be attached to the email."} if policy(@capital_call).approve? %>
 
             <%= button_to "Generate Documents" , generate_docs_capital_call_path(@capital_call),    
-                method: :patch, class: "dropdown-item", form_class: "deleteButton" if policy(@capital_call).generate_docs? %>
+                method: :patch, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the drawdown notices for all remittances in this call. Proceed?"} if policy(@capital_call).generate_docs? %>
 
             <%= button_to "Allocate Units" , 
                 allocate_units_capital_call_path(@capital_call),    

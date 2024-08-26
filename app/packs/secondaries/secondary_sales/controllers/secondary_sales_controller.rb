@@ -138,13 +138,13 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.end_date = Time.zone.today + 2.weeks
     @secondary_sale.offer_end_date = Time.zone.today + 1.week
     @secondary_sale.percent_allowed = 100
-    setup_custom_fields(@secondary_sale)
+    setup_custom_fields(@secondary_sale, force_form_type: @secondary_sale.secondary_sale_form_type)
     authorize @secondary_sale
   end
 
   # GET /secondary_sales/1/edit
   def edit
-    setup_custom_fields(@secondary_sale)
+    setup_custom_fields(@secondary_sale, force_form_type: @secondary_sale.secondary_sale_form_type)
   end
 
   def spa_upload; end
@@ -164,7 +164,7 @@ class SecondarySalesController < ApplicationController
 
   def generate_spa
     # Post the allocation, we need to upload the SPAs for verified offers
-    SpaJob.perform_later(@secondary_sale.id, user_id: current_user.id)
+    OfferSpaJob.perform_later(@secondary_sale.id, nil, current_user.id, template_id: params[:template_id])
 
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "SPA generation in progress, checkback in a few minutes." }
@@ -197,7 +197,13 @@ class SecondarySalesController < ApplicationController
   end
 
   def send_notification
-    @secondary_sale.send(params[:notification]) if SecondarySale::NOTIFICATIONS.include? params[:notification]
+    if SecondarySale::NOTIFICATIONS.include? params[:notification]
+      if params[:notification] == "adhoc_notification"
+        @secondary_sale.send(params[:notification], params[:notification_id])
+      else
+        @secondary_sale.send(params[:notification])
+      end
+    end
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Notification sent successfully." }
       format.json { render :show, status: :ok, location: @secondary_sale }

@@ -1,9 +1,29 @@
-class EoiDocJob < ApplicationJob
-  queue_as :doc_gen
-  sidekiq_options retry: 1
+class EoiDocJob < DocGenJob
+  def templates(_model = nil)
+    @investment_opportunity.documents.templates
+  end
+
+  def models
+    [@expression_of_interest]
+  end
+
+  def validate(_expression_of_interest)
+    return false, "No Expression of Interest found" if @expression_of_interest.blank?
+    return false, "InvestorKyc not verified" if @investor_kyc.blank? || !@investor_kyc.verified
+
+    [true, ""]
+  end
+
+  def generator
+    EoiDocGenerator
+  end
+
+  def cleanup_previous_docs(model, template)
+    model.documents.not_templates.where(name: template.name).find_each(&:destroy)
+  end
 
   # This is idempotent, we should be able to call it multiple times for the same ExpressionOfInterest
-  def perform(expression_of_interest_id, user_id = nil)
+  def perform(expression_of_interest_id, _user_id = nil)
     Chewy.strategy(:sidekiq) do
       @expression_of_interest = ExpressionOfInterest.find(expression_of_interest_id)
       @investment_opportunity = @expression_of_interest.investment_opportunity
@@ -11,24 +31,10 @@ class EoiDocJob < ApplicationJob
       @investor_kyc = @expression_of_interest.investor_kyc
       @templates = @investment_opportunity.documents.templates
 
-      Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for investment_opportunity #{@investment_opportunity.company_name}" }
+      @start_date = Time.zone.today
+      @end_date = Time.zone.today
 
-      @templates.each do |investment_opportunity_doc_template|
-        Rails.logger.debug { "Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{@investor_kyc.full_name}" }
-
-        # Delete any existing signed documents
-        @expression_of_interest.documents.not_templates.where(name: investment_opportunity_doc_template.name).find_each(&:destroy)
-
-        # Generate a new signed document
-        send_notification("Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{@investor_kyc.full_name}", user_id, :info)
-
-        EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template, user_id)
-      rescue StandardError => e
-        Rails.logger.error e.backtrace.join("\n")
-        send_notification("Error generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{@investor_kyc&.full_name}. #{e.message}", user_id, :danger)
-      end
-
-      send_notification("No templates found for #{@investment_opportunity}", user_id, "danger") if @templates.blank?
+      generate(@start_date, @end_date, @user_id) if valid_inputs
     end
 
     nil

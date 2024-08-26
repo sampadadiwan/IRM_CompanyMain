@@ -203,7 +203,7 @@ class InvestorKycsController < ApplicationController
 
       if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
         KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
-                                   params[:start_date], params[:end_date], user_id: current_user.id)
+                                   params[:start_date], params[:end_date], current_user.id)
 
         redirect_to investor_kyc_path(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
       else

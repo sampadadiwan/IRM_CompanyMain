@@ -6,6 +6,7 @@ resources :offers do
   get 'search', on: :collection
   patch 'generate_esign_link', on: :member
   post 'bulk_actions', on: :collection
+  patch 'generate_docs', on: :member
 end
 
 resources :interests do
@@ -15,6 +16,7 @@ resources :interests do
   patch 'allocate', on: :member
   get   'allocation_form', on: :member
   get 'matched_offers', on: :member
+  patch 'generate_docs', on: :member
 end
 
 resources :secondary_sales do
