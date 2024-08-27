@@ -56,6 +56,7 @@ class Fund < ApplicationRecord
 
   validates :name, :currency, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
+  validates_uniqueness_of :name, scope: :entity_id
 
   validates :commitment_doc_list, :sponsor_name, :manager_name, :trustee_name, :contact_name, :contact_email, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }

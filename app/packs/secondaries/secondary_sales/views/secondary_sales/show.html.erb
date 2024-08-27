@@ -40,6 +40,17 @@
           <%= button_to "Generate All SPAs" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class:
             "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",
             msg: "This will kick off the SPA generation process for all offers, which will take a few mins. Note existing SPAs will be deleted and regenerated."} if policy(@secondary_sale).generate_spa?  %>
+
+
+          <% @secondary_sale.documents.templates.where(owner_tag: "Offer Template").each do |template| %>
+
+            <%= button_to template.name,
+                generate_spa_secondary_sale_path(@secondary_sale, template_id: template.id),
+                class: "dropdown-item",
+                data: {action: "click->confirm#popup",
+                msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
+
+          <% end %>
         </div>
       </div>
     </div>

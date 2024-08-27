@@ -35,6 +35,8 @@ class SecondarySale < ApplicationRecord
            :allocation_offer_amount_cents, :allocation_interest_amount_cents,
            with_currency: ->(s) { s.entity.currency }
 
+  validates_uniqueness_of :name, scope: :entity_id
+
   validates :name, :start_date, :end_date, :percent_allowed, presence: true
   validates :final_price, numericality: { greater_than: 0 },
                           if: -> { price_type == 'Fixed Price' || finalized }
@@ -92,7 +94,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def folder_path
-    "/Secondary Sales/#{name.delete('/')}_#{id}"
+    "/Secondary Sales/#{name.delete('/')}"
   end
 
   def document_tags

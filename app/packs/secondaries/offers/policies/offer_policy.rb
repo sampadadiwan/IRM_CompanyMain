@@ -60,7 +60,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def update?
-    (support? || 
+    (support? ||
     (belongs_to_entity?(user, record) && record.secondary_sale.manage_offers) ||
     record.user_id == user.id) && !record.verified # && !record.secondary_sale.lock_allocations
   end
