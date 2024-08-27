@@ -78,32 +78,32 @@ module SecondarySaleNotifiers
     end
   end
 
-  def adhoc_notification(notification_id)
-    notification = CustomNotification.find(notification_id)
+  def adhoc_notification(custom_notification_id)
+    custom_notification = CustomNotification.find(custom_notification_id)
 
-    case notification.to
+    case custom_notification.to
     when "All Sellers"
       # Get all emails of investors & holding company employees
       offers.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
         email_users.each do |user|
-          adhoc(user, notification)
+          adhoc_offer(user, custom_notification, offer)
         end
       end
 
     when "Verified Sellers"
       offers.verified.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
         email_users.each do |user|
-          adhoc(user, notification)
+          adhoc_offer(user, custom_notification, offer)
         end
       end
 
     when "Approved Sellers"
       offers.approved.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
         email_users.each do |user|
-          adhoc(user, notification)
+          adhoc_offer(user, custom_notification, offer)
         end
       end
 
@@ -111,7 +111,7 @@ module SecondarySaleNotifiers
       # Get all emails of interests
       interests.each do |interest|
         interest.investor&.notification_users(self)&.each do |user|
-          adhoc(user, notification)
+          adhoc_interest(user, custom_notification, interest)
         end
       end
 
@@ -119,14 +119,18 @@ module SecondarySaleNotifiers
       # Get all emails of interests
       interests.short_listed.each do |interest|
         interest.investor&.notification_users(self)&.each do |user|
-          adhoc(user, notification)
+          adhoc_interest(user, custom_notification, interest)
         end
       end
 
     end
   end
 
-  def adhoc(user, notification)
-    SecondarySaleNotifier.with(entity_id:, secondary_sale: self, email: user.email, email_method: notification.email_method, msg: notification.body).deliver_later(user)
+  def adhoc_interest(user, custom_notification, interest)
+    InterestNotifier.with(entity_id:, interest:, email: user.email, email_method: custom_notification.email_method, msg: custom_notification.body, custom_notification_id: custom_notification.id).deliver_later(user)
+  end
+
+  def adhoc_offer(user, custom_notification, offer)
+    OfferNotifier.with(entity_id:, offer:, email: user.email, email_method: custom_notification.email_method, msg: custom_notification.body, custom_notification_id: custom_notification.id).deliver_later(user)
   end
 end

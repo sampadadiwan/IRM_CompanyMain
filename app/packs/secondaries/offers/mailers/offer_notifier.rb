@@ -12,18 +12,21 @@ class OfferNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      offer_id: params[:offer].id
+      offer_id: params[:offer].id,
+      custom_notification_id: params[:custom_notification_id]
     }
   end
 
   notification_methods do
     def message
       @offer = params[:offer]
+      @custom_notification ||= custom_notification
       params[:msg] || "Offer: #{@offer}"
     end
 
     def custom_notification
-      nil
+      @custom_notification = (CustomNotification.find(params[:custom_notification_id]) if params[:custom_notification_id].present?)
+      @custom_notification
     end
 
     def url

@@ -12,7 +12,8 @@ class SecondarySaleNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      secondary_sale_id: params[:secondary_sale].id
+      secondary_sale_id: params[:secondary_sale].id,
+      custom_notification_id: params[:custom_notification_id]
     }
   end
 
@@ -24,8 +25,12 @@ class SecondarySaleNotifier < BaseNotifier
     end
 
     def custom_notification
-      @secondary_sale ||= params[:secondary_sale]
-      @custom_notification ||= @secondary_sale.custom_notification(params[:email_method])
+      if params[:custom_notification_id].present?
+        @custom_notification = CustomNotification.find(params[:custom_notification_id])
+      else
+        @secondary_sale ||= params[:secondary_sale]
+        @custom_notification ||= @secondary_sale.custom_notification(params[:email_method])
+      end
       @custom_notification
     end
 

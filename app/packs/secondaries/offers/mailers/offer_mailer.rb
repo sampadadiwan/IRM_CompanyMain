@@ -2,16 +2,20 @@ class OfferMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
-  def notify_approval
+  before_action :set_offer
+  def set_offer
     @offer = Offer.find params[:offer_id]
+    @secondary_sale = @offer.secondary_sale
+    @custom_notification = CustomNotification.find(@notification.params[:custom_notification_id]) if @notification.params[:custom_notification_id].present?
+  end
+
+  def notify_approval
     subject = "Offer for #{@offer.secondary_sale.name} has been approved"
     send_mail(subject:)
   end
 
   def notify_accept_spa
-    @offer = Offer.find params[:offer_id]
-    sale = @offer.secondary_sale
-    subject = "SPA confirmation received for #{sale.name}"
+    subject = "SPA confirmation received for #{@secondary_sale.name}"
     send_mail(subject:)
   end
 end

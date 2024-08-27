@@ -12,18 +12,21 @@ class InterestNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      interest_id: params[:interest].id
+      interest_id: params[:interest].id,
+      custom_notification_id: params[:custom_notification_id]
     }
   end
 
   notification_methods do
     def message
       @interest = params[:interest]
+      @custom_notification ||= custom_notification
       params[:msg] || "Interest: #{@interest}"
     end
 
     def custom_notification
-      nil
+      @custom_notification = (CustomNotification.find(params[:custom_notification_id]) if params[:custom_notification_id].present?)
+      @custom_notification
     end
 
     def url
