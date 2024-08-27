@@ -23,6 +23,7 @@ class OfferSpaJob < DocGenJob
 
   def validate(offer)
     return false, "No Offer found" if offer.blank?
+    return false, "Offer not matched to interest" if offer.interest.blank?
     return false, "Offer not approved" unless offer.approved
 
     [true, ""]

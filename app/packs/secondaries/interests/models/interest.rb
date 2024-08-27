@@ -55,7 +55,7 @@ class Interest < ApplicationRecord
   before_validation :set_defaults
 
   validates :quantity, :price, presence: true
-  validates :buyer_entity_name, :address, :city, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
+  validates :buyer_entity_name, :address, :city, :PAN, :contact_name, presence: true, if: proc { |i| i.secondary_sale.finalized }
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 

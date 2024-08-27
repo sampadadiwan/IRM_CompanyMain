@@ -54,7 +54,7 @@
 
 
             
-            <% if policy(@secondary_sale).update? %>
+            <% if @secondary_sale && policy(@secondary_sale).update? %>
 
                 <div class="btn-group">
                     <div class="dropdown">

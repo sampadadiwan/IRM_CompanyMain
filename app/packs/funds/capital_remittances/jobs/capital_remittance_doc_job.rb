@@ -34,10 +34,11 @@ class CapitalRemittanceDocJob < DocGenJob
   end
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
-  def perform(capital_call_id, _capital_remittance_id, user_id, template_id: nil)
+  def perform(capital_call_id, capital_remittance_id, user_id, template_id: nil)
     @capital_call_id = capital_call_id
     @capital_call = CapitalCall.find(capital_call_id)
     @fund = @capital_call.fund
+    @capital_remittance_id = capital_remittance_id
 
     @start_date = Time.zone.now
     @end_date = Time.zone.now

@@ -626,6 +626,11 @@ Then('when the offers are verified') do
   end
 end
 
+
+Then('when the SPA generation is triggered') do
+  OfferSpaJob.perform_now(@sale.id, nil, @user.id)
+end
+
 Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|

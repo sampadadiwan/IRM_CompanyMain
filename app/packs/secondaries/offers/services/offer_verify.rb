@@ -3,9 +3,9 @@ class OfferVerify < OfferAction
   step :verify
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
-  step :generate_spa
-  left :handle_spa_errors, Output(:failure) => End(:failure)
-  step :notify_accept_spa
+  # step :generate_spa
+  # left :handle_spa_errors, Output(:failure) => End(:failure)
+  # step :notify_accept_spa
 
   def verify(_ctx, offer:, **)
     offer.verified = true

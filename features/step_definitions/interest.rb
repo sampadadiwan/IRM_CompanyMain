@@ -51,7 +51,7 @@
     fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
     fill_in("interest_address", with: @interest.address)
     fill_in("interest_contact_name", with: @interest.contact_name)
-    fill_in("interest_email", with: @interest.email)
+    # fill_in("interest_email", with: @interest.email)
     fill_in("interest_PAN", with: @interest.PAN)
     fill_in("interest_city", with: @interest.city)
     fill_in("interest_demat", with: @interest.demat)
