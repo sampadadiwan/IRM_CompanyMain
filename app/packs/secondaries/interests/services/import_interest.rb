@@ -1,5 +1,5 @@
 class ImportInterest < ImportUtil
-  STANDARD_HEADERS = ["Buyer Entity Name", "Address", "Contact Name", "Email", "Pan", "Bank Account", "Ifsc Code", "Buyer Signatory Emails", "Investor", "Quantity", "Price", "Shortlisted", "Escrow Deposited", "Update Only"].freeze
+  STANDARD_HEADERS = ["Buyer Entity Name", "Address", "Contact Name", "Email", "City", "Pan", "Demat", "Bank Account", "Ifsc Code", "Buyer Signatory Emails", "Investor", "Quantity", "Price", "Shortlisted", "Escrow Deposited", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -28,7 +28,7 @@ class ImportInterest < ImportUtil
       interest = Interest.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id)
     end
 
-    interest.assign_attributes(address: user_data["Address"], PAN: user_data["Pan"], email: user_data["Email"], contact_name: user_data["Contact Name"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], quantity: user_data["Quantity"], price: user_data["Price"], import_upload_id: import_upload.id, short_listed:, escrow_deposited:, buyer_signatory_emails: user_data["Buyer Signatory Emails"])
+    interest.assign_attributes(address: user_data["Address"], PAN: user_data["Pan"], email: user_data["Email"], contact_name: user_data["Contact Name"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], quantity: user_data["Quantity"], price: user_data["Price"], import_upload_id: import_upload.id, short_listed:, escrow_deposited:, buyer_signatory_emails: user_data["Buyer Signatory Emails"], buyer_entity_name: user_data["Buyer Entity Name"], city: user_data["City"], demat: user_data["Demat"])
 
     # For SecondarySale we can have multiple form types. We need to set the form type for the interest
     ctx[:form_type_id] = secondary_sale.interest_form_type_id
