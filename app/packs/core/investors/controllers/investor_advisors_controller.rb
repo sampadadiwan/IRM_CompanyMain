@@ -24,6 +24,7 @@ class InvestorAdvisorsController < ApplicationController
   # POST /investor_advisors or /investor_advisors.json
   def create
     @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
+    @investor_advisor.created_by = current_user
     authorize(@investor_advisor)
 
     respond_to do |format|

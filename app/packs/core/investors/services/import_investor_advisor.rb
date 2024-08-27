@@ -15,15 +15,16 @@ class ImportInvestorAdvisor < ImportUtil
     entity = import_upload.entity
     investor = entity.investors.where(investor_name:).first
     pre_process_investor_account(user_data)
+
     investor_advisor = InvestorAdvisor.where(email:, entity_id: investor.investor_entity_id).first
 
     if investor_advisor.present?
       Rails.logger.debug { "investor_advisor with email already exists for entity #{investor.investor_entity_id}" }
     else
       Rails.logger.debug user_data
-      investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id,
-                                             import_upload_id: import_upload.id, allowed_roles:,
-                                             permissions: investor.investor_entity.permissions, extended_permissions: %i[investor_kyc_read investor_read])
+      investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id, created_by_id:
+                            import_upload.user_id, import_upload_id: import_upload.id, allowed_roles:, permissions: investor.investor_entity.permissions, extended_permissions: %i[investor_kyc_read investor_read], owner_name: user_data['Name'])
+
       saved = investor_advisor.save!
     end
 
@@ -85,17 +86,11 @@ class ImportInvestorAdvisor < ImportUtil
         user = investor_advisor.user
         investor.investor_accesses.where(email: user.email, entity_id: import_upload.entity_id).find_each(&:destroy)
         investor.investor_accesses.create!(email: user.email, first_name: user.first_name, last_name: user.last_name, email_enabled: false, approved: true, send_confirmation: false, entity_id: import_upload.entity_id, granted_by: import_upload.user_id)
-        notify_investor_team(investor, investor_advisor, import_upload, user_data['Name'])
+
       else
         Rails.logger.debug { "Specified #{user_data['Add To']} #{user_data['Name']} not found" }
         raise "#{user_data['Add To']} #{user_data['Name']} not found"
       end
-    end
-  end
-
-  def notify_investor_team(investor, investor_advisor, import_upload, fund_name)
-    investor.users.each do |user|
-      InvestorAdvisorNotifier.with(entity_id: import_upload.entity_id, investor_advisor:, investor:, import_upload:, fund_name:, email_method: :notify_investor_advisor_addition, msg: "Investor Advisor #{investor_advisor.user.first_name} #{investor_advisor.user.last_name} with email #{investor_advisor.email} is added by #{import_upload.entity.name}").deliver_later(user)
     end
   end
 end

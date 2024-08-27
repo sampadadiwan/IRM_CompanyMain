@@ -12,9 +12,7 @@ class InvestorAdvisorNotifier < BaseNotifier
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
       investor_advisor_id: params[:investor_advisor].id,
-      investor_id: params[:investor].id,
-      import_upload_id: params[:import_upload].id,
-      fund_name: params[:fund_name]
+      owner_name: params[:owner_name]
     }
   end
 

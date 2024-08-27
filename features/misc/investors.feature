@@ -86,7 +86,7 @@ Scenario Outline: Import investor access
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   Then I should see the "Import in progress"
-  Then There should be "3" investor access created
+  Then There should be "7" investor access created
   And the investor accesses must have the data in the sheet
 
 @import

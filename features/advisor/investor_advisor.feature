@@ -8,6 +8,7 @@ Scenario Outline: Import Investor Advisors
   And given there are investor advisors "terrie@hansen-inc.com,jeanice@hansen-inc.com,tameika@hansen-inc.com,daisey@hansen-inc.com"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
+  And Given I upload an investor access file for employees
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   Given the fund has "1" capital call
   Given the capital calls are approved

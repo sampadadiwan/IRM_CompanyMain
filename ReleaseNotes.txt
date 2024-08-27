@@ -1,3 +1,12 @@
+V7.1.67
+#####################################
+95613c77d Passed ctx to save_rows for imports
+1be97dab6 Removed support email as mandatory
+76c769489 Added signed_document_already_exists? check for doc generation
+060e3c789 Added better support for attaching documents for custom notifications
+7c6a7c93a Added import of offers without holdings tests
+1cb3ee171 Made holdings optional in offer
+
 V7.1.65
 #####################################
 dbfe9a49c (HEAD -> main, tag: V7.1.65, origin/main, origin/HEAD) Import upload custom grids fix (#415)

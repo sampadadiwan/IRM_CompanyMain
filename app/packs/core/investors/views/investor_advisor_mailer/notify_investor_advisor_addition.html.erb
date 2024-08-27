@@ -1,7 +1,7 @@
-<h3>Dear <%= @investor.investor_name %></h3>
+<h3>Important Notice</h3>
 
 <p>
-    This is to inform you, that <%= @investor_advisor.user.first_name %> <%= @investor_advisor.user.last_name %> is added as Investor Advisor for <%= @fund_name %>. 
+    This is to inform you, that <%= @investor_advisor.user.first_name %> <%= @investor_advisor.user.last_name %> is added as Investor Advisor <% if @owner_name.present? %> for <%= @owner_name %>. <% end %>
 </p>
 
 

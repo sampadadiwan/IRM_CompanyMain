@@ -23,9 +23,7 @@ class InvestorAdvisor < ApplicationRecord
 
   def ensure_user
     self.user = User.find_by(email:)
-
     errors.add(:email, "No existing user found in the system. Advisor has not been setup.") unless user
-
     errors.add(:email, "User has not been setup as an investor advisor.") if user && !user.has_cached_role?(:investor_advisor)
   end
 
@@ -67,5 +65,15 @@ class InvestorAdvisor < ApplicationRecord
   def remove_access_rights
     AccessRight.where(entity_id:, user_id:).find_each(&:destroy)
     InvestorAccess.where(investor_entity_id: entity_id, email:).delete_all
+  end
+
+  # Set by import_upload, to indicate where this advisor was added
+  attr_accessor :owner_name
+
+  after_create :notify_investor_team
+  def notify_investor_team
+    entity.employees.each do |employee|
+      InvestorAdvisorNotifier.with(entity_id:, investor_advisor: self, owner_name:, email_method: :notify_investor_advisor_addition, msg: "Investor Advisor #{user.full_name} has been added").deliver_later(employee)
+    end
   end
 end
