@@ -54,7 +54,6 @@ class DocGenJob < ApplicationJob
     models.each_with_index do |model, midx|
       templates_to_use = templates(model)
       templates_to_use.each_with_index do |template, tidx|
-        count = (midx * templates_to_use.length) + tidx + 1
         # Validate the model before generating the document
         valid, msg = validate(model)
         signed_document_already_exists = signed_document_already_exists?(model, template)
@@ -65,6 +64,7 @@ class DocGenJob < ApplicationJob
           # Generate the document
           generator.new(model, template, start_date, end_date, user_id)
           # Send notification if the document is generated successfully
+          count = (midx * templates_to_use.length) + tidx + 1
           send_notification("#{count}: Generated #{template.name} for #{model}", user_id, "success")
           succeeded += 1
         else

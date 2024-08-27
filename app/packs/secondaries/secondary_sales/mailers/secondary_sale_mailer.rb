@@ -39,8 +39,4 @@ class SecondarySaleMailer < ApplicationMailer
   def notify_spa_interests
     send_mail(subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
   end
-
-  def adhoc_notification
-    send_mail(subject: @custom_notification.subject)
-  end
 end
