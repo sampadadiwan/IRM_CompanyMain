@@ -13,7 +13,7 @@ class InterestDocJob < DocGenJob
     if @interest_id.present?
       [Interest.find(@interest_id)]
     else
-      [@secondary_sale.interests.short_listed]
+      @secondary_sale.interests.short_listed
     end
   end
 

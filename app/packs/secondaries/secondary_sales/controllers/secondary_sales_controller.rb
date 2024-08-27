@@ -164,10 +164,19 @@ class SecondarySalesController < ApplicationController
 
   def generate_spa
     # Post the allocation, we need to upload the SPAs for verified offers
-    OfferSpaJob.perform_later(@secondary_sale.id, nil, current_user.id, template_id: params[:template_id])
+
+    if params[:offer_doc_generation].present?
+      OfferSpaJob.perform_later(@secondary_sale.id, nil, current_user.id, template_id: params[:template_id])
+    elsif params[:interest_doc_generation].present?
+      InterestDocJob.perform_later(@secondary_sale.id, nil, current_user.id, template_id: params[:template_id])
+    else
+      notice = "No document generation selected"
+    end
+
+    notice ||= "Document generation in progress, checkback in a few minutes."
 
     respond_to do |format|
-      format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "SPA generation in progress, checkback in a few minutes." }
+      format.html { redirect_to secondary_sale_url(@secondary_sale), notice: }
       format.json { render :show, status: :ok, location: @secondary_sale }
     end
   end
