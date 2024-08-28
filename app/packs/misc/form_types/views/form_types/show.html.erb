@@ -1,6 +1,6 @@
 
 
-<%= render FormCard.new(title: @form_type.name) do %>
+<%= render FormCard.new(title: "#{@form_type.name} #{@form_type.tag}") do %>
 
   <div data-controller="datatable">
     <table class="table table-bordered dataTable jqDataTable">

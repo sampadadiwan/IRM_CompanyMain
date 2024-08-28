@@ -1,32 +1,30 @@
-
-
 <%= render "/layouts/steps", steps: ["Customize forms fields for different areas", "Ensure customer support has walked you through this before doing this", "This is an advanced feature, please do not attempt on your own"].freeze %>
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Form Types</h1>
   <%= link_to "New Form Type", new_form_type_path, {class: "btn btn-outline-primary"}  %>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
-
   <table id="form_types" class="table table-bordered dataTable jqDataTable">
-
+    
     <thead>
       <tr>
-          <th>
+        <th>
           Name
         </th>
-      
+        <th>
+          Tag
+        </th>
         <th>
         </th>
       </tr>
     </thead>
-    
-    <tbody>
-    <% @form_types.each do |form_type| %>
-      <%= render form_type %>
-    <% end %>
-    </tbody>
-  </table>
 
+    <tbody>
+      <% @form_types.each do |form_type| %>
+        <%= render form_type %>
+      <% end %>
+    </tbody>
+
+  </table>
 </div>

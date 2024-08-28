@@ -3,6 +3,9 @@
     <%= form_type.name %>
   </td>
   <td>
+    <%= form_type.tag %>
+  </td>
+  <td>
     <%= link_to "Show" , form_type , {class: "btn btn-outline-primary" }%>
     <%= link_to "Edit" , edit_form_type_path(form_type) , {class: "btn btn-outline-success" } if policy(form_type).update? %>
   </td>
