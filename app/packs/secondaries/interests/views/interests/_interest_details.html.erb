@@ -2,10 +2,10 @@
 
   
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData">Documents</a>
-    <!-- <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#chat-tab" 
-        data-action="click->tabdetails#loadData">Chat</a> -->
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Interest Documents</a>
+    <% if interest.verified %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offer-docs-tab">Offer Documents</a>
+    <% end %>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -18,18 +18,22 @@
           <%= render "/documents/index", documents: interest.documents.includes(:folder), owner: interest, 
               entity: interest.entity, msg: msg, title: "Interest Documents" %>
         </div>
+      
+      </div>
 
-        <div id="docs" class="associated_entity">
-          <% if interest.verified %>
+      <% if interest.verified %>
+      <div id="offer-docs-tab" class="tab-pane fade">
+      
+        <div id="docs" class="associated_entity">      
             <% 
               matched_offer_ids = interest.offers.pluck(:id)
               matched_offer_docs = Document.approved.where(owner_id: matched_offer_ids, owner_type: "Offer")
             %>
             <%= render "/documents/index", documents: matched_offer_docs.includes(:folder), title: "Offer Documents" %>
-          <% end %>
+          
         </div>     
       </div>
-      
+      <% end %>      
 
 
       <div id="chat-tab" class="tab-pane fade">
