@@ -54,41 +54,6 @@
 
 
             
-            <% if @secondary_sale && policy(@secondary_sale).update? %>
-
-                <div class="btn-group">
-                    <div class="dropdown">
-                    <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Doc Generation
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">           
-                        <%
-                        document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
-                        doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
-                        %>
-                        
-                        <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
-
-                        <%= button_to "Generate All SPAs" , generate_spa_secondary_sale_path(@secondary_sale, offer_doc_generation: true), method: :patch, class:
-                        "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",
-                        msg: "This will kick off the SPA generation process for all offers, which will take a few mins. Note existing SPAs will be deleted and regenerated."} if policy(@secondary_sale).generate_spa?  %>
-
-
-                        <% @secondary_sale.documents.templates.where(owner_tag: "Offer Template").each do |template| %>
-
-                        <%= button_to template.name,
-                            generate_spa_secondary_sale_path(@secondary_sale, template_id: template.id, offer_doc_generation: true),
-                            class: "dropdown-item",
-                            data: {action: "click->confirm#popup",
-                            msg: "#{template.name} generation will take a few min, please be patient. Proceed?", method: :patch } %>
-
-                        <% end %>
-                    </div>
-                    </div>
-                </div>
-
-            <% end %>
 
             <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
                                     method: :patch, class: "btn btn-outline-success" if @secondary_sale && policy(@secondary_sale).approve_offers? %>

@@ -26,39 +26,6 @@
                 "sample_upload": "INTERESTS_SAMPLE"), 
                 { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
-
-            <% if @secondary_sale && policy(@secondary_sale).update? %>
-
-                <div class="btn-group">
-                    <div class="dropdown">
-                    <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Doc Generation
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">           
-                        <%
-                        document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
-                        doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
-                        %>
-                        
-                        <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
-
-
-                        <% @secondary_sale.documents.templates.where(owner_tag: "Buyer Template").each do |template| %>
-
-                        <%= button_to template.name,
-                            generate_spa_secondary_sale_path(@secondary_sale, template_id: template.id, interest_doc_generation: true),
-                            class: "dropdown-item",
-                            data: {action: "click->confirm#popup",
-                            msg: "#{template.name} generation will take a few min, please be patient. Proceed?", method: :patch } %>
-
-                        <% end %>
-                    </div>
-                    </div>
-                </div>
-
-            <% end %>
-
         </span>
     </div>
 
