@@ -99,7 +99,7 @@ module DocumentGeneratorBase
     UserAlert.new(user_id:, message:, level:).broadcast
   end
 
-  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil)
+  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil, generated_document_name = nil)
     file_name = "#{generated_file_name(model)}.pdf"
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
@@ -107,11 +107,12 @@ module DocumentGeneratorBase
     generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page"))
 
     # Get the name of the doc we are generating
-    generated_document.name = if start_date && end_date
-                                "#{doc_template.name} #{start_date} to #{end_date} - #{model}"
-                              else
-                                "#{doc_template.name} - #{model}"
-                              end
+    generated_document.name = generated_document_name
+    generated_document.name ||= if start_date && end_date
+                                  "#{doc_template.name} #{start_date} to #{end_date} - #{model}"
+                                else
+                                  "#{doc_template.name} - #{model}"
+                                end
 
     # Destroy existing docs with the same name for the model
     # except for signed ones

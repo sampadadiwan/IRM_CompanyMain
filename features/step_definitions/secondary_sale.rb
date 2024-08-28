@@ -634,7 +634,7 @@ end
 Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|
-    offer.documents.where(name: "SPA - #{offer}").to_a.should_not == []
+    offer.documents.where(name: "SPA #{offer.full_name} #{offer.interest.investor.investor_name}").to_a.should_not == []
   end
 end
 

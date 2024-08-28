@@ -8,7 +8,8 @@ class InterestDocGenerator
     create_working_dir(interest)
     template_path ||= download_template(template)
     generate(interest, template, template_path)
-    upload(template, interest)
+    generated_document_name = "#{template.name} #{investor.investor_name}"
+    upload(template, interest, nil, nil, nil, generated_document_name)
   ensure
     cleanup
   end

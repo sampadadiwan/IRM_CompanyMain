@@ -8,7 +8,8 @@ class OfferSpaGenerator
     create_working_dir(offer)
     template_path ||= download_template(template)
     generate(offer, template, template_path)
-    upload(template, offer)
+    generated_document_name = "#{template.name} #{offer.full_name} #{offer.interest.investor.investor_name}"
+    upload(template, offer, nil, nil, nil, generated_document_name)
   ensure
     cleanup
   end
