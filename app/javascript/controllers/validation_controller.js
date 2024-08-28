@@ -16,7 +16,25 @@ export default class ValidationController extends Controller {
         submitBtn.click(function(e) {
             validateSection(this, validateFields);
         });
-     
+        
+        this.disable_number_field_arrows();
+    }
+
+    disable_number_field_arrows() {
+        // Remove arrow up and down from number fields
+        document.querySelectorAll('input[type=number]').forEach(function(input) {
+      
+            input.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+            }
+            });
+    
+            // Disable scroll wheel
+            input.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            });
+      });
     }
 
     validateFields(curInputs) {

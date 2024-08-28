@@ -27,6 +27,9 @@ addEventListener("trix-initialize", event => {
 
 // Handle select2 on turbolinks
 $(document).on('turbo:before-cache', function() {
+
+  console.log("turbo:before-cache called");
+
   if( $('.select2-container').length > 0 ){
     // Hack to make sure select2 does not get duplicated due to turbolinks
     $('#investor_investor_entity_id').select2('destroy');
@@ -41,6 +44,8 @@ $(document).on('turbo:before-cache', function() {
 });
 
 $( document ).on('turbo:load', function() {
+
+    console.log("turbo:load called");
 
     if (document.location.hostname.search("localhost") !== 0) {
       console.log("Google Analytics Enabled");
@@ -58,22 +63,7 @@ $( document ).on('turbo:load', function() {
     // data-simplebar
     $(".data-simplebar").each(function() {
       new SimpleBar(this);
-    });
-
-    // Remove arrow up and down from number fields
-    document.querySelectorAll('input[type=number]').forEach(function(input) {
-      
-      input.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-          e.preventDefault();
-        }
-      });
-
-      // Disable scroll wheel
-      input.addEventListener('wheel', function(e) {
-        e.preventDefault();
-      });
-    });
+    });    
 
     "use strict";
 });
