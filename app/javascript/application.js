@@ -67,6 +67,11 @@ $( document ).on('turbo:load', function() {
           e.preventDefault();
         }
       });
+
+      // Disable scroll wheel
+      input.addEventListener('wheel', function(e) {
+        e.preventDefault();
+      });
     });
 
     "use strict";
