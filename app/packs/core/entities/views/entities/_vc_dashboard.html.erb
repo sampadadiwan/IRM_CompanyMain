@@ -34,6 +34,21 @@
 
         <% end %>
 
+
+        <% if current_user.enable_secondary_sale && policy_scope(Interest).count > 0 %>
+
+            <%= render ToggleCard.new(title: "Interests", css_class: "show_interests") do %>
+
+                <% interests = policy_scope(Interest).includes(:entity, :secondary_sale, :investor).where("secondary_sales.active=?", true) %>
+
+                <% interests.each do |interest| %>
+                    <%= render "/interests/card", interest: %>
+                <% end %>
+            <% end %>
+
+        <% end %>
+
+
         <% deal_investors = policy_scope(DealInvestor).includes(:investor, :deal)%>
         <% if current_user.enable_deals && deal_investors.count > 0 %>
 

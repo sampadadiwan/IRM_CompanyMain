@@ -106,7 +106,8 @@
             Interest Entity
           </td>
           <td>
-            <%= true || interest.user_id == current_user.id || interest.escrow_deposited? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
+            <% name = interest.investor&.investor_name.presence || interest.interest_entity.name %>
+            <%= true || interest.user_id == current_user.id || interest.escrow_deposited? ? name : ENV["OBFUSCATION"] %>
           </td>
         </tr>
         <% end %>

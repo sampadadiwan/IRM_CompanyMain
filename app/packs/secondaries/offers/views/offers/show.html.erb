@@ -16,7 +16,7 @@
     form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-  <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch,
+  <%= button_to "Accept Transaction Documents" , accept_spa_offer_path(@offer), method: :patch,
       class: "btn btn-outline-success" , id: 'accept_spa_btn',
       form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
       msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? && @offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>

@@ -3,117 +3,126 @@
 <%= render "/interests/stats", secondary_sale: @secondary_sale if @secondary_sale && policy(@secondary_sale).owner? %>
 <%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale] %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Interests</h1>
-    <span>
-
-        <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id),
-            {class: "btn btn-outline-primary" } if @secondary_sale %>
-
-        <%= link_to "Upload Interests", 
-            new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-            "import_upload[owner_type]": "SecondarySale", 
-            "import_upload[import_type]": "Interest", 
-            "sample_upload": "INTERESTS_SAMPLE"), 
-            { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
-
-
-        <% if @secondary_sale && policy(@secondary_sale).update? %>
-
-            <div class="btn-group">
-                <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Doc Generation
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">           
-                    <%
-                    document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
-                    doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
-                    %>
-                    
-                    <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
-
-
-                    <% @secondary_sale.documents.templates.where(owner_tag: "Buyer Template").each do |template| %>
-
-                    <%= button_to template.name,
-                        generate_spa_secondary_sale_path(@secondary_sale, template_id: template.id, interest_doc_generation: true),
-                        class: "dropdown-item",
-                        data: {action: "click->confirm#popup",
-                        msg: "#{template.name} generation will take a few min, please be patient. Proceed?", method: :patch } %>
-
-                    <% end %>
-                </div>
-                </div>
-            </div>
-
+<% if params[:card].present? %>
+    <div class="row">
+        <% @interests.each do |interest| %>
+            <%= render "/interests/card", interest:  %>
         <% end %>
+    </div>
+    <%= paginate @interests.page(params[:page]) %>
+<% else %>
 
-    </span>
-</div>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Interests</h1>
+        <span>
 
-<div class="table-responsive" data-controller="datatable">
+            <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id),
+                {class: "btn btn-outline-primary" } if @secondary_sale %>
 
-<table id="interests" class="table table-bordered dataTable jqDataTable">
+            <%= link_to "Upload Interests", 
+                new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                "import_upload[owner_type]": "SecondarySale", 
+                "import_upload[import_type]": "Interest", 
+                "sample_upload": "INTERESTS_SAMPLE"), 
+                { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
-    <thead>
-        <tr>
-            <th>
-                Interest Entity
-            </th>
 
-            <th>
-                User
-            </th>
+            <% if @secondary_sale && policy(@secondary_sale).update? %>
 
-            <th>
-                Type
-            </th>
+                <div class="btn-group">
+                    <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Doc Generation
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">           
+                        <%
+                        document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
+                        doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
+                        %>
+                        
+                        <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
 
-            <th>
-                Quantity
-            </th>
-            <th>
-                Interest Price
-            </th>
-            <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>
 
-                <th>
-                    Potential Allocation
-                </th>
-                <th>
-                    Potential Allocation %
-                </th>
+                        <% @secondary_sale.documents.templates.where(owner_tag: "Buyer Template").each do |template| %>
+
+                        <%= button_to template.name,
+                            generate_spa_secondary_sale_path(@secondary_sale, template_id: template.id, interest_doc_generation: true),
+                            class: "dropdown-item",
+                            data: {action: "click->confirm#popup",
+                            msg: "#{template.name} generation will take a few min, please be patient. Proceed?", method: :patch } %>
+
+                        <% end %>
+                    </div>
+                    </div>
+                </div>
 
             <% end %>
-            <th>
-                Actually Offered
-            </th>
-            <th>
-                Final Price
-            </th>
-            <th>
-                Allocation Amount
-            </th>
 
-            <th>
-                Shortlisted
-            </th>
-            <th>
-                Escrow Deposited
-            </th>
+        </span>
+    </div>
 
-            <th>
-            </th>
-        </tr>
-    </thead>
+    <div class="table-responsive" data-controller="datatable">
+        <table id="interests" class="table table-bordered dataTable jqDataTable">
 
-    <tbody>
-        <% interests.each do |interest| %>
-            <%= render interest, secondary_sale: secondary_sale %>
-        <% end %>
-    </tbody>
-</table>
+            <thead>
+                <tr>
+                    <th>
+                        Interest Entity
+                    </th>
 
-</div>
+                    <th>
+                        User
+                    </th>
+
+                    <th>
+                        Type
+                    </th>
+
+                    <th>
+                        Quantity
+                    </th>
+                    <th>
+                        Interest Price
+                    </th>
+                    <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>
+
+                        <th>
+                            Potential Allocation
+                        </th>
+                        <th>
+                            Potential Allocation %
+                        </th>
+
+                    <% end %>
+                    <th>
+                        Actually Offered
+                    </th>
+                    <th>
+                        Final Price
+                    </th>
+                    <th>
+                        Allocation Amount
+                    </th>
+
+                    <th>
+                        Shortlisted
+                    </th>
+                    <th>
+                        Escrow Deposited
+                    </th>
+
+                    <th>
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <% interests.each do |interest| %>
+                    <%= render interest, secondary_sale: secondary_sale %>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+
+<% end %>

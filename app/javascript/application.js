@@ -25,6 +25,7 @@ addEventListener("trix-initialize", event => {
   inputElement.pattern = "(https?://|/).+";
 });
 
+// Handle select2 on turbolinks
 $(document).on('turbo:before-cache', function() {
   if( $('.select2-container').length > 0 ){
     // Hack to make sure select2 does not get duplicated due to turbolinks
@@ -57,6 +58,15 @@ $( document ).on('turbo:load', function() {
     // data-simplebar
     $(".data-simplebar").each(function() {
       new SimpleBar(this);
+    });
+
+    // Remove arrow up and down from number fields
+    document.querySelectorAll('input[type=number]').forEach(function(input) {
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+        }
+      });
     });
 
     "use strict";

@@ -1,0 +1,35 @@
+<%
+    progressbar ||= false
+    steps = []
+    params[:force_units] = interest.entity.default_currency_units
+    if params[:force_units] == "Crores" && interest.amount.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+%>
+
+<% if policy(interest).update? && !interest.verified %>
+
+  <%
+
+  steps = ["Complete your interest details using the button below".html_safe,
+          "You may need to upload documents to complete the interest.",
+          "Wait for communication from #{interest.secondary_sale.entity.name}"].freeze
+
+  %>
+
+  <%= render "/layouts/steps", steps:  %>
+
+<% elsif policy(interest).show? && interest.verified %>
+
+
+  <%
+              
+      steps = ["Please review the Transaction Document(s)",
+              "Accept the Transaction Document(s)",
+              "Wait for communication from #{interest.secondary_sale.entity.name}"].compact
+  %>
+
+  <%= render "/layouts/steps", steps:, progressbar:  %>
+
+<% end %>

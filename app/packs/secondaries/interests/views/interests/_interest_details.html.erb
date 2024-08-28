@@ -12,9 +12,21 @@
 
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
+          
           <% msg = interest.secondary_sale.buyer_doc_list.present? ? "Documents Required: #{interest.secondary_sale.buyer_doc_list}" : nil %>
+
           <%= render "/documents/index", documents: interest.documents.includes(:folder), owner: interest, 
-              entity: interest.entity, msg: msg %>
+              entity: interest.entity, msg: msg, title: "Interest Documents" %>
+        </div>
+
+        <div id="docs" class="associated_entity">
+          <% if interest.verified %>
+            <% 
+              matched_offer_ids = interest.offers.pluck(:id)
+              matched_offer_docs = Document.approved.where(owner_id: matched_offer_ids, owner_type: "Offer")
+            %>
+            <%= render "/documents/index", documents: matched_offer_docs.includes(:folder), title: "Offer Documents" %>
+          <% end %>
         </div>     
       </div>
       

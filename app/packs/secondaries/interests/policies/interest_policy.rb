@@ -20,7 +20,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def generate_docs?
-    belongs_to_entity?(user, record) && record.short_listed
+    belongs_to_entity?(user, record) && record.short_listed && !record.finalized
   end
 
   def short_list?
@@ -45,11 +45,11 @@ class InterestPolicy < SaleBasePolicy
     (create? ||
       user.entity_id == record.interest_entity_id ||
      (sale_policy.update? && record.secondary_sale.manage_interests)
-    ) && !record.finalized
+    ) && !record.verified
   end
 
   def accept_spa?
-    update? && record.short_listed && !record.final_agreement
+    user.entity_id == record.interest_entity_id && record.verified
   end
 
   def matched_offers?
@@ -63,7 +63,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def finalize?
-    update? && record.short_listed
+    update? && record.short_listed && record.verified
   end
 
   def destroy?

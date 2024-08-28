@@ -28,7 +28,7 @@ class InterestsController < ApplicationController
 
   def matched_offers
     @q = @interest.offers.ransack(params[:q])
-    @offers = policy_scope(@q.result)
+    @offers = @q.result
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])

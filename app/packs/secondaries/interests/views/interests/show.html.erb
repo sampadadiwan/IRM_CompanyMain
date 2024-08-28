@@ -19,9 +19,9 @@
     <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on. Please ensure all documents have been uploaded before proceeding." %>
 
 
-    <%= button_to "Accept SPA" , accept_spa_interest_path(@interest), 
+    <%= button_to "Accept Transaction Documents" , accept_spa_interest_path(@interest), 
         method: :patch, class: "btn btn-outline-success" , 
-        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the SPAs with respect to the matched offer(s)."} if policy(@interest).accept_spa? %>
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the transaction documents listed below."} if policy(@interest).accept_spa? %>
 
     <%= link_to "Matched Offers", matched_offers_interest_path(@interest), 
         {class: "btn btn-outline-primary" } if current_user && policy(@interest).matched_offers? %> 
