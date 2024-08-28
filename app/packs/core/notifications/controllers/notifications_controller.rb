@@ -3,6 +3,7 @@ class NotificationsController < ApplicationController
 
   # GET /notifications or /notifications.json
   def index
+    authorize Noticed::Notification
     @q = Noticed::Notification.ransack(params[:q])
     @notifications = policy_scope(@q.result)
     # Filter by entity

@@ -62,6 +62,7 @@ $( document ).on('turbo:load', function() {
 
     // Remove arrow up and down from number fields
     document.querySelectorAll('input[type=number]').forEach(function(input) {
+      
       input.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
