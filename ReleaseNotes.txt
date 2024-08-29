@@ -1,3 +1,15 @@
+V7.1.69
+#####################################
+7cd813446 Fixed bug for notes in CD
+a8cf85b13 Removed cards from call stats
+4624b5cf9 Better fund stats
+25f9b2b7d REmoved entity col for funds
+21c2b55dc Added Face Value For Redemption for CD download
+1b5e988c9 Added notes to CD
+d2e77cd6f Added Face Value For Redemption to CDP download
+6883851e9 Removed CDP computation from grid
+6e7d5ee1e Added better validation for form types
+
 V7.1.68
 #####################################
 cbc206930 Added tag to formType
