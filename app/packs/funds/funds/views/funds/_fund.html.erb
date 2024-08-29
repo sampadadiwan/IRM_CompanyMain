@@ -1,7 +1,9 @@
 <tr id="<%= dom_id fund %>">
-  <td>
-    <%= fund.entity.name %>
-  </td>
+  <% if current_user.curr_role_investor? %>
+    <td>
+      <%= fund.entity.name %>
+    </td>
+  <% end %>
   <td>
     <%= link_to fund.name, fund %>
   </td>

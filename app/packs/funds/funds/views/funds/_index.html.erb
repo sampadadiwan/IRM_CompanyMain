@@ -31,9 +31,11 @@
     <table id="funds" class="table table-bordered dataTable jqDataTable">
       <thead>
         <tr>
-          <th>
-            Entity
-          </th>
+          <% if current_user.curr_role_investor? %>
+            <th>
+              Entity
+            </th>
+          <% end %>
           <th>
             Name
           </th>
