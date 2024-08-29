@@ -1,6 +1,6 @@
 class CapitalDistributionPaymentDecorator < ApplicationDecorator
   def amount_explain
-    h.render partial: "/capital_distribution_payments/amount", locals: { capital_distribution_payment: object }, formats: [:html]
+    h.money_to_currency object.amount
   end
 
   def folio_id
