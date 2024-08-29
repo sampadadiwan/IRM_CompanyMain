@@ -2,10 +2,8 @@
 cards_data = [
   {path: nil, stat: money_to_currency(capital_call.call_amount, params), subtitle: "Called", progress_bar_color: "primary"},
     {path: nil, stat: money_to_currency(capital_call.collected_amount, params), subtitle: "Collected", progress_bar_color: "success"},
-    {path: nil, stat: capital_call.percentage_called, subtitle: "Percentage", progress_bar_color: "warning"},
     {path: nil, stat: money_to_currency(capital_call.amount_to_be_called, params), subtitle: "To Be Called", progress_bar_color: "warning"},
     {path: nil, stat: money_to_currency(capital_call.due_amount, params), subtitle: "Due", progress_bar_color: "info"},
-    {path: nil, stat: capital_call.fund_closes.join(","), subtitle: "Applicable", progress_bar_color: "warning"},
     {path: nil, stat: l(capital_call.due_date), subtitle: "Due Date", progress_bar_color: "success"}
 ]
 %>
