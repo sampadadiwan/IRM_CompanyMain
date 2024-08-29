@@ -9,7 +9,7 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
   # Create entries for each item
   @capital_distribution_payments.includes(capital_commitment: :investor_kyc).find_each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    fvfr = money_to_currency(cc.cost_of_investment)
+    fvfr = cc.cost_of_investment.to_d
     sheet.add_row [cc.fund.name, cc.investor_name, cc.capital_distribution.title, cc.capital_commitment.folio_currency, cc.folio_amount, cc.amount, fvfr, cc.payment_date, cc.completed, cc.folio_id, cc.investor_kyc&.bank_account_number, cc.investor_kyc&.ifsc_code, cc.investor_kyc&.full_name, cc.investor_kyc&.PAN] + custom_field_values
   end
 end
