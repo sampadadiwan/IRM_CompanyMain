@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_28_141232) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -620,6 +620,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_28_141232) do
     t.integer "distribution_on", default: 0
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.text "notes"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"

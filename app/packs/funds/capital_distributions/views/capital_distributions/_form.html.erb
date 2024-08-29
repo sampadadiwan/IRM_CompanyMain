@@ -95,6 +95,11 @@
         </div>
 
         <div class="form-group">
+          <%= form.label :notes %>
+          <%= form.rich_text_area :notes, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         </div>
       </div>
