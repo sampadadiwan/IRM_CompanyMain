@@ -1,6 +1,10 @@
 class FormType < ApplicationRecord
   belongs_to :entity
 
+  validates :name, presence: true
+  validates :name, length: { maximum: 255 }
+  validates :tag, length: { maximum: 50 }
+
   has_many :form_custom_fields, -> { order(position: :asc) }, inverse_of: :form_type, dependent: :destroy
   has_many :grid_view_preferences, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :form_custom_fields, reject_if: :all_blank, allow_destroy: true

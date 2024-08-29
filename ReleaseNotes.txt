@@ -1,3 +1,13 @@
+V7.1.68
+#####################################
+cbc206930 Added tag to formType
+c3970eb95 Moved template gen buttons to allocations page
+0f1d6961c Added offer docs tab to interest show page
+6a2ae8434 Added generated_document_name to doc generation
+be4a1c061 added disable_number_field_arrows to validation controller
+acea561c7 Advisor cannot see notifications
+94fec095a Interest dashboard (#426)
+
 V7.1.67
 #####################################
 95613c77d Passed ctx to save_rows for imports
