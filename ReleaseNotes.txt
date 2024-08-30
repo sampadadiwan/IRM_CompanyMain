@@ -1,5 +1,6 @@
-V7.1.69
+V7.1.70
 #####################################
+f5b268713 Removed holding from offer index
 7cd813446 Fixed bug for notes in CD
 a8cf85b13 Removed cards from call stats
 4624b5cf9 Better fund stats
