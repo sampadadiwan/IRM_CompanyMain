@@ -7,7 +7,7 @@
         Ci Profile
       </td>
       <td>
-        <%= link_to @ci_track_record.investment_opportunity %>
+        <%= link_to @ci_track_record.owner %>
       </td>
     </tr>
     <tr>
@@ -18,7 +18,7 @@
         <%= @ci_track_record.name %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Prefix
@@ -27,7 +27,7 @@
         <%= @ci_track_record.prefix %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Value
@@ -36,7 +36,7 @@
         <%= @ci_track_record.value %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Suffix
@@ -58,6 +58,6 @@
 <% end %>
 
 <div>
-  <%= link_to "Edit", edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %> 
+  <%= link_to "Edit", edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %>
   <%= button_to "Delete", @ci_track_record, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

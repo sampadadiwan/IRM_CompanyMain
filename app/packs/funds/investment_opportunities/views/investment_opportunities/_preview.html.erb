@@ -3,24 +3,24 @@
 <div class="associated_entity">
     <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
     <div class="container">
-        <div class="row align-items-center">        
+        <div class="row align-items-center">
             <div class="col">
                 <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
             </div>
-        </div>        
+        </div>
     </div>
     </section>
 </div>
 
-<%= render "/ci_track_records/preview_track_record", investment_opportunity: investment_opportunity %>
-<%= render "/ci_widgets/preview_widgets2", investment_opportunity: investment_opportunity %>
+<%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
+<%= render "/ci_widgets/preview_widgets2", owner: investment_opportunity %>
 
 <div class="row">
     <% investment_opportunity.documents.each do |doc| %>
         <div class="col"><%= render "/investment_opportunities/preview_document", document: doc %></div>
     <% end %>
-</div>                
+</div>
 
-<div class="align-items-center text-center">                        
+<div class="align-items-center text-center">
     <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} if current_user %>
 </div>

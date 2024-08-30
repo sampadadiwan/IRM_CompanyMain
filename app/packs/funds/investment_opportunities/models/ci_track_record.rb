@@ -1,5 +1,6 @@
 class CiTrackRecord < ApplicationRecord
-  belongs_to :investment_opportunity
+  belongs_to :owner, polymorphic: true
+  belongs_to :investment_opportunity, optional: true
   belongs_to :entity
 
   validates :prefix, length: { maximum: 5 }

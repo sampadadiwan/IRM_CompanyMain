@@ -1,0 +1,17 @@
+
+<div class="card rounded-3 card-hover">
+    <% url = document.orignal ? document.file.url : document_path(document) %>
+    <a href="<%=url%>" class="stretched-link"></a>
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+        <span class="flex-shrink-0"><i class="ti ti-download text-secondary display-6"></i></span>
+        <div class="ms-4">
+            <h4 class="card-title text-dark"><%= document.name %></h4>
+            <h6 class="card-subtitle mb-0 fs-2 fw-normal mb-1">
+                <%= l document.created_at.to_date %>
+            </h6>
+            <span class="fs-2 mt-1 "><%= document.text %></span>
+        </div>
+        </div>
+    </div>
+</div>

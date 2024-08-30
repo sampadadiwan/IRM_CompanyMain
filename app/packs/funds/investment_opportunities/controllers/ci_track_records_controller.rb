@@ -65,10 +65,12 @@ class CiTrackRecordsController < ApplicationController
   def set_ci_track_record
     @ci_track_record = CiTrackRecord.find(params[:id])
     authorize @ci_track_record
+    @bread_crumbs = { "#{@ci_track_record.owner}": polymorphic_path(@ci_track_record.owner),
+                      "#{@ci_track_record.name}": ci_track_record_path(@ci_track_record) }
   end
 
   # Only allow a list of trusted parameters through.
   def ci_track_record_params
-    params.require(:ci_track_record).permit(:investment_opportunity_id, :entity_id, :name, :value, :prefix, :suffix, :details)
+    params.require(:ci_track_record).permit(:owner_id, :owner_type, :entity_id, :name, :value, :prefix, :suffix, :details)
   end
 end

@@ -18,6 +18,10 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
       (record.fund.show_portfolios && permissioned_investor?)
   end
 
+  def toggle_show_portfolio?
+    index?
+  end
+
   def create?
     false
   end

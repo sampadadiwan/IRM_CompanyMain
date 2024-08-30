@@ -1,5 +1,5 @@
 class AggregatePortfolioInvestmentsController < ApplicationController
-  before_action :set_aggregate_portfolio_investment, only: %i[show edit update destroy]
+  before_action :set_aggregate_portfolio_investment, only: %i[show edit update destroy toggle_show_portfolio]
 
   # GET /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def index
@@ -32,6 +32,14 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # GET /aggregate_portfolio_investments/1/edit
   def edit; end
+
+  def toggle_show_portfolio
+    if @aggregate_portfolio_investment.update(show_portfolio: !@aggregate_portfolio_investment.show_portfolio)
+      redirect_to aggregate_portfolio_investment_path(@aggregate_portfolio_investment), notice: "Show portfolio was successfully updated."
+    else
+      redirect_to aggregate_portfolio_investment_path(@aggregate_portfolio_investment), alert: "Show portfolio was not updated."
+    end
+  end
 
   # POST /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def create
@@ -83,11 +91,11 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @bread_crumbs = { Funds: funds_path,
                       "#{api.fund.name}": fund_path(api.fund),
                       'Portfolio Investments': fund_path(@aggregate_portfolio_investment.fund, tab: "portfolio-investments-tab"),
-                      "#{api}": nil }
+                      "#{api}": aggregate_portfolio_investment_path(api) }
   end
 
   # Only allow a list of trusted parameters through.
   def aggregate_portfolio_investment_params
-    params.require(:aggregate_portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :portfolio_company_type, :quantity, :fmv, :avg_cost)
+    params.require(:aggregate_portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :portfolio_company_type, :quantity, :fmv, :avg_cost, :show_portfolio)
   end
 end

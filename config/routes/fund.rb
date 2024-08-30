@@ -24,7 +24,9 @@ resources :investor_advisors do
   post 'switch', on: :collection
 end
 
-resources :aggregate_portfolio_investments
+resources :aggregate_portfolio_investments do
+  patch 'toggle_show_portfolio', on: :member
+end
 
 resources :fund_formulas do
   patch "enable_formulas", on: :collection
