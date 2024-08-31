@@ -2,6 +2,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   update_index('aggregate_portfolio_investment') { self if index_record?(AggregatePortfolioInvestmentIndex) }
 
   include ForInvestor
+  include WithFolder
   include Trackable.new
   include WithCustomField
   include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
@@ -11,6 +12,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :investment_instrument
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
+
+  has_many :ci_track_records, as: :owner, dependent: :destroy
+  has_many :ci_widgets, as: :owner, dependent: :destroy
 
   monetize :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, with_currency: ->(i) { i.fund.currency }
 
@@ -40,6 +44,10 @@ class AggregatePortfolioInvestment < ApplicationRecord
   before_create :update_name
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name
+  end
+
+  def folder_path
+    "/AggregatePortfolioInvestment/#{portfolio_company_name.delete('/')}_#{id}"
   end
 
   def to_s

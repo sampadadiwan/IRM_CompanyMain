@@ -250,11 +250,11 @@ Then('the Portfolio investments must be adjusted') do
     cpi.amount_cents.should == opi.amount_cents
     # cpi.fmv_cents.should be_within(100).of(opi.fmv_cents)
     cpi.cost_of_sold_cents.should == opi.cost_of_sold_cents
-    
+
     cpi.net_quantity.should == opi.net_quantity * @stock_adjustment.adjustment
     net_amount_cents = opi.buy? ? opi.net_quantity * opi.cost_cents : opi.amount_cents
     opi.net_amount_cents.should == net_amount_cents
-    cpi.gain_cents.should be_within(100).of(opi.gain_cents)    
+    cpi.gain_cents.should be_within(100).of(opi.gain_cents)
   end
 end
 
@@ -352,8 +352,8 @@ end
 
 Then('the from portfolio investments must be adjusted') do
   @from_portfolio_investment.reload
-  if StockConversion.where(id: @stock_conversion.id).count == 1  
-    puts "Checking from portfolio investment for conversions"  
+  if StockConversion.where(id: @stock_conversion.id).count == 1
+    puts "Checking from portfolio investment for conversions"
     @from_portfolio_investment.transfer_quantity.should == @stock_conversion.from_quantity
     @from_portfolio_investment.transfer_amount_cents.should == -@stock_conversion.from_quantity * @from_portfolio_investment.cost_cents
     @from_portfolio_investment.net_quantity.should == @from_portfolio_investment.quantity + @from_portfolio_investment.sold_quantity - @stock_conversion.from_quantity
@@ -409,4 +409,98 @@ end
 
 Then('the stock conversion must be deleted') do
   StockConversion.where(id: @stock_conversion.id).count.should == 0
+end
+
+Given('I add widgets for the aggregate portfolio investment') do
+  visit(aggregate_portfolio_investment_path(@api))
+  click_on("Widgets")
+  click_on("New Widget")
+  fill_in('ci_widget_title', with: "Left Widget")
+  select("Left", from: "ci_widget_image_placement")
+  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
+  details_top_element.set("Left Widget Intro")
+  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
+  details_element.set("Left Widget Details")
+  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+  sleep(0.5)
+  click_on("Save")
+
+  visit(aggregate_portfolio_investment_path(@api))
+  click_on("Widgets")
+  click_on("New Widget")
+  fill_in('ci_widget_title', with: "Center Widget")
+  select("Center", from: "ci_widget_image_placement")
+  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
+  details_top_element.set("Center Widget Intro")
+  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
+  details_element.set("Center Widget Details")
+  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+  sleep(0.5)
+  click_on("Save")
+
+  visit(aggregate_portfolio_investment_path(@api))
+  click_on("Widgets")
+  click_on("New Widget")
+  fill_in('ci_widget_title', with: "Right Widget")
+  select("Right", from: "ci_widget_image_placement")
+  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
+  details_top_element.set("Right Widget Intro")
+  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
+  details_element.set("Right Widget Details")
+  # fill_in('ci_widget_details_top', with: "Right Widget Intro")
+  # fill_in('ci_widget_details', with: "Right Widget Details")
+  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+  sleep(0.5)
+  click_on("Save")
+end
+
+Given('I add track record for the aggregate portfolio investment') do
+  visit(aggregate_portfolio_investment_path(@api))
+  click_on("Track Record")
+  click_on("New Track Record")
+  fill_in('ci_track_record_name', with: "Test Track Record")
+  fill_in('ci_track_record_prefix', with: "good")
+  fill_in('ci_track_record_value', with: "250000")
+  fill_in('ci_track_record_suffix', with: "bad")
+  fill_in('ci_track_record_details', with: "Track record details")
+  click_on("Save")
+end
+
+Given('I add preview documents for the aggregate portfolio investment') do
+  visit(aggregate_portfolio_investment_path(@api))
+  xpath = "/html/body/div[2]/div[1]/div/div/div[9]/nav/a[3]"
+  element = find(:xpath, xpath)
+  element.click
+  xpath = "/html/body/div[2]/div[1]/div/div/div[9]/div/div[3]/div/turbo-frame/div/div[2]/div/div[2]/turbo-frame/div[1]/span/div/div/button"
+  element = find(:xpath, xpath)
+  element.click
+  click_on("New Document")
+  fill_in('document_name', with: "Test Document")
+  fill_in('document_tag_list', with: "test, preview")
+  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+  sleep(0.5)
+  click_on("Save")
+end
+
+When('I go to aggregate portfolio investment preview') do
+  visit(aggregate_portfolio_investment_path(@api))
+  click_on("Preview")
+end
+
+Then('I can see all the preview details') do
+  @api.ci_widgets.each do |widget|
+    expect(page).to have_content(widget.title)
+    expect(page).to have_content(widget.details_top.gsub(/<\/?div>/, ''))
+    expect(page).to have_content(widget.details.gsub(/<\/?div>/, ''))
+  end
+  @api.ci_track_records.each do |track_record|
+    expect(page).to have_content(track_record.name)
+    expect(page).to have_content(track_record.prefix)
+    expect(page).to have_content(track_record.value)
+    expect(page).to have_content(track_record.suffix)
+    expect(page).to have_content(track_record.details.gsub(/<\/?div>/, ''))
+  end
+  @api.documents.each do |doc|
+    expect(page).to have_content(doc.name)
+  end
 end

@@ -1,8 +1,8 @@
     <div class="row center">
 
-        <% investment_opportunity.ci_track_records.each_with_index do |track_record, idx| %>
+        <% owner.ci_track_records.each_with_index do |track_record, idx| %>
             <div class="col-sm-12 col-xl col-md-4">
-                <% color = ["success", "primary", "warning", "success", "primary", "info", "warning"][idx % 7] %>            
+                <% color = ["success", "primary", "warning", "success", "primary", "info", "warning"][idx % 7] %>
 
                 <div class="col d-flex align-items-stretch">
                     <div class="card w-100">
@@ -20,5 +20,5 @@
             </div>
 
         <% end %>
-        
+
     </div>

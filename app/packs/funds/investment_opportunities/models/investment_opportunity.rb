@@ -10,8 +10,8 @@ class InvestmentOpportunity < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :expression_of_interests, dependent: :destroy
 
-  has_many :ci_track_records, dependent: :destroy
-  has_many :ci_widgets, dependent: :destroy
+  has_many :ci_track_records, as: :owner, dependent: :destroy
+  has_many :ci_widgets, as: :owner, dependent: :destroy
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 

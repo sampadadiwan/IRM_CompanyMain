@@ -1,6 +1,6 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
-  
+
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
@@ -9,92 +9,91 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
 
 
-      <% if policy(investment_opportunity).update? %>          
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
+      <% if policy(investment_opportunity).update? %>
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
               data-action="click->tabdetails#loadData">
             Tasks
           </a>
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#eoi-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#eoi-tab"
           data-action="click->tabdetails#loadData">Interests</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
           data-action="click->tabdetails#loadData">Access Rights</a>
     </nav>
-  
+
     <div class="tab-content" data-controller="datatable">
-  
+
         <div id="docs-tab" class="tab-pane fade in show active">
           <div id="docs" class="associated_entity">
             <% params[:folder_id] = @investment_opportunity.document_folder.id %>
             <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
               <%= render "/documents/tree_view", documents: @investment_opportunity.documents, entity:  @investment_opportunity.entity, show_steps: false, owner: @investment_opportunity %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
-        
+
         <div id="widgets-tab" class="tab-pane fade">
           <div id="widgets" class="associated_entity">
-            <%= render "/ci_widgets/index", ci_widgets: investment_opportunity.ci_widgets %>
+            <%= render "/ci_widgets/index", ci_widgets: investment_opportunity.ci_widgets, owner: investment_opportunity %>
           </div>
         </div>
 
         <div id="track-records-tab" class="tab-pane fade">
           <div id="track_records" class="associated_entity">
-            <%= render "/ci_track_records/index", ci_track_records: investment_opportunity.ci_track_records %>
+            <%= render "/ci_track_records/index", ci_track_records: investment_opportunity.ci_track_records, owner: investment_opportunity %>
           </div>
         </div>
-        
+
         <div id="access-rights-tab" class="tab-pane fade">
 
           <div id="access_rights" class="associated_entity" data-controller="datatable">
             <% form_type = !belongs_to_entity_id?(current_user, investment_opportunity.entity_id) ? "investor_form" : nil %>
-            <%= link_to access_rights_path(owner_id: investment_opportunity.id, owner_type: "InvestmentOpportunity", 
-                                            entity_id: current_user.entity_id, form_type:), 
+            <%= link_to access_rights_path(owner_id: investment_opportunity.id, owner_type: "InvestmentOpportunity",
+                                            entity_id: current_user.entity_id, form_type:),
                         class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
               <span>Loading...</span>
             <% end %>
-        
+
             <%= turbo_frame_tag "access_rights_frame", target: "_top" do %>
             <% end %>
           </div>
-    
+
         </div>
-  
+
 
         <div id="eoi-tab" class="tab-pane fade">
           <div id="eois" class="associated_entity">
-            
-            <%= link_to expression_of_interests_path( investment_opportunity_id: investment_opportunity.id, 
-                                    all: true), 
-                                    class: "load_data_link", 
+
+            <%= link_to expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
+                                    all: true),
+                                    class: "load_data_link",
                                     data: { turbo_frame: 'expression_of_interests_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "expression_of_interests_list", target: "_top" do %>
             <% end %>
 
-          </div>     
+          </div>
         </div>
 
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, investment_opportunity.entity).first %>
-            <%= link_to tasks_path( for_entity_id: nil, 
+            <%= link_to tasks_path( for_entity_id: nil,
                                     entity_id: investment_opportunity.entity_id,
-                                    owner_id: investment_opportunity.id, owner_type: "InvestmentOpportunity"), 
-                                    class: "load_data_link", 
+                                    owner_id: investment_opportunity.id, owner_type: "InvestmentOpportunity"),
+                                    class: "load_data_link",
                                     data: { turbo_frame: 'task_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
-          </div>     
+          </div>
         </div>
-  
+
     </div>
-  
+
 </div>
-  

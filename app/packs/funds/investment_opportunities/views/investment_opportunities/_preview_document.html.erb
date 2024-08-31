@@ -4,7 +4,7 @@
         <div class="bg-info-subtle text-info d-inline-block px-4 py-3 rounded">
             <i class="ti ti-download text-secondary display-6"></i>
         </div>
-        
+
         </div>
         <div class="mt-5">
         <h4 class="card-title"><%= document.name %></h4>
@@ -22,7 +22,7 @@
 
 
 <div class="card rounded-3 card-hover">
-    <% url = document.download ? document.file.url : document_path(document) %>
+    <% url = document.orignal ? document.file.url : document_path(document) %>
     <a href="<%=url%>" class="stretched-link"></a>
     <div class="card-body">
         <div class="d-flex align-items-center">

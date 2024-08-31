@@ -65,10 +65,12 @@ class CiWidgetsController < ApplicationController
   def set_ci_widget
     @ci_widget = CiWidget.find(params[:id])
     authorize @ci_widget
+    @bread_crumbs = { "#{@ci_widget.owner}": polymorphic_path(@ci_widget.owner),
+                      "#{@ci_widget.title}": ci_widget_path(@ci_widget) }
   end
 
   # Only allow a list of trusted parameters through.
   def ci_widget_params
-    params.require(:ci_widget).permit(:investment_opportunity_id, :entity_id, :title, :details, :url, :image, :image_placement)
+    params.require(:ci_widget).permit(:owner_id, :owner_type, :entity_id, :title, :details_top, :details, :url, :image, :image_placement)
   end
 end

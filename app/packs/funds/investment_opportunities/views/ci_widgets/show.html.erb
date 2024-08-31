@@ -2,10 +2,10 @@
 <table class="table table-bordered dataTable">
   <tr>
     <td>
-      Opportunity
+      Belongs To
     </td>
     <td>
-      <%= link_to @ci_widget.investment_opportunity %>
+      <%= link_to @ci_widget.owner %>
     </td>
   </tr>
   <tr>
@@ -52,6 +52,14 @@
 
   <tr>
     <td>
+      Intro Text
+    </td>
+    <td>
+      <%= @ci_widget.details_top&.html_safe %>
+    </td>
+  </tr>
+  <tr>
+    <td>
       Details
     </td>
     <td>
@@ -68,6 +76,6 @@
   </tr>
 </table>
 <div>
-  <%= link_to "Edit", edit_ci_widget_path(@ci_widget), {class: "btn btn-outline-primary"} %> 
+  <%= link_to "Edit", edit_ci_widget_path(@ci_widget), {class: "btn btn-outline-primary"} %>
   <%= button_to "Delete", @ci_widget, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

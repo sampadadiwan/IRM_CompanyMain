@@ -1,0 +1,61 @@
+<% col_size ||= 4 %>
+<div class="io_facts row">
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+            <i class="ti ti-currency-dollar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= money_to_currency aggregate_portfolio_investment.avg_cost, params %></h3>
+            <span class="text-muted">Avg Cost</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%
+    if params[:force_units] == "Crores" && aggregate_portfolio_investment.fmv.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+  %>
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
+            <i class="ti ti-ticket fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= money_to_currency aggregate_portfolio_investment.fmv, params %></h3>
+            <span class="text-muted">FMV</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+            <i class="ti ti-calendar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= aggregate_portfolio_investment.quantity %></h3>
+            <span class="text-muted">Quantity</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

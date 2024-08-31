@@ -212,7 +212,7 @@ class DocumentsController < ApplicationController
     respond_to do |format|
       format.html do
         if @document.owner
-          redirect_to [@document.owner, { tab: "documents-tab" }], notice: "Document was successfully deleted."
+          redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully deleted."
         else
           redirect_to documents_url, notice: "Document was successfully deleted."
         end

@@ -1,10 +1,10 @@
-      <% investment_opportunity.ci_widgets.each_with_index do |widget, idx| %>
+      <% owner.ci_widgets.each_with_index do |widget, idx| %>
         <% color = "primary" %>
-                
+
         <div class="associated_entity">
           <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
             <div class="container">
-              
+
 
               <div class="card">
                 <div class="card-header d-flex align-items-center">
@@ -14,9 +14,13 @@
                 </div>
                 <div class="card-body collapse show">
                   <div class="row align-items-center">
+                    <%= render "/ci_widgets/details_center", details: widget.details_top, color: color if !widget.details_top.blank?%>
                     <% if widget.image_placement == "Right" %>
                       <%= render "/ci_widgets/media", widget: widget %>
                       <%= render "/ci_widgets/details", widget: widget, color: color %>
+                    <% elsif widget.image_placement.casecmp?("center") %>
+                      <%= render "/ci_widgets/media", widget: widget %>
+                      <%= render "/ci_widgets/details_center", details: widget.details, color: color if !widget.details.blank?%>
                     <% else %>
                       <%= render "/ci_widgets/details", widget: widget, color: color %>
                       <%= render "/ci_widgets/media", widget: widget %>
@@ -29,4 +33,3 @@
         </div>
       <% end %>
 
-              

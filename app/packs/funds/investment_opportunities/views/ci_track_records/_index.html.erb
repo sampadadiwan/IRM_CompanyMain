@@ -1,6 +1,7 @@
+<% owner||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Track Record</h1>
-  <%= link_to "New Track Record", new_ci_track_record_path("ci_track_record[investment_opportunity_id]": @investment_opportunity.id), {class: "btn btn-outline-primary"} if @investment_opportunity %>
+  <%= link_to "New Track Record", new_ci_track_record_path("ci_track_record[owner_id]": owner&.id, "ci_track_record[owner_type]": owner&.class), {class: "btn btn-outline-primary"} if !owner.blank? %>
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="ci_track_records" class="table table-bordered dataTable">
@@ -9,15 +10,15 @@
         <th>
           Name
         </th>
-        
+
         <th>
           Prefix
         </th>
-        
+
         <th>
           Value
         </th>
-        
+
         <th>
           Suffix
         </th>
