@@ -7,7 +7,7 @@ class CapitalRemittancePayment < ApplicationRecord
   belongs_to :fund
   belongs_to :capital_remittance
   delegate :capital_call, to: :capital_remittance
-  delegate :investor, to: :capital_remittance
+  has_one :investor, through: :capital_remittance
   delegate :capital_commitment, to: :capital_remittance
   belongs_to :entity
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"

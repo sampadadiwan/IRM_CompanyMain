@@ -6,7 +6,7 @@ inv_inst_form_type, inv_inst_custom_field_names, inv_inst_custom_headers = get_f
 
 # Get the latest FundRatios for the APIs
 first_api = @aggregate_portfolio_investments[0]
-api_fund_ratios = FundRatio.latest.where(entity_id: first_api.entity_id, owner_type: "AggregatePortfolioInvestment")
+api_fund_ratios = FundRatio.latest.where(entity_id: first_api.entity_id, owner_type: "AggregatePortfolioInvestment") if first_api
 
 wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
   # Create the header row

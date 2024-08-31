@@ -15,6 +15,7 @@ class InvestorAdvisor < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   belongs_to :import_upload, optional: true
+  belongs_to :created_by, class_name: "User", optional: true
 
   before_validation :ensure_user
   validates_uniqueness_of :email, scope: :entity_id
