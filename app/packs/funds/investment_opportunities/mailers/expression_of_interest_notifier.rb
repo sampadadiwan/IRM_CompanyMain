@@ -1,7 +1,4 @@
 class ExpressionOfInterestNotifier < BaseNotifier
-  # Add required params
-  required_param :expression_of_interest
-
   def mailer_name(_notification = nil)
     ExpressionOfInterestMailer
   end
@@ -15,13 +12,13 @@ class ExpressionOfInterestNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      expression_of_interest_id: params[:expression_of_interest].id
+      expression_of_interest_id: record.id
     }
   end
 
   notification_methods do
     def message
-      @expression_of_interest = params[:expression_of_interest]
+      @expression_of_interest = record
       params[:msg] || "Expression Of Interest Approved: #{@expression_of_interest.investment_opportunity.company_name}"
     end
 
@@ -30,7 +27,7 @@ class ExpressionOfInterestNotifier < BaseNotifier
     end
 
     def url
-      expression_of_interest_path(id: params[:expression_of_interest].id, sub_domain: params[:expression_of_interest].entity.sub_domain)
+      expression_of_interest_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

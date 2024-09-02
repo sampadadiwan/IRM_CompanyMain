@@ -1,7 +1,4 @@
 class InvestorAccessNotifier < BaseNotifier
-  # Add required params
-  required_param :investor_access
-
   def mailer_name(_notification = nil)
     InvestorAccessMailer
   end
@@ -10,14 +7,14 @@ class InvestorAccessNotifier < BaseNotifier
     {
       notification_id: notification.id,
       user_id: notification.recipient_id,
-      investor_access_id: params[:investor_access].id,
+      investor_access_id: record.id,
       entity_id: params[:entity_id]
     }
   end
 
   notification_methods do
     def message
-      @investor_access ||= params[:investor_access]
+      @investor_access ||= record
       params[:msg] || "Access granted to #{@investor_access.entity.name}"
     end
 
@@ -26,7 +23,7 @@ class InvestorAccessNotifier < BaseNotifier
     end
 
     def url
-      investor_access_path(id: params[:investor_access].id, sub_domain: params[:investor_access].entity.sub_domain)
+      investor_access_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

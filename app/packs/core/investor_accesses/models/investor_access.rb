@@ -129,7 +129,7 @@ class InvestorAccess < ApplicationRecord
 
   def send_notification
     msg = "You have been granted access to '#{entity.name}'"
-    InvestorAccessNotifier.with(entity_id:, investor_access: self, email_method: :notify_access, msg:).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotifier.with(record: self, entity_id:, email_method: :notify_access, msg:).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed

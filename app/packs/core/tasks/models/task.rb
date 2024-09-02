@@ -29,7 +29,7 @@ class Task < ApplicationRecord
     users << user if response.blank?
     users << assigned_to if assigned_to
     users.uniq.each do |u|
-      TaskNotifier.with(entity_id:, task: self).deliver_later(u)
+      TaskNotifier.with(record: self, entity_id:).deliver_later(u)
     end
   end
 end

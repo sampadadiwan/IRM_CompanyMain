@@ -1,6 +1,5 @@
 class TaskNotifier < BaseNotifier
   # Add required params
-  required_param :task
   required_param :entity_id
 
   def mailer_name(_notification = nil)
@@ -15,14 +14,14 @@ class TaskNotifier < BaseNotifier
     {
       notification_id: notification.id,
       user_id: notification.recipient_id,
-      task_id: params[:task].id,
+      task_id: record.id,
       entity_id: params[:entity_id]
     }
   end
 
   notification_methods do
     def message
-      @task ||= params[:task]
+      @task ||= record
       @task.details
     end
 
@@ -31,7 +30,7 @@ class TaskNotifier < BaseNotifier
     end
 
     def url
-      task_path(id: params[:task].id, sub_domain: params[:task].entity.sub_domain)
+      task_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

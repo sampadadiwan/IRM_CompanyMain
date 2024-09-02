@@ -146,7 +146,7 @@ class AccessRight < ApplicationRecord
     if notify && (%w[Document Folder].exclude?(owner_type) || (owner.respond_to?(:send_email) && owner.send_email))
       users.each do |user|
         msg = "You have been granted access to #{owner_type} #{owner.name} by #{entity.name}"
-        AccessRightNotifier.with(entity_id:, access_right: self, msg:).deliver_later(user)
+        AccessRightNotifier.with(record: self, entity_id:, msg:).deliver_later(user)
       end
     end
   end

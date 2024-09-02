@@ -267,12 +267,22 @@ Given('Given I upload a offer file {string}') do |file_name|
     ImportUpload.last.failed_row_count.should == 0
 end
 
-Then('when the offers are approved') do  
+Then('when the offers are approved') do
   @sale.reload
   @sale.offers.each do |offer|
     offer.granted_by_user_id = @user.id
     OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true
   end
+end
+
+Then('offer approval notification is sent') do
+  @sale.offers.each do |offer|
+    offer.notify_approval
+  end
+end
+
+Then('the notification should be sent successfully') do
+  OfferNotifier::Notification.count.should == @sale.offers.count
 end
 
 Then('the sale offered quantity should be {string}') do |quantity|
@@ -298,13 +308,13 @@ Then('the offers must have the data in the sheet') do
     offer.quantity.should == user_data["Offer Quantity"]
     offer.offer_type.should == user_data["Founder/Employee/Investor"]
     offer.investor.investor_name.should == user_data["Investor"] if offer.offer_type == "Investor"
-    offer.user.email.should == user_data["Email"] 
+    offer.user.email.should == user_data["Email"]
     offer.address.should == user_data["Address"]
     offer.PAN.should == user_data["Pan"]
     offer.seller_signatory_emails.should == user_data["Seller Signatory Emails"]
     offer.bank_account_number.should == user_data["Bank Account"].to_s
     offer.ifsc_code.should == user_data["Ifsc Code"]
     offer.demat.should == user_data["Demat"].to_s
-    offer.city.should == user_data["City"]    
+    offer.city.should == user_data["City"]
   end
 end

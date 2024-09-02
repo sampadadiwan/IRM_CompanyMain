@@ -96,7 +96,7 @@ class CapitalDistributionPayment < ApplicationRecord
   def send_notification
     if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
       investor.notification_users(fund).each do |user|
-        CapitalDistributionPaymentNotifier.with(entity_id:, capital_distribution_payment: self).deliver_later(user)
+        CapitalDistributionPaymentNotifier.with(record: self, entity_id:).deliver_later(user)
       end
     end
   end

@@ -1,7 +1,4 @@
 class DocumentNotifier < BaseNotifier
-  # Add required params
-  required_param :document
-
   def mailer_name(_notification = nil)
     DocumentMailer
   end
@@ -14,26 +11,26 @@ class DocumentNotifier < BaseNotifier
     {
       notification_id: notification.id,
       user_id: notification.recipient_id,
-      document_id: params[:document].id,
+      document_id: record.id,
       entity_id: params[:entity_id]
     }
   end
 
   notification_methods do
     def message
-      @document = params[:document]
+      @document = record
       @custom_notification ||= custom_notification
       @custom_notification&.subject || params[:msg] || "Document Uploaded: #{@document.name}"
     end
 
     def custom_notification
-      @document ||= params[:document]
+      @document ||= record
       @custom_notification ||= @document.entity.custom_notification(params[:email_method], custom_notification_id: params[:custom_notification_id])
       @custom_notification
     end
 
     def url
-      document_path(id: params[:document], sub_domain: params[:document].entity.sub_domain)
+      document_path(id: record, sub_domain: record.entity.sub_domain)
     end
   end
 end

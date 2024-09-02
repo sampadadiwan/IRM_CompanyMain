@@ -1,7 +1,4 @@
 class CapitalDistributionPaymentNotifier < BaseNotifier
-  # Add required params
-  required_param :capital_distribution_payment
-
   def mailer_name(_notification = nil)
     CapitalDistributionPaymentsMailer
   end
@@ -15,14 +12,14 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      capital_distribution_payment_id: params[:capital_distribution_payment].id,
-      additional_ccs: params[:capital_distribution_payment].capital_commitment.cc
+      capital_distribution_payment_id: record.id,
+      additional_ccs: record.capital_commitment.cc
     }
   end
 
   notification_methods do
     def message
-      @capital_distribution_payment = params[:capital_distribution_payment]
+      @capital_distribution_payment = record
       params[:msg] || "CapitalDistributionPayment: #{@capital_distribution_payment}"
     end
 
@@ -31,7 +28,7 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
     end
 
     def url
-      capital_distribution_payment_path(id: params[:capital_distribution_payment].id, sub_domain: params[:capital_distribution_payment].entity.sub_domain)
+      capital_distribution_payment_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

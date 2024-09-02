@@ -86,14 +86,14 @@ class CapitalRemittance < ApplicationRecord
     if capital_call.send_call_notice_flag && capital_call.approved && !capital_call.manual_generation
       investor.notification_users(fund).each do |user|
         email_method = reminder ? :reminder_capital_remittance : :notify_capital_remittance
-        CapitalRemittanceNotifier.with(entity_id:, capital_remittance: self, email_method:).deliver_later(user)
+        CapitalRemittanceNotifier.with(record: self, entity_id:, email_method:).deliver_later(user)
       end
     end
   end
 
   def payment_received_notification
     investor.notification_users(fund).each do |user|
-      CapitalRemittanceNotifier.with(entity_id:, capital_remittance: self, email_method: :payment_received).deliver_later(user)
+      CapitalRemittanceNotifier.with(record: self, entity_id:, email_method: :payment_received).deliver_later(user)
     end
   end
 

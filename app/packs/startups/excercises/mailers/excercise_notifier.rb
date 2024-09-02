@@ -1,6 +1,5 @@
 class ExcerciseNotifier < BaseNotifier
   # Add required params
-  required_param :excercise
   required_param :email_method
 
   def mailer_name(_notification = nil)
@@ -12,13 +11,13 @@ class ExcerciseNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      excercise_id: params[:excercise].id
+      excercise_id: record.id
     }
   end
 
   notification_methods do
     def message
-      @excercise = params[:excercise]
+      @excercise = record
       params[:msg] || "Excercise: #{@excercise}"
     end
 
@@ -27,7 +26,7 @@ class ExcerciseNotifier < BaseNotifier
     end
 
     def url
-      excercise_path(id: params[:excercise].id, sub_domain: params[:excercise].entity.sub_domain)
+      excercise_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

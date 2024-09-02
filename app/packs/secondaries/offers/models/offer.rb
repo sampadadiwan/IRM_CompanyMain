@@ -161,11 +161,11 @@ class Offer < ApplicationRecord
   end
 
   def notify_approval
-    OfferNotifier.with(entity_id:, offer: self, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
+    OfferNotifier.with(record: self, entity_id:, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   def notify_accept_spa
-    OfferNotifier.with(entity_id:, offer: self, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
+    OfferNotifier.with(record: self, entity_id:, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   def folder_path

@@ -53,7 +53,7 @@ class CapitalRemittancePayment < ApplicationRecord
       # Send email notification to all approved users of the investor
       investor.notification_users(fund).each do |user|
         email_method = :notify_capital_remittance_payment
-        CapitalRemittancePaymentNotifier.with(entity_id:, capital_remittance_payment: self, email_method:).deliver_later(user)
+        CapitalRemittancePaymentNotifier.with(record: self, entity_id:, email_method:).deliver_later(user)
       end
 
       # Mark this as sent, so we dont resend duplicate notifications

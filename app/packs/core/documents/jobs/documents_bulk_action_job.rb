@@ -54,8 +54,9 @@ class DocumentsBulkActionJob < BulkActionJob
     if ((document.subject_to_approval? && document.approved) || !document.subject_to_approval?) && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
       if document.notification_users.present?
         document.notification_users.each do |user|
-          DocumentNotifier.with(entity_id: document.entity_id,
-                                document:, email_method: "send_document",
+          DocumentNotifier.with(record: document,
+                                entity_id: document.entity_id,
+                                email_method: "send_document",
                                 custom_notification_id:).deliver(user)
         rescue Exception => e
           msg = "Error sending #{document.name} to #{user.email} #{e.message}"

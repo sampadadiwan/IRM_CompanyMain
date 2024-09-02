@@ -1,6 +1,5 @@
 class OfferNotifier < BaseNotifier
   # Add required params
-  required_param :offer
   required_param :email_method
 
   def mailer_name(_notification = nil)
@@ -12,14 +11,14 @@ class OfferNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      offer_id: params[:offer].id,
+      offer_id: record.id,
       custom_notification_id: params[:custom_notification_id]
     }
   end
 
   notification_methods do
     def message
-      @offer = params[:offer]
+      @offer = record
       @custom_notification ||= custom_notification
       params[:msg] || "Offer: #{@offer}"
     end
@@ -30,7 +29,7 @@ class OfferNotifier < BaseNotifier
     end
 
     def url
-      offer_path(id: params[:offer].id, sub_domain: params[:offer].entity.sub_domain)
+      offer_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

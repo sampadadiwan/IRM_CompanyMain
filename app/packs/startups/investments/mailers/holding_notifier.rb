@@ -1,6 +1,5 @@
 class HoldingNotifier < BaseNotifier
   # Add required params
-  required_param :holding
   required_param :email_method
 
   def mailer_name(_notification = nil)
@@ -12,13 +11,13 @@ class HoldingNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      holding_id: params[:holding].id
+      holding_id: record.id
     }
   end
 
   notification_methods do
     def message
-      @holding = params[:holding]
+      @holding = record
       params[:msg] || "Holding: #{@holding}"
     end
 
@@ -27,7 +26,7 @@ class HoldingNotifier < BaseNotifier
     end
 
     def url
-      holding_path(id: params[:holding].id, sub_domain: params[:holding].entity.sub_domain)
+      holding_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

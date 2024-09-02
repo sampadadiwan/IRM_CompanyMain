@@ -1,6 +1,5 @@
 class SecondarySaleNotifier < BaseNotifier
   # Add required params
-  required_param :secondary_sale
   required_param :email_method
 
   def mailer_name(_notification = nil)
@@ -12,14 +11,14 @@ class SecondarySaleNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      secondary_sale_id: params[:secondary_sale].id,
+      secondary_sale_id: record.id,
       custom_notification_id: params[:custom_notification_id]
     }
   end
 
   notification_methods do
     def message
-      @secondary_sale ||= params[:secondary_sale]
+      @secondary_sale ||= record
       @custom_notification ||= custom_notification
       @custom_notification&.subject.presence || params[:msg].presence || "SecondarySale: #{@secondary_sale}"
     end
@@ -28,14 +27,14 @@ class SecondarySaleNotifier < BaseNotifier
       if params[:custom_notification_id].present?
         @custom_notification = CustomNotification.find(params[:custom_notification_id])
       else
-        @secondary_sale ||= params[:secondary_sale]
+        @secondary_sale ||= record
         @custom_notification ||= @secondary_sale.custom_notification(params[:email_method])
       end
       @custom_notification
     end
 
     def url
-      secondary_sale_path(id: params[:secondary_sale].id, sub_domain: params[:secondary_sale].entity.sub_domain)
+      secondary_sale_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

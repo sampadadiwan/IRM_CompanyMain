@@ -1,7 +1,4 @@
 class AccessRightNotifier < BaseNotifier
-  # Add required params
-  required_param :access_right
-
   def mailer_name(_notification = nil)
     AccessRightsMailer
   end
@@ -14,14 +11,14 @@ class AccessRightNotifier < BaseNotifier
     {
       notification_id: notification.id,
       user_id: notification.recipient_id,
-      access_right_id: params[:access_right].id,
+      access_right_id: record.id,
       entity_id: params[:entity_id]
     }
   end
 
   notification_methods do
     def message
-      @access_right ||= params[:access_right]
+      @access_right ||= record
       params[:msg] || "Access granted to #{@access_right.owner}"
     end
 
@@ -30,7 +27,7 @@ class AccessRightNotifier < BaseNotifier
     end
 
     def url
-      @access_right ||= params[:access_right]
+      @access_right ||= record
       polymorphic_url(@access_right.owner_type.tableize.singularize, id: @access_right.owner_id, sub_domain: @access_right.entity.sub_domain)
     end
   end

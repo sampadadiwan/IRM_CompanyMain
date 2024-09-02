@@ -1,5 +1,4 @@
 class InvestorAdvisorNotifier < BaseNotifier
-  required_param :investor_advisor
   required_param :email_method
 
   def mailer_name(_notification = nil)
@@ -11,14 +10,14 @@ class InvestorAdvisorNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      investor_advisor_id: params[:investor_advisor].id,
+      investor_advisor_id: record.id,
       owner_name: params[:owner_name]
     }
   end
 
   notification_methods do
     def message
-      @investor_advisor = params[:investor_advisor]
+      @investor_advisor = record
       params[:msg] || "Investor Advisor: #{@investor_advisor}"
     end
 
@@ -27,7 +26,7 @@ class InvestorAdvisorNotifier < BaseNotifier
     end
 
     def url
-      investor_advisor_path(id: params[:investor_advisor].id, sub_domain: params[:investor_advisor].entity.sub_domain)
+      investor_advisor_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

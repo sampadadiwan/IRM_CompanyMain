@@ -56,14 +56,14 @@ class Excercise < ApplicationRecord
 
   def notify_excercise
     if cashless
-      ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_cashless_excercise, msg: "Cashless Exercise of Option").deliver_later(user)
+      ExcerciseNotifier.with(record: self, entity_id:, email_method: :notify_cashless_excercise, msg: "Cashless Exercise of Option").deliver_later(user)
     else
-      ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
+      ExcerciseNotifier.with(record: self, entity_id:, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
     end
   end
 
   def notify_approval
-    ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_approval, msg: "Exercise of Option Approved").deliver_later(user)
+    ExcerciseNotifier.with(record: self, entity_id:, email_method: :notify_approval, msg: "Exercise of Option Approved").deliver_later(user)
   end
 
   def folder_path

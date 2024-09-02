@@ -8,7 +8,7 @@ Scenario Outline: See my holdings in a sale
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have "Seller" access to the sale  
+  Given I have "Seller" access to the sale
   And I am at the sales details page
   Then I should see only my holdings
 Examples:
@@ -25,7 +25,7 @@ Scenario Outline: Place an offer
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have "Seller" access to the sale  
+  Given I have "Seller" access to the sale
   And I am at the sales details page
   Then when I place an offer "<offer>"
   Then I should see the offer details
@@ -51,14 +51,14 @@ Examples:
 
 
 
-Scenario Outline: Place a wrong offer 
+Scenario Outline: Place a wrong offer
   Given there is a user "<user>" for an entity "<entity>"
   Given there are "2" employee investors
   Given Im logged in as an employee investor
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have "Seller" access to the sale  
+  Given I have "Seller" access to the sale
   And I am at the sales details page
   Then when I place an offer "<offer>"
   Then I should see the "<msg>"
@@ -80,9 +80,9 @@ Scenario Outline: Approve holdings as a company
   And there is an "unapproved" offer "quantity=100" for each employee investor
   And I am at the sales details page
   Then I should see all the offers
-  And the sales total_offered_quantity should be "0"  
+  And the sales total_offered_quantity should be "0"
   And When I approve the offers the offers should be approved
-  And the sales total_offered_quantity should be "200"  
+  And the sales total_offered_quantity should be "200"
 Examples:
     |user	    |entity               |sale                                                         |quantity	|
     |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |100        |
@@ -119,4 +119,22 @@ Scenario Outline: Import offer to sale without holdings
   Then I should see the "Import in progress"
   And the offers must have the data in the sheet
   And when the offers are approved
+  And the sale offered quantity should be "120"
+
+Scenario Outline: Offer Approval Notification
+  Given Im logged in as a user "first_name=Test1" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"
+  And Given I upload an investors file for the company
+  # And Given I upload an investor access file for employees
+  Given there is a sale "name=Summer Sale"
+  Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
+  And Given I upload a holdings file
+  Then I should see the "Import in progress"
+  And when the holdings are approved
+  And Given I upload a offer file "offers.xlsx"
+  Then I should see the "Import in progress"
+  And the offers must have the data in the sheet
+  And when the offers are approved
+  And offer approval notification is sent
+  Then the notification should be sent successfully
   And the sale offered quantity should be "120"

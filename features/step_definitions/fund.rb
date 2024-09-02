@@ -535,7 +535,7 @@ Given('the capital calls are approved') do
   @fund.capital_calls.each do |cc|
     cc.approved = true
     cc.approved_by_user = @user
-    CapitalCallUpdate.wtf?(capital_call: cc)    
+    CapitalCallUpdate.wtf?(capital_call: cc)
   end
 end
 
@@ -982,8 +982,8 @@ end
 Then('I should be able to see my capital commitments') do
   @user.reload
   click_on("Commitments")
-  
-  
+
+
   within("#capital_commitments") do
     CapitalCommitment.all.each do |cc|
 
@@ -1227,6 +1227,10 @@ end
 Given('the distribution payments are completed') do
   puts CapitalDistributionPayment.all.to_json
   CapitalDistributionPayment.update(completed: true)
+end
+
+Given('Capital Distribution Payment Notification is sent') do
+  CapitalDistributionPaymentNotifier::Notification.count.should == CapitalDistributionPayment.count
 end
 
 Then('there should be correct units for the distribution payments for each investor') do
