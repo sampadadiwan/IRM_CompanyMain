@@ -12,7 +12,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def copy_formulas?
-    update?
+    update? && support?
   end
 
   def allocate_form?
@@ -58,7 +58,8 @@ class FundPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    user.enable_funds &&
+      permissioned_employee?(:update)
   end
 
   def edit?

@@ -1,6 +1,6 @@
 class CapitalDistributionPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
@@ -25,7 +25,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def approve?
-    !record.approved && create?
+    !record.approved && update?
   end
 
   def redeem_units?

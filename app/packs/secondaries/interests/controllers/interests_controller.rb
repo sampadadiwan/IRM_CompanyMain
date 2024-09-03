@@ -1,5 +1,5 @@
 class InterestsController < ApplicationController
-  before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate
+  before_action :set_interest, only: %i[show edit update destroy short_list allocate
                                         allocation_form matched_offers accept_spa generate_docs]
 
   # GET /interests or /interests.json
@@ -17,11 +17,10 @@ class InterestsController < ApplicationController
       @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
       @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
       @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
-      @interests = @interests.finalized if params[:finalized].present?
 
     end
 
-    # @interests = @interests.page(params[:page]).per(params[:per_page] || 10)
+    # @interests = @interests.page(params[:page]).per(params[:per_page] || 10) unless format.xlsx?
 
     render "index"
   end
@@ -159,20 +158,6 @@ class InterestsController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @interest.errors, status: :unprocessable_entity }
       end
-    end
-  end
-
-  def finalize
-    InterestFinalize.call(interest: @interest, current_user:)
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(@interest, partial: "interests/interest",
-                                          locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
-        ]
-      end
-      format.html { redirect_to interest_url(@interest), notice: "Interest was successfully marked as final." }
-      format.json { @interest.to_json }
     end
   end
 

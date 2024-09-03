@@ -81,17 +81,6 @@
           </td>
         </tr>
 
-        <!-- <tr id="finalized">
-          <td>
-            Finalized
-          </td>
-          <td>
-            <span class="badge <%= interest.finalized? ? 'bg-success' : 'bg-warning' %>">
-              <%= interest.finalized? ? "Yes" : "No" %>
-            </span>
-          </td>
-        </tr> -->
-
         <% if current_user %>
         <tr>
           <td>
@@ -151,30 +140,6 @@
         </tr>
       <% end %>
         
-
-        <% if interest.secondary_sale.finalized || params[:debug].present? %>
-
-          <tr>
-            <td colspan="2" class="bg-primary"></td>
-          </tr>
-          <tr>
-            <td>
-              Mapped Offer Quantity
-            </td>
-            <td>
-              <%= interest.offer_quantity %> 
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Allocation - Mapped
-            </td>
-            <td>
-              <%= interest.allocation_delta %> 
-            </td>
-          </tr>
-
-        <% end %>
 
         <% if interest.buyer_entity_name.present? %>
 

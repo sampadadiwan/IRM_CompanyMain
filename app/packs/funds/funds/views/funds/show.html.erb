@@ -66,7 +66,7 @@
             Sebi Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Generate Reports", new_fund_report_path(fund_id: @fund.id), {class: "dropdown-item"} if policy(FundReport).new? %>
+            <%= link_to "Generate Reports", new_fund_report_path(fund_id: @fund.id), {class: "dropdown-item"} if policy(FundReport.new(fund_id: @fund.id, entity_id: @fund.entity_id)).new? %>
             <%= link_to "All Reports", fund_reports_path(fund_id: @fund.id), {class: "dropdown-item" }  %>
             <%= link_to "Corpus Details" , fund_reports_path(fund_id: @fund.id, name: "CorpusDetails"), {class: "dropdown-item" } %>
             <%= link_to "Information on Investments" , fund_reports_path(fund_id: @fund.id, name: "InformationOnInvestments" ), {class: "dropdown-item" } %>

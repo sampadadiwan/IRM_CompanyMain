@@ -1,20 +1,20 @@
 FactoryBot.define do
   factory :key_biz_metric do
-    name { "MyString" }
-    metric_type { "MyString" }
+    name { Faker::Company.name }
+    metric_type { Faker::Company.name }
     value { "9.99" }
-    display_value { "MyString" }
-    notes { "MyString" }
-    query { "MyText" }
+    display_value { Faker::Company.name }
+    notes { Faker::Company.name }
+    query { Faker::Company.catch_phrase }
   end
 
   factory :incoming_email do
-    from { "MyString" }
-    to { "MyString" }
-    subject { "MyString" }
-    body { "MyText" }
+    from { Faker::Company.name }
+    to { Faker::Company.name }
+    subject { Faker::Company.name }
+    body { Faker::Company.catch_phrase }
     owner { nil }
-    entity { nil }
+    entity { nil }    
   end
 
   factory :stock_conversion do
@@ -25,14 +25,14 @@ FactoryBot.define do
     from_quantity { "9.99" }
     to_instrument { nil }
     to_quantity { "9.99" }
-    note { "MyText" }
+    note { Faker::Company.catch_phrase }
     conversion_date { Date.today - rand(30).days }
   end
 
   factory :doc_question do
     entity { nil }
-    tags { "MyString" }
-    question { "MyText" }
+    tags { Faker::Company.name }
+    question { Faker::Company.catch_phrase }
   end
 
   factory :support_client_mapping do
@@ -54,31 +54,31 @@ FactoryBot.define do
   factory :investor_kpi_mapping do
     entity { nil }
     investor { nil }
-    reported_kpi_name { "MyString" }
-    standard_kpi_name { "MyString" }
+    reported_kpi_name { Faker::Company.name }
+    standard_kpi_name { Faker::Company.name }
     lower_threshhold { "9.99" }
     upper_threshold { "9.99" }
   end
 
   factory :quick_link_step do
-    name { "MyString" }
-    link { "MyText" }
-    description { "MyText" }
+    name { Faker::Company.name }
+    link { Faker::Company.catch_phrase }
+    description { Faker::Company.catch_phrase }
     entity { nil }
     quick_link { nil }
   end
 
   factory :quick_link do
-    name { "MyString" }
-    description { "MyText" }
-    tags { "MyString" }
+    name { Faker::Company.name }
+    description { Faker::Company.catch_phrase }
+    tags { Faker::Company.name }
     entity { nil }
   end
 
   factory :custom_notification do
-    subject { "MyString" }
-    body { "MyText" }
-    whatsapp { "MyString" }
+    subject { Faker::Company.name }
+    body { Faker::Company.catch_phrase }
+    whatsapp { Faker::Company.name }
     entity { nil }
     owner { nil }
   end
@@ -89,7 +89,7 @@ FactoryBot.define do
     portfolio_company { nil }
     user { nil }
     adjustment { "9.99" }
-    notes { "MyText" }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :investor_access do
@@ -102,6 +102,7 @@ FactoryBot.define do
     phone { rand(10 ** 10) }
     send_confirmation { false }
     approved { true }
+    
   end
 
   factory :portfolio_cashflow do
@@ -111,14 +112,14 @@ FactoryBot.define do
     aggregate_portfolio_investment { nil }
     payment_date { "2023-08-05" }
     amount { "9.99" }
-    notes { "MyText" }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :call_fee do
-    name { "MyString" }
+    name { Faker::Company.name }
     start_date { "2023-08-03" }
     end_date { "2023-08-03" }
-    notes { "MyString" }
+    notes { Faker::Company.name }
     entity { nil }
     fund { nil }
     capital_call { nil }
@@ -127,17 +128,17 @@ FactoryBot.define do
 
   factory :kpi do
     entity { nil }
-    name { "MyString" }
+    name { Faker::Company.name }
     value { "9.99" }
-    display_value { "MyString" }
-    notes { "MyString" }
+    display_value { Faker::Company.name }
+    notes { Faker::Company.name }
     kpi_report { nil }
   end
 
   factory :kpi_report do
     entity { nil }
     as_of { "2023-06-12" }
-    notes { "MyText" }
+    notes { Faker::Company.catch_phrase }
     user { nil }
   end
 
@@ -149,20 +150,32 @@ FactoryBot.define do
     pre_adjustment { "9.99" }
     amount { "9.99" }
     post_adjustment { "9.99" }
-    reason { "MyText" }
+    reason { Faker::Company.catch_phrase }
   end
 
   factory :fund_unit_setting do
     entity { nil }
     fund { nil }
-    name { "MyString" }
+    name { "A,B,C,D,E,F".split(",").sample }
     management_fee { "9.99" }
     setup_fee { "9.99" }
+  end
+
+  factory :fund_formula do
+    entity { nil }
+    fund { nil }
+    name { Faker::Company.buzzword }
+    formula { "1+1" }
+    rule_type { "GenerateAccountEntry" }
+    entry_type { "Test" }
+    commitment_type { "All" }
+    rule_for { "accounting" }
   end
 
   factory :portfolio_investment do
     fund { Fund.all.sample }
     entity { fund.entity }
+    investment_instrument { entity.investment_instruments.sample }
     portfolio_company { entity.investors.portfolio_companies.sample }
     investment_date { Time.zone.today - 1.month - rand(48).months }
     base_amount_cents { 10000000 * rand(1..20) }
@@ -178,21 +191,21 @@ FactoryBot.define do
     entity { nil }
     fund { nil }
     investor { nil }
-    folio_id { "MyString" }
+    folio_id { Faker::Company.name }
     reporting_date { "2023-02-02" }
-    entry_type { "MyString" }
-    name { "MyString" }
+    entry_type { Faker::Company.name }
+    name { Faker::Company.name }
     amount { "9.99" }
-    notes { "MyText" }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :fund_unit do
     fund { nil }
     capital_commitment { nil }
     investor { nil }
-    unit_type { "MyString" }
-    quantity { 1 }
-    reason { "MyText" }
+    unit_type { "A,B,C,D,E,F".split(",").sample }
+    quantity { 10 }
+    reason { Faker::Company.catch_phrase }
   end
 
 
@@ -201,7 +214,7 @@ FactoryBot.define do
     bank_verification { false }
     trial { false }
     trail_end_date { "2023-01-22" }
-    valuation_math { "MyString" }
+    valuation_math { Faker::Company.name }
     snapshot_frequency_months { 1 }
     last_snapshot_on { "2023-01-22" }
     # sandbox { true }
@@ -213,10 +226,10 @@ FactoryBot.define do
     entity { nil }
     fund { nil }
     valuation { nil }
-    name { "MyString" }
+    name { ["XIRR", "TVP", "DVP"].sample }
     value { "9.99" }
-    display_value { "MyString" }
-    notes { "MyText" }
+    display_value { Faker::Company.name }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :capital_remittance_payment do
@@ -229,9 +242,9 @@ FactoryBot.define do
 
   factory :user_alert do
     user { nil }
-    message { "MyString" }
+    message { Faker::Company.name }
     entity { nil }
-    level { "MyString" }
+    level { Faker::Company.name }
   end
 
   factory :esign do
@@ -239,28 +252,28 @@ FactoryBot.define do
     user { nil }
     owner { nil }
     sequence_id { 1 }
-    link { "MyString" }
-    reason { "MyText" }
-    status { "MyString" }
+    link { Faker::Company.name }
+    reason { Faker::Company.catch_phrase }
+    status { Faker::Company.name }
     completed { false }
   end
 
   factory :signature_workflow do
     owner { nil }
     entity { nil }
-    signatory_ids { "MyString" }
-    completed_ids { "MyString" }
+    signatory_ids { Faker::Company.name }
+    completed_ids { Faker::Company.name }
     sequential { false }
   end
 
   factory :adhaar_esign do
     entity { nil }
     document { nil }
-    esign_url { "MyText" }
-    esign_doc_id { "MyString" }
-    signed_file_url { "MyText" }
+    esign_url { Faker::Company.catch_phrase }
+    esign_doc_id { Faker::Company.name }
+    signed_file_url { Faker::Company.catch_phrase }
     is_signed { false }
-    reponse { "MyText" }
+    reponse { Faker::Company.catch_phrase }
   end
 
   factory :investor_notice_entry do
@@ -281,9 +294,9 @@ FactoryBot.define do
   end
 
   factory :fee do
-    advisor_name { "MyString" }
+    advisor_name { Faker::Company.name }
     amount { "9.99" }
-    amount_label { "MyString" }
+    amount_label { Faker::Company.name }
     owner { nil }
     entity { nil }
   end
@@ -347,7 +360,7 @@ FactoryBot.define do
     form_type { nil }
     amount { "9.99" }
     payment_date { "2022-09-04" }
-    properties { "MyText" }
+    properties { Faker::Company.catch_phrase }
   end
 
 
@@ -462,7 +475,7 @@ FactoryBot.define do
   factory :reminder do
     entity { nil }
     owner { nil }
-    unit { "MyString" }
+    unit { Faker::Company.name }
     count { 1 }
     sent { false }
   end
@@ -519,7 +532,7 @@ FactoryBot.define do
   factory :aggregate_investment do
     entity { nil }
     funding_round { nil }
-    shareholder { "MyString" }
+    shareholder { Faker::Company.name }
     investor { nil }
     equity { 1 }
     preferred { 1 }
@@ -529,7 +542,7 @@ FactoryBot.define do
   end
 
   factory :scenario do
-    name { "MyString" }
+    name { Faker::Company.name }
     entity { nil }
   end
 

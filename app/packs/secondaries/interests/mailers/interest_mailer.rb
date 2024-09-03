@@ -20,8 +20,4 @@ class InterestMailer < ApplicationMailer
   def notify_accept_spa
     send_mail(subject: "SPA confirmation received")
   end
-
-  def notify_finalized
-    send_mail(subject: "Interest Finalized for #{@interest.secondary_sale.name} ")
-  end
 end

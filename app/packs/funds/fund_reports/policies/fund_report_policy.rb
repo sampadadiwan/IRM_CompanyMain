@@ -1,10 +1,10 @@
 class FundReportPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
-    user.has_cached_role?(:company_admin)
+    permissioned_employee?
   end
 
   def regenerate?
@@ -16,7 +16,11 @@ class FundReportPolicy < FundBasePolicy
   end
 
   def create?
-    user.has_cached_role?(:company_admin)
+    permissioned_employee?(:create)
+  end
+
+  def update?
+    permissioned_employee?(:update)
   end
 
   def destroy?

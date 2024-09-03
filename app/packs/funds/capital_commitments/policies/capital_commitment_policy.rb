@@ -1,6 +1,10 @@
 class CapitalCommitmentPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
+  end
+
+  def create?
+    permissioned_employee?(:create)
   end
 
   def report?
@@ -9,7 +13,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? || support?
+      permissioned_investor?
   end
 
   def documents?
@@ -21,7 +25,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) || support?
+    permissioned_employee?(:update)
   end
 
   def transfer_fund_units?
@@ -29,7 +33,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def generate_documentation?
-    update? && !record.esign_completed && record.investor_kyc&.verified
+    record.investor_kyc&.verified && update? && !record.esign_completed
   end
 
   def generate_soa_form?
@@ -37,7 +41,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def generate_soa?
-    update? && record.investor_kyc&.verified
+    record.investor_kyc&.verified && update?
   end
 
   def edit?
@@ -45,6 +49,6 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) || support?
+    permissioned_employee?(:destroy) || (permissioned_employee? && support?)
   end
 end

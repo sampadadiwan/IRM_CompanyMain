@@ -1,25 +1,14 @@
 class SecondarySalePolicy < SaleBasePolicy
-  # class Scope < Scope
-  #   def resolve
-  #     case user.curr_role.to_sym
-  #     when :employee
-  #       user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
-  #     when :holding
-  #       scope.for_investor(user).distinct
-  #     when :investor
-  #       scope.for_investor(user)
-  #     else
-  #       scope.none
-  #     end
-  #   end
-  # end
-
   def index?
     user.enable_secondary_sale
   end
 
   def offer?
-    permissioned_investor?(:seller)
+    record.active? &&
+      (
+        permissioned_investor?(:seller) ||
+        (permissioned_employee?(:update) && record.manage_offers)
+      )
   end
 
   def external_sale?
@@ -27,7 +16,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def owner?
-    permissioned_employee?(:update)
+    permissioned_employee? # (:update)
   end
 
   def offers?
@@ -52,7 +41,7 @@ class SecondarySalePolicy < SaleBasePolicy
 
   def show_interest?
     record.active? &&
-      (buyer? || external_sale?)
+      (buyer? || (permissioned_employee?(:update) && record.manage_interests))
   end
 
   def see_private_docs?
@@ -61,12 +50,8 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def show?
-    if (belongs_to_entity?(user, record) && user.enable_secondary_sale) || support?
-      true
-    else
-      permissioned_investor? ||
-        external_sale?
-    end
+    permissioned_employee? ||
+      permissioned_investor?
   end
 
   def report?

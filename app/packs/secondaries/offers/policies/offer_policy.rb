@@ -23,20 +23,20 @@ class OfferPolicy < SaleBasePolicy
 
   def show?
     create? ||
-      belongs_to_entity?(user, record) ||
-      sale_policy.owner? ||
-      interest_policy.owner?
+      permissioned_employee?
   end
 
   def create?
-    if belongs_to_entity?(user, record)
-      record.secondary_sale.manage_offers
-
+    if permissioned_employee?(:create) &&
+       record.secondary_sale.manage_offers
+      true
     elsif user.has_cached_role?(:investor) && record.holding.present?
       record.holding.investor.investor_entity_id == user.entity_id
 
     elsif user.has_cached_role?(:holding) && record.holding.present?
       record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
+    else
+      support?
     end
   end
 
@@ -45,7 +45,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def generate_docs?
-    belongs_to_entity?(user, record)
+    permissioned_employee?(:update)
   end
 
   def accept_spa?
@@ -60,17 +60,15 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def update?
-    (support? ||
-    (belongs_to_entity?(user, record) && record.secondary_sale.manage_offers) ||
-    record.user_id == user.id) && !record.verified # && !record.secondary_sale.lock_allocations
+    create? && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?
-    sale_policy.owner?
+    permissioned_employee?(:update)
   end
 
   def allocate?
-    sale_policy.owner?
+    permissioned_employee?(:update)
   end
 
   def edit?

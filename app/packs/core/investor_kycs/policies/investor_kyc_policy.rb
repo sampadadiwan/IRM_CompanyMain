@@ -3,7 +3,7 @@ class InvestorKycPolicy < ApplicationPolicy
     def resolve
       if user.curr_role == "investor"
         # Give access to all the KYCs for the investor, where he has investor_accesses approved
-        scope.where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+        scope.joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
       elsif user.entity_type == "Group Company" || user.has_cached_role?(:company_admin)
         scope.for_company_admin(user)
       elsif user.has_cached_role?(:employee)
@@ -25,19 +25,17 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def show?
-    user.enable_kycs && (
-      (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) ||
-      user.entity_id == record.investor.investor_entity_id
-    )
+    permissioned_employee?(:investor_kyc_read) ||
+      user.entity_id == record.investor&.investor_entity_id
   end
 
-  def create?(emp_perm = :create)
-    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)) ||
+  def create?(emp_perm = :investor_kyc_create)
+    permissioned_employee?(emp_perm) ||
       user.entity_id == record.investor&.investor_entity_id
   end
 
   def generate_docs?
-    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)
+    permissioned_employee?(:investor_kyc_read)
   end
 
   def new?
@@ -45,11 +43,11 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def toggle_verified?
-    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :approve)
+    permissioned_employee?(:investor_kyc_approve)
   end
 
   def send_kyc_reminder?
-    user.enable_kycs && belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def send_kyc_reminder_to_all?
@@ -69,15 +67,15 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def assign_kyc_data?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def compare_kyc_datas?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def generate_new_kyc_data?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def update?
@@ -95,6 +93,9 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def destroy?
     create?(:destroy) && !record.verified
-    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :destroy)
+  end
+
+  def permissioned_employee?(perm = nil)
+    extended_permissioned_employee?(perm)
   end
 end

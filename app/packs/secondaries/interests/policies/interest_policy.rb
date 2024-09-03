@@ -8,27 +8,25 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def matched_offer?
-    Offer.where(interest_id: record.id, user_id: user.id).present?
+    record.offers.where(user_id: user.id).present?
   end
 
   def show?
-    (user.entity_id == record.interest_entity_id) ||
-      belongs_to_entity?(user, record) ||
-      sale_policy.owner? ||
+    permissioned_employee? ||
       owner? ||
       matched_offer? # The matched offers user can see the interest
   end
 
   def generate_docs?
-    belongs_to_entity?(user, record) && record.short_listed && !record.finalized
+    permissioned_employee?(:update) && record.short_listed
   end
 
   def short_list?
-    user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
+    permissioned_employee?(:update)
   end
 
   def unscramble?
-    (record.escrow_deposited? && belongs_to_entity?(user, record)) || # Escrow is deposited
+    (record.escrow_deposited? && permissioned_employee?) || # Escrow is deposited
       user.entity_id == record.interest_entity_id || # Interest is by this entity
       permissioned_investor?(:seller) # Is a seller added by the company for this sale
   end
@@ -43,18 +41,18 @@ class InterestPolicy < SaleBasePolicy
 
   def update?
     (create? ||
-      user.entity_id == record.interest_entity_id ||
-     (sale_policy.update? && record.secondary_sale.manage_interests)
+      permissioned_investor?(:seller) ||
+     (permissioned_employee?(:update) && record.secondary_sale.manage_interests)
     ) && !record.verified
   end
 
   def accept_spa?
-    user.entity_id == record.interest_entity_id && record.verified
+    permissioned_investor?(:seller) && record.verified
   end
 
   def matched_offers?
     create? ||
-      sale_policy.owner? ||
+      permissioned_employee? ||
       owner?
   end
 
@@ -62,20 +60,16 @@ class InterestPolicy < SaleBasePolicy
     update?
   end
 
-  def finalize?
-    update? && record.short_listed && record.verified
-  end
-
   def destroy?
-    update?
+    permissioned_employee?(:update) && !record.verified
   end
 
   def allocation_form?
-    sale_policy.update?
+    permissioned_employee?(:update)
   end
 
   def allocate?
-    sale_policy.update?
+    permissioned_employee?(:update)
   end
 
   def sale_policy

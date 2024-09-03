@@ -78,4 +78,69 @@ class ApplicationPolicy
   def new_policy(model)
     Pundit.policy(user, model)
   end
+
+  # This gives back the policy_scope for this user and record class
+  def policy_scope
+    Pundit.policy_scope!(user, record.class)
+  end
+
+  def permissioned_employee?(owner_id, owner_type, perm = nil)
+    # Does the user belong to the entity that owns the record?
+    if belongs_to_entity?(user, record)
+      # Is the user a company admin?
+      if user.has_cached_role?(:company_admin)
+        # Can see everything
+        true
+      else
+        # Get the cached access rights from the user for the record
+        cached_permissions = user.get_cached_access_rights_permissions(owner_type, owner_id)
+        # Cache the access rights for the user for the record
+        if cached_permissions.present?
+          @access_right = AccessRight.new(owner_id:, owner_type:, user_id: user.id)
+          @access_right[:permissions] = cached_permissions
+        end
+
+        # If the user has access rights for the record and the permission is nil or read or the user has the permission
+        @access_right.present? && (perm.nil? || perm == :read || @access_right.permissions.set?(perm))
+      end
+    else
+      false
+    end
+  end
+
+  def extended_permissioned_employee?(perm = nil)
+    # Does the user belong to the entity that owns the record?
+    if belongs_to_entity?(user, record)
+      # Is the user a company admin?
+      if user.has_cached_role?(:company_admin)
+        # Can see everything
+        true
+      else
+        @visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
+        # If the user can see the record and the permission is nil or read or the user has the extended permission
+        (perm.nil? || perm == :read || user.get_extended_permissions.set?(perm)) && @visible_record.present?
+      end
+    else
+      false
+    end
+  end
+
+  def permissioned_investor?(metadata = "none")
+    # Is the user an investor or holding
+    if (user.curr_role == 'investor' || user.curr_role == 'holding') && !belongs_to_entity?(user, record)
+      # is this record visible to the user
+      visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
+      # Cache the result
+      @pi_record ||= {}
+      @pi_record[metadata] ||= if metadata == "none"
+                                 visible_record
+                               else
+                                 visible_record.where("access_rights.metadata=?", metadata)
+                               end
+      @pi_record[metadata].present?
+    else
+      # Not an investor
+      false
+    end
+  end
 end

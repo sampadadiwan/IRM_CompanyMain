@@ -1,4 +1,4 @@
-class ApprovalPolicy < ApplicationPolicy
+class ApprovalPolicy < ApprovalBasePolicy
   class Scope < BaseScope
     def resolve
       if user.curr_role == "investor"
@@ -15,22 +15,20 @@ class ApprovalPolicy < ApplicationPolicy
 
   def show?
     user.enable_approvals &&
-      (belongs_to_entity?(user, record) ||
-        Approval.for_investor(user).where(id: record.id).present?)
+      (permissioned_employee? || permissioned_investor?)
   end
 
   def create?
     user.enable_approvals &&
-      belongs_to_entity?(user, record) &&
-      user.has_cached_role?("company_admin")
+      permissioned_employee?
   end
 
   def new?
-    user.enable_approvals && user.has_cached_role?("company_admin")
+    create?
   end
 
   def update?
-    (create? && record.due_date >= Time.zone.today && !record.locked) || support?
+    create? && record.due_date >= Time.zone.today && !record.locked
   end
 
   def edit?

@@ -1,14 +1,14 @@
-class FundUnitSettingPolicy < ApplicationPolicy
+class FundUnitSettingPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    permissioned_employee?(:create)
   end
 
   def new?
@@ -16,7 +16,7 @@ class FundUnitSettingPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -24,6 +24,6 @@ class FundUnitSettingPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy)
   end
 end

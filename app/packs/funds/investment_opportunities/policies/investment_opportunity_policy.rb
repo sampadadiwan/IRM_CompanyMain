@@ -12,7 +12,7 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   end
 
   def create?
-    user.enable_inv_opportunities && permissioned_employee?
+    user.enable_inv_opportunities && permissioned_employee?(:create)
   end
 
   def new?

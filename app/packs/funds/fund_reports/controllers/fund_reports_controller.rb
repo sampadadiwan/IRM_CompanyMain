@@ -23,6 +23,8 @@ class FundReportsController < ApplicationController
   # GET /fund_reports/new
   def new
     @fund_report = FundReport.new
+    @fund_report.fund_id = params[:fund_id]
+    @fund_report.entity_id = current_user.entity_id
     @fund_report.start_date ||= Time.zone.today - 3.months
     @fund_report.end_date ||= Time.zone.today
     authorize @fund_report

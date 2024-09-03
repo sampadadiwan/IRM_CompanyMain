@@ -115,6 +115,7 @@ end
 
 module IRMUtils
   def key_values(model, args)
+    puts "Setting #{args} on #{model.class} #{model.id}"
     key_val = args.split(";").to_h { |kv| kv.split("=") }
     key_val.each do |k, v|
       # model[k] = v

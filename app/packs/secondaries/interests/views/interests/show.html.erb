@@ -1,13 +1,5 @@
   
 
-  <% if policy(@interest).finalize? %>
-    <%= render "/layouts/steps", steps: ["Review your interest details below", 
-            "Add details and documents, by clicking 'Edit' below",
-            "Finalize your interest by clicking 'Finalize' below", 
-            "Wait for communication from #{@interest.secondary_sale.entity.name}"].freeze %>
-  <% end %>
-
-
   <%= render "/interests/show", interest: @interest %>
 
   <div>

@@ -1,6 +1,10 @@
 class CapitalCallPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
+  end
+
+  def create?
+    permissioned_employee?(:create)
   end
 
   def show?
@@ -16,7 +20,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def approve?
-    !record.approved && create? && user.has_cached_role?(:approver)
+    !record.approved && update? && user.has_cached_role?(:approver)
   end
 
   def edit?
@@ -36,7 +40,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    permissioned_employee?(:destroy) || (permissioned_employee? && support?)
   end
 
   def reminder?

@@ -34,7 +34,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
   # No updates to investments as the current algorith for attribution cannot handle updates
   # So delete and create if you want to update
   def update?
-    create?
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -47,7 +47,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
     if record.buy? && record.buys_portfolio_attributions.count.positive?
       false
     else
-      create?
+      permissioned_employee?(:destroy)
     end
   end
 

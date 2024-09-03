@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
+ActiveRecord::Schema[7.1].define(version: 2024_09_02_122158) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -238,7 +238,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
     t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.boolean "show_portfolio", default: false
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
+    t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_aggregate_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
@@ -740,8 +743,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "investment_opportunity_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["entity_id"], name: "index_ci_track_records_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_track_records_on_investment_opportunity_id"
+    t.index ["owner_type", "owner_id"], name: "index_ci_track_records_on_owner"
   end
 
   create_table "ci_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -754,8 +760,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "investment_opportunity_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.text "details_top"
     t.index ["entity_id"], name: "index_ci_widgets_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_widgets_on_investment_opportunity_id"
+    t.index ["owner_type", "owner_id"], name: "index_ci_widgets_on_owner"
   end
 
   create_table "commitment_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3070,6 +3080,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
     t.datetime "locked_at"
     t.json "json_fields"
     t.bigint "form_type_id"
+    t.text "access_rights_cache"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -3178,6 +3189,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_29_063550) do
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "aggregate_portfolio_investments", "entities"
+  add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "aggregate_portfolio_investments", "form_types"
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"

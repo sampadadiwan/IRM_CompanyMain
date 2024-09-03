@@ -1,0 +1,19 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("Interest")
+
+wb.add_worksheet(name: "Interests") do |sheet|
+  # Create the header row
+  sheet.add_row(["Id", "Interest Entity", "User", "Email", "Type", "Quantity", "Price", "Potential Allocation Quantity", "Actually Offered", "Final Price", "Allocation Amount", "Short Listed", "Verified", "Escrow Deposited", "Created", "Updated"] + custom_headers)
+
+  # Create entries for each item
+  @interests.each do |o|
+    custom_field_values = get_custom_values(o, form_type, custom_field_names)
+
+    short_listed = o.short_listed ? "Yes" : "No"
+    verified = o.verified ? "Yes" : "No"
+    escrow_deposited = o.escrow_deposited ? "Yes" : "No"
+
+    sheet.add_row([o.id, o.aquirer_name, o.user.full_name, o.user.email, o.interest_entity.entity_type, o.quantity, o.price, o.allocation_quantity, o.offer_quantity, o.final_price, o.allocation_amount, short_listed, verified, escrow_deposited, o.created_at, o.updated_at] + custom_field_values)
+  end
+end

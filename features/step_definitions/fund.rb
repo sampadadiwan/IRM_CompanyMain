@@ -29,7 +29,10 @@
 
   Given('I am {string} employee access to the fund') do |given|
     if given == "given" || given == "yes"
-      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, user_id: @user.id)
+      @access_right = AccessRight.new(entity_id: @fund.entity_id, owner: @fund, user_id: @user.id)
+      @access_right.permissions.set(:read)
+      @access_right.save!
+      @user.reload
     end
   end
 
@@ -109,7 +112,8 @@
           # @access_right.permissions.set(:update)
           # @access_right.permissions.set(:destroy)
           @access_right.save
-
+          @user.reload
+      
 
           puts "\n####Access Right####\n"
           ap @access_right
@@ -126,6 +130,7 @@
         @access_right.permissions.set(p.to_sym)
       end
       @access_right.save!
+      @user.reload
       puts "####### AccessRight #######\n"
       puts @access_right.to_json
     end
@@ -461,7 +466,7 @@ Then('the remittance rollups should be correct') do
   end
 end
 
-Then('user {string} have {string} access to the fund') do |truefalse, accesses|
+Then('user {string} have {string} access to the fund') do |truefalse, accesses|  
   accesses.split(",").each do |access|
     puts "##Checking access #{access} on fund #{@fund.name} for #{@user.email} as #{truefalse}"
     Pundit.policy(@user, @fund).send("#{access}?").to_s.should == truefalse
@@ -480,13 +485,143 @@ Given('the fund has capital commitments from each investor') do
   @fund.reload
 end
 
+Given('the fund has Fund Unit Settings') do
+  @fund.unit_types.split(",").each do |unit_type|
+    fus = FactoryBot.create(:fund_unit_setting, fund: @fund, name: unit_type.strip, entity_id: @fund.entity_id)
+    puts "\n####FundUnitSetting####\n"
+    puts fus.to_json
+  end
+end
+
+Then('user {string} have {string} access to the fund unit settings') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.fund_unit_settings.each do |fus|
+      puts "##Checking access #{access} on FUS #{fus} for #{@user.email} as #{truefalse}"
+      if @user.curr_role == "employee"        
+        Pundit.policy(@user, fus).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor"
+        Pundit.policy(@user, fus).send("#{access}?").to_s.should == "false"
+      else
+        Pundit.policy(@user, fus).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+Given('the fund has Fund Units') do
+  @fund.capital_commitments.each do |cc|
+    fu = FactoryBot.create(:fund_unit, capital_commitment: cc, fund_id: cc.fund_id, entity_id: @fund.entity_id, investor_id: cc.investor_id)
+    puts "\n####FundUnit####\n"
+    puts fu.to_json
+  end
+end
+
+Then('user {string} have {string} access to the fund units') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.fund_units.each do |fu|      
+      puts "##Checking access #{access} on Fund Unit #{fu} for #{@user.email} as #{truefalse}"
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, fu).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor" && fu.investor.investor_entity_id == @user.entity_id
+        Pundit.policy(@user, fu).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, fu).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+Given('the fund has {string} Fund Formulas') do |count|
+  (1..count.to_i).each do |i|
+    ff = FactoryBot.create(:fund_formula, fund: @fund, entity_id: @fund.entity_id)
+    puts "\n####FundFormula####\n"
+    puts ff.to_json
+  end
+end
+
+Then('user {string} have {string} access to the fund formulas') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.fund_formulas.each do |ff|
+      puts "##Checking access #{access} on Fund Formula #{ff} for #{@user.email} as #{truefalse}"
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, ff).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, ff).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+
+Then('user {string} have {string} access to the portfolio investments') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.portfolio_investments.each do |pi|
+      puts "##Checking access #{access} on Portfolio Investment #{pi} for #{@user.email} as #{truefalse}"
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, pi).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor"
+        Pundit.policy(@user, pi).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, pi).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+Then('user {string} have {string} access to the aggregate portfolio investments') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.aggregate_portfolio_investments.each do |pi|
+      puts "##Checking access #{access} on Portfolio Investment #{pi} for #{@user.email} as #{truefalse}"
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, @fund).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor"
+        Pundit.policy(@user, @fund).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, @fund).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+Given('the fund has {string} Fund Ratios') do |count|
+  (1..count.to_i).each do |i|
+    fr = FactoryBot.create(:fund_ratio, fund: @fund, entity_id: @fund.entity_id)
+    puts "\n####FundRatio####\n"
+    puts fr.to_json
+  end
+end
+
+Then('user {string} have {string} access to the fund ratios') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.fund_ratios.each do |fr|
+      puts "##Checking access #{access} on Fund Ratio #{fr} for #{@user.email} as #{truefalse}"
+      # Fund Ratios cannot be edited or destroyed
+      truefalse = "false" if ["edit", "update", "destroy"].include? access
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor"
+        Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, fr).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+
 Then('user {string} have {string} access to the capital commitment') do |truefalse, accesses|
   @fund.reload
   puts @fund.access_rights.to_json
   accesses.split(",").each do |access|
     @fund.capital_commitments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} as #{truefalse}"
-      Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      if @user.curr_role == "employee"
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      elsif @user.curr_role == "investor" && cc.investor.investor_entity_id == @user.entity_id
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
+      end
     end
   end
 end
@@ -507,6 +642,19 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
     end
   end
 end
+
+Given('the fund right has access {string}') do |crud|
+  if @access_right
+    crud.split(",").each do |p|
+      @access_right.permissions.set(p.to_sym)
+    end
+    @access_right.save!
+    @user.reload
+    puts "####### AccessRight Permissions #######\n"
+    ap @access_right
+  end
+end
+
 
 
 Given('the fund has {string} capital call') do |count|

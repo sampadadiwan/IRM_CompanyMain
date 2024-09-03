@@ -31,7 +31,6 @@ class InterestDashboard < Administrate::BaseDashboard
     city: Field::String,
 
     verified: Field::BooleanEmoji,
-    finalized: Field::BooleanEmoji,
     final_agreement: Field::BooleanEmoji,
     comments: Field::String,
     audits: Field::HasMany
@@ -76,7 +75,6 @@ class InterestDashboard < Administrate::BaseDashboard
     city
 
     verified
-    finalized
     final_agreement
     comments
 
@@ -103,7 +101,6 @@ class InterestDashboard < Administrate::BaseDashboard
     city
 
     verified
-    finalized
     final_agreement
     comments
 

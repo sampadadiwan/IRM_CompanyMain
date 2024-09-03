@@ -13,7 +13,7 @@
                       "access_right[entity_id]": access_right.entity_id,
                       form_type: params[:form_type]), 
                       { data: { turbo_frame: 'new_access_right' },
-                      method: :get, class: "btn btn-outline-primary mt-0" } if access_right && params[:form_type] != "none" %> 
+                      method: :get, class: "btn btn-outline-primary mt-0" } if access_right && policy(access_right.owner).update? && params[:form_type] != "none" %> 
 
     <%= render "/funds/search_bar", model_name: "access_right" if access_right && access_right.owner_type == "Fund"%>
   </span>

@@ -151,6 +151,16 @@ class AccessRight < ApplicationRecord
     end
   end
 
+  after_commit :add_to_user_access_rights_cache, if: -> { user_id.present? }
+  def add_to_user_access_rights_cache
+    user.cache_access_rights(self)
+  end
+
+  after_destroy_commit :remove_from_user_access_rights_cache, if: -> { user_id.present? }
+  def remove_from_user_access_rights_cache
+    user.remove_access_rights_cache(self)
+  end
+
   def users
     if user_id.present?
       [user]

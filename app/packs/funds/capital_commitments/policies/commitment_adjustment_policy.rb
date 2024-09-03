@@ -1,6 +1,6 @@
 class CommitmentAdjustmentPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def report?
@@ -16,9 +16,9 @@ class CommitmentAdjustmentPolicy < FundBasePolicy
     create?
   end
 
+  # TODO: Check this policy, unsure why this is like this.
   def create?
-    ((belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
-      permissioned_employee?(:create)) &&
+    permissioned_employee?(:create) &&
       new_policy(record.capital_commitment).update? && # The associated capital_commitment must be editable
       (record.owner.nil? || new_policy(record.owner).update?) # The associated owner must be editable
   end
@@ -28,7 +28,7 @@ class CommitmentAdjustmentPolicy < FundBasePolicy
   end
 
   def edit?
-    false # update?
+    update?
   end
 
   def destroy?

@@ -10,11 +10,11 @@ class FundRatioPolicy < FundBasePolicy
   end
 
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
-    belongs_to_entity?(user, record) ||
+    permissioned_employee? ||
       (record.fund.show_fund_ratios && permissioned_investor?)
   end
 

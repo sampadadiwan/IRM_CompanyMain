@@ -11,8 +11,8 @@
     Pundit.policy(@user, @document).show?.should == (should == "true")
   end
 
-  Given('I should have access to the document') do
-    Pundit.policy(@user, @document).show?.should == true
+  Given('I should have {string} to the document') do |doc_access|
+    Pundit.policy(@user, @document).show?.should == (doc_access == "true")  
   end
 
   Given('I should not have access to the document') do

@@ -1,6 +1,6 @@
 class OffersController < ApplicationController
   before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa generate_docs]
-  after_action :verify_authorized, except: %i[index search finalize_allocation]
+  after_action :verify_authorized, except: %i[index search]
 
   # GET /offers or /offers.json
   def index
@@ -19,7 +19,7 @@ class OffersController < ApplicationController
 
   def fetch_rows
     @q = Offer.ransack(params[:q])
-    @offers = policy_scope(@q.result).includes(:user)
+    @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale, :interest, :holding)
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)

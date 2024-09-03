@@ -2,9 +2,6 @@
   lazy_load_data ||= false
   import_upload_id ||= params[:import_upload_id]
 %>
-<%
-  data_source ||= investors_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm])
-%>
 
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">

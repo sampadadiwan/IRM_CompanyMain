@@ -9,19 +9,19 @@ class InvestorPolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      ((belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) || user.entity_id == record.investor_entity_id || permissioned_employee?)
+      (user.entity_id == record.investor_entity_id || permissioned_employee?(:investor_read))
   end
 
-  def create?(emp_perm = :create)
-    user.enable_investors && belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)
+  def create?(emp_perm = :investor_create)
+    permissioned_employee?(emp_perm)
   end
 
   def new?
     create?
   end
 
-  def update?(emp_perm = :update)
-    create?(emp_perm) || support?
+  def update?(emp_perm = :investor_update)
+    create?(emp_perm)
   end
 
   def merge?
@@ -33,7 +33,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?(:destroy)
+    update?(:investor_destroy)
   end
 
   def upload?
@@ -41,19 +41,6 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    if belongs_to_entity?(user, record)
-      if user.has_cached_role?(:company_admin)
-        true
-      else
-        @investor ||= Investor.for_employee(user).includes(:investor_access_rights).where("investors.id=?", record.id).first
-        if perm
-          @investor.present? && @investor.investor_access_rights[0].permissions.set?(perm)
-        else
-          @investor.present?
-        end
-      end
-    else
-      support?
-    end
+    extended_permissioned_employee?(perm)
   end
 end

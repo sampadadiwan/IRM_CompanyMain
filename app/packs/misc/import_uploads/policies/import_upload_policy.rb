@@ -10,11 +10,13 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def show?
-    index? && belongs_to_entity?(user, record)
+    user.enable_import_uploads &&
+      Pundit.policy(user, record.owner).permissioned_employee?
   end
 
   def create?
-    index? && belongs_to_entity?(user, record)
+    user.enable_import_uploads &&
+      Pundit.policy(user, record.owner).permissioned_employee?
   end
 
   def new?

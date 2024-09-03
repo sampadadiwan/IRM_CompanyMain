@@ -12,7 +12,6 @@ class InvestorsController < ApplicationController
       @investors = @investors.page(params[:page])
       @investors = @investors.per(params[:per_page].to_i) if params[:per_page].present?
     end
-
     respond_to do |format|
       format.html
       format.turbo_stream

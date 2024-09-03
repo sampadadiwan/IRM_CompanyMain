@@ -8,7 +8,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    belongs_to_entity?(user, record) && Pundit.policy(user, record.owner).update?
   end
 
   def new?
@@ -16,7 +16,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || Pundit.policy(user, record.owner).update?
+    create?
   end
 
   def start_deal?

@@ -1,6 +1,6 @@
 class CapitalDistributionPaymentPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?

@@ -17,6 +17,7 @@ class Interest < ApplicationRecord
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
+  has_many :access_rights, through: :secondary_sale
 
   include FileUploader::Attachment(:spa)
 
@@ -55,7 +56,7 @@ class Interest < ApplicationRecord
   before_validation :set_defaults
 
   validates :quantity, :price, presence: true
-  validates :buyer_entity_name, :address, :city, :PAN, :contact_name, presence: true, if: proc { |i| i.secondary_sale.finalized }
+  validates :buyer_entity_name, :address, :city, :PAN, :contact_name, presence: true, if: proc { |i| i.verified }
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 
@@ -87,14 +88,6 @@ class Interest < ApplicationRecord
     unless secondary_sale.no_interest_emails
       investor.notification_users.each do |user|
         InterestNotifier.with(record: self, entity_id:, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user)
-      end
-    end
-  end
-
-  def notify_finalized
-    if finalized && saved_change_to_finalized? && !secondary_sale.no_interest_emails
-      investor.notification_users.each do |user|
-        InterestNotifier.with(record: self, entity_id:, email_method: :notify_finalized, msg: "Interest finalized for #{secondary_sale.name}").deliver_later(user)
       end
     end
   end

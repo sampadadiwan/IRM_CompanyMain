@@ -2,7 +2,7 @@
 <% name ||= params[:name] || nil%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Reports</h1>
-  <%= link_to "New Fund Report", new_fund_report_path(fund_id: fund_id), {class: "btn btn-outline-primary"} if fund_id.present?  && policy(FundReport).new? %>
+  <%= link_to "New Fund Report", new_fund_report_path(fund_id: fund_id), {class: "btn btn-outline-primary"} if fund_id.present?  && policy(FundReport.new(entity_id: current_user.id, fund_id:)).new? %>
 </div>
 <div class="table-responsive" data-controller="fund-reports" data-fund-reports-lazy-load-data-value=<%= lazy_load_data %> data-fund-reports-table-name-value="#fund_reports">
 

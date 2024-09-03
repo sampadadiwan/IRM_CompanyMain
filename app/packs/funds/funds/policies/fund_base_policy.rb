@@ -14,34 +14,11 @@ class FundBasePolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    if belongs_to_entity?(user, record)
-      if user.has_cached_role?(:company_admin)
-        true
-      else
-        fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
-        @fund ||= Fund.for_employee(user).includes(:access_rights).where("funds.id=?", fund_id).first
-        if perm
-          @fund.present? && @fund.access_rights[0].permissions.set?(perm)
-        else
-          @fund.present?
-        end
-      end
-    else
-      false
-    end
-  end
-
-  def permissioned_investor?
-    if belongs_to_entity?(user, record)
-      false
-    else
-      @pi_record ||= record.class.for_investor(user).where("#{record.class.table_name}.id=?", record.id)
-      @pi_record.present?
-    end
+    fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
+    super(fund_id, "Fund", perm)
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
-      permissioned_employee?(:create)
+    permissioned_employee?(:create)
   end
 end

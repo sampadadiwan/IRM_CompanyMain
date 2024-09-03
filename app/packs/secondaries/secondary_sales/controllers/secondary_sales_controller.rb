@@ -37,7 +37,6 @@ class SecondarySalesController < ApplicationController
     @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
     @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
     @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
-    @interests = @interests.finalized if params[:finalized].present?
 
     @interests = @interests.where(signature_data: nil) if params[:signature] == 'false'
     @interests = @interests.where(final_agreement: false) if params[:final_agreement] == 'false'

@@ -85,4 +85,12 @@ class EntityPolicy < ApplicationPolicy
   def kpi_reminder?
     Entity.for_investor(user).collect(&:id).include?(record.id)
   end
+
+  def permissioned_employee?(perm = nil)
+    if perm.nil? || perm == :read
+      user.entity_id == record.id
+    else
+      user.entity_id == record.id && user.has_cached_role?(:company_admin)
+    end
+  end
 end

@@ -1,20 +1,10 @@
-class FundFormulaPolicy < ApplicationPolicy
-  class Scope < BaseScope
-    def resolve
-      if user.has_cached_role?(:support)
-        scope.all
-      else
-        super
-      end
-    end
-  end
-
+class FundFormulaPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   # Only support can create / update formulas
@@ -27,7 +17,7 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def update?
-    belongs_to_entity?(user, record) || support?
+    permissioned_employee?(:update) || support?
   end
 
   def enable_formulas?

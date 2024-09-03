@@ -137,7 +137,22 @@ end
 
 
 Given('I should have {string} access to the sale {string}') do |access_type, arg|
+  puts "Checking access #{access_type} on fund #{@sale} for #{@user} as #{arg}"
   Pundit.policy(@user, @sale).send("#{access_type}?").to_s.should == arg
+end
+
+Then('user {string} have {string} access to the offer') do |truefalse, offer_access|
+  offer_access.split(",").each do |access|
+    puts "##Checking access #{access} on offer #{@offer} for #{@user.email} as #{truefalse}"
+    Pundit.policy(@user, @offer).send("#{access}?").to_s.should == truefalse
+  end
+end
+
+Then('user {string} have {string} access to the interest') do |truefalse, interest_access|
+  interest_access.split(",").each do |access|
+    puts "##Checking access #{access} on interest #{@interest} for #{@user.email} as #{truefalse}"
+    Pundit.policy(@user, @interest).send("#{access}?").to_s.should == truefalse
+  end
 end
 
 Given('another user should have {string} access to the sale {string}') do |access_type, arg|
@@ -222,8 +237,7 @@ Given('I should not see the sale details on the details page') do
 end
 
 Given('the investor has {string} access rights to the sale') do |metadata|
-  @access_right = AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
-      access_type: "SecondarySale", entity: @company)
+  @access_right = AccessRight.create!(owner: @sale, entity_id: @sale.entity_id, access_to_investor_id: @investor.id, metadata: metadata, access_type: "SecondarySale")
 
   puts "\n####Investor AccessRight####\n"
   puts @access_right.to_json
@@ -600,6 +614,7 @@ Given('the sale access right has access {string}') do |crud|
       @access_right.permissions.set(p.to_sym)
     end
     @access_right.save!
+    @user.reload
     puts "####### AccessRight Permissions #######\n"
     ap @access_right
   end
@@ -755,4 +770,28 @@ Then('the document folder should be different for the new sale') do
   @sale_new.id.should_not == @sale.id
   @sale_new.name.should == @sale.name
   @sale_new.document_folder_id.should_not == @sale.document_folder_id
+end
+
+
+Given('the investor has an offer {string} for the sale') do |args|  
+  @offer = FactoryBot.build(:offer, entity: @sale.entity, secondary_sale: @sale,
+                          user: @employee_investor, investor: @investor)
+  key_values(@offer, args)
+  @offer.save!
+  puts "\n####Offer Created####\n"
+  puts @offer.to_json
+end
+
+Given('the offer is approved') do
+  OfferApprove.wtf?(offer: @offer, current_user: @user)
+end
+
+Given('the investor has an interest {string} for the sale') do |args|
+  @interest = FactoryBot.build(:interest, secondary_sale: @sale.reload, price: @sale.min_price,
+                          user: @employee_investor, entity: @sale.entity, interest_entity: @investor.investor_entity)
+                          
+  key_values(@interest, args)
+  @interest.save!
+  puts "\n####Interest Created####\n"
+  puts @interest.to_json
 end

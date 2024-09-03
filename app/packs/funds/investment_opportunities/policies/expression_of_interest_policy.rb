@@ -1,6 +1,6 @@
 class ExpressionOfInterestPolicy < IoBasePolicy
   def index?
-    true
+    user.enable_inv_opportunities
   end
 
   def show?
@@ -11,7 +11,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   def create?
     belongs_to_entity?(user, record) ||
       permissioned_employee?(:create) ||
-      InvestmentOpportunityPolicy.new(user, record.investment_opportunity).permissioned_investor?
+      permissioned_investor?
   end
 
   def new?
@@ -19,7 +19,8 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    permissioned_employee?(:update) ||
+      permissioned_investor?
   end
 
   def edit?

@@ -1,4 +1,4 @@
-class ApprovalResponsePolicy < ApplicationPolicy
+class ApprovalResponsePolicy < ApprovalBasePolicy
   class Scope < Scope
     def resolve
       if user.entity_type == "Group Company"
@@ -12,15 +12,16 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.enable_approvals
   end
 
   def show?
-    belongs_to_entity?(user, record) || (user.entity_id == record.response_entity_id)
+    user.enable_approvals &&
+      (permissioned_employee? || permissioned_investor?)
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def new?
@@ -41,6 +42,6 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def approve?
-    (user.entity_id == record.response_entity_id) && (record.approval.due_date >= Time.zone.today)
+    permissioned_investor? && (record.approval.due_date >= Time.zone.today)
   end
 end

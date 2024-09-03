@@ -1,11 +1,15 @@
 class FundUnitPolicy < FundBasePolicy
   def index?
-    true
+    user.enable_funds
   end
 
   def show?
     permissioned_employee? ||
       permissioned_investor?
+  end
+
+  def create?
+    permissioned_employee?(:create)
   end
 
   def new?

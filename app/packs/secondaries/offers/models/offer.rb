@@ -25,20 +25,19 @@ class Offer < ApplicationRecord
   belongs_to :secondary_sale, touch: true
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
+  has_many :access_rights, through: :secondary_sale
+
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
-                  delta_column: 'quantity',
-                  column_names: -> { { Offer.approved => 'offer_quantity' } }
+                  delta_column: 'quantity', column_names: -> { { Offer.approved => 'offer_quantity' } }
 
   counter_culture :secondary_sale,
                   column_name: proc { |o| o.approved ? 'total_offered_quantity' : nil },
-                  delta_column: 'quantity',
-                  column_names: -> { { Offer.approved => 'total_offered_quantity' } }
+                  delta_column: 'quantity', column_names: -> { { Offer.approved => 'total_offered_quantity' } }
 
   counter_culture :secondary_sale,
                   column_name: proc { |o| o.approved ? 'total_offered_amount_cents' : nil },
-                  delta_column: 'amount_cents',
-                  column_names: -> { { Offer.approved => 'total_offered_amount_cents' } }
+                  delta_column: 'amount_cents', column_names: -> { { Offer.approved => 'total_offered_amount_cents' } }
 
   # This is the holding owned by the user which is offered out
   belongs_to :holding, optional: true
@@ -67,7 +66,7 @@ class Offer < ApplicationRecord
   scope :auto_match, -> { where(auto_match: true) }
   scope :matched, -> { where.not(interest_id: nil) }
 
-  validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
+  validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.verified }
 
   validate :check_quantity, if: proc { |o| o.holding.present? }
   validate :sale_active, on: :create

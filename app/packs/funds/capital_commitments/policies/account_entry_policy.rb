@@ -1,6 +1,10 @@
 class AccountEntryPolicy < FundBasePolicy
   def index?
-    user.curr_role != "investor"
+    user.enable_funds && user.curr_role != "investor"
+  end
+
+  def create?
+    permissioned_employee?(:create)
   end
 
   def report?
