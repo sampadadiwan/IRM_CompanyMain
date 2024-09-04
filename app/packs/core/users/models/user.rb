@@ -170,7 +170,7 @@ class User < ApplicationRecord
       self.curr_role = :investor
     end
 
-    # self.permissions = User.permissions.keys if permissions.blank?
+    self.permissions = User.permissions.keys if permissions.blank?
     # self.extended_permissions = User.extended_permissions.keys if permissions.blank?
     self.entity_type = entity&.entity_type
     self.active = true
