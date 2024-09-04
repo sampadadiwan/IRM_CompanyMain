@@ -29,6 +29,7 @@ class UserDashboard < Administrate::BaseDashboard
     whatsapp_enabled: Field::BooleanEmoji,
     confirmed_at: Field::DateTime,
     roles: Field::HasMany,
+    access_rights_cache: Field::String,
     curr_role: Field::Select.with_options(collection: ["", "employee", "investor"])
   }.freeze
 
@@ -72,6 +73,7 @@ class UserDashboard < Administrate::BaseDashboard
     advisor_entity_roles
     roles
     permissions
+    access_rights_cache
   ].freeze
 
   # FORM_ATTRIBUTES

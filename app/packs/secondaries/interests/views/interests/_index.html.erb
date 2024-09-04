@@ -17,15 +17,22 @@
         
         <span>
 
-            <% if @secondary_sale && policy(@secondary_sale).update? %>
-                <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
+            <% if @secondary_sale %>
+                <% if policy(@secondary_sale).update? %>
+                    
+                    <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
 
-                <%= link_to "Upload Interests", 
-                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                    "import_upload[owner_type]": "SecondarySale", 
-                    "import_upload[import_type]": "Interest", 
-                    "sample_upload": "INTERESTS_SAMPLE"), 
-                    { class: "btn btn-outline-primary"}  %> 
+                    <%= link_to "Upload Interests", 
+                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                        "import_upload[owner_type]": "SecondarySale", 
+                        "import_upload[import_type]": "Interest", 
+                        "sample_upload": "INTERESTS_SAMPLE"), 
+                        { class: "btn btn-outline-primary"}  %> 
+
+                <% elsif policy(@secondary_sale).buyer? %>
+                    <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
+                <% end %>
+
             <% end %>
 
             <%= link_to "Download", interests_path(secondary_sale_id: @secondary_sale&.id, format: :xlsx), {class: "btn btn-outline-success"} %>

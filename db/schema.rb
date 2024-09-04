@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_09_02_122158) do
+ActiveRecord::Schema[7.1].define(version: 2024_09_04_055435) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2736,6 +2736,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_02_122158) do
     t.datetime "updated_at", null: false
     t.string "tag_list"
     t.string "curr_role", limit: 10, default: "employee"
+    t.string "model"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
@@ -3081,6 +3082,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_02_122158) do
     t.json "json_fields"
     t.bigint "form_type_id"
     t.text "access_rights_cache"
+    t.integer "access_rights_cached_permissions"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true

@@ -19,11 +19,16 @@ class User < ApplicationRecord
   # Example {Deal: {1: 7, 2: 6}}, but with a bitmask
   serialize :access_rights_cache, type: Hash
 
-  # Return the 
+  # Temporary cache of the access rights permissions, used in ApplicationPolicy
+  flag :access_rights_cached_permissions, %i[create read update destroy]
+
+  # Return the permissions which are cached
   def get_cached_access_rights_permissions(owner_type, owner_id)
-    access_rights_cache[owner_type]&.[](owner_id)
+    self[:access_rights_cached_permissions] = access_rights_cache[owner_type]&.[](owner_id)
+    self[:access_rights_cached_permissions]
   end
 
+  # Cache the access rights permissions, called when access_right is added
   def cache_access_rights(access_right)
     access_rights_cache[access_right.owner_type] ||= {}
     access_rights_cache[access_right.owner_type][access_right.owner_id] = access_right[:permissions]
@@ -165,7 +170,7 @@ class User < ApplicationRecord
       self.curr_role = :investor
     end
 
-    self.permissions = User.permissions.keys if permissions.blank?
+    # self.permissions = User.permissions.keys if permissions.blank?
     # self.extended_permissions = User.extended_permissions.keys if permissions.blank?
     self.entity_type = entity&.entity_type
     self.active = true

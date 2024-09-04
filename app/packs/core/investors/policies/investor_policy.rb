@@ -8,8 +8,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def show?
-    user.enable_investors &&
-      (user.entity_id == record.investor_entity_id || permissioned_employee?(:investor_read))
+    user.entity_id == record.investor_entity_id || permissioned_employee?(:investor_read)
   end
 
   def create?(emp_perm = :investor_create)

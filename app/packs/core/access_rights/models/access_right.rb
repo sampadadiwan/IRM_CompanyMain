@@ -9,7 +9,7 @@ class AccessRight < ApplicationRecord
   VIEWS = [ALL, SELF].freeze
   TYPES = ["All Users for Specific Stakeholder", "All Stakeholder of Specific Category"].freeze
 
-  # Additional permission - this is experimental and does not work yet
+  # Additional permissions for access rights, for employees/advisors specifically
   flag :permissions, %i[create read update destroy]
 
   belongs_to :owner, polymorphic: true # , strict_loading: true

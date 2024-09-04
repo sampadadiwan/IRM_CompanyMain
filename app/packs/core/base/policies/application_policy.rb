@@ -94,14 +94,9 @@ class ApplicationPolicy
       else
         # Get the cached access rights from the user for the record
         cached_permissions = user.get_cached_access_rights_permissions(owner_type, owner_id)
-        # Cache the access rights for the user for the record
-        if cached_permissions.present?
-          @access_right = AccessRight.new(owner_id:, owner_type:, user_id: user.id)
-          @access_right[:permissions] = cached_permissions
-        end
 
         # If the user has access rights for the record and the permission is nil or read or the user has the permission
-        @access_right.present? && (perm.nil? || perm == :read || @access_right.permissions.set?(perm))
+        cached_permissions.present? && (perm.nil? || perm == :read || user.access_rights_cached_permissions.set?(perm))
       end
     else
       false

@@ -7,7 +7,6 @@ module Users
     # POST /resource
     def create
       build_resource(sign_up_params)
-
       ensure_entity(resource)
       resource.save
 
