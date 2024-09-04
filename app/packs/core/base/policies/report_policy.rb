@@ -32,4 +32,8 @@ class ReportPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def configure_grids?
+    update?
+  end
 end

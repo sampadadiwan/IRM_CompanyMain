@@ -24,7 +24,22 @@ Scenario Outline: Create custom grid view for PortfolioInvestments
   When I select each option and click Add
   And I visit PortfolioInvestment Page and find 6 columns in the grid
   When I visit Custom Grid View page and uncheck "currency_amount"
-  And I should not find "currency_amount" column in the Investor Grid
+  And I should not find "currency_amount" column in the Portfolio Investment Grid
+
+Examples:
+  |user       |entity|
+  |           |entity_type=Company|
+  |           |entity_type=Company|
+
+Scenario Outline: Create custom grid view for PortfolioInvestments Reports
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the reports page
+  When I create a report and custom grid view for "PortfolioInvestment"
+  When I select each option and click Add
+  And I visit PortfolioInvestment Page from reports
+  When I visit Report Custom Grid View page and uncheck "currency_amount"
+  And I should not find "currency_amount" column in the Report PI Grid
 
 Examples:
   |user       |entity|
@@ -45,3 +60,5 @@ Examples:
   |user       |entity|
   |           |entity_type=Company|
   |           |entity_type=Company|
+
+

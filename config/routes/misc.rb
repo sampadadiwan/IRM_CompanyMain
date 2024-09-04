@@ -50,6 +50,7 @@ resources :kanban_boards, controller: "boards"
 
 resources :grid_view_preferences do
   patch 'update_column_sequence', on: :member
+  get 'configure_grids', on: :collection
 end
 
 resources :grid_view_preferences

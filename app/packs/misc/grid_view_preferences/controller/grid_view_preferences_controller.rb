@@ -1,23 +1,29 @@
 class GridViewPreferencesController < ApplicationController
   before_action :set_grid_view_preference, only: %i[destroy update_column_sequence]
   skip_before_action :verify_authenticity_token, only: %i[update_column_sequence]
+  after_action :verify_authorized, except: %i[configure_grids]
 
   def create
-    form_type = FormType.find(params[:form_type_id])
-    column_name = form_type.get_column_name(params[:key])
+    parent = find_parent
+    column_name = GridViewPreference.get_column_name(parent, params[:key])
+    grid_view_preference = parent.grid_view_preferences.find_by(key: params[:key])
 
-    grid_view_preference = form_type.grid_view_preferences.find_by(key: params[:key])
     if grid_view_preference
       respond_to do |format|
-        format.html { redirect_to configure_grids_form_type_path(form_type), alert: "This column is already selected." }
+        format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: parent.class.name, owner_id: parent.id), alert: "This column is already selected." }
       end
     else
-      grid_view_preference = form_type.grid_view_preferences.build(key: params[:key], name: column_name, entity_id: form_type.entity_id)
+      grid_view_preference = parent.grid_view_preferences.build(
+        key: params[:key],
+        name: column_name,
+        entity_id: parent.entity_id
+      )
+
       respond_to do |format|
         if grid_view_preference.save
-          format.html { redirect_to configure_grids_form_type_path(form_type), notice: "Custom Grid View is successfully modified." }
+          format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: parent.class.name, owner_id: parent.id), notice: "Custom Grid View is successfully modified." }
         else
-          format.html { redirect_to configure_grids_form_type_path(form_type), alert: "Custom Grid View failed to modify." }
+          format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: parent.class.name, owner_id: parent.id), alert: "Custom Grid View failed to modify." }
         end
       end
     end
@@ -50,8 +56,34 @@ class GridViewPreferencesController < ApplicationController
   def destroy
     @grid_view_preference.destroy
     respond_to do |format|
-      format.html { redirect_to configure_grids_form_type_path(@grid_view_preference.owner), notice: 'Custom Grid View is successfully modified.' }
+      format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: @grid_view_preference.owner.class.name, owner_id: @grid_view_preference.owner.id), notice: 'Custom Grid View is successfully modified.' }
       format.json { head :no_content }
+    end
+  end
+
+  def configure_grids
+    @parent = find_parent
+    model_class = begin
+      @parent.name.constantize
+    rescue StandardError
+      @parent.model.constantize
+    end
+    @field_options = model_class::STANDARD_COLUMNS
+    form_type = FormType.find_by(entity_id: current_user.entity_id, name: model_class.to_s)
+    @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s) if form_type.present?
+    @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
+  end
+
+  private
+
+  def find_parent
+    owner_type = params[:owner_type]
+    owner_id = params[:owner_id]
+
+    if owner_type.present? && owner_id.present?
+      owner_type.constantize.find(owner_id)
+    else
+      raise "Parent not found"
     end
   end
 

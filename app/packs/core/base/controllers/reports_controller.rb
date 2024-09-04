@@ -1,5 +1,5 @@
 class ReportsController < ApplicationController
-  before_action :set_report, only: %i[show edit update destroy]
+  before_action :set_report, only: %i[show edit update destroy configure_grids]
 
   # GET /reports or /reports.json
   def index
@@ -73,6 +73,14 @@ class ReportsController < ApplicationController
       format.html { redirect_to reports_url, notice: "Report was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def configure_grids
+    model_class = @report.model.constantize
+    @field_options = model_class::STANDARD_COLUMNS
+    form_type = FormType.find_by(entity_id: current_user.entity_id, name: model_class.to_s)
+    @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s) if form_type.present?
+    @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
   end
 
   private

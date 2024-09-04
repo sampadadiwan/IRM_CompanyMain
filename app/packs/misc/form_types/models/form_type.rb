@@ -95,13 +95,6 @@ class FormType < ApplicationRecord
     cn.where(entity_id:).find_each(&:ensure_json_fields)
   end
 
-  def get_column_name(key)
-    column_name = name.constantize::STANDARD_COLUMNS.key(key)
-    return column_name if column_name.present?
-
-    key.gsub("custom_fields.", "").humanize
-  end
-
   def selected_columns
     grid_view_preferences.order(:sequence)
                          .pluck(:name, :key)

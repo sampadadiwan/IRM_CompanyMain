@@ -39,15 +39,26 @@
                                 " href="<%= report_path(report) %>">Show</a>
 
             <% if policy(report).update? %>              
-            <a class="
-                                  note-social
-                                  badge-group-item badge-social
-                                  dropdown-item
-                                  position-relative
-                                  category-social
-                                  d-flex
-                                  align-items-center
-                                " href="<%= edit_report_path(report) %>"> Edit</a>
+              <a class="
+                                    note-social
+                                    badge-group-item badge-social
+                                    dropdown-item
+                                    position-relative
+                                    category-social
+                                    d-flex
+                                    align-items-center
+                                  " href="<%= edit_report_path(report) %>"> Edit</a>
+              <% if ["Portfolio Investments", "Aggregate Portfolio Investments"].include? report.category %>
+                <a class="
+                                      note-social
+                                      badge-group-item badge-social
+                                      dropdown-item
+                                      position-relative
+                                      category-social
+                                      d-flex
+                                      align-items-center
+                                    " href="<%= configure_grids_grid_view_preferences_path(owner_type: 'Report', owner_id: report.id) %>">Configure Grid</a>
+              <%end%>
             <% end %>
           </div>
         </div>

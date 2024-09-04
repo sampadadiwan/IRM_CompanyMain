@@ -3,6 +3,27 @@ Given('I am at the form type page') do
   sleep(0.5)
 end
 
+Given('I am at the reports page') do
+  visit("/reports")
+  sleep(0.5)
+end
+
+When('I create a report and custom grid view for {string}') do |report|
+  select("Portfolio Investments", from: 'url')
+  sleep(0.5)
+  find('a[aria-label="Save Report"]').click
+  sleep(0.5)
+  fill_in('report_name', with: "PI Report")
+  fill_in('report_category', with: "Portfolio Investments")
+  click_on('Save')
+  sleep(0.5)
+  visit("/reports")
+  sleep(0.5)
+  find('.more-options.text-dark').click
+  click_link("Configure Grid")
+  sleep(0.5)
+end
+
 When('I create a form type and custom grid view for {string}') do |form_type|
   click_link('New Form Type')
   find('select[name="form_type[name]"]').select(form_type)
@@ -13,7 +34,6 @@ When('I create a form type and custom grid view for {string}') do |form_type|
 end
 
 When("I select each option and click Add") do
-
   select_box = find('select#grid_view_name_select')
   options = select_box.all('option').map(&:text)
 
@@ -41,6 +61,14 @@ Given('I visit PortfolioInvestment Page and find 6 columns in the grid') do
   end
 end
 
+Given('I visit PortfolioInvestment Page from reports') do
+  visit(Report.first.url)
+  @expected_columns = ["For", "Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Investment Type", "Notes"]
+  @expected_columns.each do |column_name|
+    expect(page).to have_text(column_name)
+  end
+end
+
 Given('I visit AggregatePortfolioInvestment Page and find 6 columns in the grid') do
   visit('/aggregate_portfolio_investments')
   @expected_columns = ["For", "Portfolio Company", "Fund Name", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share"]
@@ -51,7 +79,19 @@ end
 
 When('I visit Custom Grid View page and uncheck {string}') do |column_name|
   form_type = FormType.first
-  visit "/form_types/#{form_type.id}/configure_grids"
+  visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=FormType'
+  sleep(0.25)
+  within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
+    find("form.deleteButton button").click
+  end
+  
+  click_on('Proceed')
+  sleep(0.25)
+end
+
+When('I visit Report Custom Grid View page and uncheck {string}') do |column_name|
+  report = Report.first
+  visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=Report'
   sleep(0.25)
   within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
@@ -66,6 +106,23 @@ Given('I should not find {string} column in the Investor Grid') do |column_name|
   visit('/investors')
   sleep(0.25)
   
+  column_title = column_name.capitalize
+  
+  expect(page).not_to have_selector('thead th', text: column_title)
+end
+
+Given('I should not find {string} column in the Portfolio Investment Grid') do |column_name|
+  visit('/investors')
+  sleep(0.25)
+  
+  column_title = column_name.capitalize
+  
+  expect(page).not_to have_selector('thead th', text: column_title)
+end
+
+Given('I should not find {string} column in the Report PI Grid') do |column_name|
+  visit(Report.first.url)
+  sleep(0.25)
   column_title = column_name.capitalize
   
   expect(page).not_to have_selector('thead th', text: column_title)
