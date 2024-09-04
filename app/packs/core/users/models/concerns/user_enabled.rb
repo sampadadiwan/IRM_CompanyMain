@@ -3,6 +3,7 @@ module UserEnabled
 
   included do
     # Add new flags to the end of this list
+    # validates :permissions, presence: true
     flag :permissions, %i[enable_documents enable_deals enable_investments enable_holdings
                           enable_secondary_sale enable_funds enable_inv_opportunities enable_options
                           enable_captable enable_investors enable_kpis enable_kycs enable_approvals enable_reports enable_kanban enable_import_uploads enable_investor_advisors enable_form_types]
