@@ -220,7 +220,7 @@ class InvestorKycsController < ApplicationController
     if request.post?
       if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
         # Send the kyc ids, document template ids, start date and end date to the job
-        KycDocGenJob.perform_later(@investor_kycs.pluck(:id), params[:document_template_ids], params[:start_date], params[:end_date], user_id: current_user.id, entity_id: params[:entity_id])
+        KycDocGenJob.perform_later(@investor_kycs.pluck(:id), params[:document_template_ids], params[:start_date], params[:end_date], current_user.id, entity_id: params[:entity_id])
 
         redirect_to investor_kycs_url(q: params[:q].to_unsafe_h), notice: "Document generation in progress. Please check back in a few minutes."
       else
