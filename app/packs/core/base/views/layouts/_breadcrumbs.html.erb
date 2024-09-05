@@ -23,10 +23,19 @@
               <%= button_to favorites_path(favoritable_type: controller_name.classify, favoritable_id: params[:id]), "data-bs-toggle": "tooltip", title: "Add to Favorites", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :post  do %>
                 <i class="ti ti-heart"></i>
               <% end %>
-
-              <a class="fs-5 btn mb-1 btn-primary rounded-circle round d-inline-flex align-items-center justify-content-center" data-bs-toggle="offcanvas" href="#help_slide_out" role="button" aria-controls="help_slide_out" title="Show Help">
-                <i class="ti ti-question-mark"></i>
-              </a>
+              <% 
+                if controller_name.classify == "Board" 
+                  kanban_board = KanbanBoard.find(params[:id])
+                  owner_type = kanban_board.owner_type
+                  owner_id = kanban_board.owner_id
+                else
+                  owner_type = controller_name.classify
+                  owner_id = params[:id]
+                end
+              %>
+              <%= link_to events_path(owner_type: owner_type, owner_id: owner_id), "data-bs-toggle": "tooltip", title: "Add an event", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :get  do %>
+                <i class="ti ti-calendar"></i>
+              <% end %>
             <% end %>
         </div>
 

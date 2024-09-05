@@ -1,0 +1,35 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">Event Details</h6>
+  </div>
+  <div class="card-body">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>Title</td>
+        <td><%= @event.title %></td>
+      </tr>
+
+      <tr>
+        <td>Description</td>
+        <td><%= @event.description %></td>
+      </tr>
+
+      <tr>
+        <td>Date</td>
+        <td><%= @event.start_time.strftime("%B %d, %Y at %I:%M %p") %></td>
+      </tr>
+
+      <tr>
+        <td>Owner</td>
+        <td><%= link_to "#{@event.owner_type} - #{@event.owner.respond_to?(:name) ? @event.owner.name : @event.owner.class.to_s}", polymorphic_path(@event.owner) %>
+        </td>
+
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="actions">
+  <%= link_to 'Edit', edit_event_path(@event), class: "btn btn-outline-primary" %>
+  <%= link_to 'Back to Events', events_path, class: "btn btn-outline-secondary" %>
+</div>
