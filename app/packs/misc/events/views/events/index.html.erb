@@ -1,0 +1,21 @@
+<% filter_state = "collapse" %>
+<% params[:filter] = true  %>
+<%= render "/layouts/filter", associations: [], state: filter_state %>
+<div class="fc-button-group fc-button-group-right">
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, view: 'month'), class: "fc-button fc-button-primary #{'fc-button-active' if @view == 'month'}", title: "month view", aria: { pressed: @view == 'month' } do %>
+    Month
+  <% end %>
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, view: 'week'), class: "fc-button fc-button-primary #{'fc-button-active' if @view == 'week'}", title: "week view", aria: { pressed: @view == 'week' } do %>
+    Week
+  <% end %>
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, view: 'day'), class: "fc-button fc-button-primary #{'fc-button-active' if @view == 'day'}", title: "day view", aria: { pressed: @view == 'day' } do %>
+    Day
+  <% end %>
+</div>
+<div class="container mt-2">
+  <div class="card shadow">
+    <div class="card-body">
+      <%= render partial: "#{@view}_calendar", locals: { start_date: @start_date, end_date: @end_date, events: @events, owner: @owner, current_month: @current_month } %>
+    </div>
+  </div>
+</div>

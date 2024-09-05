@@ -53,4 +53,4 @@ resources :grid_view_preferences do
   get 'configure_grids', on: :collection
 end
 
-resources :grid_view_preferences
+resources :events

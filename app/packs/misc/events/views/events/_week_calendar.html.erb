@@ -1,0 +1,51 @@
+<div class="card-header bg-light d-flex justify-content-between align-items-center">
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, week: @previous_week.strftime('%Y-%m-%d'), view: @view), data: { turbo: false } do %>
+    <i class="fas fa-arrow-left"></i>
+  <% end %>
+  <h5 class="card-title m-0"><%= "Week of " + @current_week.strftime('%B %d, %Y') %></h5>
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, week: @next_week.strftime('%Y-%m-%d'), view: @view), data: { turbo: false } do %>
+    <i class="fas fa-arrow-right"></i>
+  <% end %>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-week-calendar mb-0">
+    <thead>
+      <tr class="text-center bg-light">
+        <th class="time-slot-column"></th>
+        <th>Sun</th>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (0..23).each do |hour| %>
+        <tr>
+          <td class="time-slot-column text-center">
+            <%= "#{hour % 12 == 0 ? 12 : hour % 12}:00 #{hour < 12 ? 'AM' : 'PM'}" %>
+          </td>
+          <% (@start_date..@end_date).each do |day| %>
+            <td class="week-calendar-cell text-center <%= 'bg-secondary' if day.nil? || day.month != @current_week.month %> <%= 'bg-skyblue' if day == Date.current %>">
+              <% if day.present? && day.month == @current_week.month %>
+                <% events_in_hour = @events_by_day_and_hour[[day, hour]] || [] %>
+                <%= link_to new_event_path(owner_type: @owner.class.name, owner_id: @owner.id, date: day, time_slot: hour), class: "d-block h-100 w-100 position-absolute top-0 start-0", style: "z-index: 1;", data: { turbo: false } do %>
+                <% end %>
+                <div class="week-events" style="position: relative; z-index: 2;">
+                  <% events_in_hour.each do |event| %>
+                    <%= link_to event_path(event), class: "event-item", data: { turbo: false } do %>
+                      <%= event.title %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

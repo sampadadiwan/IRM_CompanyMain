@@ -1,0 +1,49 @@
+<div class="card-header bg-light d-flex justify-content-between align-items-center">
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, month: @previous_month.strftime('%Y-%m'), view: @view), data: { turbo: false } do %>
+    <i class="fas fa-arrow-left"></i>
+  <% end %>
+  <h5 class="card-title m-0"><%= @current_month.strftime('%B %Y') %></h5>
+  <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, month: @next_month.strftime('%Y-%m'), view: @view), data: { turbo: false } do %>
+    <i class="fas fa-arrow-right"></i>
+  <% end %>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-calendar mb-0">
+    <thead>
+      <tr class="text-center bg-light">
+        <th>Sun</th>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (@start_date..@end_date).to_a.in_groups_of(7).each do |week| %>
+        <tr>
+          <% week.each do |day| %>
+            <td class="calendar-cell text-center <%= 'bg-secondary' if day.nil? || day.month != @current_month.month %> <%= 'bg-skyblue' if day == Date.current %>">
+              <% if day.present? %>
+                <div class="date-number"><%= day.day %></div>
+                <% if @owner.present? %>
+                  <%= link_to new_event_path(owner_type: @owner&.class&.name, owner_id: @owner&.id, date: day), class: "d-block h-100 w-100 position-absolute top-0 start-0", style: "z-index: 1;", data: { turbo: false } do %>
+                  <% end %>
+                <% end %>
+                <div class="events" style="position: relative; z-index: 2;">
+                  <% @events_by_day[day]&.each do |event| %>
+                    <%= link_to event_path(event), class: "event-item", data: { turbo: false } do %>
+                      <%= event.title %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
