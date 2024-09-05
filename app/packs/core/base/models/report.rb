@@ -6,6 +6,7 @@ class Report < ApplicationRecord
   before_create :set_model
 
   validates :name, :curr_role, presence: true
+  validates :category, length: { maximum: 30 }
 
   def self.reports_for
     { 'Account Entries': "/account_entries?filter=true",
