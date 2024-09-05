@@ -3,7 +3,7 @@
     <%= render "capital_remittance_mailer/capital_remittance_details", capital_remittance: @capital_remittance, current_user: nil, params: {} if @custom_notification.show_details %>
   <% end %>
 <% else %>
-  <h3>Dear <%= @capital_remittance.investor_name %></h3>
+  <h3>Dear <%= @capital_remittance.capital_commitment.investor_kyc&.full_name %></h3>
 
   <p>
     A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %>.
