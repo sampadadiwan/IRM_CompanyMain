@@ -67,8 +67,8 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def update?
-    (user.enable_secondary_sale && !record.finalized &&
-      permissioned_employee?(:update)) || support?
+    user.enable_secondary_sale && !record.finalized &&
+      permissioned_employee?(:update)
   end
 
   def spa_upload?

@@ -99,7 +99,7 @@ class ApplicationPolicy
         cached_permissions.present? && (perm.nil? || perm == :read || user.access_rights_cached_permissions.set?(perm))
       end
     else
-      false
+      support?
     end
   end
 

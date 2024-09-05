@@ -17,7 +17,7 @@ class FundFormulaPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) || support?
+    permissioned_employee?(:update)
   end
 
   def enable_formulas?

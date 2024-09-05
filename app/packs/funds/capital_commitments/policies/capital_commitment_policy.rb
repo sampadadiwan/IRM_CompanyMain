@@ -49,6 +49,6 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) || (permissioned_employee? && support?)
+    permissioned_employee?(:destroy)
   end
 end

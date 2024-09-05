@@ -35,8 +35,7 @@ class FundPolicy < FundBasePolicy
     user.enable_funds &&
       (
         permissioned_employee? ||
-        permissioned_investor? ||
-        support?
+        permissioned_investor?
       )
   end
 
