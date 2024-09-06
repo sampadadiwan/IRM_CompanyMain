@@ -64,18 +64,7 @@
             <td>
               <div class="money-wrapper">
                 <span><%= money_to_currency @capital_remittance.other_fee, params %></span>
-              </div>
-              <ul class="fees-list">
-              <% @capital_remittance.json_fields["other_fees_audit"]&.each do |fee_array| %>
-                  <% fee_array.each do |fee| %>
-                    <li class="fee-item">
-                      <span class="fee-name"><%= fee[0] %></span>
-                      <span class="fee-description"><%= fee[1] %></span>
-                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
-                    </li>
-                  <% end %>
-                <% end %>                
-              </ul>
+              </div>              
             </td>
           </tr>
         <% end %>
