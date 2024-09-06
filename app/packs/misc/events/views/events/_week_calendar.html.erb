@@ -26,7 +26,7 @@
       <% (0..23).each do |hour| %>
         <tr>
           <td class="time-slot-column text-center">
-            <%= "#{hour % 12 == 0 ? 12 : hour % 12}:00 #{hour < 12 ? 'AM' : 'PM'}" %>
+          <%= "#{hour % 12 == 0 ? 12 : hour % 12}:00 #{hour < 12 ? 'AM' : 'PM'}" %>
           </td>
           <% (@start_date..@end_date).each do |day| %>
             <td class="week-calendar-cell text-center <%= 'bg-secondary' if day.nil? || day.month != @current_week.month %> <%= 'bg-skyblue' if day == Date.current %>">

@@ -69,7 +69,7 @@ class EventsController < ApplicationController
   end
 
   def handle_month_view
-    @current_month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Date.today.beginning_of_month
+    @current_month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Time.zone.today.beginning_of_month
     @previous_month = @current_month.prev_month
     @next_month = @current_month.next_month
 
@@ -127,13 +127,17 @@ class EventsController < ApplicationController
   def set_owner
     owner_type = params.dig(:event, :owner_type) || params[:owner_type]
     owner_id = params.dig(:event, :owner_id) || params[:owner_id]
-    if owner_type.blank?
-      @owner = nil
-      return
-    end
-    @owner = owner_type.constantize.find(owner_id)
 
-    authorize @owner
+    if owner_type.blank?
+      @owner = @current_user.entity
+      owner_type = "Entity"
+    else
+      @owner = owner_type.constantize.find(owner_id)
+    end
+
+    authorize @owner unless owner_type == "Entity"
+  rescue Pundit::AuthorizationNotPerformedError
+    skip_authorization if owner_type == "Entity"
   end
 
   def set_event

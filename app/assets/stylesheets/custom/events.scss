@@ -15,8 +15,7 @@
   position: absolute;
   top: 5px;
   right: 5px;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 16px;
   z-index: 1;
 }
 
@@ -54,23 +53,6 @@
 
 .calendar-cell.bg-secondary {
   background-color: #e9ecef !important;
-}
-
-.fc-button-group .btn.active {
-  background-color: #007bff;
-  color: #fff;
-  border-color: #007bff;
-}
-
-.fc-button-group .btn:not(.active) {
-  background-color: #6c757d;
-  color: #fff;
-  border-color: #6c757d;
-}
-
-.fc-button-group .btn:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
 }
 
 .bg-skyblue {

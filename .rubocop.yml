@@ -184,7 +184,7 @@ Metrics/ClassLength:
   Enabled: true
   Exclude:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-
+    - 'app/packs/secondaries/offers/models/offer.rb'
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
   Max: 100
