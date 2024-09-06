@@ -1199,7 +1199,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_05_025429) do
   create_table "events", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "title", null: false
     t.text "description"
-    t.date "date", null: false
+    t.datetime "start_time", null: false
+    t.datetime "end_time", null: false
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.bigint "entity_id", null: false
