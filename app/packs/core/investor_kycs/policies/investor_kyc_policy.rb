@@ -67,7 +67,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def assign_kyc_data?
-    permissioned_employee?
+    permissioned_employee?(:investor_kyc_read)
   end
 
   def compare_kyc_datas?
@@ -75,11 +75,11 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def generate_new_kyc_data?
-    permissioned_employee?
+    permissioned_employee?(:investor_kyc_read)
   end
 
   def update?
-    (create?(:update) || support?) && !record.verified
+    (create?(:investor_kyc_update) || support?) && !record.verified
   end
 
   # Used to send notification to fund that kyc needs updates
