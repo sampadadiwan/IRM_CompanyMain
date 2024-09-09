@@ -42,10 +42,13 @@ module NotificationExtensions
   end
 
   def model
+    # The new way is to store the record in the event
+    # The old way was to store the record in params
+
     # The actual model is stored in params
     # The key is model name in lowercase
     # To get the model name, we use the notifier name and remove the Notifier part
-    params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
+    record.presence || params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
   end
 end
 
