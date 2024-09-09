@@ -73,16 +73,34 @@ class CustomAllocationJob < AllocationBase
 
     Rails.logger.debug { "allocating #{interest_percentage}% of interests and #{offer_percentage} % of offers" }
 
-    # We have more interests #{100.00 * interest_percentage},
-    interests.update_all("allocation_percentage = #{100.00 * interest_percentage},
-      allocation_quantity = ceil(quantity * #{interest_percentage}),
-      final_price = #{secondary_sale.final_price},
-      allocation_amount_cents = (ceil(quantity * #{interest_percentage}) * #{secondary_sale.final_price * 100})")
+    if secondary_sale.final_price.positive?
+      # We have more interests #{100.00 * interest_percentage},
+      interests.update_all("allocation_percentage = #{100.00 * interest_percentage},
+        allocation_quantity = ceil(quantity * #{interest_percentage}),
+        final_price = #{secondary_sale.final_price},
+        allocation_amount_cents = (ceil(quantity * #{interest_percentage}) * #{secondary_sale.final_price * 100})")
 
-    offers.update_all(" allocation_percentage = #{100.00 * offer_percentage},
-      allocation_quantity = ceil(quantity * #{offer_percentage}),
-      final_price = #{secondary_sale.final_price},
-      allocation_amount_cents = (ceil(quantity * #{offer_percentage}) * #{secondary_sale.final_price * 100})")
+      offers.update_all(" allocation_percentage = #{100.00 * offer_percentage},
+        allocation_quantity = ceil(quantity * #{offer_percentage}),
+        final_price = #{secondary_sale.final_price},
+        allocation_amount_cents = (ceil(quantity * #{offer_percentage}) * #{secondary_sale.final_price * 100})")
+    else
+      # We dont have a final price, so we need to allocate based on the interest applied_price
+      interests.each do |interest|
+        interest.update(allocation_percentage: 100.00 * interest_percentage,
+                        allocation_quantity: (interest.quantity * interest_percentage).ceil,
+                        final_price: interest.applied_price,
+                        allocation_amount_cents: (interest.quantity * interest_percentage * interest.applied_price * 100))
+      end
+
+      offers.each do |offer|
+        applied_price = offer.interest ? offer.interest.applied_price : 0
+        offer.update(allocation_percentage: 100.00 * offer_percentage,
+                     allocation_quantity: (offer.quantity * offer_percentage).ceil,
+                     final_price: applied_price,
+                     allocation_amount_cents: (offer.quantity * offer_percentage * applied_price * 100))
+      end
+    end
 
     # Sometimes we overallocate. so we need to adjust
     # update_delta(interests, offers)

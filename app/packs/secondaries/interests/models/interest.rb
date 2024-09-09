@@ -96,13 +96,17 @@ class Interest < ApplicationRecord
     "#{investor&.investor_name} - #{quantity} shares @ #{price}"
   end
 
+  def applied_price
+    final_price.positive? ? final_price : price
+  end
+
   def set_defaults
     self.entity_id ||= secondary_sale.entity_id
     self.investor ||= entity.investors.where(investor_entity_id: user.entity_id).first
     self.interest_entity_id ||= investor.investor_entity_id
 
-    self.amount_cents = quantity * final_price * 100 if final_price.positive?
-    self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
+    self.amount_cents = quantity * applied_price * 100
+    self.allocation_amount_cents = allocation_quantity * applied_price * 100
 
     self.custom_matching_vals = ""
     if secondary_sale.custom_matching_fields.present?
