@@ -50,22 +50,4 @@ class DealPolicy < ApplicationPolicy
   def destroy?
     permissioned_employee?(:destroy) && user.has_cached_role?(:company_admin)
   end
-
-  def permissioned_employee?(perm = nil)
-    if belongs_to_entity?(user, record)
-      if user.has_cached_role?(:company_admin)
-        true
-      else
-        deal_id = record.instance_of?(Deal) ? record.id : record.deal_id
-        @deal ||= Deal.for_employee(user).includes(:access_rights).where("deals.id=?", deal_id).first
-        if perm
-          @deal.present? && @deal.access_rights[0].permissions.set?(perm)
-        else
-          @deal.present?
-        end
-      end
-    else
-      support?
-    end
-  end
 end

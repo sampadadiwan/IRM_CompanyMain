@@ -83,9 +83,9 @@ When('I fill and submit the new document page') do
   puts "Selecting #{@document.folder.name}" if @document.folder_id
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 
-  sleep(3)
-  click_on("Save")
   sleep(4)
+  click_on("Save")
+  sleep(5)
 end
 
 

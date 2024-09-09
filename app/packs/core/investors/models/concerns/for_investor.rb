@@ -18,6 +18,7 @@ module ForInvestor
     end
 
     scope :for_company_admin, lambda { |user|
+      table_name = parent_class_type.name.underscore.pluralize
       join_clause = if parent_class_type.name == name
                       joins(:entity)
                     else
@@ -25,13 +26,31 @@ module ForInvestor
                     end
 
       if user.entity_type == "Group Company"
-        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?)", user.entity.child_ids)
+        join_clause.where("#{table_name}": { entity_id: user.entity.child_ids })
       else
-        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id = ?", user.entity_id)
+        join_clause.where("#{table_name}": { entity_id: user.entity_id })
       end
     }
 
     scope :for_employee, lambda { |user|
+      table_name = parent_class_type.name.underscore.pluralize
+      join_clause = if parent_class_type.name == name
+                      joins(:entity)
+                    else
+                      joins(parent_class_type.name.underscore.to_sym)
+                    end
+
+      # This is the list of ids for which the user has been granted specific access
+      cached_ids = user.get_cached_ids(parent_class_type.name)
+
+      if user.entity_type == "Group Company"
+        join_clause.where("#{table_name}": { entity_id: user.entity.child_ids, id: cached_ids })
+      else
+        join_clause.where("#{table_name}": { entity_id: user.entity_id, id: cached_ids })
+      end
+    }
+
+    scope :for_employee_orig, lambda { |user|
       join_clause = if instance_methods.include?(:access_rights)
                       joins(:access_rights)
                     else
@@ -45,7 +64,7 @@ module ForInvestor
     }
 
     # Some models have a belongs_to :investor association
-    scope :for_investor, lambda { |user|
+    scope :for_investor_orig, lambda { |user|
       filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
 
       join_clause = if instance_methods.include?(:access_rights)
@@ -76,5 +95,45 @@ module ForInvestor
 
       join_clause
     }
+
+    scope :for_investor, lambda { |user|
+      table_name = parent_class_type.name.underscore.pluralize
+      join_clause = if instance_methods.include?(:access_rights)
+                      Rails.logger.debug { "######## for_investor has access_rights" }
+                      if instance_methods.include?(:investor)
+                        Rails.logger.debug { "######## for_investor has :investor" }
+                        joins(:access_rights, :investor)
+                      else
+                        Rails.logger.debug { "######## for_investor has entity: :investor" }
+                        joins(:access_rights, entity: :investors)
+                      end
+                    elsif instance_methods.include?(:investor)
+                      Rails.logger.debug { "######## for_investor has :investor" }
+                      joins(:investor, parent_class_type.name.underscore.to_sym)
+                    else
+                      Rails.logger.debug { "######## for_investor has parent_class_type #{parent_class_type}" }
+                      joins(parent_class_type.name.underscore.to_sym).joins(entity: :investors)
+                    end
+
+      # This is the list of ids for which the user has been granted specific access
+      cached_ids = user.get_cached_ids(parent_class_type.name)
+      join_clause.where("#{table_name}": { id: cached_ids }).where("investors.investor_entity_id=?", user.entity_id)
+    }
+  end
+
+  def model_with_access_rights
+    if %w[CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalCall CapitalDistributionPayment FundUnit FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment AccountEntry].include?(self.class.name)
+      fund
+    elsif %w[ExpressionOfInterest].include?(self.class.name)
+      investor_opportunity
+    elsif %w[Offer Interest].include?(self.class.name)
+      secondary_sale
+    elsif %w[ApprovalResponse].include?(self.class.name)
+      approval
+    elsif %w[Kpi].include?(self.class.name)
+      kpi_report
+    else
+      self
+    end
   end
 end

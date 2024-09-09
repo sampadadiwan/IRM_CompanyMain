@@ -1,7 +1,11 @@
 class AddUserAccessRightsToUserCache < ActiveRecord::Migration[7.1]
   def change
-    AccessRight.where.not(user_id: nil).find_each do |access_right|
-      access_right.user.cache_access_rights(access_right)
-    end
+    puts "######################################################"
+    puts "Please run the AddUserAccessRightsToUserCache maunally"
+    puts "######################################################"
+    # User.update_all(access_rights_cache: {})
+    # AccessRight.all.each do |access_right|
+    #   access_right.add_to_user_access_rights_cache
+    # end; nil
   end
 end

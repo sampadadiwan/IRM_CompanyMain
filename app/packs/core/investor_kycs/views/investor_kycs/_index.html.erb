@@ -37,7 +37,6 @@
       </div>
       <% end %>
 
-      <% if policy(investor_kyc).new? || policy(Document).approve? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -50,12 +49,11 @@
 
             <%= link_to "Generate Kyc Docs", generate_all_docs_investor_kycs_path(entity_id:, q: params[:q].to_unsafe_h), class: "dropdown-item" if params[:q].present? && policy(investor_kyc).new?  %>
 
-            <%= link_to "Approve Kyc Docs", approve_documents_path(entity_id:, owner_type: "InvestorKyc"), class: "dropdown-item" if policy(Document).approve? %>
+            <%= link_to "Approve Kyc Docs", approve_documents_path(entity_id:, owner_type: "InvestorKyc"), class: "dropdown-item" if current_user.has_cached_role?(:approver) %>
 
           </div>
         </div>
       </div>
-      <% end %>
 
       <% if params[:q].present? %>
         <%= render "investor_kycs/bulk_actions" %>

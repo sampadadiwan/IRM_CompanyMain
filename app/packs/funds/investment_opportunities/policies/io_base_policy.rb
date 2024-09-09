@@ -13,11 +13,6 @@ class IoBasePolicy < ApplicationPolicy
     end
   end
 
-  def permissioned_employee?(perm = nil)
-    investment_opportunity_id = record.instance_of?(InvestmentOpportunity) ? record.id : record.investment_opportunity_id
-    super(investment_opportunity_id, "InvestmentOpportunity", perm)
-  end
-
   def create?
     permissioned_employee?(:create)
   end

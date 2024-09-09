@@ -3,6 +3,7 @@ class InvestorNoticeEntriesController < ApplicationController
 
   # GET /investor_notice_entries or /investor_notice_entries.json
   def index
+    authorize(InvestorNoticeEntry)
     @investor_notice_entries = policy_scope(InvestorNoticeEntry)
   end
 

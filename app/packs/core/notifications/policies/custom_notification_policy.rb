@@ -10,7 +10,7 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    permissioned_employee?
   end
 
   def mark_as_read?
@@ -18,7 +18,7 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def create?
-    show? && Pundit.policy(user, record.owner).update?
+    permissioned_employee?(:create)
   end
 
   def new?

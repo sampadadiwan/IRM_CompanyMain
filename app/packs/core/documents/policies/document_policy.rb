@@ -23,7 +23,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.enable_documents) ||
+    (user.enable_documents && permissioned_employee?(:update)) ||
       (record.owner && owner_policy.update?) ||
       # The DealInvestor/CapitalCommitment are cases where other users can attach documents to the document owner which is not created by them
       (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
@@ -40,7 +40,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def update?
     (
-      create? ||
+      permissioned_employee?(:update) ||
       (record.owner && owner_policy.update?) ||
       allow_external?(:write)
     ) && !record.locked # Ensure locked documents cannot be changed
@@ -72,11 +72,11 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def approve?
-    user.has_cached_role?(:company_admin) || user.has_cached_role?(:approver)
+    update? && record.to_be_approved? && user.has_cached_role?(:approver)
   end
 
   def destroy?
-    (update? && record.entity_id == user.entity_id &&
+    (permissioned_employee?(:destroy) &&
     (!record.sent_for_esign || record.esign_expired? || record.esign_failed?)) || support?
   end
 

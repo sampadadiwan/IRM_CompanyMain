@@ -2,7 +2,8 @@
 
 <% if params[:q].present? %>
 
-    <%= bulk_action_button("Approve", "This will approve each document in the search results (including results on other pages). Proceed?", folder_id: folder_id) %>
+    <%= bulk_action_button("Approve", "This will approve each document in the search results (including results on other pages). Proceed?", folder_id: folder_id) if current_user.has_cached_role?(:approver) %>
+
     <%= bulk_action_button("Send For eSignatures", "This will send each document in the search results (including results on other pages) for eSignatures. Proceed?", folder_id: folder_id) %>
 
     <%= bulk_action_button("Delete", "This will send delete all documents in the search results (including results on other pages). Proceed?", folder_id: folder_id) %>

@@ -4,6 +4,7 @@ class CustomNotificationsController < ApplicationController
   # GET /custom_notifications or /custom_notifications.json
   def index
     @custom_notifications = policy_scope(CustomNotification).all
+    @custom_notifications = with_owner_access(@custom_notifications)
     @custom_notifications = @custom_notifications.page(params[:page])
   end
 

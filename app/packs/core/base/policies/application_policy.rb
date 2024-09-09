@@ -58,6 +58,10 @@ class ApplicationPolicy
       (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id))
   end
 
+  def belongs_to_investor_entity?(user, record)
+    user.entity_id == record.investor&.investor_entity_id if record.respond_to?(:investor)
+  end
+
   def company_admin_or_emp_crud?(user, record, crud = "read")
     user.has_cached_role?(:company_admin) || crud?(user, record, crud)
   end
@@ -84,7 +88,18 @@ class ApplicationPolicy
     Pundit.policy_scope!(user, record.class)
   end
 
-  def permissioned_employee?(owner_id, owner_type, perm = nil)
+  def get_model_with_access_rights(owner: nil)
+    # Get the model_with_access_rights from the record
+    model_with_access_rights = record.model_with_access_rights if record.respond_to?(:model_with_access_rights)
+    # Get the model_with_access_rights from the record.owner
+    model_with_access_rights ||= record.owner.model_with_access_rights if record.respond_to?(:owner) && record.owner.respond_to?(:model_with_access_rights)
+    # Get the model_with_access_rights from the optional owen
+    model_with_access_rights ||= owner.model_with_access_rights if owner.respond_to?(:model_with_access_rights)
+
+    model_with_access_rights
+  end
+
+  def permissioned_employee?(perm = nil, owner: nil)
     # Does the user belong to the entity that owns the record?
     if belongs_to_entity?(user, record)
       # Is the user a company admin?
@@ -92,8 +107,15 @@ class ApplicationPolicy
         # Can see everything
         true
       else
-        # Get the cached access rights from the user for the record
-        cached_permissions = user.get_cached_access_rights_permissions(owner_type, owner_id)
+        # Get the model to wich the access_rights are attached, for the policy record
+        # Example for an offer its the associated secondary_sale,
+        # for the commitment its the fund etc
+        # But for a sale its the sale itself, likewise for fund
+        model_with_access_rights = get_model_with_access_rights(owner:)
+
+        # Get the cached_permissions and metadata from the users access_rights_cache
+        cached_permissions = nil
+        cached_permissions, _metadata = user.get_cached_access_rights_permissions(model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
 
         # If the user has access rights for the record and the permission is nil or read or the user has the permission
         cached_permissions.present? && (perm.nil? || perm == :read || user.access_rights_cached_permissions.set?(perm))
@@ -120,9 +142,28 @@ class ApplicationPolicy
     end
   end
 
-  def permissioned_investor?(metadata = "none")
+  def permissioned_investor?(metadata = "none", owner: nil)
     # Is the user an investor or holding
-    if (user.curr_role == 'investor' || user.curr_role == 'holding') && !belongs_to_entity?(user, record)
+    if (user.curr_role == 'investor' || user.curr_role == 'holding') &&
+       !belongs_to_entity?(user, record)
+
+      # # Get the model to wich the access_rights are attached, for the policy record
+      # # Example for an offer its the associated secondary_sale,
+      # # for the commitment its the fund etc
+      # # But for a sale its the sale itself, likewise for fund
+      # model_with_access_rights = get_model_with_access_rights(owner:)
+
+      # # Get the cached_permissions and metadata from the users access_rights_cache
+      # cached_permissions = nil
+      # cached_permissions, metadata = user.get_cached_access_rights_permissions(model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+
+      # # If the user has access rights for the record and the permission is nil or read or the user has the permission
+      # if cached_permissions.present?
+      #   model_with_access_rights == record || belongs_to_investor_entity?(user, record)
+      # else
+      #   false
+      # end
+
       # is this record visible to the user
       visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
       # Cache the result

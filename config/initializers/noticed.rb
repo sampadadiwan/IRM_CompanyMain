@@ -50,6 +50,10 @@ module NotificationExtensions
     # To get the model name, we use the notifier name and remove the Notifier part
     record.presence || params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
   end
+
+  def entity_id
+    model&.entity_id if model.respond_to?(:entity_id)
+  end
 end
 
 Rails.application.config.after_initialize do

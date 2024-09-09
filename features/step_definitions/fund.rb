@@ -51,6 +51,7 @@
     end
 
     @fund.reload
+    @user.reload
   end
 
   Given('another user is {string} investor advisor access to the fund') do |given|
@@ -67,15 +68,12 @@
           puts "\n####Investor Advisor####\n"
           puts investor_advisor.to_json
 
-          # Switch the IA to the entity
-          investor_advisor.switch(@user)
-
           # Create the Access Right
           @access_right = AccessRight.create!(entity_id: inv.investor_entity_id, owner: @fund, user_id: @user.id, metadata: "Investor Advisor")
 
           puts "\n####Access Right####\n"
           puts @access_right.to_json
-
+          
           ia = InvestorAccess.create(entity: inv.entity, investor: inv,
           first_name: @user.first_name, last_name: @user.last_name,
           email: @user.email, granter: nil, approved: true )
@@ -83,10 +81,17 @@
           puts "\n####Investor Access####\n"
           puts ia.to_json
 
+
+          # Switch the IA to the entity
+          investor_advisor.switch(@user)
+
         end
       end
 
     end
+
+    @fund.reload
+    @user.reload
   end
 
   Given('another user is {string} fund advisor access to the fund') do |given|
@@ -630,7 +635,7 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
   accesses.split(",").each do |access|
     @fund.capital_commitments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
-
+      
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       elsif(@user.investor_advisor?)
@@ -912,9 +917,9 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(1)
+  sleep(4)
   click_on("Save")
-  sleep(3)
+  sleep(5)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   if ImportUpload.last.import_type == "CapitalCall"
     sleep(6)
@@ -1406,7 +1411,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(1)
   click_on("Save")
-  sleep(1)
+  sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == 0
@@ -1424,9 +1429,9 @@ Given('Given I upload {string} {string} error file for Account Entries') do |fil
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(1)
+  sleep(3)
   click_on("Save")
-  sleep(1)
+  sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == err_count.to_i

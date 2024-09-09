@@ -169,7 +169,7 @@
    <div style="display: inline-block;">
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} if policy(@document).update? %>
 
-      <%= button_to "Approve", document_path(@document, "document[approved]": true, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if @document.to_be_approved? %>
+      <%= button_to "Approve", document_path(@document, "document[approved]": true, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).approve? %>
       
       <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>

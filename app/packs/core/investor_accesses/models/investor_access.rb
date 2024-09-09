@@ -147,4 +147,16 @@ class InvestorAccess < ApplicationRecord
   def parse_cc
     cc&.scan(%r{\b[a-zA-Z0-9.!\#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\b})&.join(",")
   end
+
+  after_commit :add_to_user_access_rights_cache, unless: -> { destroyed? || deleted_at.present? }
+  def add_to_user_access_rights_cache
+    # Refresh the users access_rights_cache, for this entity
+    user.refresh_access_rights_cache(entity_id:, add: approved)
+  end
+
+  after_destroy_commit :remove_from_user_access_rights_cache
+  def remove_from_user_access_rights_cache
+    # Refresh the users access_rights_cache, for this entity, force clear the cache
+    user.refresh_access_rights_cache(entity_id:, add: false)
+  end
 end

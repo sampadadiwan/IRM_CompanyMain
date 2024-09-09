@@ -15,15 +15,6 @@ class SaleBasePolicy < ApplicationPolicy
     end
   end
 
-  def permissioned_employee?(perm = nil)
-    secondary_sale_id = record.instance_of?(SecondarySale) ? record.id : record.secondary_sale_id
-    super(secondary_sale_id, "SecondarySale", perm)
-  end
-
-  def permissioned_investor?(metadata = "none")
-    super
-  end
-
   def create?
     (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
       permissioned_employee?(:create)

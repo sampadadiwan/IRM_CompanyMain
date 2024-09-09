@@ -46,15 +46,12 @@
           id="documents_tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-      <% if policy(fund).update? %>      
+      <% if fund.entity_id == current_user.entity_id %>      
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
               data-action="click->tabdetails#loadData">
             Tasks
           </a>
-      <% end %>
-
-      <% if policy(fund).grant_access_rights? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
               data-action="click->tabdetails#loadData">Access</a>
       <% end %>
 

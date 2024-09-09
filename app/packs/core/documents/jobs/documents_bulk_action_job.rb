@@ -17,13 +17,16 @@ class DocumentsBulkActionJob < BulkActionJob
       end
 
     when "approve"
-      if document.to_be_approved?
+      user = User.find(user_id)
+      if Pundit.policy(user, document).approve?
         document.update(approved: true, approved_by_id: user_id)
       else
         msg = if document.approved
                 "Document #{document.name} is already approved."
               elsif document.subject_to_approval?
                 "Document #{document.name} is not generated, does not require approval."
+              elsif !user.has_cached_role?(:approver)
+                "User #{user.email} does not have permission to approve document #{document.name}."
               else
                 "Document #{document.name} is not ready for approval."
               end

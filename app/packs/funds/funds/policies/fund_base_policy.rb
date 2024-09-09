@@ -13,11 +13,6 @@ class FundBasePolicy < ApplicationPolicy
     end
   end
 
-  def permissioned_employee?(perm = nil)
-    fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
-    super(fund_id, "Fund", perm)
-  end
-
   def create?
     permissioned_employee?(:create)
   end

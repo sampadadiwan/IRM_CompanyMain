@@ -4,9 +4,11 @@ class TaskPolicy < ApplicationPolicy
       if user.support?
         # Support user
         scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id)
-      else
+      elsif user.has_cached_role?(:company_admin) || user.curr_role == "investor"
         # Show tasks which are not for support only
         scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id).not_for_support
+      elsif user.has_cached_role?(:employee)
+        scope.where("assigned_to_id=?", user.id).not_for_support
       end
     end
   end
@@ -24,11 +26,8 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def create?
-    if belongs_to_entity?(user, record)
-      true
-    else
+    permissioned_employee?(:create) ||
       user.entity_id == record.for_entity_id
-    end
   end
 
   def new?

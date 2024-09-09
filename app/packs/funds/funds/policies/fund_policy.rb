@@ -72,8 +72,4 @@ class FundPolicy < FundBasePolicy
   def destroy?
     Rails.env.test? ? permissioned_employee?(:destroy) : support?
   end
-
-  def grant_access_rights?
-    user.has_cached_role?(:company_admin)
-  end
 end

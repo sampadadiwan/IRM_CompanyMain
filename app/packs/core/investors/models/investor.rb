@@ -259,4 +259,16 @@ class Investor < ApplicationRecord
       approved_users
     end
   end
+
+  def add_to_user_access_rights_cache(access_right)
+    approved_users.each do |user|
+      user.cache_access_rights(access_right) unless user.has_cached_role?(:investor_advisor)
+    end
+  end
+
+  def remove_from_user_access_rights_cache(access_right)
+    approved_users.each do |user|
+      user.remove_access_rights_cache(access_right) unless user.has_cached_role?(:investor_advisor)
+    end
+  end
 end

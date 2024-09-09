@@ -139,4 +139,20 @@ class ApplicationController < ActionController::Base
   def current_user_or_support_user
     current_user && current_user.support_user_id.present? ? current_user.support_user : current_user
   end
+
+  def with_owner_access(relation, raise_error: true)
+    if params[:owner_id].present? && params[:owner_type].present?
+      unless current_user.company_admin?
+        # If owner is passed, check if user is authorized to view the owner
+        @owner = params[:owner_type].constantize.find(params[:owner_id])
+        authorize(@owner, :show?)
+      end
+      relation.where(owner_id: params[:owner_id], owner_type: params[:owner_type])
+    elsif !current_user.company_admin? && raise_error
+      # Raise AccessDenied if user is an employee and no owner is passed
+      raise Pundit::NotAuthorizedError
+    else
+      relation
+    end
+  end
 end

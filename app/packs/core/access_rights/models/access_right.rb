@@ -151,14 +151,40 @@ class AccessRight < ApplicationRecord
     end
   end
 
-  after_commit :add_to_user_access_rights_cache, if: -> { user_id.present? }
+  after_commit :add_to_user_access_rights_cache, unless: -> { destroyed? || deleted_at.present? || owner_type == "Folder" }
   def add_to_user_access_rights_cache
-    user.cache_access_rights(self)
+    # We have couple of cases
+    # 1 AR is for category, so we need to add it to all the investor users of that category
+    # 2 AR is for investor, so we need to add it to all the users of that investor
+    # 3 AR is for user, so we need to add it to that user
+    if access_to_category.present?
+      # Get all the investors with this category -> investor access that are approved
+      investors.each do |investor|
+        investor.add_to_user_access_rights_cache(self)
+      end
+    elsif access_to_investor_id.present?
+      # Get all the investor -> investor access that are approved
+      investor.add_to_user_access_rights_cache(self)
+    elsif user_id.present?
+      # Add it to the user cache
+      user.cache_access_rights(self)
+    end
   end
 
-  after_destroy_commit :remove_from_user_access_rights_cache, if: -> { user_id.present? }
+  after_destroy_commit :remove_from_user_access_rights_cache, unless: -> { owner_type == "Folder" }
   def remove_from_user_access_rights_cache
-    user.remove_access_rights_cache(self)
+    if access_to_category.present?
+      # Get all the investors with this category -> investor access that are approved
+      investors.each do |investor|
+        investor.remove_from_user_access_rights_cache(self)
+      end
+    elsif access_to_investor_id.present?
+      # Get all the investor -> investor access that are approved
+      investor.remove_from_user_access_rights_cache(self)
+    elsif user_id.present?
+      # Add it to the user cache
+      user.remove_access_rights_cache(self)
+    end
   end
 
   def users

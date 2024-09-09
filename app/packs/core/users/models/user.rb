@@ -2,6 +2,7 @@ class User < ApplicationRecord
   include UserEnabled
   include WithCustomField
   include Memoized
+  include AccessRightsCache
 
   acts_as_favoritor
 
@@ -11,34 +12,6 @@ class User < ApplicationRecord
   # This is set from session[:support_user_id] in the ApplicationController.
   # The session is setup in users_controller#no_password_login when support user logs in as another user
   attr_accessor :support_user_id
-
-  # access_rights_cache is a hash serialized, to hold a cache of the users access rights
-  # It is updated is access_right is added or deleted for a user
-  # This is specifically used for employee and investor_advisor access to data
-  # stucture is {owner_type: {owner_id: permissions}}
-  # Example {Deal: {1: 7, 2: 6}}, but with a bitmask
-  serialize :access_rights_cache, type: Hash
-
-  # Temporary cache of the access rights permissions, used in ApplicationPolicy
-  flag :access_rights_cached_permissions, %i[create read update destroy]
-
-  # Return the permissions which are cached
-  def get_cached_access_rights_permissions(owner_type, owner_id)
-    self[:access_rights_cached_permissions] = access_rights_cache[owner_type]&.[](owner_id)
-    self[:access_rights_cached_permissions]
-  end
-
-  # Cache the access rights permissions, called when access_right is added
-  def cache_access_rights(access_right)
-    access_rights_cache[access_right.owner_type] ||= {}
-    access_rights_cache[access_right.owner_type][access_right.owner_id] = access_right[:permissions]
-    save
-  end
-
-  def remove_access_rights_cache(access_right)
-    access_rights_cache[access_right.owner_type]&.delete(access_right.owner_id)
-    save
-  end
 
   def support_user
     @support_user ||= User.find(support_user_id) if support_user_id.present?

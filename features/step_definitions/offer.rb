@@ -258,9 +258,9 @@ Given('Given I upload a offer file {string}') do |file_name|
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-    sleep(3)
+    sleep(4)
     click_on("Save")
-    sleep(3)
+    sleep(4)
     ImportUploadJob.perform_now(ImportUpload.last.id)
     sleep(5)
 
