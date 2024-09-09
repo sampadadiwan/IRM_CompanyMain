@@ -67,7 +67,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def assign_kyc_data?
-    permissioned_employee?(:investor_kyc_read)
+    permissioned_employee?(:investor_kyc_update)
   end
 
   def compare_kyc_datas?
@@ -75,7 +75,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def generate_new_kyc_data?
-    permissioned_employee?(:investor_kyc_read)
+    permissioned_employee?(:investor_kyc_update)
   end
 
   def update?
@@ -92,7 +92,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?(:destroy) && !record.verified
+    create?(:investor_kyc_delete) && !record.verified
   end
 
   def permissioned_employee?(perm = nil)
