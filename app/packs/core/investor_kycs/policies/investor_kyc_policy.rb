@@ -35,7 +35,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def generate_docs?
-    permissioned_employee?(:investor_kyc_read)
+    permissioned_employee?(:investor_kyc_update)
   end
 
   def new?
