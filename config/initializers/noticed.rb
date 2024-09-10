@@ -48,7 +48,7 @@ module NotificationExtensions
     # The actual model is stored in params
     # The key is model name in lowercase
     # To get the model name, we use the notifier name and remove the Notifier part
-    record.presence || params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
+    event.record.presence || params[:"#{self.class.name.split('::').first.gsub('Notifier', '').gsub('Download', '').underscore}"]
   end
 
   def entity_id

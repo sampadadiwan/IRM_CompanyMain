@@ -444,7 +444,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(2)
+  sleep(4)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
