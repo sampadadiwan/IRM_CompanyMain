@@ -64,7 +64,7 @@ module ForInvestor
     }
 
     # Some models have a belongs_to :investor association
-    scope :for_investor_orig, lambda { |user|
+    scope :for_investor, lambda { |user|
       filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
 
       join_clause = if instance_methods.include?(:access_rights)
@@ -96,7 +96,7 @@ module ForInvestor
       join_clause
     }
 
-    scope :for_investor, lambda { |user|
+    scope :for_investor_new, lambda { |user|
       table_name = parent_class_type.name.underscore.pluralize
       join_clause = if instance_methods.include?(:access_rights)
                       Rails.logger.debug { "######## for_investor has access_rights" }
