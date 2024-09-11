@@ -99,13 +99,11 @@ class Offer < ApplicationRecord
 
     self.approved = false if quantity_changed?
 
-    if final_price.positive?
-      self.amount_cents = quantity * final_price * 100
-      self.allocation_amount_cents = allocation_quantity * final_price * 100
-    elsif interest.present?
-      self.amount_cents = quantity * interest.price * 100
-      self.allocation_amount_cents = allocation_quantity * interest.price * 100
+    if interest.present?
+      self.amount_cents = quantity * interest.applied_price * 100
+      self.allocation_amount_cents = allocation_quantity * interest.applied_price * 100
     end
+
     self.docs_uploaded_check ||= {}
     self.bank_verification_response ||= {}
     self.pan_verification_response ||= {}
