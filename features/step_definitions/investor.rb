@@ -222,9 +222,9 @@ Given('Given I upload an investor kyc {string} for employees') do |file_name|
   click_on("Upload KYC Details")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(1)
+  sleep(3)
   click_on("Save")
-  sleep(1)
+  sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 

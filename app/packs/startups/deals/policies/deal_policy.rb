@@ -24,11 +24,11 @@ class DealPolicy < ApplicationPolicy
   end
 
   def kanban?
-    show? && belongs_to_entity?(user, record)
+    show?
   end
 
   def show_detail_tabs?
-    belongs_to_entity?(user, record)
+    show?
   end
 
   def create?
@@ -48,6 +48,6 @@ class DealPolicy < ApplicationPolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) && user.has_cached_role?(:company_admin)
+    permissioned_employee?(:destroy)
   end
 end
