@@ -30,20 +30,21 @@ module AccessRightsCache
   end
 
   # Cache the access rights permissions, called when access_right is added
-  def cache_access_rights(access_right, save_by_default: true)
+  def cache_access_rights(access_right, save_by_default: true, for_entity_id: nil)
     investor_access = InvestorAccess.where(user_id: id, entity_id: access_right.entity_id)
     # Initialize the cache
+    for_entity_id ||= access_right.entity_id
     self.access_rights_cache ||= {}
-    self.access_rights_cache[access_right.entity_id] ||= {}
-    self.access_rights_cache[access_right.entity_id][access_right.owner_type] ||= {}
-    self.access_rights_cache[access_right.entity_id][access_right.owner_type][access_right.owner_id] ||= {}
+    self.access_rights_cache[for_entity_id] ||= {}
+    self.access_rights_cache[for_entity_id][access_right.owner_type] ||= {}
+    self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] ||= {}
     # Cache only if the user is an employee or has investor access
     if curr_role == "employee" || investor_access.first.present?
-      self.access_rights_cache[access_right.entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
+      self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
       save_by_default ? save : false
     else
       # If the user is not an employee or investor, then do not cache
-      Rails.logger.debug { "Not caching access_right, investor access not found for user_id: #{id} and entity_id: #{access_right.entity_id}" }
+      Rails.logger.debug { "Not caching access_right, investor access not found for user_id: #{id} and entity_id: #{for_entity_id}" }
       false
     end
   end

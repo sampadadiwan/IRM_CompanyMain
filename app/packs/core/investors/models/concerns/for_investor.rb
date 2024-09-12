@@ -98,25 +98,16 @@ module ForInvestor
 
     scope :for_investor_new, lambda { |user|
       table_name = parent_class_type.name.underscore.pluralize
-      join_clause = if instance_methods.include?(:access_rights)
-                      Rails.logger.debug { "######## for_investor has access_rights" }
-                      if instance_methods.include?(:investor)
-                        Rails.logger.debug { "######## for_investor has :investor" }
-                        joins(:access_rights, :investor)
-                      else
-                        Rails.logger.debug { "######## for_investor has entity: :investor" }
-                        joins(:access_rights, entity: :investors)
-                      end
-                    elsif instance_methods.include?(:investor)
-                      Rails.logger.debug { "######## for_investor has :investor" }
-                      joins(:investor, parent_class_type.name.underscore.to_sym)
-                    else
-                      Rails.logger.debug { "######## for_investor has parent_class_type #{parent_class_type}" }
-                      joins(parent_class_type.name.underscore.to_sym).joins(entity: :investors)
-                    end
 
       # This is the list of ids for which the user has been granted specific access
-      cached_ids = user.get_cached_ids(nil, parent_class_type.name)
+      cached_ids = user.get_cached_ids(user.entity_id, parent_class_type.name)
+
+      join_clause = if parent_class_type.name == name
+                      joins(:entity)
+                    else
+                      joins(parent_class_type.name.underscore.to_sym)
+                    end
+
       join_clause.where("#{table_name}": { id: cached_ids }).where("investors.investor_entity_id=?", user.entity_id)
     }
   end

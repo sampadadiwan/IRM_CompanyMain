@@ -1,6 +1,6 @@
 class PortfolioInvestmentDecorator < ApplicationDecorator
   include ActiveSupport::NumberHelper
-  
+
   def for
     portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment)
   end
