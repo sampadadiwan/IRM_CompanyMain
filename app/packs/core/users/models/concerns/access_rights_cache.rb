@@ -14,31 +14,42 @@ module AccessRightsCache
   end
 
   # Return the permissions which are cached
-  def get_cached_access_rights_permissions(owner_type, owner_id)
-    permissions, metadata = access_rights_cache[owner_type]&.[](owner_id)&.split(",")
+  def get_cached_access_rights_permissions(entity_id, owner_type, owner_id)
+    permissions, metadata = access_rights_cache.dig(entity_id, owner_type, owner_id)&.split(",")
     self[:access_rights_cached_permissions] = permissions&.to_i
     [self[:access_rights_cached_permissions], metadata]
   end
 
-  def get_cached_ids(owner_type)
-    access_rights_cache[owner_type]&.keys
+  def get_cached_ids(entity_id, owner_type)
+    if entity_id.present?
+      access_rights_cache.dig(entity_id, owner_type)&.keys || []
+    else
+      # Return all the ids for this owner_type, across all entity_ids
+      access_rights_cache[owner_type]&.values&.map(&:keys)&.flatten || []
+    end
   end
 
   # Cache the access rights permissions, called when access_right is added
   def cache_access_rights(access_right, save_by_default: true)
-    investor_access = InvestorAccess.where(user_id: id, entity_id: access_right.entity_id).first
-    if curr_role == "employee" || investor_access.present?
-      access_rights_cache[access_right.owner_type] ||= {}
-      access_rights_cache[access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
+    investor_access = InvestorAccess.where(user_id: id, entity_id: access_right.entity_id)
+    # Initialize the cache
+    self.access_rights_cache ||= {}
+    self.access_rights_cache[access_right.entity_id] ||= {}
+    self.access_rights_cache[access_right.entity_id][access_right.owner_type] ||= {}
+    self.access_rights_cache[access_right.entity_id][access_right.owner_type][access_right.owner_id] ||= {}
+    # Cache only if the user is an employee or has investor access
+    if curr_role == "employee" || investor_access.first.present?
+      self.access_rights_cache[access_right.entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
       save_by_default ? save : false
     else
+      # If the user is not an employee or investor, then do not cache
       Rails.logger.debug { "Not caching access_right, investor access not found for user_id: #{id} and entity_id: #{access_right.entity_id}" }
       false
     end
   end
 
   def remove_access_rights_cache(access_right, save_by_default: true)
-    access_rights_cache[access_right.owner_type]&.delete(access_right.owner_id)
+    access_rights_cache.dig(access_right.entity_id, access_right.owner_type)&.delete(access_right.owner_id)
     save_by_default ? save : false
   end
 

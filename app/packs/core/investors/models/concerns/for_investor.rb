@@ -41,7 +41,7 @@ module ForInvestor
                     end
 
       # This is the list of ids for which the user has been granted specific access
-      cached_ids = user.get_cached_ids(parent_class_type.name)
+      cached_ids = user.get_cached_ids(user.entity_id, parent_class_type.name)
 
       if user.entity_type == "Group Company"
         join_clause.where("#{table_name}": { entity_id: user.entity.child_ids, id: cached_ids })
@@ -116,7 +116,7 @@ module ForInvestor
                     end
 
       # This is the list of ids for which the user has been granted specific access
-      cached_ids = user.get_cached_ids(parent_class_type.name)
+      cached_ids = user.get_cached_ids(nil, parent_class_type.name)
       join_clause.where("#{table_name}": { id: cached_ids }).where("investors.investor_entity_id=?", user.entity_id)
     }
   end

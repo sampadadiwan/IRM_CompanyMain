@@ -115,7 +115,7 @@ class ApplicationPolicy
 
         # Get the cached_permissions and metadata from the users access_rights_cache
         cached_permissions = nil
-        cached_permissions, _metadata = user.get_cached_access_rights_permissions(model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+        cached_permissions, _metadata = user.get_cached_access_rights_permissions(model_with_access_rights.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
 
         # If the user has access rights for the record and the permission is nil or read or the user has the permission
         cached_permissions.present? && (perm.nil? || perm == :read || user.access_rights_cached_permissions.set?(perm))
@@ -155,7 +155,7 @@ class ApplicationPolicy
 
       # # Get the cached_permissions and metadata from the users access_rights_cache
       # cached_permissions = nil
-      # cached_permissions, metadata = user.get_cached_access_rights_permissions(model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+      # cached_permissions, metadata = user.get_cached_access_rights_permissions(model_with_access_rights.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
 
       # # If the user has access rights for the record and the permission is nil or read or the user has the permission
       # if cached_permissions.present?
