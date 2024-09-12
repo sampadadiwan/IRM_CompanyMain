@@ -1,4 +1,6 @@
 class PortfolioInvestmentDecorator < ApplicationDecorator
+  include ActiveSupport::NumberHelper
+  
   def for
     portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment)
   end
@@ -21,6 +23,10 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
 
   def cost_of_sold_currency
     money_to_currency portfolio_investment.cost_of_sold
+  end
+
+  def decorated_quantity
+    number_to_delimited(object.quantity)
   end
 
   def investment_type

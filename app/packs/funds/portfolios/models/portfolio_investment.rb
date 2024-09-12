@@ -86,7 +86,7 @@ class PortfolioInvestment < ApplicationRecord
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
   STANDARD_COLUMNS = { "For" => "for", "Company Name" => "company_name", "Investment Date" => "investment_date",
-                       "Amount" => "currency_amount", "Quantity" => "quantity", "Cost Per Share" => "cost_in_currency",
+                       "Amount" => "currency_amount", "Quantity" => "decorated_quantity", "Cost Per Share" => "cost_in_currency",
                        "FMV" => "fmv_currency", "FIFO Cost" => "cost_of_sold_currency", "Investment Type" => "investment_type", "Notes" => "notes" }.freeze
 
   def setup_aggregate

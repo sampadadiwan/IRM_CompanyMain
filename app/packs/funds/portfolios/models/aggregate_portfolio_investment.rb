@@ -34,11 +34,11 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Portfolio Company" => "portfolio_company_name",
     "Fund Name" => "fund_name",
     "Instrument" => "investment_instrument",
-    "Net Bought Amount" => "bought_amount",
-    "Sold Amount" => "sold_amount",
-    "Current Quantity" => "current_quantity",
-    "Fmv" => "fmv",
-    "Avg Cost / Share" => "avg_cost"
+    "Net Bought Amount" => "net_bought_amount",
+    "Sold Amount" => "sold_amount_currency",
+    "Current Quantity" => "comma_quantity",
+    "Fmv" => "fmv_currency",
+    "Avg Cost / Share" => "avg_cost_currency"
   }.freeze
 
   before_create :update_name
