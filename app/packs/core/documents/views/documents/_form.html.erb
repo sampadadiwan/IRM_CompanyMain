@@ -103,15 +103,7 @@
           </div>
 
 
-        <% end %>
-
-          <% if document.from_template_id != nil %>
-            <div class="form-group">
-              <%= form.label :approved %>
-              <%= form.check_box :approved, class: "form-check-input" %>
-              <small class="text-muted">Enable access to generated document</small>
-            </div>
-          <% end %>
+        <% end %>          
 
           <%= custom_form_fields(document, form) %>
 
