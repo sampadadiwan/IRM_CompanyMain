@@ -142,7 +142,7 @@ class ApplicationPolicy
     end
   end
 
-  def permissioned_investor?(metadata = "none", owner: nil)
+  def permissioned_investor?(metadata = "none", _owner: nil)
     # Is the user an investor or holding
     if (user.curr_role == 'investor' || user.curr_role == 'holding') &&
        !belongs_to_entity?(user, record)

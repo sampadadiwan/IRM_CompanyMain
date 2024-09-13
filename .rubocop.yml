@@ -190,6 +190,7 @@ Metrics/ModuleLength:
   Max: 100
   Enabled: true
   Exclude:
+    - 'app/packs/core/investors/models/concerns/for_investor.rb'
     - 'app/packs/core/entity/models/concerns/entity_enabled.rb'
     - 'app/packs/funds/portfolios/models/concerns/portfolio_computations.rb'
     - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
@@ -211,6 +212,7 @@ Metrics/MethodLength:
   Max: 30
   Enabled: true
   Exclude:
+    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
     - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'

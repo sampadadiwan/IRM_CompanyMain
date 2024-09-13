@@ -10,7 +10,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    !user.investor_advisor?
   end
 
   def welcome?
