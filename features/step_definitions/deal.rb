@@ -147,6 +147,7 @@ end
 
 Given('I am {string} employee access to the deal') do |given|
   @access_right = AccessRight.create(entity_id: @deal.entity_id, owner: @deal, user_id: @user.id) if %w[given yes].include?(given)
+  @user.reload
 end
 
 Given('I have {string} access to the deal') do |should|

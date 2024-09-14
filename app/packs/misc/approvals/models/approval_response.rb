@@ -3,6 +3,7 @@ class ApprovalResponse < ApplicationRecord
   include WithCustomField
   include WithIncomingEmail
   include WithFolder
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :investor

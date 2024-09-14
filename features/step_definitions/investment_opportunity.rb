@@ -171,7 +171,7 @@
     details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
     details_element.set("Left Widget Details")
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-    sleep(0.5)
+    sleep(2)
     click_on("Save")
 
     visit(investment_opportunity_path(@investment_opportunity))
@@ -184,7 +184,7 @@
     details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
     details_element.set("Center Widget Details")
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-    sleep(0.5)
+    sleep(2)
     click_on("Save")
 
     visit(investment_opportunity_path(@investment_opportunity))
@@ -199,7 +199,7 @@
     # fill_in('ci_widget_details_top', with: "Right Widget Intro")
     # fill_in('ci_widget_details', with: "Right Widget Details")
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-    sleep(0.5)
+    sleep(2)
     click_on("Save")
   end
 

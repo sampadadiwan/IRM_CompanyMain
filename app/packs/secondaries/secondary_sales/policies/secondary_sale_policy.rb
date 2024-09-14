@@ -6,7 +6,7 @@ class SecondarySalePolicy < SaleBasePolicy
   def offer?
     record.active? &&
       (
-        permissioned_investor?(:seller) ||
+        permissioned_investor?("Seller") ||
         (permissioned_employee?(:update) && record.manage_offers)
       )
   end

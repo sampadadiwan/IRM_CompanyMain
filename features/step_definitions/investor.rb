@@ -183,9 +183,9 @@ Given('Given I upload an investor access file for employees') do
 
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(3)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
@@ -222,9 +222,9 @@ Given('Given I upload an investor kyc {string} for employees') do |file_name|
   click_on("Upload KYC Details")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(3)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
@@ -264,9 +264,9 @@ Given('Given I upload an investors file for the company') do
   sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
-  sleep(4)
+  sleep(2)
   click_on("Save")
-  sleep(4)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(3)
 end
@@ -312,9 +312,9 @@ Given('Given I upload an investors file for the fund') do
   sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
-  sleep(4)
+  sleep(2)
   click_on("Save")
-  sleep(4)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 

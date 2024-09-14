@@ -15,7 +15,7 @@ class AmlReportPolicy < ApplicationPolicy
 
   # investor can see investor kyc but not aml report
   def show?
-    index? && belongs_to_entity?(user, record)
+    index? && permissioned_employee?
   end
 
   def create?
@@ -27,7 +27,7 @@ class AmlReportPolicy < ApplicationPolicy
   end
 
   def generate_new?
-    index? && belongs_to_entity?(user, record)
+    index? && permissioned_employee?(:investor_kyc_update)
   end
 
   def toggle_approved?
@@ -48,5 +48,9 @@ class AmlReportPolicy < ApplicationPolicy
 
   def aml_enabled
     user.entity.entity_setting.aml_enabled?
+  end
+
+  def permissioned_employee?(perm = nil)
+    InvestorKycPolicy.new(user, record).permissioned_employee?(perm)
   end
 end

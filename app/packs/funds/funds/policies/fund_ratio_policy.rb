@@ -15,7 +15,7 @@ class FundRatioPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      (record.fund.show_fund_ratios && permissioned_investor?)
+      (record.fund.show_fund_ratios && FundPolicy.new(user, record.fund).permissioned_investor?)
   end
 
   def create?

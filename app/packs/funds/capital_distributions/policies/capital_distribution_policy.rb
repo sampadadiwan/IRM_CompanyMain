@@ -4,8 +4,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def show?
-    permissioned_employee? ||
-      permissioned_investor?
+    permissioned_employee?
   end
 
   def new?

@@ -14,8 +14,8 @@ Scenario Outline: Access Aml Report as company admin
   	|user	               |entity               |role |crud|boolean|aml_enabled|
   	|first_name=AdminUser|entity_type=Investment Fund;name=TestCompany901  |company_admin|"index,show,toggle_approved,generate_new"|true|true|# not relevant as we have removed admin condition for now
   	|first_name=AdminUser|entity_type=Investment Fund;name=TestCompany902 |company_admin|"index,show,toggle_approved,generate_new"|false|false|
-    |first_name=approver  |entity_type=Investment Fund;name=TestCompany903  |approver |"index,show,toggle_approved,generate_new"|true|true|
-    |first_name=signatory  |entity_type=Investment Fund;name=TestCompany904  |signatory |"index,show,toggle_approved,generate_new"|true|true|
+    |first_name=approver  |entity_type=Investment Fund;name=TestCompany903  |company_admin,approver |"index,show,toggle_approved,generate_new"|true|true|
+    |first_name=signatory  |entity_type=Investment Fund;name=TestCompany904  |company_admin,signatory |"index,show,toggle_approved,generate_new"|true|true|
 
 Scenario Outline: Access Aml Report as Other User
   Given there is a user "<user>" for an entity "<entity>"

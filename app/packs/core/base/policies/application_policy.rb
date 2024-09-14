@@ -142,38 +142,41 @@ class ApplicationPolicy
     end
   end
 
-  def permissioned_investor?(metadata = "none", _owner: nil)
+  def permissioned_investor?(metadata = "none", owner: nil)
     # Is the user an investor or holding
     if (user.curr_role == 'investor' || user.curr_role == 'holding') &&
        !belongs_to_entity?(user, record)
 
-      # # Get the model to wich the access_rights are attached, for the policy record
-      # # Example for an offer its the associated secondary_sale,
-      # # for the commitment its the fund etc
-      # # But for a sale its the sale itself, likewise for fund
-      # model_with_access_rights = get_model_with_access_rights(owner:)
+      # Get the model to wich the access_rights are attached, for the policy record
+      # Example for an offer its the associated secondary_sale,
+      # for the commitment its the fund etc
+      # But for a sale its the sale itself, likewise for fund
+      model_with_access_rights = get_model_with_access_rights(owner:)
 
-      # # Get the cached_permissions and metadata from the users access_rights_cache
-      # cached_permissions = nil
-      # cached_permissions, metadata = user.get_cached_access_rights_permissions(model_with_access_rights.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+      # Get the cached_permissions and metadata from the users access_rights_cache
+      cached_permissions = nil
+      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(user.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
 
-      # # If the user has access rights for the record and the permission is nil or read or the user has the permission
-      # if cached_permissions.present?
-      #   model_with_access_rights == record || belongs_to_investor_entity?(user, record)
-      # else
-      #   false
-      # end
+      # If the user has access rights for the record and the permission is nil or read or the user has the permission
+      # binding.pry
+      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata == cached_metadata)
+
+      if model_with_access_rights == record
+        permission_metadata_ok
+      else
+        permission_metadata_ok && record.investor.investor_entity_id == user.entity_id
+      end
 
       # is this record visible to the user
-      visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
-      # Cache the result
-      @pi_record ||= {}
-      @pi_record[metadata] ||= if metadata == "none"
-                                 visible_record
-                               else
-                                 visible_record.where("access_rights.metadata=?", metadata)
-                               end
-      @pi_record[metadata].present?
+      # visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
+      # # Cache the result
+      # @pi_record ||= {}
+      # @pi_record[metadata] ||= if metadata == "none"
+      #                            visible_record
+      #                          else
+      #                            visible_record.where("access_rights.metadata=?", metadata)
+      #                          end
+      # @pi_record[metadata].present?
     else
       # Not an investor
       false

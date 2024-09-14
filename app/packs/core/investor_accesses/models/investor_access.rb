@@ -150,13 +150,13 @@ class InvestorAccess < ApplicationRecord
 
   after_commit :add_to_user_access_rights_cache, unless: -> { destroyed? || deleted_at.present? }
   def add_to_user_access_rights_cache
-    # Refresh the users access_rights_cache, for this entity
-    user.refresh_access_rights_cache(entity_id:, add: approved)
+    # Refresh the users access_rights_cache, for the investor_entity as this is associated with an investor
+    user.refresh_access_rights_cache(self, add: approved)
   end
 
   after_destroy_commit :remove_from_user_access_rights_cache
   def remove_from_user_access_rights_cache
-    # Refresh the users access_rights_cache, for this entity, force clear the cache
-    user.refresh_access_rights_cache(entity_id:, add: false)
+    # Refresh the users access_rights_cache, for the investor_entity as this is associated with an investor, force clear the cache
+    user.refresh_access_rights_cache(self, add: false)
   end
 end

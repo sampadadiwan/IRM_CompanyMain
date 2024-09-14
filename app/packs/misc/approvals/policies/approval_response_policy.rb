@@ -21,7 +21,7 @@ class ApprovalResponsePolicy < ApprovalBasePolicy
   end
 
   def create?
-    permissioned_employee?
+    permissioned_employee? 
   end
 
   def new?
@@ -29,8 +29,7 @@ class ApprovalResponsePolicy < ApprovalBasePolicy
   end
 
   def update?
-    # false
-    create? && record.approval.due_date >= Time.zone.today
+    (create? || permissioned_investor?) && record.approval.due_date >= Time.zone.today
   end
 
   def edit?

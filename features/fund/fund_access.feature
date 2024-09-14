@@ -77,7 +77,7 @@ Scenario Outline: Access fund & details as Investor
   Given the capital calls are approved
   Then user "<should>" have "<inv_access>" access to his own capital remittances
   Given the fund has "2" capital distribution
-  Then user "<should>" have "<access>" access to the capital distributions
+  Then user "false" have "<access>" access to the capital distributions
   Given the capital distributions are approved
   Then user "<should>" have "<access>" access to his own capital distribution payments
   Given the fund has Fund Unit Settings
@@ -141,7 +141,7 @@ Scenario Outline: Access fund & details as Investor Advisor
   Given the capital calls are approved
   Then user "<should>" have "<inv_access>" access to his own capital remittances
   Given the fund has "2" capital distribution
-  Then user "<should>" have "<access>" access to the capital distributions
+  Then user "false" have "<access>" access to the capital distributions
   Given the capital distributions are approved
   Then user "<should>" have "<access>" access to his own capital distribution payments
   

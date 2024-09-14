@@ -125,6 +125,7 @@ include CurrencyHelper
         puts @access_right.to_json
       end
     end
+    @user.reload
   end
 
   Then('I {string} see the deal investors in the deal details page') do |should|

@@ -40,8 +40,8 @@
     # Hack to make the tests work without rewriting many steps for another user
     @user = @employee_investor
     if given == "given" || given == "yes"
-      @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id,
-                                          metadata: "Investor")
+      @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Investor")
+      
       ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor,
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
@@ -917,9 +917,9 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(4)
+  sleep(2)
   click_on("Save")
-  sleep(5)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   if ImportUpload.last.import_type == "CapitalCall"
     sleep(6)
@@ -1411,7 +1411,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(1)
   click_on("Save")
-  sleep(3)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == 0
@@ -1429,9 +1429,9 @@ Given('Given I upload {string} {string} error file for Account Entries') do |fil
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(3)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == err_count.to_i
@@ -1628,9 +1628,9 @@ Given('Given I upload a fund unit settings {string} for the fund') do |file_name
   sleep(6)
   fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(10)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == 0
@@ -1700,9 +1700,9 @@ Then('Given I upload {string} file for Distributions of the fund') do |string|
   sleep(2)
   fill_in('import_upload_name', with: "Test Distributions Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/capital_distributions.xlsx'), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(6)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == 0
@@ -1715,9 +1715,9 @@ Then('Given I upload {string} file for Fund Units of the fund') do |string|
   sleep(2)
   fill_in('import_upload_name', with: "Test Fund Units Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_units.xlsx'), make_visible: true)
-  sleep(3)
+  sleep(2)
   click_on("Save")
-  sleep(6)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
   ImportUpload.last.failed_row_count.should == 0

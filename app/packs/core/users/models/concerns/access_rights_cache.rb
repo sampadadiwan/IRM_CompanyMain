@@ -17,7 +17,7 @@ module AccessRightsCache
   def get_cached_access_rights_permissions(entity_id, owner_type, owner_id)
     permissions, metadata = access_rights_cache.dig(entity_id, owner_type, owner_id)&.split(",")
     self[:access_rights_cached_permissions] = permissions&.to_i
-    [self[:access_rights_cached_permissions], metadata]
+    [self[:access_rights_cached_permissions], metadata&.strip]
   end
 
   def get_cached_ids(entity_id, owner_type)
@@ -49,53 +49,47 @@ module AccessRightsCache
     end
   end
 
-  def remove_access_rights_cache(access_right, save_by_default: true)
-    access_rights_cache.dig(access_right.entity_id, access_right.owner_type)&.delete(access_right.owner_id)
+  def remove_access_rights_cache(access_right, save_by_default: true, for_entity_id: nil)
+    for_entity_id ||= access_right.entity_id
+    access_rights_cache.dig(for_entity_id, access_right.owner_type)&.delete(access_right.owner_id)
     save_by_default ? save : false
   end
 
   # This will cleanup and reset all the access_rights for this user
   # Typically called when investor_access is approved or unapproved or deleted
   # optional param entity_id: The entity that is granting investor_access
-  def refresh_access_rights_cache(entity_id: nil, add: true)
+  def refresh_access_rights_cache(investor_access, add: true)
     # Reset the cache
     self.access_rights_cache = {} if entity_id.blank?
 
     # Find all the access rights for this user and add/remove from cache
     # This should cover employees and investor_advisors as they have access_rights for specific user
     ars = AccessRight.where(user_id: id)
-    ars = ars.where(entity_id:) if entity_id.present?
+    ars = ars.where(entity_id: investor_access.entity_id)
     ars.each do |ar|
       if add
-        cache_access_rights(ar, save_by_default: false)
+        cache_access_rights(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id)
       else
-        remove_access_rights_cache(ar, save_by_default: false)
+        remove_access_rights_cache(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id)
       end
     end
 
     unless has_cached_role?(:investor_advisor)
-      # Now he may be an investor in many places, via investor_access
-      # Note we skip investor_advisors, as they have investor_access,
-      # but need access_right for specific user. See above.
-      ias = InvestorAccess.where(user_id: id)
-      ias = ias.where(entity_id:) if entity_id.present?
+      category = investor_access.investor.category
+      # Investor specific access_rights
+      access_rights_investor = AccessRight.where(entity_id: investor_access.entity_id, access_to_investor_id: investor_access.investor_id)
+      # category specific access_rights
+      access_rights_category = AccessRight.where(entity_id: investor_access.entity_id, access_to_category: category)
 
-      ias.each do |investor_access|
-        category = investor_access.investor.category
-        # Investor specific access_rights
-        access_rights_investor = AccessRight.where(entity_id: investor_access.entity_id, access_to_investor_id: investor_access.investor_id)
-        # category specific access_rights
-        access_rights_category = AccessRight.where(entity_id: investor_access.entity_id, access_to_category: category)
-
-        # Lets add/remove from cache
-        access_rights_investor.or(access_rights_category).find_each do |ar|
-          if add
-            cache_access_rights(ar, save_by_default: false)
-          else
-            remove_access_rights_cache(ar, save_by_default: false)
-          end
+      # Lets add/remove from cache
+      access_rights_investor.or(access_rights_category).find_each do |ar|
+        if add
+          cache_access_rights(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id)
+        else
+          remove_access_rights_cache(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id)
         end
       end
+
     end
 
     save

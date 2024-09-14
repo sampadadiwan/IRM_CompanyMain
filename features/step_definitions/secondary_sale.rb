@@ -161,6 +161,7 @@ end
 
 Given('employee investor should have {string} access to the sale {string}') do |access_type, arg|
   @employee_investor = @investor_entity.employees.first
+  # binding.pry 
   Pundit.policy(@employee_investor, @sale).send("#{access_type}?").to_s.should == arg
 end
 

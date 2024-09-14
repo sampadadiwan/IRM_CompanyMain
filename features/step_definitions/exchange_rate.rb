@@ -4,9 +4,9 @@ Given('Given I upload an exchange_rates file') do
   sleep(1)
   fill_in('import_upload_name', with: "Exchange Rates Bulk Import Testing")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/exchange_rates.xlsx'), make_visible: true)
-  sleep(4)
+  sleep(2)
   click_on("Save")
-  sleep(4)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
