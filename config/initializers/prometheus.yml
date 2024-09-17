@@ -6,4 +6,7 @@ scrape_configs:
   - job_name: 'rails_app'
     static_configs:
       - targets: ['host.docker.internal:9394'] 
+  - job_name: node
+    static_configs:
+      - targets: ['host.docker.internal:9100']
 
