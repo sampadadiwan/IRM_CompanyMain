@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s  # How frequently to scrape targets (default is every 15s)
+
+scrape_configs:
+  # this is the port for the prometheus exporter
+  - job_name: 'rails_app'
+    static_configs:
+      - targets: ['host.docker.internal:9394'] 
+

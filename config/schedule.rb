@@ -12,6 +12,7 @@ end
 
 every :reboot, roles: [:app] do
   bundle "sidekiq"
+  bundle "prometheus_exporter -b 0.0.0.0"
   bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
 end

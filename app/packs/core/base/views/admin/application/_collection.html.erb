@@ -18,7 +18,7 @@ to display a collection of resources in an HTML table.
 [1]: http://www.rubydoc.info/gems/administrate/Administrate/Page/Collection
 %>
 
-<table aria-labelledby="<%= table_title %>" data-controller="table" data-action="click->table#visitDataUrl keydown->table#visitDataUrl">
+<table aria-labelledby="<%= table_title %>" data-controller="table" data-action="click->table#visitDataUrl keydown->table#visitDataUrl" class="table table-bordered dataTable action_table hover">
   <thead>
     <tr>
       <% collection_presenter.attribute_types.each do |attr_name, attr_type| %>
@@ -57,7 +57,7 @@ to display a collection of resources in an HTML table.
 
   <tbody>
     <% resources.each do |resource| %>
-      <tr class="js-table-row"
+      <tr class=""
           <% if accessible_action?(resource, :show) %>
             <%= %(tabindex=0 role=link data-url=#{polymorphic_path([namespace, resource])}) %>
           <% end %>

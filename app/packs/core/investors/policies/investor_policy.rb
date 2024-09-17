@@ -40,6 +40,6 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    extended_permissioned_employee?(perm)
+    extended_permissioned_employee?(perm) || support?
   end
 end

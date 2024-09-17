@@ -5,7 +5,6 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1"
-gem 'scout_apm'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -229,4 +228,5 @@ gem "marginalia", "~> 1.11"
 # gem 'newrelic_rpm'
 gem 'friendly_id', '~> 5.5.0'
 gem 'humanize'
+gem 'prometheus_exporter'
 gem 'sendgrid-ruby'

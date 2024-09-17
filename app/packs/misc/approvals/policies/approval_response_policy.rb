@@ -21,7 +21,7 @@ class ApprovalResponsePolicy < ApprovalBasePolicy
   end
 
   def create?
-    permissioned_employee? 
+    permissioned_employee?
   end
 
   def new?

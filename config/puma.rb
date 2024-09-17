@@ -44,19 +44,18 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
-# on_worker_boot do
-#   require 'prometheus_exporter/instrumentation'
-#   PrometheusExporter::Instrumentation::ActiveRecord.start(
-#     custom_labels: { type: "puma_worker" }, # optional params
-#     config_labels: %i[database host] # optional params
-#   )
-# end
+# in puma.rb
+on_worker_boot do
+  require 'prometheus_exporter/instrumentation'
+  PrometheusExporter::Instrumentation::ActiveRecord.start(
+    custom_labels: { type: "puma_worker" }, # optional params
+    config_labels: %i[database host] # optional params
+  )
+end
 
-# # puma.rb config
-# after_worker_boot do
-#   require 'prometheus_exporter/instrumentation'
-#   # optional check, avoids spinning up and down threads per worker
-#   PrometheusExporter::Instrumentation::Puma.start unless PrometheusExporter::Instrumentation::Puma.started?
-
-#   PrometheusExporter::Instrumentation::Process.start(type: "web")
-# end
+# puma.rb config
+after_worker_boot do
+  require 'prometheus_exporter/instrumentation'
+  # optional check, avoids spinning up and down threads per worker
+  PrometheusExporter::Instrumentation::Puma.start unless PrometheusExporter::Instrumentation::Puma.started?
+end
