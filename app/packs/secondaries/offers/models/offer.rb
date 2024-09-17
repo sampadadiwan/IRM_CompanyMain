@@ -87,6 +87,10 @@ class Offer < ApplicationRecord
     errors.add(:secondary_sale, ": Is not active.") unless secondary_sale.active?
   end
 
+  def applied_price
+    secondary_sale.final_price.positive? ? secondary_sale.final_price : interest.applied_price
+  end
+
   before_save :set_defaults
   def set_defaults
     if holding.present?
