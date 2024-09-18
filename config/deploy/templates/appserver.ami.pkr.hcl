@@ -7,22 +7,34 @@ packer {
   }
 }
 
+# Declare the ami_date variable
+variable "ami_date" {
+  type    = string
+  default = ""  # Optional default value (if needed)
+}
+
 source "amazon-ebs" "ubuntu" {
-  ami_name      = "pkr ub22 051023"
+  ami_name      = "AppServer-${var.ami_date}"
   instance_type = "t2.micro"
   region        = "ap-south-1"
-  source_ami    = "ami-0f5ee92e2d63afc18"
+  source_ami    = "ami-0522ab6e1ddcc7055"
   // skip_region_validation = "true"
   associate_public_ip_address = "true"
-  vpc_id                      = "vpc-00364cf49c3f42a03"
-  subnet_id                   = "subnet-0203665947eb41df9"
+  vpc_id                      = "vpc-0a5573442e8b54a08"
+  subnet_id                   = "subnet-02e6d37e5ec01bb5f"
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-0e15ce838c2a1c70a"
+  security_group_id           = "sg-07fdf064150f9f0b1"
   ssh_username                = "ubuntu"
+
+   # Add tags for the AMI
+  tags = {
+    "Name"         = "AppServer"
+    "CreatedBy"    = "Packer"
+  }
 }
 
 build {
-  name = "packer ubuntu 22"
+  name = "AppServer"
   sources = [
     "source.amazon-ebs.ubuntu"
   ]
@@ -33,6 +45,8 @@ build {
       "sudo rm -r /var/lib/apt/lists/*",
       "sudo apt update",
       "sudo apt-get update",
+      "sudo apt-get upgrade --yes",
+      "sudo apt-get install --yes zsh",
 
       // microsoft fonts - tbd
       "echo INSTALLING- MS Fonts",
@@ -40,25 +54,14 @@ build {
       "sudo apt-get install --yes ttf-mscorefonts-installer",
 
       // RVM
-      "echo INSTALLING- RVM and Ruby 3.1.2",
+      "echo INSTALLING- RVM and Ruby 3.3.3",
       "sudo apt-get install -y curl gnupg build-essential",
       "gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB",
       // "curl -sSL https://get.rvm.io | bash",
       // "curl -sSL https://get.rvm.io | bash -s stable --rails"
       // intalling ruby along with rvm as rvm is not recognized as a package unless the terminal is reopened
-      "curl -sSL https://get.rvm.io | bash -s stable --ruby=3.1.2",
+      "curl -sSL https://get.rvm.io | bash -s stable --ruby=3.3.3",
 
-      // "exec $SHELL",
-      // "bash -c 'source /home/ubuntu/.rvm/scripts/rvm'",
-      // "bash -c 'source ~/.rvm/scripts/rvm'",
-      // "sudo usermod -a -G rvm `whoami`",
-
-      // Ruby
-      // "rvm install ruby-3.1.2",
-      // "rvm use ruby-3.1.2 --default",
-      // "gem install bundler --no-rdoc --no-ri",
-      // Rails
-      // "gem install rails -v 7.0.6",
 
       // docker
       "echo INSTALLING- Docker",
@@ -71,6 +74,7 @@ build {
       // database
       "echo INSTALLING- MySql",
       "sudo apt install --yes mysql-client",
+      "sudo apt-get install --yes libmysqlclient-dev",
       // "sudo systemctl start mysql.service",
       // libreoffice
       "echo INSTALLING- LibreOffice",
@@ -90,7 +94,7 @@ build {
       "sudo ufw app list",
       "sudo ufw allow 'Nginx HTTP'",
       "sudo ufw status",
-      "systemctl status nginx"
+      "systemctl status nginx",
       // pdftk
       "echo INSTALLING- pdftk",
       "sudo apt install --yes pdftk",      

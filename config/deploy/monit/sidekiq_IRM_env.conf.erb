@@ -1,0 +1,6 @@
+# Monit configuration for Sidekiq :  IRM
+  check process sidekiq_IRM_<%= fetch(:stage) %>
+  matching 'sidekiq .* '
+  start program = "/bin/su - ubuntu -c 'cd /home/ubuntu/IRM/current && ~/.rvm/bin/rvm default do bundle exec sidekiq -e <%= fetch(:stage) %>     >> /home/ubuntu/IRM/shared/log/sidekiq.log 2>&1 &'" with timeout 30 seconds
+  stop program = "/bin/su - ubuntu -c 'ps -ax | grep "sidekiq .* " | grep -v grep | awk "{print \$1}" | xargs --no-run-if-empty kill'" with timeout 10 seconds
+  group IRM-sidekiq

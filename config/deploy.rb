@@ -128,3 +128,52 @@ namespace :recovery do
     end
   end
 end
+
+
+namespace :IRM do
+  desc 'Generate and upload Monit configuration and systemd service files'
+  task :setup do
+    on roles(:app) do
+      
+      # Define the paths
+      monit_config_path = "/etc/monit/conf.d"
+      system_config_path = "/etc/systemd/system/"
+      nginx_config_path = "/etc/nginx/sites-available"
+
+      # Helper method to generate and upload files
+      def generate_and_upload(template_path, local_temp_path, remote_path)
+        # Generate the file from the ERB template
+        template = File.read(template_path)
+        config = ERB.new(template).result(binding)
+        # Upload the config file to the temporary location
+        upload! StringIO.new(config), local_temp_path
+        # Move the file to the final destination with sudo
+        execute :sudo, :mv, local_temp_path, remote_path
+      end
+
+      # For Puma Monit config
+      local_puma_monit = "#{shared_path}/tmp/puma_IRM_#{fetch(:stage)}.conf"
+      generate_and_upload('./config/deploy/monit/puma_IRM_env.conf.erb', local_puma_monit, monit_config_path)
+
+      # For Puma systemd service
+      local_puma_service = "#{shared_path}/tmp/puma_IRM_#{fetch(:stage)}.service"
+      generate_and_upload('./config/deploy/services/puma_IRM_env.service.erb', local_puma_service, system_config_path)
+
+      # For Sidekiq Monit config
+      local_sidekiq_monit = "#{shared_path}/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
+      generate_and_upload('./config/deploy/monit/sidekiq_IRM_env.conf.erb', local_sidekiq_monit, monit_config_path)
+       
+      # for nginx config
+      local_nginx_conf = "#{shared_path}/tmp/nginx_IRM_#{fetch(:stage)}"
+      generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
+      execute :sudo, :ln, "-s", "#{nginx_config_path}/nginx_IRM_#{fetch(:stage)}", "/etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)}"
+
+      # Reload Monit to apply the new configuration
+      execute :sudo, "monit reload"
+      # restart nginx
+      execute :sudo, "service nginx restart"
+    end
+  end
+end
+
+

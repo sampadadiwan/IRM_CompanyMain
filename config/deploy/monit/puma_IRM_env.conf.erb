@@ -1,0 +1,8 @@
+# Monit configuration for Puma
+# Service name: puma_IRM_<%= fetch(:stage) %>
+#
+check process puma_IRM_<%= fetch(:stage) %>
+  with pidfile "/home/ubuntu/IRM/shared/tmp/pids/puma.pid"
+  start program = "/usr/bin/sudo -iu ubuntu /bin/bash -c 'cd /home/ubuntu/IRM/current && ~/.rvm/bin/rvm default do bundle exec puma --yjit -C /home/ubuntu/IRM/shared/puma.rb '"
+  stop program = "/usr/bin/sudo -iu ubuntu /bin/bash -c 'cd /home/ubuntu/IRM/current && ~/.rvm/bin/rvm default do bundle exec pumactl -S /home/ubuntu/IRM/shared/tmp/pids/puma.state stop'"
+~                                                                                                                                                                             ~                       

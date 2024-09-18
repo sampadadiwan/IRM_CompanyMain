@@ -3,7 +3,9 @@
 # Defines a single server with a list of roles and multiple properties.
 # You can define all roles on a single server, or split them:
 
-server "13.127.99.172", user: "ubuntu", roles: %w[primary app db web]
+# server "13.127.99.172", user: "ubuntu", roles: %w[primary app db web]
+server "3.108.67.247", user: "ubuntu", roles: %w[primary app db web]
+
 # server "13.233.75.106", user: "ubuntu", roles: %w[app db web]
 
 set :rails_env, "staging"

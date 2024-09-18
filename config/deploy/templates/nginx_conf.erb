@@ -1,46 +1,14 @@
-upstream puma_<%= fetch(:nginx_config_name) %> { <%
-  @backends = puma_binds.map do |bind|
-     if bind.unix?
-       "server unix://#{bind.address} #{fetch(:nginx_socket_flags)};"
-     else
-       "server #{bind.local.address} #{fetch(:nginx_http_flags)};"
-     end
-  end
-%><% @backends.each do |server| %>
-  <%= server %><% end %>
+upstream puma_IRM_<%= fetch(:stage) %> {
+  server unix:///home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock;
+  # server 0.0.0.0:3000;
 }
-<% if fetch(:nginx_use_ssl) -%>
+
 server {
   listen 80;
   server_tokens off;
-  server_name <%= fetch(:nginx_server_name) %>;
-  return 301 https://$host$1$request_uri;
-}
-<% end -%>
-
-server {
-<% if fetch(:nginx_use_ssl) -%>
-  <% if fetch(:nginx_use_http2) -%>
-  listen 443 ssl http2;
-  <% else -%>
-  listen 443 ssl;
-  <% end -%>
-<% if fetch(:nginx_ssl_certificate) -%>
-  ssl_certificate <%= fetch(:nginx_ssl_certificate) %>;
-<% else -%>
-  ssl_certificate /etc/ssl/certs/<%= fetch(:nginx_config_name) %>.crt;
-<% end -%>
-<% if fetch(:nginx_ssl_certificate_key) -%>
-  ssl_certificate_key <%= fetch(:nginx_ssl_certificate_key) %>;
-<% else -%>
-  ssl_certificate_key /etc/ssl/private/<%= fetch(:nginx_config_name) %>.key;
-<% end -%>
-<% else -%>
-  listen 80;
-<% end -%>
-  server_name <%= fetch(:nginx_server_name) %>;
-  root <%= current_path %>/public;
-  try_files $uri/index.html $uri @puma_<%= fetch(:nginx_config_name) %>;
+  server_name localhost IRM.local;
+  root /home/ubuntu/IRM/current/public;
+  try_files $uri/index.html $uri @puma_IRM_<%= fetch(:stage) %>;
 
   client_max_body_size 4G;
   keepalive_timeout 10;
@@ -48,7 +16,7 @@ server {
   error_page 500 502 504 /500.html;
   error_page 503 @503;
 
-  location @puma_<%= fetch(:nginx_config_name) %> {
+  location @puma_IRM_<%= fetch(:stage) %> {
     proxy_http_version 1.1;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -56,27 +24,14 @@ server {
     proxy_redirect off;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "Upgrade";
-<% if fetch(:nginx_use_ssl) -%>
-    proxy_set_header X-Forwarded-Proto https;
-<% else -%>
-  <% if fetch(:nginx_downstream_uses_ssl) -%>
-    proxy_set_header X-Forwarded-Proto https;
-  <% else -%>
-    proxy_set_header X-Forwarded-Proto http;
-  <% end -%>
-<% end -%>
-    proxy_pass http://puma_<%= fetch(:nginx_config_name) %>;
-    # limit_req zone=one;
-    access_log <%= shared_path %>/log/nginx.access.log;
-    error_log <%= shared_path %>/log/nginx.error.log;
-
-    
-    if ($request_method !~ ^(GET|HEAD|PUT|POST|DELETE|OPTIONS|PATCH)$ ){
-      return 405;
-    }
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Forwarded-Ssl on;
+      proxy_pass http://puma_IRM_<%= fetch(:stage) %>;
+    access_log /home/ubuntu/IRM/shared/log/nginx.access.log;
+    error_log /home/ubuntu/IRM/shared/log/nginx.error.log;
   }
 
-  location ^~ /assets/ {
+  location ^~ /vendor/ {
     gzip_static on;
     expires max;
     add_header Cache-Control public;
@@ -88,7 +43,7 @@ server {
     add_header Cache-Control public;
   }
 
-  location ^~ /vendor/ {
+  location ^~ /assets/ {
     gzip_static on;
     expires max;
     add_header Cache-Control public;
@@ -117,4 +72,5 @@ server {
   if (-f $document_root/system/maintenance.html) {
     return 503;
   }
+
 }
