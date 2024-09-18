@@ -47,8 +47,24 @@ namespace :deploy do
     end
   end
 
+  desc "Ensure permissions are set for nginx and puma"
+  task :ensure_permissions do
+    on roles(:app) do
+      # Change the ownership of the logs to ubuntu
+      execute :sudo, :chown, "-R", "ubuntu", "/home/ubuntu/IRM/current/log/*"
+      execute :sudo, :chown, "-R", "www-data", "/home/ubuntu/IRM/current/log/nginx*"
+      # sudo usermod -aG ubuntu www-data
+      execute :sudo, :usermod, "-aG", "ubuntu", "www-data"
+      # sudo chmod 660 /home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock
+      execute :sudo, :chmod, "660", "/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock"
+      # restart nginx
+      execute :sudo, "service nginx restart"
+    end
+  end
+
   before "deploy:updated", :upload_env
   before 'deploy:finished', 'sidekiq:restart'
+  after  'deploy:finished', 'ensure_permissions'
 end
 
 namespace :puma do
@@ -131,6 +147,36 @@ end
 
 
 namespace :IRM do
+
+  desc 'Set environment variable on remote host based on a local file'
+  task :set_rails_master_key do
+    on roles(:app) do
+      # Path to the local file on your machine (relative to the project root or absolute)
+      local_credentials_key = "./config/credentials/#{fetch(:stage)}.key"
+
+      # Ensure the file exists locally
+      unless File.exist?(local_credentials_key)
+        error "The file #{local_credentials_key} does not exist."
+        exit 1
+      end
+
+      # Read the content of the local file (assumed to contain the environment variable value)
+      env_value = File.read(local_credentials_key).strip
+
+      # Environment variable name (you can customize it or read from file if needed)
+      env_var_name = 'RAILS_MASTER_KEY'
+
+      # Command to append the environment variable to /etc/environment on the remote host
+      set_env_command = "echo '#{env_var_name}=\"#{env_value}\"' | sudo tee -a /etc/environment"
+
+      # Execute the command on the remote host
+      execute set_env_command
+
+      # Reload the environment so the change takes effect
+      # execute :sudo, 'source /etc/environment'
+    end
+  end
+
   desc 'Generate and upload Monit configuration and systemd service files'
   task :setup do
     on roles(:app) do
@@ -152,28 +198,38 @@ namespace :IRM do
       end
 
       # For Puma Monit config
-      local_puma_monit = "#{shared_path}/tmp/puma_IRM_#{fetch(:stage)}.conf"
+      local_puma_monit = "/tmp/puma_IRM_#{fetch(:stage)}.conf"
       generate_and_upload('./config/deploy/monit/puma_IRM_env.conf.erb', local_puma_monit, monit_config_path)
 
       # For Puma systemd service
-      local_puma_service = "#{shared_path}/tmp/puma_IRM_#{fetch(:stage)}.service"
+      local_puma_service = "/tmp/puma_IRM_#{fetch(:stage)}.service"
       generate_and_upload('./config/deploy/services/puma_IRM_env.service.erb', local_puma_service, system_config_path)
 
       # For Sidekiq Monit config
-      local_sidekiq_monit = "#{shared_path}/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
+      local_sidekiq_monit = "/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
       generate_and_upload('./config/deploy/monit/sidekiq_IRM_env.conf.erb', local_sidekiq_monit, monit_config_path)
        
       # for nginx config
-      local_nginx_conf = "#{shared_path}/tmp/nginx_IRM_#{fetch(:stage)}"
+      local_nginx_conf = "/tmp/nginx_IRM_#{fetch(:stage)}"
       generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
       execute :sudo, :ln, "-s", "#{nginx_config_path}/nginx_IRM_#{fetch(:stage)}", "/etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)}"
 
+      # for monitrc
+      local_monitrc = "/tmp/monitrc"
+      generate_and_upload('./config/deploy/templates/monitrc.erb', local_monitrc, "/etc/monit/monitrc")
+
       # Reload Monit to apply the new configuration
       execute :sudo, "monit reload"
+
+      # Remove the /etc/nginx/sites-enabled/default file
+      execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
+      
       # restart nginx
       execute :sudo, "service nginx restart"
     end
   end
+
+  before 'IRM:setup', 'IRM:set_rails_master_key'
 end
 
 
