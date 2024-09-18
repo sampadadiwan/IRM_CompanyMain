@@ -12,5 +12,5 @@
 ## Manually spinning up a server using the AMI created above
 1. Spin up an EC2 instance with the AMI created above, and the right SG, VPC, Keys etc
 2. Get the public IP address, and place it in the deploy/staging.rb (or production.rb) file
-3. bundle exec cap staging IRM:setup - this will create all the monit, puma, sidekiq services etc
+3. `bundle exec cap staging IRM:setup` - this will create all the monit, puma, sidekiq services etc
 4. 

@@ -40,9 +40,9 @@ set :puma_init_active_record, true
 
 namespace :deploy do
   desc "Uploads .env remote servers."
-  task :upload_env do
+  task :ensure_rails_credentials do
     on roles(:app) do
-      # This is stored in /etc/environments
+      # This is stored in /etc/environments when the AMI is built 
       execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
   end
@@ -62,9 +62,9 @@ namespace :deploy do
     end
   end
 
-  before "deploy:updated", :upload_env
+  before "deploy:updated", :ensure_rails_credentials
   before 'deploy:finished', 'sidekiq:restart'
-  after  'deploy:finished', 'ensure_permissions'
+  after  'deploy:finished', :ensure_permissions
 end
 
 namespace :puma do
@@ -145,7 +145,8 @@ namespace :recovery do
   end
 end
 
-
+# These tasks are to be called only when a completely new AMI, with no previous setup, is being used
+# E.x bundle exec cap staging IRM:setup
 namespace :IRM do
 
   desc 'Set environment variable on remote host based on a local file'
@@ -177,7 +178,7 @@ namespace :IRM do
     end
   end
 
-  desc 'Generate and upload Monit configuration and systemd service files'
+  desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
       
@@ -224,8 +225,8 @@ namespace :IRM do
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
       
-      # restart nginx
-      execute :sudo, "service nginx restart"
+      # restart nginx - Does not work as the nginx config is pointing to the app, which is not yet deployed
+      # execute :sudo, "service nginx restart"
     end
   end
 
