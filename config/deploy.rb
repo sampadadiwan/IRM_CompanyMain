@@ -216,7 +216,8 @@ namespace :IRM do
       # for monitrc
       local_monitrc = "/tmp/monitrc"
       generate_and_upload('./config/deploy/templates/monitrc.erb', local_monitrc, "/etc/monit/monitrc")
-
+      execute :sudo, :chown, "root", "/etc/monit/monitrc"
+      execute :sudo, :chmod, "700", "/etc/monit/monitrc"
       # Reload Monit to apply the new configuration
       execute :sudo, "monit reload"
 
