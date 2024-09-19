@@ -1,3 +1,18 @@
+V8.0.1
+#####################################
+807bb61bd Fixed bug with API policy
+c540d7d75 Added observability and db packer files
+f20415312 Added better support for capistrano IRM:setup
+987c6d9f1 Added appserver.ami.pkr.hcl
+12a3d29ce Added node exporter config
+32cfb688d Added better support for offer.applied_price
+43459f1b9 Better docs to start observability
+ec2d3d18b Observability (#447)
+
+V8.0.0
+#####################################
+Mulitple changes for policy via access rights cache
+
 V7.1.70
 #####################################
 f5b268713 Removed holding from offer index
