@@ -15,7 +15,7 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
 
   def show?
     (user.enable_funds && permissioned_employee?) ||
-      (record.fund.show_portfolios && permissioned_investor?)
+      (record.fund.show_portfolios && FundPolicy.new(user, record.fund).permissioned_investor?)
   end
 
   def toggle_show_portfolio?

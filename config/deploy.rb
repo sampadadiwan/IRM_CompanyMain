@@ -42,7 +42,7 @@ namespace :deploy do
   desc "Uploads .env remote servers."
   task :ensure_rails_credentials do
     on roles(:app) do
-      # This is stored in /etc/environments when the AMI is built 
+      # This is stored in /etc/environments when the AMI is built
       execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
   end
@@ -148,7 +148,6 @@ end
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
 # E.x bundle exec cap staging IRM:setup
 namespace :IRM do
-
   desc 'Set environment variable on remote host based on a local file'
   task :set_rails_master_key do
     on roles(:app) do
@@ -181,7 +180,6 @@ namespace :IRM do
   desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
-      
       # Define the paths
       monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
@@ -209,7 +207,7 @@ namespace :IRM do
       # For Sidekiq Monit config
       local_sidekiq_monit = "/tmp/sidekiq_IRM_#{fetch(:stage)}.conf"
       generate_and_upload('./config/deploy/monit/sidekiq_IRM_env.conf.erb', local_sidekiq_monit, monit_config_path)
-       
+
       # for nginx config
       local_nginx_conf = "/tmp/nginx_IRM_#{fetch(:stage)}"
       generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
@@ -224,7 +222,7 @@ namespace :IRM do
 
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
-      
+
       # restart nginx - Does not work as the nginx config is pointing to the app, which is not yet deployed
       # execute :sudo, "service nginx restart"
     end
@@ -232,5 +230,3 @@ namespace :IRM do
 
   before 'IRM:setup', 'IRM:set_rails_master_key'
 end
-
-

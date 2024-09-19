@@ -1,4 +1,6 @@
 class ImportFundDocs < ImportUtil
+  step nil, delete: :create_custom_fields
+
   STANDARD_HEADERS = ["Fund", "Investor", "Folio No", "Document Type", "Document Name", "File Name",
                       "Tags", "Send Email", "Folder", "Call / Distribution Name"].freeze
   attr_accessor :commitments
