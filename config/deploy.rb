@@ -229,5 +229,11 @@ namespace :IRM do
     end
   end
 
+  task :reboot do
+    on roles(:app) do
+      execute :sudo, :reboot
+    end
+  end
+
   before 'IRM:setup', 'IRM:set_rails_master_key'
 end
