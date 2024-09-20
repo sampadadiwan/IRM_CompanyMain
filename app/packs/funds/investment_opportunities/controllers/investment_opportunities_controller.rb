@@ -9,7 +9,7 @@ class InvestmentOpportunitiesController < ApplicationController
     @investment_opportunities = policy_scope(InvestmentOpportunity)
 
     @investment_opportunities = @investment_opportunities.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    @investment_opportunities = @investment_opportunities.where("tag_list like ?", "%#{params[:tag]}%") if params[:tag].present?
+    @investment_opportunities = @investment_opportunities.where("investment_opportunities.tag_list like ?", "%#{params[:tag]}%") if params[:tag].present?
     @investment_opportunities = @investment_opportunities.page(params[:page])
   end
 

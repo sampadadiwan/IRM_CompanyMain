@@ -43,7 +43,7 @@
             <div class="col-12">
               <div class="d-flex align-items-center mb-3">
                 <div>
-                  <h3 class="fs-8"><%= policy_scope(current_user.entity.tasks).count %></h3>
+                  <h3 class="fs-8"><%= policy_scope(current_user.entity.tasks)&.count %></h3>
                   <h6 class="card-subtitle mb-1 text-muted">Tasks</h6>
                 </div>
                 <div class="ms-auto">
