@@ -116,7 +116,7 @@ module ForInvestor
     if %w[CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalCall CapitalDistributionPayment FundUnit FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment AccountEntry].include?(self.class.name)
       fund
     elsif %w[ExpressionOfInterest].include?(self.class.name)
-      investor_opportunity
+      investment_opportunity
     elsif %w[Offer Interest].include?(self.class.name)
       secondary_sale
     elsif %w[ApprovalResponse].include?(self.class.name)
