@@ -49,3 +49,19 @@ on_worker_boot do
   end
 end
 <% end %>
+
+# in puma.rb
+on_worker_boot do
+  require 'prometheus_exporter/instrumentation'
+  PrometheusExporter::Instrumentation::ActiveRecord.start(
+    custom_labels: { type: "puma_worker" }, # optional params
+    config_labels: %i[database host] # optional params
+  )
+end
+
+# puma.rb config
+after_worker_boot do
+  require 'prometheus_exporter/instrumentation'
+  # optional check, avoids spinning up and down threads per worker
+  PrometheusExporter::Instrumentation::Puma.start unless PrometheusExporter::Instrumentation::Puma.started?
+end
