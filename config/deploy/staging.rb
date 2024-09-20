@@ -4,8 +4,8 @@
 # You can define all roles on a single server, or split them:
 
 # server "13.127.99.172", user: "ubuntu", roles: %w[primary app db web]
-server "13.235.67.155", user: "ubuntu", roles: %w[primary app db web]
-server "13.233.179.116", user: "ubuntu", roles: %w[primary app db web]
+# server "13.235.67.155", user: "ubuntu", roles: %w[primary app db web]
+server "13.233.55.8", user: "ubuntu", roles: %w[primary app db web]
 
 # server "13.233.75.106", user: "ubuntu", roles: %w[app db web]
 

@@ -20,10 +20,10 @@ source "amazon-ebs" "ubuntu" {
   source_ami    = "ami-0522ab6e1ddcc7055"
   // skip_region_validation = "true"
   associate_public_ip_address = "true"
-  vpc_id                      = "vpc-0a5573442e8b54a08"
-  subnet_id                   = "subnet-02e6d37e5ec01bb5f"
+  vpc_id                      = "vpc-07ca6f6769142b3de"
+  subnet_id                   = "subnet-009ecf23ee9b89068"
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-07fdf064150f9f0b1"
+  security_group_id           = "sg-0af3021d12d4d62ba"
   ssh_username                = "ubuntu"
 
    # Add tags for the AMI
@@ -55,23 +55,55 @@ build {
       "sudo apt-get install --yes zsh",
 
 
-      // docker
-      "echo INSTALLING- Docker",
-      "sudo apt install --yes apt-transport-https ca-certificates curl software-properties-common",
-      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
-      "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
-      "sudo apt update",
-      "sudo apt install --yes docker-ce",
+      "wget https://github.com/prometheus/prometheus/releases/download/v2.41.0/prometheus-2.41.0.linux-amd64.tar.gz",
+      "tar xvfz prometheus-2.41.0.linux-amd64.tar.gz",
+      "sudo mv prometheus-2.41.0.linux-amd64 /opt/prometheus",
+      "sudo ln -s /opt/prometheus/prometheus /usr/local/bin/prometheus",
+      "sudo ln -s /opt/prometheus/promtool /usr/local/bin/promtool",
+      "wget https://dl.grafana.com/oss/release/grafana_9.3.2_amd64.deb",
+      "sudo apt-get install -y adduser libfontconfig1",
+      "sudo dpkg -i grafana_9.3.2_amd64.deb",
+
+      "sudo useradd --no-create-home --shell /bin/false prometheus",
+      "sudo mkdir -p /etc/prometheus",
+      "sudo cp /home/ubuntu/prometheus.yml /etc/prometheus/prometheus.yml",
+      "sudo chown -R prometheus:prometheus /etc/prometheus",
+      "sudo chown -R prometheus:prometheus /opt/prometheus",
+      "sudo tee /etc/systemd/system/prometheus.service > /dev/null <<EOL",
+      "[Unit]",
+      "Description=Prometheus",
+      "Wants=network-online.target",
+      "After=network-online.target",
+      "",
+      "[Service]",
+      "User=prometheus",
+      "Group=prometheus",
+      "Type=simple",
+      "ExecStart=/usr/local/bin/prometheus \\",
+      "  --config.file=/etc/prometheus/prometheus.yml \\",
+      "  --storage.tsdb.path=/var/lib/prometheus \\",
+      "  --web.console.templates=/opt/prometheus/consoles \\",
+      "  --web.console.libraries=/opt/prometheus/console_libraries",
+      "",
+      "[Install]",
+      "WantedBy=multi-user.target",
+      "EOL",
+      "sudo systemctl daemon-reload",
+      "sudo systemctl start prometheus",
+      "sudo systemctl enable prometheus",
+      "sudo systemctl start grafana-server",
+      "sudo systemctl enable grafana-server",
+      "sudo mkdir -p /var/lib/prometheus",
+      "sudo chown -R prometheus:prometheus /var/lib/prometheus",
+      "sudo chmod -R 775 /var/lib/prometheus",
+
+
+
 
       // log rotate
       "sudo apt install --yes logrotate",
 
-      // Create the docker network
-      "sudo docker network create grafana-prometheus",
-
-      // Run the docker instances for prometheus and graphana from crontab
-      "(crontab -l 2>/dev/null; echo '@reboot sudo docker run --rm --name my-prometheus --network grafana-prometheus --network-alias prometheus --publish 9090:9090 --volume /home/ubuntu/prometheus.yml:/etc/prometheus/prometheus.yml --detach prom/prometheus') | crontab -u ubuntu -",
-      "(crontab -l 2>/dev/null; echo '@reboot sudo docker run --rm --name grafana --network grafana-prometheus --network-alias grafana --publish 8000:3000 --detach grafana/grafana-oss:latest') | crontab -u ubuntu -",
+      
     ]
   }
 }
