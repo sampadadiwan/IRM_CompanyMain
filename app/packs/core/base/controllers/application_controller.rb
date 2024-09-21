@@ -33,7 +33,11 @@ class ApplicationController < ActionController::Base
   end
 
   def verify_authenticity_token
-    super if request.headers['Authorization'].blank? && ENV['SKIP_AUTHENTICITY_TOKEN'] != "true"
+    if ENV['VULN_SCAN'] == "true"
+      false if controller_name == "sessions"
+    elsif request.headers['Authorization'].blank? && ENV['SKIP_AUTHENTICITY_TOKEN'] != "true"
+      super
+    end
   end
 
   # This is a common action for all models which have filters. Bulk actions can be applied to filtered results. A Job "#{controller_name}BulkActionJob", needs to be defined, which will be passed the ids of the filtered results. and the bulk action to perform on them. Note that the controller must implement a fetch_rows method which returns the filtered results.
@@ -55,13 +59,9 @@ class ApplicationController < ActionController::Base
     devise_parameter_sanitizer.permit(:sign_up, keys: %i[first_name last_name phone role entity_id whatsapp_enabled dept call_code])
   end
 
-  rescue_from Pundit::NotAuthorizedError do |_exception|
-    if request.headers['Authorization'].present?
-      render json: { error: "Access Denied" }, status: :forbidden
-    else
-      redirect_to root_path, alert: "Access Denied"
-    end
-  end
+  rescue_from Pundit::NotAuthorizedError, with: :deny_access
+  rescue_from ActiveRecord::RecordNotFound, with: :deny_access
+  rescue_from ActionController::RoutingError, with: :deny_access
 
   rescue_from ActionController::InvalidAuthenticityToken do |_exception|
     redirect_path = request.referer || root_path
@@ -71,6 +71,15 @@ class ApplicationController < ActionController::Base
   before_action :prepare_exception_notifier
 
   private
+
+  # Define the method to handle the error
+  def deny_access
+    if request.headers['Authorization'].present?
+      render json: { error: "Access Denied" }, status: :forbidden
+    else
+      redirect_to root_path, alert: "Access Denied"
+    end
+  end
 
   def prepare_exception_notifier
     request.env["exception_notifier.exception_data"] = {

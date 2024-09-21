@@ -1,3 +1,12 @@
+V8.0.2
+#####################################
+dbc006507 Fixed misc bugs with IO
+7f3769036 Fixed bug with new EOI
+5ad22dd82 Recreated the dev env
+c319a34f4 Setup new ips for dev
+74810ee1c Reset the staging IP address
+2a43c6780 Improved docs
+
 V8.0.1
 #####################################
 807bb61bd Fixed bug with API policy

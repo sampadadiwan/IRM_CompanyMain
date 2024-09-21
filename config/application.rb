@@ -98,15 +98,15 @@ module CapHive
       Devise::PasswordsController.layout "devise"
     end
 
-    # unless Rails.env.development? || Rails.env.test?
-    Rails.application.config.middleware.use ExceptionNotification::Rack,
-                                            email: {
-                                              email_prefix: "[Error] #{Rails.env}: ",
-                                              sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
-                                              exception_recipients: ENV.fetch('ERROR_EMAIL')
-                                            }
+    if ENV['VULN_SCAN'].blank?
+      Rails.application.config.middleware.use ExceptionNotification::Rack,
+                                              email: {
+                                                email_prefix: "[Error] #{Rails.env}: ",
+                                                sender_address: ENV.fetch("SUPPORT_EMAIL", nil),
+                                                exception_recipients: ENV.fetch('ERROR_EMAIL')
+                                              }
 
-    # end
+    end
 
     # We make sure that the ES index gets updated in the background.
     # This helps in reducing the impact to app if ES is down
