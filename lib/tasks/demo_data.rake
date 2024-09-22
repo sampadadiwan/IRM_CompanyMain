@@ -613,65 +613,66 @@ namespace :irm do
     
     Entity.funds.each do |e|
       3.times do
-        fund = FactoryBot.create(:fund, entity: e)
-        puts "Creating fund #{fund.name} for #{e.name}"
-        doc = Document.create!(entity: e, owner: fund, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+        fund = FactoryBot.build(:fund, entity: e)
+
+        if fund.save
+          puts "Creating fund #{fund.name} for #{e.name}"
+          doc = Document.create!(entity: e, owner: fund, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
 
 
-        e.investors.sample(5).each do |inv|
-          AccessRight.create!(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
-          commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
-          
-          doc = Document.create!(entity: e, owner: commitment, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
-        end
+          e.investors.sample(5).each do |inv|
+            AccessRight.create!(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
+            commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
+            
+            doc = Document.create!(entity: e, owner: commitment, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+          end
 
 
-        (1..3).each do 
-          fund.reload
-          call = FactoryBot.create(:capital_call, fund: ) 
-          doc = Document.create!(entity: e, owner: call, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+          (1..3).each do 
+            fund.reload
+            call = FactoryBot.create(:capital_call, fund: ) 
+            doc = Document.create!(entity: e, owner: call, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
 
 
-          CapitalCallJob.perform_now(call.id, "Generate")
-          call.capital_remittances.each do |cr|
-            doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+            CapitalCallJob.perform_now(call.id, "Generate")
+            call.capital_remittances.each do |cr|
+              doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
-            FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, folio_amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
+              FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, folio_amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
 
-            if rand(2) > 0
-              cr.update(verified: true)
-              FundUnitsJob.perform_now(cr.capital_call_id, "CapitalCall", "For Call", 1)
+              if rand(2) > 0
+                cr.update(verified: true)
+                FundUnitsJob.perform_now(cr.capital_call_id, "CapitalCall", "For Call", 1)
+              end
+
             end
-
           end
-        end
 
-        (1..3).each do 
-          fund.reload
-          distribution = FactoryBot.create(:capital_distribution, fund: , approved: true, generate_payments_paid: true) 
-          doc = Document.create!(entity: e, owner: distribution, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+          (1..3).each do 
+            fund.reload
+            distribution = FactoryBot.create(:capital_distribution, fund: , approved: true, generate_payments_paid: true) 
+            doc = Document.create!(entity: e, owner: distribution, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
 
 
-          CapitalDistributionJob.perform_now(distribution.id)
-          distribution.capital_distribution_payments.each do |cr|
-            doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: e.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+            CapitalDistributionJob.perform_now(distribution.id)
+            distribution.capital_distribution_payments.each do |cr|
+              doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: e.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
+            end
           end
-        end
-
-        
+        end # if fund.save
 
       end
 
@@ -682,7 +683,7 @@ namespace :irm do
     raise e
   end
 
-  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeFunds, :generateFakePortfolios] do
+  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeFunds, :generateFakePortfolios] do
     puts "Generating all Fake Data"
     SolidQueue::Queue.all.each(&:clear)
   end

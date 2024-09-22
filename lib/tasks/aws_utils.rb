@@ -271,7 +271,8 @@ module AwsUtils
   def setup_pulumi_config(stack, web_server_name, db_server_name, region)
     pulumi_config = {
       "IRM-infra:#{region}_web_server_ami" => latest_ami(web_server_name, region).image_id,
-      "IRM-infra:#{region}_db_server_ami" => latest_ami(db_server_name, region).image_id
+      "IRM-infra:#{region}_db_server_ami" => latest_ami(db_server_name, region).image_id,
+      "IRM-infra:#{region}_observability_ami" => latest_ami("Observability", region).image_id
     }
 
     pulumi_config.each do |key, value|

@@ -419,7 +419,7 @@ FactoryBot.define do
   end
 
   factory :fund do
-    name { ["Tech", "Agri", "Fin Tech", "SAAS", "Macro"].sample + " Fund" }
+    name { ["Tech", "Agri", "FinTech", "SaaS", "Macro", "HealthTech", "EdTech", "Biotech", "E-commerce", "AI/ML", "Clean Energy", "PropTech", "IoT", "Cybersecurity", "Cloud Computing", "Digital Payments", "Blockchain", "Mobility", "Smart Cities", "Robotics", "Renewable Energy", "Telecommunications", "Data Analytics", "InsurTech", "AgriTech", "GreenTech", "MedTech", "LegalTech", "Logistics", "RegTech"].sample + " Fund" }
     details { Faker::Company.catch_phrase }
     entity { Entity.funds.sample }
     tag_list {  }
