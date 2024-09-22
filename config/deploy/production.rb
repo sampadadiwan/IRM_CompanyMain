@@ -3,11 +3,13 @@
 # Defines a single server with a list of roles and multiple properties.
 # You can define all roles on a single server, or split them:
 
-# server "example.com", user: "deploy", roles: %w{app db web}, my_property: :my_value
-# server "example.com", user: "deploy", roles: %w{app web}, other_property: :other_value
-# server "db.example.com", user: "deploy", roles: %w{db}
+# ap_south_1
 server "13.201.61.145", user: "ubuntu", roles: %w[primary app db web]
 server "13.233.131.224", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+# ap_south_2
+# server "18.61.81.133", user: "ubuntu", roles: %w[primary app db web]
+# server "18.61.2.41", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+
 set :rails_env, "production"
 set :stage, :production
 

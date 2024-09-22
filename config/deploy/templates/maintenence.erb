@@ -1,0 +1,19 @@
+server {
+    listen 80;
+
+    location / {
+        root /home/ubuntu/IRM/current/public; # Adjust this path to the directory containing maintenance.html
+        try_files /maintenance.html =503;
+    }
+
+    error_page 503 @maintenance;
+
+    location @maintenance {
+        root /home/ubuntu/IRM/current/public; # Adjust this path to the directory containing maintenance.html
+        rewrite ^(.*)$ /maintenance.html break;
+    }
+
+    location /maintenance.html {
+        root /home/ubuntu/IRM/current/public; # Adjust this path to the directory containing maintenance.html
+    }
+}
