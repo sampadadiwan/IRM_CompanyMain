@@ -145,7 +145,6 @@ gem "combine_pdf"
 
 gem "blazer", "~> 2.6"
 gem 'public_activity'
-gem "ruby-openai"
 
 # gem "strong_migrations"
 
@@ -226,7 +225,11 @@ end
 
 gem "marginalia", "~> 1.11"
 # gem 'newrelic_rpm'
+gem 'aws-sdk-wafv2', require: false
 gem 'friendly_id', '~> 5.5.0'
 gem 'humanize'
+gem 'langchainrb'
 gem 'prometheus_exporter'
+gem "ruby-openai", "~> 6.3.0"
 gem 'sendgrid-ruby'
+gem 'wikipedia-client'

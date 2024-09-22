@@ -1,0 +1,4 @@
+
+<%= turbo_stream.append('chat-messages', partial: "users/chat_message", locals: { chat_message: @chat_message }) %>
+
+<%= turbo_stream.replace('chat_box', partial: "users/chat_box" ) %>

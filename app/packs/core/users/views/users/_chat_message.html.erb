@@ -1,0 +1,10 @@
+<div class="mb-3">
+    User:
+    <div class="alert alert-secondary">
+        <%= params[:query] %>
+    </div>
+    GPT:
+    <div class="alert alert-success">
+        <%= @response&.html_safe %>
+    </div>
+</div>

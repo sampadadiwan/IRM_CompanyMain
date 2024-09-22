@@ -1,7 +1,11 @@
 resources :quick_link_steps
 resources :quick_links
 resources :custom_notifications
-resources :reports
+
+resources :reports do
+  post 'prompt', on: :collection
+end
+
 resources :audits
 resources :reminders
 resources :favorites

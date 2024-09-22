@@ -1,0 +1,22 @@
+<!-- app/views/chat/index.html.erb -->
+<% @chat_responses ||= [] %>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary-light text-white">
+          <h5 class="mb-0">Chat with CapHive</h5>
+        </div>
+        <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
+          <!-- Chat messages will go here -->
+          <div id="chat-messages">
+            
+          </div>
+        </div>
+        <div class="card-footer">
+          <%= render "/users/chat_box" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

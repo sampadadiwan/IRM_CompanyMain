@@ -43,6 +43,7 @@ AllCops:
     - 'features/**/*'
     - 'bin/**/*'
     - 'test/factories.rb'
+    - 'config/deploy.rb'
 
 Rails/FilePath:
   Exclude:

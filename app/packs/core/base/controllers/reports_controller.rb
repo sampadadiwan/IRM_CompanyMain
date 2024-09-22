@@ -13,6 +13,14 @@ class ReportsController < ApplicationController
   # GET /reports/1 or /reports/1.json
   def show; end
 
+  def prompt
+    authorize Report
+    model_class = params[:model_class].constantize
+    query = params[:query]
+    @report_url = ReportPrompt.generate_report_url(query, model_class)
+    redirect_to "/#{@report_url}", allow_other_host: true
+  end
+
   # GET /reports/new
   def new
     @report = Report.new

@@ -7,6 +7,11 @@ class UsersController < ApplicationController
 
   def welcome; end
 
+  def chat
+    authorize(User)
+    @response = UserLlmChat.new(user: current_user).query(params[:query])
+  end
+
   # GET /users or /users.json
   def index
     authorize(User)

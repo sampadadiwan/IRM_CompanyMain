@@ -268,11 +268,11 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency].sort
+    %w[created_at update_at folio_id commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[account_entries activities capital_distribution_payments capital_remittance_payments capital_remittances document_folder documents entity exchange_rate folders form_custom_fields form_type fund fund_ratios fund_units investor investor_kyc investor_signatory versions]
+    %w[fund investor investor_kyc]
   end
 
   def cc

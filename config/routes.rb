@@ -28,6 +28,8 @@ Rails.application.routes.draw do
     get 'set_persona', on: :collection
     post 'reset_password', on: :collection
     post 'accept_terms', on: :collection
+    get 'chat', on: :collection
+    post 'chat', on: :collection
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

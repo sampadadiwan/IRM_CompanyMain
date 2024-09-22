@@ -210,8 +210,12 @@ GEM
       aws-sdk-core (~> 3, >= 3.199.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.8)
+    aws-sdk-wafv2 (1.87.0)
+      aws-sdk-core (~> 3, >= 3.199.0)
+      aws-sigv4 (~> 1.1)
     aws-sigv4 (1.8.0)
       aws-eventstream (~> 1, >= 1.0.2)
+    baran (0.1.12)
     base64 (0.2.0)
     bcrypt (3.1.20)
     better_errors (2.10.1)
@@ -489,6 +493,8 @@ GEM
       regexp_parser (>= 2.6.2, < 3.0.0)
       regexp_property_values (~> 1.0)
     json (2.7.2)
+    json-schema (4.3.1)
+      addressable (>= 2.8)
     json2table (1.0.7)
     kaminari (1.2.2)
       activesupport (>= 4.1.0)
@@ -502,6 +508,13 @@ GEM
       activerecord
       kaminari-core (= 1.2.2)
     kaminari-core (1.2.2)
+    langchainrb (0.16.0)
+      baran (~> 0.1.9)
+      json-schema (~> 4)
+      matrix
+      pragmatic_segmenter (~> 0.3.0)
+      rainbow (~> 3.1.0)
+      zeitwerk (~> 2.5)
     language_server-protocol (3.17.0.3)
     launchy (2.5.2)
       addressable (~> 2.8)
@@ -607,6 +620,7 @@ GEM
       racc
     pastel (0.8.0)
       tty-color (~> 0.5)
+    pragmatic_segmenter (0.3.24)
     prism (0.30.0)
     prometheus_exporter (2.1.1)
       webrick
@@ -751,7 +765,7 @@ GEM
     rubocop-rspec (3.0.1)
       rubocop (~> 1.61)
     ruby-ole (1.2.13.1)
-    ruby-openai (7.1.0)
+    ruby-openai (6.3.1)
       event_stream_parser (>= 0.3.0, < 2.0.0)
       faraday (>= 1)
       faraday-multipart (>= 1)
@@ -908,6 +922,8 @@ GEM
     websocket-extensions (0.1.5)
     whenever (1.0.0)
       chronic (>= 0.6.3)
+    wikipedia-client (1.17.0)
+      addressable (~> 2.7)
     wisper (2.0.1)
     xpath (3.2.0)
       nokogiri (~> 1.8)
@@ -934,6 +950,7 @@ DEPENDENCIES
   awesome_print
   aws-sdk-ec2
   aws-sdk-s3
+  aws-sdk-wafv2
   better_errors
   binding_of_caller
   blazer (~> 2.6)
@@ -984,6 +1001,7 @@ DEPENDENCIES
   jbuilder
   json2table
   kaminari
+  langchainrb
   letter_opener
   libreconv
   mail-logger
@@ -1014,7 +1032,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   rubocop-rspec
-  ruby-openai
+  ruby-openai (~> 6.3.0)
   rubyXL!
   rubyzip
   rupees!
@@ -1040,6 +1058,7 @@ DEPENDENCIES
   web-console
   webdrivers
   whenever
+  wikipedia-client
   xirr!
   yajl-ruby
 

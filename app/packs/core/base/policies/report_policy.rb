@@ -9,6 +9,10 @@ class ReportPolicy < ApplicationPolicy
     true
   end
 
+  def prompt?
+    true
+  end
+
   def show?
     belongs_to_entity?(user, record) || record.entity.nil?
   end
