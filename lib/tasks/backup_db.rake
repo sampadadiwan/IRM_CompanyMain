@@ -50,7 +50,7 @@ namespace :db do  desc "Backup database to AWS-S3"
   end
 
   desc 'Create a MySQL replica on a different machine'
-  task :create_replica, [:skip_restore_backup] do |t, args|
+  task :create_replica, [:skip_restore_backup] => :environment do |t, args|
     begin
       args.with_defaults(:skip_restore_backup => false)
       skip_restore_backup = args[:skip_restore_backup]
@@ -101,7 +101,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       # Create a new database on the destination
       destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
 
-      restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) unless skip_restore_backup
+      BackupDbJob.new.restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) unless skip_restore_backup
       
       # Set up replication on the destination
       change_master_query = "CHANGE MASTER TO
