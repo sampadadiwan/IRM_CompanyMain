@@ -16,20 +16,22 @@
 
   <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state) do %>
 
-    <div class="">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <%= form_with(url: prompt_reports_path(model_class: controller_name.singularize.camelize), method: :post, local: true, data: { turbo: false }, class: "row") do |form| %>
-            <div class="col-10">
-              <%= form.text_field :query, class: "form-control", id: "query", rows: 4, placeholder: "Enter your query here" %>
-            </div>
-            <div class="col-2">
-              <%= form.submit "Submit", class: "btn btn-primary" %>
-            </div>
-          <% end %>
+    <% if current_user.enable_user_llm_chat %>
+      <div class="">
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <%= form_with(url: prompt_reports_path(model_class: controller_name.singularize.camelize), method: :post, local: true, data: { turbo: false }, class: "row") do |form| %>
+              <div class="col-10">
+                <%= form.text_field :query, class: "form-control", id: "query", rows: 4, placeholder: "Enter your query here" %>
+              </div>
+              <div class="col-2">
+                <%= form.submit "Submit", class: "btn btn-primary" %>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
-    </div>
+    <% end %>
 
     <% @q.build_condition if @q.conditions.empty? %>
 
