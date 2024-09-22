@@ -108,7 +108,8 @@ build {
       "systemctl status nginx",
       // pdftk
       "echo INSTALLING- pdftk",
-      "sudo apt install --yes pdftk",      
+      "sudo apt install --yes pdftk",  
+      "sudo apt install --yes pv",      
     ]
   }
 }

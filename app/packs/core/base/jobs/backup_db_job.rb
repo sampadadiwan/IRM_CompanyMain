@@ -25,7 +25,8 @@ class BackupDbJob < ApplicationJob
     s3 = Aws::S3::Resource.new(client:)
 
     # Get the latest backup file from the S3 bucket
-    bucket_name = "#{Rails.env}-db-backup.caphive.com"
+    # bucket_name = "#{Rails.env}-db-backup.caphive.com"
+    bucket_name = "#{ENV.fetch('AWS_S3_BUCKET', nil)}.db-backup"
     Rails.logger.debug { "Checking for latest backup in bucket #{bucket_name}" }
     bucket = s3.bucket(bucket_name)
     objects = bucket.objects
@@ -112,6 +113,7 @@ class BackupDbJob < ApplicationJob
     Rails.logger.debug { "Created backup: tmp/#{backup_filename} of size #{human_readable_size(size_kb)}" }
 
     # save to aws-s3
+    # bucket_name = "#{Rails.env}-db-backup.caphive.com"
     bucket_name = "#{ENV.fetch('AWS_S3_BUCKET', nil)}.db-backup" # gotcha: bucket names are unique across AWS-S3
 
     client = Aws::S3::Client.new(

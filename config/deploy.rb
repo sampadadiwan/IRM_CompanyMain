@@ -52,7 +52,13 @@ namespace :deploy do
     on roles(:app) do
       # Change the ownership of the logs to ubuntu
       execute :sudo, :chown, "-R", "ubuntu", "/home/ubuntu/IRM/current/log/*"
-      execute :sudo, :chown, "-R", "www-data", "/home/ubuntu/IRM/current/log/nginx*"
+      # Check if the log files exist
+      if test("[ -f /home/ubuntu/IRM/current/log/nginx* ]")
+        # If the files exist, run the chown command
+        execute :sudo, :chown, "-R", "www-data", "/home/ubuntu/IRM/current/log/nginx*"
+      else
+        info "Nginx log files do not exist, skipping chown step."
+      end
       # sudo usermod -aG ubuntu www-data
       execute :sudo, :usermod, "-aG", "ubuntu", "www-data"
       # sudo chmod 660 /home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock
