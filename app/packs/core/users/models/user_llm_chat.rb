@@ -59,7 +59,7 @@ class UserLlmChat
   def show_funds(fund_name: nil)
     funds = Pundit.policy_scope(@user, Fund)
     funds = funds.where("funds.name like ?", "%#{fund_name}%") if fund_name.present?
-    funds.map do |fund|
+    funds.includes(:entity).map do |fund|
       {
         name: fund.name,
         entity: fund.entity.name
