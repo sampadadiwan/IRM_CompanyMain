@@ -6,8 +6,8 @@
 # server "example.com", user: "deploy", roles: %w{app db web}, my_property: :my_value
 # server "example.com", user: "deploy", roles: %w{app web}, other_property: :other_value
 # server "db.example.com", user: "deploy", roles: %w{db}
-server "18.61.81.133", user: "ubuntu", roles: %w[primary app db web]
-server "18.61.2.41", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+server "65.0.85.176", user: "ubuntu", roles: %w[primary app db web]
+server "65.1.3.51", user: "ubuntu", roles: %w[app web] if ENV["LB"]
 set :rails_env, "production"
 set :stage, :production
 
