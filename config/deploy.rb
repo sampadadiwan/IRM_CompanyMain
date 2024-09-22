@@ -87,7 +87,10 @@ namespace :nginx do
   desc 'Switch nginx configuration to maintenance or IRM_production'
   task :switch_maintenance do
     on roles(:app) do
+
+      # Copy the maintenance page to /etc/nginx/sites-available/maintenance
       within release_path do
+        execute :sudo, :cp, "config/deploy/templates/maintenance", "/etc/nginx/sites-available/maintenance"
         execute :rake, "\"nginx:switch[maintenance]\" RAILS_ENV=#{fetch(:stage)}"
       end
     end
