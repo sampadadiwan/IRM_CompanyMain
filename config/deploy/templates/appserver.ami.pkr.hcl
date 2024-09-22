@@ -17,14 +17,25 @@ source "amazon-ebs" "ubuntu" {
   ami_name      = "AppServer-${var.ami_date}"
   instance_type = "t2.micro"
   region        = "ap-south-1"
-  source_ami    = "ami-0522ab6e1ddcc7055"
+  
   // skip_region_validation = "true"
   associate_public_ip_address = "true"
-  vpc_id                      = "vpc-0a5573442e8b54a08"
-  subnet_id                   = "subnet-02e6d37e5ec01bb5f"
+  // Dev
+  // source_ami                  = "ami-0522ab6e1ddcc7055"
+  // vpc_id                      = "vpc-0a5573442e8b54a08"
+  // subnet_id                   = "subnet-02e6d37e5ec01bb5f"
+  // ssh_interface               = "public_ip"
+  // security_group_id           = "sg-07fdf064150f9f0b1"
+  // ssh_username                = "ubuntu"
+
+  // Prod
+  source_ami                  = "ami-0522ab6e1ddcc7055"
+  vpc_id                      = "vpc-0cb0c5cad8c279582"
+  subnet_id                   = "subnet-0cf73758b0fb6a9b5"
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-07fdf064150f9f0b1"
+  security_group_id           = "sg-02fe5b268dcb2b2a3"
   ssh_username                = "ubuntu"
+  
 
    # Add tags for the AMI
   tags = {

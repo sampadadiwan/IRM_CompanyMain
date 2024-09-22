@@ -1,8 +1,8 @@
-namespace :db do  desc "Backup database to AWS-S3"
 
-  
 
-  task :backup => [:environment] do
+namespace :db do  desc "Backup database to AWS-S3"  
+
+  task :backup => :environment do
     begin
       BackupDbJob.perform_now
     rescue => e
@@ -12,7 +12,7 @@ namespace :db do  desc "Backup database to AWS-S3"
   end
 
   desc 'Test the latest database backup from S3'
-  task :restore, [:restore_db_name, :db_host] do |t, args|
+  task :restore, [:restore_db_name, :db_host] => :environment do |t, args|
     begin
       args.with_defaults(:restore_db_name => :test_db_restore)
       puts "\n#####################"
