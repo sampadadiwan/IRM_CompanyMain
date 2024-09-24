@@ -1,3 +1,19 @@
+V8.0.6
+#####################################
+35f00c176  Archived migrations
+6a0400d7c Capital calls improvement (#445)
+f39be0727 Whatsapp webhook1 (#450)
+8f29ed8e0 Cleanup of report prompt
+61b1db57a Better investor filters
+fd4ad9de4 Added unzip to packer image
+e8613fec0 Document send notification now not restricted to owner
+442de783b Fixed issue with access_rights_cache for investor advisor
+f254e4548 Added check for enable_user_llm_chat
+406f70ef5 Better llm chats
+f88edc10f Better deploy docs
+728bd8394 Backup of maintenance page
+65ecdd565 Fixed the AWS REGION in .env
+
 V8.0.2
 #####################################
 dbc006507 Fixed misc bugs with IO

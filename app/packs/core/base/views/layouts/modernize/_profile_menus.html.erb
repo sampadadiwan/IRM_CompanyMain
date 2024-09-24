@@ -63,6 +63,7 @@
             </div>
         </a>
 
+        <% if current_user.enable_user_llm_chat %>
         <a href="/users/chat" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
             <img src="/modernize/images/svgs/icon-dd-chat.svg" alt="" width="24" height="24" />
@@ -72,6 +73,7 @@
             <span class="fs-2 d-block text-body-secondary">Chat With CapHive</span>
             </div>
         </a>
+        <% end %>
 
         </div>
         <div class="message-body py-1 mx-7 border-bottom">

@@ -244,5 +244,13 @@ namespace :IRM do
     end
   end
 
+  task :apt_update do
+    on roles(:app) do
+      execute :sudo, "apt-get update"
+      execute :sudo, "apt-get upgrade -y"
+      execute :sudo, "reboot"
+    end
+  end
+
   before 'IRM:setup', 'IRM:set_rails_master_key'
 end

@@ -117,4 +117,22 @@ module AccessRightsCache
 
     save
   end
+
+  def reset_access_rights_cache
+    self.access_rights_cache = {}
+    if has_cached_role?(:company_admin)
+      # Nothing to do as company_admin has access to everything
+    elsif has_cached_role?(:employee) && !has_cached_role?(:investor) && !has_cached_role?(:investor_advisor)
+      # Add all the access rights for this user
+      AccessRight.where(user_id: id).each do |ar|
+        cache_access_rights(ar, save_by_default: false)
+      end
+      save
+    elsif has_cached_role?(:investor) || has_cached_role?(:investor_advisor)
+      # Add all the investor_access
+      InvestorAccess.approved.where(user_id: id).each do |investor_access|
+        refresh_access_rights_cache(investor_access, add: true)
+      end
+    end
+  end
 end
