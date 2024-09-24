@@ -71,6 +71,6 @@ class CiWidgetsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def ci_widget_params
-    params.require(:ci_widget).permit(:owner_id, :owner_type, :entity_id, :title, :details_top, :details, :url, :image, :image_placement)
+    params.require(:ci_widget).permit(:owner_id, :owner_type, :entity_id, :title, :details_top, :details, :url, :image, :image_placement, :embed_script)
   end
 end

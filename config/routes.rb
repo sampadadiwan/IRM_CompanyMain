@@ -24,6 +24,7 @@ Rails.application.routes.draw do
     get 'search', on: :collection
     get 'no_password_login', on: :collection
     post 'magic_link', on: :collection
+    post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection
     get 'set_persona', on: :collection
     post 'reset_password', on: :collection

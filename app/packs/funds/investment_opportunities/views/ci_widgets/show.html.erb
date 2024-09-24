@@ -74,6 +74,15 @@
       <%= @ci_widget.url %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Embed Script
+    </td>
+    <td>
+      <%= @ci_widget.embed_script&.html_safe %>
+    </td>
+  </tr>
 </table>
 <div>
   <%= link_to "Edit", edit_ci_widget_path(@ci_widget), {class: "btn btn-outline-primary"} %>
