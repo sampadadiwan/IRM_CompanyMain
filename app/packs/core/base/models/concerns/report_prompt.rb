@@ -1,7 +1,7 @@
 class ReportPrompt
   EXAMPLES_MAP = [
-    { input: "verified xxx", output: "xxx?q[c][0][a][0][name]=verified&q[c][0][p]=eq&q[c][0][v][0][value]=true&button" },
-    { input: "unverified xxx", output: "xxx?q[c][0][a][0][name]=verified&q[c][0][p]=eq&q[c][0][v][0][value]=false&button" },
+    { input: "verified xxx", output: "xxx?q[c][0][a][0][name]=verified&q[c][0][p]=eq&q[c][0][v][0][value]=true" },
+    { input: "unverified xxx", output: "xxx?q[c][0][a][0][name]=verified&q[c][0][p]=eq&q[c][0][v][0][value]=false" },
     { input: "verified investors created after 01/01/2020", output: "xxx?q[c][0][a][0][name]=verified&q[c][0][p]=eq&q[c][0][v][0][value]=true&q[c][1][a][0][name]=created_at&q[c][1][p]=gt&q[c][1][v][0][value]=01/01/2020" },
     { input: "xxx with investing entity containing 'Singh'", output: "xxx?q[c][1][a][0][name]=full_name&q[c][1][p]=cont&q[c][1][v][0][value]=Singh" },
     { input: "xxx with name containing 'Singh'", output: "xxx?q[c][1][a][0][name]=full_name&q[c][1][p]=cont&q[c][1][v][0][value]=Singh" }
