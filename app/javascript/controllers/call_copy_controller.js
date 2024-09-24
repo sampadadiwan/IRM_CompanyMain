@@ -45,14 +45,17 @@ export default class extends Controller {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").show();
+      $("#applicable-to-group").show();
     } else if (call_basis === "Upload") {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").hide();
+      $("#applicable-to-group").hide();
     } else {
       $("#amount_to_be_called_group").show();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").hide();
+      $("#applicable-to-group").show();
     }
   }
 
