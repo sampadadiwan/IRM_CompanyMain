@@ -96,6 +96,19 @@
         </td>
       </tr>
 
+      <% if capital_call.close_percentages.present? %>
+        <% capital_call.close_percentages.each do |close, percentage| %>
+          <tr class="">
+            <td>
+              <%= close %> - Percentage Called
+            </td>
+            <td>
+              <%= percentage %> %
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+
       <% if capital_call.fund.unit_types.present? %>
         <% capital_call.unit_prices.each do |unit_type, unit_price| %>
 
