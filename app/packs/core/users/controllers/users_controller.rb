@@ -2,14 +2,25 @@ class UsersController < ApplicationController
   before_action :authenticate_user!, except: %w[magic_link no_password_login welcome]
   # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
+  skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
+  skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
+
   before_action :set_user, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login]
+  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook]
 
   def welcome; end
 
   def chat
     authorize(User)
-    @response = UserLlmChat.new(user: current_user).query(params[:query])
+
+    chat_class = current_user.curr_role == "Investor" ? InvestorLlmChat : UserLlmChat
+    @response = chat_class.new(user: current_user).query(params[:query])
+  end
+
+  def whatsapp_webhook
+    user = User.find_by(phone: params[:waId][-10..], call_code: params[:waId][..-11])
+    WhatsappChatJob.perform_later(user.id, params[:text]) if user && UserPolicy.new(user, user).whatsapp_webhook?
+    render json: "Ok"
   end
 
   # GET /users or /users.json
