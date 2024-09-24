@@ -1,27 +1,26 @@
 
 <%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
 
-    <%= form_with(model: capital_call, validate: true) do |form| %>
-      <% if capital_call.errors.any? %>
-        <div class="alert alert-danger">
-          <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital_call from being saved:</h2>
+  <%= form_with(model: capital_call, validate: true) do |form| %>
+    <% if capital_call.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital call from being saved:</h2>
+        <ul>
+          <% capital_call.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
 
-          <ul>
-            <% capital_call.errors.each do |error| %>
-              <li><%= error.full_message %></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
+    <div data-controller="call-copy">
 
-      <div data-controller="call-copy">
+      <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true %>
 
-      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-      
       <div class="form-group">
         <%= form.label :name %>
-        <%= form.text_field :name, class: "form-control"  %>
+        <%= form.text_field :name, class: "form-control" %>
       </div>
 
       <div class="form-group">
@@ -29,6 +28,11 @@
         <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
       </div>
 
+      <div class="form-group">
+        <%= form.label :call_basis %>
+        <%= form.select :call_basis, capital_call.call_basis_list, {}, { class: "form-control", data: { action: "change->call-copy#call_basis_changed" } } %>
+        <small class="text-muted">Select how the remittance amounts are computed</small>
+      </div>
 
       <div class="form-group">
         <%= form.label :fund_closes, "Applicable To" %>
@@ -36,55 +40,49 @@
           closes = ["All"] 
           closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
         %>
-        <%= form.select :fund_closes, closes, {include_blank: false, include_hidden: false}, 
+        <%= form.select :fund_closes, closes, { include_blank: false, include_hidden: false }, 
                         class: "form-control select2 select2-multiple", multiple: "multiple" %>
       </div>
 
-      <div class="form-group">
-        <%= form.label :call_basis %>
-        <%= form.select :call_basis, capital_call.call_basis_list, {}, {class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
-        <small class="text-muted">Select how the remittance amounts are computed</small>
+      <div id="percentage-fields-container"></div>
+
+      <!-- Global Percentage Called field that will be hidden if specific closes are selected -->
+      <div class="form-group" id="percentage_called_group">
+        <%= form.label :percentage_called %>
+        <%= form.number_field :percentage_called, class: "form-control", step: :any %>
+        <small class="text-muted">Write 100 for 100%</small>
       </div>
 
       <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
         <%= form.label :amount_to_be_called %> <span class="formatted_currency"></span>
-        <%= form.number_field :amount_to_be_called, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+        <%= form.number_field :amount_to_be_called, class: "form-control", data: { action: "input->currencyformat#format" } %>
         <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
       </div>
 
-      <div class="form-group" id="percentage_called_group">
-        <%= form.label :percentage_called %>
-        <%= form.number_field :percentage_called, class: "form-control", step: :any  %>
-        <small class="text-muted">Write 100 for 100%</small>
-      </div>
-
-
       <div class="form-group">
         <%= form.label :call_date %>
-        <%= form.date_field :call_date, class: "form-control"  %>
+        <%= form.date_field :call_date, class: "form-control" %>
       </div>
 
       <div class="form-group">
         <%= form.label :due_date %>
-        <%= form.date_field :due_date, class: "form-control"  %>
+        <%= form.date_field :due_date, class: "form-control" %>
       </div>
 
       <% if capital_call.fund.unit_types.present? %>
         <div>
           <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
             <% 
-                unit_type = unit_type.strip 
-                price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
-                premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
+              unit_type = unit_type.strip 
+              price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
+              premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
             %>
             <div class="row">  
-              
-
               <div class="form-group col-md-4">
                 <%= form.label :unit_type, "#{unit_type} Unit Price" %>
                 <%= form.number_field :unit_type, step: :any, class: "form-control price", 
                     name: "capital_call[unit_prices][#{unit_type}][price]", 
-                    id: "#{unit_type}_price", value: price  %>
+                    id: "#{unit_type}_price", value: price %>
               </div>
               <div class="form-group col-md-3">
                 <%= form.label :unit_type, "Premium" %>      
@@ -95,7 +93,6 @@
               <% if index == 0 %>
                 <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
               <% end %>
-              
             </div>
           <% end %>  
         </div>
@@ -110,12 +107,12 @@
                     "import_upload[owner_type]": "Fund", 
                     "import_upload[import_type]": "AccountEntry", 
                     "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                    { class: "btn btn-outline-success", target: "_blank"}   %> 
+                    { class: "btn btn-outline-success", target: "_blank" } %> 
 
-        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>    
+        <%= form.submit "Save", { class: "btn btn-outline-primary" } %>    
       </div>
 
-      </div>
-    <% end %>
+    </div>
+  <% end %>
 
 <% end %>
