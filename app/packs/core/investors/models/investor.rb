@@ -236,7 +236,7 @@ class Investor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[pan city category investor_name tag_list investor_access_count].sort
+    %w[pan city category investor_name tag_list investor_access_count unapproved_investor_access_count].sort
   end
 
   def update_investor_name(name)
