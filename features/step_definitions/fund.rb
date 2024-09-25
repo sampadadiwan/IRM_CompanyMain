@@ -336,7 +336,6 @@
         if @capital_call.call_basis == "Amount allocated on Investable Capital"
           ((@capital_call.amount_to_be_called * remittance.percentage / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
         elsif @capital_call.call_basis == "Percentage of Commitment"
-          byebug
           ((cc.committed_amount * @capital_call.percentage_called / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
         elsif @capital_call.call_basis == "Upload"
           file = File.open("./public/sample_uploads/capital_remittances.xlsx", "r")
