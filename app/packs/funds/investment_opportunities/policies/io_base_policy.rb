@@ -3,9 +3,9 @@ class IoBasePolicy < ApplicationPolicy
     def resolve
       if user.curr_role == "investor"
         scope.for_investor(user)
-      elsif user.has_cached_role?(:company_admin) && (user.entity.is_fund? || user.entity.is_group_company?)
+      elsif user.has_cached_role?(:company_admin)
         scope.for_company_admin(user)
-      elsif user.has_cached_role?(:employee) && (user.entity.is_fund? || user.entity.is_group_company?)
+      elsif user.has_cached_role?(:employee)
         scope.for_employee(user)
       else
         scope.none

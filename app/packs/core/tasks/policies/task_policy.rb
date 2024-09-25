@@ -9,6 +9,8 @@ class TaskPolicy < ApplicationPolicy
         scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id).not_for_support
       elsif user.has_cached_role?(:employee)
         scope.where("assigned_to_id=?", user.id).not_for_support
+      else
+        scope.none
       end
     end
   end

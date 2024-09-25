@@ -19,7 +19,7 @@
 
 
       <% if interest.short_listed %>
-        
+
         <div class="form-group">
           <%= form.label :buyer_entity_name %>
           <%= form.text_field :buyer_entity_name, class: "form-control"  %>
@@ -45,7 +45,7 @@
           <%= form.label :city %>
           <%= form.text_field :city, class: "form-control"  %>
         </div>
-        
+
         <div class="form-group">
           <%= form.label :PAN %>
           <%= form.text_field :PAN, class: "form-control"  %>
@@ -66,22 +66,22 @@
           <%= form.text_field :ifsc_code, class: "form-control"  %>
         </div>
 
-        
+
 
         <div class="form-group">
 
-          <%= file_fields("Signature", interest, form) %>
+          <%= file_fields("Signature image", interest, form) %>
           <small class="form-text text-muted"></small>
-      
+
         </div>
-        
-        
+
+
         <div class="form-group">
           <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
           <%= form.check_box :final_agreement, class: "form-check-input"  %>
-          <small class="text-muted"> 
-            SPAs are visible in the 
-            <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>  
+          <small class="text-muted">
+            SPAs are visible in the
+            <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>
           </small>
         </div>
 
@@ -91,7 +91,7 @@
           <div class="form-group">
             <%= form.label :investor_id, "Buyer" %>
             <%= form.select :investor_id, interest.secondary_sale.buyer_investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
-          </div>  
+          </div>
 
           <div class="form-group">
             <%= form.label :escrow_deposited %>
@@ -99,9 +99,9 @@
           </div>
 
         <% else %>
-          <%= form.text_field :investor_id, class: "form-control", hidden: true  %>    
+          <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
         <% end %>
-        
+
         <div class="form-group" data-controller="currencyformat">
           <%= form.label :quantity %> <span class="formatted_currency"></span>
           <%= form.number_field :quantity, class: "form-control", data: {action: "input->currencyformat#format"}  %>
@@ -112,7 +112,7 @@
           <%= form.label :price %>
           <%= form.number_field :price, class: "form-control"  %>
           <small class="text-muted">
-                <%= interest.secondary_sale.display_price %>       
+                <%= interest.secondary_sale.display_price %>
           </small>
         </div>
 
@@ -120,13 +120,13 @@
         <%  interest.secondary_sale.buyer_doc_list.split(",").each do |doc_name| %>
 
         <div class="form-group">
-            <%= file_fields(doc_name.strip.squeeze(" "), interest, form) %>              
+            <%= file_fields(doc_name.strip.squeeze(" "), interest, form) %>
             <small class="form-text text-muted">Please upload a latest clear copy </small>
         </div>
-        
+
         <% end %>
         <% end %>
-        
+
         <div class="form-group">
           <%= form.label :details %>
           <%= form.rich_text_area :details, class: "form-control"  %>
@@ -137,7 +137,7 @@
       <% end %>
 
       <%= custom_form_fields(interest, form) %>
-      
+
       <div class="form-group">
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
       </div>
