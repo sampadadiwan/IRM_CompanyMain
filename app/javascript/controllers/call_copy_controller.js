@@ -5,7 +5,6 @@ export default class extends Controller {
   connect() {
     console.log("call_copy connect");
     this.call_basis_changed();
-    this.addApplicableToListener();
   }
 
   copy_all(e) {
@@ -45,49 +44,22 @@ export default class extends Controller {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").show();
-      $("#applicable-to-group").show();
+      $("#close-percentages-container").show(); 
+      $("#applicable-to-group").hide();
     } else if (call_basis === "Upload") {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").hide();
+      $("#close-percentages-container").hide();
       $("#applicable-to-group").hide();
+
     } else {
       $("#amount_to_be_called_group").show();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").hide();
+      $("#close-percentages-container").hide();
       $("#applicable-to-group").show();
     }
   }
 
-  addApplicableToListener() {
-    const applicableToSelect = $("#capital_call_fund_closes");
-
-    applicableToSelect.on('change', (event) => {
-      this.handleApplicableToSelection(event);
-    });
-  }
-
-  handleApplicableToSelection(event) {
-    const selectedCloses = $(event.target).val();
-    const container = $("#percentage-fields-container");
-
-    container.empty();
-
-    $("#percentage_called_group").hide();
-
-    selectedCloses.forEach((close) => {
-      if (close === "All") {
-        return;
-      }
-
-      const row = `
-        <div class="form-group">
-          <label>${close} - Percentage Called</label>
-          <input type="number" step="any" name="capital_call[close_percentages][${close}]" class="form-control" required />
-          <small class="text-muted">Enter percentage for ${close}</small>
-        </div>
-      `;
-      container.append(row);
-    });
-  }
 }

@@ -3,10 +3,10 @@ module CapitalRemittanceCallBasis
 
   def call_basis_percentage_commitment
     self.percentage = if capital_call.close_percentages&.dig(capital_commitment.fund_close).present?
-                    capital_call.close_percentages[capital_commitment.fund_close].to_d
-                  else
-                    0.to_d
-                  end
+                        capital_call.close_percentages[capital_commitment.fund_close].to_d
+                      else
+                        BigDecimal('0')
+                      end
     self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
 
     # Now compute the call amount in the fund currency.

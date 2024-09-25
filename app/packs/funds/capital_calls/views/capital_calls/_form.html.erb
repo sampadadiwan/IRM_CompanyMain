@@ -1,4 +1,3 @@
-
 <%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
 
   <%= form_with(model: capital_call, validate: true) do |form| %>
@@ -42,6 +41,26 @@
         %>
         <%= form.select :fund_closes, closes, { include_blank: false, include_hidden: false }, 
                         class: "form-control select2 select2-multiple", multiple: "multiple" %>
+      </div>
+
+      <div id="close-percentages-container">
+        <% capital_call.fund.capital_commitments.pluck(:fund_close).uniq.each_with_index do |fund_close, index| %>
+          <% close_name = fund_close %>
+          <% percentage_value = capital_call.close_percentages&.dig(close_name) || 0 %>
+
+          <div class="row">
+            <div class="form-group col-md-4">
+              <%= form.label "Percentage for #{close_name}" %>
+              <%= form.number_field :close_percentages, step: :any, class: "form-control", 
+                  name: "capital_call[close_percentages][#{close_name}]", 
+                  id: "#{close_name}_percentage", value: percentage_value %>
+            </div>
+          </div>
+
+          <% if index == 0 %>
+            <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+          <% end %>
+        <% end %>
       </div>
 
       <div id="percentage-fields-container"></div>
@@ -99,7 +118,6 @@
       <% end %>
 
       <%= render "/capital_calls/common_form_fields", capital_call: capital_call, form: form %>
-
       <div class="form-group">
         <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
         <%= link_to "Upload Account Entries", 

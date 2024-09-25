@@ -119,6 +119,7 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
+    params["capital_call"]["fund_closes"] = params["capital_call"]["close_percentages"].select { |_, percentage| percentage.to_d.positive? }.keys if params["capital_call"]["close_percentages"].present?
     if current_user.support?
       params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, :send_call_notice_flag, :send_payment_notification_flag, fund_closes: [], unit_prices: {}, properties: {}, close_percentages: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES_WITH_FORMULA, documents_attributes: Document::NESTED_ATTRIBUTES, fee_formula_ids: [])
     else
