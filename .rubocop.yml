@@ -1,3 +1,4 @@
+
 require:
   - rubocop-performance
   - rubocop-rails
@@ -225,7 +226,7 @@ Metrics/MethodLength:
     - 'app/packs/core/base/jobs/backup_db_job.rb'
     - 'app/packs/core/base/jobs/s3_check_job.rb'
     - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
-  
+    - 'app/packs/funds/capital_calls/services/import_capital_call.rb'
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'

@@ -397,6 +397,7 @@ FactoryBot.define do
     call_basis { "Percentage of Commitment" }
     percentage_called { rand(1..4) * 10 }
     fund_closes { ["All"] }
+    close_percentages { {"First Close"=> rand(1..4) * 10} }
     notes { Faker::Company.catch_phrase }
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types

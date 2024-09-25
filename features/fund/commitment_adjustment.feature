@@ -26,7 +26,7 @@ Scenario Outline: Create a commitment adjustment for a remittance
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing investor "name=Investor 1"
   Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor 
-  Given there is a capital call "percentage_called=20"
+  Given there is a capital call "close_percentages={'First Close':'20'}"
   Given there are payments for each remittance
   When a commitment adjustment "<adjustment>" is created for the last remittance 
   Then a reverse remittance payment must be generated for the remittance

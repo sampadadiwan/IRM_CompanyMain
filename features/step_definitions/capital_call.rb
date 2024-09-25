@@ -7,14 +7,8 @@ When('I create a Capital Call') do
 	sleep(0.2)
 	fill_in 'capital_call_name', with: 'Demo call'
 	sleep(1)
-	find('span.select2-selection--multiple').click
-	sleep(0.2)
-	find('li.select2-results__option', text: "First Close").click
-	find('span.select2-selection--multiple').click
-	sleep(2)
-	find('li.select2-results__option', text: "Second Close").click
-  find('input[name="capital_call[close_percentages][First Close]"]').set('10')
-  find('input[name="capital_call[close_percentages][Second Close]"]').set('20')
+	fill_in "capital_call[close_percentages][First Close]", with: "10"
+	fill_in "capital_call[close_percentages][Second Close]", with: "20"
   find('input[name="capital_call[call_date]"]').set('13/09/2024')
   find('input[name="capital_call[due_date]"]').set('13/11/2024')
   click_on('Save')

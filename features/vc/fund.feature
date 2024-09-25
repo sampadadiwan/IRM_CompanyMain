@@ -11,7 +11,7 @@ Scenario Outline: View a fund
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
   Given my firm is an investor in the fund
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
-  Given there is a capital call "percentage_called=20"
+  Given there is a capital call "close_percentages={'First Close':'20'}"
   Given there is a capital distribution "gross_amount_cents=2000000"
   And I should see the fund in all funds page
   When I am at the fund details page

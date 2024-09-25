@@ -28,14 +28,15 @@ class ImportCapitalCall < ImportUtil
         send_payment_notification_flag = user_data["Send Payment Notification"]&.downcase == "yes"
         fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].split(",") : ["All"]
         percentage_called = user_data["Percentage Called"] || 0
+        close_percentages = user_data["Close Percentages"].gsub(/[“”]/, '"')
+        close_percentages = JSON.parse(close_percentages)
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"], call_date: user_data["Call Date"],
                                        import_upload_id: import_upload.id, fund_closes:, commitment_type: user_data["Type"],
-                                       percentage_called:, send_call_notice_flag:,
+                                       percentage_called:, send_call_notice_flag:, close_percentages:,
                                        manual_generation: true, call_basis: user_data["Call Basis"],
                                        send_payment_notification_flag:, generate_remittances:, generate_remittances_verified:)
-
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 
         check_exchange_rate(capital_call)
