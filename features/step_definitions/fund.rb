@@ -291,7 +291,12 @@
     if @capital_call.call_basis == "Percentage of Commitment"
         fill_in "capital_call[close_percentages][First Close]", with: @capital_call.percentage_called
     elsif @capital_call.call_basis != "Upload"
-        fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
+      find('#select2-capital_call_fund_closes-container', visible: false)
+      select2_trigger = find('.select2-selection--multiple', match: :first)
+      select2_trigger.click
+      first_option = find(".select2-results__option", match: :first, visible: true)
+      first_option.click
+      fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
     end
 
     if @fund.entity.permissions.enable_units?
@@ -314,7 +319,6 @@
         end
       end
     end
-
     click_on "Save"
     sleep(2)
 
