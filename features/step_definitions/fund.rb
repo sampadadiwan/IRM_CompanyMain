@@ -259,8 +259,11 @@
     hash = arg.split('=').last
     hash = hash.gsub("'", "\"")
     close_percentages = JSON.parse(hash)
-    @capital_call.close_percentages = close_percentages if close_percentages.is_a?(Hash) && close_percentages.key?("close_percentages")
-    key_values(@capital_call, arg)
+    if close_percentages.is_a?(Hash) && close_percentages.key?("First Close")
+      @capital_call.close_percentages = close_percentages
+    else
+      key_values(@capital_call, arg)
+    end
     CapitalCallCreate.call(capital_call: @capital_call)
     puts "\n####CapitalCall####\n"
     puts @capital_call.to_json
@@ -336,7 +339,7 @@
         if @capital_call.call_basis == "Amount allocated on Investable Capital"
           ((@capital_call.amount_to_be_called * remittance.percentage / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
         elsif @capital_call.call_basis == "Percentage of Commitment"
-          ((cc.committed_amount * @capital_call.percentage_called / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
+          ((cc.committed_amount * @capital_call.close_percentages["First Close"].to_f / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
         elsif @capital_call.call_basis == "Upload"
           file = File.open("./public/sample_uploads/capital_remittances.xlsx", "r")
           data = Roo::Spreadsheet.open(file.path) # open spreadsheet
@@ -391,7 +394,7 @@
    Then('I should see the capital call details') do
     find(".show_details_link").click
     expect(page).to have_content(@capital_call.name)
-    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.call_basis == "Percentage of Commitment"
+    expect(page).to have_content(@capital_call.close_percentages["First Close"].to_i) if  @capital_call.call_basis == "Percentage of Commitment"
     expect(page).to have_content(money_to_currency @capital_call.amount_to_be_called) if  @capital_call.amount_to_be_called_cents > 0
 
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
