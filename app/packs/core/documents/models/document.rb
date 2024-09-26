@@ -162,6 +162,14 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('image')
   end
 
+  def pdf?
+    file&.mime_type&.include?('pdf')
+  end
+
+  def mime_type_includes?(file_type)
+    file&.mime_type&.include?(file_type)
+  end
+
   def uploaded_file_name
     file.metadata['filename'] if file.metadata
   end
