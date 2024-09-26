@@ -233,3 +233,4 @@ gem 'prometheus_exporter'
 gem "ruby-openai", "~> 6.3.0"
 gem 'sendgrid-ruby'
 gem 'wikipedia-client'
+gem 'parser'

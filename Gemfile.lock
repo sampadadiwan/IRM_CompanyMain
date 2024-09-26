@@ -1015,6 +1015,7 @@ DEPENDENCIES
   overcommit (~> 0.58.0)
   packs-rails
   paranoia
+  parser
   prometheus_exporter
   pry-byebug
   public_activity
