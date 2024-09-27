@@ -132,7 +132,7 @@ class DealInvestorsController < ApplicationController
     @frame = params[:turbo_frame] || "new_deal_investor"
 
     respond_to do |format|
-      if @deal_investor.save
+      if DealInvestorCreate.wtf?(deal_investor: @deal_investor).success?
         ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal investor was successfully created." }
         format.json { render :show, status: :created, location: @deal_investor }
@@ -156,11 +156,11 @@ class DealInvestorsController < ApplicationController
   def update
     authorize @deal_investor
     setup_doc_user(@deal_investor)
-
+    @deal_investor.assign_attributes(deal_investor_params)
     @current_user = current_user
     @frame = params[:turbo_frame] || "deal_investor_form_offcanvas#{@deal_investor.id}"
     respond_to do |format|
-      if @deal_investor.update(deal_investor_params)
+      if DealInvestorUpdate.wtf?(deal_investor: @deal_investor).success?
         ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         @message = "Deal investor was successfully updated."
         @deal_investor.deal.broadcast_message(@message)
@@ -179,7 +179,8 @@ class DealInvestorsController < ApplicationController
   # DELETE /deal_investors/1 or /deal_investors/1.json
   def destroy
     authorize @deal_investor
-    @deal_investor.destroy
+    DealInvestorDestroy.wtf?(deal_investor: @deal_investor)
+
     respond_to do |format|
       @message = "Deal investor was successfully destroyed."
       @status = "success"

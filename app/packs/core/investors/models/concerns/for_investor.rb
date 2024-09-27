@@ -123,6 +123,8 @@ module ForInvestor
       approval
     elsif %w[Kpi].include?(self.class.name)
       kpi_report
+    elsif %w[DealInvestor].include?(self.class.name)
+      deal
     else
       self
     end
