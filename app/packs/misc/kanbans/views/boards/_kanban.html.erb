@@ -11,7 +11,7 @@
     <h1 class="h3 mb-0 text-gray-800">
     <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
     <% if kanban_board.owner_type == "Deal" %>
-      <%= link_to kanban_board.owner, target: "_self" do %>
+      <%= link_to polymorphic_path(kanban_board.owner, grid_view: true), target: "_self" do %>
         <i class="ti ti-grid-pattern"></i>
       <% end %>
     <% end %>
@@ -44,8 +44,10 @@
         </a>
         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
           <%= link_to 'Edit', edit_polymorphic_path(kanban_board.owner, turbo_frame_id: "board#{kanban_board.id}_edit", turbo: true), class: 'dropdown-item' %>
+          <%= link_to "Preview", polymorphic_path(kanban_board.owner, preview: 'true'), class: "dropdown-item", target: "_blank" if kanban_board.owner_type == "Deal" %>
           <a class="dropdown-item archived-columns" href="javascript:void(0);">Archived Columns</a>
         </div>
+
       </div>
     </div>
   </div>

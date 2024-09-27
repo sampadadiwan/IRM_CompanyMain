@@ -2,11 +2,6 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
 
-    <% if policy(deal_investor).update? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
-              data-action="click->tabdetails#loadData">Access Rights</a>
-    <% end %>
-
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab"
               data-action="click->tabdetails#loadData">Deal Steps</a>
 
@@ -29,18 +24,6 @@
                   UNION #{Document.includes(:folder).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
         <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
       </div>
-    </div>
-
-    <div id="access-rights-tab" class="tab-pane fade in">
-
-          <% cache([deal_investor, "AccessRights"]) do %>
-            <div id="access_rights" class="associated_entity" data-controller="datatable">
-
-              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: deal_investor.id, owner_type: "DealInvestor", entity_id: deal_investor.entity_id) do %>
-              <% end %>
-
-            </div>
-          <% end %>
     </div>
 
     <div id="activities-tab" class="tab-pane fade">

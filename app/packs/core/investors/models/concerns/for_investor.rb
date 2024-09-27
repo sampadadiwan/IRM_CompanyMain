@@ -12,6 +12,8 @@ module ForInvestor
         SecondarySale
       elsif %w[Kpi].include?(name)
         KpiReport
+      elsif %w[DealInvestor].include?(name)
+        Deal
       else
         self
       end

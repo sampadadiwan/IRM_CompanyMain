@@ -1,8 +1,7 @@
 <div class="io_facts row">
 <%# show either 2 buttons Overview and data room or just data room %>
-<% if model.investment_opportunity_link.present? %>
   <div class="col-<%=col_size.to_i/2%> thin-padding">
-    <a href="<%= investment_opportunity_path(id: model.investment_opportunity_link) %>">
+    <a href="<%= deal_path(id: model.id, preview: true) %>">
       <div class="card shadow">
         <div class="card-body d-flex justify-content-center contained">
             <h5 class="text-primary my-2">Overview</h5>
@@ -21,23 +20,8 @@
     </a>
   </div>
 
-<% else %>
-
-    <div class="col-<%=col_size.to_i/2%> thin-padding">
-      <a href="<%= folder_documents_path(entity_id: model.entity_id, folder_id: model.data_room_folder_id, parent_folder_id: model.document_folder.id) %>">
-        <div class="card shadow">
-            <div class="card-body d-flex justify-content-center contained">
-              <h5 class="text-danger my-2">Data Room</h5>
-            </div>
-        </div>
-      </a>
-    </div>
-
-<% end %>
-
-
   <div class="col-<%=col_size.to_i/2%> thin-padding">
-    <a href="<%= messages_path(owner_id: model.id, owner_type: "DealInvestor", investor_id: object.investor_id) %>">
+    <a href="<%= messages_path(owner_id: object.id, owner_type: "DealInvestor", investor_id: object.investor_id) %>">
       <div class="card shadow">
           <div class="card-body d-flex justify-content-center contained">
               <h5 class="text-success my-2">Queries</h5>
