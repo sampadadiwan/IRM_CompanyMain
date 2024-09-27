@@ -57,11 +57,6 @@
     </div>
 
     <div class="form-group">
-      <%= form.label :investment_opportunity_id %>
-      <%= form.text_field :investment_opportunity_link, class: "form-control", placeholder: "IO Id"  %>
-    </div>
-
-    <div class="form-group">
       <%= form.label :clone_from %>
       <%= form.select :clone_from_id, deal.entity.deals.map{|d| [d.name, d.id]}, {include_blank: true}, class: "form-control"  %>
       <small class="text-muted"> Select a deal if you want the steps to be cloned, or leave blank </small>

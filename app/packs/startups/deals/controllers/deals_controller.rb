@@ -42,10 +42,15 @@ class DealsController < ApplicationController
             'Content-Disposition'
           ] = "attachment; filename=deal.xlsx"
 
-          render params[:kanban].present? ? "show" : "grid_view"
+          render params[:grid_view].present? ? "grid_view" : "show"
         end
         format.html do
-          if params[:kanban].present? && @deal.kanban_board.present?
+          # make board the default view if deal has a board
+          if params[:grid_view].present?
+            render "grid_view"
+          elsif params[:preview].present?
+            render "show"
+          elsif @deal.kanban_board.present?
             redirect_to board_path(@deal.kanban_board)
           else
             render "grid_view"
@@ -108,8 +113,9 @@ class DealsController < ApplicationController
   def update
     @frame = params[:deal][:turbo_frame_id] || "deal_form_#{@deal.id}"
     params[:deal].delete(:turbo_frame_id)
+    @deal.assign_attributes(deal_params)
     respond_to do |format|
-      if @deal.update(deal_params)
+      if UpdateDeal.wtf?(deal: @deal).success?
         @success = true
         format.turbo_stream do
           ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal.broadcast_data)
@@ -143,13 +149,14 @@ class DealsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal
     @deal = Deal.find(params[:id])
-    @bread_crumbs = { Deals: deals_path, "#{@deal.name || '-'}": deal_path(@deal) }
+    path = @deal.kanban_board.present? ? board_path(@deal.kanban_board) : deal_path(@deal)
+    @bread_crumbs = { Deals: deals_path, "#{@deal.name || '-'}": path }
     authorize(@deal)
   end
 
   # Only allow a list of trusted parameters through.
   def deal_params
     params.require(:deal).permit(:entity_id, :name, :amount, :status, :form_type_id, :clone_from_id, :tags,
-                                 :start_date, :currency, :investment_opportunity_link, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
+                                 :start_date, :currency, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
   end
 end
