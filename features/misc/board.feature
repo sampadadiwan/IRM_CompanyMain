@@ -227,3 +227,22 @@ Scenario Outline: Deal edit and details
   Examples:
   	|user	      |entity               |deal                             |msg	|edit |tabs|
   	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|"Access Rights, Deal Docs, Deal, Reminders"|
+
+Scenario Outline: Deal preview
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  When I click on the Add Item and select any Investor and save
+  And I view the deal details
+  Given I add widgets for the deal
+  And I add track record for the deal
+  And I add preview documents for the deal
+  When I go to deal preview
+  Then I can see the deal preview details
+  Examples:
+  	|user	      |entity               |deal                             |msg	|edit |
+  	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|
