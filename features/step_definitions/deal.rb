@@ -79,7 +79,7 @@ Then('an deal should be created') do
 end
 
 Then('I should see the deal details on the details page') do
-  visit(deal_path(@deal))
+  visit(deal_path(@deal, grid_view: true))
   find_by_id('deal_tab').click
   expect(page).to have_content(@deal.name)
   expect(page).to have_content(money_to_currency(@deal.amount))
@@ -103,7 +103,7 @@ end
 Given('I visit the deal details page') do
   sleep(5)
   @deal.reload
-  visit(deal_url(@deal))
+  visit(deal_path(@deal, grid_view: true))
 end
 
 Then('I should be able to change currency units') do
@@ -475,6 +475,7 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
     click_on(tab)
     sleep(0.5)
     if tab == "Deal Docs"
+      # byebug
       expect(page).to have_content("Documents: #{@deal.name}")
       expect(page).to have_content("All Documents")
       expect(page).to have_content("Folders")

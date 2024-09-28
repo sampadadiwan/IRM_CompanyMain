@@ -56,7 +56,7 @@ include CurrencyHelper
   end
 
   Given('I should see the deal investors in the deal details page') do
-    visit(deal_path(@deal))
+    visit(deal_path(@deal, grid_view: true))
 
     @deal.deal_investors.each do |deal_investor|
       within("#deal_investor_#{deal_investor.id}") do
@@ -129,7 +129,7 @@ include CurrencyHelper
   end
 
   Then('I {string} see the deal investors in the deal details page') do |should|
-    visit(deal_path(@deal))
+    visit(deal_path(@deal, grid_view:true))
 
 
     @deal.deal_investors.each do |deal_investor|
