@@ -475,7 +475,6 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
     click_on(tab)
     sleep(0.5)
     if tab == "Deal Docs"
-      # byebug
       expect(page).to have_content("Documents: #{@deal.name}")
       expect(page).to have_content("All Documents")
       expect(page).to have_content("Folders")
