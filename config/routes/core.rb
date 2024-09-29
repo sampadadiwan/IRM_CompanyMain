@@ -53,6 +53,7 @@ resources :investor_kycs do
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
+  post 'validate_docs_with_ai', on: :member
 end
 resources :investor_kyc_sebi_datas do
   get 'sub_categories', on: :collection

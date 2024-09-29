@@ -1,7 +1,7 @@
 class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder send_notification]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder send_notification validate_docs_with_ai]
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   has_scope :uncalled, type: :boolean
@@ -34,6 +34,13 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs/1 or /investor_kycs/1.json
   def show; end
+
+  # This can be triggered for any resource which implements with_doc_questions concern
+  def validate_docs_with_ai
+    authorize(@investor_kyc)
+    DocLlmValidationJob.perform_later("InvestorKyc", @investor_kyc.id, current_user.id)
+    redirect_to investor_kyc_url(@investor_kyc), notice: "Document validation in progress. Please check back in a few minutes."
+  end
 
   # GET /investor_kycs/new
   def new

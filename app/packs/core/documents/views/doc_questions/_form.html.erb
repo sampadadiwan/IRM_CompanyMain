@@ -14,6 +14,19 @@
     <% end %>
 
     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <%= form.label :qtype %>
+      <%= form.select :qtype, DocQuestion::qtypes.invert, {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :document_name %>
+      <%= form.text_field :document_name, class: "form-control"  %>
+      <span class="text-muted">The name of the document to which these questions apply</span>
+    </div>
 
     <div class="form-group">
       <%= form.label :tags %>
@@ -22,9 +35,20 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :for_class %>
+      <%= form.select :for_class, DocQuestion::FOR_CLASSES, {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
       <%= form.label :question %>
-      <%= form.text_area :question, class: "form-control"  %>
-      <span class="text-muted">Question to be answered by the LLM for docs with the tags above.</span>
+      <%= form.text_field :question, class: "form-control"  %>
+      <span class="text-muted">Question to be answered by the LLM.</span>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :response_hint %>
+      <%= form.text_field :response_hint, class: "form-control"  %>
+      <span class="text-muted">Answer in Yes or No / Extract to field my_custom_field.</span>
     </div>
 
     <div class="form-group">

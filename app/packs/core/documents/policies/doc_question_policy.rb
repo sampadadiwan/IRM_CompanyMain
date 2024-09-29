@@ -1,6 +1,6 @@
 class DocQuestionPolicy < ApplicationPolicy
   def index?
-    user.enable_documents
+    user.entity.enable_doc_llm_validation
   end
 
   def show?

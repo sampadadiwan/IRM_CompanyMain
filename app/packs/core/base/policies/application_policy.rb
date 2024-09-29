@@ -38,6 +38,10 @@ class ApplicationPolicy
     false
   end
 
+  def validate_docs_with_ai?
+    user.entity.enable_doc_llm_validation
+  end
+
   def allow_external?(action, role = nil)
     extenal = Permission.allow(record, user, role)
     extenal ? extenal.set?(action) : false

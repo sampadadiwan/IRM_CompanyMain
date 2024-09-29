@@ -23,10 +23,11 @@
             KYC Actions
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false,
-              method: :post, msg: "This will generate a notification to all users associated with this investor"} if policy(@investor_kyc).send_kyc_reminder? %>
+            <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate a notification to all users associated with this investor"} if policy(@investor_kyc).send_kyc_reminder? %>
 
             <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "dropdown-item" } if policy(@investor_kyc).generate_docs? %>
+
+            <%= button_to "Validate Document Data", validate_docs_with_ai_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This try and validate the data in the documents and kyc. It will take a few minutes. Proceed?"} if policy(@investor_kyc).validate_docs_with_ai? %>
 
             <%= link_to "Audit Trail" , investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
           </div>

@@ -5,8 +5,19 @@
   </td>
   <td>
     <%= doc_question.question %>
+    <div class="text-muted"><%= doc_question.response_hint %></div>
+  </td>
+  <td>
+    <%= doc_question.for_class %>
+  </td>
+  <td>
+    <%= doc_question.document_name %>
+  </td>
+  <td>
+    <%= doc_question.qtype %>
   </td>
   <td>
     <%= link_to "Show", doc_question , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_doc_question_path(doc_question), {class: "btn btn-outline-success"}%>
   </td>
 </tr>

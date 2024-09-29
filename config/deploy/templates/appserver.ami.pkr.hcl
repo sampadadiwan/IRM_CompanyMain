@@ -111,6 +111,7 @@ build {
       "sudo apt install --yes pdftk",  
       "sudo apt install --yes pv", 
       "sudo apt install --yes unzip",
+      "sudo apt install --yes imagemagick"
     ]
   }
 }

@@ -56,6 +56,17 @@
       </td>
     </tr>
 
+    <% if policy(@investor_kyc).validate_docs_with_ai? %>
+    <tr>
+      <td>
+        Document Data Validated
+      </td>
+      <td>
+        <%= display_boolean investor_kyc.all_docs_valid %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         Investing Entity

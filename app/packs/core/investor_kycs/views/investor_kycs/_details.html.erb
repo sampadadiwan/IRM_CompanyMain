@@ -19,6 +19,10 @@
           data-action="click->tabdetails#loadData">Audit Trail</a>
     <% end %>
 
+    <% if policy(@investor_kyc).validate_docs_with_ai? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-validation-tab" >Doc Validations</a>
+    <% end %>
+
   </nav>
 
 
@@ -29,6 +33,12 @@
           <% msg = nil %>
           <%= render "/documents/index", documents: @investor_kyc.documents.includes(:folder),
               owner: @investor_kyc, entity: @investor_kyc.entity, msg: msg %>
+        </div>
+      </div>
+
+      <div id="docs-validation-tab" class="tab-pane fade in show">
+        <div id="docs_validation" class="associated_entity">          
+          <%= Json2table.get_html_table(@investor_kyc.doc_question_answers, JsonTable::TABLE_OPTIONS).html_safe if @investor_kyc.doc_question_answers.present? %>
         </div>
       </div>
 

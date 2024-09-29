@@ -2,7 +2,7 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Doc Questions</h1>
-  <%= link_to "New Doc Question", new_doc_question_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to "New Doc Question", new_doc_question_path("doc_question[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
@@ -16,6 +16,15 @@
         </th>
         <th>
           Question
+        </th>
+        <th>
+          For
+        </th>
+        <th>
+          Document Name
+        </th>
+        <th>
+          Type
         </th>
         <th>
         </th>

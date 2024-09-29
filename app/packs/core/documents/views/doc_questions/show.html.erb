@@ -1,6 +1,37 @@
 <%= render FormCard.new(title: "#{@doc_question}") do %>
   <table class="table table-bordered dataTable">
-    
+    <tr>
+      <td>
+        Document Name
+      </td>
+      <td>
+        <%= @doc_question.document_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        For
+      </td>
+      <td>
+        <%= @doc_question.for_class %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @doc_question.owner %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Qtype
+      </td>
+      <td>
+        <%= @doc_question.qtype.humanize %>
+      </td>
+    </tr>
     <tr>
       <td>
         Tags
@@ -15,6 +46,14 @@
       </td>
       <td>
         <%= @doc_question.question %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Response Hint
+      </td>
+      <td>
+        <%= @doc_question.response_hint %>
       </td>
     </tr>
   </table>

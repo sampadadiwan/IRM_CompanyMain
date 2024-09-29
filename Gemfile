@@ -229,8 +229,10 @@ gem 'aws-sdk-wafv2', require: false
 gem 'friendly_id', '~> 5.5.0'
 gem 'humanize'
 gem 'langchainrb'
+gem 'parser'
 gem 'prometheus_exporter'
-gem "ruby-openai", "~> 6.3.0"
+gem "ruby-openai", git: "https://github.com/alexrudall/ruby-openai.git"
 gem 'sendgrid-ruby'
 gem 'wikipedia-client'
-gem 'parser'
+
+gem 'mini_magick'

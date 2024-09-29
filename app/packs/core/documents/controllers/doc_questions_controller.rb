@@ -3,6 +3,7 @@ class DocQuestionsController < ApplicationController
 
   # GET /doc_questions or /doc_questions.json
   def index
+    authorize DocQuestion
     @doc_questions = policy_scope(DocQuestion)
   end
 
@@ -11,8 +12,9 @@ class DocQuestionsController < ApplicationController
 
   # GET /doc_questions/new
   def new
-    @doc_question = DocQuestion.new
+    @doc_question = DocQuestion.new(doc_question_params)
     @doc_question.entity_id = current_user.entity_id
+    @doc_question.owner ||= current_user.entity
     authorize @doc_question
   end
 
@@ -65,11 +67,11 @@ class DocQuestionsController < ApplicationController
   def set_doc_question
     @doc_question = DocQuestion.find(params[:id])
     authorize @doc_question
-    @bread_crumbs = { Questions: doc_questions_path, "#{@doc_question.tags}": doc_question_path(@doc_question.tags), "#{@doc_question}": nil }
+    @bread_crumbs = { Questions: doc_questions_path, "#{@doc_question}": nil }
   end
 
   # Only allow a list of trusted parameters through.
   def doc_question_params
-    params.require(:doc_question).permit(:entity_id, :tags, :question)
+    params.require(:doc_question).permit(:entity_id, :tags, :question, :document_name, :for_class, :qtype, :owner_id, :owner_type, :response_hint)
   end
 end

@@ -50,6 +50,7 @@ class Entity < ApplicationRecord
   has_many :investor_notices, dependent: :destroy
 
   has_many :documents, dependent: :destroy
+  has_many :doc_questions, dependent: :destroy
   has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
   has_many :tasks, dependent: :destroy

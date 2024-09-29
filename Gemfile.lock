@@ -1,4 +1,13 @@
 GIT
+  remote: https://github.com/alexrudall/ruby-openai.git
+  revision: 3c9411f3f72bffd408e949ca7fa9a95221d17503
+  specs:
+    ruby-openai (7.1.0)
+      event_stream_parser (>= 0.3.0, < 2.0.0)
+      faraday (>= 1)
+      faraday-multipart (>= 1)
+
+GIT
   remote: https://github.com/ausangshukla/acts_as_favoritor.git
   revision: 353fe5010c225a012cf6d34881827c165eb47281
   specs:
@@ -765,10 +774,6 @@ GEM
     rubocop-rspec (3.0.1)
       rubocop (~> 1.61)
     ruby-ole (1.2.13.1)
-    ruby-openai (6.3.1)
-      event_stream_parser (>= 0.3.0, < 2.0.0)
-      faraday (>= 1)
-      faraday-multipart (>= 1)
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
     ruby-vips (2.2.1)
@@ -1007,6 +1012,7 @@ DEPENDENCIES
   mail-logger
   marginalia (~> 1.11)
   memoized
+  mini_magick
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   net-pop!
@@ -1033,7 +1039,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   rubocop-rspec
-  ruby-openai (~> 6.3.0)
+  ruby-openai!
   rubyXL!
   rubyzip
   rupees!
