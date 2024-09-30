@@ -20,6 +20,6 @@ class PortfolioCashflow < ApplicationRecord
 
   def initalize(*)
     super
-    self.tag ||= "Actual"
+    self.tag = "Actual" if tag.blank?
   end
 end

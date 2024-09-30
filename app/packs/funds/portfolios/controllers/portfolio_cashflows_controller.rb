@@ -75,6 +75,7 @@ class PortfolioCashflowsController < ApplicationController
   def set_portfolio_cashflow
     @portfolio_cashflow = PortfolioCashflow.find(params[:id])
     authorize @portfolio_cashflow
+    @bread_crumbs = { "#{@portfolio_cashflow.portfolio_company.name}": investor_path(@portfolio_cashflow.portfolio_company), 'Portfolio Cashflow': portfolio_cashflow_path(@portfolio_cashflow) }
   end
 
   # Only allow a list of trusted parameters through.

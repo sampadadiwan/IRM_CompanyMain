@@ -5,29 +5,32 @@ class CapitalCommitmentCalcs
   end
 
   def fmv_cents
+    # Take the amount from the last account that satisfies the condition.
+    # Cumulative entries are always on fund level so we should not need to search with false here but its here for safety
+    # The last account entry will have the cumulative amount as we'll make sure of it by generating it using a fund formula
     @fmv_cents ||= begin
-      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: false, reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
   end
 
   def cash_in_hand_cents
     @cash_in_hand_cents ||= begin
-      ae = @capital_commitment.account_entries.where(name: "Cash In Hand", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae = @capital_commitment.account_entries.where(name: "Cash In Hand", cumulative: false, reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
   end
 
   def net_current_assets_cents
     @net_current_assets_cents ||= begin
-      ae = @capital_commitment.account_entries.where(name: "Net Current Assets", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae = @capital_commitment.account_entries.where(name: "Net Current Assets", cumulative: false, reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
   end
 
   def estimated_carry_cents
     @estimated_carry_cents ||= begin
-      ae = @capital_commitment.account_entries.where(name: "Estimated Carry", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae = @capital_commitment.account_entries.where(name: "Estimated Carry", cumulative: false, reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
   end
@@ -49,7 +52,11 @@ class CapitalCommitmentCalcs
 
   def rvpi
     cc = collected_cents
-    cc.positive? ? (fmv_cents / cc).round(2) : 0
+    if cc.positive?
+      (fmv_cents + cash_in_hand_cents + net_current_assets_cents) / cc
+    else
+      0
+    end
   end
 
   def tvpi
@@ -58,7 +65,7 @@ class CapitalCommitmentCalcs
 
   def fmv_on_date
     @fmv_on_date ||= begin
-      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: false, reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
   end
@@ -78,7 +85,7 @@ class CapitalCommitmentCalcs
     cf << Xirr::Transaction.new(cash_in_hand_cents, date: @end_date, notes: "Cash in Hand") if cash_in_hand_cents != 0
     cf << Xirr::Transaction.new(net_current_assets_cents, date: @end_date, notes: "Net Current Assets") if net_current_assets_cents != 0
 
-    cf << Xirr::Transaction.new(estimated_carry_cents, date: @end_date, notes: "Estimated Carry") if net_irr && estimated_carry_cents != 0
+    cf << Xirr::Transaction.new(estimated_carry_cents * -1, date: @end_date, notes: "Estimated Carry") if net_irr && estimated_carry_cents != 0
 
     Rails.logger.debug { "capital_commitment.xirr cf: #{cf}" }
     Rails.logger.debug { "capital_commitment.xirr irr: #{cf.xirr}" }

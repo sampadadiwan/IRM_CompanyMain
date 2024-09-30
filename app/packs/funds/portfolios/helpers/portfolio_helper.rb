@@ -33,11 +33,12 @@ module PortfolioHelper
 
   def api_xirr_chart(api)
     xirrs = FundRatio.where(entity_id: api.entity_id, fund_id: api.fund_id,
-                            name: "IRR: #{api.portfolio_company_name}")
+                            owner: api,
+                            name: "IRR")
                      .order(end_date: :asc)
                      .pluck(:end_date, :value)
 
-    column_chart cumulative(xirrs), library: {
+    column_chart xirrs, library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,

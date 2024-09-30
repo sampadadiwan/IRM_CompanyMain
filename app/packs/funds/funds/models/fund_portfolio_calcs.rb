@@ -67,7 +67,11 @@ class FundPortfolioCalcs
   end
 
   def rvpi
-    collected_cents.positive? ? (fmv_cents / collected_cents).round(2) : 0
+    if collected_cents.positive? # ? (fmv_cents / collected_cents).round(2) : 0
+      ((fmv_cents + net_current_assets_cents + cash_in_hand_cents) / collected_cents).round(2)
+    else
+      0
+    end
   end
 
   def tvpi
@@ -103,6 +107,14 @@ class FundPortfolioCalcs
 
       # Get the FMV
       cf << Xirr::Transaction.new(fmv_on_date, date: @end_date, notes: "FMV on Date") if fmv_on_date.positive?
+
+      # loop over all apis
+      @fund.aggregate_portfolio_investments.each do |api|
+        portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
+        portfolio_cashflows.each do |pcf|
+          cf << Xirr::Transaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+        end
+      end
 
       lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
       (lxirr * 100).round(2)
@@ -185,6 +197,8 @@ class FundPortfolioCalcs
 
     apis.each do |api|
       portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+      next if portfolio_investments.blank?
+
       quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.quantity }
 
       portfolio_company_id = api.portfolio_company_id
@@ -224,7 +238,7 @@ class FundPortfolioCalcs
     cf << Xirr::Transaction.new(cash_in_hand_cents, date: @end_date, notes: "Cash in Hand") if cash_in_hand_cents != 0
     cf << Xirr::Transaction.new(net_current_assets_cents, date: @end_date, notes: "Net Current Assets") if net_current_assets_cents != 0
 
-    cf << Xirr::Transaction.new(estimated_carry_cents, date: @end_date, notes: "Estimated carry") if net_irr
+    cf << Xirr::Transaction.new(estimated_carry_cents * -1, date: @end_date, notes: "Estimated carry") if net_irr
     cf << Xirr::Transaction.new(adjustment_cash, date: @end_date, notes: "Adjustment Cash") if adjustment_cash != 0
 
     Rails.logger.debug { "fund.xirr cf: #{cf}" }
