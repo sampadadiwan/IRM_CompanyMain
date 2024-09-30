@@ -8,22 +8,23 @@ class RemittanceReconciler < Trailblazer::Operation
   left :handle_errors, Output(:failure) => End(:failure)
 
   def init(ctx, capital_remittance:, **)
-    Rails.logger.debug { "RemittanceReconciler for #{capital_remittance}" }
+    log_debug("RemittanceReconciler for #{capital_remittance}")
     open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "gpt-4o" })
     ctx[:open_ai_client] = open_ai_client
     true
   end
 
+  def log_debug(message)
+    Rails.logger.debug { message }
+  end
+
   def upload_csv(ctx, open_ai_client:, csv_file_path:, **)
-    # Read the CSV file
-    # csv = CSV.read(csv_file.path, headers: true)
-    # ctx[:csv] = csv
 
     file_id = upload_csv_to_openai(open_ai_client, csv_file_path)
     if file_id
       puts { "File uploaded successfully. File ID: #{file_id}" }
     else
-      Rails.logger.debug "File upload failed."
+      log_debug("File upload failed.")
     end
 
     ctx[:file_id] = file_id
@@ -39,7 +40,7 @@ class RemittanceReconciler < Trailblazer::Operation
     if answer
       puts { "Answer: #{answer}" }
     else
-      Rails.logger.debug "Semantic search failed."
+      log_debug("Semantic search failed.")
     end
 
     ctx[:answer] = answer
@@ -131,33 +132,6 @@ class RemittanceReconciler < Trailblazer::Operation
     Rails.logger.debug response
     sleep(20)
 
-    # while true do
-    #   response = open_ai_client.runs.retrieve(id: run_id, thread_id: thread_id)
-    #   status = response['status']
-    #   messages = open_ai_client.messages.list(thread_id: thread_id)
-    #   puts messages
-
-    #   case status
-    #   when 'queued', 'in_progress', 'cancelling'
-    #     puts 'Sleeping'
-    #     sleep 2 # Wait one second and poll again
-    #   when 'completed'
-    #     break # Exit loop and report result to user
-    #   when 'requires_action'
-    #     # Handle tool calls (see below)
-    #     puts response['action']
-    #     break
-    #   when 'cancelled', 'failed', 'expired'
-    #     puts response['last_error'].inspect
-    #     break # or `exit`
-    #   else
-    #     puts "Unknown status response: #{status}"
-    #   end
-    # end
-
-    # messages = client.messages.list(thread_id: thread_id, parameters: { order: 'asc' })
-
-    # puts messages
   rescue OpenAI::Error => e
     Rails.logger.error "OpenAI Semantic Search Error: #{e.message}"
     open_ai_client.assistants.delete(id: ctx[:assistant_id]) if ctx[:assistant_id]
