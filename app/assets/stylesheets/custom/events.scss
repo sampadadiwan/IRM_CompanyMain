@@ -48,7 +48,7 @@
   font-size: 12px;
   word-wrap: break-word;
   display: block;
-  color: #333;
+  color: white;
 }
 
 .calendar-cell.bg-secondary {
@@ -160,4 +160,13 @@
   display: flex;
   justify-content: flex-end;
   margin-right: 10px;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  background-color: grey;
+  border: 1px solid #ccc;
+  padding: 5px;
+  z-index: 1000;
 }

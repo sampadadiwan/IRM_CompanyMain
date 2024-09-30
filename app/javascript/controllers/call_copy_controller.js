@@ -10,21 +10,28 @@ export default class extends Controller {
   copy_all(e) {
     e.preventDefault();
 
-    let price = $(".price")[0].value;
-    $(".price").each(function (index, item) {
-      $(item)[0].value = price;
-    });
-    console.log(`price = ${price}`);
+    function copyFieldValues(fieldClass) {
+      let firstValue = $(`.${fieldClass}`)[0].value;
+      console.log(`${fieldClass} = ${firstValue}`);
 
-    if ($(".premium").length > 0) {
-      let premium = $(".premium")[0].value;
-      console.log(`premium = ${premium}`);
-
-      $(".premium").each(function (index, item) {
-        $(item)[0].value = premium;
+      $(`.${fieldClass}`).each(function (index, item) {
+        $(item)[0].value = firstValue;
       });
     }
+
+    if ($(".price").length > 0) {
+      copyFieldValues('price');
+    }
+
+    if ($(".premium").length > 0) {
+      copyFieldValues('premium');
+    }
+
+    if ($(".percentage").length > 0) {
+      copyFieldValues('percentage');
+    }
   }
+
 
   copy_all_percentage_changes(e) {
     e.preventDefault();

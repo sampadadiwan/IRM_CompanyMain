@@ -51,7 +51,7 @@
           <div class="row">
             <div class="form-group col-md-4">
               <%= form.label "Percentage for #{close_name}" %>
-              <%= form.number_field :close_percentages, step: :any, class: "form-control", 
+              <%= form.number_field :close_percentages, step: :any, class: "form-control percentage", 
                   name: "capital_call[close_percentages][#{close_name}]", 
                   id: "#{close_name}_percentage", value: percentage_value %>
             </div>

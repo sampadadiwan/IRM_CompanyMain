@@ -16,6 +16,5 @@ When('I create a Capital Call') do
 end
 
 Given("it should create Capital Remittances according to the close percentage") do
-	expect(CapitalRemittance.first.percentage).to(eq("10".to_d))
-	expect(CapitalRemittance.second.percentage).to(eq("20".to_d))
+	expect(CapitalRemittance.pluck(:percentage)).to match_array([BigDecimal("10"), BigDecimal("20")])
 end
