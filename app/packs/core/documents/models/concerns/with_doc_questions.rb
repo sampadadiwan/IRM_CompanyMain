@@ -27,6 +27,6 @@ module WithDocQuestions
   def mark_as_validated(all_docs_valid)
     Rails.logger.debug { "#{self}: All docs valid: #{all_docs_valid}" }
     self.all_docs_valid = all_docs_valid if respond_to?(:all_docs_valid)
-    save
+    save(validate: false)
   end
 end

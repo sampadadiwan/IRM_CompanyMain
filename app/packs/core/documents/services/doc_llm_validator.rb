@@ -19,7 +19,7 @@ class DocLlmValidator < Trailblazer::Operation
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
     # @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini" })
-    open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini", temperature: 0.1 })
+    open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "gpt-4o", temperature: 0.1 })
     ctx[:open_ai_client] = open_ai_client
     ctx[:doc_questions] = model.doc_questions.where(document_name: document.name)
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
@@ -31,7 +31,7 @@ class DocLlmValidator < Trailblazer::Operation
     # make the directory if it does not exist
     FileUtils.mkdir_p("tmp/KycDocLlmValidator") unless File.directory?("tmp/KycDocLlmValidator")
     # setup the image path
-    image_path = "tmp/KycDocLlmValidator/#{document.id}.png"
+    image_path = "tmp/KycDocLlmValidator/#{document.id}_%d.png"
     ctx[:image_path] = image_path
 
     if document.mime_type_includes?('pdf')
@@ -39,6 +39,9 @@ class DocLlmValidator < Trailblazer::Operation
       document.file.download do |file|
         image = MiniMagick::Image.open(file.path)
         image.format "png"
+        image.density 900
+        image.flatten
+        image.background "white"
         image.write(image_path)
       end
 
@@ -173,9 +176,9 @@ class DocLlmValidator < Trailblazer::Operation
   # Ensure assistant is deleted
   def cleanup(ctx, **)
     Rails.logger.debug "Cleaning up"
-    image_path = ctx[:image_path]
+    ctx[:image_path]
     # Check if tmp image_path is present and delete
-    File.delete(image_path) if image_path && File.exist?(image_path)
+    # File.delete(image_path) if image_path && File.exist?(image_path)
     # assistant.delete
     true
   end
