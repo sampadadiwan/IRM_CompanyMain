@@ -166,9 +166,10 @@ class DocLlmValidator < Trailblazer::Operation
   def save_check_results(_ctx, model:, document:, doc_question_answers:, **)
     model.doc_question_answers ||= {}
     model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
-    model.doc_question_answers[document.name].each do |question, answer|
+    model.doc_question_answers[document.name].each do |question, answer_and_explanation|
       # Need better check for extraction
-      unless VALIDATION_RESPONSES.include?(answer.to_s.downcase)
+      answer = answer_and_explanation["answer"]
+      if answer.blank? || !VALIDATION_RESPONSES.include?(answer.to_s.downcase)
         # Save any extracted data from the document to the model custom fields
         if model.respond_to?(question.to_sym)
           model.send(:"#{question}=", answer)
