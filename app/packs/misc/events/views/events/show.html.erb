@@ -31,5 +31,5 @@
 
 <div class="actions">
   <%= link_to 'Edit', edit_event_path(@event), class: "btn btn-outline-primary" %>
-  <%= link_to 'Back to Events', events_path, class: "btn btn-outline-secondary" %>
+  <%= link_to 'Back to Events', events_path(owner_id: @event.owner_id, owner_type: @event.owner_type), class: "btn btn-outline-secondary" %>
 </div>

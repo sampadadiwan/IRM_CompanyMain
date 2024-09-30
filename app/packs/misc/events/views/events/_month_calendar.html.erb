@@ -8,7 +8,7 @@
   <% end %>
 </div>
 
-<div class="table-responsive">
+<div class="table-responsive" data-controller="tooltip">
   <table class="table table-bordered table-calendar mb-0">
     <thead>
       <tr class="text-center bg-light">
@@ -34,6 +34,8 @@
                 <% end %>
                 <div class="events" style="position: relative; z-index: 2;">
                   <% @events_by_day[day]&.each do |event| %>
+                    <div data-toggle="tooltip" 
+                         title="Event: <%= event.title %> | Date: <%= event.start_time.strftime('%B %d, %Y') %> | Owner: <%= @owner.name %>">
                     <%= link_to event_path(event), class: "event-item", data: { turbo: false } do %>
                       <%= event.title %>
                     <% end %>
