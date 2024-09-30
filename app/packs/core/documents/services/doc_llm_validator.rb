@@ -19,7 +19,7 @@ class DocLlmValidator < Trailblazer::Operation
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
     # @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini" })
-    open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini" })
+    open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini", temperature: 0.1 })
     ctx[:open_ai_client] = open_ai_client
     ctx[:doc_questions] = model.doc_questions.where(document_name: document.name)
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
@@ -112,7 +112,7 @@ class DocLlmValidator < Trailblazer::Operation
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
 
     messages = new_checks.map { |check| { type: "text", text: check } } + [
-      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given'}} " },
+      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given'}} " },
       { type: "image_url",
         image_url: {
           url: encode_image(image_path: ctx[:image_path])
