@@ -1,21 +1,21 @@
 <%
 
-params[:force_units] = fund.default_currency_units 
+params[:force_units] = fund.default_currency_units
 
 cards_data = [
   { path: nil, stat: money_to_currency(fund.committed_amount, params), subtitle: "Committed", progress_bar_color: "success" },
   { path: nil, stat: money_to_currency(fund.call_amount, params), subtitle: "Called", progress_bar_color: "warning" },
   { path: nil, stat: money_to_currency(fund.collected_amount, params), subtitle: "Collected", progress_bar_color: "danger" },
   { path: nil, stat: money_to_currency(fund.distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info" },
-  { path: nil, stat: money_to_currency(fund.committed_amount - fund.call_amount), subtitle: "Uncalled", progress_bar_color: "success" },
-  { path: nil, stat: fund.capital_commitments.count, subtitle: "Folios", progress_bar_color: "warning" }, 
+  { path: nil, stat: money_to_currency(fund.committed_amount - fund.call_amount, params), subtitle: "Uncalled", progress_bar_color: "success" },
+  { path: nil, stat: fund.capital_commitments.count, subtitle: "Folios", progress_bar_color: "warning" },
 ]
 
 %>
 
 <div class="row">
     <% cards_data.each do |card_data| %>
-    
+
         <%= render(NumberStatsComponent.new(
             path: card_data[:path],
             amount: card_data[:stat],
