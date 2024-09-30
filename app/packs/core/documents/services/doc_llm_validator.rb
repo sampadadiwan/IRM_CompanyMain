@@ -27,22 +27,47 @@ class DocLlmValidator < Trailblazer::Operation
   end
 
   # Since we deal with vision models, who can read images much better than PDFs, we convert the pdf or doc into image before sending to llm
-  def convert_file_to_image(ctx, document:, **)
+  def convert_file_to_image(ctx, model:, document:, **)
+    folder_path = "tmp/KycDocLlmValidator/#{model.class.name}/#{model.id}"
     # make the directory if it does not exist
-    FileUtils.mkdir_p("tmp/KycDocLlmValidator") unless File.directory?("tmp/KycDocLlmValidator")
+    FileUtils.mkdir_p(folder_path) unless File.directory?(folder_path)
     # setup the image path
-    image_path = "tmp/KycDocLlmValidator/#{document.id}_%d.png"
+    image_path = "#{folder_path}/#{document.id}.png"
+    image_paths = []
     ctx[:image_path] = image_path
+    ctx[:folder_path] = folder_path
 
     if document.mime_type_includes?('pdf')
       # convert pdf to image
       document.file.download do |file|
-        image = MiniMagick::Image.open(file.path)
-        image.format "png"
-        image.density 900
-        image.flatten
-        image.background "white"
-        image.write(image_path)
+        magick = MiniMagick::Image.open(file.path)
+
+        # Iterate through each page in the document
+        magick.pages.each_with_index do |image, index|
+          # Apply desired transformations
+          image.format "png"
+          image.flatten
+          image.background "white"
+          # Set the density (resolution) for all pages
+          image.density 900
+
+          # Define a unique path for each output image
+          output_path = "#{folder_path}/#{document.id}_#{index + 1}.png"
+          image_paths << output_path
+          # Write the transformed image to the output path
+          image.write(output_path)
+
+          Rails.logger.debug { "Saved page #{index + 1} to #{output_path}" }
+        end
+
+        # Use 'append' with vertical stacking to generate the combined image
+        MiniMagick::Tool::Convert.new do |convert|
+          image_paths.each do |img|
+            convert << img
+          end
+          convert.append # Append vertically
+          convert << image_path
+        end
       end
 
       true
@@ -177,9 +202,10 @@ class DocLlmValidator < Trailblazer::Operation
   def cleanup(ctx, **)
     Rails.logger.debug "Cleaning up"
     ctx[:image_path]
-    # Check if tmp image_path is present and delete
-    # File.delete(image_path) if image_path && File.exist?(image_path)
     # assistant.delete
+
+    # Delete the folder_path
+    FileUtils.rm_rf(ctx[:folder_path]) if !Rails.env.development? && ctx[:folder_path] && File.directory?(ctx[:folder_path])
     true
   end
 
