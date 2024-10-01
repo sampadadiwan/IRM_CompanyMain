@@ -940,7 +940,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_29_070952) do
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
     t.json "json_fields"
-    t.string "investment_opportunity_link"
     t.json "card_view_attrs"
     t.string "tags", limit: 100
     t.string "slug"

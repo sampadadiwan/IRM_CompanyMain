@@ -8,7 +8,7 @@ class ImportFundFormula < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_row(row_data, import_upload, _custom_field_headers, ctx)
+  def save_row(row_data, import_upload, _custom_field_headers, _ctx)
     Rails.logger.debug row_data
 
     fund = import_upload.owner

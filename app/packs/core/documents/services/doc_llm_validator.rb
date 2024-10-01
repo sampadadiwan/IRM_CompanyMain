@@ -18,12 +18,16 @@ class DocLlmValidator < Trailblazer::Operation
   # model: The model whose data needs to be validated against the document (ex InvestorKyc, Offer etc)
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
-    # @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini" })
-    open_ai_client = OpenAI::Client.new(access_token: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "gpt-4o", temperature: 0.1 })
+    model = ctx[:model] || "gpt-4o"
+    temperature = ctx[:temperature] || 0.1
+    access_token = Rails.application.credentials["OPENAI_API_KEY"]
+    open_ai_client = OpenAI::Client.new(access_token:, llm_options: { model:, temperature: })
+
     ctx[:open_ai_client] = open_ai_client
     ctx[:doc_questions] = model.doc_questions.where(document_name: document.name)
+
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
-    true
+    ctx[:open_ai_client].present? && ctx[:doc_questions].present?
   end
 
   # Since we deal with vision models, who can read images much better than PDFs, we convert the pdf or doc into image before sending to llm
@@ -39,7 +43,7 @@ class DocLlmValidator < Trailblazer::Operation
     if document.mime_type_includes?('pdf')
       # convert pdf to image
       document.file.download do |file|
-        pdf_to_image(document, file, folder_path, image_path)
+        ImageService.pdf_to_image(document, file, folder_path, image_path)
       end
       true
     elsif document.mime_type_includes?('doc')
@@ -57,64 +61,19 @@ class DocLlmValidator < Trailblazer::Operation
     end
   end
 
-  def encode_image(image_path:, **)
-    Rails.logger.debug { "Encoding image #{image_path}" }
-    file_extension = File.extname(image_path).delete(".")
-    image = Base64.encode64(File.read(image_path))
-    "data:image/#{file_extension};base64,#{image}"
-  end
-
-  # # Usage
-  # input_string = "Is the name in the document $full_name and the PAN number $pan_number?"
-  # variables = extract_variables(input_string)
-  # puts variables
-  # Output:
-  # ["full_name", "pan_number"]
-  def extract_variables(text)
-    # This will return an array of variable names without the '$'
-    text.scan(/\$(\w+)/).flatten
-  end
-
-  # Replace the variables in the checks with the actual values from the kyc
-  def replace_variables(doc_questions, model)
-    new_checks = []
-
-    doc_questions.each do |doc_question|
-      check = doc_question.question
-
-      # Extract the variables from the check
-      evs = extract_variables(check)
-      if evs.empty?
-        # If there are no variables in the check, just add the check to the new_checks
-        interpolated_question = "Question: #{check}. Response Format Hint: #{doc_question.response_hint_text}"
-        new_checks << interpolated_question
-      else
-        # Replace the variables in the check with the actual values from the kyc
-        evs.each do |var|
-          interpolated_question = check.gsub!("$#{var}", model.send(var.to_sym))
-          new_checks << "Question: #{interpolated_question}. Response Format Hint: #{doc_question.response_hint_text}"
-        end
-      end
-      # Set the interpolated question in the doc_question
-      doc_question.interpolated_question = interpolated_question
-    end
-
-    new_checks
-  end
-
   # Run the checks with the llm
   # checks is a list of questions to ask the llm about the document
   # Example: checks = ["Is the name $full_name ?", "Is there a date of birth", "What is the PAN number?", "Is the pan number $PAN ?"]
   def run_checks_with_llm(ctx, model:, doc_questions:, open_ai_client:, **)
     # Replace the variables in the checks with the actual values from the kyc
-    new_checks = replace_variables(doc_questions, model)
+    new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
 
     messages = new_checks.map { |check| { type: "text", text: check } } + [
       { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given'}} " },
       { type: "image_url",
         image_url: {
-          url: encode_image(image_path: ctx[:image_path])
+          url: ImageService.encode_image(ctx[:image_path])
         } }
     ]
 
@@ -181,38 +140,8 @@ class DocLlmValidator < Trailblazer::Operation
     true
   end
 
-  def handle_errors(ctx, **); end
-
-  private
-
-  def pdf_to_image(document, file, folder_path, image_path)
-    magick = MiniMagick::Image.open(file.path)
-    image_paths = []
-    # Iterate through each page in the document
-    magick.pages.each_with_index do |image, index|
-      # Apply desired transformations
-      image.format "png"
-      image.flatten
-      image.background "white"
-      # Set the density (resolution) for all pages
-      image.density 900
-
-      # Define a unique path for each output image
-      output_path = "#{folder_path}/#{document.id}_#{index + 1}.png"
-      image_paths << output_path
-      # Write the transformed image to the output path
-      image.write(output_path)
-
-      Rails.logger.debug { "Saved page #{index + 1} to #{output_path}" }
-    end
-
-    # Use 'append' with vertical stacking to generate the combined image
-    MiniMagick::Tool::Convert.new do |convert|
-      image_paths.each do |img|
-        convert << img
-      end
-      convert.append # Append vertically
-      convert << image_path
-    end
+  def handle_errors(_ctx, **)
+    Rails.logger.error "Error in Doc LLM Validator"
+    true
   end
 end

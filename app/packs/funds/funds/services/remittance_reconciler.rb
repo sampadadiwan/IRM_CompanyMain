@@ -135,7 +135,7 @@ class RemittanceReconciler < Trailblazer::Operation
                                      content: query
                                    })["id"]
 
-    # Create a run to enqueue the messages with the LLM                                   
+    # Create a run to enqueue the messages with the LLM
     response = open_ai_client.runs.create(thread_id:,
                                           parameters: {
                                             assistant_id: ctx[:assistant_id]
@@ -144,7 +144,7 @@ class RemittanceReconciler < Trailblazer::Operation
     run_id = response["id"]
     # Now we wait for the LLM to complete
     wait_for_semantic_search(open_ai_client, run_id, thread_id)
-    
+
     messages = open_ai_client.messages.list(thread_id:)
     Rails.logger.debug "Messages on thread:"
     Rails.logger.debug messages
@@ -182,6 +182,5 @@ class RemittanceReconciler < Trailblazer::Operation
         Rails.logger.debug { "Unknown status response: #{status}" }
       end
     end
-
   end
 end
