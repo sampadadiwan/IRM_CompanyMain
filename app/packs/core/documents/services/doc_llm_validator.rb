@@ -33,43 +33,14 @@ class DocLlmValidator < Trailblazer::Operation
     FileUtils.mkdir_p(folder_path) unless File.directory?(folder_path)
     # setup the image path
     image_path = "#{folder_path}/#{document.id}.png"
-    image_paths = []
     ctx[:image_path] = image_path
     ctx[:folder_path] = folder_path
 
     if document.mime_type_includes?('pdf')
       # convert pdf to image
       document.file.download do |file|
-        magick = MiniMagick::Image.open(file.path)
-
-        # Iterate through each page in the document
-        magick.pages.each_with_index do |image, index|
-          # Apply desired transformations
-          image.format "png"
-          image.flatten
-          image.background "white"
-          # Set the density (resolution) for all pages
-          image.density 900
-
-          # Define a unique path for each output image
-          output_path = "#{folder_path}/#{document.id}_#{index + 1}.png"
-          image_paths << output_path
-          # Write the transformed image to the output path
-          image.write(output_path)
-
-          Rails.logger.debug { "Saved page #{index + 1} to #{output_path}" }
-        end
-
-        # Use 'append' with vertical stacking to generate the combined image
-        MiniMagick::Tool::Convert.new do |convert|
-          image_paths.each do |img|
-            convert << img
-          end
-          convert.append # Append vertically
-          convert << image_path
-        end
+        pdf_to_image(document, file, folder_path, image_path)
       end
-
       true
     elsif document.mime_type_includes?('doc')
       # convert doc to image
@@ -169,10 +140,10 @@ class DocLlmValidator < Trailblazer::Operation
     model.doc_question_answers[document.name].each do |question, answer_and_explanation|
       # Need better check for extraction
       answer = answer_and_explanation["answer"]
-      if answer.blank? || !VALIDATION_RESPONSES.include?(answer.to_s.downcase)
+      if answer.blank? || VALIDATION_RESPONSES.exclude?(answer.to_s.downcase)
         # Save any extracted data from the document to the model custom fields
         if model.respond_to?(question.to_sym)
-          model.send(:"#{question}=", answer)
+          model.send(:"#{question}=", answer) # if model.send(question.to_sym).blank?
         else
           model.properties[question] = answer
         end
@@ -211,4 +182,37 @@ class DocLlmValidator < Trailblazer::Operation
   end
 
   def handle_errors(ctx, **); end
+
+  private
+
+  def pdf_to_image(document, file, folder_path, image_path)
+    magick = MiniMagick::Image.open(file.path)
+    image_paths = []
+    # Iterate through each page in the document
+    magick.pages.each_with_index do |image, index|
+      # Apply desired transformations
+      image.format "png"
+      image.flatten
+      image.background "white"
+      # Set the density (resolution) for all pages
+      image.density 900
+
+      # Define a unique path for each output image
+      output_path = "#{folder_path}/#{document.id}_#{index + 1}.png"
+      image_paths << output_path
+      # Write the transformed image to the output path
+      image.write(output_path)
+
+      Rails.logger.debug { "Saved page #{index + 1} to #{output_path}" }
+    end
+
+    # Use 'append' with vertical stacking to generate the combined image
+    MiniMagick::Tool::Convert.new do |convert|
+      image_paths.each do |img|
+        convert << img
+      end
+      convert.append # Append vertically
+      convert << image_path
+    end
+  end
 end

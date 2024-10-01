@@ -1,3 +1,10 @@
+V8.0.9
+#####################################
+b8ded81b5 Fixed saving of only extractions to model properties for llm doc validation
+70bfc47ca Ratios changes, fixes for cumulative=false (#463)
+d030f7c19 Added better multi page pdf to image conversion for llm doc validation
+8b5a79911 Call and events bug fixes (#462)
+
 V8.0.6
 #####################################
 35f00c176  Archived migrations
