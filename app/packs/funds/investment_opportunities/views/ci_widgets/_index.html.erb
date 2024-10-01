@@ -1,7 +1,10 @@
-<% owner||= nil %>
+<% owner ||= nil %>
+<% target ||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Widgets</h1>
-  <%= link_to "New Widget", new_ci_widget_path("ci_widget[owner_id]": owner&.id, "ci_widget[owner_type]": owner&.class), {class: "btn btn-outline-primary"}  if !owner.blank? %>
+  <% options = {class: "btn btn-outline-primary"} %>
+  <% options[:target] = target if target.present? %>
+  <%= link_to "New Widget", new_ci_widget_path("ci_widget[owner_id]": owner&.id, "ci_widget[owner_type]": owner&.class), options  if !owner.blank? %>
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="ci_widgets" class="table table-bordered dataTable">

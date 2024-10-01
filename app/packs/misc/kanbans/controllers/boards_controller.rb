@@ -19,9 +19,10 @@ class BoardsController < ApplicationController
                   else
                     "KanbanCard"
                   end
-    @q = data_source.constantize.ransack(params[:q])
+
+    records = Pundit.policy_scope(current_user, data_source.constantize)
+    @q = records.ransack(params[:q])
     @kanban_cards = KanbanCard.where(data_source_type: data_source, data_source_id: @q.result.pluck(:id))
-    @kanban_cards = policy_scope(@kanban_cards)
   end
 
   def index

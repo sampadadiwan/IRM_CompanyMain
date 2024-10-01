@@ -1,0 +1,24 @@
+<%= render "/deals/preview_header", deal: deal %>
+
+<div class="associated_entity">
+    <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <%= render "/deals/card_table2", deal: deal %>
+            </div>
+        </div>
+    </div>
+    </section>
+</div>
+
+<%= render "/ci_track_records/preview_track_record", owner: deal %>
+<%= render "/ci_widgets/preview_widgets2", owner: deal %>
+
+<div class="row">
+    <% deal.documents.each do |doc| %>
+        <% if doc.tag_list.split(",").map(&:strip).include?("preview") %>
+            <div class="col"><%= render "/deals/preview_document", document: doc %></div>
+        <% end %>
+    <% end %>
+</div>

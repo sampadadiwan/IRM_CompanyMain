@@ -28,6 +28,9 @@ class Deal < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 
+  has_many :ci_track_records, as: :owner, dependent: :destroy
+  has_many :ci_widgets, as: :owner, dependent: :destroy
+
   validates :name, :amount_cents, :status, :currency, presence: true
   validates :status, length: { maximum: 20 }
   validates :tags, length: { maximum: 100 }

@@ -23,7 +23,6 @@ class DealInvestor < ApplicationRecord
 
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
-  has_many :access_rights, as: :owner, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal

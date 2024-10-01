@@ -1,5 +1,5 @@
 <hr>
-<% if owner.instance_of?(Deal) && policy(owner).show_detail_tabs?%>
+<% if owner.instance_of?(Deal) %>
     <%= render ToggleCard.new(title: "#{owner.name}: Details", css_class: "show_funds", state: "closed") do %>
         <%= render "/deals/deal_board_details", deal: owner, show_investors: "No" %>
     <% end %>

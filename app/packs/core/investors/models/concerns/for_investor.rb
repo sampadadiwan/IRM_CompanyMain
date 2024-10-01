@@ -12,6 +12,8 @@ module ForInvestor
         SecondarySale
       elsif %w[Kpi].include?(name)
         KpiReport
+      elsif %w[DealInvestor].include?(name)
+        Deal
       else
         self
       end
@@ -123,6 +125,8 @@ module ForInvestor
       approval
     elsif %w[Kpi].include?(self.class.name)
       kpi_report
+    elsif %w[DealInvestor].include?(self.class.name)
+      deal
     else
       self
     end

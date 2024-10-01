@@ -1,0 +1,61 @@
+<% col_size ||= 4 %>
+<div class="io_facts row">
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+            <i class="ti ti-currency-dollar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= money_to_currency deal.amount, params %></h3>
+            <span class="text-muted">Deal Amount</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%
+    if params[:force_units] == "Crores" && deal.amount.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+  %>
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
+            <i class="ti ti-ticket fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%=  deal.start_date %></h3>
+            <span class="text-muted">Start Date</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+            <i class="ti ti-calendar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= deal.status %></h3>
+            <span class="text-muted">Status</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

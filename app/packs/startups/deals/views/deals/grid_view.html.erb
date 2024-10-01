@@ -31,7 +31,8 @@
         <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
           <span>Loading...</span>
         <% end %>
-        <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-outline-success"} do %>
+        <%= link_to "Preview", deal_path(id: @deal.id, preview: true) , {class: "btn btn-outline-success"}%>
+        <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-outline-primary"} do %>
           <i class="fa-lg fa-regular fa-file-excel"></i> Download
         <% end %>
         <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-outline-success"} do %>
@@ -89,6 +90,9 @@
     </div>
   <% end %>
 
-  <%= render "/deals/deal_details", deal: @deal, show_investors: "No" if policy(@deal).show_detail_tabs? %>
-
+  <% if policy(@deal).show_detail_tabs? %>
+    <%= render "/deals/deal_details", deal: @deal, show_investors: "No"%>
+  <% elsif current_user.curr_role == "investor" %>
+    <%= render "/deals/deal_investor_details",deal: @deal, show_investors: "No" %>
+  <% end %>
 <% end %>

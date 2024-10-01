@@ -142,7 +142,6 @@
 <div class="d-inline-flex">
   <%= link_to "Details", deal_investor_path(deal_investor), class: "btn btn-outline-primary", target: "_blank" %>
   <%= link_to "Edit", edit_deal_investor_path(deal_investor, turbo_frame: turbo_tag), class: "btn btn-outline-secondary", data: { turbo_stream: true } if update_allowed %>
-  <%= link_to "Access Rights", deal_investor_path(deal_investor, tab: "access-rights-tab"), class: "btn btn-outline-info", target: "_blank" %>
   <%= form_with(model: deal_investor, url: deal_investor_path(deal_investor), method: :delete) do |form| %>
     <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
   <% end %>

@@ -6,10 +6,7 @@ class DealInvestorPolicy < DealBasePolicy
       elsif %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif %w[employee].include? user.curr_role
-        # find all deals that user has access to
-        deal_ids = Deal.for_employee(user).includes(:access_rights).where("access_rights.user_id=?", user.id).pluck(:id)
-        # find all deal investors that are associated with the deals
-        scope.for_employee(user).or(scope.where(entity_id: user.entity_id, deal_id: deal_ids))
+        scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
       end

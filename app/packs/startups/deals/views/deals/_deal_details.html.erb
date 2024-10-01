@@ -10,6 +10,9 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
          data-action="click->tabdetails#loadData">Deal Docs</a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
+
       <% if show_deal == "Yes" %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#deal-tab" id="deal_tab">Deal</a>
       <% end %>
@@ -37,37 +40,34 @@
       </div>
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <%= link_to folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id),
-                                     class: "load_data_link",
-                                     data: { turbo_frame: 'documents_tree_frame' } do %>
-              <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
-          <% end %>
+            <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
+            <% end %>
         </div>
       </div>
+
+      <div id="widgets-tab" class="tab-pane fade">
+        <div id="widgets" class="associated_entity">
+          <%= render "/ci_widgets/index", ci_widgets: deal.ci_widgets, owner: deal, target: "_blank" %>
+        </div>
+      </div>
+
+      <div id="track-records-tab" class="tab-pane fade">
+        <div id="track_records" class="associated_entity">
+          <%= render "/ci_track_records/index", ci_track_records: deal.ci_track_records, owner: deal, target: "_blank" %>
+        </div>
+      </div>
+
       <div id="activities-tab" class="tab-pane fade">
         <div id="deal_activities" class="associated_entity">
-
-          <%= link_to deal_activities_path(deal_id: deal.id, template: true, all: true), class: "load_data_link",
-            data: { turbo_frame: 'deal_activities_frame' } do %>
-              <span>Loading...</span>
+          <%= turbo_frame_tag "deal_activities_frame", target: "_top", src: deal_activities_path(deal_id: deal.id, template: true, all: true), loading: :lazy do %>
           <% end %>
-          <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
-          <% end %>
-
         </div>
       </div>
 
       <div id="investors-tab" class="tab-pane fade">
         <div id="deal_investors" class="associated_entity">
-          <%= link_to deal_investors_path(deal_id: deal.id), class: "load_data_link",
-              data: { turbo_frame: 'deal_investors_frame' } do %>
-            <span>Loading...</span>
+          <%= turbo_frame_tag "deal_investors_frame", target: "_top", src: deal_investors_path(deal_id: deal.id), loading: :lazy do %>
           <% end %>
-          <%= turbo_frame_tag "deal_investors_frame", target: "_top" do %>
-          <% end %>
-
         </div>
       </div>
 
@@ -87,12 +87,7 @@
 
       <div id="reminders-tab" class="tab-pane fade">
         <div id="reminders" class="associated_entity">
-          <%= link_to reminders_path( owner_id: deal.id, owner_type: "Deal", sent: false),
-                                  class: "load_data_link",
-                                  data: { turbo_frame: 'reminders_list' } do %>
-            <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "reminders_list", target: "_top" do %>
+          <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: deal.id, owner_type: "Deal", sent: false), loading: :lazy do %>
           <% end %>
         </div>
       </div>
