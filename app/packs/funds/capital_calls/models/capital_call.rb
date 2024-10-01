@@ -21,7 +21,7 @@ class CapitalCall < ApplicationRecord
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call
   serialize :unit_prices, type: Hash
-  serialize :close_percentages, Hash
+  serialize :close_percentages, type: Hash
   serialize :fund_closes, type: Array
 
   has_many :capital_remittances, dependent: :destroy
@@ -34,7 +34,8 @@ class CapitalCall < ApplicationRecord
 
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-  validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
+  validates :name, :due_date, :call_date, :percentage_called, :commitment_type, presence: true
+  validates :fund_closes, presence: true, unless: -> { call_basis == 'Upload' }
   # validates percentage_called is less than or equal to 100
   validates :percentage_called, numericality: { less_than_or_equal_to: 100 }
   validates :commitment_type, length: { maximum: 10 }

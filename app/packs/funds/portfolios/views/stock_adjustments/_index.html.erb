@@ -1,7 +1,9 @@
 <% investor ||= nil %>
+<% portfolio_company_id ||= investor&.id || params[:portfolio_company_id] %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Stock Adjustments</h1>
-  <%= link_to "New Stock Adjustment", new_stock_adjustment_path(portfolio_company_id: investor.id), {class: "btn btn-outline-primary"}  if investor %>
+  <%= link_to "New Stock Adjustment", new_stock_adjustment_path(portfolio_company_id: portfolio_company_id), {class: "btn btn-outline-primary"}  if portfolio_company_id  %>
 </div>
 <div class="table-responsive" data-controller="datatable">
 
