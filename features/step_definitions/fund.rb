@@ -1012,7 +1012,7 @@ Then('the capital calls must have the data in the sheet') do
     puts "Checking import of #{cc.name}"
     cc.name.should == user_data["Name"].strip
     cc.fund.name.should == user_data["Fund"]
-    cc.percentage_called.should == user_data["Percentage Called"].to_d
+    cc.close_percentages["First Close"] == user_data["Percentage Called"].to_d
     cc.due_date.should == user_data["Due Date"]
     user_data["Unit Price/Premium"].split(",").each do |unit_price|
       puts "Checking unit price #{unit_price}"

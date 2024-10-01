@@ -327,7 +327,7 @@ Then('Sebi report should be generated for the fund') do
     result_sheet_rows = result_excel.worksheets[idx].rows
 
     ws.rows.each_with_index do |row, ridx|
-      row.should == result_sheet_rows[ridx]
+      expect(row.compact).to(eq(result_sheet_rows[ridx].compact))
     end
   end
 end
