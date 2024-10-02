@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-export default class BoardController extends Controller {
+export default class KanbanBoardController extends Controller {
   connect() {
 		this.cards = Array.from(document.getElementsByClassName("kanban-card"));
     this.columns = Array.from(document.getElementsByClassName("task-list-container"));

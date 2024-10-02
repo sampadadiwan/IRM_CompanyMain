@@ -1,4 +1,1 @@
-<%= turbo_stream.append("deal_activities_columns_#{@deal_activity.deal_id}",
-    partial: "deals/kanban_column_component", locals: { deal_activity: @deal_activity, current_user: @current_user, deal: @deal_activity.deal, deal_investors: [] }) %>
-
 <%= turbo_stream.replace('new_deal_activity', partial: "deal_activities/blank" ) %>
