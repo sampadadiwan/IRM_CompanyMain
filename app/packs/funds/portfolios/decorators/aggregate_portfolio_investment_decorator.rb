@@ -7,11 +7,11 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
   end
 
   def investment_instrument
-    h.link_to object.investment_instrument, object
+    h.link_to object.investment_instrument, object.investment_instrument
   end
 
   def fund_name
-    h.link_to object.fund, object
+    h.link_to object.fund, object.fund
   end
 
   def net_bought_amount

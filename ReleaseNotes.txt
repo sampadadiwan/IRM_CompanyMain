@@ -1,5 +1,17 @@
 V8.0.10
 #####################################
+f5bee3be9 Now employees cannot add PIs to read only funds
+a3c7489ea Added validation for 0 quantity on create
+6713573a4 Now can create valuation only if the owner can be updated
+cbe723b53 Notifier check for deleted model (#472)
+7c887e26e Capital Distribution payment tests and checks (#471)
+4687d8648 Added columns_map to RansackTableHeader, to allow overrides for cols
+21b7a55e8 Added mandatory instrument for valuations
+a2e8c4c5d Added XL download in PI filter
+97425a9a8 Fixed errors with fund doc upload
+
+V8.0.10
+#####################################
 6c3d36da7 Refactored doc llm validator
 0ee5c5b49 (origin/deal-data-room-IO-fix-3) Remove comments from policy
 07e0893a6 Bugfix - Deleting Access rights now updates cache properly
