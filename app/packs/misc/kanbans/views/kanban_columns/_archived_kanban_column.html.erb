@@ -1,0 +1,8 @@
+<tr id="<%= dom_id kanban_column %>">
+  <td>
+    <%= kanban_column.name %>
+  </td>
+  <td>
+    <%= button_to "Restore", restore_column_kanban_column_path(kanban_column), method: :patch, class: "btn btn-outline-primary" %>
+  </td>
+</tr>

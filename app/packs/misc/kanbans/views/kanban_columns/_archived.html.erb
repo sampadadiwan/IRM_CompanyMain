@@ -12,7 +12,7 @@
     </thead>
     <tbody>
       <% kanban_columns&.each do |kanban_column| %>
-        <%= render "kanban_columns/kanban_column", kanban_column: kanban_column %>
+        <%= render "kanban_columns/archived_kanban_column", kanban_column: kanban_column %>
       <% end %>
     </tbody>
   </table>
