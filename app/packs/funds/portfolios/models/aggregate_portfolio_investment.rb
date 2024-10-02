@@ -18,8 +18,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   monetize :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, with_currency: ->(i) { i.fund.currency }
 
-  STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Fund Name", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name fund_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
+  STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
@@ -30,6 +30,17 @@ class AggregatePortfolioInvestment < ApplicationRecord
   validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMNS = {
+    "For" => "commitment_type",
+    "Portfolio Company" => "portfolio_company_name",
+    "Instrument" => "investment_instrument",
+    "Net Bought Amount" => "net_bought_amount",
+    "Sold Amount" => "sold_amount_currency",
+    "Current Quantity" => "comma_quantity",
+    "Fmv" => "fmv_currency",
+    "Avg Cost / Share" => "avg_cost_currency"
+  }.freeze
+
+  STANDARD_COLUMNS_WITH_FUND = {
     "For" => "commitment_type",
     "Portfolio Company" => "portfolio_company_name",
     "Fund Name" => "fund_name",
