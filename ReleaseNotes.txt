@@ -1,3 +1,22 @@
+V8.0.10
+#####################################
+6c3d36da7 Refactored doc llm validator
+0ee5c5b49 (origin/deal-data-room-IO-fix-3) Remove comments from policy
+07e0893a6 Bugfix - Deleting Access rights now updates cache properly
+aff0c987f Fixed fund_import error
+d9f14cfb5 Merged remittance reconciler
+fd710dabc Import cc fixes (#465)
+b8dda54f8 Stock adjustment button now visible, Uncalled amount now shows with currency units (#464)
+70bfc47ca Ratios changes (#463)
+d030f7c19 Added better multi page pdf to image conversion for llm doc validation
+8b5a79911 Call and events bug fixes (#462)
+11669081c Added specs and missing update deal operation
+aa48398f2 Policy update - user for investor and for employee in DealInvestorPolicy
+0d3a2faab (origin/deal-data-room-IO-fix-2) Added deal preview button on board and grid view
+47174f8af Added Deal preview with widgets and track record, added deal docs in view for investor, now deal investor uses deal for accessrights, policy and scope
+f38adcde0 (origin/deal-data-room-IO-fix-1) Added trailblazer operations for deal and deal investors
+a51e74f69 (origin/deal-data-room-IO-fix) Remove IO link from deal
+
 V8.0.9
 #####################################
 b8ded81b5 Fixed saving of only extractions to model properties for llm doc validation

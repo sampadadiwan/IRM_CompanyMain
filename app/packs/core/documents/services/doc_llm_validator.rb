@@ -18,7 +18,7 @@ class DocLlmValidator < Trailblazer::Operation
   # model: The model whose data needs to be validated against the document (ex InvestorKyc, Offer etc)
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
-    model = ctx[:model] || "gpt-4o"
+    ctx[:llm_model] || "gpt-4o"
     temperature = ctx[:temperature] || 0.1
     access_token = Rails.application.credentials["OPENAI_API_KEY"]
     open_ai_client = OpenAI::Client.new(access_token:, llm_options: { model:, temperature: })

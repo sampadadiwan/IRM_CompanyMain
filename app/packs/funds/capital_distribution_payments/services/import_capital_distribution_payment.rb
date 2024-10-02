@@ -1,5 +1,5 @@
 class ImportCapitalDistributionPayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Amount", "Payment Date", "Completed", "Folio No"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Amount", "Payment Date", "Completed", "Folio No", "Cost Of Investment"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -10,7 +10,7 @@ class ImportCapitalDistributionPayment < ImportUtil
 
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"]).first
+    capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     folio_id = user_data["Folio No"]&.to_s
     capital_commitment = fund.capital_commitments.where(investor_id: investor&.id, folio_id:).first

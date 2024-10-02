@@ -1767,6 +1767,46 @@ Then('There should be {string} fund units created with data in the sheet') do |c
   end
 end
 
+Then('Given I upload {string} file for the Distribution Payments of the fund') do |file_name|
+  visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[import_type]": "CapitalDistributionPayment"))
+  sleep(2)
+  fill_in('import_upload_name', with: "Test CDP Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
+end
+
+Then('There should be {string} distribution payments created') do |count|
+  CapitalDistributionPayment.count.should == count.to_i
+end
+
+Then('the capital distribution payments must have the data in the sheet {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+    capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
+    investor = Investor.where(investor_name: row_data["Investor"]).first
+    cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
+
+    puts "Checking import of #{cdp.to_json}"
+      
+    cdp.amount.to_d.should == row_data["Amount"].to_d
+    cdp.cost_of_investment.to_d.should == row_data["Cost Of Investment"].to_d
+    cdp.payment_date.should == Date.parse(row_data["Payment Date"].to_s)
+    cdp.completed.should == (row_data["Completed"] == "Yes")
+  end
+end
+
 Given('there is a custom notification for the capital call with subject {string} with email_method {string}') do |subject, email_method|
   @custom_notification = CustomNotification.create!(entity: @capital_call.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call, email_method:)
 end

@@ -2,7 +2,7 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
   include CurrencyHelper
   include ActiveSupport::NumberHelper
 
-  def company_link
+  def portfolio_company_name
     h.link_to object.portfolio_company_name, object.portfolio_company
   end
 

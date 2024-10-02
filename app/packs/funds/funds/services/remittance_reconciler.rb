@@ -16,10 +16,6 @@ class RemittanceReconciler < Trailblazer::Operation
     true
   end
 
-  def log_debug(message)
-    Rails.logger.debug { message }
-  end
-
   def upload_csv(ctx, open_ai_client:, csv_file_path:, **)
     # Upload the CSV file to OpenAI
     file_id = upload_csv_to_openai(open_ai_client, csv_file_path)
@@ -83,6 +79,10 @@ class RemittanceReconciler < Trailblazer::Operation
     true
   end
 
+  ###################################################################
+  # Private methods
+  ###################################################################
+
   private
 
   def setup_assistant(ctx, client, file_ids)
@@ -108,10 +108,6 @@ class RemittanceReconciler < Trailblazer::Operation
     # Save the assistant for future reference
     ctx[:assistant] = client.assistants.retrieve(id: assistant_id)
     ctx[:assistant_id] = assistant_id
-  end
-
-  def log_debug(message)
-    Rails.logger.debug { message }
   end
 
   def upload_csv_to_openai(open_ai_client, file_path)
@@ -183,4 +179,8 @@ class RemittanceReconciler < Trailblazer::Operation
       end
     end
   end
+end
+
+def log_debug(message)
+  Rails.logger.debug { message }
 end

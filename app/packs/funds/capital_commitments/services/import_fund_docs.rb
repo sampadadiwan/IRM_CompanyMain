@@ -65,7 +65,7 @@ class ImportFundDocs < ImportUtil
                            user_id: import_upload.user_id, send_email:)
 
         # Save the document
-        raise "#{file_name} does not exist. Check for missing file or extension" unless File.exist?(file_name)
+        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_name)
 
         doc.file = File.open(file_name, "rb")
         doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]
@@ -84,15 +84,32 @@ class ImportFundDocs < ImportUtil
 
     case user_data["Document Type"]
     when "Commitment"
-      return CapitalCommitment.where(fund_id: fund.id, folio_id:).last
+      cc = CapitalCommitment.where(fund_id: fund.id, folio_id:).last
+      raise "Capital Commitment not found for #{folio_id}" unless cc
+
+      return cc
     when "Remittance"
       call_name = user_data["Call / Distribution Name"]
+      raise "Call Name not found" unless call_name
+
       call = CapitalCall.where(fund_id: fund.id, name: call_name).last
-      return CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id).last
+      raise "Capital Call not found for #{call_name}" unless call
+
+      capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id).last
+      raise "Capital Remittance not found for #{call_name}" unless capital_remittance
+
+      return capital_remittance
     when "Distribution"
       distribution_name = user_data["Call / Distribution Name"]
+      raise "Distribution Name not found" unless distribution_name
+
       distribution = CapitalDistribution.where(fund_id: fund.id, title: distribution_name).last
-      return CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id).last
+      raise "Capital Distribution not found for #{distribution_name}" unless distribution
+
+      cdp = CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id).last
+      raise "Capital Distribution Payment not found for #{distribution_name}" unless cdp
+
+      return cdp
     end
 
     nil
