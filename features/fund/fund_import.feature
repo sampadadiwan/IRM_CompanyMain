@@ -137,6 +137,26 @@ Scenario Outline: Import capital distributions
   And the capital distributions must have the data in the sheet
   And the payments are generated for the capital distrbutions
 
+@import
+Scenario Outline: Import capital distributions payments
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And Given I upload "capital_distributions_no_payments.xlsx" file for "Distributions" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "2" capital distributions created
+  And Given I upload "capital_distribution_payments.xlsx" file for the Distribution Payments of the fund
+  Then There should be "6" distribution payments created
+  And the capital distribution payments must have the data in the sheet "capital_distribution_payments.xlsx"
+  
+
+
+
+
+
+
 
 
 
