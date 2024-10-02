@@ -20,7 +20,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
 
   def create?
     user.enable_funds &&
-      permissioned_employee?
+      permissioned_employee?(:update) # Only employees with update permission on the fund can create investments
   end
 
   def new?
