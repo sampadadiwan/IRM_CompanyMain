@@ -4,9 +4,8 @@
     <td>
         <% if current_user.entity_id == deal.entity_id %>
             <%= link_to deal.name, deal_path(deal, grid_view: true) %>
-            <% kanban_board = KanbanBoard.find_by(owner_type: "Deal", owner_id: deal.id) %>
-            <% if kanban_board.present? %>
-                <%= link_to kanban_deal_path(deal) do%>
+            <% if deal.kanban_board.present? %>
+                <%= link_to board_path(deal.kanban_board) do%>
                     <i class="ti ti-brand-trello icon-large"></i>
                 <% end %>
             <% end %>
