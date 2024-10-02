@@ -16,6 +16,7 @@ class PortfolioInvestmentsController < ApplicationController
     respond_to do |format|
       format.html
       format.turbo_stream { render partial: 'portfolio_investments/index', locals: { portfolio_investments: @portfolio_investments } }
+      format.xlsx
     end
   end
 
