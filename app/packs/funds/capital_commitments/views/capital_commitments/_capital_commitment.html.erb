@@ -1,36 +1,12 @@
-<tr id="<%= dom_id capital_commitment %>">
+
+<tr id="capital_commitment_<%= capital_commitment.id %>">
+
+  <%= render RansackTableRow.new(model: capital_commitment, columns:) %>
+
   <td>
-    <%= capital_commitment.commitment_type %>
+    <%= link_to "Show", capital_commitment , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_capital_commitment_path(capital_commitment.id), {class: "btn btn-outline-success"} if policy(capital_commitment).edit? %>
   </td>
-  <td>
-    <%= capital_commitment.folio_id %>
-  </td>
-  <td>
-    <%= link_to capital_commitment.investor_name, investor_path(id: capital_commitment.investor_id) %>
-  </td>
-  <td>
-    <%= link_to capital_commitment.investor_kyc.full_name, investor_kyc_path(id: capital_commitment.investor_kyc) if capital_commitment.investor_kyc %>
-  </td>
-  
-  <td>
-    <%= capital_commitment.unit_type %>
-  </td>
-  <td>
-    <%= money_to_currency capital_commitment.committed_amount, params %>
-  </td>
-  <td>
-    <%= capital_commitment.percentage&.round(2) %> %
-  </td>
-  <td>
-    <%= money_to_currency capital_commitment.call_amount, params %>
-  </td>
-  <td>
-    <%= money_to_currency capital_commitment.collected_amount, params %>
-  </td>
-  <td>
-    <%= money_to_currency capital_commitment.distribution_amount, params %>
-  </td>
-  <td>
-    <%= link_to "Show" , capital_commitment , {class: "btn btn-outline-primary" }%>
-  </td>
+
 </tr>
+
