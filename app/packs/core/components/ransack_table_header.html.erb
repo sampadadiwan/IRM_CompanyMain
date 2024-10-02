@@ -1,8 +1,7 @@
 <% cache_if((current_user != nil), ["InvestorHeader", entity]) do %>
     <thead>
         <tr>
-            <% @columns = get_columns(entity) %>
-            <% @columns = @columns.blank? ? @model::STANDARD_COLUMNS : @columns %>
+            <% @columns = @columns_map %>
             <% @columns.each do |column_name, attribute| %>
                 <th>
                     <% if attribute.present? && !attribute.starts_with?("custom_field") %>
