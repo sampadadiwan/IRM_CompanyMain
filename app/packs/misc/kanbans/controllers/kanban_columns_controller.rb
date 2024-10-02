@@ -13,12 +13,6 @@ class KanbanColumnsController < ApplicationController
     end
   end
 
-  def index
-    @kanban_columns = policy_scope(KanbanColumn)
-    @kanban_columns = @kanban_columns.where(kanban_board_id: params[:kanban_board_id]) if params[:kanban_board_id].present?
-    @bread_crumbs = { columns: columns_path }
-  end
-
   def new
     @kanban_column = KanbanColumn.new(kanban_column_params)
     @kanban_column.entity_id ||= current_user.entity_id
