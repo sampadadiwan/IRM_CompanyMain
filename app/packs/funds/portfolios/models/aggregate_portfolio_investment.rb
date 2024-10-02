@@ -40,17 +40,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Avg Cost / Share" => "avg_cost_currency"
   }.freeze
 
-  STANDARD_COLUMNS_WITH_FUND = {
-    "For" => "commitment_type",
-    "Portfolio Company" => "portfolio_company_name",
-    "Fund Name" => "fund_name",
-    "Instrument" => "investment_instrument",
-    "Net Bought Amount" => "net_bought_amount",
-    "Sold Amount" => "sold_amount_currency",
-    "Current Quantity" => "comma_quantity",
-    "Fmv" => "fmv_currency",
-    "Avg Cost / Share" => "avg_cost_currency"
-  }.freeze
+  STANDARD_COLUMNS_WITH_FUND = STANDARD_COLUMNS.merge("Fund Name" => "fund_name").freeze
 
   before_create :update_name
   def update_name
