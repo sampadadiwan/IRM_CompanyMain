@@ -19,7 +19,7 @@ class AccessRightNotifier < BaseNotifier
   notification_methods do
     def message
       @access_right ||= record
-      params[:msg] || "Access granted to #{@access_right.owner}"
+      params[:msg] || "Access granted to #{@access_right&.owner}"
     end
 
     def custom_notification

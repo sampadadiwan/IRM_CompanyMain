@@ -15,7 +15,7 @@ class InvestorAccessNotifier < BaseNotifier
   notification_methods do
     def message
       @investor_access ||= record
-      params[:msg] || "Access granted to #{@investor_access.entity.name}"
+      params[:msg] || "Access granted to #{@investor_access&.entity&.name}"
     end
 
     def custom_notification

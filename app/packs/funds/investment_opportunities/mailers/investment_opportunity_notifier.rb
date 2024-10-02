@@ -18,7 +18,7 @@ class InvestmentOpportunityNotifier < BaseNotifier
   notification_methods do
     def message
       @investment_opportunity = record
-      params[:msg] || "Investment Opportunity: #{@investment_opportunity.name}"
+      params[:msg] || "Investment Opportunity: #{@investment_opportunity&.name}"
     end
 
     def custom_notification

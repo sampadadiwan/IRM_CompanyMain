@@ -20,7 +20,7 @@ class DocumentNotifier < BaseNotifier
     def message
       @document = record
       @custom_notification ||= custom_notification
-      @custom_notification&.subject || params[:msg] || "Document Uploaded: #{@document.name}"
+      @custom_notification&.subject || params[:msg] || "Document Uploaded: #{@document&.name}"
     end
 
     def custom_notification

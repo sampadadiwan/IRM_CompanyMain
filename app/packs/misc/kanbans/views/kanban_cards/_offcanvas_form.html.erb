@@ -1,46 +1,42 @@
-
 <% turbo_tag ||= "kanban_card_form_offcanvas#{kanban_card.id}"%>
 <%= turbo_frame_tag turbo_tag do %>
   <div class="dynamic_form" data-controller="">
-        <%= form_with(model: kanban_card, validate: true) do |form| %>
-            <% if kanban_card.errors.any? %>
-            <div class="alert alert-danger">
-                <h2><%= pluralize(kanban_card.errors.count, "error") %> prohibited this kanban_card from being saved:</h2>
-
-                <ul>
-                <% kanban_card.errors.each do |error| %>
-                    <li><%= error.full_message %></li>
-                <% end %>
-                </ul>
-            </div>
+    <%= form_with(model: kanban_card, validate: true) do |form| %>
+      <% if kanban_card.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(kanban_card.errors.count, "error") %> prohibited this kanban_card from being saved:</h2>
+          <ul>
+            <% kanban_card.errors.each do |error| %>
+              <li><%= error.full_message %></li>
             <% end %>
-
-            <%= form.text_field :turbo_frame, class: "form-control", value: turbo_tag, hidden: true  %>
-
-            <%= form.text_field :kanban_column_id, class: "form-control", hidden: true  %>
-			<%= form.text_field :kanban_board_id, class: "form-control", hidden: true  %>
-			<%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-			<%= form.hidden_field :data_source_id, value: kanban_card.data_source_id %>
-			<%= form.hidden_field :data_source_type, value: kanban_card.data_source_type %>
-			<div class="form-group">
-			<%= form.label :title %>
-			<%= form.text_field :title, class: "form-control" %>
-			</div>
-			<div class="form-group">
-			<%= form.label :notes %>
-			<%= form.text_field :notes, class: "form-control" %>
-			</div>
-			<div class="form-group">
-			<%= form.label :info_field %>
-			<%= form.text_field :info_field, class: "form-control" %>
-			</div>
-			<div class="form-group">
-			<%= form.label :tags %>
-			<%= form.text_field :tags, class: "form-control" %>
-			</div>
-			<div class="form-group">
-			<%= form.submit "Save", class: "btn btn-primary" %>
-			</div>
-        <% end %>
+          </ul>
+        </div>
+      <% end %>
+      <%= form.text_field :turbo_frame, class: "form-control", value: turbo_tag, hidden: true  %>
+      <%= form.text_field :kanban_column_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :kanban_board_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.hidden_field :data_source_id, value: kanban_card.data_source_id %>
+      <%= form.hidden_field :data_source_type, value: kanban_card.data_source_type %>
+      <div class="form-group">
+        <%= form.label :title %>
+        <%= form.text_field :title, class: "form-control" %>
+      </div>
+      <div class="form-group">
+        <%= form.label :notes %>
+        <%= form.text_field :notes, class: "form-control" %>
+      </div>
+      <div class="form-group">
+        <%= form.label :info_field %>
+        <%= form.text_field :info_field, class: "form-control" %>
+      </div>
+      <div class="form-group">
+        <%= form.label :tags %>
+        <%= form.text_field :tags, class: "form-control" %>
+      </div>
+      <div class="form-group">
+        <%= form.submit "Save", class: "btn btn-primary" %>
+      </div>
+    <% end %>
   </div>
 <% end %>
