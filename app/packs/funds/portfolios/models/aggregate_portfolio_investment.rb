@@ -40,7 +40,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Avg Cost / Share" => "avg_cost_currency"
   }.freeze
 
-  STANDARD_COLUMNS_WITH_FUND = STANDARD_COLUMNS.merge("Fund Name" => "fund_name").freeze
+  STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
 
   before_create :update_name
   def update_name
