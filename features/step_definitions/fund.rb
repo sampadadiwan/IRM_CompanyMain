@@ -1794,7 +1794,7 @@ Then('the capital distribution payments must have the data in the sheet {string}
 
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
-    capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"]).first
+    capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
     investor = Investor.where(investor_name: row_data["Investor"]).first
     cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
 
