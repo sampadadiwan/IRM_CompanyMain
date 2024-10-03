@@ -92,26 +92,43 @@
       <% end %>
     </span>
   </div>
+  <% if current_user.curr_role == "investor" %>
+    <%
+      col_params = {no_fund: true}
+      if current_user.curr_role == "investor"
+        col_params[:column_names] = InvestorKyc::INVESTOR_COLUMN_NAMES
+        col_params[:column_fields] = InvestorKyc::INVESTOR_COLUMN_FIELDS
+      end
+      column_names, field_list = get_columns(InvestorKyc, params: col_params) 
+    %>
 
-  <%
-    col_params = {no_fund: true}
-    if current_user.curr_role == "investor"
-      col_params[:column_names] = InvestorKyc::INVESTOR_COLUMN_NAMES
-      col_params[:column_fields] = InvestorKyc::INVESTOR_COLUMN_FIELDS
-    end
-    column_names, field_list = get_columns(InvestorKyc, params: col_params) 
-  %>
+     <div class="table-responsive" data-controller="investor-kycs"
+         data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %>
+         data-investor-kycs-table-name-value="#investor_kycs"
+         data-investor-kycs-field-list-value=<%=field_list%>>
 
-   <div class="table-responsive" data-controller="investor-kycs"
-       data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %>
-       data-investor-kycs-table-name-value="#investor_kycs"
-       data-investor-kycs-field-list-value=<%=field_list%>>
+      <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->investor-kycs#loadData"><span>Load Data</span></a>
+      <% end %>
 
-    <% if lazy_load_data %>
-      <a class="load_data_link" data-action="click->investor-kycs#loadData"><span>Load Data</span></a>
-    <% end %>
-
-    <%= render CustomTable.new(data_source:, id: "investor_kycs", column_names:) %>
+      <%= render CustomTable.new(data_source:, id: "investor_kycs", column_names:) %>
 
 
+    </div>
+  <% else %>
+    <div class="table-responsive">
+      <table id="investor_kycs" class="table table-bordered dataTable action_table hover">
+          <% ransack_table_header = RansackTableHeader.new(InvestorKyc, q: @q, current_user: current_user, records: investor_kycs, report_id: params["report_id"]) %>
+          <%= render ransack_table_header %>
+        <tbody>
+          <% investor_kycs.each do |capital_commitment| %>
+            <%= render "investor_kycs/investor_kyc",  investor_kyc: investor_kyc.decorate, columns: ransack_table_header.columns%>
+          <% end %>
+        </tbody>
+      </table>
+      <% if investor_kycs.present? %>
+        <%= page_entries_info investor_kycs, entry_name: 'item' %>
+        <%= paginate investor_kycs %>
+      <% end %>
   </div>
+  <% end %>
