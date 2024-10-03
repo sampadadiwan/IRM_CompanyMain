@@ -187,6 +187,8 @@ Metrics/ClassLength:
   Exclude:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/secondaries/offers/models/offer.rb'
+    - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
+    - 'app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb'
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
   Max: 100

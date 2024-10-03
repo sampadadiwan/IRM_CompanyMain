@@ -46,9 +46,7 @@ class DealsController < ApplicationController
         end
         format.html do
           # make board the default view if deal has a board
-          if params[:grid_view].present?
-            render "grid_view"
-          elsif params[:preview].present?
+          if params[:preview].present?
             render "show"
           elsif @deal.kanban_board.present?
             redirect_to board_path(@deal.kanban_board)

@@ -5,12 +5,12 @@ class InvestorKyc < ApplicationRecord
   INVESTOR_COLUMN_NAMES = ["Entity"] + STANDARD_COLUMN_NAMES - ["Investor"]
   INVESTOR_COLUMN_FIELDS = ["entity_name"] + STANDARD_COLUMN_FIELDS - ["investor_name"]
 
-  STANDARD_COLUMNS = {"Investor"=>"investor_name",
-                       "Investing Entity"=>"full_name",
-                       "Type"=>"kyc_type",
-                       "Kyc Verified"=>"verified",
-                       "Expired"=>"expired"}.freeze
-  
+  STANDARD_COLUMNS = { "Investor" => "investor_name",
+                       "Investing Entity" => "full_name",
+                       "Type" => "kyc_type",
+                       "Kyc Verified" => "verified",
+                       "Expired" => "expired" }.freeze
+
   # Make all models searchable
   update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
   include WithCustomField

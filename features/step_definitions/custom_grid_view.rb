@@ -85,6 +85,14 @@ Given('I visit CapitalCommitment Page and find 6 columns in the grid') do
   end
 end
 
+Given('I visit InvestorKyc Page and find 6 columns in the grid') do
+  visit('/investor_kycs')
+  @expected_columns = ["Investor", "Investing", "Entity", "Type", "Kyc", "Verified", "Expired"]
+  @expected_columns.each do |column_name|
+    expect(page).to have_text(column_name)
+  end
+end
+
 When('I visit Custom Grid View page and uncheck {string}') do |column_name|
   form_type = FormType.first
   visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=FormType'
