@@ -1,0 +1,117 @@
+#CommandPal {
+  .modal-container {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -20%);
+    // max-width: 500px;        
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 26px;
+    font-family: "Inter", sans-serif;
+  }
+
+  // Set the min only on mobile
+  @media (min-width:320px)  {
+    .modal-container {
+      min-width: 300px;
+    }
+    // Hide the search box
+    .search-box {
+      display: none;
+    }
+  }
+
+  @media (min-width:768px)  {
+    .modal-container {
+      min-width: 500px;
+    }
+    // Hide the search box
+    .search-box {
+      display: block;
+    }
+  }
+
+  
+  .search-box input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .items-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+  }
+  
+  .item.selected {
+    background-color: #eaeff5;
+    color: #333;
+  }
+  
+  .item:hover {
+    background-color: #f0f4f8;
+  }
+  
+  .item span {
+    display: flex;
+    align-items: center;
+  }
+  
+  .item kyb {
+    background-color: #cae0f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #666;
+  }
+  
+  footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #999;
+  }
+  
+  footer span {
+    display: flex;
+    align-items: center;
+  }
+  
+  footer kyb {
+    background-color: #e0e4e8;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #666;
+  }
+  
+  .modal-container.svelte-bvn01s {
+    max-width: unset !important;
+  }
+
+  .mobile-button  { border-width: 0px; }
+  svg {
+    transform: scale(.5) translateX(0px);
+  }
+  
+}
+

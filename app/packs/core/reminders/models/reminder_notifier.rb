@@ -19,7 +19,7 @@ class ReminderNotifier < BaseNotifier
   notification_methods do
     def message
       @reminder = record
-      params[:msg] || "Reminder: #{@reminder.note}"
+      params[:msg] || "Reminder: #{@reminder&.note}"
     end
 
     def custom_notification

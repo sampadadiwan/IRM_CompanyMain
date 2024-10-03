@@ -22,7 +22,7 @@ class TaskNotifier < BaseNotifier
   notification_methods do
     def message
       @task ||= record
-      @task.details
+      @task&.details
     end
 
     def custom_notification

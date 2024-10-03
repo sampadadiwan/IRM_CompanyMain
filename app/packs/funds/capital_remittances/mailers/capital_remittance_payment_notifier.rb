@@ -23,7 +23,7 @@ class CapitalRemittancePaymentNotifier < BaseNotifier
       @capital_call ||= @capital_remittance.capital_call
       @custom_notification = custom_notification
 
-      @custom_notification&.subject || params[:msg].presence || "Remittance payment received by #{@capital_remittance.fund.name} for #{@capital_remittance.capital_call.name}"
+      @custom_notification&.subject || params[:msg].presence || "Remittance payment received by #{@capital_remittance&.fund&.name} for #{@capital_remittance&.capital_call&.name}"
     end
 
     def custom_notification

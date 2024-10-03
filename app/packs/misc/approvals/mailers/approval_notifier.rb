@@ -24,7 +24,7 @@ class ApprovalNotifier < BaseNotifier
       @approval_response ||= record
       @approval ||= @approval_response.approval
       @custom_notification ||= custom_notification
-      @custom_notification&.subject.presence || params[:msg].presence || @approval.title
+      @custom_notification&.subject.presence || params[:msg].presence || @approval&.title
     end
 
     def custom_notification

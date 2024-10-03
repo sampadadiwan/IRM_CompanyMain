@@ -8,6 +8,8 @@
             <i class="ti ti-home"></i>
             <div class="bg-primary rounded-circle"></div>
         </a>
+        <!-- Hidden field with entity_type -->
+        <%= hidden_field_tag :current_entity_type, current_user.entity.entity_type %>
     <% end %>
 
 
