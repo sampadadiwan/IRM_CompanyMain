@@ -1,4 +1,6 @@
+<% if current_user.curr_role == "investor" %>
 
+<% end %>
 <tr id="capital_commitment_<%= capital_commitment.id %>">
 
   <%= render RansackTableRow.new(model: capital_commitment, columns:) %>
