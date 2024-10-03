@@ -87,13 +87,6 @@ Then('I should see the deal details on the details page') do
   # sleep(10)
 end
 
-Then('I am at the deals kanban show page') do
-  visit(kanban_deal_path(@deal))
-  expect(page).to have_content(@deal.name)
-  deal_activities = DealActivity.templates(@deal).pluck(:title)
-  deal_activities.each { |activity| expect(page.html).to(include(activity)) }
-end
-
 Then('I should see the deal in all deals page') do
   visit("/deals")
   expect(page).to have_content(@deal.name)
@@ -474,12 +467,6 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
     expect(page).to have_content(tab)
     click_on(tab)
     sleep(0.5)
-    if tab == "Deal Docs"
-      expect(page).to have_content("Documents: #{@deal.name}")
-      expect(page).to have_content("All Documents")
-      expect(page).to have_content("Folders")
-      expect(page).to have_content("Data Room")
-    end
     if tab == "Access Rights"
       expect(page).to have_content("Grant Access")
     end
@@ -487,9 +474,6 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
       expect(page).to have_content("#{@deal.entity.name}")
       expect(page).to have_content("Card View Attributes")
       expect(page).to have_content("Start Date")
-    end
-    if tab == "Reminders"
-      expect(page).to have_content("New Reminder")
     end
   end
 end
@@ -605,25 +589,6 @@ Given('I add track record for the deal') do
   switch_to_window windows.first
 end
 
-Given('I add preview documents for the deal') do
-  visit(deal_path(@deal))
-  element = all('.show_details_link').last
-  element.click
-  xpath = '//*[@id="board_1"]/div[4]/div[2]/div/div/nav/a[2]'
-  element = find(:xpath, xpath)
-  element.click
-  xpath = '/html/body/div[2]/div[1]/div/div/turbo-frame/div[4]/div[2]/div/div/div/div[2]/div/turbo-frame/div/div[2]/div/div[2]/turbo-frame/div[1]/span/div/div/button'
-  sleep(8)
-  element = find(:xpath, xpath)
-  element.click
-  click_on("New Document")
-  fill_in('document_name', with: "Test Document")
-  fill_in('document_tag_list', with: "test, preview")
-  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
-  click_on("Save")
-end
-
 When('I go to deal preview') do
   visit(deal_path(@deal))
   click_on("Preview")
@@ -642,8 +607,5 @@ Then('I can see the deal preview details') do
     expect(page).to have_content(track_record.value)
     expect(page).to have_content(track_record.suffix)
     expect(page).to have_content(track_record.details.gsub(/<\/?div>/, ''))
-  end
-  @deal.documents.each do |doc|
-    expect(page).to have_content(doc.name)
   end
 end

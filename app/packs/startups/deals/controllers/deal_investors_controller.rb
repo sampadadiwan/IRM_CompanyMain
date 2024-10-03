@@ -9,12 +9,7 @@ class DealInvestorsController < ApplicationController
     @deal_investors = @deal_investors.where(deal_id: params[:deal_id]) if params[:deal_id].present?
     @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
 
-    if params[:turbo] && (params[:kanban] && params[:deal].present?)
-      @deal = Deal.find(params[:deal])
-      render turbo_stream: [
-        turbo_stream.replace("kanban_#{params[:deal]}_columns", partial: "/deals/kanban_deal_columns", locals: { deal: @deal, deal_investors: @deal_investors, deal_activities: DealActivity.templates(@deal), current_user:, filter_state: "show" })
-      ]
-    elsif params[:turbo] && (params[:boards] && params[:board_id].present?)
+    if params[:turbo] && (params[:boards] && params[:board_id].present?)
       @kanban_cards = KanbanCard.where(data_source_type: "DealInvestor", data_source_id: @deal_investors.pluck(:id))
       @filtered_results = false
       kanban_board = KanbanBoard.find(params["board_id"])
