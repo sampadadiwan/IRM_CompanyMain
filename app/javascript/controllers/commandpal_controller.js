@@ -146,13 +146,7 @@ export default class extends Controller {
 
     misc() {
       // Get the path part of the URL
-      const path = window.location.pathname;
-      
-      // Regular expression to match the pattern /resource/resource_id where resource_id is an integer
-      const regex = /^\/[a-zA-Z]+\/\d+$/;
-
-      // Test if the path matches the pattern
-      const matches = regex.test(path);
+      const path = window.location.pathname;          
 
       let children = [        
         {
@@ -180,6 +174,14 @@ export default class extends Controller {
         }
       ]
 
+      // Regular expression to match the pattern /resource/resource_id where resource_id is an integer
+      const regex = /^\/[a-zA-Z_]+\/\d+$/;
+
+      // Test if the path matches the pattern
+      const matches = regex.test(path);
+      
+      // alert(matches);
+      // alert(path);
 
       if (matches) {
         console.log('The URL follows the pattern /resource/resource_id');
