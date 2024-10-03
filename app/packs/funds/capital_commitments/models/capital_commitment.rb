@@ -26,15 +26,15 @@ class CapitalCommitment < ApplicationRecord
                               collected_amount distribution_amount dt_actions].freeze
 
   STANDARD_COLUMNS = {"Type"=>"commitment_type",
- "Folio"=>"folio_id",
- "Investor"=>"investor_name",
- "Investing Entity"=>"full_name",
- "Unit Type"=>"unit_type",
- "Committed"=>"committed_amount",
- "Percentage"=>"percentage",
- "Called"=>"call_amount",
- "Collected"=>"collected_amount",
- "Distributed"=>"distribution_amount"}.freeze
+                      "Folio"=>"folio_id",
+                      "Investor"=>"investor_name",
+                      "Investing Entity"=>"full_name",
+                      "Unit Type"=>"unit_type",
+                      "Committed"=>"committed_amount",
+                      "Percentage"=>"percentage",
+                      "Called"=>"call_amount",
+                      "Collected"=>"collected_amount",
+                      "Distributed"=>"distribution_amount"}.freeze
 
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
