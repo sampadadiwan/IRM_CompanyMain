@@ -92,7 +92,7 @@ class Fund < ApplicationRecord
     investors.joins(:investor_accesses).where('investor_accesses.approved = true').pluck('investor_accesses.email')
   end
 
-  TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template"].freeze
+  TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template", "Distribution Template"].freeze
   def document_tags
     TEMPLATE_TAGS
   end

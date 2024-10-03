@@ -127,6 +127,7 @@ class EventsController < ApplicationController
   def set_owner
     owner_type = params.dig(:event, :owner_type) || params[:owner_type]
     owner_id = params.dig(:event, :owner_id) || params[:owner_id]
+    owner_type = owner_type&.singularize&.camelize
 
     if owner_type.blank?
       @owner = @current_user.entity

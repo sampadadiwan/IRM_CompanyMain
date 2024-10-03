@@ -1,0 +1,4 @@
+<!-- This is the hotkeys for a fund -->
+<% hotkeys = commands.map { |sub_array| sub_array.join(':') }.join(';') %>
+<%= hidden_field_tag :hotkeys, hotkeys %>
+<%= hidden_field_tag :hotkeys_parent, model.to_s %>

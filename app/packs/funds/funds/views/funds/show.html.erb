@@ -1,3 +1,12 @@
+<% 
+commands = [ 
+    ["New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": @fund.id)],
+    ["Upload Commitments", new_import_upload_path("import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "CapitalCommitment")],
+    ["Download Commitments", capital_commitments_path(all: true, fund_id: @fund.id, format: :xlsx)] 
+] 
+
+%>
+<%= render "funds/hotkeys", commands:, model: @fund %>
 
 <% if current_user.entity_id == @fund.entity_id || current_user.curr_role == "advisor" %>
   <%= render "/funds/fund_stats", fund: @fund %>
