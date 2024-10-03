@@ -77,8 +77,11 @@
 
         <div id="commitments-tab" class="tab-pane fade in show active">
           <div id="commitments" class="associated_entity">
-            <%= render "/capital_commitments/index", fund: fund,
-                lazy_load_data: false, data_source: capital_commitments_path(fund_id: fund.id, all: true, format: :json) %>
+            <turbo-frame id="<%= "capital_commitments_frame" %>" 
+                   src="<%= url_for(controller: "capital_commitments", action: :index, fund_id: fund.id) %>" 
+                   loading="lazy">
+              <p>Loading <%= "capital_commitments".humanize %>...</p>
+            </turbo-frame>
           </div>
         </div>
 
