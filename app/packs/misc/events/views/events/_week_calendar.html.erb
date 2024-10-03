@@ -2,7 +2,11 @@
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, week: @previous_week.strftime('%Y-%m-%d'), view: @view), data: { turbo: false } do %>
     <i class="fas fa-arrow-left"></i>
   <% end %>
-  <h5 class="card-title m-0"><%= "Week of " + @current_week.strftime('%B %d, %Y') %></h5>
+  <div class="card-title m-0 text-center">
+    <span><%= owner %></span>
+    <h5><%= "Week of " + @current_week.strftime('%B %d, %Y') %></h5>
+  </div>
+  
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, week: @next_week.strftime('%Y-%m-%d'), view: @view), data: { turbo: false } do %>
     <i class="fas fa-arrow-right"></i>
   <% end %>

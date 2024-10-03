@@ -19,7 +19,7 @@ class ExpressionOfInterestNotifier < BaseNotifier
   notification_methods do
     def message
       @expression_of_interest = record
-      params[:msg] || "Expression Of Interest Approved: #{@expression_of_interest.investment_opportunity.company_name}"
+      params[:msg] || "Expression Of Interest Approved: #{@expression_of_interest&.investment_opportunity&.company_name}"
     end
 
     def custom_notification

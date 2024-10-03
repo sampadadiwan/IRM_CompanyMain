@@ -74,6 +74,8 @@
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
 
+    <script src="https://cdn.jsdelivr.net/npm/command-pal"></script>
+    
   <title>CapHive</title>
 </head>
 
@@ -86,7 +88,7 @@
 
     <%= render "/layouts/modernize/sidebar_main" %>
 
-    <div class="page-wrapper">
+    <div class="page-wrapper" data-controller="commandpal">
       
       <%= render "/layouts/modernize/topbar" %>
       <%#= render "/layouts/modernize/sidebar_horizontal" %>

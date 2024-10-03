@@ -7,7 +7,7 @@ cards_data = [
   { path: nil, stat: money_to_currency(fund.call_amount, params), subtitle: "Called", progress_bar_color: "warning" },
   { path: nil, stat: money_to_currency(fund.collected_amount, params), subtitle: "Collected", progress_bar_color: "danger" },
   { path: nil, stat: money_to_currency(fund.distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info" },
-  { path: nil, stat: money_to_currency(fund.committed_amount - fund.call_amount, params), subtitle: "Uncalled", progress_bar_color: "success" },
+  #{ path: nil, stat: money_to_currency(fund.committed_amount - fund.call_amount, params), subtitle: "Uncalled", progress_bar_color: "success" },
   { path: nil, stat: fund.capital_commitments.count, subtitle: "Folios", progress_bar_color: "warning" },
 ]
 

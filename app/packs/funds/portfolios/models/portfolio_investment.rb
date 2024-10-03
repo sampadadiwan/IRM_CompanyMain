@@ -52,6 +52,8 @@ class PortfolioInvestment < ApplicationRecord
   validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
   validate :sell_quantity_allowed
   validates :portfolio_company_name, length: { maximum: 100 }
+  validates :quantity, numericality: { other_than: 0 }, on: :create
+
   # validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
   # For sells, roll up the amount_cents to the aggregate portfolio investment sold_amount_cents
