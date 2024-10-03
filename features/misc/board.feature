@@ -226,7 +226,7 @@ Scenario Outline: Deal edit and details
   And i should see be able to edit the deal from deal tab
   Examples:
   	|user	      |entity               |deal                             |msg	|edit |tabs|
-  	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|"Access Rights, Deal Docs, Deal, Reminders"|
+  	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|"Access Rights, Deal"|
 
 Scenario Outline: Deal preview
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -240,7 +240,6 @@ Scenario Outline: Deal preview
   And I view the deal details
   Given I add widgets for the deal
   And I add track record for the deal
-  And I add preview documents for the deal
   When I go to deal preview
   Then I can see the deal preview details
   Examples:
