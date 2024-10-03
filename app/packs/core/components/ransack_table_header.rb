@@ -20,7 +20,7 @@ class RansackTableHeader < ViewComponent::Base
     report = Report.find_by(id: @report_id)
     columns = fetch_report_columns(report) if report.present?
     columns = fetch_custom_columns(entity) if columns.blank?
-    columns = @model::STANDARD_COLUMNS if columns.blank?
+    return @model::STANDARD_COLUMNS if columns.blank?
     columns
   end
 

@@ -87,13 +87,6 @@ Then('I should see the deal details on the details page') do
   # sleep(10)
 end
 
-Then('I am at the deals kanban show page') do
-  visit(kanban_deal_path(@deal))
-  expect(page).to have_content(@deal.name)
-  deal_activities = DealActivity.templates(@deal).pluck(:title)
-  deal_activities.each { |activity| expect(page.html).to(include(activity)) }
-end
-
 Then('I should see the deal in all deals page') do
   visit("/deals")
   expect(page).to have_content(@deal.name)

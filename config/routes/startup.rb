@@ -55,7 +55,6 @@ end
 resources :deals do
   get 'search', on: :collection
   get 'investor_deals', on: :collection
-  get 'kanban', on: :member
 end
 
 resources :investments do

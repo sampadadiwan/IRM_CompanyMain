@@ -59,7 +59,7 @@
   <%= turbo_frame_tag "board#{kanban_board.id}_new_kanban_card" do %>
   <% end %>
 
-<div class="row scrumboard" id="cancel-row" data-controller="board" data-kanban-board-id="<%= kanban_board.id %>">
+<div class="row scrumboard" id="cancel-row" data-controller="kanban-board" data-kanban-board-id="<%= kanban_board.id %>">
   <div class="col-lg-12 layout-spacing pb-3">
     <div data-simplebar="init" class="simplebar-scrollable-x">
       <div class="simplebar-wrapper" style="margin: 0px;">
@@ -78,10 +78,10 @@
               <div class="task-list-section" id="<%= kanban_board.id %>">
                 <% kanban_board.kanban_columns.each do |kanban_column| %>
                   <% if @searched_kanban_cards.nil? %>
-                    <%= render "boards/kanban_column", kanban_column: kanban_column, kanban_cards: kanban_column.kanban_cards %>
+                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column, kanban_cards: kanban_column.kanban_cards %>
                   <% else %>
                     <% filtered_cards = kanban_column.kanban_cards & @searched_kanban_cards %>
-                    <%= render "boards/kanban_column", kanban_column: kanban_column, kanban_cards: filtered_cards %>
+                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column, kanban_cards: filtered_cards %>
                   <% end %>
                 <% end %>
                 <% if policy(KanbanColumn.new(entity_id: current_user.entity_id)).create? %>
