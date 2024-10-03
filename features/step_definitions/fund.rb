@@ -919,7 +919,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-
+  sleep(0.5)
   if page.has_button?("Upload / Download")
     click_on("Upload / Download")
     click_on("Upload")
