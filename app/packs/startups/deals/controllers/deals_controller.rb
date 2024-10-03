@@ -1,5 +1,5 @@
 class DealsController < ApplicationController
-  before_action :set_deal, only: %w[show update destroy edit kanban]
+  before_action :set_deal, only: %w[show update destroy edit]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals or /deals.json
@@ -58,15 +58,6 @@ class DealsController < ApplicationController
         end
       end
     end
-  end
-
-  def kanban
-    @deal_investor = DealInvestor.new(deal: @deal, entity: @deal.entity)
-    @deal_activity = DealActivity.new(deal: @deal, entity: @deal.entity)
-    @q = @deal.deal_investors.ransack(params[:q])
-    @deal_investors = policy_scope(@q.result)
-    params[:kanban] = true
-    render "deals/show"
   end
 
   # GET /deals/new
