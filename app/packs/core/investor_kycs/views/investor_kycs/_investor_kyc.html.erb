@@ -1,4 +1,4 @@
-<%if current_user.curr_role == "investor"%>
+<% if current_user.curr_role == "investor" %>
   <tr id="<%= dom_id investor_kyc %>">
     <td>
       <%= investor_kyc.entity.name %>
@@ -42,5 +42,13 @@
     </td>
   </tr>
 <% else %>
-  
+  <tr id="investor_kyc_<%= investor_kyc.id %>">
+
+    <%= render RansackTableRow.new(model: investor_kyc, columns:) %>
+
+    <td>
+      <%= link_to "Show", investor_kyc , {class: "btn btn-outline-primary"}%>
+    </td>
+
+  </tr>
 <% end %>
