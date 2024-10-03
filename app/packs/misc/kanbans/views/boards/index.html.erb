@@ -5,6 +5,11 @@
     <h1 class="h3 mb-0 text-gray-800">Boards</h1>
     <div class="d-flex align-items-center">
       <%= link_to "New Board", new_board_path("kanban_board[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary me-2"}  %>
+      <%= render "boards/owner_type_form", possible_owner_types: KanbanBoard::OWNER_TYPES_FORM_NAMES, include_blank: false %>
+      <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
+          href="<%=boards_path(table_view: true)%>" >
+          <i class="ti ti-menu-2 text-primary fs-6"></i>
+      </a>
     </div>
   </div>
 
