@@ -23,9 +23,9 @@
     </div>
 
     <div class="form-group">
-      <%= form.label :adjustment %>
+      <%= form.label :adjustment, "Adjustment Factor" %>
       <%= form.number_field :adjustment, class: "form-control", step: :any  %>
-      <small class="text-muted"> Stock Split/Merge Ratio </small>
+      <small class="text-muted"> Enter the adjustment factor to update stock quantity based on the ratio for share split / consolidation e.g. enter 10 if 1 share is converted to 10 shares </small>
     </div>
 
     <div class="form-group">

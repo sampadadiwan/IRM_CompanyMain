@@ -3,18 +3,22 @@ class StockAdjustmentJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(id)
-    @stock_adjustment = StockAdjustment.find(id)
-    @portfolio_company = @stock_adjustment.portfolio_company
-    @entity = @portfolio_company.entity
+    Chewy.strategy(:sidekiq) do
+      @stock_adjustment = StockAdjustment.find(id)
+      @portfolio_company = @stock_adjustment.portfolio_company
+      @entity = @portfolio_company.entity
 
-    Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.investment_instrument} by #{@stock_adjustment.adjustment}")
+      Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.investment_instrument} by #{@stock_adjustment.adjustment}")
 
-    count = valuations.update_all("per_share_value_cents = (per_share_value_cents / #{@stock_adjustment.adjustment})")
-    Rails.logger.info("StockAdjustmentJob: Adjusting #{count} valuations")
+      ActiveRecord::Base.transaction do
+        count = valuations.update_all("per_share_value_cents = (per_share_value_cents / #{@stock_adjustment.adjustment})")
+        Rails.logger.info("StockAdjustmentJob: Adjusting #{count} valuations")
 
-    Rails.logger.info("StockAdjustmentJob: Adjusting portfolio investments")
-    aggregate_portfolio_investments.each do |api|
-      api.split(@stock_adjustment.adjustment)
+        Rails.logger.info("StockAdjustmentJob: Adjusting portfolio investments")
+        aggregate_portfolio_investments.each do |api|
+          api.split(@stock_adjustment.adjustment)
+        end
+      end
     end
   end
 
