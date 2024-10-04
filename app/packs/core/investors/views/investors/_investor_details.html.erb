@@ -174,9 +174,11 @@
         <% if investor.entity.permissions.enable_kycs? %>
         <div id="kycs-tab" class="tab-pane fade">
           <div id="kycs" class="associated_entity">
-          
-            <%= render "investor_kycs/index", data_source: investor_kycs_path(investor_id: investor.id, all: true), lazy_load_data: true %>
-
+            <turbo-frame id="<%= "investor_kycs_frame" %>" 
+               src="<%= url_for(controller: "investor_kycs", action: :index) %>" 
+               loading="lazy">
+              <p>Loading <%= "investor_kycs".humanize %>...</p>
+            </turbo-frame>
           </div>     
         </div>
         <% end %>
@@ -184,9 +186,11 @@
 
         <div id="commitments-tab" class="tab-pane fade in">
             <div id="commitments" class="associated_entity">
-              <%= render "/capital_commitments/index", 
-                  lazy_load_data: true, data_source: capital_commitments_path(investor_id: investor.id, all: true, format: :json), cols: "all" %>
-            </div>     
+              <turbo-frame id="<%= "capital_commitments_frame" %>" 
+                   src="<%= url_for(controller: "capital_commitments", action: :index) %>" 
+                   loading="lazy">
+              <p>Loading <%= "capital_commitments".humanize %>...</p>
+            </turbo-frame>     
         </div>
 
         <div id="fund-units-tab" class="tab-pane fade">

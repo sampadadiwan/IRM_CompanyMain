@@ -18,7 +18,10 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitments = @capital_commitments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
 
-    @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank? && params[:search].blank?
+    if params[:all].blank?
+      @capital_commitments = @capital_commitments.page(params[:page])
+      @capital_commitments = @capital_commitments.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     respond_to do |format|
       format.html

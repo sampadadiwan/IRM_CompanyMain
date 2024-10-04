@@ -1,4 +1,8 @@
 class CapitalCommitmentDecorator < ApplicationDecorator
+  def full_name
+    h.link_to capital_commitment.investor_kyc.full_name, h.investor_kyc_path(id: capital_commitment.investor_kyc) if capital_commitment.investor_kyc
+  end
+
   def percentage
     "#{object.percentage.round(2)} %"
   end

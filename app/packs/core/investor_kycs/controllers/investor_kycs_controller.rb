@@ -30,6 +30,13 @@ class InvestorKycsController < ApplicationController
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
 
     @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
+
+    if params[:all].blank?
+      @investor_kycs = @investor_kycs.page(params[:page])
+      @investor_kycs = @investor_kycs.per(params[:per_page].to_i) if params[:per_page].present?
+    end
+
+    @investor_kycs
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json

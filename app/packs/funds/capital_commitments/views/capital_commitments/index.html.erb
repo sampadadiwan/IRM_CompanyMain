@@ -11,7 +11,9 @@
         <%= render "/capital_commitments/index_ag", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
     <!-- Otherwise, we show the list of commitments -->
     <% else %>
-        <%= render "/capital_commitments/index", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
+        <%= turbo_frame_tag "capital_commitments_frame", target: "_top" do %>
+            <%= render "/capital_commitments/index", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
+        <%end%>
     <% end %>
 
 <% end %>

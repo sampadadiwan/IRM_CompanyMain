@@ -1,4 +1,5 @@
-<tr id="<%= dom_id capital_commitment %>">
+<% if current_user.curr_role == "investor" %>
+  <tr id="<%= dom_id capital_commitment %>">
   <td>
     <%= capital_commitment.commitment_type %>
   </td>
@@ -34,3 +35,15 @@
     <%= link_to "Show" , capital_commitment , {class: "btn btn-outline-primary" }%>
   </td>
 </tr>
+<% else %>
+  <tr id="capital_commitment_<%= capital_commitment.id %>">
+
+    <%= render RansackTableRow.new(model: capital_commitment, columns:) %>
+
+    <td>
+      <%= link_to "Show", capital_commitment , {class: "btn btn-outline-primary"}%>
+      <%= link_to "Edit", edit_capital_commitment_path(capital_commitment.id), {class: "btn btn-outline-success"} if policy(capital_commitment).edit? %>
+    </td>
+
+  </tr>
+<% end %>
