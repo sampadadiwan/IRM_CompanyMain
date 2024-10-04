@@ -1,3 +1,15 @@
+V8.0.13
+#####################################
+b5981e2a7  Merge pull request #474 from ausangshukla/kanban-cleanup-combined
+a88bd789b Restored owner_type form
+56ec6dd89 Fixed Tests
+6d63a5a54 Command pallette (#475)
+ef558af74 Remove kanban deal path
+d0dadd3f8 Fixed links in API
+b7f13382f return columns for headers
+df230e13a Removed unwated files
+95148b33a Custom columns for CapitalCommitments
+
 V8.0.10
 #####################################
 f5bee3be9 Now employees cannot add PIs to read only funds
