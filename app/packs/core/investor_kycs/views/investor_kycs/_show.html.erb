@@ -95,12 +95,23 @@
         <% if investor_kyc.pan_card.present? %>
           <% if investor_kyc.pan_card.mime_type.include?("image") %>
             <br>
-            <%= image_tag investor_kyc.pan_card_url,
+            <%= image_tag investor_kyc.pan_card.url,
               style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
           <% end %>
         <% end %>
       </td>
     </tr>
+
+    <% if investor_kyc.entity.entity_setting.pan_verification %>
+      <tr>
+        <td>
+          <%= pan_label %> Verified
+        </td>
+        <td>
+          <%= render "investor_kycs/pan_verification", model: investor_kyc, current_user: current_user %>
+        </td>
+      </tr>
+    <% end %>
 
     <tr>
       <td>
@@ -306,14 +317,6 @@
       </td>
       <td>
         <%= investor_kyc.signature_data %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <%= pan_label %> Data
-      </td>
-      <td>
-        <%= investor_kyc.pan_card_data %>
       </td>
     </tr>
 

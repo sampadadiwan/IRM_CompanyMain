@@ -2,18 +2,26 @@ module InvestorKycConcern
   extend ActiveSupport::Concern
 
   def validate_pan_card
+    validate_pan = (saved_change_to_PAN? && self.PAN.present?) || (saved_change_to_full_name? && full_name.present?) || (saved_change_to_birth_date? && birth_date.present?) || (self.PAN.present? && full_name.present? && birth_date.present? && pan_verification_response.blank?)
+
+    return unless validate_pan
+
     if Rails.env.test?
-      VerifyKycPanJob.perform_now(id) if (saved_change_to_PAN? && self.PAN.present?) || (saved_change_to_full_name? && full_name.present?) || (saved_change_to_birth_date? && birth_date.present?)
-    elsif (saved_change_to_PAN? && self.PAN.present?) || (saved_change_to_full_name? && full_name.present?) || (saved_change_to_birth_date? && birth_date.present?)
-      VerifyKycPanJob.set(wait: rand(300).seconds).perform_later(id)
+      VerifyPanJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyPanJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
     end
   end
 
   def validate_bank
+    validate_bank = (saved_change_to_bank_account_number? && bank_account_number.present?) || (saved_change_to_ifsc_code? && ifsc_code.present?) || (saved_change_to_full_name? && full_name.present?) || (bank_account_number.present? && ifsc_code.present? && full_name.present? && bank_verification_response.blank?)
+
+    return unless validate_bank
+
     if Rails.env.test?
-      VerifyKycBankJob.perform_now(id) if (saved_change_to_bank_account_number? && bank_account_number.present?) || (saved_change_to_ifsc_code? && ifsc_code.present?) || (saved_change_to_full_name? && full_name.present?)
-    elsif (saved_change_to_bank_account_number? && bank_account_number.present?) || (saved_change_to_ifsc_code? && ifsc_code.present?) || (saved_change_to_full_name? && full_name.present?)
-      VerifyKycBankJob.set(wait: rand(300).seconds).perform_later(id)
+      VerifyBankJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyBankJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
     end
   end
 

@@ -29,7 +29,7 @@ class InvestorKycDatatable < ApplicationDatatable
       {
         id: record.id,
         entity_name: record.entity.name,
-        full_name: record.decorate.full_name,
+        full_name: record.decorate.full_name_link,
         kyc_type: record.kyc_type.titleize,
         investor_name: record.decorate.investor_link,
         pan: record.PAN,

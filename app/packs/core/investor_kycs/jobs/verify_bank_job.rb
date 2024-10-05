@@ -1,7 +1,22 @@
 class VerifyBankJob < ApplicationJob
   queue_as :default
 
-  def perform(id); end
+  def perform(obj_class:, obj_id:)
+    Chewy.strategy(:sidekiq) do
+      @model = obj_class.constantize.find(obj_id)
+      @model = @model.decorate if @model.decorator_class?
+      if @model.bank_verification_enabled?
+        verify
+        if %w[InvestorKyc IndividualKyc NonIndividualKyc].include?(obj_class)
+          @model.save(validate: false)
+        else
+          @model.save
+        end
+      else
+        Rails.logger.debug { "Skipping: bank_verification set to false for #{@model.entity.name}" }
+      end
+    end
+  end
 
   private
 
@@ -34,7 +49,7 @@ class VerifyBankJob < ApplicationJob
   rescue JSON::ParserError => e
     # if response cannot be parsed, log the error and return nil as its shown on UI
     Rails.logger.error { "JSON::ParserError: #{e.message}" }
-    nil
+    response.body
   end
 
   def check_details(response)

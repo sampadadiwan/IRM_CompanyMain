@@ -1,3 +1,4 @@
+# rubocop:disable Metrics/ClassLength
 class Offer < ApplicationRecord
   include Trackable.new
   include WithFolder
@@ -80,6 +81,9 @@ class Offer < ApplicationRecord
   validates :full_name, length: { maximum: 100 }
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(o) { o.entity.currency }
+
+  serialize :pan_verification_response, type: Hash
+  serialize :bank_verification_response, type: Hash
 
   BUYER_STATUS = %w[Confirmed Rejected].freeze
 
@@ -192,11 +196,32 @@ class Offer < ApplicationRecord
   end
 
   def validate_pan_card
-    VerifyOfferPanJob.perform_later(id) if (saved_change_to_PAN? || saved_change_to_full_name?) && pan_card.present?
+    should_validate_pan = (saved_change_to_PAN? && self.PAN.present?) ||
+                          (saved_change_to_full_name? && full_name.present?) ||
+                          (self.PAN.present? && full_name.present? && self.pan_verification_response.blank?)
+
+    return unless should_validate_pan
+
+    if Rails.env.test?
+      VerifyPanJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyPanJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
+    end
   end
 
   def validate_bank
-    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
+    should_validate_bank = (saved_change_to_bank_account_number? && bank_account_number.present?) ||
+                           (saved_change_to_ifsc_code? && ifsc_code.present?) ||
+                           (saved_change_to_full_name? && full_name.present?) ||
+                           (bank_account_number.present? && ifsc_code.present? && full_name.present? && bank_verification_response.blank?)
+
+    return unless should_validate_bank
+
+    if Rails.env.test?
+      VerifyBankJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyBankJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
+    end
   end
 
   def generate_spa(user)
@@ -314,3 +339,4 @@ class Offer < ApplicationRecord
     end
   end
 end
+# rubocop:enable Metrics/ClassLength

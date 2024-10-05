@@ -54,7 +54,6 @@ class InvestorKyc < ApplicationRecord
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
   include FileUploader::Attachment(:signature)
-  include FileUploader::Attachment(:pan_card)
 
   belongs_to :verified_by, class_name: "User", optional: true
 
@@ -105,6 +104,10 @@ class InvestorKyc < ApplicationRecord
       update_column(:send_kyc_form_to_user, false)
       # rubocop:enable Rails/SkipsModelValidations
     end
+  end
+
+  def pan_card
+    documents.where("name like ?", "%PAN%").last&.file
   end
 
   def updated_notification(msg: nil)

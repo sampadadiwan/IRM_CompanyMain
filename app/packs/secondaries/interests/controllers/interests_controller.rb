@@ -76,10 +76,11 @@ class InterestsController < ApplicationController
 
   # PATCH/PUT /interests/1 or /interests/1.json
   def update
+    @interest.assign_attributes(interest_params)
     setup_doc_user(@interest)
 
     respond_to do |format|
-      if @interest.update(interest_params)
+      if InterestUpdate.wtf?(interest: @interest).success?
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
         format.json { render :show, status: :ok, location: @interest }
       else

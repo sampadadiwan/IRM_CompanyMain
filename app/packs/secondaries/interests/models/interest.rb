@@ -58,6 +58,9 @@ class Interest < ApplicationRecord
   validates :quantity, :price, presence: true
   validates :buyer_entity_name, :address, :city, :PAN, :contact_name, presence: true, if: proc { |i| i.verified }
 
+  serialize :pan_verification_response, type: Hash
+  serialize :bank_verification_response, type: Hash
+
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   counter_culture :secondary_sale,
@@ -154,6 +157,39 @@ class Interest < ApplicationRecord
     else
       # Else send it to the interest user only
       [user.email]
+    end
+  end
+
+  def validate_pan_card
+    should_validate_pan = (saved_change_to_PAN? && self.PAN.present?) ||
+                          (saved_change_to_buyer_entity_name? && buyer_entity_name.present?) ||
+                          (self.PAN.present? && buyer_entity_name.present? && pan_verification_response.blank?)
+
+    return unless should_validate_pan
+
+    if Rails.env.test?
+      VerifyPanJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyPanJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
+    end
+  end
+
+  def pan_card
+    documents.where("name like ?", "%PAN%").last&.file
+  end
+
+  def validate_bank
+    should_validate_bank = (saved_change_to_bank_account_number? && bank_account_number.present?) ||
+                           (saved_change_to_buyer_entity_name? && buyer_entity_name.present?) ||
+                           (saved_change_to_ifsc_code? && ifsc_code.present?) ||
+                           (bank_account_number.present? && ifsc_code.present? && buyer_entity_name.present? && bank_verification_response.blank?)
+
+    return unless should_validate_bank
+
+    if Rails.env.test?
+      VerifyBankJob.perform_now(obj_class: self.class.to_s, obj_id: id)
+    else
+      VerifyBankJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
     end
   end
 

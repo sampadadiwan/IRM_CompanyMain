@@ -31,7 +31,7 @@
             Secondary Sale
           </td>
           <td>
-            <%= link_to interest.secondary_sale.name, interest.secondary_sale %> : 
+            <%= link_to interest.secondary_sale.name, interest.secondary_sale %> :
             <%= l interest.secondary_sale.start_date %> - <%= l interest.secondary_sale.end_date %>
           </td>
         </tr>
@@ -59,7 +59,7 @@
             <%= interest.details %>
           </td>
         </tr>
-        
+
         <tr id="short_listed">
           <td>
             Shortlisted
@@ -139,7 +139,7 @@
           </td>
         </tr>
       <% end %>
-        
+
 
         <% if interest.buyer_entity_name.present? %>
 
@@ -151,7 +151,7 @@
               Buyer Entity Name
             </td>
             <td>
-              <%= interest.buyer_entity_name %> 
+              <%= interest.buyer_entity_name %>
             </td>
           </tr>
           <tr>
@@ -159,10 +159,10 @@
               Contact Name
             </td>
             <td>
-              <%= interest.contact_name %> 
+              <%= interest.contact_name %>
             </td>
           </tr>
-          
+
           <tr>
             <td>
               Buyer Emails for ESignatures
@@ -176,7 +176,7 @@
               Address
             </td>
             <td>
-              <%= interest.address %> 
+              <%= interest.address %>
             </td>
           </tr>
 
@@ -185,7 +185,7 @@
               City
             </td>
             <td>
-              <%= interest.city %> 
+              <%= interest.city %>
             </td>
           </tr>
 
@@ -194,16 +194,40 @@
               PAN
             </td>
             <td>
-              <%= interest.PAN %> 
+              <%= interest.PAN %>
+              <br>
+              <% show_pan_verification = !interest.secondary_sale.disable_pan_kyc && interest.entity.entity_setting.pan_verification %>
+              <% if show_pan_verification && current_user%>
+              <%= render "investor_kycs/pan_verification", model: interest %>
+              <% end %>
             </td>
           </tr>
+
+          <% if params[:debug].present? %>
+            <tr>
+              <td>
+                PAN Verification Response
+              </td>
+              <td>
+                <%= interest.pan_verification_response %>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                PAN Verification Status
+              </td>
+              <td>
+                <%= interest.pan_verification_status %>
+              </td>
+            </tr>
+          <% end %>
 
           <tr>
             <td>
               Demat
             </td>
             <td>
-              <%= interest.demat %> 
+              <%= interest.demat %>
             </td>
           </tr>
 
@@ -212,25 +236,47 @@
               Bank Account Number
             </td>
             <td>
-              <%= interest.bank_account_number %> 
+              <%= interest.bank_account_number %>
+              <br>
+              <%= render "investor_kycs/bank_verification", model: interest if current_user && !interest.secondary_sale.disable_bank_kyc %>
             </td>
           </tr>
+          <tr>
 
           <tr>
             <td>
               IFSC Code
             </td>
             <td>
-              <%= interest.ifsc_code %> 
+              <%= interest.ifsc_code %>
             </td>
           </tr>
 
-          
+          <% if params[:debug].present? %>
+            <tr>
+              <td>
+                Bank Verification Response
+              </td>
+              <td>
+                <%= interest.bank_verification_response %>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Bank Verification Status
+              </td>
+              <td>
+                <%= interest.bank_verification_status %>
+              </td>
+            </tr>
+          <% end %>
+
+
           <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
 
             <tr>
               <td colspan="2" class="bg-primary"></td>
-            </tr>      
+            </tr>
             <tr>
               <td>
                 SPA

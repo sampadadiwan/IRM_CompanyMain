@@ -121,6 +121,56 @@ Scenario Outline: Import offer to sale without holdings
   And when the offers are approved
   And the sale offered quantity should be "120"
 
+Scenario Outline: Offer PAN verification
+  Given there is a user "<user>" for an entity "<entity>"
+  Given there are "2" employee investors
+  Given Im logged in as an employee investor
+  Given there is a FundingRound "name=Series A"
+  And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
+  Given there is a sale "<sale>"
+  Given I have "Seller" access to the sale
+  And I am at the sales details page
+  Then when I place an offer "<offer>"
+  Then I should see the offer details
+  Given Offer PAN verification is enabled
+  And I add pan details to the offer
+  Then Pan Verification is triggered
+  And when the offer name is updated
+  Then Pan Verification is triggered
+  And when the offer PAN is updated
+  Then Pan Verification is triggered
+
+
+Examples:
+    |user	      |entity               |sale                                 |offer	             |
+    |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        |
+
+
+Scenario Outline: Offer Bank verification
+    Given there is a user "<user>" for an entity "<entity>"
+    Given there are "2" employee investors
+    Given Im logged in as an employee investor
+    Given there is a FundingRound "name=Series A"
+    And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
+    Given there is a sale "<sale>"
+    Given I have "Seller" access to the sale
+    And I am at the sales details page
+    Given Offer Bank verification is enabled
+    Then when I place an offer "<offer>"
+    Then I should see the offer details
+    And I add bank details to the offer
+    And Bank Verification is triggered
+    And when the offer name is updated
+    Then Bank Verification is triggered
+    And when the offer Bank Account number is updated
+    Then Bank Verification is triggered
+    And when the offer Bank IFSC is updated
+    Then Bank Verification is triggered
+
+  Examples:
+      |user	      |entity               |sale                                 | offer	             |
+      |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        |
+
 Scenario Outline: Offer Approval Notification
   Given Im logged in as a user "first_name=Test1" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"

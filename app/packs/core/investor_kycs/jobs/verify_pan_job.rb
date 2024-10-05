@@ -1,7 +1,22 @@
 class VerifyPanJob < ApplicationJob
   queue_as :default
 
-  def perform(id); end
+  def perform(obj_class:, obj_id:)
+    Chewy.strategy(:sidekiq) do
+      @model = obj_class.constantize.find(obj_id)
+      @model = @model.decorate if @model.decorator_class?
+      if @model.pan_verification_enabled?
+        verify
+        if %w[InvestorKyc IndividualKyc NonIndividualKyc].include?(obj_class)
+          @model.save(validate: false)
+        else
+          @model.save
+        end
+      else
+        Rails.logger.debug { "Skipping: pan_verification set to false for #{@model.entity.name}" }
+      end
+    end
+  end
 
   private
 
@@ -9,14 +24,13 @@ class VerifyPanJob < ApplicationJob
     if @model.pan_card
       response = KycVerify.new.verify_pan_card(@model.pan_card)
       init_offer(response)
-
-      if response[:status] == "success" && response[:verified]
-        @model.pan_verified = response[:verified]
-        @model.pan_verification_response = response
+      # api keeps returning verified as nil even on success
+      verified = response[:verified] || (response[:status].casecmp?("success") && response[:name_matched])
+      if verified
+        @model.pan_verified = verified
         check_details(response)
       else
         @model.pan_verified = false
-        @model.pan_verification_status = response[:status]
       end
     else
       @model.pan_verification_status = "No PAN card uploaded"
@@ -25,7 +39,7 @@ class VerifyPanJob < ApplicationJob
 
   def init_offer(response)
     logger.debug response
-    @model.pan_verification_response = nil
+    @model.pan_verification_response = response&.to_h
     @model.pan_verification_status = ""
     @model.pan_verified = false
   end
@@ -44,7 +58,7 @@ class VerifyPanJob < ApplicationJob
     end
 
     # dob format "dd/mm/yyyy"
-    if response[:is_pan_dob_valid] != true || response[:dob] != @model.birth_date&.strftime("%d/%m/%Y")
+    if response[:is_pan_dob_valid] != true || (@model.respond_to?(:birth_date) && response[:dob] != @model.birth_date&.strftime("%d/%m/%Y"))
       @model.pan_verification_status += " Date of birth does not match"
       @model.pan_verified = false
     end

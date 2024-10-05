@@ -44,7 +44,7 @@
           </span>
         </td>
       </tr>
-      
+
       <tr>
         <td>
           Quantity
@@ -55,7 +55,7 @@
       </tr>
 
       <% if current_user  %>
-      
+
         <% if Rails.env.test? %>
           <tr>
             <td>
@@ -72,192 +72,234 @@
             </td>
           </tr>
         <% end %>
-        
-      <tr>
-        <td>
-          Notes
-        </td>
-        <td>
-          <%= @offer.notes %>
-        </td>
-      </tr>
-      
-
-      <% if @offer.PAN  || params[:debug].present? %>
-        <tr>
-          <td colspan="2" class="bg-primary"></td>
-        </tr>
-        <tr>
-          <td>
-            Allocated Quantity
-          </td>
-          <td>
-            <%= @offer.allocation_quantity %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Final Price
-          </td>
-          <td>
-            <%= @offer.final_price %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Gross Amount
-          </td>
-          <td>
-            <%= money_to_currency @offer.allocation_amount, params %>
-          </td>
-        </tr>
-        <%
-          fees = @offer.compute_fees(@offer.secondary_sale.fees)
-          fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
-        %>
-        <tr>
-          <td>
-            Fees
-          </td>
-          <td>
-            <%= money_to_currency fee_amount, params %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Net Amount
-          </td>
-          <td>
-            <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
-          </td>
-        </tr>
 
         <tr>
           <td>
-            Allocation %
+            Notes
           </td>
           <td>
-            <%= @offer.allocation_percentage %> %
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Acquirer
-          </td>
-          <td>
-            <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %> 
+            <%= @offer.notes %>
           </td>
         </tr>
 
 
-        <tr>
-          <td colspan="2" class="bg-primary"></td>
-        </tr>
-        <tr>
-          <td>
-            Full Name
-          </td>
-          <td>
-            <%= @offer.full_name %>
-          </td>
-        </tr>
+        <% if @offer.PAN  || params[:debug].present? %>
+          <tr>
+            <td colspan="2" class="bg-primary"></td>
+          </tr>
+          <tr>
+            <td>
+              Allocated Quantity
+            </td>
+            <td>
+              <%= @offer.allocation_quantity %>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Final Price
+            </td>
+            <td>
+              <%= @offer.final_price %>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Gross Amount
+            </td>
+            <td>
+              <%= money_to_currency @offer.allocation_amount, params %>
+            </td>
+          </tr>
+          <%
+            fees = @offer.compute_fees(@offer.secondary_sale.fees)
+            fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
+          %>
+          <tr>
+            <td>
+              Fees
+            </td>
+            <td>
+              <%= money_to_currency fee_amount, params %>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Net Amount
+            </td>
+            <td>
+              <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Allocation %
+            </td>
+            <td>
+              <%= @offer.allocation_percentage %> %
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Acquirer
+            </td>
+            <td>
+              <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %>
+            </td>
+          </tr>
 
 
-        <tr>
-          <td>
-            Seller Emails for ESignatures
-          </td>
-          <td>
-            <%= @offer.seller_signatory_emails %>
-          </td>
-        </tr>
+          <tr>
+            <td colspan="2" class="bg-primary"></td>
+          </tr>
+          <tr>
+            <td>
+              Full Name
+            </td>
+            <td>
+              <%= @offer.full_name %>
+            </td>
+          </tr>
 
-        <tr>
-          <td>
-            Esignature Emails
-          </td>
-          <td>
-            <%= @offer.seller_signatory_emails %>
-          </td>
-        </tr>
 
-        <tr>
-          <td>
-            Address
-          </td>
-          <td>
-            <%= @offer.address %>
-          </td>
-        </tr>
-        
-        <tr>
-          <td>
-            PAN
-          </td>
-          <td>
-            <%= @offer.PAN %>  
-            <br>
-            <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>        
-          </td>
-        </tr>
+          <tr>
+            <td>
+              Seller Emails for ESignatures
+            </td>
+            <td>
+              <%= @offer.seller_signatory_emails %>
+            </td>
+          </tr>
 
-        <tr>
-          <td>
-            Bank Account Number
-          </td>
-          <td>
-            <%= @offer.bank_account_number %>
+          <tr>
+            <td>
+              Esignature Emails
+            </td>
+            <td>
+              <%= @offer.seller_signatory_emails %>
+            </td>
+          </tr>
 
-            <br>
-            <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            IFSC Code
-          </td>
-          <td>
-            <%= @offer.ifsc_code %>
-          </td>
-        </tr>
+          <tr>
+            <td>
+              Address
+            </td>
+            <td>
+              <%= @offer.address %>
+            </td>
+          </tr>
 
-        <%= display_custom_fields(@offer) if current_user %>
-      
+          <tr>
+            <td>
+              PAN
+            </td>
+            <td>
+              <%= @offer.PAN %>
+              <br>
+              <% show_pan_verification = !@offer.secondary_sale.disable_pan_kyc && @offer.entity.entity_setting.pan_verification %>
+              <% if show_pan_verification && current_user%>
+              <%= render "investor_kycs/pan_verification", model: @offer %>
+              <% end %>
+            </td>
+          </tr>
+
+          <% if params[:debug].present? %>
+            <tr>
+              <td>
+                PAN Verification Response
+              </td>
+              <td>
+                <%= @offer.pan_verification_response %>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                PAN Verification Status
+              </td>
+              <td>
+                <%= @offer.pan_verification_status %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <td>
+              Bank Account Number
+            </td>
+            <td>
+              <%= @offer.bank_account_number %>
+
+              <br>
+              <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              IFSC Code
+            </td>
+            <td>
+              <%= @offer.ifsc_code %>
+            </td>
+          </tr>
+
+          <% if params[:debug].present? %>
+            <tr>
+              <td>
+                Bank Verification Response
+              </td>
+              <td>
+                <%= @offer.bank_verification_response %>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Bank Verification Status
+              </td>
+              <td>
+                <%= @offer.bank_verification_status %>
+              </td>
+            </tr>
+          <% end %>
+
+
 
           <tr>
               <td colspan="2" class="bg-primary"></td>
           </tr>
 
-      
-        <tr>
-            <td>
-            I agree to enter into the SPA
-            </td>
-            <td>
-                <%= display_boolean @offer.final_agreement %>
-                <% if @offer.final_agreement_user %>
-                  <div>
-                    <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
-                  </div>
-                <% end %>
-            </td>
-        </tr>
 
+          <tr>
+              <td>
+              I agree to enter into the SPA
+              </td>
+              <td>
+                  <%= display_boolean @offer.final_agreement %>
+                  <% if @offer.final_agreement_user %>
+                    <div>
+                      <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
+                    </div>
+                  <% end %>
+              </td>
+          </tr>
 
-        
+        <% end %>
+
+        <%= display_custom_fields(@offer) if current_user %>
+
         <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
 
             <tr>
             <td colspan="2" class="bg-primary"></td>
-            </tr>      
+            </tr>
             <tr>
             <td>
                 SPA
             </td>
             <td>
                 <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-sm btn-outline-success" if @offer.spa %>
-                <span><%= "(Link expires in 7 days)" unless current_user %></span>              
+                <span><%= "(Link expires in 7 days)" unless current_user %></span>
             </td>
             </tr>
 
@@ -265,12 +307,6 @@
 
 
       <% end %>
-    
-
-    <% end %>
-
-      
-
 
     </table>
 

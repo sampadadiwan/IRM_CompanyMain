@@ -318,3 +318,125 @@ Then('the offers must have the data in the sheet') do
     offer.city.should == user_data["City"]
   end
 end
+
+Given('Offer PAN verification is enabled') do
+  @sale.entity.entity_setting.update!(pan_verification: true)
+  @sale.update!(disable_pan_kyc: false)
+end
+
+Given('I add pan details to the offer') do
+  allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
+  @og_pan_verification_response = @offer.pan_verification_response
+
+  @offer.update!(approved: true)
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_full_name", with: Faker::Name.unique.name)
+  fill_in("offer_PAN", with: Faker::Alphanumeric.alphanumeric(number: 10).upcase)
+  attach_file("files[]", File.absolute_path("./public/sample_uploads/example_pan.jpeg"), make_visible: true)
+  sleep(1)
+  click_on("Next")
+  click_on("Save")
+end
+
+Then('Pan Verification is triggered') do
+  allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
+  sleep(5)
+  @offer.reload.pan_verification_response.should_not == @og_pan_verification_response
+end
+
+Then('when the offer name is updated') do
+  allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
+  allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
+  @og_pan_verification_response = @offer.pan_verification_response
+  @og_bank_verification_response = @offer.bank_verification_response
+
+  @offer.update!(approved: true)
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_full_name", with: Faker::Name.unique.name)
+  click_on("Next")
+  click_on("Save")
+end
+
+Then('when the offer PAN is updated') do
+  allow_any_instance_of(KycVerify).to receive(:verify_pan_card).and_return(pan_response)
+  @og_pan_verification_response = @offer.pan_verification_response
+  @offer.update!(approved: true)
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_PAN", with: Faker::Alphanumeric.alphanumeric(number: 10).upcase)
+  click_on("Next")
+  click_on("Save")
+end
+
+Given('Offer Bank verification is enabled') do
+  @sale.entity.entity_setting.update!(bank_verification: true)
+  @sale.update!(disable_bank_kyc: false)
+end
+
+Given('I add bank details to the offer') do
+  allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
+  @og_bank_verification_response = @offer.bank_verification_response
+
+  @offer.update!(approved: true)
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_full_name", with: Faker::Name.unique.name)
+  fill_in("offer_address", with: @offer.address)
+  fill_in("offer_bank_account_number", with: Faker::Bank.unique.account_number)
+  fill_in("offer_ifsc_code", with: Faker::Bank.swift_bic)
+  click_on("Next")
+  click_on("Save")
+end
+
+Then('Bank Verification is triggered') do
+  allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
+  sleep(5)
+  @offer.reload
+  @offer.bank_verification_response.should_not == @og_bank_verification_response
+end
+
+Then('when the offer Bank Account number is updated') do
+  allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
+  @og_bank_verification_response = @offer.bank_verification_response
+
+  @offer.update!(approved: true)
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_bank_account_number", with: Faker::Bank.unique.account_number)
+  click_on("Next")
+  click_on("Save")
+end
+
+Then('when the offer Bank IFSC is updated') do
+  allow_any_instance_of(KycVerify).to receive(:verify_bank).and_return(bank_response)
+  @og_bank_verification_response = @offer.bank_verification_response
+
+  visit(edit_offer_path(@offer))
+  click_on("Next")
+  fill_in("offer_ifsc_code", with: Faker::Bank.swift_bic)
+  click_on("Next")
+  click_on("Save")
+end
+
+def pan_response
+  {:status=>"success",
+  :fathers_name=> Faker::Name.unique.name,
+  :name=> Faker::Name.unique.name,
+  :dob=>"01/01/1990",
+  :id_no=> Faker::Alphanumeric.alphanumeric(number: 10),
+  :is_pan_dob_valid=>true,
+  :name_matched=>true,
+  :verified=>nil}
+end
+
+def bank_response
+  body = {"id"=> Faker::Alphanumeric.alphanumeric(number: 16),
+  "verified"=>"true",
+  "verified_at"=> Time.now.strftime('%Y-%m-%d %H:%M:%S') ,
+  "beneficiary_name_with_bank"=> Faker::Name.unique.name,
+  "fuzzy_match_result"=>"true",
+  "fuzzy_match_score"=>100}
+  OpenStruct.new(verified: true, body: body.to_json)
+end
