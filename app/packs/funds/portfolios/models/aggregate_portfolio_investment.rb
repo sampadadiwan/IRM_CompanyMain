@@ -34,10 +34,10 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Portfolio Company" => "portfolio_company_name",
     "Instrument" => "investment_instrument",
     "Net Bought Amount" => "net_bought_amount",
-    "Sold Amount" => "sold_amount_currency",
-    "Current Quantity" => "comma_quantity",
-    "Fmv" => "fmv_currency",
-    "Avg Cost / Share" => "avg_cost_currency"
+    "Sold Amount" => "sold_amount",
+    "Current Quantity" => "quantity",
+    "Fmv" => "fmv",
+    "Avg Cost / Share" => "avg_cost"
   }.freeze
 
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
