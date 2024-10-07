@@ -1,12 +1,12 @@
 <div class="nested-fields">
-  <%= form_with(model: @objects&.last, method: :get, action: @action, id: "search_form", data: { controller: "search" }, class: "d-flex justify-content-between align-items-center") do |form| %>
-    <div class="d-flex align-items-center" style="max-width: 160px;">
+  <%= form_with(method: :get, url: @data_source,  data: { controller: "search", turbo_frame: @turbo_frame }, class: "search-form d-flex justify-content-between align-items-center") do |form| %>
+    <div class="d-flex align-items-center search-form-per-page" >
       <% current_per_page = params.dig("per_page").presence || 10 %>
-      <%= form.number_field "per_page", { id: "per_page_input", class: "form-control", style: "width: 90px;", data: { target: "search.perPageInput", toggle: "tooltip", title: "Items per page" }, value: current_per_page } %>
+      <%= form.number_field "per_page", { id: "per_page_input", class: "form-control", data: { target: "search.perPageInput", toggle: "tooltip", title: "Items per page" }, value: current_per_page } %>
       <small class="ms-2">per page</small>
     </div>
 
-    <div class="d-flex align-items-center" style="max-width: 400px; width: 100%;">
+    <div class="d-flex align-items-center search-form-input">
       <% current_input = params.dig("search", "value").presence || nil %>
       <%= form.text_field "search[value]", { id: "search_input", class: "form-control", data: { target: "search.searchInput", action: "keydown->search#debouncedSearchInput", toggle: "tooltip", title: "Type to search" }, value: current_input, placeholder: "Search..." } %>
 
@@ -14,6 +14,9 @@
         <span class="sr-only">Loading...</span>
       </div>
     </div>
+
+    <!-- Add hidden fields for the query params in the data_source passed -->
+    <%= add_hidden_fields_from_source(form, @data_source)%>
 
     <%= form.submit "Submit", { hidden: true, id: "submit", data: { target: "search.submit" } } %>
   <% end %>

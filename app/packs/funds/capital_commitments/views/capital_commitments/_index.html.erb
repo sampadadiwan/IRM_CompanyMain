@@ -1,11 +1,11 @@
 <%
   fund ||= Fund.find_by(id: params[:fund_id])
   fund_id ||= params[:fund_id] || fund&.id
-  title ||= "Capital Commitments" 
+  title ||= "Capital Commitments"
   import_upload_id ||= params[:import_upload_id]
-  data_source ||= capital_commitments_path( params: params.to_unsafe_h, fund_id:, 
-                                                import_upload_id:, format: :json, all: true)  
-  xl_link = download_xl_link(data_source) 
+  data_source ||= capital_commitments_path( params: params.to_unsafe_h, fund_id:,
+                                                import_upload_id:, format: :json, all: true)
+  xl_link = download_xl_link(data_source)
 %>
 
 <% if current_user.curr_role == "investor" %>
@@ -15,12 +15,12 @@
     <% end %>
     <%= paginate capital_commitments %>
   <% else %>
-    <% 
-      cols ||= params[:cols] 
+    <%
+      cols ||= params[:cols]
     %>
 
-    <% 
-      lazy_load_data ||= false 
+    <%
+      lazy_load_data ||= false
 
     col_params = { fund_id: fund_id }
     cols ||= "default"
@@ -38,28 +38,30 @@
       col_params[:column_fields] = ["fund_name"] + col_params[:column_fields]
     end
 
-    column_names, field_list = get_columns(CapitalCommitment, params: col_params) 
+    column_names, field_list = get_columns(CapitalCommitment, params: col_params)
   %>
 
   <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
 
 
-  <div class="table-responsive" data-controller="commitments" 
-    data-commitments-lazy-load-data-value=<%= lazy_load_data %> 
+  <div class="table-responsive" data-controller="commitments"
+    data-commitments-lazy-load-data-value=<%= lazy_load_data %>
     data-commitments-table-name-value="#capital_commitments"
     data-commitments-field-list-value=<%=field_list%> >
 
       <%= render CustomTable.new(data_source:, id: "capital_commitments", column_names:) %>
-      
+
     </div>
   <% end %>
 <% else %>
   <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
-  <%=render SearchComponent.new %>
+  <%capital_commitments_frame = "capital_commitments_frame"%>
+  <%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:,
+                                                import_upload_id:), turbo_frame: capital_commitments_frame) %>
 
   <div class="table-responsive">
       <table id="capital_commitments" class="table table-bordered dataTable action_table hover">
-          <% ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, current_user: current_user, records: capital_commitments, report_id: params["report_id"]) %>
+          <% ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame) %>
           <%= render ransack_table_header %>
         <tbody>
           <% capital_commitments.each do |capital_commitment| %>
@@ -69,7 +71,7 @@
       </table>
       <% if capital_commitments.present? %>
         <%= page_entries_info capital_commitments, entry_name: 'item' %>
-        <%= paginate capital_commitments %>
+        <%= paginate capital_commitments, data: {turbo_frame: capital_commitments_frame} %>
       <% end %>
   </div>
 

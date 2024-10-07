@@ -26,7 +26,7 @@
     <% if ["holdings", "investors", "portfolio_investments", "capital_commitments", "investor_kycs"].include?(model_class) %>
       <turbo-frame id="<%= "#{model_class}_frame" %>" 
                    src="<%= url_for(controller: model_class, action: :index, import_upload_id: @import_upload.id) %>" 
-                   loading="lazy">
+                   loading="lazy" target="_top">
         <p>Loading <%= model_class.humanize %>...</p>
       </turbo-frame>
 

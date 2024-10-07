@@ -1,11 +1,11 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
-  <% 
-    label = investor.is_holdings_entity ? "#{investor.category} Users" : "Users" 
+  <%
+    label = investor.is_holdings_entity ? "#{investor.category} Users" : "Users"
   %>
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    
+
     <% if investor.category == "Portfolio Company" %>
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
         Valuations
@@ -39,7 +39,7 @@
 
       <a id="stakeholder_users_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
         <%= label %>
-      </a>      
+      </a>
 
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
@@ -60,7 +60,7 @@
       </a>
 
       <% if investor.entity.permissions.enable_kycs? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"  
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"
             data-action="click->tabdetails#loadData">
             KYC
         </a>
@@ -68,7 +68,7 @@
 
     <% end %>
 
-    <% if policy(investor).update? %>        
+    <% if policy(investor).update? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
           Access Rights
         </a>
@@ -79,14 +79,14 @@
           Documents
       </a>
     <% end %>
-    
+
   </nav>
 
 
   <div class="tab-content" data-controller="datatable">
 
       <% if investor.category == "Portfolio Company" %>
-        
+
         <div id="valuations-tab" class="tab-pane fade in show active">
           <div id="valuations" class="associated_entity">
             <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
@@ -96,37 +96,37 @@
 
         <div id="portfolio-investments-tab" class="tab-pane fade">
           <div id="portfolio_investments" class="associated_entity">
-            <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top", src: aggregate_portfolio_investments_path(investor_id: investor.id), loading: :lazy do %>
+            <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top", src: aggregate_portfolio_investments_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="instruments-tab" class="tab-pane fade">
-          <div id="investment_instruments" class="associated_entity">            
+          <div id="investment_instruments" class="associated_entity">
             <%= turbo_frame_tag "investment_instruments_list", target: "_top", src: investment_instruments_path(portfolio_company_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="cashflows-tab" class="tab-pane fade">
-          <div id="portfolio_cashflows" class="associated_entity">            
+          <div id="portfolio_cashflows" class="associated_entity">
             <%= turbo_frame_tag "portfolio_cashflows_list", target: "_top", src: portfolio_cashflows_path(portfolio_company_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="kpis-tab" class="tab-pane fade">
-          <div id="kpis" class="associated_entity">            
+          <div id="kpis" class="associated_entity">
             <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: investor.investor_entity_id, grid_view: true), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="kpi-mappings-tab" class="tab-pane fade">
-          <div id="investor_kpi_mappings" class="associated_entity">            
+          <div id="investor_kpi_mappings" class="associated_entity">
             <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="stock-adjustments-tab" class="tab-pane fade">
@@ -138,66 +138,62 @@
 
         <div id="investors-tab" class="tab-pane fade show active">
           <div id="investor_accesses" class="associated_entity">
-            <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user), 
+            <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user),
                 investor: investor, label: label %>
-          </div>     
+          </div>
         </div>
 
         <div id="investments-tab" class="tab-pane fade">
-          <div id="investments" class="associated_entity">            
+          <div id="investments" class="associated_entity">
             <%= turbo_frame_tag "investments_frame", target: "_top", src: investments_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="notes-tab" class="tab-pane fade">
-          <div id="notes" class="associated_entity">            
+          <div id="notes" class="associated_entity">
             <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(investor_id: investor.id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="tasks-tab" class="tab-pane fade">
-          <div id="tasks" class="associated_entity">            
+          <div id="tasks" class="associated_entity">
             <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(for_entity_id: investor.investor_entity_id, entity_id: investor.entity_id), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="reminders-tab" class="tab-pane fade">
-          <div id="reminders" class="associated_entity">            
+          <div id="reminders" class="associated_entity">
             <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: investor.id, owner_type: "Investor", sent: false), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <% if investor.entity.permissions.enable_kycs? %>
-        <div id="kycs-tab" class="tab-pane fade">
-          <div id="kycs" class="associated_entity">
-            <turbo-frame id="<%= "investor_kycs_frame" %>" 
-               src="<%= url_for(controller: "investor_kycs", action: :index) %>" 
-               loading="lazy">
-              <p>Loading <%= "investor_kycs".humanize %>...</p>
-            </turbo-frame>
-          </div>     
-        </div>
+          <div id="kycs-tab" class="tab-pane fade">
+            <div id="kycs" class="associated_entity">
+              <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(investor_id: investor.id), target: "_top" do %>
+                <p>Loading Investor KYCs...</p>
+              <% end %>
+            </div>
+          </div>
         <% end %>
 
-
         <div id="commitments-tab" class="tab-pane fade in">
-            <div id="commitments" class="associated_entity">
-              <turbo-frame id="<%= "capital_commitments_frame" %>" 
-                   src="<%= url_for(controller: "capital_commitments", action: :index) %>" 
-                   loading="lazy">
-              <p>Loading <%= "capital_commitments".humanize %>...</p>
-            </turbo-frame>     
+          <div id="commitments" class="associated_entity">
+            <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(investor_id: investor.id) do %>
+              <p>Loading Capital Commitments...</p>
+            <% end %>
+          </div>
         </div>
 
         <div id="fund-units-tab" class="tab-pane fade">
-          <div id="fund_units" class="associated_entity">            
+          <div id="fund_units" class="associated_entity">
             <%= turbo_frame_tag "fund_units_list", target: "_top", src: fund_units_path(investor_id: investor.id, cols: "all"), loading: :lazy do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
 
@@ -206,9 +202,9 @@
 
       <div id="access-rights-tab" class="tab-pane fade in">
           <div id="access_rights" class="associated_entity">
-            
+
             <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-              
+
               <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
                 To Investor
               </a>
@@ -216,9 +212,9 @@
               <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
                 For Investor
               </a>
-              
+
             </nav>
-            <div class="tab-content">              
+            <div class="tab-content">
 
               <div id="access_rights_to_investors_tab" class="tab-pane show active">
                 <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
@@ -226,21 +222,21 @@
                 <% end %>
               </div>
 
-              <div id="access_rights_for_investors_tab" class="tab-pane fade">                
+              <div id="access_rights_for_investors_tab" class="tab-pane fade">
                 <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor")  do %>
-                
+
                 <% end %>
               </div>
 
-            </div>  
-            
+            </div>
+
           </div>
       </div>
 
       <% if current_user.has_cached_role?(:company_admin) %>
         <div id="docs-tab" class="tab-pane fade">
           <div id="docs" class="associated_entity">
-            
+
             <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: investor.entity_id, folder_id: investor.document_folder.id), loading: :lazy do %>
             <% end %>
 
