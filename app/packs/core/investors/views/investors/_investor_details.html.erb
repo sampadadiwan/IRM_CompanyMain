@@ -174,25 +174,23 @@
         <% if investor.entity.permissions.enable_kycs? %>
           <div id="kycs-tab" class="tab-pane fade">
             <div id="kycs" class="associated_entity">
-              <turbo-frame id="investor_kycs_frame" 
-                           src="<%= investor_kycs_path(investor_id: investor.id) %>" 
-                           loading="lazy" target="_top">
-                <p>Loading <%= "Investor KYCs" %>...</p>
-              </turbo-frame>
+              <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(investor_id: investor.id), target: "_top" do %>
+                <p>Loading Investor KYCs...</p>
+              <% end %>
             </div>     
           </div>
         <% end %>
 
-
         <div id="commitments-tab" class="tab-pane fade in">
           <div id="commitments" class="associated_entity">
-            <turbo-frame id="capital_commitments_frame" 
-                         src="<%= capital_commitments_path(investor_id: investor.id) %>" 
-                         loading="lazy" target="_top">
-              <p>Loading <%= "Capital Commitments" %>...</p>
-            </turbo-frame>
+            <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(investor_id: investor.id) do %>
+              <p>Loading Capital Commitments...</p>
+            <% end %>
           </div>
         </div>
+
+        <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(investor_id: investor.id) do %>
+              <% end %>
 
         <div id="fund-units-tab" class="tab-pane fade">
           <div id="fund_units" class="associated_entity">            
