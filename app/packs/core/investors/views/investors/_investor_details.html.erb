@@ -189,9 +189,6 @@
           </div>
         </div>
 
-        <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(investor_id: investor.id) do %>
-              <% end %>
-
         <div id="fund-units-tab" class="tab-pane fade">
           <div id="fund_units" class="associated_entity">            
             <%= turbo_frame_tag "fund_units_list", target: "_top", src: fund_units_path(investor_id: investor.id, cols: "all"), loading: :lazy do %>
