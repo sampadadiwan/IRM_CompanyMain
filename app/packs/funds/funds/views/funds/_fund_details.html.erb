@@ -46,7 +46,7 @@
           id="documents_tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-      <% if fund.entity_id == current_user.entity_id %>      
+      <% if fund.entity_id == current_user.entity_id %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
               data-action="click->tabdetails#loadData">
             Tasks
@@ -68,7 +68,7 @@
                                         data: { turbo_frame: 'documents_tree_frame' } do %>
                   <span>Loading...</span>
               <% end %>
-              
+
               <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
               <% end %>
 
@@ -77,9 +77,9 @@
 
         <div id="commitments-tab" class="tab-pane fade in show active">
           <div id="commitments" class="associated_entity">
-            <turbo-frame id="<%= "capital_commitments_frame" %>" 
-                   src="<%= url_for(controller: "capital_commitments", action: :index, fund_id: fund.id) %>" 
-                   loading="lazy">
+            <turbo-frame id="<%= "capital_commitments_frame" %>"
+                   src="<%= url_for(controller: "capital_commitments", action: :index, fund_id: fund.id) %>"
+                   loading="lazy",  target="_top" >
               <p>Loading <%= "capital_commitments".humanize %>...</p>
             </turbo-frame>
           </div>
@@ -119,7 +119,7 @@
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
           </div>
-        </div>        
+        </div>
 
         <% else %>
 
