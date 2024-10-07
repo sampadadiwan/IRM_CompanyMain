@@ -67,11 +67,9 @@
 
     <div id="kycs-tab" class="tab-pane fade">
       <div id="kycs" class="associated_entity">
-        <turbo-frame id="<%= "investor_kycs_frame" %>" 
-               src="<%= url_for(controller: "investor_kycs", action: :index, investor_id: capital_commitment.investor_id) %>" 
-               loading="lazy">
-          <p>Loading <%= "investor_kycs".humanize %>...</p>
-        </turbo-frame>
+        <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(investor_id: capital_commitment.investor_id), target: "_top" do %>
+          <p>Loading Investor KYCs...</p>
+        <% end %>
       </div>
     </div>
 

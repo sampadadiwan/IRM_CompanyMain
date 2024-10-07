@@ -116,7 +116,7 @@
 
     </div>
   <% else %>
-    <%=render SearchComponent.new %>
+    <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.to_unsafe_h, import_upload_id:), turbo_frame: "investor_kycs_frame") %>
 
     <div class="table-responsive">
       <table id="investor_kycs" class="table table-bordered dataTable action_table hover">
@@ -130,7 +130,7 @@
       </table>
       <% if investor_kycs.present? %>
         <%= page_entries_info investor_kycs, entry_name: 'item' %>
-        <%= paginate investor_kycs %>
+        <%= paginate investor_kycs, data: {turbo_frame: "investor_kycs_frame"} %>
       <% end %>
   </div>
   <% end %>
