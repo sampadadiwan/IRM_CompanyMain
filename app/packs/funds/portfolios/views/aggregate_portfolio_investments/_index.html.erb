@@ -50,8 +50,8 @@
 
 <%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: %>
 
-<% api_turbo_frame = "aggregate_portfolio_investments_list" %>
-<%=render SearchComponent.new(data_source: aggregate_portfolio_investments_path( params: params.to_unsafe_h, fund_id: params[:fund_id], import_upload_id:), turbo_frame: api_turbo_frame) %>
+<% api_turbo_frame = "aggregate_portfolio_investments_frame" %>
+<%=render SearchComponent.new(data_source: aggregate_portfolio_investments_path(params: params.to_unsafe_h, fund_id: params[:fund_id]), turbo_frame: api_turbo_frame) %>
 <div class="table-responsive">
     <table id="aggregate_portfolio_investments" class="table table-bordered dataTable action_table hover">
       <!-- Table Header with our without fund -->

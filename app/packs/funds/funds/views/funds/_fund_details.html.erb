@@ -141,7 +141,7 @@
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <div id="portfolio-investments-tab" class="tab-pane fade">
             <div id="portfolio_investments" class="associated_entity">
-              <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top", loading: :lazy, src: aggregate_portfolio_investments_path(fund_id: fund.id) do %>
+              <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top", loading: :lazy, src: aggregate_portfolio_investments_path(fund_id: fund.id) do %>
                 <span>Loading...</span>
               <% end %>
             </div>
