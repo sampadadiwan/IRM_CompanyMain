@@ -34,7 +34,7 @@ class CapitalCommitment < ApplicationRecord
                        "Percentage" => "percentage",
                        "Called" => "call_amount",
                        "Collected" => "collected_amount",
-                       "Distributed" => "distribution_amoun" }.freeze
+                       "Distributed" => "distribution_amount" }.freeze
 
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
