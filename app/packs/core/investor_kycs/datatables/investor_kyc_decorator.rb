@@ -19,6 +19,14 @@ class InvestorKycDecorator < ApplicationDecorator
     entity.entity_setting.pan_verification
   end
 
+  def kyc_type_titlized
+    object.kyc_type.titleize
+  end
+
+  def verified_button
+    display_boolean(object.verified)
+  end
+
   def dt_actions
     links = []
     links << h.link_to('Show', h.investor_kyc_path(object), class: "btn btn-outline-primary")

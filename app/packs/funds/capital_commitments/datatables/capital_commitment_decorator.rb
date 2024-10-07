@@ -1,10 +1,26 @@
 class CapitalCommitmentDecorator < ApplicationDecorator
   def full_name
-    h.link_to capital_commitment.investor_kyc.full_name, h.investor_kyc_path(id: capital_commitment.investor_kyc) if capital_commitment.investor_kyc
+    h.link_to(capital_commitment.investor_kyc.full_name, h.investor_kyc_path(id: capital_commitment.investor_kyc)) if capital_commitment.investor_kyc
   end
 
   def percentage
     "#{object.percentage.round(2)} %"
+  end
+
+  def committed_amount_currency
+    money_to_currency object.committed_amount
+  end
+
+  def call_amount_currency
+    money_to_currency object.call_amount
+  end
+
+  def collected_amount_currency
+    money_to_currency object.collected_amount
+  end
+
+  def distribution_amount_currency
+    money_to_currency object.distribution_amount
   end
 
   def custom_fields
@@ -17,6 +33,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
 
   def folio_link
     h.link_to object.folio_id, object
+  end
+
+  def investor_link
+    h.link_to object.investor_name, object.investor
   end
 
   def full_name_link

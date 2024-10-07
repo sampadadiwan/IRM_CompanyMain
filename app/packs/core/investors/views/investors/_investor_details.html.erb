@@ -175,7 +175,7 @@
         <div id="kycs-tab" class="tab-pane fade">
           <div id="kycs" class="associated_entity">
             <turbo-frame id="<%= "investor_kycs_frame" %>" 
-               src="<%= url_for(controller: "investor_kycs", action: :index) %>" 
+               src="<%= url_for(controller: "investor_kycs", action: :index, investor_id: investor.id) %>" 
                loading="lazy">
               <p>Loading <%= "investor_kycs".humanize %>...</p>
             </turbo-frame>
@@ -187,10 +187,11 @@
         <div id="commitments-tab" class="tab-pane fade in">
             <div id="commitments" class="associated_entity">
               <turbo-frame id="<%= "capital_commitments_frame" %>" 
-                   src="<%= url_for(controller: "capital_commitments", action: :index) %>" 
+                   src="<%= url_for(controller: "capital_commitments", action: :index, investor_id: investor.id) %>" 
                    loading="lazy">
-              <p>Loading <%= "capital_commitments".humanize %>...</p>
-            </turbo-frame>     
+                <p>Loading <%= "capital_commitments".humanize %>...</p>
+              </turbo-frame>   
+            </div>  
         </div>
 
         <div id="fund-units-tab" class="tab-pane fade">
