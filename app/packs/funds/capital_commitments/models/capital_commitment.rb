@@ -26,8 +26,8 @@ class CapitalCommitment < ApplicationRecord
                               collected_amount distribution_amount dt_actions].freeze
 
   STANDARD_COLUMNS = { "Type" => "commitment_type",
-                       "Folio" => "folio_link",
-                       "Investor" => "investor_link",
+                       "Folio" => "folio_id",
+                       "Investor" => "investor_name",
                        "Investing Entity" => "full_name",
                        "Unit Type" => "unit_type",
                        "Committed" => "committed_amount",

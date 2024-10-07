@@ -27,7 +27,7 @@ class CapitalCommitmentDatatable < ApplicationDatatable
         commitment_type: record.commitment_type,
         folio_id: record.decorate.folio_link,
         unit_type: record.unit_type,
-        investor_name: record.decorate.investor_link,
+        investor_name: record.decorate.investor_name,
         full_name: record.decorate.full_name_link,
         fund_name: record.decorate.fund_link,
         committed_amount: record.decorate.money_to_currency(record.committed_amount, params),

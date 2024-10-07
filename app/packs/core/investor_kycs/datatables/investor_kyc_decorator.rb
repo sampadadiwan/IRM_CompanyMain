@@ -19,11 +19,11 @@ class InvestorKycDecorator < ApplicationDecorator
     entity.entity_setting.pan_verification
   end
 
-  def kyc_type_titlized
+  def kyc_type
     object.kyc_type.titleize
   end
 
-  def verified_button
+  def verified
     display_boolean(object.verified)
   end
 

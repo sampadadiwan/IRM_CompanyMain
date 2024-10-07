@@ -88,15 +88,15 @@ class PortfolioInvestment < ApplicationRecord
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
   STANDARD_COLUMNS = { "For" => "for",
-    "Company Name" => "company_name",
-    "Investment Date" => "investment_date",
-    "Amount" => "currency_amount",
-    "Quantity" => "quantity",
-    "Cost Per Share" => "cost",
-    "FMV" => "fmv",
-    "FIFO Cost" => "cost_of_sold",
-    "Investment Type" => "investment_type",
-    "Notes" => "notes" }.freeze
+                       "Company Name" => "portfolio_company_name",
+                       "Investment Date" => "investment_date",
+                       "Amount" => "amount",
+                       "Quantity" => "quantity",
+                       "Cost Per Share" => "cost",
+                       "FMV" => "fmv",
+                       "FIFO Cost" => "cost_of_sold",
+                       "Investment Type" => "investment_type",
+                       "Notes" => "notes" }.freeze
 
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?

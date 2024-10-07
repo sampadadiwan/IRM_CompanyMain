@@ -2,7 +2,7 @@ class RansackTableHeader < ViewComponent::Base
   include Ransack::Helpers::FormHelper
   include ApplicationHelper
 
-  def initialize(model, q:, columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", turbo_frame:)
+  def initialize(model, q:, turbo_frame:, columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "")
     super
     @model = model
     @q = q.presence || @model.ransack
@@ -22,6 +22,7 @@ class RansackTableHeader < ViewComponent::Base
     columns = fetch_report_columns(report) if report.present?
     columns = fetch_custom_columns(entity) if columns.blank?
     return @model::STANDARD_COLUMNS if columns.blank?
+
     columns
   end
 

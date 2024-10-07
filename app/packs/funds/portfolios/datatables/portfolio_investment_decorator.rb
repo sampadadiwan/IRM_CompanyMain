@@ -5,11 +5,11 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
     portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment)
   end
 
-  def company_name
+  def portfolio_company_name
     h.link_to portfolio_investment.portfolio_company_name, portfolio_investment.aggregate_portfolio_investment
   end
 
-  def currency_amount
+  def amount
     money_to_currency portfolio_investment.amount
   end
 
