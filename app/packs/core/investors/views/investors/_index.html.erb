@@ -65,6 +65,6 @@
 
     <% if @investors.present? %>
       <%= page_entries_info @investors, entry_name: 'item' %>
-      <%= paginate @investors, data: {turbo_frame: "capital_commitments_frame"} %>
+      <%= paginate @investors, data: {turbo_frame: "investors_frame"} %>
     <% end %>
 </div>
