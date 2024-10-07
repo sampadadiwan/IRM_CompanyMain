@@ -1,11 +1,14 @@
-<% aggregate_portfolio_investment ||= nil %>
+<%
+  aggregate_portfolio_investment ||= nil
+  import_upload_id ||= nil
+%>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= params[:title] || "Portfolio Investments" %></h1>
 
   <span>
     <% if aggregate_portfolio_investment && policy(aggregate_portfolio_investment).add_investment? %>
-    
+
       <%= link_to "New Portfolio Investment",
           new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
           "portfolio_investment[fund_id]": params[:fund_id],
@@ -31,7 +34,7 @@
   </span>
 </div>
 
-<%=render SearchComponent.new %>
+<%=render SearchComponent.new(data_source: portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: "portfolio_investments_frame") %>
 
 <div class="table-responsive">
     <table id="portfolio_investments" class="table table-bordered dataTable action_table hover">
@@ -45,6 +48,6 @@
     </table>
     <% if portfolio_investments.present? %>
       <%= page_entries_info portfolio_investments, entry_name: 'item' %>
-      <%= paginate portfolio_investments %>
+      <%= paginate portfolio_investments, data: { turbo_frame: "portfolio_investments_frame" } %>
     <% end %>
 </div>
