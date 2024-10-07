@@ -70,7 +70,7 @@
       </table>
       <% if capital_commitments.present? %>
         <%= page_entries_info capital_commitments, entry_name: 'item' %>
-        <%= paginate capital_commitments %>
+        <%= paginate capital_commitments, data: {turbo_frame: "capital_commitments_frame"} %>
       <% end %>
   </div>
 
