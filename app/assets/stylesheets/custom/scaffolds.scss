@@ -1244,6 +1244,18 @@ h6 {
   animation: spin 0.75s linear infinite;
 }
 
+.search-form-input{
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-form-per-page{
+  max-width: 160px;
+  #per_page_input {
+    width: 90px;
+  }
+}
+
 // Define the keyframes for spinning animation
 @keyframes spin {
   0% {
@@ -1268,3 +1280,4 @@ input[type=number]::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+

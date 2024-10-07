@@ -1,0 +1,9 @@
+<%
+    # Parse the query string into a hash
+    params_hash = Rack::Utils.parse_nested_query(query_string)
+%>
+<% params_hash.each do |key, value| %>
+    <% if key != "controller" && key != "action" && key != "utf8" && key != "commit" && key != "per_page" && key != "page" && key != "search" %>
+    <%= form.hidden_field key, value: value %>
+    <% end %>
+<% end %>
