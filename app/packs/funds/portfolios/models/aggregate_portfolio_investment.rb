@@ -33,7 +33,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "For" => "commitment_type",
     "Portfolio Company" => "portfolio_company_name",
     "Instrument" => "investment_instrument",
-    "Net Bought Amount" => "net_bought_amount",
+    "Net Bought Amount" => "bought_amount",
     "Sold Amount" => "sold_amount",
     "Current Quantity" => "quantity",
     "Fmv" => "fmv",

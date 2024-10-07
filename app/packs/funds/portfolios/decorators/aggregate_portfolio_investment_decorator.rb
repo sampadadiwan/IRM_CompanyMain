@@ -14,7 +14,7 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
     h.link_to object.fund, object.fund
   end
 
-  def net_bought_amount
+  def bought_amount
     money_to_currency(object.bought_amount, {})
   end
 
