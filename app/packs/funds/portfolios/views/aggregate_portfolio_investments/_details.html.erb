@@ -16,15 +16,9 @@
   <div class="tab-content">
     <div id="portfolio-investments-tab" class="tab-pane fade in show active">
       <div id="portfolio_investments" class="associated_entity">
-        <%
-            params[:fund_id] = @aggregate_portfolio_investment.fund_id
-            params[:portfolio_company_id] = @aggregate_portfolio_investment.portfolio_company_id
-        %>
-        <% @portfolio_investments = @aggregate_portfolio_investment.portfolio_investments.includes(:aggregate_portfolio_investment, :fund).page(params[:page]).per(params[:per_page] || 10) %>
-        <%= render "/portfolio_investments/index",
-                  portfolio_investments: @portfolio_investments,
-                  aggregate_portfolio_investment: @aggregate_portfolio_investment %>
-
+        <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(aggregate_portfolio_investment_id: @aggregate_portfolio_investment.id) do %>
+          <span>Loading...</span>
+        <% end %>
       </div>
     </div>
     <div id="cashflows-tab" class="tab-pane fade in">

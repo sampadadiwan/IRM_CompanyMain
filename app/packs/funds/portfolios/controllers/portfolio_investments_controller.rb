@@ -7,7 +7,9 @@ class PortfolioInvestmentsController < ApplicationController
     @portfolio_investments = policy_scope(@q.result).includes(:aggregate_portfolio_investment, :capital_commitment, :fund)
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @portfolio_investments = @portfolio_investments.where(investment_instrument_id: params[:investment_instrument_id]) if params[:investment_instrument_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
+    @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, current_user, params)
     if params[:all].blank?
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
