@@ -1,48 +1,4 @@
-<% if current_user.curr_role == "investor" %>
-  <tr id="<%= dom_id investor_kyc %>">
-    <td>
-      <%= investor_kyc.entity.name %>
-    </td>
-    <td>
-      <%= link_to investor_kyc.investor.investor_name, investor_kyc.investor %>
-    </td>
-    <td>
-      <%= investor_kyc.full_name %>
-    </td>
-    <td>
-      <%= investor_kyc.birth_date&.strftime("%d %B, %Y") %>
-    </td>
-    <td>
-      <%= investor_kyc.PAN %>
-    </td>
-    <td>
-      <%= display_boolean investor_kyc.pan_verified %>
-    </td>
-    <td>
-      <%= investor_kyc.address %>
-    </td>
-    <td>
-      <%= investor_kyc.bank_account_number %>
-    </td>
-    <td>
-      <%= investor_kyc.ifsc_code %>
-    </td>
-    <td>
-      <%= display_boolean investor_kyc.bank_verified %>
-    </td>
-    <td>
-      <%= display_boolean investor_kyc.verified %>
-    </td>
-    <td>
-      <%= display_boolean investor_kyc.expired? %>
-    </td>
-
-    <td>
-      <%= link_to "Show" , investor_kyc , {class: "btn btn-outline-primary" }%>
-    </td>
-  </tr>
-<% else %>
-  <tr id="investor_kyc_<%= investor_kyc.id %>">
+<tr id="investor_kyc_<%= investor_kyc.id %>">
 
     <%= render RansackTableRow.new(model: investor_kyc, columns:) %>
 
@@ -51,4 +7,3 @@
     </td>
 
   </tr>
-<% end %>
