@@ -7,8 +7,8 @@ class InvestorKyc < ApplicationRecord
 
   STANDARD_COLUMNS = { "Investor" => "investor_name",
                        "Investing Entity" => "full_name_link",
-                       "Type" => "kyc_type_titlized",
-                       "Kyc Verified" => "verified_button",
+                       "Type" => "kyc_type",
+                       "Kyc Verified" => "verified",
                        "Expired" => "expired" }.freeze
 
   # Make all models searchable
