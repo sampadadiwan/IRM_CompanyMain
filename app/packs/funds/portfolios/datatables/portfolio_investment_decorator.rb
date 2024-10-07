@@ -13,19 +13,19 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
     money_to_currency portfolio_investment.amount
   end
 
-  def cost_in_currency
+  def cost
     money_to_currency portfolio_investment.cost
   end
 
-  def fmv_currency
+  def fmv
     money_to_currency portfolio_investment.fmv
   end
 
-  def cost_of_sold_currency
+  def cost_of_sold
     money_to_currency portfolio_investment.cost_of_sold
   end
 
-  def decorated_quantity
+  def quantity
     number_to_delimited(object.quantity)
   end
 

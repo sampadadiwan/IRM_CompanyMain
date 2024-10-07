@@ -7,19 +7,19 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     "#{object.percentage.round(2)} %"
   end
 
-  def committed_amount_currency
+  def committed_amount
     money_to_currency object.committed_amount
   end
 
-  def call_amount_currency
+  def call_amount
     money_to_currency object.call_amount
   end
 
-  def collected_amount_currency
+  def collected_amount
     money_to_currency object.collected_amount
   end
 
-  def distribution_amount_currency
+  def distribution_amount
     money_to_currency object.distribution_amount
   end
 

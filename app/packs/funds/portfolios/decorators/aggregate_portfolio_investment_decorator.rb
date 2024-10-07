@@ -18,19 +18,19 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
     money_to_currency(object.bought_amount, {})
   end
 
-  def sold_amount_currency
+  def sold_amount
     money_to_currency(object.sold_amount, {})
   end
 
-  def fmv_currency
+  def fmv
     money_to_currency(object.fmv, {})
   end
 
-  def avg_cost_currency
+  def avg_cost
     money_to_currency(object.avg_cost, {})
   end
 
-  def comma_quantity
+  def quantity
     number_to_delimited(object.quantity)
   end
 
