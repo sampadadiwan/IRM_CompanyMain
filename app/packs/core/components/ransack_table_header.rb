@@ -2,7 +2,7 @@ class RansackTableHeader < ViewComponent::Base
   include Ransack::Helpers::FormHelper
   include ApplicationHelper
 
-  def initialize(model, q:, columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "")
+  def initialize(model, q:, columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", turbo_frame:)
     super
     @model = model
     @q = q.presence || @model.ransack
@@ -10,6 +10,7 @@ class RansackTableHeader < ViewComponent::Base
     @current_user = current_user
     @entity = entity.presence || get_owner_entity(records)
     @css_class = css_class
+    @turbo_frame = turbo_frame
     @report_id = report_id
     @columns_map = columns_map.presence || get_columns(@entity)
   end
