@@ -28,7 +28,7 @@ class CapitalCommitment < ApplicationRecord
   STANDARD_COLUMNS = { "Type" => "commitment_type",
                        "Folio" => "folio_id",
                        "Investor" => "investor_name",
-                       "Investing Entity" => "full_name",
+                       "Investing Entity" => "investor_kyc_full_name",
                        "Unit Type" => "unit_type",
                        "Committed" => "committed_amount",
                        "Percentage" => "percentage",

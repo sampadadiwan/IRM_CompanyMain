@@ -32,7 +32,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   STANDARD_COLUMNS = {
     "For" => "commitment_type",
     "Portfolio Company" => "portfolio_company_name",
-    "Instrument" => "investment_instrument",
+    "Instrument" => "investment_instrument_name",
     "Net Bought Amount" => "bought_amount",
     "Sold Amount" => "sold_amount",
     "Current Quantity" => "quantity",
