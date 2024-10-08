@@ -29,7 +29,7 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
     number_to_delimited(object.quantity)
   end
 
-  def investment_type
+  def category
     "#{portfolio_investment.category} : #{portfolio_investment.sub_category}"
   end
 end

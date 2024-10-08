@@ -3,7 +3,7 @@ class InvestorKycDecorator < ApplicationDecorator
     h.render partial: "investor_kycs/expired", locals: { investor_kyc: object }, formats: [:html]
   end
 
-  def full_name_link
+  def full_name
     if object.full_name.blank?
       h.link_to "", h.investor_kyc_path(id: object.id)
     else

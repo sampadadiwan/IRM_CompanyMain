@@ -95,7 +95,7 @@ class PortfolioInvestment < ApplicationRecord
                        "Cost Per Share" => "cost",
                        "FMV" => "fmv",
                        "FIFO Cost" => "cost_of_sold",
-                       "Investment Type" => "investment_type",
+                       "Investment Type" => "category",
                        "Notes" => "notes" }.freeze
 
   def setup_aggregate
