@@ -23,8 +23,8 @@ Scenario Outline: Create custom grid view for PortfolioInvestments
   When I create a form type and custom grid view for "PortfolioInvestment"
   When I select each option and click Add
   And I visit PortfolioInvestment Page and find 6 columns in the grid
-  When I visit Custom Grid View page and uncheck "currency_amount"
-  And I should not find "currency_amount" column in the Portfolio Investment Grid
+  When I visit Custom Grid View page and uncheck "amount"
+  And I should not find "amount" column in the Portfolio Investment Grid
 
 Examples:
   |user       |entity|
@@ -38,8 +38,8 @@ Scenario Outline: Create custom grid view for PortfolioInvestments Reports
   When I create a report and custom grid view for "PortfolioInvestment"
   When I select each option and click Add
   And I visit PortfolioInvestment Page from reports
-  When I visit Report Custom Grid View page and uncheck "currency_amount"
-  And I should not find "currency_amount" column in the Report PI Grid
+  When I visit Report Custom Grid View page and uncheck "amount"
+  And I should not find "amount" column in the Report PI Grid
 
 Examples:
   |user       |entity|
@@ -68,8 +68,8 @@ Scenario Outline: Create custom grid view for CapitalCommitment
   When I create a form type and custom grid view for "CapitalCommitment"
   When I select each option and click Add
   And I visit CapitalCommitment Page and find 6 columns in the grid
-  When I visit Custom Grid View page and uncheck "investor"
-  And I should not find "investor" column in the Investor Grid
+  When I visit Custom Grid View page and uncheck "investor_name"
+  And I should not find "investor_name" column in the Investor Grid
 
 Examples:
   |user       |entity|
