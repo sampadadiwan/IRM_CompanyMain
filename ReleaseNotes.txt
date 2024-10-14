@@ -1,3 +1,25 @@
+V8.0.15
+#####################################
+982a1a4cb (origin/main, origin/HEAD) Custom Grids test fix (#497)
+92cf2324f Merged commitments grid
+072a4e035 Sort link fixes (#496)
+da2c9b947 Fix Kyc datatable
+881a8d98d Sort by catergories
+8a70b8b7e Grids sorting fix
+6f28ac95d Decorator changes for sorting
+0c185df2e Commitment search fix (#485)
+b9a0f9ef5 Remove upload id drom API index, update API turbo frame name
+86d28a109 Fix sorting issue on PI index page, use turbo frame on instrument show page for PIs
+b546aa7d4 Fix sorting issue on API index page
+b70047f64 Fix sorting issue on API index page
+fcc321fdb Pass turbo frame to ransack header
+c461a2892 Added elastic search for PI, fixed search component for PI
+e263beb19 Search component change for investors
+31b8d41d8 Search component change for investor_kyc
+f530fe50a Fixed APIs search component
+9cd0e3057 Search component change for investors
+d6545056b Fix pagination issue in turbo-frame
+
 V8.0.13
 #####################################
 b5981e2a7  Merge pull request #474 from ausangshukla/kanban-cleanup-combined

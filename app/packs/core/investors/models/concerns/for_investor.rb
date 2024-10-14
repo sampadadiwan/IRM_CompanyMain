@@ -52,19 +52,6 @@ module ForInvestor
       end
     }
 
-    scope :for_employee_orig, lambda { |user|
-      join_clause = if instance_methods.include?(:access_rights)
-                      joins(:access_rights)
-                    else
-                      joins(parent_class_type.name.underscore => :access_rights)
-                    end
-      if user.entity_type == "Group Company"
-        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?) and access_rights.user_id=?", user.entity.child_ids, user.id)
-      else
-        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=? and access_rights.entity_id=?", user.entity_id, user.id, user.entity_id)
-      end
-    }
-
     # Some models have a belongs_to :investor association
     scope :for_investor, lambda { |user|
       filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
@@ -98,20 +85,7 @@ module ForInvestor
       join_clause
     }
 
-    scope :for_investor_new, lambda { |user|
-      table_name = parent_class_type.name.underscore.pluralize
-
-      # This is the list of ids for which the user has been granted specific access
-      cached_ids = user.get_cached_ids(user.entity_id, parent_class_type.name)
-
-      join_clause = if parent_class_type.name == name
-                      joins(:entity)
-                    else
-                      joins(parent_class_type.name.underscore.to_sym)
-                    end
-
-      join_clause.where("#{table_name}": { id: cached_ids }).where("investors.investor_entity_id=?", user.entity_id)
-    }
+   
   end
 
   def model_with_access_rights
