@@ -89,8 +89,9 @@
   Given('there is a sale {string}') do |arg1|
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
     @sale.start_date = Time.zone.today    
-    SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)
-    key_values(@sale.reload, arg1)
+    key_values(@sale, arg1)
+
+    SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)    
     puts @sale.to_json
     @sale.save!
     @sale.reload
