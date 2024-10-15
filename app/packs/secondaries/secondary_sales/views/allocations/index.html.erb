@@ -6,9 +6,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Allocations</h1>
   <span>
-    <%= link_to "Filter", allocations_path(q: params[:q].to_unsafe_h, filter: true), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "New", new_allocation_path("allocation[secondary_sale_id]": params[:secondary_sale_id]), {class: "btn btn-outline-primary"}  %>
 
-    <%= link_to "Download", allocations_path(q: params[:q].to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Filter", allocations_path(q: params[:q]&.to_unsafe_h, filter: true), {class: "btn btn-outline-primary"}  %>
+
+    <%= link_to "Download", allocations_path(q: params[:q]&.to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"}  %>
 
     <%= render "/allocations/bulk_actions" %>
 

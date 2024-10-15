@@ -55,7 +55,7 @@ class SecondarySaleAllocationEngine < BaseAllocationEngine
 
         allocation_quantity = [available_offer_quantity, available_interest_quantity].min
         # Create the allocation and update allocation quantities
-        create_allocation(offer, interest, allocation_quantity, interest.price)
+        Allocation.create_allocation(offer, interest, allocation_quantity, interest.price)
       end
     end
   end
@@ -93,7 +93,7 @@ class SecondarySaleAllocationEngine < BaseAllocationEngine
         next if available_offer_quantity.zero?
 
         allocation_quantity = [available_offer_quantity, available_interest_quantity].min
-        create_allocation(offer, interest, allocation_quantity, offer.price)
+        Allocation.create_allocation(offer, interest, allocation_quantity, offer.price)
         break # Break after a full match
       end
     end

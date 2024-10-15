@@ -49,7 +49,8 @@ class AllocationsController < ApplicationController
 
   # GET /allocations/new
   def new
-    @allocation = Allocation.new
+    @allocation = Allocation.new(allocation_params)
+    @allocation.entity_id = current_user.entity_id
     authorize @allocation
   end
 
@@ -59,7 +60,9 @@ class AllocationsController < ApplicationController
   # POST /allocations
   def create
     @allocation = Allocation.new(allocation_params)
+    @allocation.entity_id = current_user.entity_id
     authorize @allocation
+    @allocation = Allocation.build_from(@allocation.offer, @allocation.interest, @allocation.quantity, @allocation.price)
     if @allocation.save
       redirect_to @allocation, notice: "Allocation was successfully created."
     else
@@ -118,6 +121,6 @@ class AllocationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def allocation_params
-    params.require(:allocation).permit(:offer_id, :interest_id, :secondary_sale_id, :entity_id, :quantity, :amount, :notes, :verified)
+    params.require(:allocation).permit(:offer_id, :interest_id, :secondary_sale_id, :entity_id, :quantity, :price, :amount, :notes, :verified)
   end
 end

@@ -70,22 +70,6 @@ class BaseAllocationEngine
     @offers.where(price: ..interest.price).order(created_at: :asc) # Sort by submission time for time priority
   end
 
-  def create_allocation(offer, interest, allocated_quantity, price)
-    Rails.logger.debug { "Creating allocation between Offer ##{offer.id} and Interest ##{interest.id}" }
-    Allocation.create!(
-      entity: offer.entity,
-      secondary_sale: offer.secondary_sale,
-      offer:,
-      avail_offer_quantity: offer.quantity - offer.allocation_quantity,
-      interest:,
-      avail_interest_quantity: interest.quantity - interest.allocation_quantity,
-      quantity: allocated_quantity,
-      price:,
-      amount_cents: allocated_quantity * price * 100
-    )
-    Rails.logger.debug { "Allocated #{allocated_quantity} units between Offer ##{offer.id} and Interest ##{interest.id}" }
-  end
-
   def send_notification(message, user_id, level = "success")
     Rails.logger.debug { message }
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?

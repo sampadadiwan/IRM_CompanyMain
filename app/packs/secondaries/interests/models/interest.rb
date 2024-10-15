@@ -227,4 +227,12 @@ class Interest < ApplicationRecord
   def unverified_allocation_quantity
     allocations.unverified.sum(:quantity)
   end
+
+  def total_available_quantity
+    quantity - total_allocation_quantity
+  end
+
+  def total_allocation_quantity
+    allocations.sum(:quantity)
+  end
 end

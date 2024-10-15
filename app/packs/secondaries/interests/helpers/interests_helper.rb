@@ -11,9 +11,22 @@ module InterestsHelper
     short_listed_quantity = secondary_sale.interests.short_listed.sum(:quantity)
     pending_quantity = secondary_sale.interests.pending.sum(:quantity)
     rejected_quantity = secondary_sale.interests.rejected.sum(:quantity)
-    grouped = [["Shortlisted", short_listed_quantity],
-               ["Pending", pending_quantity],
-               ["Rejected", rejected_quantity]]
+    grouped = [
+      ["Shortlisted", short_listed_quantity],
+      ["Pending", pending_quantity],
+      ["Rejected", rejected_quantity]
+    ]
+
+    pie_chart_with_options grouped
+  end
+
+  def interest_by_allocation(secondary_sale)
+    allocated_interests = secondary_sale.interests.where(allocation_quantity: 0..).sum(:quantity)
+    unallocated_interests = secondary_sale.interests.where(allocation_quantity: 0).sum(:quantity)
+    grouped = [
+      ["Allocated", allocated_interests],
+      ["Un Allocated", unallocated_interests]
+    ]
 
     pie_chart_with_options grouped
   end

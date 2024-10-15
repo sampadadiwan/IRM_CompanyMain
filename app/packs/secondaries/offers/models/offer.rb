@@ -315,6 +315,14 @@ class Offer < ApplicationRecord
     allocations.unverified.sum(:quantity)
   end
 
+  def total_available_quantity
+    quantity - total_allocation_quantity
+  end
+
+  def total_allocation_quantity
+    allocations.sum(:quantity)
+  end
+
   ################### Adhoc fn for prod data management ##############
 
   def self.copy_docs(from_sale, to_sale)

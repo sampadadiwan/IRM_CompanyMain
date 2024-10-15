@@ -10,10 +10,32 @@
         </ul>
       </div>
     <% end %>
-    
+
+    <% if allocation.new_record? %>
+      
+      <%= form.hidden_field :secondary_sale_id, value: allocation.secondary_sale_id %>
+
+      <div class="form-group">
+        <%= form.label :offer_id %>
+        <%= form.select :offer_id, allocation.secondary_sale.offers.approved.filter{|o| o.total_available_quantity > 0}.map{|o| ["#{o.full_name}, Id: #{o.id}, Quantity: #{o.quantity}, Price: #{o.price}, Remaining: #{o.quantity - o.total_allocation_quantity}", o.id]}, {prompt: "Select Offer"}, class: "form-control select2" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :interest_id %>
+        <%= form.select :interest_id, allocation.secondary_sale.interests.short_listed.filter{|o| o.total_available_quantity > 0}.map{|o| ["#{o.buyer_entity_name}, Id: #{o.id}, Quantity: #{o.quantity}, Price: #{o.price}, Remaining: #{o.quantity - o.total_allocation_quantity}", o.id]}, {prompt: "Select Interest"}, class: "form-control select2" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :price, "Allocation Price" %>
+        <%= form.text_field :price, class: "form-control"  %>
+        <span class="text-muted">The price at which the transaction is done</span>
+      </div>
+
+    <% end %> 
+  
     <div class="form-group">
-      <%= form.label :quantity %>
-      <%= form.text_field :quantity, class: "form-control"  %>
+      <%= form.label :quantity, "Allocation Quantity" %>
+      <%= form.text_field :quantity, class: "form-control", disabled: allocation.verified %>
     </div>
     <div class="form-group">
       <%= form.label :notes %>
