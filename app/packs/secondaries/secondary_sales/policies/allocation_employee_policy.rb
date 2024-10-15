@@ -36,6 +36,6 @@ class AllocationEmployeePolicy < SaleBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    permissioned_employee?(:destroy) && !record.verified?
   end
 end

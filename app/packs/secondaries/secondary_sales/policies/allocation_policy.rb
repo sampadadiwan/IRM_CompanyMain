@@ -14,7 +14,7 @@ class AllocationPolicy < SaleBasePolicy
     end
   end
 
-  delegate :bulk_actions?, :show?, :create?, :generate_docs?, :accept_spa?, :new?, :update?, :edit?, :destroy, to: :specific_policy
+  delegate :bulk_actions?, :show?, :create?, :generate_docs?, :accept_spa?, :new?, :update?, :edit?, :destroy?, to: :specific_policy
 
   def index?
     user.enable_secondary_sale

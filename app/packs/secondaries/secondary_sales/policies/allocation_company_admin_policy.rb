@@ -35,7 +35,7 @@ class AllocationCompanyAdminPolicy < SaleBasePolicy
     update?
   end
 
-  def destroy?
-    permissioned_employee?(:destroy)
+  def destroy?    
+    permissioned_employee?(:destroy) && !record.verified?
   end
 end
