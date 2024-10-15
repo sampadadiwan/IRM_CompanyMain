@@ -52,7 +52,6 @@
     # expect(page).to have_content(@input_sale.start_date)
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
-      expect(page).to have_content(@input_sale.percent_allowed)
       expect(page).to have_content(custom_format_number(@input_sale.min_price, {}))
       expect(page).to have_content(custom_format_number(@input_sale.max_price, {}))
     end
@@ -69,8 +68,8 @@
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
       # expect(page).to have_content(@input_sale.percent_allowed)
-      expect(page).to have_content(@input_sale.min_price)
-      expect(page).to have_content(@input_sale.max_price)
+      expect(page).to have_content(custom_format_number(@input_sale.min_price))
+      expect(page).to have_content(custom_format_number(@input_sale.max_price))
     end
   end
 
@@ -89,9 +88,11 @@
 
   Given('there is a sale {string}') do |arg1|
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
-    @sale.start_date = Time.zone.today
-    key_values(@sale, arg1)
+    @sale.start_date = Time.zone.today    
     SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)
+    key_values(@sale.reload, arg1)
+    puts @sale.to_json
+    @sale.save!
     @sale.reload
     puts "\n####Sale####\n"
     puts @sale.to_json
@@ -155,14 +156,15 @@ Then('user {string} have {string} access to the interest') do |truefalse, intere
   end
 end
 
-Given('another user should have {string} access to the sale {string}') do |access_type, arg|
-  Pundit.policy(@another_user, @sale).send("#{access_type}?").to_s.should == arg
+Given('another user should have {string} access to the sale {string}') do |access_type, truefalse|
+  puts "##Checking access #{access_type} on interest #{@sale} for #{@another_user.email} as #{truefalse}"
+  Pundit.policy(@another_user, @sale).send("#{access_type}?").to_s.should == truefalse
 end
 
-Given('employee investor should have {string} access to the sale {string}') do |access_type, arg|
+Given('employee investor should have {string} access to the sale {string}') do |access_type, truefalse|
   @employee_investor = @investor_entity.employees.first
-  # binding.pry 
-  Pundit.policy(@employee_investor, @sale).send("#{access_type}?").to_s.should == arg
+  puts "##Checking access #{access_type} on interest #{@sale} for #{@employee_investor.email} as #{truefalse}"
+  Pundit.policy(@employee_investor, @sale).send("#{access_type}?").to_s.should == truefalse
 end
 
 
@@ -423,7 +425,7 @@ Given('there are {string} interests {string} for the sale') do |count, args|
                   price: @sale.min_price,
                   entity: @entity,
                   interest_entity: investor_entity,
-                  short_listed: true,
+                  short_listed_status: Interest::STATUS_SHORT_LISTED,
                   buyer_signatory_emails: "shrikant.gour@caphive.com")
 
     key_values(interest, args)
@@ -459,7 +461,7 @@ Then('when the last offer is allocated') do
 end
 
 Then('when the allocation is done') do
-  CustomAllocationJob.perform_now(@sale.id, @user.id)
+  NewAllocationJob.perform_now(@sale.id, @user.id, "Default Allocation Engine", priority: "Time", matching_priority: "Supply Driven")
   @sale.reload
   puts "\n####Sale Reloaded####\n"
   puts @sale.to_json
@@ -630,11 +632,28 @@ end
 
 
 
+Then('existing investor user {string} have {string} access to the sale') do |truefalse, accesses|
+  @employee_investor.reload
+  accesses.split(",").each do |access|
+    puts "##Checking access #{access} on fund #{@sale.name} for #{@employee_investor.email} as #{truefalse}"
+    Pundit.policy(@employee_investor, @sale).send("#{access}?").to_s.should == truefalse
+  end
+end
+
+
+
 Given('the sale has a SPA template') do
   doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Offer Template")
   doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
   doc.save!
 end
+
+Given('the sale has an allocation SPA template') do
+  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Allocation Template")
+  doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
+  doc.save!
+end
+
 
 Then('when the offers are verified') do
   @sale.offers.not_verified.each do |offer|
@@ -651,6 +670,24 @@ Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|
     offer.documents.where(name: "SPA #{offer.full_name} #{offer.interest.investor.investor_name}").to_a.should_not == []
+  end
+end
+
+Then('when the allocations are verified') do
+  @sale.allocations.unverified.each do |allocation|
+    allocation.verified = true
+    allocation.save!
+  end
+end
+
+Then('when the allocations SPA generation is triggered') do
+  AllocationSpaJob.perform_now(@sale.id, nil, @user.id)
+end
+
+Then('the SPAs must be generated for each verified allocation') do
+  @sale.reload
+  @sale.allocations.verified.each do |allocation|
+    allocation.documents.where(name: "SPA #{allocation.offer.full_name} #{allocation.interest.buyer_entity_name}").to_a.should_not == []
   end
 end
 
@@ -674,6 +711,7 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
   puts "All emails #{all_emails.uniq}"
 
   @sale.investor_users("Seller").collect(&:email).each do |email|
+    sleep(1)
     puts "Checking investor email #{email} with subject #{subject}"
     open_email(email)
     expect(current_email.subject).to eq subject
@@ -795,4 +833,109 @@ Given('the investor has an interest {string} for the sale') do |args|
   @interest.save!
   puts "\n####Interest Created####\n"
   puts @interest.to_json
+end
+
+
+
+
+Then('the allocations must be visible') do
+  visit(secondary_sale_path(@sale))
+  click_on("View Allocations")
+  click_on("All Allocations")
+  @sale.allocations.each_with_index do |allocation, idx|
+    puts "Checking allocation #{allocation} with id #{allocation.id}"
+    within("#allocation_#{allocation.id}") do
+      expect(page).to have_content(allocation.offer.full_name)
+      expect(page).to have_content(allocation.interest.buyer_entity_name)
+      expect(page).to have_content(allocation.quantity)
+      expect(page).to have_content(money_to_currency(allocation.amount, {}))
+      expect(page).to have_content(allocation.offer.full_name)
+      expect(page).to have_content(custom_format_number(allocation.offer.quantity))
+      expect(page).to have_content(custom_format_number(allocation.offer.price))
+      expect(page).to have_content(allocation.interest.buyer_entity_name)
+      expect(page).to have_content(custom_format_number(allocation.interest.quantity))
+      expect(page).to have_content(custom_format_number(allocation.interest.price))
+      expect(page).to have_content(allocation.verified ? "Yes" : "No")      
+    end
+
+    if idx == 9
+      within('.pagination') do
+        click_link '2'
+      end
+    end
+  end
+end
+
+Then('the sale must be allocated as per the file {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  allocations = @sale.allocations.order(id: :asc).to_a
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    allocation = allocations[idx-1]
+    puts "Checking #{allocation}"
+    allocation.offer.full_name.should == user_data["Offer"]
+    allocation.offer.price.should == user_data["Offer Price"].to_i
+    allocation.offer.quantity.should == user_data["Offer Quantity"].to_i
+
+    allocation.interest.buyer_entity_name.should == user_data["Interest"]
+    allocation.interest.price.should == user_data["Interest Price"].to_i
+    allocation.interest.quantity.should == user_data["Interest Quantity"].to_i
+
+    allocation.quantity.should == user_data["Allocation Quantity"].to_i
+    allocation.amount.to_d.should == user_data["Allocation Amount"].to_i
+
+    allocation.verified.should == (user_data["Verified"] == "Yes")
+    
+  end  
+end
+
+
+Then('when the allocations are verified {string}') do |verified|
+  # binding.pry
+  visit(secondary_sale_path(@sale))
+  click_on("View Allocations")
+  click_on("All Allocations")
+  sleep(3)
+  click_on("Bulk Actions")
+  if verified == "true"
+    click_on("Verify")
+  else
+    click_on("Unverify")
+  end
+  sleep(2)
+  click_on("Proceed")
+  sleep(12)
+  @sale.reload
+end
+
+Then('the allocations must be verified {string}') do |verified|  
+  @sale.allocations.each do |allocation|
+    puts "Checking allocation #{allocation} #{verified}"
+    allocation.verified.should == (verified == "true")
+  end
+end
+
+Then('the corresponding offers must verified {string}') do |verified|
+  @sale.allocations.each do |allocation|
+    puts "Checking offer #{allocation.offer} #{verified}"
+    allocation.offer.verified.should == allocation.verified
+    allocation.offer.verified.should == (verified == "true")
+    allocation.offer.allocation_quantity.should == allocation.offer.allocations.verified.sum(:quantity)
+  end
+end
+
+Then('the corresponding interests must verified {string}') do |verified|
+  @sale.allocations.each do |allocation|
+    puts "Checking interest #{allocation.interest} #{verified}"
+    allocation.interest.verified.should == allocation.verified
+    allocation.interest.verified.should == (verified == "true")
+    allocation.interest.allocation_quantity.should == allocation.interest.allocations.verified.sum(:quantity)
+  end
 end

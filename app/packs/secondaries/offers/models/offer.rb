@@ -6,12 +6,13 @@ class Offer < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include WithIncomingEmail
+  include WithAllocations
 
-  STANDARD_COLUMN_NAMES = ["User", "Investor", "Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Approved", "Verified", "Updated At", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[user investor_name quantity allocation_quantity allocation_percentage final_price allocation_amount approved verified updated_at dt_actions].freeze
+  STANDARD_COLUMN_NAMES = ["Investor", "User", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", "Approved", "Verified", "Updated At", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[investor_name user quantity price allocation_quantity allocation_amount approved verified updated_at dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = ["User", "Quantity", "Allocation Quantity", "Price", "Allocation Amount", " "].freeze
-  INVESTOR_COLUMN_FIELDS = %w[user quantity allocation_quantity final_price allocation_amount dt_actions].freeze
+  INVESTOR_COLUMN_NAMES = ["User", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", " "].freeze
+  INVESTOR_COLUMN_FIELDS = %w[user quantity price allocation_quantity allocation_amount dt_actions].freeze
 
   # Make all models searchable
   update_index('offer') { self if index_record? }
@@ -28,10 +29,6 @@ class Offer < ApplicationRecord
 
   has_many :access_rights, through: :secondary_sale
 
-  counter_culture :interest,
-                  column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
-                  delta_column: 'quantity', column_names: -> { { Offer.approved => 'offer_quantity' } }
-
   counter_culture :secondary_sale,
                   column_name: proc { |o| o.approved ? 'total_offered_quantity' : nil },
                   delta_column: 'quantity', column_names: -> { { Offer.approved => 'total_offered_quantity' } }
@@ -42,11 +39,10 @@ class Offer < ApplicationRecord
 
   # This is the holding owned by the user which is offered out
   belongs_to :holding, optional: true
-  # This is the buyer against which this sellers quantity is matched
-  belongs_to :interest, optional: true
 
   belongs_to :granter, class_name: "User", foreign_key: :granted_by_user_id, optional: true
   belongs_to :buyer, class_name: "Entity", optional: true
+  has_many :interests, through: :allocations
 
   # has_many :messages, as: :owner, dependent: :destroy
   include FileUploader::Attachment(:spa)
@@ -65,7 +61,6 @@ class Offer < ApplicationRecord
   scope :not_verified, -> { where(verified: false) }
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :auto_match, -> { where(auto_match: true) }
-  scope :matched, -> { where.not(interest_id: nil) }
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.verified }
 
@@ -91,10 +86,6 @@ class Offer < ApplicationRecord
     errors.add(:secondary_sale, ": Is not active.") unless secondary_sale.active?
   end
 
-  def applied_price
-    secondary_sale.final_price.positive? ? secondary_sale.final_price : interest.applied_price
-  end
-
   before_save :set_defaults
   def set_defaults
     if holding.present?
@@ -106,17 +97,15 @@ class Offer < ApplicationRecord
     end
 
     self.approved = false if quantity_changed?
-
-    if interest.present?
-      self.amount_cents = quantity * interest.applied_price * 100
-      self.allocation_amount_cents = allocation_quantity * interest.applied_price * 100
-    end
+    # Override the price for fixed price sales
+    self.price = secondary_sale.final_price if secondary_sale.price_type == "Fixed Price"
+    self.amount_cents = quantity * price * 100
 
     self.docs_uploaded_check ||= {}
     self.bank_verification_response ||= {}
     self.pan_verification_response ||= {}
 
-    set_custom_matching_vals
+    # set_custom_matching_vals
   end
 
   def set_custom_matching_vals
@@ -166,7 +155,7 @@ class Offer < ApplicationRecord
       # holding users total holding amount
       (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
     else
-      Integer::MAX
+      Float::INFINITY
     end
   end
 
@@ -234,7 +223,6 @@ class Offer < ApplicationRecord
 
   def validate_spa_generation
     errors.add(:base, "Offer #{id} is not verified!") unless verified
-    errors.add(:base, "Offer #{id} is not associated with any interest!") if interest.blank?
     errors.add(:base, "No Offer Template found for Offer #{id}") if secondary_sale.documents&.where(owner_tag: "Offer Template").blank?
   end
 
@@ -287,7 +275,10 @@ class Offer < ApplicationRecord
   ################# eSign stuff follows ###################
 
   def buyer_signatories
-    self&.interest&.buyer_signatory_emails&.split(",")
+    sigs = allocations.map do |allocation|
+      allocation.interest&.buyer_signatory_emails&.split(",")
+    end
+    sigs.flatten.compact
   end
 
   def seller_signatories
@@ -297,11 +288,11 @@ class Offer < ApplicationRecord
   ################# ransack stuff follows ###################
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified final_agreement matched interest_id updated_at created_at].sort
+    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified final_agreement matched updated_at created_at].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[secondary_sale investor interest user]
+    %w[secondary_sale investor user]
   end
 
   def self.ransackable_scopes(_auth_object = nil)
@@ -318,6 +309,10 @@ class Offer < ApplicationRecord
 
   def to_s
     "Offer: #{user}"
+  end
+
+  def unverified_allocation_quantity
+    allocations.unverified.sum(:quantity)
   end
 
   ################### Adhoc fn for prod data management ##############

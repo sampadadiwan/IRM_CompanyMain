@@ -163,27 +163,52 @@ class ApplicationPolicy
 
       # If the user has access rights for the record and the permission is nil or read or the user has the permission
       # binding.pry
-      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata == cached_metadata)
-
+      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
       if model_with_access_rights == record
         permission_metadata_ok
       else
         permission_metadata_ok && record.investor.investor_entity_id == user.entity_id
       end
-
-      # is this record visible to the user
-      # visible_record = policy_scope.where("#{record.class.table_name}.id=?", record.id)
-      # # Cache the result
-      # @pi_record ||= {}
-      # @pi_record[metadata] ||= if metadata == "none"
-      #                            visible_record
-      #                          else
-      #                            visible_record.where("access_rights.metadata=?", metadata)
-      #                          end
-      # @pi_record[metadata].present?
     else
       # Not an investor
       false
     end
+  end
+
+  # Permissioned for Relationship Manager
+  def permissioned_rm?(metadata = "none", owner: nil)
+    if user.has_cached_role?(:rm)
+      # Get the model to wich the access_rights are attached, for the policy record
+      # Example for an offer its the associated secondary_sale,
+      # for the commitment its the fund etc
+      # But for a sale its the sale itself, likewise for fund
+      model_with_access_rights = get_model_with_access_rights(owner:)
+
+      # Get the cached_permissions and metadata from the users access_rights_cache
+      cached_permissions = nil
+      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(user.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+
+      # If the user has access rights for the record and the permission is nil or read or the user has the permission
+      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
+      if model_with_access_rights == record
+        permission_metadata_ok
+      elsif record.new_record?
+        permission_metadata_ok && record.entity.rm_mappings.exists?(rm_entity_id: user.entity_id)
+      # We may not have the investor_id yet, see the UI for offers and interests for RMs where they select the investor
+      else
+        permission_metadata_ok && record.entity.rm_mappings.exists?(rm_entity_id: user.entity_id, investor_id: record.investor_id)
+      end
+    else
+      false
+    end
+  end
+
+  def rm_mapping
+    @rm_mapping ||= record.entity.rm_mappings.approved.where(investor_id: record.investor_id, rm_entity_id: user.entity_id).last
+    @rm_mapping
+  end
+
+  def rm?
+    user.has_cached_role?(:rm)
   end
 end

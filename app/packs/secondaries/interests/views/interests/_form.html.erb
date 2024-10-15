@@ -86,7 +86,7 @@
           <%= form.check_box :final_agreement, class: "form-check-input"  %>
           <small class="text-muted">
             SPAs are visible in the
-            <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>
+            <%= link_to "Matched Offers", allocations_path(interest_id: @interest.id), target: "_blank" %>
           </small>
         </div>
 

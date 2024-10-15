@@ -109,8 +109,8 @@ module ApplicationHelper
               data: { msg:, action: "click->confirm#popup", method: :post }
   end
 
-  def ransack_query_params(name, predicate, value)
-    { "c" => { "0" => { "a" => { "0" => { "name" => name } }, "p" => predicate, "v" => { "0" => { "value" => value } } } } }
+  def ransack_query_params(name, predicate, value, idx: 0)
+    { "c" => { idx.to_s => { "a" => { idx.to_s => { "name" => name } }, "p" => predicate, "v" => { idx.to_s => { "value" => value } } } } }
   end
 
   def deep_locate(params, key, value)

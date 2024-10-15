@@ -17,8 +17,7 @@
             <%= button_to "Delete" , @secondary_sale, method: :delete, class: "dropdown-item" ,
                 form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
-            <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale),
-                method: :patch, class: "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %>
+            <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } if policy(@secondary_sale).allocate? %>
            
 
             <%
@@ -45,11 +44,22 @@
             View Allocations
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Offer Allocations",
-                finalize_offer_allocation_secondary_sale_path(@secondary_sale),
+            <%= link_to "All Allocations",
+                allocations_path(secondary_sale_id: @secondary_sale.id, q: ransack_query_params(:secondary_sale_id, :eq, @secondary_sale.id)),
                 {class: "dropdown-item" } %>
-            <%= link_to "Interest Allocations",
-                finalize_interest_allocation_secondary_sale_path(@secondary_sale),
+            <%= link_to "Un Allocated Offers",
+                offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
+                {class: "dropdown-item" } %>
+            <%= link_to "Allocated Offers",
+                offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :gt, 0)),
+                {class: "dropdown-item" } %>
+            
+            <%= link_to "Un Allocated Interests",
+                interests_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
+                {class: "dropdown-item" } %>
+
+            <%= link_to "Allocated Interests",
+                interests_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :gt, 0)),
                 {class: "dropdown-item" } %>
 
           </div>
@@ -69,10 +79,6 @@
                 {class: "dropdown-item" } %>
 
             <div class="dropdown-divider"></div>
-
-            <%= link_to "View Payments",
-                payments_secondary_sale_path(@secondary_sale),
-                {class: "dropdown-item" } %>
 
             <%= link_to "Offers Completion Report",
                 offers_secondary_sale_path(@secondary_sale, report: "completion_report"),

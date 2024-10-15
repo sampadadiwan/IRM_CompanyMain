@@ -1,4 +1,16 @@
 class OfferDecorator < ApplicationDecorator
+  def quantity
+    h.custom_format_number(object.quantity)
+  end
+
+  def price
+    h.custom_format_number(object.price)
+  end
+
+  def allocation_quantity
+    h.custom_format_number(object.allocation_quantity)
+  end
+
   def allocation_percentage
     "#{object.allocation_percentage.round(2)} %"
   end

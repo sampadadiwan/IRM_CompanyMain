@@ -39,7 +39,7 @@
       <!-- Disable the form if the disabled flag is set -->
       <fieldset disabled="disabled">
         <%= search_form_for @q, method: :post, url: do |f| %>
-          <%= render "/funds/filter" %>
+          <%= render "/layouts/filter_ext" %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
           <% end %>
@@ -47,7 +47,7 @@
       </fieldset>
     <% else %>      
       <%= search_form_for @q, method: :post, url: do |f| %>
-          <%= render "/funds/filter" %>
+          <%= render "/layouts/filter_ext" %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
           <% end %>

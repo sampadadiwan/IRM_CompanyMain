@@ -46,7 +46,15 @@ class ApplicationController < ActionController::Base
     rows = fetch_rows
 
     # and a bulk action to perform on the results
-    "#{controller_name}_bulk_action_job".classify.constantize.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action], params: params.to_unsafe_h)
+    bulk_action_job = if params[:bulk_action_job_prefix].blank?
+                        # The specific bulk action job is passed as a parameter
+                        "#{params[:bulk_action_job_prefix]}_#{controller_name}_bulk_action_job".classify.constantize
+                      else
+                        # The Default bulk action job is the controller name suffixed with BulkActionJob
+                        "#{controller_name}_bulk_action_job".classify.constantize
+                      end
+
+    bulk_action_job.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action], params: params.to_unsafe_h)
 
     # and redirect back to the page we came from
     redirect_path = request.referer || root_path
@@ -163,5 +171,14 @@ class ApplicationController < ActionController::Base
     else
       relation
     end
+  end
+
+  def get_q_param(name)
+    value = nil
+    @q.conditions.each do |condition|
+      #   # Check if the condition's attribute (name) is 'interest_id'
+      value = condition.values.map(&:value).first if condition.attributes.map(&:name).include?(name.to_s)
+    end
+    value
   end
 end

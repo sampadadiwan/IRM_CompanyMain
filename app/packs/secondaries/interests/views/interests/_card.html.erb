@@ -30,7 +30,7 @@
                     <i class="ti ti-user text-primary fs-6"></i>
                   </div>
                   <div class="text-wrap" >
-                    <h4 class="mb-0 fs-6"><%= interest.user.full_name %></h4>
+                    <h4 class="mb-0 fs-6"><%= interest.buyer_entity_name %></h4>
                     <p class="fs-3 mb-0">User</p>
                   </div>
                 </div>
@@ -39,8 +39,8 @@
                     <i class="ti ti-mail text-primary fs-6"></i>
                   </div>
                   <div class="text-wrap" >
-                    <h4 class="mb-0 fs-6"><%= interest.user.email %></h4>
-                    <p class="fs-3 mb-0">Email</p>
+                    <h4 class="mb-0 fs-6"><%= interest.buyer_signatory_emails.presence || "N/A" %></h4>
+                    <p class="fs-3 mb-0">Esign Email</p>
                   </div>
                 </div>
               </div>

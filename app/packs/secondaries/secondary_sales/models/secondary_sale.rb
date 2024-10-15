@@ -22,6 +22,7 @@ class SecondarySale < ApplicationRecord
 
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
+  has_many :allocations, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :fees, as: :owner, dependent: :destroy
 
@@ -57,10 +58,9 @@ class SecondarySale < ApplicationRecord
       self.max_price = final_price
     end
     self.show_quantity ||= "Actual"
-  end
-
-  def allocate_sale(user_id)
-    CustomAllocationJob.perform_later(id, user_id) if finalized && final_price_changed?
+    self.manage_offers = true if id.nil?
+    self.manage_interests = true if id.nil?
+    self.show_holdings = false if id.nil?
   end
 
   def active?
@@ -98,7 +98,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def document_tags
-    ["Buyer", "Buyer Template", "Offer Template", "Seller"]
+    ["Buyer", "Buyer Template", "Offer Template", "Seller", "Allocation Template"]
   end
 
   def signature_labels

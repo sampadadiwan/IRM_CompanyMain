@@ -77,7 +77,7 @@
           <% if access_right.owner_type == "SecondarySale" %>
             <div class="form-group" id="metadata_form_group">
               <%= form.label :metadata, "Select Buyer or Seller" %>
-              <%= form.select :metadata, ["Buyer", "Seller"], {}, class: "form-control" %>
+              <%= form.select :metadata, ["Buyer", "Seller", "RM"], {}, class: "form-control" %>
             </div>
           <% end %>
 

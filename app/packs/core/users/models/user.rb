@@ -123,22 +123,26 @@ class User < ApplicationRecord
 
   def setup_defaults
     if entity.entity_type == "Company"
+      Rails.logger.debug "Setting up company user"
       add_role :employee
-      add_role :holding
       self.curr_role = :employee
     elsif entity.entity_type == "Holding"
+      Rails.logger.debug "Setting up holding user"
       add_role :holding
       self.curr_role = :holding
     elsif ["Investor Advisor"].include?(entity.entity_type)
+      Rails.logger.debug "Setting up investor advisor user"
       add_role :employee
       add_role :investor_advisor
       self.curr_role = :employee
       # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
       self.advisor_entity_id = entity_id
     elsif entity.is_fund?
+      Rails.logger.debug "Setting up fund user"
       add_role :employee
       self.curr_role = :employee
     elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
+      Rails.logger.debug "Setting up investor user"
       add_role :investor
       self.curr_role = :investor
     end

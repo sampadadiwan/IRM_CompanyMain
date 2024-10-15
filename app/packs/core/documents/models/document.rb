@@ -58,6 +58,9 @@ class Document < ApplicationRecord
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
   scope :not_sent_for_esign, -> { where(sent_for_esign: false) }
   scope :signed, -> { where(owner_tag: "Signed") }
+  scope :generated_approved_or_others, lambda { |model|
+    model.documents.includes(:folder).where(owner_tag: "Generated", approved: true).or(model.documents.where.not(owner_tag: "Generated")).or(model.documents.where(owner_tag: nil))
+  }
 
   def to_s
     name

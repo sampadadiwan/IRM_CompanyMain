@@ -21,7 +21,7 @@ class StockSplitter
     # self.sold_quantity *= stock_split_ratio
     # self.net_quantity *= stock_split_ratio
     @portfolio_investment.notes ||= ""
-    @portfolio_investment.notes += "Stock adjusted by factor #{stock_split_ratio} on #{Time.zone.today.strftime("%d %b %Y")}.\n"
+    @portfolio_investment.notes += "Stock adjusted by factor #{stock_split_ratio} on #{Time.zone.today.strftime('%d %b %Y')}.\n"
     result = PortfolioInvestmentUpdate.call(portfolio_investment: @portfolio_investment)
     raise "StockSplitter: PortfolioInvestmentUpdate failed: #{result[:errors]}" unless result.success?
   end

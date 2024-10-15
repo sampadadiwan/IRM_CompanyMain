@@ -94,7 +94,7 @@ class ApplicationMailer < ActionMailer::Base
 
     if @custom_notification && @custom_notification.attachment_names.present? && @notification.model.respond_to?(:documents)
       @custom_notification.attachment_names.split(',').each do |name|
-        # Get the document with the name from the model      
+        # Get the document with the name from the model
         document = @notification.model.documents.where("name like ?", "%#{name}%").first
         # Attach it to the email
         attach_doc(document) if document.present?

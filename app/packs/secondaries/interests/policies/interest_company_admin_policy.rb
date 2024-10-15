@@ -1,0 +1,53 @@
+class InterestCompanyAdminPolicy < SaleBasePolicy
+  def index?
+    user.enable_secondary_sale
+  end
+
+  def owner?
+    permissioned_employee?
+  end
+
+  def matched_offer?
+    true
+  end
+
+  def show?
+    permissioned_employee?
+  end
+
+  def generate_docs?
+    permissioned_employee?(:update) && record.short_listed
+  end
+
+  def short_list?
+    permissioned_employee?(:update)
+  end
+
+  def create?
+    user.id == record.user_id
+  end
+
+  def new?
+    create?
+  end
+
+  def update?
+    (permissioned_employee?(:update) && record.secondary_sale.manage_interests) && !record.verified
+  end
+
+  def accept_spa?
+    false
+  end
+
+  def matched_offers?
+    true
+  end
+
+  def edit?
+    update?
+  end
+
+  def destroy?
+    permissioned_employee?(:update) && !record.verified
+  end
+end

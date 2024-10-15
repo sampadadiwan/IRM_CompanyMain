@@ -37,21 +37,7 @@
                 </li>
             <% end %>
 
-            <% if current_user && current_user.curr_role == "holding" %>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/holdings">
-                        <span><i class="ti ti-file-plus"></i></span>
-                        <span class="hide-menu">Holdings</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/offers?card=true">
-                        <span><i class="ti ti-file-minus"></i></span>
-                        <span class="hide-menu">Offers</span>
-                    </a>
-                </li>
-            <% end %>
+            
 
             <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
                 <!-- Divider -->

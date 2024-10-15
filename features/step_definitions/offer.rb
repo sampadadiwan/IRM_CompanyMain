@@ -105,10 +105,10 @@
     puts @offer.to_json
 
     fill_in("offer_quantity", with: @offer.quantity) unless @offer.approved
+    fill_in("offer_full_name", with: @offer.full_name)
 
     if(@offer.secondary_sale && @offer.secondary_sale.finalized)
-      click_on("Next")
-      fill_in("offer_full_name", with: @offer.full_name)
+      click_on("Next")      
       fill_in("offer_PAN", with: @offer.PAN)
       fill_in("offer_address", with: @offer.address)
       # fill_in("offer_city", with: @offer.city)
@@ -180,7 +180,12 @@
   Then('I should see the offer in the offers tab') do
     visit(secondary_sale_path(@sale))
     click_on("Offers")
-    expect(page).to have_content(@user.full_name)
+    # Check if this has the card class
+    if @offer.full_name.present?
+      expect(page).to have_content(@offer.full_name)  
+    else
+      expect(page).to have_content(@user.full_name)
+    end
     # expect(page).to have_content(@entity.name)
     # expect(page).to have_content(@offer.quantity)
     expect(page).to have_content(@offer.allocation_quantity)
@@ -253,7 +258,7 @@ Given('Given I upload a offer file {string}') do |file_name|
     @import_offer_file_name = file_name
     @existing_user_count = User.count
     visit(secondary_sale_path(@sale))
-    click_on("Pending Offers")
+    click_on("Offers")
     click_on("Upload / Download")
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
@@ -330,8 +335,8 @@ Given('I add pan details to the offer') do
 
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
-  click_on("Next")
   fill_in("offer_full_name", with: Faker::Name.unique.name)
+  click_on("Next")  
   fill_in("offer_PAN", with: Faker::Alphanumeric.alphanumeric(number: 10).upcase)
   attach_file("files[]", File.absolute_path("./public/sample_uploads/example_pan.jpeg"), make_visible: true)
   sleep(1)
@@ -353,8 +358,8 @@ Then('when the offer name is updated') do
 
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
-  click_on("Next")
   fill_in("offer_full_name", with: Faker::Name.unique.name)
+  click_on("Next")  
   click_on("Next")
   click_on("Save")
 end
@@ -381,8 +386,8 @@ Given('I add bank details to the offer') do
 
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
-  click_on("Next")
   fill_in("offer_full_name", with: Faker::Name.unique.name)
+  click_on("Next")  
   fill_in("offer_address", with: @offer.address)
   fill_in("offer_bank_account_number", with: Faker::Bank.unique.account_number)
   fill_in("offer_ifsc_code", with: Faker::Bank.swift_bic)
@@ -439,4 +444,12 @@ def bank_response
   "fuzzy_match_result"=>"true",
   "fuzzy_match_score"=>100}
   OpenStruct.new(verified: true, body: body.to_json)
+end
+
+
+Then('the offer investors must have access rights to the sale') do
+  @sale.reload
+  @sale.offers.each do |offer|
+    offer.investor.access_rights.where(owner: @sale).count.should == 1
+  end
 end

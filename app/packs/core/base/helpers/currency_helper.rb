@@ -3,11 +3,11 @@ module CurrencyHelper
 
   INDIA_FORMAT = /(\d+?)(?=(\d\d)+(\d)(?!\d))/
 
-  def custom_format_number(number, params = {}, ignore_units = false)
+  def custom_format_number(number, params = {}, force_units: true)
     cookies ||= nil
-    raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
+    raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units]) || force_units
 
-    if raw_units.present? && !ignore_units
+    if raw_units.present?
       case raw_units
       when "Crores"
         number_with_delimiter(number, delimiter_pattern: INDIA_FORMAT)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_14_165349) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -267,6 +267,29 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
+  end
+
+  create_table "allocations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "offer_id", null: false
+    t.bigint "interest_id", null: false
+    t.bigint "secondary_sale_id", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "avail_offer_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "avail_interest_quantity", precision: 10, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.boolean "verified", default: false
+    t.bigint "document_folder_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "json_fields"
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.index ["document_folder_id"], name: "index_allocations_on_document_folder_id"
+    t.index ["entity_id"], name: "index_allocations_on_entity_id"
+    t.index ["interest_id"], name: "index_allocations_on_interest_id"
+    t.index ["offer_id"], name: "index_allocations_on_offer_id"
+    t.index ["secondary_sale_id"], name: "index_allocations_on_secondary_sale_id"
   end
 
   create_table "aml_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -966,6 +989,18 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.index ["previous_refresh_token"], name: "index_devise_api_tokens_on_previous_refresh_token"
     t.index ["refresh_token"], name: "index_devise_api_tokens_on_refresh_token"
     t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
+  end
+
+  create_table "doc_answers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.bigint "user_id", null: false
+    t.json "doc_question_answers"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_doc_answers_on_document_id"
+    t.index ["entity_id"], name: "index_doc_answers_on_entity_id"
+    t.index ["user_id"], name: "index_doc_answers_on_user_id"
   end
 
   create_table "doc_questions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1843,12 +1878,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.integer "entity_id"
     t.integer "quantity"
     t.decimal "price", precision: 10
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.integer "interest_entity_id"
     t.bigint "secondary_sale_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "short_listed", default: false
     t.boolean "escrow_deposited", default: false
     t.decimal "final_price", precision: 10, scale: 2, default: "0.0"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -1881,6 +1915,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.json "json_fields"
     t.string "buyer_signatory_emails"
     t.bigint "import_upload_id"
+    t.text "pan_verification_response"
+    t.string "pan_verification_status"
+    t.boolean "pan_verified"
+    t.text "bank_verification_response"
+    t.string "bank_verification_status"
+    t.boolean "bank_verified"
+    t.string "short_listed_status", default: "pending", null: false
+    t.boolean "completed", default: false
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -2108,7 +2150,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.text "signature_data"
-    t.text "pan_card_data"
     t.boolean "pan_verified", default: false
     t.text "pan_verification_response"
     t.string "pan_verification_status"
@@ -2504,6 +2545,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.string "seller_signatory_emails"
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.boolean "completed", default: false
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_offers_on_deleted_at"
@@ -2749,6 +2792,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
     t.string "model"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
+  end
+
+  create_table "rm_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "rm_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "rm_entity_id", null: false
+    t.integer "permissions", default: 0
+    t.boolean "approved", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_rm_mappings_on_entity_id"
+    t.index ["investor_id"], name: "index_rm_mappings_on_investor_id"
+    t.index ["rm_entity_id"], name: "index_rm_mappings_on_rm_entity_id"
+    t.index ["rm_id"], name: "index_rm_mappings_on_rm_id"
   end
 
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3209,6 +3267,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
   add_foreign_key "allocation_runs", "users"
+  add_foreign_key "allocations", "entities"
+  add_foreign_key "allocations", "folders", column: "document_folder_id"
+  add_foreign_key "allocations", "interests"
+  add_foreign_key "allocations", "offers"
+  add_foreign_key "allocations", "secondary_sales"
   add_foreign_key "aml_reports", "entities"
   add_foreign_key "aml_reports", "investor_kycs"
   add_foreign_key "aml_reports", "investors"
@@ -3293,6 +3356,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
+  add_foreign_key "doc_answers", "documents"
+  add_foreign_key "doc_answers", "entities"
+  add_foreign_key "doc_answers", "users"
   add_foreign_key "doc_questions", "entities"
   add_foreign_key "document_chats", "documents"
   add_foreign_key "document_chats", "entities"
@@ -3480,6 +3546,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_07_092334) do
   add_foreign_key "reminders", "entities"
   add_foreign_key "reports", "entities"
   add_foreign_key "reports", "users"
+  add_foreign_key "rm_mappings", "entities"
+  add_foreign_key "rm_mappings", "entities", column: "rm_entity_id"
+  add_foreign_key "rm_mappings", "investors"
+  add_foreign_key "rm_mappings", "investors", column: "rm_id"
   add_foreign_key "scenario_investments", "entities"
   add_foreign_key "scenario_investments", "funds"
   add_foreign_key "scenario_investments", "investment_instruments"

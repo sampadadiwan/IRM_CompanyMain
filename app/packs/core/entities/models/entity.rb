@@ -60,6 +60,7 @@ class Entity < ApplicationRecord
 
   # List of investors who are invested in this entity
   has_many :investors, dependent: :destroy
+  has_many :rm_mappings, dependent: :destroy
   has_many :investor_advisors, dependent: :destroy
   has_many :investor_entities, through: :investors
   has_many :investor_kyc_sebi_datas, dependent: :destroy

@@ -5,25 +5,25 @@ class Interest < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include WithIncomingEmail
+  include WithAllocations
 
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :investor
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :secondary_sale, touch: true
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :entity, touch: true
 
-  has_many :offers, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
-  has_many :access_rights, through: :secondary_sale
+  has_many :offers, through: :allocations
 
   include FileUploader::Attachment(:spa)
 
   has_rich_text :details
 
-  validates :quantity, comparison: { less_than_or_equal_to: :display_quantity }
+  # validates :quantity, comparison: { less_than_or_equal_to: :display_quantity }
   validates :price, comparison: { less_than_or_equal_to: :max_price }, if: -> { secondary_sale.price_type == 'Price Range' }
   validates :price, comparison: { greater_than_or_equal_to: :min_price }, if: -> { secondary_sale.price_type == 'Price Range' }
 
@@ -43,9 +43,26 @@ class Interest < ApplicationRecord
   delegate :final_price, to: :secondary_sale
   delegate :email, to: :user, prefix: true
 
+  # 1. Define possible statuses as constants
+  STATUS_PENDING = 'pending'.freeze
+  STATUS_SHORT_LISTED = 'short_listed'.freeze
+  STATUS_REJECTED = 'rejected'.freeze
+
+  STATUSES = [STATUS_PENDING, STATUS_SHORT_LISTED, STATUS_REJECTED].freeze
+
+  # 2. Validations
+  validates :short_listed_status, presence: true, inclusion: { in: STATUSES }
+
+  # 3. Scopes for easy querying
+  scope :pending, -> { where(short_listed_status: STATUS_PENDING) }
+  scope :short_listed, -> { where(short_listed_status: STATUS_SHORT_LISTED) }
+  scope :not_short_listed, -> { where.not(short_listed_status: STATUS_SHORT_LISTED) }
+  scope :rejected, -> { where(short_listed_status: STATUS_REJECTED) }
+
   scope :cmv, ->(val) { where(custom_matching_vals: val) }
-  scope :short_listed, -> { where(short_listed: true) }
-  scope :not_short_listed, -> { where(short_listed: false) }
+  scope :verified, -> { where(verified: true) }
+  scope :unverified, -> { where(verified: false) }
+
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :escrow_deposited, -> { where(escrow_deposited: true) }
   scope :priced_above, ->(price) { where(price: price..) }
@@ -80,7 +97,7 @@ class Interest < ApplicationRecord
   end
 
   def notify_shortlist
-    if short_listed && saved_change_to_short_listed? && !secondary_sale.no_interest_emails
+    if short_listed && saved_change_to_short_listed_status? && !secondary_sale.no_interest_emails
       investor.notification_users.each do |user|
         InterestNotifier.with(record: self, entity_id:, email_method: :notify_shortlist, msg: "Interest shortlisted for #{secondary_sale.name}").deliver_later(user)
       end
@@ -95,6 +112,10 @@ class Interest < ApplicationRecord
     end
   end
 
+  def short_listed
+    short_listed_status == STATUS_SHORT_LISTED
+  end
+
   def to_s
     "#{investor&.investor_name} - #{quantity} shares @ #{price}"
   end
@@ -107,6 +128,7 @@ class Interest < ApplicationRecord
     self.entity_id ||= secondary_sale.entity_id
     self.investor ||= entity.investors.where(investor_entity_id: user.entity_id).first
     self.interest_entity_id ||= investor.investor_entity_id
+    self.price = secondary_sale.final_price if secondary_sale.price_type == 'Fixed Price'
 
     self.amount_cents = quantity * applied_price * 100
     self.allocation_amount_cents = allocation_quantity * applied_price * 100
@@ -193,11 +215,16 @@ class Interest < ApplicationRecord
     end
   end
 
+  include RansackerAmounts.new(fields: %w[allocation_amount])
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN address allocation_amount allocation_percentage allocation_quantity amount bank_account_number buyer_entity_name city contact_name demat email entity_id ifsc_code quantity short_listed verified]
+    %w[PAN address allocation_amount allocation_quantity amount bank_account_number buyer_entity_name city contact_name demat email entity_id ifsc_code quantity short_listed_status quantity price verified escrow_deposited created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[secondary_sale investor]
+    %w[secondary_sale investor user]
+  end
+
+  def unverified_allocation_quantity
+    allocations.unverified.sum(:quantity)
   end
 end

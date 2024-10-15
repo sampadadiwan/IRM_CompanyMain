@@ -1,7 +1,9 @@
 class DealPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "investor"
+      if user.has_cached_role?(:rm)
+        scope.for_rm(user)
+      elsif user.curr_role == "investor"
         scope.for_investor(user)
       elsif user.entity_type == "Group Company"
         scope.where(entity_id: user.entity.child_ids)

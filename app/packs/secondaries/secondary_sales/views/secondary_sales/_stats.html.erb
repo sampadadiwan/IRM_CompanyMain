@@ -1,15 +1,15 @@
 <%
-  final_price = custom_format_number(secondary_sale.final_price, params)
+  # allocated_quantity = custom_format_number(secondary_sale.allocated_quantity, params)
   sell_quantity = number_with_delimiter(secondary_sale.total_offered_quantity)
   buy_quantity = number_with_delimiter(secondary_sale.total_interest_quantity)
-  offer_allocation_percentage = [secondary_sale.allocation_percentage * 100, 100].min
 %>
 
 <%
 cards_data = [
-  { path: nil, stat: final_price, subtitle: "Final Price", progress_bar_color: "success", text_info: "currency-dollar"},
   { path: nil, stat: sell_quantity, subtitle: "Sell Quantity", progress_bar_color: "info", text_info: "minus" },
-  { path: nil, stat: buy_quantity, subtitle: "Buy Quantity", progress_bar_color: "danger", text_info: "plus" }  
+  { path: nil, stat: buy_quantity, subtitle: "Buy Quantity", progress_bar_color: "success", text_info: "plus" } ,
+  #{ path: nil, stat: allocated_quantity, subtitle: "Allocated Quantity", progress_bar_color: "danger", text_info: "check"},
+  
 ]
 %>
 

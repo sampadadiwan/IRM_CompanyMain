@@ -684,8 +684,7 @@ namespace :irm do
   end
 
   task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeFunds, :generateFakePortfolios] do
-    puts "Generating all Fake Data"
-    SolidQueue::Queue.all.each(&:clear)
+    puts "Generating all Fake Data"    
   end
 
 end

@@ -146,7 +146,7 @@ Scenario Outline: Add Interest documents
   Given there is a FundingRound "name=Series A"
   And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there are offers "quantity=50;approved=true" for the sale
-  Given there are "1" interests "quantity=50;short_listed=true" for the sale
+  Given there are "1" interests "quantity=50;short_listed_status=short_listed" for the sale
   When I visit the interest details page
   When I click the tab "Documents"
   When I create a new document "<document>"

@@ -10,17 +10,17 @@
 
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist" data-controller="tabdetails">
     <% if policy(secondary_sale).owner? %>
-      <% access_right_active = true %>
+      <% interests_active = true %>
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
       
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"   
-            data-action="click->tabdetails#loadData">Pending Offers</a>
+            data-action="click->tabdetails#loadData">Offers</a>
       
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
+      
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a>
+      <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a -->
       
       <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
             data-action="click->tabdetails#loadData">Reminders</a -->
@@ -28,6 +28,13 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
             Notification</a>
     
+    <% elsif policy(secondary_sale).rm? %>
+      <% offers_active = true %>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"   
+            data-action="click->tabdetails#loadData">Offers</a>
+      
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
+      
     <% elsif policy(secondary_sale).seller? %>
       <% if secondary_sale.show_holdings %>
         <% holdings_active = true; document_tag="Seller" %>
@@ -101,22 +108,15 @@
 
       <div id="offerings-tab" class="tab-pane fade <%= offers_active ? 'in show active' : '' %>">
         <div id="offerings" class="associated_entity">
-          <% approved = policy(secondary_sale).owner? ? false : nil %>          
+          <% approved = (policy(secondary_sale).owner? || policy(secondary_sale).rm?) ? false : nil %>          
           
-          <% if policy(secondary_sale).seller? %>
+          <% if policy(secondary_sale).owner? || policy(secondary_sale).rm?  %>
+            <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false), loading: :lazy  do %>
+            <% end %>
+          <% elsif policy(secondary_sale).seller? %>
             <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, approved: approved, card: true), loading: :lazy  do %>
             <% end %>
-          <% end %>
-
-          <% if policy(secondary_sale).owner? %>
-            <%= link_to offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, approved: approved), 
-                class: "load_data_link", data: { turbo_frame: 'offers_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-          <% end %>
-          
-          <%= turbo_frame_tag "offers_frame", target: "_top" do %>
-          <% end %>
+          <% end %>          
 
         </div>     
       </div>
@@ -125,11 +125,7 @@
     <% if policy(secondary_sale).buyer? || policy(secondary_sale).owner? %>
       <div id="interests-tab" class="tab-pane fade <%= interests_active ? 'in show active' : '' %>">
         <div id="interests" class="associated_entity">
-          <%= link_to interests_secondary_sale_path(secondary_sale), class: "load_data_link", data: { turbo_frame: 'interests_frame' } do %>
-            <span>Loading...</span>
-           <% end %>
-      
-          <%= turbo_frame_tag "interests_frame", target: "_top" do %>
+          <%= turbo_frame_tag "interests_frame", target: "_top", src: interests_secondary_sale_path(secondary_sale), loading: :lazy do %>
           <% end %>
         </div>     
       </div>

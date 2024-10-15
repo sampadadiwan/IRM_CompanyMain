@@ -1,0 +1,212 @@
+<div class="wizard_container" data-controller="wizard">
+
+    <div class="stepwizard">
+            <div class="stepwizard-row setup-panel">
+                
+                    
+                <div class="stepwizard-step">
+                    <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
+                    <p>Step 1</p>
+                </div>
+                <% if interest.short_listed %>
+                    <div class="stepwizard-step">
+                        <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
+                        <p>Step 2</p>
+                    </div>
+                <% end %>
+
+            </div>
+    </div>
+
+<%= form_with(model: interest, validate: true, class: "wizard_form row justify-content-md-center") do |form| %>
+  <% if interest.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(interest.errors.count, "error") %> prohibited this interest from being saved:</h2>
+
+      <ul>
+        <% interest.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row setup-content" id="step-1">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header"> 1. Interest Quantity </div>
+            <div class="card-body">
+
+                <div class="form-group">
+                    <%= form.number_field :entity_id, class: "form-control", hidden: true  %>
+                    <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+                    <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
+                </div>
+
+                <% unless interest.short_listed %>
+                    <% if current_user.entity_id == interest.entity_id %>
+                        <div class="form-group">
+                            <%= form.label :investor_id, "Buyer" %>
+                            <%= form.select :investor_id, interest.secondary_sale.buyer_investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
+                        </div>
+
+                        <div class="form-group">
+                            <%= form.label :escrow_deposited %>
+                            <%= form.check_box :escrow_deposited, class: "form-check-input"  %>
+                        </div>
+                    <% elsif current_user.has_cached_role?(:rm) %>
+                        <div class="form-group">
+                            <%= form.label :investor_id, "Buyer" %>
+                            <%= form.select :investor_id, RmMapping.investors_for(current_user, interest.entity).map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
+                        </div>
+                    <% else %>
+                        <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+                    <% end %>
+                <% end %> 
+
+                <div class="form-group">
+                    <div class="form-group">
+                        <%= form.label :buyer_entity_name %>
+                        <%= form.text_field :buyer_entity_name, class: "form-control"  %>
+                    </div>
+                </div>
+
+
+                <div class="form-group" data-controller="currencyformat">
+                    <%= form.label :quantity %> <span class="formatted_currency"></span>
+                    <% if interest.short_listed %>
+                        <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
+                        <%= form.number_field :quantity, class: "form-control", hidden: true %>
+                    <% else %>
+                        <%= form.number_field :quantity, class: "form-control", required: true, data: {action: "input->currencyformat#format"} %>
+                        <small class="text-muted">Sale quantity: <%= interest.secondary_sale.display_quantity %></small>
+                    <% end %>
+                </div>
+
+                <div class="form-group" data-controller="currencyformat">
+                    <%= form.label :price %> <span class="formatted_currency"></span>
+                    <% if interest.short_listed || interest.secondary_sale.price_type == "Fixed Price" %>
+                        <%= form.number_field :price, class: "form-control", required: true, disabled: true %>
+                    <% else %>
+                        <%= form.number_field :price, class: "form-control", required: true, data: {action: "input->currencyformat#format"} %>
+
+                        <small class="text-muted">
+                                <%= interest.secondary_sale.display_price %>
+                        </small>
+                    <% end %>
+                </div>
+
+
+                <%= custom_form_fields(interest, form, step: :one) %>
+
+                <div class="form-group">
+                    <%= form.label :comments %>
+                    <%= form.text_area :comments, class: "form-control"  %>
+                </div>
+
+                <div class="form-group">
+                    <% if interest.short_listed %>
+                        <button id="next1" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right" type="button">Next</button>
+                    <% else %>
+                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                    <% end %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <% if interest.short_listed %>
+
+    <div class="row setup-content" id="step-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 2. Personal Details </div>
+                <div class="card-body">
+
+                    <div class="form-group">
+                        <%= form.label :contact_name %>
+                        <%= form.text_field :contact_name, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :buyer_signatory_emails %>
+                        <%= form.text_field :buyer_signatory_emails, class: "form-control" %>
+                        <small class="form-text text-muted">Comma separated emails if esignature is required</small>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :address %>
+                        <%= form.text_area :address, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :city %>
+                        <%= form.text_field :city, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :PAN %>
+                        <%= form.text_field :PAN, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= file_fields("Upload PAN", interest, form, required: false, meta_data: "PAN") %>
+                        <small class="form-text text-muted">Please upload a clear image of your PAN</small>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :demat %>
+                        <%= form.text_field :demat, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :bank_account_number %>
+                        <%= form.text_field :bank_account_number, class: "form-control"  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :ifsc_code, "IFSC Code" %>
+                        <%= form.text_field :ifsc_code, class: "form-control"  %>
+                    </div>
+
+
+
+                    <% if interest.secondary_sale.buyer_doc_list.present? %>
+                        <%  interest.secondary_sale.buyer_doc_list.split(",").each do |doc_name| %>
+
+                        <div class="form-group">
+                            <%= file_fields(doc_name.strip.squeeze(" "), interest, form) %>
+                            <small class="form-text text-muted">Please upload a latest clear copy </small>
+                        </div>
+
+                        <% end %>
+                    <% end %>
+
+
+                    <%= custom_form_fields(interest, form, step: :end) %>
+
+                    <div class="form-group">
+                        <%= form.label :completed %>
+                        <%= form.check_box :completed, class: "form-check-input"  %>
+                        <small class="form-text text-muted">Please check this box to confirm that you have uploaded all the required documents and filled out all required information above correctly</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="uppy_wait_info alert alert-info">Please wait for the file upload above to complete, before clicking Save.</div>
+                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+  <% end %>
+
+<% end %>
+
+</div>

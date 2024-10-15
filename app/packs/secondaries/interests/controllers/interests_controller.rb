@@ -1,11 +1,11 @@
 class InterestsController < ApplicationController
   before_action :set_interest, only: %i[show edit update destroy short_list allocate
-                                        allocation_form matched_offers accept_spa generate_docs]
+                                        allocation_form accept_spa generate_docs]
 
   # GET /interests or /interests.json
   def index
     @q = Interest.ransack(params[:q])
-    @interests = policy_scope(@q.result).includes(:entity, :interest_entity, :user)
+    @interests = policy_scope(@q.result).includes(:entity, :interest_entity, :user, :secondary_sale, :investor)
     @secondary_sale = nil
 
     if params[:secondary_sale_id].present?
@@ -13,24 +13,22 @@ class InterestsController < ApplicationController
 
       @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
       @interests = @interests.order(allocation_quantity: :desc)
-      @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"
-      @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
+
+      # @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"
+      # @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
+
       @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
       @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
 
+      @interest = @interests.pending if params[:short_listed_status] == "pending"
+      @interest = @interests.rejected if params[:short_listed_status] == "rejected"
+      @interest = @interests.short_listed if params[:short_listed_status] == "short_listed"
+
     end
 
-    # @interests = @interests.page(params[:page]).per(params[:per_page] || 10) unless format.xlsx?
+    @interests = @interests.page(params[:page]) unless request.format.xlsx?
 
     render "index"
-  end
-
-  def matched_offers
-    @q = @interest.offers.ransack(params[:q])
-    @offers = @q.result
-    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
-    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
-    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
   end
 
   # GET /interests/1 or /interests/1.json
@@ -40,6 +38,12 @@ class InterestsController < ApplicationController
   def new
     @interest = Interest.new(interest_params)
     @interest.user_id ||= current_user.id
+    @interest.entity_id = @interest.secondary_sale.entity_id
+    # Set the investor id
+    @interest.investor_id ||= @interest.entity.investors.where(investor_entity_id: current_user.entity_id).first&.id
+
+    redirect_to secondary_sale_path(@interest.secondary_sale, notice: "Investor not set") if @interest.investor_id.blank?
+
     @interest.interest_entity_id ||= @interest.investor&.investor_entity_id || current_user.entity_id
     @interest.entity_id = @interest.secondary_sale.entity_id
     @interest.price = @interest.secondary_sale.final_price if @interest.secondary_sale.price_type == "Fixed Price"
@@ -119,9 +123,10 @@ class InterestsController < ApplicationController
   def allocation_form; end
 
   def short_list
-    result = InterestShortList.call(interest: @interest)
+    result = InterestShortList.call(interest: @interest, short_listed_status: params[:short_listed_status])
     respond_to do |format|
       if result.success?
+        @interest.reload
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace(@interest, partial: "interests/interest",
@@ -190,7 +195,7 @@ class InterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def interest_params
-    params.require(:interest).permit(:entity_id, :quantity, :price, :user_id, :verified,
+    params.require(:interest).permit(:entity_id, :quantity, :price, :user_id, :verified, :completed,
                                      :comments, :escrow_deposited, :details, :allocation_quantity,
                                      :investor_id, :secondary_sale_id, :buyer_entity_name,
                                      :demat, :city, :bank_account_number, :ifsc_code, :form_type_id,

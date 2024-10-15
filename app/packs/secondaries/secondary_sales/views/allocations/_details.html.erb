@@ -1,0 +1,29 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
+        data-action="click->tabdetails#loadData">Documents</a>
+
+  </nav>
+
+
+  <div class="tab-content" data-controller="datatable">
+
+
+      <div id="docs-tab" class="tab-pane fade in show active">
+        <div id="docs" class="associated_entity">
+         <% documents = if current_user.entity_id == @allocation.entity_id
+            @allocation.documents.includes(:folder)
+            else
+            @allocation.documents.includes(:folder).where(owner_tag:"Generated", approved: true).or(@allocation.documents.where.not(owner_tag:"Generated")).or(@allocation.documents.where(owner_tag: nil))
+            end
+        %>
+          <%= render "/documents/index", documents: documents,
+              owner: @allocation, entity: @allocation.entity, msg: msg %>
+        </div>
+      </div>
+
+  </div>
+
+</div>

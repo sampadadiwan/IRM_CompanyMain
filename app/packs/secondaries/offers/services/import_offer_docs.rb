@@ -1,6 +1,6 @@
 class ImportOfferDocs < ImportUtil
-  STANDARD_HEADERS = ["Id", "User", "Email", "Folder", "Document Name", "File Name",
-                      "Tags", "Send Email", "Orignal Format"].freeze
+  STANDARD_HEADERS = ["Id", "User", "Email", "Document Name", "File Name",
+                      "Tags", "Send Email", "Orignal Format", "Folder"].freeze
   attr_accessor :commitments
 
   def standard_headers

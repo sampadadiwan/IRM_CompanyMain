@@ -10,19 +10,29 @@
 
       <tr>
         <td>
+          Entity
+        </td>
+        <td>
+          <%= @offer.entity.name %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Investor
+        </td>
+        <td>
+          <%= @offer.investor.investor_name %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
           User
         </td>
         <td>
           <%= @offer.user.full_name %>
           (<%= @offer.user.email %>)
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @offer.entity.name %>
         </td>
       </tr>
       <tr>
@@ -50,7 +60,16 @@
           Quantity
         </td>
         <td>
-          <%= @offer.quantity %>
+          <%= custom_format_number @offer.quantity, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Price
+        </td>
+        <td>
+          <%= custom_format_number @offer.price, params %>
         </td>
       </tr>
 
@@ -83,7 +102,7 @@
         </tr>
 
 
-        <% if @offer.PAN  || params[:debug].present? %>
+        <% if @offer.allocation_quantity > 0  || params[:debug].present? %>
           <tr>
             <td colspan="2" class="bg-primary"></td>
           </tr>
@@ -95,14 +114,7 @@
               <%= @offer.allocation_quantity %>
             </td>
           </tr>
-          <tr>
-            <td>
-              Final Price
-            </td>
-            <td>
-              <%= @offer.final_price %>
-            </td>
-          </tr>
+          
           <tr>
             <td>
               Gross Amount
@@ -132,24 +144,7 @@
             </td>
           </tr>
 
-          <tr>
-            <td>
-              Allocation %
-            </td>
-            <td>
-              <%= @offer.allocation_percentage %> %
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Acquirer
-            </td>
-            <td>
-              <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %>
-            </td>
-          </tr>
-
+        <% end %>
 
           <tr>
             <td colspan="2" class="bg-primary"></td>
@@ -173,14 +168,6 @@
             </td>
           </tr>
 
-          <tr>
-            <td>
-              Esignature Emails
-            </td>
-            <td>
-              <%= @offer.seller_signatory_emails %>
-            </td>
-          </tr>
 
           <tr>
             <td>
@@ -263,6 +250,15 @@
             </tr>
           <% end %>
 
+          <tr id="completed">
+            <td>
+              Completed
+            </td>
+            <td>
+              <%= display_boolean(@offer.completed) %>
+            </td>
+          </tr>
+
 
 
           <tr>
@@ -284,7 +280,7 @@
               </td>
           </tr>
 
-        <% end %>
+        
 
         <%= display_custom_fields(@offer) if current_user %>
 

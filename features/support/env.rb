@@ -37,9 +37,10 @@ Cucumber::Rails::Database.autorun_database_cleaner = false
 # Remove/comment out the lines below if your app doesn't have a database.
 # For some databases (like MongoDB and CouchDB) you may need to use :truncation instead.
 
+# Drop emailbutler_messages caphive_agents admin_users impressions 
 begin
   # These tables are excluded simply to make truncation faster. If you write tests which include these models then you should remove them from this list.
-  DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs share_transfers action_mailbox_inbound_emails]]
+  DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs share_transfers action_mailbox_inbound_emails admin_users allocation_runs audits call_fees caphive_agents devise_api_tokens doc_answers doc_questions document_chats emailbutler_messages favorites fees friendly_id_slugs incoming_emails key_biz_metrics permissions portfolio_scenarios quick_link_steps quick_links stamp_papers support_client_mappings whatsapp_logs]]
 
   Chewy.strategy :bypass
 

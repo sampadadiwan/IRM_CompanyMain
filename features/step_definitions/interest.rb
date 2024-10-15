@@ -26,7 +26,7 @@
     key_values(@interest, args)
     click_on("New Interest")
     fill_in("interest_quantity", with: @interest.quantity)
-    fill_in("interest_price", with: @interest.price)
+    fill_in("interest_price", with: @interest.price) unless @sale.price_type == "Fixed Price"
     click_on("Save")
   end
 
@@ -39,7 +39,7 @@
   end
 
   Then('when the interest is shortlisted') do
-    InterestShortList.call(interest: @created_interest).success?.should == true
+    InterestShortList.call(interest: @created_interest, short_listed_status: Interest::STATUS_SHORT_LISTED).success?.should == true
   end
   
   
@@ -47,8 +47,9 @@
     visit (edit_interest_url(@created_interest))
     @interest = FactoryBot.build(:interest, quantity: @created_interest.quantity, price: @created_interest.price)    
     key_values(@interest, args)
-
+    
     fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
+    click_on("Next")
     fill_in("interest_address", with: @interest.address)
     fill_in("interest_contact_name", with: @interest.contact_name)
     # fill_in("interest_email", with: @interest.email)
@@ -99,8 +100,12 @@
     expect(page).to have_content(@interest.price)
     expect(page).to have_content(@interest.quantity)
     # if @user.entity_id == @created_interest.interest_entity_id || @created_interest.escrow_deposited
-        expect(page).to have_content(@created_interest.user.full_name)
-        expect(page).to have_content(@created_interest.interest_entity.name)
+    if @created_interest.buyer_entity_name.present?
+        expect(page).to have_content(@created_interest.buyer_entity_name) 
+    elsif @created_interest.user 
+        expect(page).to have_content(@created_interest.user.full_name) 
+    end
+    expect(page).to have_content(@created_interest.interest_entity.name)
     # else
     #     expect(page).to have_no_content(@created_interest.user.full_name)
     #     expect(page).to have_no_content(@created_interest.interest_entity.name)
@@ -109,8 +114,7 @@
     # expect(page).to have_content(@created_interest.entity.name)
     
     within("#short_listed") do
-        label = @created_interest.short_listed ? "Yes" : "No"
-        expect(page).to have_content(label)
+        expect(page).to have_content(@created_interest.short_listed_status.humanize)
     end
     within("#escrow_deposited") do
         label = @created_interest.escrow_deposited ? "Yes" : "No"
@@ -143,3 +147,22 @@
     end
   end
   
+  
+Given('given I upload an interests file {string}') do |file_name|
+  @import_offer_file_name = file_name
+  @existing_user_count = User.count
+  visit(secondary_sale_path(@sale))
+  click_on("Interests")
+  click_on("Upload Interests")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
+  sleep(4)
+  click_on("Save")
+  sleep(4)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(5)
+
+  ImportUpload.last.failed_row_count.should == 0
+
+  
+end

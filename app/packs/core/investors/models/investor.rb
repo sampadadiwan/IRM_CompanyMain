@@ -25,6 +25,9 @@ class Investor < ApplicationRecord
   # The users linked to the InvestorAccess
   has_many :users, through: :investor_accesses
   has_many :approved_users, through: :approved_investor_accesses, source: :user
+  has_many :rm_mappings, dependent: :destroy
+  has_many :rm_mappings_as_rm, class_name: "RmMapping", foreign_key: :rm_id, dependent: :destroy
+  has_many :mapped_investors_as_rm, through: :rm_mappings_as_rm, source: :investor
 
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
@@ -94,8 +97,11 @@ class Investor < ApplicationRecord
               }
 
   scope :advisors, -> { where(category: "Investor Advisor") }
+  scope :rms, -> { where(category: "RM") }
   scope :portfolio_companies, -> { where(category: "Portfolio Company") }
+  scope :not_portfolio_companies, -> { where.not(category: "Portfolio Company") }
   scope :not_advisors, -> { where.not(category: "Investor Advisor") }
+  scope :not_rms, -> { where.not(category: "RM") }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
   scope :not_holding, -> { where(is_holdings_entity: false) }

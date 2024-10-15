@@ -6,7 +6,7 @@
     <%= offer.investor.investor_name %>
   </td>
   <td>
-    <%= offer.quantity %>
+    <%= custom_format_number offer.quantity, params %>
   </td>
   <td>
     <%= offer.percentage %>%

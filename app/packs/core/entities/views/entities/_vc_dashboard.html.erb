@@ -23,9 +23,13 @@
 
         <% if current_user.enable_secondary_sale && policy_scope(Offer).count > 0 %>
 
-            <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do %>
+            <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do |component|  %>
 
-                <% offers = policy_scope(Offer).includes(:entity, :secondary_sale, :investor, :holding).where("secondary_sales.active=?", true) %>
+                <% component.with_header do %>
+                    <a class="btn btn-outline-primary" href="<%=offers_path%>"><i class="fa-solid fa-table-cells"></i></a>
+                <% end %>
+
+                <% offers = policy_scope(Offer).joins(:secondary_sale).includes(:entity, :investor, :holding).where("secondary_sales.active=?", true) %>
 
                 <% offers.each do |offer| %>
                     <%= render "/offers/card", offer: %>
@@ -37,9 +41,13 @@
 
         <% if current_user.enable_secondary_sale && policy_scope(Interest).count > 0 %>
 
-            <%= render ToggleCard.new(title: "Interests", css_class: "show_interests") do %>
+            <%= render ToggleCard.new(title: "Interests", css_class: "show_interests") do |component| %>
 
-                <% interests = policy_scope(Interest).includes(:entity, :secondary_sale, :investor).where("secondary_sales.active=?", true) %>
+                <% component.with_header do %>
+                    <a class="btn btn-outline-primary" href="<%=interests_path%>"><i class="fa-solid fa-table-cells"></i></a>
+                <% end %>
+
+                <% interests = policy_scope(Interest).joins(:secondary_sale).includes(:entity, :investor).where("secondary_sales.active=?", true) %>
 
                 <% interests.each do |interest| %>
                     <%= render "/interests/card", interest: %>

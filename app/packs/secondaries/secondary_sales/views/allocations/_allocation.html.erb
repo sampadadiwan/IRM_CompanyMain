@@ -1,0 +1,51 @@
+<tr id="<%= dom_id allocation %>">
+  <td>
+    <%= link_to allocation.offer.full_name, allocation.offer %>
+  </td>
+  <td>
+    <%= allocation.offer.investor.investor_name %>
+  </td>
+  <td>
+    <%= number_with_delimiter allocation.offer.price %>
+  </td>
+  <td>
+    <%= number_with_delimiter allocation.offer.quantity %>
+    <% if params[:debug].present? %>
+      <div class="small text-muted"> <%= allocation.avail_offer_quantity %></div>
+    <% end %>
+  </td>
+  <td>
+    <%= link_to allocation.interest.buyer_entity_name, allocation.interest %>
+  </td>
+  <td>
+    <%= allocation.interest.investor.investor_name %>
+  </td>
+  <td>
+    <%= number_with_delimiter allocation.interest.price %>
+  </td>
+  <td>
+    <%= allocation.interest.quantity %>
+    <% if params[:debug].present? %>
+      <div class="small text-muted"> <%= allocation.avail_interest_quantity %> </div>
+    <% end %>
+  </td>
+  <td>
+    <%= number_with_delimiter allocation.quantity %>
+  </td>
+  <td>
+    <%= number_with_delimiter allocation.price %>
+  </td>
+  <td>
+    <%= money_to_currency allocation.amount, params %>
+  </td>
+  <td>
+    <%= allocation.notes %>
+  </td>
+  <td>
+    <%= display_boolean allocation.verified %>
+  </td>
+  <td>
+    <%= link_to "Show", allocation , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_allocation_path(allocation), {class: "btn btn-outline-success"} if policy(allocation).update? %>
+  </td>
+</tr>

@@ -1,0 +1,18 @@
+<tr id="<%= dom_id rm_mapping %>">
+  <td>
+    <%= link_to rm_mapping.rm.investor_name, rm_mapping.rm %>
+  </td>
+  <td>
+    <%= link_to rm_mapping.investor.investor_name, rm_mapping.investor %>
+  </td>
+  <td>
+    <%= rm_mapping.permissions %>
+  </td>
+  <td>
+    <%= display_boolean rm_mapping.approved %>
+  </td>
+  <td>
+    <%= link_to "Show", rm_mapping , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_rm_mapping_path(rm_mapping), {class: "btn btn-outline-success"} if policy(rm_mapping).update? %>
+  </td>
+</tr>

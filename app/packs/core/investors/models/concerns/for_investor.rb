@@ -8,7 +8,7 @@ module ForInvestor
         Fund
       elsif ["ExpressionOfInterest"].include?(name)
         InvestmentOpportunity
-      elsif %w[Offer Interest].include?(name)
+      elsif %w[Offer Interest Allocation].include?(name)
         SecondarySale
       elsif %w[Kpi].include?(name)
         KpiReport
@@ -52,6 +52,42 @@ module ForInvestor
       end
     }
 
+    scope :for_rm, lambda { |user|
+      join_clause = if instance_methods.include?(:access_rights)
+                      Rails.logger.debug { "######## for_rm has access_rights" }
+                      if instance_methods.include?(:investor)
+                        Rails.logger.debug { "######## for_rm 1 has :investor" }
+                        joins(:access_rights).joins(investor: :rm_mappings)
+                      else
+                        # This is for the case where the model has access_rights like SecondarySale, Fund, Deal, Approval etc
+                        Rails.logger.debug { "######## for_rm 2 joins entity: :investor" }
+                        joins(:access_rights).joins(entity: :investors)
+                      end
+                    elsif instance_methods.include?(:investor)
+                      Rails.logger.debug { "######## for_rm 3 joins investor: :rm_mappings" }
+                      joins(investor: :rm_mappings).joins(parent_class_type.name.underscore => :access_rights)
+                    else
+                      Rails.logger.debug { "######## for_rm 4" }
+                      joins(parent_class_type.name.underscore => :access_rights).joins(entity: :investors)
+                    end
+
+      # Filter by access rights
+      join_clause = if instance_methods.include?(:investor)
+                      # These are models like offers, interests, commitments etc which have an investor association, and have the access rights which are given in the parent model to the RM. So special treament to join with the rm_mappings table instead of the investors table
+                      filter = AccessRight.access_filter_for_rm(user)
+                      join_clause.merge(filter).where("rm_mappings.rm_entity_id=?", user.entity_id)
+                    else
+                      # These are models like secondary_sale, deal, fund, approval etc which dont have an investor association, and have the access rights which are given to the RM. So we treat it like  aregular investor access
+                      filter = AccessRight.access_filter(user)
+                      join_clause.merge(filter).where("investors.investor_entity_id=?", user.entity_id)
+                    end
+
+      # Ensure the investor access is approved
+      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+
+      join_clause
+    }
+
     # Some models have a belongs_to :investor association
     scope :for_investor, lambda { |user|
       filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
@@ -84,8 +120,6 @@ module ForInvestor
 
       join_clause
     }
-
-   
   end
 
   def model_with_access_rights
@@ -93,7 +127,7 @@ module ForInvestor
       fund
     elsif %w[ExpressionOfInterest].include?(self.class.name)
       investment_opportunity
-    elsif %w[Offer Interest].include?(self.class.name)
+    elsif %w[Offer Interest Allocation].include?(self.class.name)
       secondary_sale
     elsif %w[ApprovalResponse].include?(self.class.name)
       approval

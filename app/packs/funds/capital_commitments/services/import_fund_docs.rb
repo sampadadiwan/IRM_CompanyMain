@@ -48,7 +48,7 @@ class ImportFundDocs < ImportUtil
     send_email = user_data["Send Email"] == "Yes"
     file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
 
-    model = find_model(user_data, fund)
+    model = find_model(user_data, fund, investor)
     if fund && investor && model
       # Create the doc and attach it to the commitment
       if Document.exists?(owner: model, entity_id: model.entity_id,
@@ -79,13 +79,13 @@ class ImportFundDocs < ImportUtil
     end
   end
 
-  def find_model(user_data, fund)
+  def find_model(user_data, fund, investor)
     folio_id = user_data["Folio No"].presence
 
     case user_data["Document Type"]
     when "Commitment"
-      cc = CapitalCommitment.where(fund_id: fund.id, folio_id:).last
-      raise "Capital Commitment not found for #{folio_id}" unless cc
+      cc = CapitalCommitment.where(fund_id: fund.id, folio_id:, investor_id: investor.id).last
+      raise "Capital Commitment not found for #{folio_id} and #{investor}" unless cc
 
       return cc
     when "Remittance"
@@ -95,8 +95,8 @@ class ImportFundDocs < ImportUtil
       call = CapitalCall.where(fund_id: fund.id, name: call_name).last
       raise "Capital Call not found for #{call_name}" unless call
 
-      capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id).last
-      raise "Capital Remittance not found for #{call_name}" unless capital_remittance
+      capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id, investor_id: investor.id).last
+      raise "Capital Remittance not found for #{call_name}, #{folio_id} and #{investor}" unless capital_remittance
 
       return capital_remittance
     when "Distribution"
@@ -106,8 +106,8 @@ class ImportFundDocs < ImportUtil
       distribution = CapitalDistribution.where(fund_id: fund.id, title: distribution_name).last
       raise "Capital Distribution not found for #{distribution_name}" unless distribution
 
-      cdp = CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id).last
-      raise "Capital Distribution Payment not found for #{distribution_name}" unless cdp
+      cdp = CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id, investor_id: investor.id).last
+      raise "Capital Distribution Payment not found for #{distribution_name}, #{folio_id} and #{investor}" unless cdp
 
       return cdp
     end

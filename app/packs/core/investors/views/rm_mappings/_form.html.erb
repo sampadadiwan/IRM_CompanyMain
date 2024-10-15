@@ -1,0 +1,44 @@
+<%= render FormCard.new(title: "Rm Mappings : #{rm_mapping.presence || 'New'}") do %>
+  <%= form_with(model: rm_mapping, validate: true) do |form| %>
+    <% if rm_mapping.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(rm_mapping.errors.count, "error") %> prohibited this rm_mapping from being saved:</h2>
+        <ul>
+          <% rm_mapping.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+
+    <div class="form-group">
+      <%= form.label :rm_id %>
+      <%= form.select :rm_id, current_user.entity.investors.rms.map{|r| [r.investor_name, r.id]}, {}, class: "form-control select2"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :investor_id %>
+      <%= form.select :investor_id, current_user.entity.investors.not_portfolio_companies.map{|r| [r.investor_name, r.id]}, {}, class: "form-control select2"  %>
+    </div>
+
+    <div class="associated_entity row">
+        <% RmMapping.permissions.pairs.each do |key, val| %>
+          <div class="form-group col">
+              <%= form.label :permissions, key.titleize, class: "no-wrap" %>
+              <%= form.check_box :permissions, {name: "rm_mapping[permissions][]",
+                  val: val, id: "permissions#{val}", class: "form-check-input"}, val, nil   %>
+          </div>      
+        <% end %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :approved %>
+      <%= form.check_box :approved, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

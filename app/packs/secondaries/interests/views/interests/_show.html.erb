@@ -10,7 +10,7 @@
 
         <tr>
           <td>
-            Interest Entity
+            Entity
           </td>
           <td>
             <%= interest.entity.name %>
@@ -19,13 +19,33 @@
 
         <tr>
           <td>
-            Esignature Emails
+            Name
           </td>
           <td>
-            <%= interest.buyer_signatory_emails %>
+            <%= interest.buyer_entity_name.presence %>
           </td>
         </tr>
 
+        <tr>
+          <td>
+            Investor
+          </td>
+          <td>
+            <%= interest.investor.investor_name %>
+          </td>
+        </tr>
+
+
+        <tr>
+          <td>
+            User
+          </td>
+          <td>
+            <%= interest.user&.full_name %>
+          </td>
+        </tr>
+
+      
         <tr>
           <td>
             Secondary Sale
@@ -40,7 +60,7 @@
             Quantity
           </td>
           <td>
-            <%= interest.quantity %>
+            <%= custom_format_number interest.quantity, params %>
           </td>
         </tr>
         <tr>
@@ -48,7 +68,7 @@
             Price
           </td>
           <td>
-            <%= interest.price %>
+            <%= custom_format_number interest.price, params %>
           </td>
         </tr>
         <tr>
@@ -65,8 +85,8 @@
             Shortlisted
           </td>
           <td>
-            <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
-              <%= interest.short_listed? ? "Yes" : "No" %>
+            <span class="badge <%= interest.short_listed ? 'bg-success' : 'bg-warning' %>">
+              <%= interest.short_listed_status.humanize %>
             </span>
           </td>
         </tr>
@@ -79,30 +99,9 @@
               <%= interest.escrow_deposited? ? "Yes" : "No" %>
             </span>
           </td>
-        </tr>
+        </tr>        
 
-        <% if current_user %>
-        <tr>
-          <td>
-            User
-          </td>
-          <td>
-            <%= true || interest.user_id == current_user.id || interest.escrow_deposited? ? interest.user.full_name + " " + interest.user.email : ENV["OBFUSCATION"] %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Interest Entity
-          </td>
-          <td>
-            <% name = interest.investor&.investor_name.presence || interest.interest_entity.name %>
-            <%= true || interest.user_id == current_user.id || interest.escrow_deposited? ? name : ENV["OBFUSCATION"] %>
-          </td>
-        </tr>
-        <% end %>
-
-
-        <% if interest.secondary_sale.lock_allocations %>
+        <% if interest.allocation_quantity > 0 %>
         <tr>
           <td colspan="2" class="bg-primary"></td>
         </tr>
@@ -114,14 +113,7 @@
             <%= interest.allocation_quantity %>
           </td>
         </tr>
-        <tr>
-          <td>
-            Final Price
-          </td>
-          <td>
-            <%= interest.final_price %>
-          </td>
-        </tr>
+        
         <tr>
           <td>
             Allocation Amount
@@ -130,14 +122,7 @@
             <%= money_to_currency interest.allocation_amount, params %>
           </td>
         </tr>
-        <tr>
-          <td>
-            Allocation %
-          </td>
-          <td>
-            <%= interest.allocation_percentage %> %
-          </td>
-        </tr>
+        
       <% end %>
 
 
@@ -271,22 +256,14 @@
             </tr>
           <% end %>
 
-
-          <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
-
-            <tr>
-              <td colspan="2" class="bg-primary"></td>
-            </tr>
-            <tr>
-              <td>
-                SPA
-              </td>
-              <td>
-                <%= link_to "Download SPA", interest.spa.url, target: "_blank", class: "btn btn-outline-sm btn-outline-primary" if interest.spa.present? %>
-              </td>
-            </tr>
-
-          <% end %>
+          <tr id="completed">
+            <td>
+              Completed
+            </td>
+            <td>
+              <%= display_boolean(interest.completed) %>
+            </td>
+          </tr>
 
           <tr>
             <td>

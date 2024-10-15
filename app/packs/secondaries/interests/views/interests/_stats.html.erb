@@ -4,7 +4,11 @@
 <% index = 0 %>
 <div class="row">
     
-    <% stats = [["Shortlisted", secondary_sale.interests.short_listed.count, interests_secondary_sale_path(secondary_sale, short_listed: true)], ["Pending", secondary_sale.interests.not_short_listed.count, interests_secondary_sale_path(secondary_sale, short_listed: false) ],  ["Un Eligible", secondary_sale.interests.not_eligible(secondary_sale).count, interests_secondary_sale_path(secondary_sale, eligible: false)], ["Eligible", secondary_sale.interests.eligible(secondary_sale).count, interests_secondary_sale_path(secondary_sale, eligible: true)]] %>
+    <% stats = [
+        ["Shortlisted", secondary_sale.interests.short_listed.count, interests_secondary_sale_path(secondary_sale, short_listed_status: :short_listed)], 
+        ["Pending", secondary_sale.interests.pending.count, interests_secondary_sale_path(secondary_sale, short_listed_status: :pending) ],
+        ["Rejected", secondary_sale.interests.rejected.count, interests_secondary_sale_path(secondary_sale, short_listed_status: :rejected) ]
+    ] %>
     <% stats.each do |status, count, link| %>
     <% 
         color = colors[index % colors.length]; index += 1 

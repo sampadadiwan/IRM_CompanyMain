@@ -5,6 +5,10 @@
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
 
+    <% if offer.allocation_quantity > 0 %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#transaction-docs-tab"
+          data-action="click->tabdetails#loadData">Transaction Documents</a>
+    <% end %>
   </nav>
 
 
@@ -14,9 +18,9 @@
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
          <% documents = if current_user.entity_id == @offer.entity_id
-            @offer.documents.includes(:folder)
+              @offer.documents.includes(:folder)
             else
-            @offer.documents.includes(:folder).where(owner_tag:"Generated", approved: true).or(@offer.documents.where.not(owner_tag:"Generated")).or(@offer.documents.where(owner_tag: nil))
+              Document.generated_approved_or_others(@offer)
             end
         %>
           <% msg = @offer.secondary_sale.seller_doc_list.present? ? "Documents Required: #{@offer.secondary_sale.seller_doc_list}" : nil %>
@@ -24,6 +28,14 @@
               owner: @offer, entity: @offer.entity, msg: msg %>
         </div>
       </div>
+
+      <% if offer.allocation_quantity > 0 %>
+        <div id="transaction-docs-tab" class="tab-pane fade in">
+          <div id="transaction_docs" class="associated_entity">
+            <%= render "/documents/index", documents: @offer.transaction_documents.approved, msg: nil, title: "Transaction Documents" %>
+          </div>
+        </div>
+      <% end %>
 
   </div>
 

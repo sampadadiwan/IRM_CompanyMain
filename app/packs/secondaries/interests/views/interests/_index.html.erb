@@ -1,7 +1,12 @@
 <% secondary_sale = @secondary_sale %>
+<% secondary_sale_id = @secondary_sale&.id || params[secondary_sale_id] %>
 
-<%= render "/interests/stats", secondary_sale: @secondary_sale if @secondary_sale && policy(@secondary_sale).owner? %>
-<%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale] %>
+<% if @secondary_sale && policy(@secondary_sale).owner?  %>
+    <%= render "/interests/stats", secondary_sale: @secondary_sale %>
+    <%= render "/interests/charts", secondary_sale: @secondary_sale %>
+<% end %>
+
+<%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale], hidden_fields: {secondary_sale_id:} %>
 
 <% if params[:card].present? %>
     <div class="row">
@@ -9,7 +14,7 @@
             <%= render "/interests/card", interest:  %>
         <% end %>
     </div>
-    <%= paginate @interests.page(params[:page]) %>
+    <%= paginate @interests %>
 <% else %>
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -18,7 +23,7 @@
         <span>
 
             <% if @secondary_sale %>
-                <% if policy(@secondary_sale).update? %>
+                <% if policy(@secondary_sale).update? || policy(@secondary_sale).import_interests? %>
                     
                     <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
 
@@ -36,57 +41,52 @@
             <% end %>
 
             <%= link_to "Download", interests_path(secondary_sale_id: @secondary_sale&.id, format: :xlsx), {class: "btn btn-outline-success"} %>
+
+            <%= button_to "Shortlist All", short_list_interests_secondary_sale_path(@secondary_sale), 
+                                    method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will shortlist all interests. Proceed?"} if @secondary_sale && policy(@secondary_sale).short_list_interests? %>
         </span>
     </div>
 
-    <div class="table-responsive" data-controller="datatable">
-        <table id="interests" class="table table-bordered dataTable jqDataTable">
+    <div class="table-responsive">
+        <table id="interests" class="table table-bordered dataTable">
 
             <thead>
                 <tr>
                     <th>
-                        Interest Entity
+                        <%= sort_link @q, "buyer_entity_name", "Buyer Entity" %>
                     </th>
 
                     <th>
-                        User
+                        <%= sort_link @q, "investor_investor_name", "Stakeholder" %>
                     </th>
 
                     <th>
-                        Type
+                        <%= sort_link @q, :user_first_name, "User" %>
+                    </th>
+                    
+                    <th>
+                        <%= sort_link @q, :quantity %>
+                    </th>
+                    <th>
+                        <%= sort_link @q, :price, "Price" %>
+                    </th>
+
+                    <th>                        
+                        <%= sort_link @q, "allocation_quantity" %>
+                    </th>
+                                        
+                    <th>                        
+                        <%= sort_link @q, :allocation_amount, "Allocation Amount" %>
                     </th>
 
                     <th>
-                        Quantity
+                        <%= sort_link @q, "short_listed_status", "Status" %>
                     </th>
                     <th>
-                        Interest Price
-                    </th>
-                    <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>
-
-                        <th>
-                            Potential Allocation
-                        </th>
-                        <th>
-                            Potential Allocation %
-                        </th>
-
-                    <% end %>
-                    <th>
-                        Actually Offered
+                        <%= sort_link @q, :escrow_deposited, "Escrow Deposited" %>
                     </th>
                     <th>
-                        Final Price
-                    </th>
-                    <th>
-                        Allocation Amount
-                    </th>
-
-                    <th>
-                        Shortlisted
-                    </th>
-                    <th>
-                        Escrow Deposited
+                        <%= sort_link @q, :created_at %>
                     </th>
 
                     <th>
@@ -96,10 +96,13 @@
 
             <tbody>
                 <% interests.each do |interest| %>
-                    <%= render interest, secondary_sale: secondary_sale %>
+                    <%= render "/interests/interest", interest:, secondary_sale: %>
                 <% end %>
             </tbody>
         </table>
+
+        <%= paginate interests %>
     </div>
 
 <% end %>
+

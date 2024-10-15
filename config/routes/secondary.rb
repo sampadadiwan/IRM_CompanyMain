@@ -15,7 +15,6 @@ resources :interests do
   patch 'finalize', on: :member
   patch 'allocate', on: :member
   get   'allocation_form', on: :member
-  get 'matched_offers', on: :member
   patch 'generate_docs', on: :member
 end
 
@@ -23,16 +22,24 @@ resources :secondary_sales do
   # patch 'make_visible', on: :member
   get 'search', on: :collection
   get 'download', on: :member
-  patch 'allocate', on: :member
+  post 'allocate', on: :member
+  get 'allocate', on: :member
   patch 'generate_spa', on: :member
   patch 'send_notification', on: :member
   get 'spa_upload', on: :member
   patch 'lock_allocations', on: :member
   get 'offers', on: :member
   patch 'approve_offers', on: :member
+  patch 'short_list_interests', on: :member
   get 'interests', on: :member
   get 'finalize_offer_allocation', on: :member
   get 'finalize_interest_allocation', on: :member
   get 'payments', on: :member
   get 'report', on: :member
+end
+
+resources :allocations do
+  patch 'generate_docs', on: :member
+  patch 'verify', on: :member
+  post 'bulk_actions', on: :collection
 end

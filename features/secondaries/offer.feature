@@ -13,13 +13,13 @@ Scenario Outline: See my holdings in a sale
   Then I should see only my holdings
 Examples:
     |user	      |entity                          |sale                                     |quantity	|
-    |  	        |entity_type=Company;pan=123456  |name=Grand Sale  |100        |
-    |  	        |entity_type=Company;pan=123456  |name=Winter Sale |200        |
+    |  	        |entity_type=Company;pan=123456  |name=Grand Sale;show_holdings=true  |100        |
+    |  	        |entity_type=Company;pan=123456  |name=Winter Sale;show_holdings=true |200        |
 
 
 
 Scenario Outline: Place an offer
-  Given there is a user "<user>" for an entity "<entity>"
+  Given there is a user "first_name=John" for an entity "entity_type=Company"
   Given there are "2" employee investors
   Given Im logged in as an employee investor
   Given there is a FundingRound "name=Series A"
@@ -45,14 +45,14 @@ Scenario Outline: Place an offer
   And I should see the document details on the details page
 
 Examples:
-    |user	    |entity               |sale                                                         |offer	             | total_quantity |
-    |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        | 100            |
-    |  	        |entity_type=Company  |name=Winter Sale;percent_allowed=100 |quantity=50         | 50             |
+    |sale                                                    |offer	             | total_quantity |
+    |name=Grand Sale;percent_allowed=100;show_holdings=true  |quantity=100        | 100            |
+    |name=Winter Sale;percent_allowed=100;show_holdings=true |quantity=50         | 50             |
 
 
 
 Scenario Outline: Place a wrong offer
-  Given there is a user "<user>" for an entity "<entity>"
+  Given there is a user "" for an entity "entity_type=Company"
   Given there are "2" employee investors
   Given Im logged in as an employee investor
   Given there is a FundingRound "name=Series A"
@@ -64,9 +64,9 @@ Scenario Outline: Place a wrong offer
   Then I should see the "<msg>"
 
 Examples:
-    |user	    |entity               |sale                                                        |offer	              | msg |
-    |  	      |entity_type=Company  |name=Grand Sale;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
-    |  	      |entity_type=Company  |name=Winter Sale;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
+    |sale                                                        |offer	              | msg |
+    |name=Grand Sale;percent_allowed=50;show_holdings=true  |quantity=100;approved=false        | Over Allowed Percentage |
+    |name=Winter Sale;percent_allowed=50;show_holdings=true |quantity=200;approved=false        | is > total holdings   |
 
 
 
@@ -95,7 +95,7 @@ Scenario Outline: Import offer to sale
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   # And Given I upload an investor access file for employees
-  Given there is a sale "name=Summer Sale"
+  Given there is a sale "name=Summer Sale;price_type=Variable Price;min_price=100;max_price=200"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
   Then I should see the "Import in progress"
@@ -114,15 +114,16 @@ Scenario Outline: Import offer to sale without holdings
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
-  Given there is a sale "name=Summer Sale"
+  Given there is a sale "name=Summer Sale;price_type=Variable Price;min_price=100;max_price=200"
   And Given I upload a offer file "offers_no_holdings.xlsx"
   Then I should see the "Import in progress"
   And the offers must have the data in the sheet
+  And the offer investors must have access rights to the sale
   And when the offers are approved
   And the sale offered quantity should be "120"
 
 Scenario Outline: Offer PAN verification
-  Given there is a user "<user>" for an entity "<entity>"
+  Given there is a user "" for an entity "entity_type=Company"
   Given there are "2" employee investors
   Given Im logged in as an employee investor
   Given there is a FundingRound "name=Series A"
@@ -142,12 +143,12 @@ Scenario Outline: Offer PAN verification
 
 
 Examples:
-    |user	      |entity               |sale                                 |offer	             |
-    |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        |
+    |sale                                                     |offer	             |
+    |name=Grand Sale;percent_allowed=100;show_holdings=true   |quantity=100        |
 
 
 Scenario Outline: Offer Bank verification
-    Given there is a user "<user>" for an entity "<entity>"
+    Given there is a user "" for an entity "entity_type=Company"
     Given there are "2" employee investors
     Given Im logged in as an employee investor
     Given there is a FundingRound "name=Series A"
@@ -168,8 +169,8 @@ Scenario Outline: Offer Bank verification
     Then Bank Verification is triggered
 
   Examples:
-      |user	      |entity               |sale                                 | offer	             |
-      |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        |
+      |sale                                                     | offer	             |
+      |name=Grand Sale;percent_allowed=100;show_holdings=true   |quantity=100        |
 
 Scenario Outline: Offer Approval Notification
   Given Im logged in as a user "first_name=Test1" for an entity "name=Urban;entity_type=Company"

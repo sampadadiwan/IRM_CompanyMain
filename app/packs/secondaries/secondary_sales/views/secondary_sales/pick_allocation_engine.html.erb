@@ -1,0 +1,34 @@
+
+<!-- Form for selecting and submitting the allocation engine -->
+
+<%= render NewCard.new do %>
+
+  <%= render FormCard.new(title: "Select Allocation Engine", header_css_class: "fs-5") do %>
+
+    <%= form_with model: @secondary_sale, url: allocate_secondary_sale_path(@secondary_sale), method: :post do |f| %>
+      <div class="form-group">
+        <%= f.label :allocation_engine, "Select Allocation Engine" %>
+        <%= f.select :allocation_engine, ["Default Allocation Engine"], {}, name: "allocation_engine", class: "form-control" %>
+        <small class="form-text text-muted">Select the allocation engine to use for this sale</small>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :priority, "Time / Price Priority" %>
+        <%= f.select :priority, %w[Time Price], {}, name: "priority", class: "form-control" %>
+        <small class="form-text text-muted">Defines the order in which offers and interests are processed based on submission time or price, ensuring fair allocation.</small>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :matching_priority, "Matching Priority" %>
+        <%= f.select :matching_priority, ["Supply Driven", "Demand Driven"], {}, name: "matching_priority", class: "form-control" %>
+        <small class="form-text text-muted">Specifies whether the market is supply-driven (sells are matched against buys) or demand-driven (buys are matched against sells), influencing how offers and interests are matched.</small>
+      </div>
+
+      <div class="form-group">
+        <%= f.submit "Submit", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+
+  <% end %>
+
+<% end %>

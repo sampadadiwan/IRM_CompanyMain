@@ -168,6 +168,25 @@
                         <%= form.text_field :seller_doc_list, class: "form-control", placeholder: "PAN, Tax Certificate,Share Certificate / DEMAT Certificate"  %>
                         <small class="text-muted"> Comma separated list of documents needed from each seller. </small>
                     </div>
+
+                    <% form_types = current_user.entity.form_types.where(name: "Offer").map{|ft| ["#{ft.name}: #{ft.tag}", ft.id]} %>
+                    <% if form_types.present? %>    
+                    <div class="form-group">
+                        <%= form.label :offer_form_type_id, "Offer Form" %>
+                        <%= form.select :offer_form_type_id, form_types, {}, class: "form-control" %>
+                        <small class="text-muted"> Select the custom form used for Offers.</small>
+                    </div>
+                    <% end %>
+
+                    <% form_types = current_user.entity.form_types.where(name: "Interest").map{|ft| ["#{ft.name}: #{ft.tag}", ft.id]} %>
+                    <% if form_types.present? %>   
+                    <div class="form-group">
+                        <%= form.label :interest_form_type_id, "Interest Form" %>
+                        <%= form.select :interest_form_type_id, form_types, {}, class: "form-control" %>
+                        <small class="text-muted"> Select the custom form used for Interests.</small>
+                    </div>
+                    <% end %>
+
                     
                     <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>

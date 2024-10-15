@@ -1,4 +1,23 @@
 FactoryBot.define do
+  factory :rm_mapping do
+    rm { nil }
+    investor { nil }
+    entity { nil }
+    permissions { 1 }
+    approved { false }
+  end
+
+  factory :allocation do
+    offer { nil }
+    interest { nil }
+    secondary_sale { nil }
+    entity { nil }
+    quantity { "9.99" }
+    amount { "9.99" }
+    notes { "MyText" }
+    verified { false }
+  end
+
   factory :key_biz_metric do
     name { Faker::Company.name }
     metric_type { Faker::Company.name }

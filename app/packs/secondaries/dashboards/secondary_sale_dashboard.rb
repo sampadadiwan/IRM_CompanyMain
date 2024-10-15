@@ -43,7 +43,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interest_allocation_quantity: Field::Number,
     visible_externally: Field::BooleanEmoji,
     seller_transaction_fees_pct: Field::Number,
-    lock_allocations: Field::BooleanEmoji,
     disable_pan_kyc: Field::BooleanEmoji,
     disable_bank_kyc: Field::BooleanEmoji,
     secondary_sale_form_type_id: Field::Number,
@@ -101,7 +100,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     offer_allocation_quantity
     interest_allocation_quantity
     visible_externally
-    lock_allocations
     disable_pan_kyc
     disable_bank_kyc
     secondary_sale_form_type_id

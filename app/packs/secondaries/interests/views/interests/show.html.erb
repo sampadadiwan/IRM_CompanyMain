@@ -15,12 +15,8 @@
         method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the transaction documents listed below."} if policy(@interest).accept_spa? %>
 
-    <%= link_to "Matched Offers", matched_offers_interest_path(@interest), 
-        {class: "btn btn-outline-primary" } if current_user && policy(@interest).matched_offers? %> 
+    <%= link_to "Allocations", allocations_path(secondary_sale_id: @interest.secondary_sale_id, q: ransack_query_params(:interest_id, :eq, @interest.id)), {class: "btn btn-outline-primary" } %> 
 
-    <%= link_to "Potential Matches", 
-        search_offers_path(query: @interest.custom_matching_vals, secondary_sale_id: @interest.secondary_sale_id, finalize_allocation: true), 
-        {class: "btn btn-outline-primary" } if current_user && belongs_to_entity_id?(current_user, @interest.entity_id) %> 
 
     <% if policy(@interest).generate_docs?  %>
     <div class="btn-group">

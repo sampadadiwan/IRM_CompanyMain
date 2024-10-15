@@ -19,7 +19,7 @@ class OffersController < ApplicationController
 
   def fetch_rows
     @q = Offer.ransack(params[:q])
-    @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale, :interest, :holding)
+    @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale, :holding)
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)
@@ -53,17 +53,7 @@ class OffersController < ApplicationController
                           .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
                                                  query:, default_operator: 'and' }).page(params[:page]).objects
 
-      if params[:finalize_allocation].present?
-        if params[:secondary_sale_id].present?
-          render "/offers/finalize_allocation"
-        elsif params[:interest_id].present?
-          render "/interests/matched_offers"
-        else
-          render "index"
-        end
-      else
-        render "index"
-      end
+      render "index"
 
     else
       redirect_to offers_path(request.parameters)
@@ -108,32 +98,6 @@ class OffersController < ApplicationController
   def edit
     setup_custom_fields(@offer, force_form_type: @offer.secondary_sale.offer_form_type)
   end
-
-  def allocate
-    result = OfferAllocate.call(offer: @offer, current_user:, offer_params:)
-    respond_to do |format|
-      if result.success?
-        format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace("tf_offer_#{@offer.id}", partial: "offers/final_offer", locals: { offer: @offer })
-          ]
-        end
-        format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }
-        format.json { render :show, status: :ok, location: @offer }
-      else
-        format.turbo_stream do
-          @offer.comments = "Error: #{@offer.errors.full_messages}"
-          render turbo_stream: [
-            turbo_stream.replace("tf_offer_#{@offer.id}", partial: "offers/final_offer", locals: { offer: @offer })
-          ]
-        end
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @offer.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  def allocation_form; end
 
   # POST /offers or /offers.json
   def create
@@ -201,7 +165,7 @@ class OffersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def offer_params
-    params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
+    params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id, :price, :completed,
                                   :holding_id, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code, :city, :demat,
                                   :comments, :verified, :interest_id, :form_type_id, :allocation_quantity,
                                   :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :seller_signatory_emails, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})

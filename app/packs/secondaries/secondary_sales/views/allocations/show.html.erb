@@ -1,0 +1,98 @@
+<%= render FormCard.new(title: "#{@allocation}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Offer
+      </td>
+      <td>
+        <%= link_to @allocation.offer %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Interest
+      </td>
+      <td>
+        <%= link_to @allocation.interest %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Secondary Sale
+      </td>
+      <td>
+        <%= link_to @allocation.secondary_sale %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Quantity
+      </td>
+      <td>
+        <%= @allocation.quantity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Amount
+      </td>
+      <td>
+        <%= @allocation.amount %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @allocation.notes %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Verified
+      </td>
+      <td>
+        <%= display_boolean @allocation.verified %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@allocation).update? %>
+      <%= link_to "Edit", edit_allocation_path(@allocation), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @allocation, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+
+    <% if policy(@allocation).update?  %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Generate Document
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+            <%= button_to "All Docs",
+                  generate_docs_allocation_path(@allocation),
+                  class: "dropdown-item",
+                  data: {action: "click->confirm#popup",
+                  msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
+
+            <% @allocation.secondary_sale.documents.templates.where(owner_tag: "Allocation Template").each do |template| %>
+
+              <%= button_to template.name,
+                  generate_docs_allocation_path(@allocation, template_id: template.id),
+                  class: "dropdown-item",
+                  data: {action: "click->confirm#popup",
+                  msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
+
+            <% end %>
+
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%= render "/allocations/details", allocation: @allocation, msg: nil %>

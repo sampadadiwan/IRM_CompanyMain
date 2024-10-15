@@ -3,8 +3,8 @@
   
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Interest Documents</a>
-    <% if interest.verified %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offer-docs-tab">Offer Documents</a>
+    <% if interest.allocation_quantity > 0 %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#transaction-docs-tab">Transaction Documents</a>
     <% end %>
   </nav>
 
@@ -15,24 +15,25 @@
           
           <% msg = interest.secondary_sale.buyer_doc_list.present? ? "Documents Required: #{interest.secondary_sale.buyer_doc_list}" : nil %>
 
-          <%= render "/documents/index", documents: interest.documents.includes(:folder), owner: interest, 
+          <% documents = if current_user.entity_id == interest.entity_id
+              interest.documents.includes(:folder)
+            else
+              Document.generated_approved_or_others(interest)
+            end
+          %>
+
+          <%= render "/documents/index", documents: documents, owner: interest, 
               entity: interest.entity, msg: msg, title: "Interest Documents" %>
         </div>
       
       </div>
 
-      <% if interest.verified %>
-      <div id="offer-docs-tab" class="tab-pane fade">
-      
-        <div id="docs" class="associated_entity">      
-            <% 
-              matched_offer_ids = interest.offers.pluck(:id)
-              matched_offer_docs = Document.approved.where(owner_id: matched_offer_ids, owner_type: "Offer")
-            %>
-            <%= render "/documents/index", documents: matched_offer_docs.includes(:folder), title: "Offer Documents" %>
-          
-        </div>     
-      </div>
+      <% if interest.allocation_quantity > 0 %>
+        <div id="transaction-docs-tab" class="tab-pane fade in">
+          <div id="transaction_docs" class="associated_entity">
+            <%= render "/documents/index", documents: @interest.transaction_documents.approved, msg: nil, title: "Transaction Documents" %>
+          </div>
+        </div>
       <% end %>      
 
 

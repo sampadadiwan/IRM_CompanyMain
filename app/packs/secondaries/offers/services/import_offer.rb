@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Seller Signatory Emails", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
+  STANDARD_HEADERS = ["Email", "Price", "First Name", "Last Name", "Offer Quantity", "Address", "Pan", "Bank Account", "Ifsc Code", "Seller Signatory Emails", "Founder/Employee/Investor", "Investor", "Update Only", "Approved"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -8,12 +8,7 @@ class ImportOffer < ImportUtil
   def save_row(user_data, import_upload, custom_field_headers, ctx)
     Rails.logger.debug { "Processing offer #{user_data}" }
 
-    email = user_data["Email"]
-    update_only = user_data["Update Only"] == "Yes"
-    offer_type = user_data["Founder/Employee/Investor"]
-
-    user = User.find_by(email:)
-    raise "User #{email} not found" unless user
+    email, update_only, approved, offer_type, user, secondary_sale, full_name = get_key_data(user_data, import_upload)
 
     if offer_type == "Investor"
       # This offer is for an investor
@@ -26,18 +21,11 @@ class ImportOffer < ImportUtil
       raise "User not found for investor #{user_data['Investor']}" unless user.entity_id == investor.investor_entity_id
 
     else
-
       # Get the holding for which the offer is being made
       holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?", email, import_upload.entity_id).last
-
       investor = holding.investor
-
     end
-    # Get the Secondary Sale
-    secondary_sale = import_upload.owner
     # Make the offer
-
-    full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
 
     if update_only
       raise "No Offer Id specified for update" unless user_data["Offer Id"]
@@ -48,7 +36,7 @@ class ImportOffer < ImportUtil
       offer = Offer.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id, holding_id: holding&.id)
     end
 
-    offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"], demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:, offer_type:, seller_signatory_emails: user_data["Seller Signatory Emails"])
+    offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"], demat: user_data["Demat"], quantity: user_data["Offer Quantity"], price: user_data["Price"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:, offer_type:, seller_signatory_emails: user_data["Seller Signatory Emails"])
 
     # For SecondarySale we can have multiple form types. We need to set the form type for the offer
     ctx[:form_type_id] = secondary_sale.offer_form_type_id
@@ -56,7 +44,40 @@ class ImportOffer < ImportUtil
 
     setup_custom_fields(user_data, offer, custom_field_headers - ["Offer Id", "Update Only"])
 
+    AccessRight.create(owner: offer.secondary_sale, entity: offer.entity, access_to_investor_id: offer.investor_id, metadata: "Seller")
     offer.save!
+
+    # we need to approve the offer based on the data in the file
+    approved ? approve_offer(offer, import_upload) : true
+  end
+
+  def approve_offer(offer, import_upload)
+    # Approve the offer if required
+    if OfferPolicy.new(import_upload.user, offer).approve?
+      result = OfferApprove.wtf?(offer:, current_user: import_upload.user)
+      raise "Error approving offer #{offer.errors.full_messages}" unless result.success?
+
+      result.success?
+    else
+      Rails.logger.debug { "Skipping approval for offer #{offer.id} for user #{import_upload.user}" }
+      true
+    end
+  end
+
+  def get_key_data(user_data, import_upload)
+    email = user_data["Email"]
+    update_only = user_data["Update Only"] == "Yes"
+    approved = user_data["Approved"] == "Yes"
+    offer_type = user_data["Founder/Employee/Investor"]
+    full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
+    # Get the user
+    user = User.find_by(email:)
+    raise "User #{email} not found" unless user
+
+    # Get the Secondary Sale
+    secondary_sale = import_upload.owner
+
+    [email, update_only, approved, offer_type, user, secondary_sale, full_name]
   end
 
   def adhoc_update(file_path, secondary_sale_id)

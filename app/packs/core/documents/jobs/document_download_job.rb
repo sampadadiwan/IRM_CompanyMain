@@ -9,6 +9,7 @@ class DocumentDownloadJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       user = User.find(user_id)
       folder = Folder.find(folder_id)
+      same_entity = (user.entity_id == folder.entity_id)
 
       @tmp_dir = "tmp/#{folder_id}"
       FileUtils.mkdir_p @tmp_dir
@@ -20,14 +21,15 @@ class DocumentDownloadJob < ApplicationJob
 
           Zip::File.open(zip_file.path, Zip::File::CREATE) do |zipfile|
             if document_ids.present?
-              add_documents(zipfile, user, folder_ids, document_ids:)
+              add_documents(zipfile, user, folder_ids:, document_ids:, same_entity:)
             else
-              add_documents(zipfile, user, folder_ids)
+              add_documents(zipfile, user, folder_ids:, same_entity:)
             end
           end
 
-          uploaded_document = upload(user, folder, zip_file.path)
-          msg = "You will be sent a download link for the documents in a few minutes."
+          uploaded_document = upload(user, zip_file.path, folder:)
+          download_link = "<a href='#{uploaded_document.file.url}'><b>Download</b></a>"
+          msg = "#{download_link} the zip file. You will also be sent the download link for the documents in an email. Note the link will expire in 7 days."
           DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
           send_notification(msg, user_id)
         end
@@ -45,40 +47,65 @@ class DocumentDownloadJob < ApplicationJob
   end
 
   # rubocop:enable Metrics/MethodLength
-  def add_documents(zipfile, user, folder_ids, document_ids: nil)
+  def add_documents(zipfile, user, folder_ids:, document_ids: nil, same_entity: false)
+    # If the user is a company admin, they can download all documents
+    no_check_individual_docs_access = same_entity && user.has_cached_role?(:company_admin)
     document_list = {}
-    docs = Pundit.policy_scope(user, Document).where(folder_id: folder_ids).includes(:folder).order(created_at: :asc)
+    docs = if no_check_individual_docs_access
+             # Still apply policy scope to get the documents the user has access to
+             Pundit.policy_scope(user, Document)
+           else
+             # It may look like we are giving unlimited access to the documents, but the policy will still be applied in the loop below
+             Document.all
+           end
+    docs = docs.where(folder_id: folder_ids).includes(:folder).order(created_at: :asc) if folder_ids.present?
     docs = docs.where(id: document_ids) if document_ids.present?
 
-    docs.find_each do |doc|
-      doc.file.download do |tmp|
-        doc_dir, file_name = get_file_name(doc, tmp)
-
-        unless document_list[file_name].nil?
-          og_file_name = file_name
-          Rails.logger.debug { "File #{og_file_name} already exists" }
-          counter = 1
-          file_name_no_ext = og_file_name[0...og_file_name.rindex('.')]
-          file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
-          while document_list[file_name].present?
-            counter += 1
-            file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
-          end
-        end
-        make_directory(doc_dir, tmp, file_name)
-        zipfile.add(file_name, file_name)
-        document_list[file_name] = "Added"
-        Rails.logger.debug { "Added file #{file_name}" }
-      end
-    end
-
+    add_docs_to_zip(zipfile, user, docs, document_list, no_check_individual_docs_access)
     Rails.logger.debug "Done with all docs"
   end
 
-  def upload(user, folder, file)
-    tmp_folder = user.entity.root_folder.children.where(entity_id: user.entity_id, name: "tmp").first_or_create
+  def add_docs_to_zip(zipfile, user, docs, document_list, no_check_individual_docs_access)
+    docs.find_each do |doc|
+      # You can only download a document if you have access to it
+      if no_check_individual_docs_access || Pundit.policy(user, doc).show?
+        doc.file.download do |tmp|
+          doc_dir, file_name = get_file_name(doc, tmp)
 
-    doc = Document.new(name: "Download-#{folder.name}-#{user.full_name}-#{rand(1000)}", folder: tmp_folder, entity: user.entity, orignal: true, user:)
+          unless document_list[file_name].nil?
+            og_file_name = file_name
+            Rails.logger.debug { "File #{og_file_name} already exists" }
+            counter = 1
+            file_name_no_ext = og_file_name[0...og_file_name.rindex('.')]
+            file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
+            while document_list[file_name].present?
+              counter += 1
+              file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
+            end
+          end
+          make_directory(doc_dir, tmp, file_name)
+          zipfile.add(file_name, file_name)
+          document_list[file_name] = "Added"
+          Rails.logger.debug { "Added file #{file_name}" }
+        end
+      else
+        Rails.logger.debug { "User #{user.email} does not have access to document #{doc.id}" }
+      end
+    end
+  end
+
+  def upload(user, file, folder:)
+    # Create a tmp folder if it doesn't exist in the root folder
+    tmp_folder = user.entity.root_folder.children.where(entity_id: user.entity_id, name: "tmp").first_or_create
+    # Create a unique name for the document
+    name = if folder.present?
+             "Download-#{folder.name}-#{user.full_name}-#{Time.zone.now.strftime('%m%d%H%M%S')}"
+           else
+             "Download-#{user.full_name}-#{Time.zone.now.strftime('%m%d%H%M%S')}"
+           end
+
+    # Create the document
+    doc = Document.new(name:, folder: tmp_folder, entity: user.entity, orignal: true, user:)
     doc.file = File.open(file, "rb")
     doc.save!
     doc

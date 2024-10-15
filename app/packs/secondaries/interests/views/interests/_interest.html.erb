@@ -1,52 +1,58 @@
 <tr id="<%= dom_id interest %>">
   <td>
-    <%= interest.aquirer_name  %>
+    <%= interest.buyer_entity_name  %>
   </td>
   <td>
-    <%= interest.user.full_name  %>
+    <%= interest.investor.investor_name  %>
   </td>
   <td>
-    <%= interest.interest_entity.entity_type %>
-  </td>    
-  <td>
-    <%= interest.quantity %>
+    <%= interest.user&.full_name  %>
   </td>
   <td>
-    <%= number_to_currency interest.price %>
+    <%= custom_format_number interest.quantity, params %>
+  </td>
+  <td>
+    <%= custom_format_number interest.price, params %>
   </td>
 
-  <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>    
-    <td>
-      <%= custom_format_number interest.allocation_quantity, params %>
-    </td>
-    <td>
-      <%= interest.allocation_percentage %>%
-    </td>
-  <% end %>
   <td>
-    <%= custom_format_number interest.offer_quantity, params %>
+    <%= custom_format_number interest.allocation_quantity, params %>
   </td>
+
   
-  <td>
-    <%= custom_format_number interest.final_price, params %>
-  </td>
   <td>
     <%= money_to_currency interest.allocation_amount, params %>
   </td>
   
 
   <td id="short_listed">
-    <%= display_boolean interest.short_listed %>
+    <span class=" badge <%=short_listed_css(interest)%>">
+      <%= interest.short_listed_status.humanize %>
+    </span>
   </td>
   <td id="escrow_deposited">
     <%= display_boolean interest.escrow_deposited %>
   </td>
+  <td>
+    <%= l interest.created_at %>
+  </td>
   
   <td>
     <%= link_to "Show" , interest , {class: "btn btn-outline-primary" }%>
-    <% label = interest.short_listed? ? "Remove Shortlist" : "Shortlist" %>
-    <%= button_to label , short_list_interest_path(interest), method: :patch, class: "btn btn-outline-success" , 
-      form_class: "deleteButton" if policy(interest).short_list? %>
+   
+    <% if policy(interest).short_list? %>
+    <div class="dropdown">
+      <button class="btn btn-outline-success dropdown-toggle" type="button"
+              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Change Status
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <%= button_to "Shortlist" , short_list_interest_path(interest, short_listed_status: :short_listed), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+        <%= button_to "Reject" , short_list_interest_path(interest, short_listed_status: :rejected), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+        <%= button_to "Pending" , short_list_interest_path(interest, short_listed_status: :pending), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+      </div>
+    </div>
+    <% end %>
 
   </td>
 </tr>

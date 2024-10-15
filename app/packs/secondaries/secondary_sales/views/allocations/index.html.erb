@@ -1,0 +1,73 @@
+<%= render "/layouts/alerts" %>
+<%= render "/layouts/filter", associations: [:offer, :interest, :secondary_sale] %>
+
+<%#= render "/allocations/stats", allocations: @allocations %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Allocations</h1>
+  <span>
+    <%= link_to "Filter", allocations_path(q: params[:q].to_unsafe_h, filter: true), {class: "btn btn-outline-primary"}  %>
+
+    <%= link_to "Download", allocations_path(q: params[:q].to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"}  %>
+
+    <%= render "/allocations/bulk_actions" %>
+
+  </span>
+</div>
+
+
+<div class="table-responsive" data-controller="datatable">
+  <table id="allocations" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          <%= sort_link @q, :offer_full_name, "Offer" %>
+        </th>
+        <th>
+          <%= sort_link @q, :offer_investor_investor_name, "Offer Investor" %>
+        </th>
+        <th>
+          <%= sort_link @q, :offer_price, "Offer Price" %>
+        </th>
+        <th>
+          <%= sort_link @q, :offer_quantity, "Offer Quantity" %>
+        </th>
+        <th>
+          <%= sort_link @q, :interest_buyer_entity_name, "Interest" %>
+        </th>
+        <th>
+          <%= sort_link @q, :interest_investor_investor_name, "Interest Investor" %>
+        </th>
+        <th>
+          <%= sort_link @q, :interest_price, "Interest Price" %>
+        </th>
+        <th>
+          <%= sort_link @q, :interest_quantity, "Interest Quantity" %>
+        </th>
+        <th>
+          <%= sort_link @q, :quantity, "Allocation Quantity" %>
+        </th>
+        <th>
+          <%= sort_link @q, :price, "Allocation Price" %>
+        </th>
+        <th>
+          <%= sort_link @q, :amount, "Allocation Amount" %>
+        </th>
+        <th>
+          Notes
+        </th>
+        <th>
+          <%= sort_link @q, :verified, "Verified" %>
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @allocations.each do |allocation| %>
+        <%= render allocation %>
+      <% end %>
+    </tbody>
+  </table>
+  <%= paginate @allocations.page(params[:page]) %>
+</div>

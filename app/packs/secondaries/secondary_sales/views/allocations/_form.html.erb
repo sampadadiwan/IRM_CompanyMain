@@ -1,0 +1,30 @@
+<%= render FormCard.new(title: "Allocations : #{allocation.presence || 'New'}") do %>
+  <%= form_with(model: allocation, validate: true) do |form| %>
+    <% if allocation.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(allocation.errors.count, "error") %> prohibited this allocation from being saved:</h2>
+        <ul>
+          <% allocation.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    
+    <div class="form-group">
+      <%= form.label :quantity %>
+      <%= form.text_field :quantity, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :verified %>
+      <%= form.check_box :verified, class: "form-check-input"  %>
+    </div>
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

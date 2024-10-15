@@ -67,6 +67,10 @@ class AccessRight < ApplicationRecord
     end
   }
 
+  scope :access_filter_for_rm, lambda { |user|
+    where("access_rights.access_to_category='RM' OR access_rights.access_to_investor_id=rm_mappings.rm_id OR access_rights.user_id=?", user.id)
+  }
+
   scope :investor_granted_access_filter, lambda { |user|
     where("access_rights.user_id=? and access_rights.entity_id=?", user.id, user.entity_id)
   }
@@ -180,10 +184,12 @@ class AccessRight < ApplicationRecord
       end
     elsif access_to_investor_id.present?
       # Get all the investor -> investor access that are approved
-      investor.remove_from_user_access_rights_cache(self)
+      inv = Investor.with_deleted.find(access_to_investor_id)
+      inv.remove_from_user_access_rights_cache(self)
     elsif user_id.present?
       # Add it to the user cache
-      user.remove_access_rights_cache(self)
+      u = User.with_deleted.find(user_id)
+      u.remove_access_rights_cache(self)
     end
   end
 

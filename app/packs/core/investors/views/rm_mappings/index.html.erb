@@ -1,0 +1,32 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Rm Mappings</h1>
+  <%= link_to "New Rm Mapping", new_rm_mapping_path, {class: "btn btn-outline-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="rm_mappings" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Rm
+        </th>
+        <th>
+          Investor
+        </th>
+        <th>
+          Permissions
+        </th>
+        <th>
+          Approved
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rm_mappings.each do |rm_mapping| %>
+        <%= render rm_mapping %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

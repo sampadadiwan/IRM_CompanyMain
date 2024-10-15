@@ -89,6 +89,10 @@ Given('there is an existing investor entity {string} with employee {string}') do
 end
 
 
+Given('the existing investor user has role {string}') do |role|
+  @employee_investor.add_role(role)
+end
+
 Given('there is an existing investor {string}') do |arg1|
   steps %(
         Given there is an existing investor entity "#{arg1}"

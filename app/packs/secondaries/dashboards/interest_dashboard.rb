@@ -18,7 +18,7 @@ class InterestDashboard < Administrate::BaseDashboard
     price: Field::String.with_options(searchable: false),
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    short_listed: Field::BooleanEmoji,
+    short_listed_status: Field::String,
     escrow_deposited: Field::BooleanEmoji,
     interest_id: Field::Number,
 

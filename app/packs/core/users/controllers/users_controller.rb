@@ -13,7 +13,8 @@ class UsersController < ApplicationController
   def chat
     authorize(User)
 
-    chat_class = current_user.curr_role == "Investor" ? InvestorLlmChat : InvestorLlmChat
+    # chat_class = current_user.curr_role == "Investor" ? InvestorLlmChat : InvestorLlmChat
+    chat_class = InvestorLlmChat
     @response = chat_class.new(user: current_user).query(params[:query])
   end
 

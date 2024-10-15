@@ -1,0 +1,42 @@
+<%= render FormCard.new(title: "#{@rm_mapping}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Rm
+      </td>
+      <td>
+        <%= link_to @rm_mapping.rm.investor_name, @rm_mapping.rm %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to @rm_mapping.investor.investor_name, @rm_mapping.investor %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Permissions
+      </td>
+      <td>
+        <%= @rm_mapping.permissions %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Approved
+      </td>
+      <td>
+        <%= display_boolean @rm_mapping.approved %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@rm_mapping).update? %>
+      <%= link_to "Edit", edit_rm_mapping_path(@rm_mapping), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @rm_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>
