@@ -59,6 +59,7 @@ class Interest < ApplicationRecord
   scope :short_listed, -> { where(short_listed_status: STATUS_SHORT_LISTED) }
   scope :not_short_listed, -> { where.not(short_listed_status: STATUS_SHORT_LISTED) }
   scope :rejected, -> { where(short_listed_status: STATUS_REJECTED) }
+  scope :withdrawn, -> { where(short_listed_status: STATUS_WITHDRAWN) }
 
   scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :verified, -> { where(verified: true) }

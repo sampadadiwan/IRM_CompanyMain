@@ -8,7 +8,8 @@
         ["All", secondary_sale.interests.count, interests_secondary_sale_path(secondary_sale)], 
         ["Shortlisted", secondary_sale.interests.short_listed.count, interests_secondary_sale_path(secondary_sale, filter: true, q: ransack_query_params(:short_listed_status, :eq, :short_listed))], 
         ["Pending", secondary_sale.interests.pending.count, interests_secondary_sale_path(secondary_sale, filter: true, q: ransack_query_params(:short_listed_status, :eq, :pending)) ],
-        ["Rejected", secondary_sale.interests.rejected.count, interests_secondary_sale_path(secondary_sale, filter: true, q: ransack_query_params(:short_listed_status, :eq, :rejected)) ]
+        ["Rejected", secondary_sale.interests.rejected.count, interests_secondary_sale_path(secondary_sale, filter: true, q: ransack_query_params(:short_listed_status, :eq, :rejected)) ],
+        ["Withdrawn", secondary_sale.interests.withdrawn.count, interests_secondary_sale_path(secondary_sale, filter: true, q: ransack_query_params(:short_listed_status, :eq, :withdrawn)) ]
     ] %>
     <% stats.each do |status, count, link| %>
     <% 
