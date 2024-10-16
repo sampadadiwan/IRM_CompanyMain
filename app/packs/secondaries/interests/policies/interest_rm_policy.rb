@@ -23,7 +23,7 @@ class InterestRmPolicy < SaleBasePolicy
   end
 
   def short_list?
-    false
+    permissioned_rm? && rm_mapping.permissions.update?
   end
 
   def create?

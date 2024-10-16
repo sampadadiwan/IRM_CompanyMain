@@ -41,15 +41,18 @@
     <%= link_to "Show" , interest , {class: "btn btn-outline-primary" }%>
    
     <% if policy(interest).short_list? %>
-    <div class="dropdown">
+    <div class="dropdown position-static">
       <button class="btn btn-outline-success dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Change Status
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        <%= button_to "Shortlist" , short_list_interest_path(interest, short_listed_status: :short_listed), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
-        <%= button_to "Reject" , short_list_interest_path(interest, short_listed_status: :rejected), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
-        <%= button_to "Pending" , short_list_interest_path(interest, short_listed_status: :pending), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+        <% if policy(interest.secondary_sale).owner? %>
+          <%= button_to "Shortlist" , short_list_interest_path(interest, short_listed_status: :short_listed), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+          <%= button_to "Reject" , short_list_interest_path(interest, short_listed_status: :rejected), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+          <%= button_to "Pending" , short_list_interest_path(interest, short_listed_status: :pending), method: :patch, class: "dropdown-item" , form_class: "deleteButton" %>
+        <% end %>
+        <%= button_to "Withdraw" , short_list_interest_path(interest, short_listed_status: :withdrawn), method: :patch, data: {msg: "This will mark the interest as Withdrawn and it will not be included in future allocations. Proceed?", action: "click->confirm#popup", method: :patch}, class: "dropdown-item" , form_class: "deleteButton" %>
       </div>
     </div>
     <% end %>

@@ -39,6 +39,8 @@ module InterestsHelper
       "bg-warning"
     when Interest::STATUS_REJECTED
       "bg-danger"
+    when Interest::STATUS_WITHDRAWN
+      "bg-light text-danger"
     end
   end
 end

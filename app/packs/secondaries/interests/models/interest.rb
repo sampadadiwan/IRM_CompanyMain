@@ -47,8 +47,9 @@ class Interest < ApplicationRecord
   STATUS_PENDING = 'pending'.freeze
   STATUS_SHORT_LISTED = 'short_listed'.freeze
   STATUS_REJECTED = 'rejected'.freeze
+  STATUS_WITHDRAWN = 'withdrawn'.freeze
 
-  STATUSES = [STATUS_PENDING, STATUS_SHORT_LISTED, STATUS_REJECTED].freeze
+  STATUSES = [STATUS_PENDING, STATUS_SHORT_LISTED, STATUS_REJECTED, STATUS_WITHDRAWN].freeze
 
   # 2. Validations
   validates :short_listed_status, presence: true, inclusion: { in: STATUSES }

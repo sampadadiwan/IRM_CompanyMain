@@ -23,7 +23,7 @@ class InterestInvestorPolicy < SaleBasePolicy
   end
 
   def short_list?
-    false
+    permissioned_investor?(:buyer)
   end
 
   def create?

@@ -125,7 +125,12 @@ class InterestsController < ApplicationController
   def allocation_form; end
 
   def short_list
-    result = InterestShortList.call(interest: @interest, short_listed_status: params[:short_listed_status])
+    result = InterestShortList.call(
+      interest: @interest,
+      short_listed_status: params[:short_listed_status],
+      current_user:
+    )
+
     respond_to do |format|
       if result.success?
         @interest.reload

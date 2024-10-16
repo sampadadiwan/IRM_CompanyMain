@@ -28,6 +28,8 @@
               allocations_path(secondary_sale_id: @secondary_sale.id, q: ransack_query_params(:interest_buyer_entity_name, :eq, "Enter Name")),
               {class: "dropdown-item" } %>
 
+          <div class="dropdown-divider"></div>
+
           <%= link_to "Un Allocated Offers",
               offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
               {class: "dropdown-item" } %>

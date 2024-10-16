@@ -4,8 +4,15 @@ class InterestShortList < InterestAction
   left :handle_errors, Output(:failure) => End(:failure)
   # step :notify_shortlist
 
-  def short_list(_ctx, interest:, short_listed_status:, **)
-    interest.short_listed_status = short_listed_status
+  def short_list(_ctx, interest:, short_listed_status:, current_user:, **)
+    # Only owners can short_list
+    if SecondarySalePolicy.new(current_user, interest.secondary_sale).owner?
+      interest.short_listed_status = short_listed_status
+    elsif short_listed_status == Interest::STATUS_WITHDRAWN
+      interest.short_listed_status = short_listed_status
+    else
+      interest.errors.add(:short_listed_status, "You are not authorized to #{short_listed_status} this interest")
+    end
     interest.valid?
   end
 
