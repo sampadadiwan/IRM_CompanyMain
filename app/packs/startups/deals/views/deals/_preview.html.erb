@@ -17,7 +17,7 @@
 
 <div class="row">
     <% deal.documents.each do |doc| %>
-        <% if doc.tag_list.split(",").map(&:strip).include?("preview") %>
+        <% if doc.tag_list&.split(",")&.map(&:strip)&.include?("preview") %>
             <div class="col"><%= render "/deals/preview_document", document: doc %></div>
         <% end %>
     <% end %>
