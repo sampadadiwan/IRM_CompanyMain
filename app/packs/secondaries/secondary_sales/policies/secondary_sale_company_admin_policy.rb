@@ -12,11 +12,11 @@ class SecondarySaleCompanyAdminPolicy < SaleBasePolicy
   end
 
   def offers?
-    offer?
+    permissioned_employee?(:update) && record.manage_offers
   end
 
   def interests?
-    show_interest?
+    permissioned_employee?(:update) && record.manage_interests
   end
 
   def payments?

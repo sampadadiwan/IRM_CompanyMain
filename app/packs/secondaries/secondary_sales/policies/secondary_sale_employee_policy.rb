@@ -12,11 +12,11 @@ class SecondarySaleEmployeePolicy < SaleBasePolicy
   end
 
   def offers?
-    owner? && offer?
+    show? && record.manage_offers
   end
 
   def interests?
-    owner? && show_interest?
+    show? && record.manage_offers
   end
 
   def payments?
