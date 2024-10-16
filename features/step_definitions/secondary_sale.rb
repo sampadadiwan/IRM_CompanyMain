@@ -445,21 +445,6 @@ Given('the interests have no signatories') do
   @sale.interests.update_all(buyer_signatory_emails: nil)
 end
 
-Then('when the last offer is allocated') do
-  steps %(
-    And I am at the login page
-    When I fill and submit the login page
-  )
-  visit(secondary_sale_path(@sale))
-  visit("/secondary_sales/#{@sale.id}/finalize_offer_allocation")
-  # click on edit
-  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/div[13]/a[2]').click
-  # check verified
-  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/form/div[11]/input[2]').click
-  # click save
-  find(:xpath, '/html/body/div[2]/div[1]/div/div/div[7]/div/div[2]/turbo-frame[2]/form/div[13]/input').click
-  sleep(2)
-end
 
 Then('when the allocation is done') do
   NewAllocationJob.perform_now(@sale.id, @user.id, "Default Allocation Engine", priority: "Time", matching_priority: "Supply Driven")
@@ -468,22 +453,13 @@ Then('when the allocation is done') do
   puts @sale.to_json
 end
 
-Then('the sale allocation percentage must be {string}') do |arg|
-  puts "\n####Eligible Interests####\n"
-  puts @sale.interests.eligible(@sale).to_json
-  # puts "\n####All Interests####\n"
-  # puts @sale.interests.to_json
-  @sale.cmf_allocation_percentage[""].should == arg.to_f
-end
-
-
 Then('the sale must be allocated correctly') do
   @sale.total_offered_quantity.should == @sale.offers.approved.sum(:quantity)
   # @sale.total_offered_amount_cents.should == @sale.offers.approved.sum(:amount_cents)
   # @sale.total_interest_amount_cents.should == @sale.interests.short_listed.sum(:amount_cents)
   @sale.total_interest_quantity.should == @sale.interests.short_listed.sum(:quantity)
-  @sale.offer_allocation_quantity.should == @sale.offers.approved.sum(:allocation_quantity)
-  @sale.interest_allocation_quantity.should == @sale.interests.short_listed.sum(:allocation_quantity)
+  @sale.allocation_quantity.should == @sale.offers.approved.sum(:allocation_quantity)
+  @sale.allocation_quantity.should == @sale.interests.short_listed.sum(:allocation_quantity)
   @sale.allocation_interest_amount_cents.should == @sale.interests.short_listed.sum(:allocation_amount_cents)
 
   @sale.allocation_offer_amount_cents.should == @sale.offers.approved.sum(:allocation_amount_cents)
@@ -546,16 +522,6 @@ end
 
 Then('the employee investments must be reduced by the sold amount') do
   Investment.where(employee_holdings: true).sum(:quantity).should == @holding_quantity
-end
-
-Then('the allocations ops sheet must be visible') do
-  visit finalize_offer_allocation_secondary_sale_path(@sale)
-  @sale.offers.each do |offer|
-    within "#tf_offer_#{offer.id}" do
-      expect(page).to have_content(offer.full_name)
-      expect(page).to have_content(custom_format_number(offer.quantity, {}))
-    end
-  end
 end
 
 Then('the offers completetion page must be visible') do

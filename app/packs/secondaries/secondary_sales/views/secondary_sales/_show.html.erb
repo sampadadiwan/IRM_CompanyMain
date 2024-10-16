@@ -238,40 +238,23 @@
 
           <tr>
             <td>
-              Allocated Offer Quantity
+              Allocated Quantity
             </td>
             <td>
-              <%= custom_format_number secondary_sale.offer_allocation_quantity, params %>
+              <%= custom_format_number secondary_sale.allocation_quantity, params %>
             </td>
           </tr>
 
           <tr>
             <td>
-              Allocated Offer Amount
+              Allocated Amount
             </td>
             <td>
-              <%= money_to_currency secondary_sale.allocation_offer_amount, params %>
+              <%= money_to_currency secondary_sale.allocation_amount, params %>
             </td>
           </tr>
           
 
-          <tr>
-            <td>
-              Allocated Interest Quantity
-            </td>
-            <td>
-              <%= custom_format_number secondary_sale.interest_allocation_quantity, params %>
-            </td>
-          </tr>
-          
-          <tr>
-            <td>
-              Allocated Interest Amount
-            </td>
-            <td>
-              <%= money_to_currency secondary_sale.allocation_interest_amount, params %>
-            </td>
-          </tr>
 
           <tr>
             <td>

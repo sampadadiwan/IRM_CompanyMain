@@ -39,8 +39,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     total_offered_quantity: Field::Number,
     total_interest_quantity: Field::Number,
-    offer_allocation_quantity: Field::Number,
-    interest_allocation_quantity: Field::Number,
     visible_externally: Field::BooleanEmoji,
     seller_transaction_fees_pct: Field::Number,
     disable_pan_kyc: Field::BooleanEmoji,
@@ -97,8 +95,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     updated_at
     total_offered_quantity
     total_interest_quantity
-    offer_allocation_quantity
-    interest_allocation_quantity
     visible_externally
     disable_pan_kyc
     disable_bank_kyc

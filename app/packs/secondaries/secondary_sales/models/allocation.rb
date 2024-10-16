@@ -45,6 +45,20 @@ class Allocation < ApplicationRecord
                              },
                              execute_after_commit: true
 
+  counter_culture :secondary_sale, column_name: proc { |r| r.verified ? 'allocation_amount_cents' : nil },
+                                   delta_column: 'amount_cents',
+                                   column_names: {
+                                     ["allocations.verified = ?", true] => 'allocation_amount_cents'
+                                   },
+                                   execute_after_commit: true
+
+  counter_culture :secondary_sale, column_name: proc { |r| r.verified ? 'allocation_quantity' : nil },
+                                   delta_column: 'quantity',
+                                   column_names: {
+                                     ["allocations.verified = ?", true] => 'allocation_quantity'
+                                   },
+                                   execute_after_commit: true
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[amount notes quantity created_at updated_at verified offer_id interest_id].sort.freeze
   end

@@ -8,7 +8,6 @@ class FundDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    activities: Field::HasMany,
     entity: Field::BelongsTo,
     documents: Field::HasMany,
     valuations: Field::HasMany,

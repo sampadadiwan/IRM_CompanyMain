@@ -32,8 +32,6 @@ resources :secondary_sales do
   patch 'approve_offers', on: :member
   patch 'short_list_interests', on: :member
   get 'interests', on: :member
-  get 'finalize_offer_allocation', on: :member
-  get 'finalize_interest_allocation', on: :member
   get 'payments', on: :member
   get 'report', on: :member
 end

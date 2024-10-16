@@ -25,7 +25,7 @@ wb.styles do |s|
     sheet.add_row ["Interest Allocation Quantity", @secondary_sale.interest_allocation_quantity], style: wrap_text
     allocation_percentage = @secondary_sale.allocation_percentage > 1 ? 100 : (@secondary_sale.allocation_percentage * 100).round(2)
     sheet.add_row ["Offer Allocation %", allocation_percentage], style: wrap_text
-    sheet.add_row ["Offer Allocation Quantity", @secondary_sale.offer_allocation_quantity], style: wrap_text
+    sheet.add_row ["Offer Allocation Quantity", @secondary_sale.allocation_quantity], style: wrap_text
   end
 end
 

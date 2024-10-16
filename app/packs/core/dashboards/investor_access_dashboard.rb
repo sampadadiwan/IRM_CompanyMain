@@ -9,7 +9,6 @@ class InvestorAccessDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     audits: Field::HasMany,
-    activities: Field::HasMany,
     entity: Field::BelongsTo,
     investor: Field::BelongsTo,
     user: Field::BelongsTo,

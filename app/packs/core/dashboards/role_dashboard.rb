@@ -9,7 +9,6 @@ class RoleDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     audits: Field::HasMany,
-    activities: Field::HasMany,
     users: Field::HasMany,
     resource: Field::Polymorphic,
     id: Field::Number,

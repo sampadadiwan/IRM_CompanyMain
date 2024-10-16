@@ -448,7 +448,7 @@ namespace :irm do
   task generateFakeSales: :environment do
     Entity.startups.each do |e|
     
-      sale = FactoryBot.create(:secondary_sale, entity:e, start_date:Date.today, end_date:Date.today + 10.days)
+      sale = FactoryBot.create(:secondary_sale, entity:e, start_date:Date.today, end_date:Date.today + 100.days)
       puts sale.to_json
 
     end
@@ -459,7 +459,7 @@ namespace :irm do
 
   desc "generates fake Offers for testing"
   task generateFakeOffers: :environment do
-    SecondarySale.all.each do |sale|
+    SecondarySale.all.active.each do |sale|
 
       next if !sale.active 
       next if sale.offers.any?
@@ -467,24 +467,19 @@ namespace :irm do
       sale.entity.investors.not_holding.sample(3).each do |inv|
 
         if inv.investor_entity.employees.empty?
-          FactoryBot.create(:user, entity: inv.investor_entity)
+          user = FactoryBot.create(:user, entity: inv.investor_entity)
+        else
+          user = inv.investor_entity.employees.sample
         end
 
         AccessRight.create(owner: sale, access_type: "SecondarySale", entity: sale.entity, investor: inv, metadata: "Seller")
 
-        funding_round = inv.entity.funding_rounds.sample        
-        if funding_round.nil?
-          funding_round = FactoryBot.create(:funding_round, entity: inv.entity)
-        end
-
-        holding = FactoryBot.build(:holding, entity: sale.entity, investor: inv, user: inv.investor_entity.employees.sample, holding_type: "Investor", investment_instrument: "Equity", funding_round:)
-        CreateHolding.wtf?(holding: holding)    
         
-        offer = FactoryBot.build(:offer, holding:, secondary_sale: sale, 
-          user: holding.user, investor: holding.investor, entity: holding.entity,
-          full_name: holding.user&.full_name)
+        offer = FactoryBot.build(:offer, secondary_sale: sale, 
+          user:, investor: inv, entity: sale.entity,
+          full_name: user&.full_name)
 
-        offer.quantity = offer.allowed_quantity
+        offer.quantity = rand(10)*100
         offer.approved = rand(4) > 0
         # offer.signature = File.open("public/sample_uploads/signature.png", "rb")
         offer.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }  
@@ -497,13 +492,8 @@ namespace :irm do
       end
 
       sale.reload
-      Entity.investment_advisors.each do | advisor |
-
-        investor =  sale.entity.investors.where(investor_name: advisor.name).first
-        investor ||= FactoryBot.build(:investor, entity: sale.entity, investor_entity: advisor, investor_name: advisor.name, category: "Investment Advisor")
+      sale.entity.investors.not_holding.sample(3).each do | investor |
         
-        if investor.save
-
           if investor.investor_entity.employees.empty?
             FactoryBot.create(:user, entity: investor.investor_entity)
           end
@@ -514,15 +504,14 @@ namespace :irm do
           escrow_deposited = rand(2) > 0
           interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
               investor_id: investor.id, secondary_sale: sale,
-              quantity: qty, price: price, user_id: advisor.employees.first.id, 
-              short_listed: short_listed, escrow_deposited: escrow_deposited)
+              quantity: qty, price: price, user_id: investor.investor_entity.employees.sample.id, 
+              short_listed_status: Interest::STATUS_SHORT_LISTED, escrow_deposited: escrow_deposited)
           
           # interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
           interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
 
           interest.save!
           puts interest.to_json
-        end        
       end
       
     end

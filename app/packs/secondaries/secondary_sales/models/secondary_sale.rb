@@ -32,8 +32,7 @@ class SecondarySale < ApplicationRecord
 
   serialize :cmf_allocation_percentage, type: Hash
 
-  monetize :total_offered_amount_cents, :total_interest_amount_cents,
-           :allocation_offer_amount_cents, :allocation_interest_amount_cents,
+  monetize :total_offered_amount_cents, :total_interest_amount_cents, :allocation_amount_cents,
            with_currency: ->(s) { s.entity.currency }
 
   validates_uniqueness_of :name, scope: :entity_id
@@ -49,6 +48,8 @@ class SecondarySale < ApplicationRecord
   validates :allocation_status, :sale_type, :show_quantity, length: { maximum: 10 }
   validates :price_type, length: { maximum: 15 }
   validates :name, length: { maximum: 255 }
+
+  scope :active, -> { where(end_date: Time.zone.today..) }
 
   before_save :set_defaults
   def set_defaults

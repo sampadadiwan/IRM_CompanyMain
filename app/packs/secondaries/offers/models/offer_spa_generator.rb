@@ -35,8 +35,8 @@ class OfferSpaGenerator
     context.store  :sale_entity, offer.secondary_sale.entity
     context.store  :offer_investor, offer.investor
     context.store  :offer_user, offer.user
-    offer_allocation_quantity_in_words = offer.entity.currency == "INR" ? offer.allocation_quantity.to_i.rupees.humanize : offer.allocation_quantity.to_i.to_words.humanize
-    context.store :offer_allocation_quantity_words, offer_allocation_quantity_in_words
+    allocation_quantity_in_words = offer.entity.currency == "INR" ? offer.allocation_quantity.to_i.rupees.humanize : offer.allocation_quantity.to_i.to_words.humanize
+    context.store :allocation_quantity_words, allocation_quantity_in_words
 
     context.store  :secondary_sale, TemplateDecorator.decorate(offer.secondary_sale)
     context.store  :interest, TemplateDecorator.decorate(offer.interest)
@@ -45,7 +45,7 @@ class OfferSpaGenerator
     context.store :individual, %w[true yes 1].include?(offer.properties["individual"]&.downcase)
 
     amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
-    context.store :offer_allocation_amount_words, amount_in_words
+    context.store :allocation_amount_words, amount_in_words
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
 
