@@ -12,11 +12,11 @@ class SecondarySaleRmPolicy < SaleBasePolicy
   end
 
   def offers?
-    offer?
+    show?
   end
 
   def interests?
-    show_interest?
+    show?
   end
 
   def payments?

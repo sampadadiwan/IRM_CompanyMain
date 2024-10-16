@@ -1,3 +1,16 @@
+V8.0.16
+#####################################
+891dd2a00 Added ability to withdraw an interest
+bf9bef44d access docs tag list if it is present (#505)
+bef1ac403 Remove holdings from sale (#504)
+4609bf9cb Removed unwanted tables
+0fbb8a74e Ensured prod data fits into new Sale changes
+87ae73f39 Do not allow delete of verified allocation
+880ca3de4 Fixed Allocation.build_from to allow for price
+bf1568439 Added new allocation for company admin
+f2623e72e Secondary allocations (#503)
+638c98b0c Removed dead code from for_investor
+
 V8.0.15
 #####################################
 982a1a4cb (origin/main, origin/HEAD) Custom Grids test fix (#497)

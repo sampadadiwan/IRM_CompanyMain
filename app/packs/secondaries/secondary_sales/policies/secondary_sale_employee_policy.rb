@@ -12,11 +12,11 @@ class SecondarySaleEmployeePolicy < SaleBasePolicy
   end
 
   def offers?
-    show? && record.manage_offers
+    show? 
   end
 
   def interests?
-    show? && record.manage_offers
+    show? 
   end
 
   def payments?
