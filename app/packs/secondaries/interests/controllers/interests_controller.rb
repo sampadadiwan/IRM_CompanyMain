@@ -26,6 +26,8 @@ class InterestsController < ApplicationController
 
     end
 
+    @interests = @interests.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+
     @interests = @interests.page(params[:page]) unless request.format.xlsx?
 
     render "index"

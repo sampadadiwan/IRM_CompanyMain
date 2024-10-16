@@ -2,13 +2,14 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "Interests") do |sheet|
   # Create the header row
-  sheet.add_row(["ID", "User", "Email", "Sign In Count", "Status", "Signature Uploaded", "SPA Accepted", "Documents"])
+  sheet.add_row(["ID", "User", "Email", "Sign In Count", "Completed", "Status", "Signature Uploaded", "SPA Accepted", "Documents"])
 
   # Create entries for each item
   @interests.includes(:documents).find_each do |o|
     sig = o.signature.present? ? 'Yes' : 'No'
     docs = o.documents.collect(&:name).join(", ")
     spa = o.final_agreement ? 'Yes' : 'No'
-    sheet.add_row([o.id, o.buyer_entity_name, o.email, o.user&.sign_in_count, short_listed_status, sig, spa, docs])
+    completed = o.completed ? 'Yes' : 'No'
+    sheet.add_row([o.id, o.buyer_entity_name, o.email, o.user&.sign_in_count, completed, o.short_listed_status.humanize, sig, spa, docs])
   end
 end

@@ -29,14 +29,16 @@ class SaleBasePolicy < ApplicationPolicy
   end
 
   def specific_policy_class
+    model_class = record.instance_of?(Class) ? record : record.class
+
     if user.has_cached_role?(:rm)
-      "#{record.class}RmPolicy".constantize
+      "#{model_class}RmPolicy".constantize
     elsif user.curr_role.to_s == "investor" || user.has_cached_role?(:holding)
-      "#{record.class}InvestorPolicy".constantize
+      "#{model_class}InvestorPolicy".constantize
     elsif user.has_cached_role?(:company_admin)
-      "#{record.class}CompanyAdminPolicy".constantize
+      "#{model_class}CompanyAdminPolicy".constantize
     elsif user.has_cached_role?(:employee)
-      "#{record.class}EmployeePolicy".constantize
+      "#{model_class}EmployeePolicy".constantize
     elsif user.has_cached_role?(:super) || user.has_cached_role?(:support)
       "SuperPolicy".constantize
     end

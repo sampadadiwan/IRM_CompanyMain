@@ -15,6 +15,6 @@ class OfferSearchService
     offers = offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
     offers = offers.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    offers.joins(:investor, :user).includes(:secondary_sale, :entity, holding: :funding_round)
+    offers.joins(:investor, :user).includes(:secondary_sale, :entity)
   end
 end

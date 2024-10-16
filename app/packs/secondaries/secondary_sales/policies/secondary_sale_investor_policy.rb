@@ -12,11 +12,11 @@ class SecondarySaleInvestorPolicy < SaleBasePolicy
   end
 
   def offers?
-    offer?
+    permissioned_investor?(:seller)
   end
 
   def interests?
-    show_interest?
+    permissioned_investor?(:buyer)
   end
 
   def payments?

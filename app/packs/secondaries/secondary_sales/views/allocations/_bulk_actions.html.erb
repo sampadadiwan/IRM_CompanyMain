@@ -48,7 +48,7 @@
         <%= button_to "Download Docs", download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id), class: "dropdown-item", data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } if folder_id.present? %>
     <% end %>
     
-    <% if policy(secondary_sale).owner? %>
+    <% if secondary_sale && policy(secondary_sale).owner? %>
         <div class="dropdown-divider"></div>
         <%= link_to "All Documents", documents_path(filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item"  %>
         <%= link_to "Approved Documents", documents_path(q: ransack_query_params(:approved, :eq, true), filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item" %>

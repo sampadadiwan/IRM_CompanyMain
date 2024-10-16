@@ -38,6 +38,10 @@
                 </th>
 
                 <th>
+                    Completed
+                </th>
+
+                <th>
                     Signature Uploaded
                 </th>
                 <th>
@@ -66,6 +70,7 @@
                 <td><%= o.user&.email %></td>
                 <td><%= o.user&.sign_in_count %></td>
                 <td><%= display_boolean o.verified %></td>
+                <td><%= display_boolean o.completed %></td>
                 <td>
                     <%= display_boolean (o.documents.any?{|d| d.name.downcase.include? "signature"}) %>
                 </td>

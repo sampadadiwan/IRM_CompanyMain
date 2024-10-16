@@ -29,7 +29,7 @@
                     <a class="btn btn-outline-primary" href="<%=offers_path%>"><i class="fa-solid fa-table-cells"></i></a>
                 <% end %>
 
-                <% offers = policy_scope(Offer).joins(:secondary_sale).includes(:entity, :investor, :holding).where("secondary_sales.active=?", true) %>
+                <% offers = policy_scope(Offer).joins(:secondary_sale).includes(:entity, :investor).where("secondary_sales.active=?", true) %>
 
                 <% offers.each do |offer| %>
                     <%= render "/offers/card", offer: %>

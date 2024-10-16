@@ -1,7 +1,7 @@
 <%= render NewCard.new do %>
   <% title = approval_response.owner.blank? ? "Approval Response" : "Approval Response for #{approval_response.owner}" %>
   <%= render FormCard.new(title:) do %>
-    <%= render "/layouts/alerts" %>
+    
     <%= form_with(model: approval_response, url: approve_approval_response_path(approval_response),
     method: :patch) do |form| %>
       <div>

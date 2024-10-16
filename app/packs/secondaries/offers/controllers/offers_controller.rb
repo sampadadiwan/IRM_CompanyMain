@@ -19,7 +19,7 @@ class OffersController < ApplicationController
 
   def fetch_rows
     @q = Offer.ransack(params[:q])
-    @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale, :holding)
+    @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale)
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)
@@ -69,7 +69,7 @@ class OffersController < ApplicationController
     @offer.user_id = current_user.id
     @offer.full_name = current_user.full_name
     @offer.entity_id = @offer.secondary_sale.entity_id
-    @offer.quantity = @offer.allowed_quantity
+    @offer.investor_id ||= @offer.entity.investors.where(investor_entity_id: current_user.entity_id).first&.id
     setup_custom_fields(@offer, force_form_type: @offer.secondary_sale.offer_form_type)
 
     authorize @offer
@@ -165,9 +165,6 @@ class OffersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def offer_params
-    params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id, :price, :completed,
-                                  :holding_id, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code, :city, :demat,
-                                  :comments, :verified, :interest_id, :form_type_id, :allocation_quantity,
-                                  :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :seller_signatory_emails, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id, :price, :completed, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code, :city, :demat, :comments, :verified, :interest_id, :form_type_id, :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :seller_signatory_emails, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

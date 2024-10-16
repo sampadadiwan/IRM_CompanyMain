@@ -2,8 +2,8 @@
 <% secondary_sale_id = @secondary_sale&.id || params[secondary_sale_id] %>
 
 <% if @secondary_sale && policy(@secondary_sale).owner?  %>
-    <%= render "/interests/stats", secondary_sale: @secondary_sale %>
     <%= render "/interests/charts", secondary_sale: @secondary_sale %>
+    <%= render "/interests/stats", secondary_sale: @secondary_sale %>    
 <% end %>
 
 <%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale], hidden_fields: {secondary_sale_id:} %>

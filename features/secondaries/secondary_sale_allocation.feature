@@ -5,6 +5,7 @@ Scenario Outline: Sale Allocation
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
+  And the sale has an allocation SPA template
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   And Given I upload a offer file "offers_allocate.xlsx"
@@ -17,6 +18,8 @@ Scenario Outline: Sale Allocation
   Then the allocations must be verified "true"
   And the corresponding offers must verified "true"
   And the corresponding interests must verified "true"
+  And when the allocations SPA generation is triggered 
+  Then the SPAs must be generated for each verified allocation
   
   Examples:
   	|sale                                     |

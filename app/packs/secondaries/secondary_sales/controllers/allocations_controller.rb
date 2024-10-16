@@ -64,7 +64,7 @@ class AllocationsController < ApplicationController
     authorize @allocation
     @allocation = Allocation.build_from(@allocation.offer, @allocation.interest, @allocation.quantity, @allocation.price)
     if @allocation.save
-      redirect_to @allocation, notice: "Allocation was successfully created."
+      redirect_to allocations_path(filter: true, secondary_sale_id: @allocation.secondary_sale_id), notice: "Allocation was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -73,7 +73,7 @@ class AllocationsController < ApplicationController
   # PATCH/PUT /allocations/1
   def update
     if @allocation.update(allocation_params)
-      redirect_to @allocation, notice: "Allocation was successfully updated.", status: :see_other
+      redirect_to allocations_path(filter: true, secondary_sale_id: @allocation.secondary_sale_id), notice: "Allocation was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end

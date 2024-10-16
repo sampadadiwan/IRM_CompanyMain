@@ -21,8 +21,8 @@ module InterestsHelper
   end
 
   def interest_by_allocation(secondary_sale)
-    allocated_interests = secondary_sale.interests.where(allocation_quantity: 0..).sum(:quantity)
-    unallocated_interests = secondary_sale.interests.where(allocation_quantity: 0).sum(:quantity)
+    allocated_interests = secondary_sale.interests.where(allocation_quantity: 0..).count
+    unallocated_interests = secondary_sale.interests.where(allocation_quantity: 0).count
     grouped = [
       ["Allocated", allocated_interests],
       ["Un Allocated", unallocated_interests]

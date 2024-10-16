@@ -19,11 +19,7 @@ class OfferInvestorPolicy < SaleBasePolicy
   end
 
   def create?
-    if user.has_cached_role?(:investor) && record.holding.present?
-      record.holding.investor.investor_entity_id == user.entity_id
-    elsif user.has_cached_role?(:holding) && record.holding.present?
-      record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
-    end
+    true
   end
 
   def approve?

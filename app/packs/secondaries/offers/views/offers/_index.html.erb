@@ -4,6 +4,58 @@
 
 <%= render "/layouts/filter", associations: [:investor, :user, :secondary_sale, :interest], hidden_fields: {secondary_sale_id:} %>
 
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 ml-5">
+        Offers:
+        <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
+    </h1>
+    <span>
+        <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
+                                class: "btn btn-outline-primary" if @secondary_sale && policy(@secondary_sale).owner? %>
+        
+        <%= link_to "New Offer", new_offer_path("offer[secondary_sale_id]": @secondary_sale), 
+                                class: "btn btn-outline-primary" if @secondary_sale && policy(@secondary_sale).offer?  %>
+        
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Upload / Download
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                <%= link_to "Upload Offers", 
+                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                    "import_upload[owner_type]": "SecondarySale", 
+                    "import_upload[import_type]": "Offer", 
+                    "sample_upload": "OFFERS_SAMPLE"), 
+                    { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
+
+                <%= link_to "Upload Offers Documents", 
+                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                        "import_upload[owner_type]": "SecondarySale", 
+                        "import_upload[import_type]": "OfferDocs", 
+                        "sample_upload": "OFFERS_DOCS_SAMPLE"), 
+                        { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
+
+
+                <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                                        class: "dropdown-item" if @secondary_sale %>
+
+
+                </div>
+            </div>
+        </div>
+        
+
+        <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
+                                method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will approve all offer. Proceed?"} if @secondary_sale && policy(@secondary_sale).approve_offers? %>
+
+
+        <%= render "offers/bulk_actions" %>
+    </span>
+</div>
+
 <% if params[:card].present? %>
     <div class="row">
         <% @offers.each do |offer| %>
@@ -11,59 +63,7 @@
         <% end %>
     </div>
     <%= paginate @offers.page(params[:page]) %>
-<% else %>
-
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 ml-5">
-            Offers:
-            <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
-        </h1>
-        <span>
-            <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
-                                    class: "btn btn-outline-primary" if @secondary_sale %>
-            
-            <%= link_to "New Offer", new_offer_path("offer[secondary_sale_id]": @secondary_sale), 
-                                    class: "btn btn-outline-primary" if @secondary_sale && policy(@secondary_sale).offer?  %>
-            
-            <div class="btn-group">
-                <div class="dropdown">
-                    <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Upload / Download
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-                    <%= link_to "Upload Offers", 
-                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                        "import_upload[owner_type]": "SecondarySale", 
-                        "import_upload[import_type]": "Offer", 
-                        "sample_upload": "OFFERS_SAMPLE"), 
-                        { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
-
-                    <%= link_to "Upload Offers Documents", 
-                            new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                            "import_upload[owner_type]": "SecondarySale", 
-                            "import_upload[import_type]": "OfferDocs", 
-                            "sample_upload": "OFFERS_DOCS_SAMPLE"), 
-                            { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
-
-
-                    <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                            class: "dropdown-item" if @secondary_sale %>
-
-
-                    </div>
-                </div>
-            </div>
-            
-
-            <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
-                                    method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will approve all offer. Proceed?"} if @secondary_sale && policy(@secondary_sale).approve_offers? %>
-
-
-            <%= render "offers/bulk_actions" %>
-        </span>
-    </div>
+<% else %>    
 
     <% 
         lazy_load_data ||= false 

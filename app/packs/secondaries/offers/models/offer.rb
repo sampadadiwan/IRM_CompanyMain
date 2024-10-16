@@ -1,4 +1,3 @@
-# rubocop:disable Metrics/ClassLength
 class Offer < ApplicationRecord
   include Trackable.new
   include WithFolder
@@ -37,9 +36,6 @@ class Offer < ApplicationRecord
                   column_name: proc { |o| o.approved ? 'total_offered_amount_cents' : nil },
                   delta_column: 'amount_cents', column_names: -> { { Offer.approved => 'total_offered_amount_cents' } }
 
-  # This is the holding owned by the user which is offered out
-  belongs_to :holding, optional: true
-
   belongs_to :granter, class_name: "User", foreign_key: :granted_by_user_id, optional: true
   belongs_to :buyer, class_name: "Entity", optional: true
   has_many :interests, through: :allocations
@@ -51,9 +47,6 @@ class Offer < ApplicationRecord
   serialize :bank_verification_response, type: Hash
   serialize :docs_uploaded_check, type: Hash
 
-  delegate :quantity, to: :holding, prefix: :holding
-  delegate :funding_round, to: :holding
-
   scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
@@ -64,7 +57,6 @@ class Offer < ApplicationRecord
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.verified }
 
-  validate :check_quantity, if: proc { |o| o.holding.present? }
   validate :sale_active, on: :create
   validates :offer_type, :PAN, length: { maximum: 15 }
   validates :bank_account_number, :demat, length: { maximum: 40 }
@@ -88,14 +80,6 @@ class Offer < ApplicationRecord
 
   before_save :set_defaults
   def set_defaults
-    if holding.present?
-      self.percentage = (100.0 * quantity) / total_holdings_quantity
-      self.investor_id = holding.investor_id
-      self.user_id = holding.user_id if holding.user_id
-      self.entity_id = holding.entity_id
-      self.offer_type ||= holding.holding_type
-    end
-
     self.approved = false if quantity_changed?
     # Override the price for fixed price sales
     self.price = secondary_sale.final_price if secondary_sale.price_type == "Fixed Price"
@@ -118,44 +102,6 @@ class Offer < ApplicationRecord
         RUBY
         self.custom_matching_vals += "#{val}_"
       end
-    end
-  end
-
-  # This is used to validate the quantity of the offer
-  # This is applicable only for the offers tied to a holding
-  def check_quantity
-    # holding users total holding amount
-    total_quantity = total_holdings_quantity
-    Rails.logger.debug { "total_holdings_quantity: #{total_quantity}" }
-
-    # already offered amount
-    already_offered = secondary_sale.offers.where(user_id: holding.user_id).sum(:quantity)
-    Rails.logger.debug { "already_offered: #{already_offered}" }
-
-    already_offered -= quantity_was unless new_record?
-
-    total_offered_quantity = already_offered + quantity
-    total_offered_quantity -= quantity_was unless new_record?
-    Rails.logger.debug { "total_offered_quantity: #{total_offered_quantity}" }
-
-    # errors.add(:quantity, "Total offered quantity #{total_offered_quantity} is > allowed_quantity #{allowed_quantity}") if total_offered_quantity > allowed_quantity
-    errors.add(:quantity, "Total offered quantity #{total_offered_quantity} is > total holdings #{total_quantity}") if total_offered_quantity > total_quantity
-  end
-
-  def total_holdings_quantity
-    if holding.present?
-      holding.holding_type == "Investor" ? holding.investor.holdings.approved.eq_and_pref.sum(:quantity) : holding.user.holdings.approved.eq_and_pref.sum(:quantity)
-    else
-      0
-    end
-  end
-
-  def allowed_quantity
-    if holding.present?
-      # holding users total holding amount
-      (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
-    else
-      Float::INFINITY
     end
   end
 
@@ -288,7 +234,7 @@ class Offer < ApplicationRecord
   ################# ransack stuff follows ###################
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified final_agreement matched updated_at created_at].sort
+    %w[PAN address allocation_amount_cents allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code quantity verified final_agreement updated_at created_at].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -342,4 +288,3 @@ class Offer < ApplicationRecord
     end
   end
 end
-# rubocop:enable Metrics/ClassLength

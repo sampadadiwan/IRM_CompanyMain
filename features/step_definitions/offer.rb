@@ -136,6 +136,15 @@
     )
   end
 
+  Then('when I place an offer {string} from the offers tab') do |arg|
+    @offer = FactoryBot.build(:offer)
+    key_values(@offer, arg)
+    click_on("New")
+    steps %(
+      Then when I submit the offer
+    )
+  end
+
   When('I visit the offer details page') do
     @offer ||= Offer.first
     visit(offer_path(@offer))
@@ -202,6 +211,23 @@ Given('there is an {string} offer {string} for each employee investor') do | app
   Holding.all.each do |h|
     offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
                 secondary_sale_id: @sale.id, investor_id: h.investor_id, approved: approved)
+    key_values(offer, args)
+    offer.save!
+
+    offer.approved = approved
+    offer.save
+
+    puts "\n####Offer####\n"
+    puts offer.to_json
+  end
+
+  @sale.reload
+end
+
+Given('there is an {string} offer {string} for each investor') do |approved_arg, args|
+  approved = approved_arg == "approved"
+  Investor.not_holding.not_trust.each do |h|
+    offer = FactoryBot.build(:offer, user_id:h.investor_entity.employees.sample.id, entity_id: @sale.entity_id, secondary_sale_id: @sale.id, investor_id: h.id, approved: approved)
     key_values(offer, args)
     offer.save!
 

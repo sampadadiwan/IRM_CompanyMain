@@ -6,6 +6,9 @@
     <% if interest.allocation_quantity > 0 %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#transaction-docs-tab">Transaction Documents</a>
     <% end %>
+    <% if policy(interest.secondary_sale).owner? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#changes-tab">Changes</a>
+    <% end %>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -36,17 +39,13 @@
         </div>
       <% end %>      
 
-
-      <div id="chat-tab" class="tab-pane fade">
+      <% if policy(interest.secondary_sale).owner? %>
+      <div id="changes-tab" class="tab-pane fade">
         <div id="messages" class="associated_entity">
-          <%= link_to messages_path(owner_id: interest.id, owner_type: "Interest"), 
-              class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
-            <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "messages_frame", target: "_top" do %>
-          <% end %>
+          <%= render "/interests/changes", interest: interest %>
         </div>  
       </div>
+      <% end %>
 
 
   </div>

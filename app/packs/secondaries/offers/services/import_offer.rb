@@ -10,21 +10,12 @@ class ImportOffer < ImportUtil
 
     email, update_only, approved, offer_type, user, secondary_sale, full_name = get_key_data(user_data, import_upload)
 
-    if offer_type == "Investor"
-      # This offer is for an investor
-      investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-      raise "Investor #{user_data['Investor']} not found" unless investor
+    # This offer is for an investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
+    raise "Investor #{user_data['Investor']} not found" unless investor
 
-      # Get the holding for which the offer is being made
-      holding = Holding.where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).last
+    raise "User not found for investor #{user_data['Investor']}" unless user.entity_id == investor.investor_entity_id
 
-      raise "User not found for investor #{user_data['Investor']}" unless user.entity_id == investor.investor_entity_id
-
-    else
-      # Get the holding for which the offer is being made
-      holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?", email, import_upload.entity_id).last
-      investor = holding.investor
-    end
     # Make the offer
 
     if update_only
@@ -33,7 +24,7 @@ class ImportOffer < ImportUtil
       offer = Offer.find_by(entity_id: import_upload.entity_id, id: user_data["Offer Id"])
       raise "No offer found for update, for user with #{email}, secondary_sale_id #{secondary_sale.id}, #{user_data['Pan']} " if offer.new_record?
     else
-      offer = Offer.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id, holding_id: holding&.id)
+      offer = Offer.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id)
     end
 
     offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"], demat: user_data["Demat"], quantity: user_data["Offer Quantity"], price: user_data["Price"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:, offer_type:, seller_signatory_emails: user_data["Seller Signatory Emails"])
