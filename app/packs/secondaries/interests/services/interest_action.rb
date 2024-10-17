@@ -1,6 +1,6 @@
 class InterestAction < Trailblazer::Operation
   def save(ctx, interest:, **)
-    validate = ctx[:investor_user]
+    validate = ctx[:investor_user] || ctx[:validate]
     interest.save(validate:)
   end
 

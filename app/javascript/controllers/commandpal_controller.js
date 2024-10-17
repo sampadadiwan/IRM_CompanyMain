@@ -56,7 +56,7 @@ export default class extends Controller {
       let children = [
         {
             name: "Funds",
-            shortcut: "ctrl+f",
+            shortcut: "ctrl+u",
             handler: () => {                    
                 window.location = "/funds";
             }
