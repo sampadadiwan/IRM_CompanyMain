@@ -46,10 +46,7 @@
                 <th>
                     PAN
                 </th>
-                <th>
-                    Buyer
-                </th>
-
+                
                 <th>
                     Verified
                 </th>
@@ -107,12 +104,7 @@
                         <td>
                             <%= offer.PAN %>
                         </td>
-                        <td>
-                            <%= offer.interest.buyer_entity_name %>
-                            Account: <%= offer.interest.bank_account_number %>
-                            IFSC: <%= offer.interest.ifsc_code %>
-                        </td>
-
+                        
                         <td>
                             <%= display_boolean offer.verified %>
                         </td>

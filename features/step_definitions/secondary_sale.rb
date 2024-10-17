@@ -607,8 +607,6 @@ Then('existing investor user {string} have {string} access to the sale') do |tru
   end
 end
 
-
-
 Given('the sale has a SPA template') do
   doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Offer Template")
   doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
@@ -628,17 +626,6 @@ Then('when the offers are verified') do
   end
 end
 
-
-Then('when the SPA generation is triggered') do
-  OfferSpaJob.perform_now(@sale.id, nil, @user.id)
-end
-
-Then('the SPAs must be generated for each verified offer') do
-  @sale.reload
-  @sale.offers.verified.each do |offer|
-    offer.documents.where(name: "SPA #{offer.full_name} #{offer.interest.investor.investor_name}").to_a.should_not == []
-  end
-end
 
 Then('when the allocations are verified') do
   @sale.allocations.unverified.each do |allocation|

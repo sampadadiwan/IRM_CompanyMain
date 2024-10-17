@@ -8,7 +8,7 @@ class OfferSpaGenerator
     create_working_dir(offer)
     template_path ||= download_template(template)
     generate(offer, template, template_path)
-    generated_document_name = "#{template.name} #{offer.full_name} #{offer.interest.investor.investor_name}"
+    generated_document_name = "#{template.name} #{offer.full_name}"
     upload(template, offer, nil, nil, nil, generated_document_name)
   ensure
     cleanup
@@ -39,7 +39,7 @@ class OfferSpaGenerator
     context.store :allocation_quantity_words, allocation_quantity_in_words
 
     context.store  :secondary_sale, TemplateDecorator.decorate(offer.secondary_sale)
-    context.store  :interest, TemplateDecorator.decorate(offer.interest)
+    context.store  :allocations, TemplateDecorator.decorate(offer.allocations)
     offer_custom_fields = TemplateDecorator.decorate(context[:offer].custom_fields)
     context.store :offer_custom_fields, offer_custom_fields
     context.store :individual, %w[true yes 1].include?(offer.properties["individual"]&.downcase)
@@ -52,20 +52,12 @@ class OfferSpaGenerator
     add_fees(context, offer)
 
     add_image(context, :offer_signature, offer.signature)
-    add_image(context, :interest_signature, offer.interest&.signature)
 
     file_name = generated_file_name(offer)
     convert(template, context, file_name)
 
     additional_footers = []
-    additional_headers = []
-    if offer.interest
-      # Get any footers from the interest
-      additional_footers += offer.interest.documents.where(name: %w[Footer])
-      additional_footers += offer.interest.documents.where(name: ["#{template_document.name} Footer", "#{template_document.name} Signature"])
-      additional_headers += offer.interest.documents.where(name: ["Header", "Stamp Paper"])
-      additional_headers += offer.interest.documents.where(name: ["#{template_document.name} Header", "#{template_document.name} Stamp Paper"])
-    end
+    additional_headers = []    
 
     add_header_footers(offer, file_name, additional_headers, additional_footers, template_document.name)
   end
