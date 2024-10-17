@@ -97,6 +97,9 @@ class ImportUtil < Trailblazer::Operation
   def process_rows(import_upload, headers, data, ctx)
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
+    # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
+    custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
+
     ctx[:custom_field_headers] = custom_field_headers
 
     # Parse the XL rows
@@ -158,6 +161,9 @@ class ImportUtil < Trailblazer::Operation
 
   def setup_custom_fields(user_data, model, custom_field_headers)
     custom_field_headers -= ["Update Only"]
+    # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
+    custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
+
     # Were any custom fields passed in ? Set them up
     if custom_field_headers.length.positive?
       model.properties ||= {}

@@ -336,7 +336,7 @@ Then('the offers must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     offer = offers[idx-1]
     puts "Checking import of #{offer}"
-    offer.quantity.should == user_data["Offer Quantity"]
+    offer.quantity.should == user_data["Quantity"]
     offer.offer_type.should == user_data["Founder/Employee/Investor"]
     offer.investor.investor_name.should == user_data["Investor"] if offer.offer_type == "Investor"
     offer.user.email.should == user_data["Email"]

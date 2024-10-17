@@ -12,11 +12,11 @@ class SecondarySaleEmployeePolicy < SaleBasePolicy
   end
 
   def offers?
-    show? 
+    show?
   end
 
   def interests?
-    show? 
+    show?
   end
 
   def payments?

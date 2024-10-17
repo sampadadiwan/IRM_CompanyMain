@@ -4,7 +4,7 @@ form_type, custom_field_names, custom_headers = get_form_type("Interest")
 
 wb.add_worksheet(name: "Interests") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "Interest Entity", "User", "Email", "Type", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", "Status", "Verified", "Escrow Deposited", "Created", "Updated"] + custom_headers)
+  sheet.add_row(["Id", "Buyer Entity Name", "Investor", "Address", "Contact Name", "City", "PAN", "Demat", "Bank Account", "IFSC Code", "Buyer Signatory Emails", "Quantity", "Price", "Short Listed Status", "User", "Email", "Escrow Deposited", "Allocation Quantity", "Allocation Amount", "Verified", "Created", "Updated"] + custom_headers)
 
   # Create entries for each item
   @interests.each do |o|
@@ -13,6 +13,6 @@ wb.add_worksheet(name: "Interests") do |sheet|
     verified = o.verified ? "Yes" : "No"
     escrow_deposited = o.escrow_deposited ? "Yes" : "No"
 
-    sheet.add_row([o.id, o.aquirer_name, o.user&.full_name, o.user&.email, o.interest_entity.entity_type, o.quantity, o.price, o.allocation_quantity, o.allocation_amount, o.short_listed_status.humanize, verified, escrow_deposited, o.created_at, o.updated_at] + custom_field_values)
+    sheet.add_row([o.id, o.buyer_entity_name, o.investor.investor_name, o.address, o.contact_name, o.city, o.PAN, o.demat, o.bank_account_number, o.ifsc_code, o.buyer_signatory_emails, o.quantity, o.price, o.short_listed_status.humanize, o.user&.full_name, o.user&.email, escrow_deposited, o.allocation_quantity, o.allocation_amount, verified, o.created_at, o.updated_at] + custom_field_values)
   end
 end
