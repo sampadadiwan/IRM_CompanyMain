@@ -23,7 +23,7 @@ class InterestRmPolicy < SaleBasePolicy
   end
 
   def short_list?
-    permissioned_rm? && rm_mapping.permissions.update?
+    permissioned_rm? && rm_mapping.permissions.update? && record.short_listed_status != Interest::STATUS_SHORT_LISTED
   end
 
   def create?

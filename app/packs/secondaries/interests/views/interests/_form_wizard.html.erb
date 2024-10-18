@@ -65,10 +65,15 @@
                 <% end %> 
 
                 <div class="form-group">
-                    <div class="form-group">
+                    <% if interest.short_listed %> 
                         <%= form.label :buyer_entity_name %>
-                        <%= form.text_field :buyer_entity_name, class: "form-control"  %>
-                    </div>
+                        <%= form.text_field :buyer_entity_name, class: "form-control", disabled: true %>
+                    <% else %>
+                        <div class="form-group">
+                            <%= form.label :buyer_entity_name %>
+                            <%= form.text_field :buyer_entity_name, class: "form-control"  %>
+                        </div>
+                    <% end %>
                 </div>
 
 

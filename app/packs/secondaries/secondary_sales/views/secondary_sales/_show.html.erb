@@ -69,9 +69,7 @@
             </td>
           </tr>
         <% end %>
-
-        
-
+      
 
         <% if secondary_sale.final_price > 0 %>
           <tr>
@@ -125,6 +123,7 @@
               <%= display_boolean secondary_sale.active? %>
             </td>
           </tr>
+          
 
           <% if current_user.entity_id == secondary_sale.entity_id %>
 
@@ -207,16 +206,7 @@
                   <% end %>
                 </ul>
             </td>
-          </tr>
-
-          <tr id="visible_externally"  class="">
-            <td>
-              Visible Externally
-            </td>
-            <td>
-              <%= display_boolean secondary_sale.visible_externally %>
-            </td>
-          </tr>
+          </tr>    
 
         <% end %>
 
@@ -254,33 +244,25 @@
             </td>
           </tr>
           
-
-
-          <tr>
-            <td>
-              Interest Allocation
-            </td>
-            <td>
-                <% secondary_sale.cmf_allocation_percentage.each do |k,v| %>
-                  <% if k == "" %>
-                    <div><%= "#{v.round(2)} %" %> </div>
-                  <% else %>
-                    <div><%= "#{k} = #{v.round(2)} %" %> </div>
-                  <% end %>
-                <% end %>
-            </td>
-          </tr>
-          
-
           <tr>
             <td colspan="2" class="bg-primary"></td>
           </tr>
         <% end %>
 
         
-
-
         <%= display_custom_fields(secondary_sale, collapsed: true) if current_user %>
+
+        <% if secondary_sale.notification_employee_ids.present? %>
+        <% notification_names = secondary_sale.notification_users.map(&:full_name) %>
+        <tr>
+            <td>
+              Notify Employees
+            </td>
+            <td>
+              <%= notification_names %>
+            </td>
+        </tr>
+        <% end %>
 
       </table>
 

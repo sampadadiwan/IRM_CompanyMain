@@ -23,11 +23,11 @@ class InterestInvestorPolicy < SaleBasePolicy
   end
 
   def short_list?
-    permissioned_investor?(:buyer)
+    permissioned_investor?(:buyer) && record.short_listed_status != Interest::STATUS_SHORT_LISTED
   end
 
   def create?
-    user.id == record.user_id
+    permissioned_investor?(:buyer)
   end
 
   def new?

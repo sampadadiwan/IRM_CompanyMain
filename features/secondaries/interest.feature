@@ -3,6 +3,7 @@ Feature: Interest
 
 Scenario Outline: Create new interest
   Given there is a user "<user>" for an entity "<entity>"
+  And the user has role "company_admin"
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"
@@ -42,6 +43,7 @@ Examples:
 
 Scenario Outline: Create new interest for indicative sale
   Given there is a user "<user>" for an entity "<entity>"
+  And the user has role "company_admin"
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"

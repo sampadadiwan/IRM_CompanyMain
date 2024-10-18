@@ -24,7 +24,7 @@ class InterestEmployeePolicy < SaleBasePolicy
   end
 
   def create?
-    user.id == record.user_id
+    permissioned_employee?(:update) && record.secondary_sale.manage_interests
   end
 
   def new?

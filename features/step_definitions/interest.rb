@@ -25,6 +25,7 @@
     @interest = Interest.new
     key_values(@interest, args)
     click_on("New Interest")
+    fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
     fill_in("interest_quantity", with: @interest.quantity)
     fill_in("interest_price", with: @interest.price) unless @sale.price_type == "Fixed Price"
     click_on("Save")
@@ -39,7 +40,7 @@
   end
 
   Then('when the interest is shortlisted') do
-    InterestShortList.call(interest: @created_interest, short_listed_status: Interest::STATUS_SHORT_LISTED).success?.should == true
+    InterestShortList.call(interest: @created_interest, short_listed_status: Interest::STATUS_SHORT_LISTED, current_user: @created_interest.entity.employees.sample).success?.should == true
   end
   
   
@@ -47,8 +48,10 @@
     visit (edit_interest_url(@created_interest))
     @interest = FactoryBot.build(:interest, quantity: @created_interest.quantity, price: @created_interest.price)    
     key_values(@interest, args)
-    
-    fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
+
+    unless @created_interest.short_listed
+      fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
+    end
     click_on("Next")
     fill_in("interest_address", with: @interest.address)
     fill_in("interest_contact_name", with: @interest.contact_name)

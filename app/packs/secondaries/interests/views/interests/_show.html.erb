@@ -19,7 +19,7 @@
 
         <tr>
           <td>
-            Name
+            Buyer Entity Name
           </td>
           <td>
             <%= interest.buyer_entity_name.presence %>
@@ -82,11 +82,16 @@
 
         <tr id="short_listed">
           <td>
-            Shortlisted
+            Status
           </td>
           <td>
-            <span class="badge <%= interest.short_listed ? 'bg-success' : 'bg-warning' %>">
+            <span class="badge <%= short_listed_css(interest) %>">
               <%= interest.short_listed_status.humanize %>
+            </span>
+            <br>
+            <span class="small text-muted">
+              <%= interest.status_updated_at ? "At: #{l interest.status_updated_at}" : "" %>
+              <%= interest.status_updated_by ? "By: #{interest.status_updated_by.full_name}" : "" %>
             </span>
           </td>
         </tr>
@@ -126,19 +131,10 @@
       <% end %>
 
 
-        <% if interest.buyer_entity_name.present? %>
-
           <tr>
             <td colspan="2" class="bg-primary"></td>
           </tr>
-          <tr>
-            <td>
-              Buyer Entity Name
-            </td>
-            <td>
-              <%= interest.buyer_entity_name %>
-            </td>
-          </tr>
+         
           <tr>
             <td>
               Contact Name
@@ -205,7 +201,6 @@
                 <%= interest.pan_verification_status %>
               </td>
             </tr>
-          <% end %>
 
           <tr>
             <td>

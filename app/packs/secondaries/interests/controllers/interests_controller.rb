@@ -14,9 +14,6 @@ class InterestsController < ApplicationController
       @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
       @interests = @interests.order(allocation_quantity: :desc)
 
-      # @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"
-      # @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
-
       @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
       @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
 
@@ -28,7 +25,7 @@ class InterestsController < ApplicationController
 
     @interests = @interests.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    @interests = @interests.page(params[:page]) unless request.format.xlsx?
+    @interests = @interests.page(params[:page]) unless request.format.xlsx? || params[:all].present?
 
     render "index"
   end

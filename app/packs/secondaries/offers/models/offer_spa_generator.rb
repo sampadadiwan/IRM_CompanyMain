@@ -57,7 +57,7 @@ class OfferSpaGenerator
     convert(template, context, file_name)
 
     additional_footers = []
-    additional_headers = []    
+    additional_headers = []
 
     add_header_footers(offer, file_name, additional_headers, additional_footers, template_document.name)
   end

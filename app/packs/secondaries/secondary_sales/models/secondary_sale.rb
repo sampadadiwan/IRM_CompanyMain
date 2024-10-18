@@ -30,7 +30,8 @@ class SecondarySale < ApplicationRecord
   belongs_to :offer_form_type, class_name: "FormType", optional: true
   belongs_to :interest_form_type, class_name: "FormType", optional: true
 
-  serialize :cmf_allocation_percentage, type: Hash
+  # List of employee ids to notify
+  serialize :notification_employee_ids, type: Array
 
   monetize :total_offered_amount_cents, :total_interest_amount_cents, :allocation_amount_cents,
            with_currency: ->(s) { s.entity.currency }
@@ -136,5 +137,13 @@ class SecondarySale < ApplicationRecord
 
   def adhoc_notifications_to
     ["All Sellers", "All Buyers", "Approved Sellers", "Verified Sellers", "Shortlisted Buyers"].sort
+  end
+
+  def notification_users
+    if notification_employee_ids.present?
+      entity.employees.where(id: notification_employee_ids)
+    else
+      []
+    end
   end
 end

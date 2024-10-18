@@ -1,0 +1,25 @@
+<%= render "/layouts/steps", show_step_numbers: false, steps: ["Pivot:Drag Header To Pivot", "Filter:Click Header Chevron", "Chart:Select Data and Right Click", "Export:Select Data and Right Click"].freeze %>
+
+<% secondary_sale = @secondary_sale %>
+<% secondary_sale_id = @secondary_sale&.id || params[secondary_sale_id] %>
+<% data_source ||= interests_path(params: params.to_unsafe_h, format: :json, all: true, secondary_sale_id: params[:secondary_sale_id], jbuilder: true) %>
+
+
+<div class="table-responsive">
+
+  <div data-controller="interests-ag" data-interests-ag-lazy-load-data-value=<%= false %>   
+    data-interests-ag-table-name-value="#interests_table">
+    
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Interests</h1>        
+    </div>
+
+    <%#= render "interests/index_header", secondary_sale: @secondary_sale, secondary_sale_id: %>
+
+    <div id="interests_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
+    </div>
+
+    </div>
+</div>
+

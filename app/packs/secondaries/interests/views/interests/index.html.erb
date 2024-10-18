@@ -1,5 +1,9 @@
 
 <%= turbo_frame_tag "interests_frame", target: "_top" do %>
-    <%= render "/interests/index", interests: @interests, secondary_sale: @secondary_sale %>
+    <% if params[:ag].present? %>
+        <%= render "/interests/index_ag", interests: @interests, secondary_sale: @secondary_sale %>
+    <% else %>
+        <%= render "/interests/index", interests: @interests, secondary_sale: @secondary_sale %>
+    <% end %>
 <% end %>
 

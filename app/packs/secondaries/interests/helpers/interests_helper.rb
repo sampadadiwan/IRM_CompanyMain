@@ -43,4 +43,10 @@ module InterestsHelper
       "bg-light text-danger"
     end
   end
+
+  def short_listed_status(interest)
+    "<span class='badge #{short_listed_css(interest)}'>
+      #{interest.short_listed_status.humanize}
+    </span>"
+  end
 end

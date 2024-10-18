@@ -1,5 +1,6 @@
 <% 
     colors = ["success", "info", "danger", "warning"].freeze 
+    show_step_numbers = true  if show_step_numbers.nil?
 %>
 
 
@@ -12,8 +13,14 @@
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                 <div>
-                    <h3 class="fs-4">Step <%= index + 1 %></h3>
-                    <h6 class="card-subtitle mb-1 text-muted"><%= step %></h6>
+                    <% if show_step_numbers %>
+                        <h3 class="fs-4">Step <%= index + 1 %></h3>
+                        <h6 class="card-subtitle mb-1 text-muted"><%= step %></h6>
+                    <% else %>
+                        <h3 class="fs-4"><%= step.split(":")[0] %></h3>
+                        <h6 class="card-subtitle mb-1 text-muted"><%= step.split(":")[1] %></h6>
+                    <% end %>
+                    
                 </div>
                 <div class="ms-auto">
                     <span class="text-<%=color%> display-6"><i class="ti ti-chevron-right"></i></span>

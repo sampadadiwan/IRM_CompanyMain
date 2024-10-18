@@ -260,6 +260,6 @@ class SecondarySalesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def secondary_sale_params
-    params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price, :form_type_id, :percent_allowed, :min_price, :max_price, :active, :price_type, :seller_doc_list, :finalized, :spa, :offer_end_date, :support_email, :buyer_doc_list, :indicative_quantity, :show_quantity, :interest_form_type_id, :offer_form_type_id, seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price, :form_type_id, :percent_allowed, :min_price, :max_price, :active, :price_type, :seller_doc_list, :finalized, :spa, :offer_end_date, :support_email, :buyer_doc_list, :indicative_quantity, :show_quantity, :interest_form_type_id, :offer_form_type_id, notification_employee_ids: [], seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {}, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

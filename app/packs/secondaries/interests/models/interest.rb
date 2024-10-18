@@ -50,6 +50,7 @@ class Interest < ApplicationRecord
   STATUS_WITHDRAWN = 'withdrawn'.freeze
 
   STATUSES = [STATUS_PENDING, STATUS_SHORT_LISTED, STATUS_REJECTED, STATUS_WITHDRAWN].freeze
+  belongs_to :status_updated_by, class_name: "User", optional: true
 
   # 2. Validations
   validates :short_listed_status, presence: true, inclusion: { in: STATUSES }
@@ -64,6 +65,8 @@ class Interest < ApplicationRecord
   scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :verified, -> { where(verified: true) }
   scope :unverified, -> { where(verified: false) }
+  scope :completed, -> { where(completed: true) }
+  scope :incomplete, -> { where(completed: false) }
 
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :escrow_deposited, -> { where(escrow_deposited: true) }
@@ -92,25 +95,39 @@ class Interest < ApplicationRecord
 
   def notify_interest
     unless secondary_sale.no_interest_emails
-      investor.notification_users.each do |user|
-        InterestNotifier.with(record: self, entity_id:, email_method: :notify_interest, msg: "Interest received for #{secondary_sale.name}").deliver_later(user)
-      end
+      msg = "Interest received for #{investor.investor_name}:#{buyer_entity_name} in #{secondary_sale.name}"
+      send_notification(:notify_interest, msg)
     end
   end
 
   def notify_shortlist
-    if short_listed && saved_change_to_short_listed_status? && !secondary_sale.no_interest_emails
-      investor.notification_users.each do |user|
-        InterestNotifier.with(record: self, entity_id:, email_method: :notify_shortlist, msg: "Interest shortlisted for #{secondary_sale.name}").deliver_later(user)
-      end
+    if saved_change_to_short_listed_status? && !secondary_sale.no_interest_emails
+      msg = "Interest #{short_listed_status.humanize} for #{investor.investor_name}:#{buyer_entity_name} in #{secondary_sale.name}"
+      send_notification(:notify_shortlist, msg)
     end
   end
 
   def notify_accept_spa
     unless secondary_sale.no_interest_emails
-      investor.notification_users.each do |user|
-        InterestNotifier.with(record: self, entity_id:, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user)
+      msg = "SPA confirmation received for #{investor.investor_name}:#{buyer_entity_name} in #{secondary_sale.name}"
+      send_notification(:notify_accept_spa, msg)
+    end
+  end
+
+  def send_notification(email_method, msg)
+    # Notifiy the investor
+    investor.notification_users.each do |user|
+      InterestNotifier.with(record: self, entity_id:, email_method:, msg:).deliver_later(user)
+    end
+    # Notify the RM
+    investor.rm_mappings.each do |rm_mapping|
+      rm_mapping.rm.notification_users.each do |user|
+        InterestNotifier.with(record: self, entity_id:, email_method:, msg:).deliver_later(user)
       end
+    end
+    # Notify the entity
+    secondary_sale.notification_users.each do |user|
+      InterestNotifier.with(record: self, entity_id:, email_method:, msg:).deliver_later(user)
     end
   end
 

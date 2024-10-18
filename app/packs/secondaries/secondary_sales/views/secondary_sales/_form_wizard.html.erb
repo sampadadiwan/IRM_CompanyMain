@@ -187,7 +187,12 @@
                     </div>
                     <% end %>
 
-                    
+                    <div class="form-group">
+                        <%= form.label :notification_employee_ids, "Notify Employees" %>
+                        <%= form.select :notification_employee_ids, secondary_sale.entity.employees.map{|e| [e.full_name, e.id]}, {ignore_blanks: true}, multiple: true, class: "form-control select2" %>
+                        <small class="text-muted"> Select the employees to notify.</small>
+                    </div>
+
                     <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
                     </div>

@@ -16,7 +16,7 @@ class ImportInterest < ImportUtil
   def save_row(user_data, import_upload, custom_field_headers, ctx)
     Rails.logger.debug { "Processing interest #{user_data}" }
 
-    _, update_only, user, short_listed_status, escrow_deposited, investor = key_data(user_data, import_upload)
+    update_only, user, escrow_deposited, investor = key_data(user_data, import_upload)
     # Get the Secondary Sale
     secondary_sale = import_upload.owner
 
@@ -29,14 +29,23 @@ class ImportInterest < ImportUtil
       interest = Interest.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: investor.id, secondary_sale_id: secondary_sale.id)
     end
 
+    interest.assign_attributes(address: user_data["Address"], PAN: user_data["Pan"], contact_name: user_data["Contact Name"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], import_upload_id: import_upload.id, escrow_deposited:, buyer_signatory_emails: user_data["Buyer Signatory Emails"], city: user_data["City"], demat: user_data["Demat"], user_id: import_upload.user_id)
+
+    # If the interest is not short listed, we can set the quantity and price
+    if interest.short_listed_status != Interest::STATUS_SHORT_LISTED
+      interest.quantity = user_data["Quantity"]
+      interest.price = user_data["Price"]
+      interest.buyer_entity_name = user_data["Buyer Entity Name"]
+    end
+
     # Allow only people who can short list to short list
     if InterestPolicy.new(import_upload.user, interest).short_list?
       short_listed_status = user_data["Short Listed Status"].downcase.squeeze(" ")
       short_listed_status = Interest::STATUS_SHORT_LISTED if ["shortlisted", "short listed"].include?(short_listed_status)
       short_listed_status = Interest::STATUS_PENDING unless Interest::STATUSES.include?(short_listed_status)
+      # Assign the short listed status only if the user has the right to do so
+      interest.short_listed_status = short_listed_status
     end
-
-    interest.assign_attributes(address: user_data["Address"], PAN: user_data["Pan"], contact_name: user_data["Contact Name"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], quantity: user_data["Quantity"], price: user_data["Price"], import_upload_id: import_upload.id, short_listed_status:, escrow_deposited:, buyer_signatory_emails: user_data["Buyer Signatory Emails"], buyer_entity_name: user_data["Buyer Entity Name"], city: user_data["City"], demat: user_data["Demat"], user_id: import_upload.user_id)
 
     setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS)
 
@@ -48,18 +57,18 @@ class ImportInterest < ImportUtil
     interest.save!
   end
 
+  # extract the key data from the user data
   def key_data(user_data, import_upload)
     email = user_data["Email"]
     update_only = user_data["Update Only"] == "Yes" || user_data["Id"].present?
     user = User.where(email:).first
     # If the user is not found, we need to set it up as the user who uploaded the file
     user ||= import_upload.user
-    short_listed_status = Interest::STATUS_PENDING
 
     escrow_deposited = user_data["Escrow Deposited"] == "Yes"
     investor = Investor.find_by(entity_id: import_upload.entity_id, investor_name: user_data["Investor"])
     raise "No investor found for #{user_data['Investor']}" unless investor
 
-    [email, update_only, user, short_listed_status, escrow_deposited, investor]
+    [update_only, user, escrow_deposited, investor]
   end
 end

@@ -10,6 +10,8 @@ export default class BaseAgGrid extends Controller {
         tableName: String // Which table id are we targeting
     }
 
+    
+
     connect() {
         console.log(`connect AgGrid: ${this.tableNameValue}`);
         console.log(`Datatable setup for ${this.tableNameValue}`);
@@ -24,6 +26,8 @@ export default class BaseAgGrid extends Controller {
 
 
     init(tableName) {
+        let restoreColumnState = this.restoreColumnState;
+        let saveColumnState = this.saveColumnState;
 
         // let the grid know which columns and what data to use
         this.gridOptions = {
@@ -41,6 +45,15 @@ export default class BaseAgGrid extends Controller {
                 sortable: true,
                 minWidth: 120,
             },
+            // onGridReady: (event) => {
+            //     this.gridOptions.api = event.api;
+            //     this.gridOptions.columnApi = event.columnApi;
+            //     this.restoreColumnState(this.gridOptions);
+            // },
+              
+            // onColumnVisible: (event) => {
+            //     saveColumnState(this.gridOptions);
+            // },
 
             autoGroupColumnDef: { 
                 minWidth: 200,
@@ -114,9 +127,37 @@ export default class BaseAgGrid extends Controller {
         var api = this.gridOptions.api;
         $(document).on('turbo:before-cache', function () {
             api.destroy();
-        });
+        });        
 
     }
+
+    
+
+    // saveColumnState(gridOptions) {
+    //     // let gridOptions = this.gridOptions;
+    //     let columnStateKey = 'myGridColumnState_v1'; // Use a unique key for your grid
+    //     if (gridOptions.columnApi) {
+    //         console.log('Saving column state');
+    //         const columnState = gridOptions.columnApi.getColumnState();
+    //         localStorage.setItem(columnStateKey, JSON.stringify(columnState));
+    //     }
+    // }
+
+    // restoreColumnState(gridOptions) {        
+    //     // let gridOptions = this.gridOptions;
+    //     let columnStateKey = 'myGridColumnState_v1'; // Use a unique key for your grid
+    //     let columnState = JSON.parse(localStorage.getItem(columnStateKey));
+        
+    //     console.log('Restoring column state');
+    //     console.log(columnState);
+
+    //     if (columnState && gridOptions.columnApi) {
+    //       const isStateValid = gridOptions.columnApi.applyColumnState(columnState);
+    //       if (!isStateValid) {
+    //         console.warn('Failed to restore column state, perhaps the columns have changed.');
+    //       }
+    //     }
+    // }
 
 
     loadData() {
@@ -129,6 +170,7 @@ export default class BaseAgGrid extends Controller {
                 console.log(`loadData completed from ${source}`);
                 console.log(data);
                 this.gridOptions.api.setRowData(data);
+                this.restoreColumnState(this.gridOptions);
             });
     }
 
@@ -140,6 +182,56 @@ export default class BaseAgGrid extends Controller {
 
     html(params) {
         return params.value ? params.value : '';
+    }
+
+    html_column(controller, field, headerName, enableRowGroup = true, enablePivot = true) {
+        return {
+            field: field, headerName: headerName, enableRowGroup: enableRowGroup, enablePivot: enablePivot,
+            cellRenderer: function (params) {
+              return controller.renderCell(params, field, field);
+            },
+            valueGetter: (params) => { 
+              if (params.data !== undefined) {
+                return params.data[field]
+              }
+            }
+          }
+        
+    }
+
+    formatNumberWithCommas(value) {
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    numberFormatColumn(controller, field, headerName, formatNumberWithCommas, enableRowGroup = true, enablePivot = true) {
+        return {
+            field: field,
+            headerName: headerName,
+            filter: "agNumberColumnFilter",
+            enableRowGroup: enableRowGroup,
+            enablePivot: enablePivot,
+            chartDataType: 'series',
+            aggFunc: 'sum',
+            valueFormatter: function (params) {
+              if (params.value != null) {
+                // Format the number with two decimal places and comma separators
+                return formatNumberWithCommas(params.value);
+              } else {
+                return params.value;
+              }
+            }
+          }
+    }
+
+    textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true) {
+        return { 
+            field: field,
+            headerName: headerName, 
+            filter: "agSetColumnFilter", 
+            enableRowGroup: enableRowGroup, 
+            enablePivot: enablePivot, 
+            chartDataType: 'category',
+            aggFunc: aggFunc}
     }
 
     getExportColumns() {
