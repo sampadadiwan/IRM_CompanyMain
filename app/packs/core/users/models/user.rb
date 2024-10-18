@@ -145,6 +145,12 @@ class User < ApplicationRecord
       Rails.logger.debug "Setting up investor user"
       add_role :investor
       self.curr_role = :investor
+
+      # Special handling for RMs
+      if InvestorAccess.joins(:investor).where(user_id: id).where("investors.category = ?", "RM").first.present?
+        # If the user has InvestorAccess with RM category, then add the RM role
+        add_role :rm
+      end
     end
 
     self.permissions = User.permissions.keys if permissions.blank?
