@@ -23,7 +23,7 @@ class InterestInvestorPolicy < SaleBasePolicy
   end
 
   def short_list?
-    permissioned_investor?(:buyer) && record.short_listed_status != Interest::STATUS_SHORT_LISTED
+    permissioned_investor?(:buyer) && record.short_listed_status == Interest::STATUS_PENDING
   end
 
   def create?

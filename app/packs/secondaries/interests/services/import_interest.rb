@@ -39,12 +39,21 @@ class ImportInterest < ImportUtil
     end
 
     # Allow only people who can short list to short list
-    if InterestPolicy.new(import_upload.user, interest).short_list?
+    policy = InterestPolicy.new(import_upload.user, interest)
+    if policy.short_list?
       short_listed_status = user_data["Short Listed Status"].downcase.squeeze(" ")
-      short_listed_status = Interest::STATUS_SHORT_LISTED if ["shortlisted", "short listed"].include?(short_listed_status)
-      short_listed_status = Interest::STATUS_PENDING unless Interest::STATUSES.include?(short_listed_status)
-      # Assign the short listed status only if the user has the right to do so
-      interest.short_listed_status = short_listed_status
+      if policy.owner? 
+        # Owners can set the short listed status to anything
+        short_listed_status = Interest::STATUS_SHORT_LISTED if ["shortlisted", "short listed"].include?(short_listed_status)
+        short_listed_status = Interest::STATUS_PENDING unless Interest::STATUSES.include?(short_listed_status)
+        # Assign the short listed status only if the user has the right to do so
+        interest.short_listed_status = short_listed_status
+      elsif !interest.short_listed && short_listed_status == Interest::STATUS_WITHDRAWN       
+        # If the interest is not short listed, we can set the short listed status to withdrawn
+        interest.short_listed_status = short_listed_status 
+      else
+        puts "User #{import_upload.user.email} does not have the right to #{short_listed_status} interest"
+      end
     end
 
     setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS)
