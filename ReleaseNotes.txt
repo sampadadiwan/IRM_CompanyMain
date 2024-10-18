@@ -1,3 +1,26 @@
+V8.0.17
+#####################################
+c12f4b5a9 Added audit trail for allocations
+c3fd6cf08 Added secondary_sale_id to bulk actions for allocations
+e58a87acd Better timestamps in xl downloads
+133e7e9e1 Added verified to the interests grid
+86603c1d2 Fixed custom_fields in XL download for offers
+22e8f315b Fixed custom_fields in XL download for interests
+9d86c3a87 Fixed bug with un allocated pi
+01dca4d74 Auto add rm role to RMs
+4ea85245a Added initial changes for pro rata allocation
+afb7dd11e Tracks short_list_status changes
+1365fc2b0 Fix for unallocated pie
+db0c3ad32 Formatting fixes in code (#517)
+53f4ed516 Folder path update (#498)
+fae2a94b7 No aggregation of price in interests ag grid
+7fb6ad924 Fixed breaking docs tests
+dd50bfb3f Added others to pie chart by quantity for interests
+3de40f439 Removed interests from other unused code
+484c20cd2 Fixed short listing without validation
+e9091f186 Fixed import of offers and interests, directly from downloads
+81781dfdb Fixed sales with no managed interests/offers
+
 V8.0.16
 #####################################
 891dd2a00 Added ability to withdraw an interest

@@ -95,14 +95,12 @@
             </span>
           </td>
         </tr>
-        <tr id="escrow_deposited">
+        <tr id="verified">
           <td>
-            Escrow Deposited
+            Verified
           </td>
           <td>
-            <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
-              <%= interest.escrow_deposited? ? "Yes" : "No" %>
-            </span>
+            <%= display_boolean interest.verified %>
           </td>
         </tr>        
 

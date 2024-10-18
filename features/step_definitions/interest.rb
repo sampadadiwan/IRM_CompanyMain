@@ -119,8 +119,8 @@
     within("#short_listed") do
         expect(page).to have_content(@created_interest.short_listed_status.humanize)
     end
-    within("#escrow_deposited") do
-        label = @created_interest.escrow_deposited ? "Yes" : "No"
+    within("#verified") do
+        label = @created_interest.verified ? "Yes" : "No"
         expect(page).to have_content(label)
     end
 
