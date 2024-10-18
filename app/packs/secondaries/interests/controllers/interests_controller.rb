@@ -27,6 +27,13 @@ class InterestsController < ApplicationController
 
     @interests = @interests.page(params[:page]) unless request.format.xlsx? || params[:all].present?
 
+
+    if params[:secondary_sale_id].present?
+      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      @bread_crumbs = { Secondaries: secondary_sales_path,
+                        "#{@secondary_sale.name}": secondary_sale_path(@secondary_sale) }
+    end
+    
     render "index"
   end
 
