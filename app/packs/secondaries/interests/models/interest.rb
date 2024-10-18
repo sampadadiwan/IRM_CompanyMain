@@ -171,7 +171,7 @@ class Interest < ApplicationRecord
   end
 
   def folder_path
-    "#{secondary_sale.folder_path}/Interests/#{interest_entity.name.delete('/')}-#{id}"
+    "#{secondary_sale.folder_path}/Interests/#{interest_entity.name.delete('/')}-#{id_or_random_int}"
   end
 
   def offer_amount

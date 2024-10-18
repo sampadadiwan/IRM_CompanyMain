@@ -38,7 +38,7 @@ class Approval < ApplicationRecord
   end
 
   def folder_path
-    "/Approvals/#{title.delete('/')}-#{id}"
+    "/Approvals/#{title.delete('/')}-#{id_or_random_int}"
   end
 
   def self.for_investor(user)

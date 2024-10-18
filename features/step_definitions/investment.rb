@@ -95,7 +95,7 @@ Then('I should see the investment details') do
   expect(page).to have_content(@investment.category)
   expect(page).to have_content(@investment.investment_instrument)
   expect(page).to have_content(@investment.investment_type)
-  expect(page).to have_content(@investment.quantity)
+  expect(page).to have_content(number_with_delimiter(@investment.quantity))
   expect(page).to have_content(money_to_currency(@investment.price))
 end
 

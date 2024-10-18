@@ -1,7 +1,8 @@
 class InvestorKycCreate < InvestorKycAction
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
-  step :send_kyc_form
+  step :fix_folder_paths
+  step :send_kyc_form_on_create
   step :enable_kyc
   step :validate_bank
   step :validate_pan_card

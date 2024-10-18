@@ -323,7 +323,7 @@ def select_investor_and_save(investor_id, tags)
   input_field.set(tags)
   sleep(0.5)
   click_button('Save')
-  sleep(1)
+  sleep(5)
 end
 
 When('I click on a Kanban Card') do
@@ -372,7 +372,7 @@ def select_investor_by_name_and_save(name, tags)
   input_field.set(tags)
   sleep(0.5)
   click_button('Save')
-  sleep(1)
+  sleep(5)
 end
 
 When('I click on the action dropdown and create a Kanban Column') do

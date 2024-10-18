@@ -52,6 +52,6 @@ class CustomNotification < ApplicationRecord
   end
 
   def folder_path
-    "#{owner.folder_path}/Notifications/#{id}"
+    "#{owner.folder_path}/Notifications/#{id_or_random_int}"
   end
 end

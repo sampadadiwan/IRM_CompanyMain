@@ -68,7 +68,7 @@ class Allocation < ApplicationRecord
   end
 
   def folder_path
-    "#{secondary_sale.folder_path}/Allocations/#{id}"
+    "#{secondary_sale.folder_path}/Allocations/#{id_or_random_int}"
   end
 
   def to_s

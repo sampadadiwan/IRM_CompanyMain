@@ -59,7 +59,11 @@ class DealActivity < ApplicationRecord
   end
 
   def folder_path
-    "#{deal_investor.folder_path}/Steps/#{title.delete('/')}" if deal_investor
+    unless deal_investor.present?
+      "#{deal.folder_path}/Steps/#{title.delete('/')}"
+    else
+      "#{deal_investor.folder_path}/Steps/#{title.delete('/')}"
+    end
   end
 
   def folder_type

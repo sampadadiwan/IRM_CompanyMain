@@ -36,7 +36,7 @@ class ApprovalResponse < ApplicationRecord
   end
 
   def folder_path
-    "#{approval.folder_path}/Responses/#{investor.investor_name}-#{id}"
+    "#{approval.folder_path}/Responses/#{investor.investor_name}-#{id_or_random_int}"
   end
 
   after_commit :send_notification, unless: proc { |r| r.destroyed? || r.deleted_at.present? }

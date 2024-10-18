@@ -142,9 +142,9 @@ class InvestorKyc < ApplicationRecord
 
   def folder_path
     if full_name.present?
-      "#{investor.folder_path}/KYC-#{id}/#{full_name.delete('/')}"
+      "#{investor.folder_path}/KYC-#{id_or_random_int}/#{full_name.delete('/')}"
     else
-      "#{investor.folder_path}/KYC-#{id}/#{investor.investor_name.delete('/')}"
+      "#{investor.folder_path}/KYC-#{id_or_random_int}/#{investor.investor_name.delete('/')}"
     end
   end
 

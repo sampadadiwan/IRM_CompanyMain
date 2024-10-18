@@ -11,11 +11,13 @@ When('I create a Capital Call with percentage of commitment') do
 	fill_in "capital_call[close_percentages][Second Close]", with: "20"
   find('input[name="capital_call[call_date]"]').set('13/09/2024')
   find('input[name="capital_call[due_date]"]').set('13/11/2024')
+  allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
   click_on('Save')
   sleep(2)
 end
 
 When("I create a Capital Call with upload call basis") do
+	allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
 	visit("/funds/1")
 	sleep(0.5)
 	find('a.nav-link[href="#capital-calls-tab"]').click

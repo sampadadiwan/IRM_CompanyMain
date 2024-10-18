@@ -319,6 +319,7 @@
         end
       end
     end
+    allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
     click_on "Save"
     sleep(2)
 

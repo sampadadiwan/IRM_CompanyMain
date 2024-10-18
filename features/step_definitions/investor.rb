@@ -1180,3 +1180,11 @@ Then('the kycs users should receive the kyc reminder email') do
     end
   end
 end
+
+Then('mock UpdateDocumentFolderPathJob job') do
+  UpdateDocumentFolderPathJob.perform_now(@investor_kyc.class.name, @investor_kyc.id)
+end
+
+Then('Folder path should be present and correct') do
+  expect(@investor_kyc.document_folder.full_path).to(eq(@investor_kyc.folder_path))
+end

@@ -13,7 +13,7 @@ module WithFolder
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
     has_many :folders, as: :owner, dependent: :destroy
-
+    after_commit :update_root_folder, only: %i[update]
     # Used to check if its being destroyed and not setup_document_folder
     attr_accessor :being_destroyed
 
@@ -21,6 +21,10 @@ module WithFolder
       self.being_destroyed = true
       super
     end
+  end
+
+  def id_or_random_int
+    id || rand(1..10000)
   end
 
   def folder_type
@@ -61,6 +65,16 @@ module WithFolder
   def folder_name
     folder_path.split("/")[-1]
   end
+
+  def update_root_folder
+    return if (respond_to?(:deleted?) && deleted?)
+    if Rails.env.test?
+      UpdateDocumentFolderPathJob.perform_later(self.class.name, self.id)
+    else
+      UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, self.id)
+    end
+  end
+
 
   # Given a folder path, create the folder tree
   def setup_folder_from_path(path)

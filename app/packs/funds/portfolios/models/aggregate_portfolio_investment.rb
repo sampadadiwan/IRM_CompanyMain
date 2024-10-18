@@ -48,7 +48,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   end
 
   def folder_path
-    "/AggregatePortfolioInvestment/#{portfolio_company_name.delete('/')}_#{id}"
+    "/AggregatePortfolioInvestment/#{portfolio_company_name.delete('/')}_#{id_or_random_int}"
   end
 
   def to_s
