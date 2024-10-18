@@ -17,7 +17,7 @@ export default class extends BaseAgGrid {
       numberFormatColumn(controller, "allocation_quantity", "Allocation Quantity", formatNumberWithCommas),
       numberFormatColumn(controller, "allocation_amount", "Allocation Amount", formatNumberWithCommas),
       html_column(controller, "short_listed_status", "Status"),
-      html_column(controller, "escrow_deposited", "Escrow"),
+      html_column(controller, "verified", "Verified"),
 
       textColumn(controller, "created_at", "Created At", "sum"),
       
