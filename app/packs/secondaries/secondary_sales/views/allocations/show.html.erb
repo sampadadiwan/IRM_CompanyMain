@@ -61,7 +61,7 @@
   
     <%= link_to "Edit", edit_allocation_path(@allocation), {class: "btn btn-outline-primary"} if policy(@allocation).update? %>
     <%= button_to "Delete", @allocation, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@allocation).destroy? %>
-    
+    <%= link_to "Audit Trail", allocation_path(@allocation, audit_trail: true), {class: "btn btn-outline-success"} %>
 
     <% if policy(@allocation).update?  %>
       <div class="btn-group">

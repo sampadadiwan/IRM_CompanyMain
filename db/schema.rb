@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_17_123932) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_18_151036) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -247,6 +247,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_17_123932) do
     t.datetime "updated_at", null: false
     t.json "json_fields"
     t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.timestamp "deleted_at"
+    t.index ["deleted_at"], name: "index_allocations_on_deleted_at"
     t.index ["document_folder_id"], name: "index_allocations_on_document_folder_id"
     t.index ["entity_id"], name: "index_allocations_on_entity_id"
     t.index ["interest_id"], name: "index_allocations_on_interest_id"

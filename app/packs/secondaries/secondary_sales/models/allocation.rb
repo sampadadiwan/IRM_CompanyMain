@@ -3,6 +3,7 @@ class Allocation < ApplicationRecord
   include WithFolder
   include WithCustomField
   include RansackerAmounts.new(fields: %w[amount])
+  include Trackable.new(on: %i[create update])
 
   belongs_to :offer
   belongs_to :interest
