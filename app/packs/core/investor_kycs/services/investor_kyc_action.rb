@@ -22,7 +22,7 @@ class InvestorKycAction < Trailblazer::Operation
     investor_kyc.investor_kyc_sebi_data.valid?
   end
 
-  def fix_folder_paths(ctx, investor_kyc:, **)
+  def fix_folder_paths(_ctx, investor_kyc:, **)
     document_folder = investor_kyc.document_folder
     parent_folder = document_folder.parent
     parent_folder.name = "KYC-#{investor_kyc.id}"
