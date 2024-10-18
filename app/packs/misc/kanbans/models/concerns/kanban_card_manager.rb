@@ -42,7 +42,8 @@ module KanbanCardManager
   end
 
   def create_or_update_kanban_card
-    return if self.deleted?
+    return if deleted?
+
     kanban_card_attrs = get_card_attributes
     return if kanban_card_attrs.nil?
 

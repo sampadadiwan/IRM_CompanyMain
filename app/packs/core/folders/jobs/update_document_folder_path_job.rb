@@ -10,7 +10,7 @@ class UpdateDocumentFolderPathJob < ApplicationJob
       folder = object.document_folder
       expected_full_path = object.folder_path
       document_folder_name = expected_full_path.split("/").last
-      
+
       update_folder(folder, expected_full_path, document_folder_name)
 
       update_descendants(folder)
@@ -20,13 +20,9 @@ class UpdateDocumentFolderPathJob < ApplicationJob
   private
 
   def update_folder(folder, expected_full_path, document_folder_name)
-    if folder.name != document_folder_name
-      folder.name = document_folder_name
-    end
+    folder.name = document_folder_name if folder.name != document_folder_name
 
-    if folder.full_path != expected_full_path
-      folder.full_path = expected_full_path
-    end
+    folder.full_path = expected_full_path if folder.full_path != expected_full_path
     folder.set_defaults
     folder.save!
   end

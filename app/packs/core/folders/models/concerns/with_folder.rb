@@ -24,7 +24,7 @@ module WithFolder
   end
 
   def id_or_random_int
-    id || rand(1..10000)
+    id || rand(1..10_000)
   end
 
   def folder_type
@@ -67,14 +67,14 @@ module WithFolder
   end
 
   def update_root_folder
-    return if (respond_to?(:deleted?) && deleted?)
+    return if respond_to?(:deleted?) && deleted?
+
     if Rails.env.test?
-      UpdateDocumentFolderPathJob.perform_later(self.class.name, self.id)
+      UpdateDocumentFolderPathJob.perform_later(self.class.name, id)
     else
-      UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, self.id)
+      UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, id)
     end
   end
-
 
   # Given a folder path, create the folder tree
   def setup_folder_from_path(path)
