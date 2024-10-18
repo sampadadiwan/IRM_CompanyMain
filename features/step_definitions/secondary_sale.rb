@@ -350,9 +350,9 @@ end
 
 
 Given('there are offers {string} for the sale') do |args|
-  Holding.all.each do |h|
-    offer = FactoryBot.build(:offer,holding: h, entity: h.entity, secondary_sale: @sale,
-                          user: h.entity.employees.sample, investor: h.investor)
+  Investor.not_holding.not_trust.all.each do |inv|
+    offer = FactoryBot.build(:offer,investor: inv, entity: inv.entity, secondary_sale: @sale,
+                          user: inv.investor_entity.employees.sample)
 
 
     key_values(offer, args)

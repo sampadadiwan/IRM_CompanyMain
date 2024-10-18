@@ -119,9 +119,8 @@ Scenario Outline: Add Offer documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
-  Given there are "1" employee investors
-  Given there is a FundingRound "name=Series A"
-  And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
+  Given there is an existing investor "" with "1" users
+  Given the investors are added to the sale
   Given there are offers "quantity=50;approved=true" for the sale
   When I visit the offer details page
   When I click the tab "Documents"
@@ -142,9 +141,8 @@ Scenario Outline: Add Interest documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
-  Given there are "1" employee investors
-  Given there is a FundingRound "name=Series A"
-  And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
+  Given there is an existing investor "" with "1" users
+  Given the investors are added to the sale  
   Given there are offers "quantity=50;approved=true" for the sale
   Given there are "1" interests "quantity=50;short_listed_status=short_listed" for the sale
   When I visit the interest details page
