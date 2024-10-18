@@ -1,8 +1,15 @@
 module InterestsHelper
   def interest_by_quantity(secondary_sale)
     interests = secondary_sale.interests
-    grouped = interests
-              .map { |k| [k.buyer_entity_name, k.quantity] }
+    if interests.count < 10
+      grouped = interests.map { |k| [k.buyer_entity_name, k.quantity] }
+    else
+      grouped = interests.order(quantity: :desc).limit(10).map { |k| [k.buyer_entity_name, k.quantity] }
+      # This is to get the sum of the other
+      row = Interest.connection.select_one("select sum(quantity) from (#{interests.order(quantity: :desc).offset(10).to_sql}) q")
+      others_quantity = row["sum(quantity)"]
+      grouped << ["Others", others_quantity]
+    end
 
     pie_chart_with_options grouped
   end
