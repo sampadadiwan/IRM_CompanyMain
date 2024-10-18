@@ -1,6 +1,6 @@
 wb = xlsx_package.workbook
 
-form_type, custom_field_names, custom_headers = get_form_type("Offer")
+form_type, custom_field_names, custom_headers = get_form_type("Offer", form_type_id: @secondary_sale&.offer_form_type_id)
 
 wb.add_worksheet(name: "Offers") do |sheet|
   # Create the header row
