@@ -98,4 +98,50 @@ class SecondarySaleAllocationEngine < BaseAllocationEngine
       end
     end
   end
+
+  def generate_pro_rata_allocations
+    # Step 0: Find the clearing price
+    clearing_price = find_clearing_price(offers, interests)
+
+    # Step 1: Filter eligible offers and interests based on the clearing price
+    eligible_offers = @offers.select { |offer| offer.price <= clearing_price }
+                             .sort_by { |offer| [offer.price, offer.created_at] } # Ascending price, then earlier time
+
+    eligible_interests = @interests.select { |interest| interest.price >= clearing_price }
+                                   .sort_by { |interest| [-interest.price, interest.created_at] } # Descending price, then earlier time
+
+    # Step 2: Initialize allocation list
+    allocations = []
+
+    # Step 3: Initialize indices for offers and interests
+    offer_index = 0
+    interest_index = 0
+
+    # Step 4: Greedy Allocation
+    while offer_index < eligible_offers.size && interest_index < eligible_interests.size
+      offer = eligible_offers[offer_index]
+      interest = eligible_interests[interest_index]
+
+      # Determine the quantity to allocate
+      allocated_quantity = [offer.quantity, interest.quantity].min
+
+      # Create the allocation
+      allocations << {
+        offer_id: offer.id,
+        interest_id: interest.id,
+        quantity: allocated_quantity,
+        price: clearing_price
+      }
+
+      # Update remaining quantities
+      offer.quantity -= allocated_quantity
+      interest.quantity -= allocated_quantity
+
+      # Move to next offer or interest if fully allocated
+      offer_index += 1 if offer.quantity.zero?
+      interest_index += 1 if interest.quantity.zero?
+    end
+
+    allocations
+  end
 end

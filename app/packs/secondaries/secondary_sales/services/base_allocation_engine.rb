@@ -74,4 +74,47 @@ class BaseAllocationEngine
     Rails.logger.debug { message }
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
+
+  def find_clearing_price(offers, interests)
+    # Step 1: Sort offers by price (ascending) and interests by price (descending)
+    sorted_offers = offers.sort_by(&:price)
+    sorted_interests = interests.sort_by { |interest| -interest.price }
+
+    # Step 2: Initialize cumulative supply and demand
+    cumulative_supply = 0
+    cumulative_demand = 0
+
+    # Step 3: Find the clearing price by comparing supply and demand
+    clearing_price = nil
+    offer_index = 0
+    interest_index = 0
+
+    while offer_index < sorted_offers.length && interest_index < sorted_interests.length
+      current_offer = sorted_offers[offer_index]
+      current_interest = sorted_interests[interest_index]
+
+      if current_interest.price >= current_offer.price
+        # Update cumulative supply and demand
+        cumulative_supply += current_offer.quantity
+        cumulative_demand += current_interest.quantity
+
+        # If supply and demand meet or cross, set clearing price
+        clearing_price = if cumulative_demand >= cumulative_supply
+                           current_offer.price
+                         else
+                           current_interest.price
+                         end
+
+        # Move to the next offer and interest
+        offer_index += 1
+        interest_index += 1
+      else
+        # No match, break the loop
+        break
+      end
+    end
+
+    # Return the clearing price if found
+    clearing_price
+  end
 end
