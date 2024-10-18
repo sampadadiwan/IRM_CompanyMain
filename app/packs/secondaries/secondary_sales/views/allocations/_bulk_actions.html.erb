@@ -24,13 +24,13 @@
 
     <% msg = "This will Verify each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Verify",
-    bulk_actions_allocations_path("bulk_action": "Verify", q: params.to_unsafe_h[:q], all: true),
+    bulk_actions_allocations_path("bulk_action": "Verify", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
     class: "dropdown-item", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     <% msg = "This will Unverify each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Unverify",
-    bulk_actions_allocations_path("bulk_action": "Unverify", q: params.to_unsafe_h[:q], all: true),
+    bulk_actions_allocations_path("bulk_action": "Unverify", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
     class: "dropdown-item", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
@@ -38,7 +38,7 @@
     
     <% msg = "This will generate documents for each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Generate All Docs",
-    bulk_actions_allocations_path("bulk_action": "Generate All Docs", q: params.to_unsafe_h[:q], all: true),
+    bulk_actions_allocations_path("bulk_action": "Generate All Docs", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
     class: "dropdown-item", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
