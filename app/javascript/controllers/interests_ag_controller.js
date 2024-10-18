@@ -13,7 +13,7 @@ export default class extends BaseAgGrid {
       textColumn(controller, "investor_name", "Investor"),
       textColumn(controller, "user", "User"),
       numberFormatColumn(controller, "quantity", "Quantity", formatNumberWithCommas),
-      numberFormatColumn(controller, "price", "Price", formatNumberWithCommas),
+      numberFormatColumn(controller, "price", "Price", formatNumberWithCommas, ""),
       numberFormatColumn(controller, "allocation_quantity", "Allocation Quantity", formatNumberWithCommas),
       numberFormatColumn(controller, "allocation_amount", "Allocation Amount", formatNumberWithCommas),
       html_column(controller, "short_listed_status", "Status"),

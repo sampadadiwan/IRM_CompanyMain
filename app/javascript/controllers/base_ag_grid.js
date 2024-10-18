@@ -203,15 +203,15 @@ export default class BaseAgGrid extends Controller {
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
-    numberFormatColumn(controller, field, headerName, formatNumberWithCommas, enableRowGroup = true, enablePivot = true) {
+    numberFormatColumn(controller, field, headerName, formatNumberWithCommas, aggFunc = "sum", enableRowGroup = true, enablePivot = true) {
         return {
             field: field,
             headerName: headerName,
             filter: "agNumberColumnFilter",
             enableRowGroup: enableRowGroup,
             enablePivot: enablePivot,
-            chartDataType: 'series',
-            aggFunc: 'sum',
+            chartDataType: 'series',    
+            aggFunc: aggFunc,        
             valueFormatter: function (params) {
               if (params.value != null) {
                 // Format the number with two decimal places and comma separators
@@ -220,7 +220,7 @@ export default class BaseAgGrid extends Controller {
                 return params.value;
               }
             }
-          }
+          };
     }
 
     textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true) {

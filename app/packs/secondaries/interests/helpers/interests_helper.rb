@@ -47,7 +47,7 @@ module InterestsHelper
     when Interest::STATUS_REJECTED
       "bg-danger"
     when Interest::STATUS_WITHDRAWN
-      "bg-light text-danger"
+      "bg-muted bg-opacity-50"
     end
   end
 
