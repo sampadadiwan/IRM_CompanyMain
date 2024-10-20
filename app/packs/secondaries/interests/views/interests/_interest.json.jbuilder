@@ -10,3 +10,7 @@ json.dt_actions render(
   formats: [:html],
   locals: { interest: }
 )
+
+if interest.json_fields.present?
+  json.merge! interest.json_fields
+end

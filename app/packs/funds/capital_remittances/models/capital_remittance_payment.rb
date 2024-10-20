@@ -48,7 +48,7 @@ class CapitalRemittancePayment < ApplicationRecord
     # 2. if the capital remittance is verified
     # 3. if the payment notification has not been sent
     if  capital_call.send_payment_notification_flag &&
-        capital_remittance.verified &&
+        capital_remittance.verified && self.amount_cents > 0 &&
         !payment_notification_sent
       # Send email notification to all approved users of the investor
       investor.notification_users(fund).each do |user|
