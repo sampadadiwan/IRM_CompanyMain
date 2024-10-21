@@ -62,7 +62,8 @@
 
             <%= render ToggleCard.new(title: "Deals", css_class: "show_deals") do %>
 
-                <%= render "/deal_investors/investor_view", deal_investors: deal_investors %>
+                <%= turbo_frame_tag "deal_investors_frame", target: "_top", loading: :lazy, src: deal_investors_path do %>
+                <% end %>
 
             <% end %>
 

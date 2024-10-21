@@ -1,6 +1,8 @@
+<% partial_to_use ||= nil%>
 <h1>New Access Right</h1>
+
 <% if params[:form_type] %>
-    <%= render params[:form_type], access_right: @access_right %>
+    <%= render params[:form_type], access_right: @access_right, partial_to_use: partial_to_use %>
 <% else %>
     <%= render "form", access_right: @access_right %>
 <% end %>

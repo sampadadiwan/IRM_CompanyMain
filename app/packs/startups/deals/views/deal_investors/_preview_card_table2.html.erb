@@ -1,36 +1,22 @@
 <div class="io_facts row">
 <%# show either 2 buttons Overview and data room or just data room %>
-  <div class="col-<%=col_size.to_i/2%> thin-padding">
-    <a href="<%= deal_path(id: model.id, preview: true) %>">
-      <div class="card shadow">
-        <div class="card-body d-flex justify-content-center contained">
-            <h5 class="text-primary my-2">Overview</h5>
-        </div>
+  <div class="col-<%= col_size.to_i/2 %>">
+    <div class="card-body d-flex justify-content-center contained">
+      <div class="w-100">
+        <%= link_to "Overview", overview_deal_path(model), { class: "btn btn-outline-primary btn-lg w-100" } %>
       </div>
-    </a>
+    </div>
   </div>
 
-  <div class="col-<%=col_size.to_i/2%> thin-padding">
-    <a href="<%= folder_documents_path(entity_id: model.entity_id, folder_id: model.data_room_folder_id, parent_folder_id: model.document_folder.id) %>">
-      <div class="card shadow">
-        <div class="card-body d-flex justify-content-center contained">
-          <h5 class="text-danger my-2">Data Room</h5>
-        </div>
+  <div class="col-<%= col_size.to_i/2 %>">
+    <div class="card-body d-flex justify-content-center contained">
+      <div class="w-100">
+        <%= link_to "Queries", tasks_path(owner: object.id, owner_type: "DealInvestor", for_entity_id: current_user.entity_id), { class: "btn btn-outline-success btn-lg w-100" } %>
       </div>
-    </a>
+    </div>
   </div>
-
-  <div class="col-<%=col_size.to_i/2%> thin-padding">
-    <a href="<%= messages_path(owner_id: object.id, owner_type: "DealInvestor", investor_id: object.investor_id) %>">
-      <div class="card shadow">
-          <div class="card-body d-flex justify-content-center contained">
-              <h5 class="text-success my-2">Queries</h5>
-            </div>
-      </div>
-    </a>
-  </div>
-
 </div>
+
 <% if show_tags && tags.present? %>
 <div class="io_facts row">
   <div class="col thin-padding w-50">
@@ -38,7 +24,7 @@
         <div class="row text-center">
           <div class="text-center">
               <% tags&.split(",")&.each do |tag| %>
-                <span class="badge rounded-pill bg-primary"><%= link_to tag, investment_opportunities_path(tag:) %></span>
+                <span class="badge rounded-pill bg-primary"><%=tag%></span>
               <% end %>
           </div>
         </div>

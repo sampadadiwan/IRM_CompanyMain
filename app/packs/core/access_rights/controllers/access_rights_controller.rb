@@ -67,7 +67,7 @@ class AccessRightsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.append('new_access_right', partial: "access_rights/form", locals: { access_right: @access_right })
+          turbo_stream.append('new_access_right', partial: "access_rights/form", locals: { access_right: @access_right, partial_to_use: params[:partial_to_use] })
         ]
       end
       format.html
@@ -85,6 +85,7 @@ class AccessRightsController < ApplicationController
     @access_rights.each { |access_right| access_right.granted_by = current_user }
     @access_rights.each(&:save)
     @access_rights = AccessRight.includes(:investor, :owner).where(id: @access_rights.collect(&:id))
+    @partial_to_use = params[:partial_to_use] || "access_right"
     respond_to do |format|
       format.turbo_stream { render :create }
       format.html { redirect_to access_right_url(@access_right), notice: "Access right was successfully created." }
@@ -111,14 +112,14 @@ class AccessRightsController < ApplicationController
   def destroy
     authorize @access_right
     @access_right.destroy
-
+    redirect_to = params[:back_to] || access_rights_url
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
           turbo_stream.remove(@access_right)
         ]
       end
-      format.html { redirect_to access_rights_url, notice: "Access right was successfully destroyed." }
+      format.html { redirect_to redirect_to, notice: "Access right was successfully destroyed." }
       format.json { head :no_content }
     end
   end

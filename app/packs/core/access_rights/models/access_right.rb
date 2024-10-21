@@ -96,8 +96,6 @@ class AccessRight < ApplicationRecord
   def types
     case owner_type
     when "Deal"
-      %w[Employee Advisor]
-    when "DealInvestor"
       ["All Users for Specific Stakeholder"] + %w[Employee Advisor]
     when "Fund", "InvestmentOpportunity", "SecondarySale"
       AccessRight::TYPES + %w[Employee Advisor]

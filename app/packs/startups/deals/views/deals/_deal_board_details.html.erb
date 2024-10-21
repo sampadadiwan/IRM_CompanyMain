@@ -6,10 +6,9 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-         data-action="click->tabdetails#loadData">Deal Docs</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
+         data-action="click->tabdetails#loadData">Documents</a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
@@ -17,6 +16,8 @@
       <% if show_deal == "Yes" %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#deal-tab" id="deal_tab">Deal</a>
       <% end %>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
 
       <% if show_investors == "Yes" %>
         <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab" id="deal_investments"
@@ -36,7 +37,7 @@
           <%= render "/deals/show", deal: deal %>
         </div>
       </div>
-      <div id="docs-tab" class="tab-pane fade">
+      <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
             <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
             <% end %>
@@ -45,13 +46,13 @@
 
       <div id="widgets-tab" class="tab-pane fade">
         <div id="widgets" class="associated_entity">
-          <%= render "/ci_widgets/index", ci_widgets: deal.ci_widgets, owner: deal, target: "_blank" %>
+          <%= render "/ci_widgets/index", ci_widgets: deal.ci_widgets, owner: deal, target: "_top" %>
         </div>
       </div>
 
       <div id="track-records-tab" class="tab-pane fade">
         <div id="track_records" class="associated_entity">
-          <%= render "/ci_track_records/index", ci_track_records: deal.ci_track_records, owner: deal, target: "_blank" %>
+          <%= render "/ci_track_records/index", ci_track_records: deal.ci_track_records, owner: deal, target: "_top" %>
         </div>
       </div>
 
@@ -62,17 +63,16 @@
         </div>
       </div>
 
-      <div id="access-tab" class="tab-pane fade in show active">
+      <div id="access-tab" class="tab-pane fade">
         <div id="access_rights" class="associated_entity">
-
           <%  access_right = AccessRight.new(
             owner_id: deal.id,
             access_type: "Deal",
             owner_type: "Deal",
             entity_id: deal.entity_id) %>
 
-          <% params[:form_type] = "deal_form" %>
-          <%= render "access_rights/index", access_rights: deal.access_rights.includes(:investor, :owner), access_right: access_right %>
+          <% params[:form_type] = "deals/access_rights_form" %>
+          <%= render "access_rights/index", access_rights: deal.access_rights.includes(:investor, :owner), access_right: access_right, owner_type: "Deal", owner_id: deal.id %>
         </div>
       </div>
 

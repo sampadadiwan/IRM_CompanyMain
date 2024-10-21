@@ -1,6 +1,8 @@
-class CreateDeal < Trailblazer::Operation
-  step :active_deal
+class CreateDeal < DealActions
+  step :active_deal, Output(:failure) => End(:failure)
   step :create_activity_template
+  step :create_deal_documents_folder
+  left :handle_errors, Output(:failure) => End(:failure)
 
   def active_deal(ctx, deal:, **)
     if deal.save

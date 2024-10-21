@@ -1,13 +1,14 @@
 class PreviewCardComponent < ViewComponent::Base
-  def initialize(title: "", path: "", model: nil, object: nil, logo: nil, col_size: 12)
+  def initialize(title: "", path: "", model: nil, object: nil, logo: nil)
     super
     @title = title
     @path = path
     @model = model
     @object = object
     @logo = logo || model.entity.logo
+
     @show_tags = true
-    @col_size = col_size
+    @col_size = 12
     @tags = model.tags
   end
 

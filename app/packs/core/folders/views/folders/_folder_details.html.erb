@@ -1,33 +1,33 @@
-<div class="associated_entity">
+<div class="associated_entity" data-controller="tabs" >
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
       <a class="nav-link  active" data-bs-toggle="pill" data-bs-toggle="tab" href="#folders-tab">Documents</a>
-
-      <% unless (["Fund", "Deal", "SecondarySale"].include?(folder.owner_type) && params[:debug].blank?) %>
+      <% folder_with_access_rights = ["Deal Documents"] %>
+      <% unless (["Fund", "Deal", "SecondarySale"].include?(folder.owner_type) && params[:debug].blank? && !folder_with_access_rights.include?(folder.name)) %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
       <% end %>
-      
+
     </nav>
-    
-  
-  
+
+
+
     <div class="tab-content" data-controller="datatable">
         <div id="access-rights-tab" class="tab-pane fade">
           <div id="access_rights" class="associated_entity">
-            
-              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: folder.id, owner_type: "Folder", entity_id: folder.entity_id) do %>
+
+              <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: folder.id, owner_type: "Folder", entity_id: folder.entity_id, form_type: "document_form", access_type: "Folder") do %>
               <% end %>
 
           </div>
         </div>
-    
+
         <div id="folders-tab" class="tab-pane fade in show active">
           <div id="folders" class="associated_entity">
             <% params[:folder_id] = folder.id %>
-            <%= render "documents/tree_view", documents: folder.documents.page().per(100), 
+            <%= render "documents/tree_view", documents: folder.documents.page().per(100),
                         entity: folder.entity, show_steps: false, no_folders: true %>
           </div>
         </div>
 
-    </div>  
+    </div>
 
 </div>

@@ -16,8 +16,8 @@ Then('the deal data room should be created') do
   @data_room = @deal.data_room_folder
   @data_room.should_not == nil
   @data_room.owner.should == @deal
-  @data_room.name.should == "Data Room"
-  @data_room.full_path.should == "/Deals/#{@deal.name}/Data Room"
+  @data_room.name.should == "Overview"
+  @data_room.full_path.should == "/Deals/#{@deal.name}/Overview"
 end
 
 Then('the deal data room should have the correct access_rights') do
@@ -69,7 +69,7 @@ Then('the child folders should have the same access rights') do
     puts "Checking folder #{folder.name} access rights #{folder.access_rights.first}"
     folder.access_rights.length.should == 1
     folder.access_rights.first.user_id.should == @user.id
-    folder.access_rights.first.cascade.should == true    
+    folder.access_rights.first.cascade.should == true
     folder.access_rights.first.entity_id.should == @folder.entity_id
   end
 end
@@ -78,8 +78,8 @@ Then('the documents should have the same access rights') do
   Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
     puts "Checking document #{doc.name} access rights #{doc.access_rights.first}"
     doc.access_rights.length.should == 1
-    doc.access_rights.first.user_id.should == @user.id    
-    doc.access_rights.first.entity_id.should == @folder.entity_id  
+    doc.access_rights.first.user_id.should == @user.id
+    doc.access_rights.first.entity_id.should == @folder.entity_id
   end
 end
 
@@ -142,4 +142,3 @@ end
 Then('UpdateDocumentFolderPathJob job is triggered') do
   UpdateDocumentFolderPathJob.perform_now(@deal.class.name, @deal.id)
 end
-

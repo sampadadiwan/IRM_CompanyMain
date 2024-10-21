@@ -1,0 +1,60 @@
+
+<%
+    show_metadata ||= "Yes"
+    target ||= "_top"
+%>
+<% access_right = access_rights.first %>
+<% badges = ["badge bg-primary", "badge bg-success"] %>
+<% if access_right.present? %>
+<tr>
+    <td>
+        <% if grouped_by.first == :user_id %>
+            <%= link_to access_right.user.full_name, user_path(access_right.user), target: target %>
+        <% elsif grouped_by.first == :access_to_investor_id %>
+            <%= link_to access_right.investor.investor_name, investor_path(access_right.investor, tab: "investors-tab"), target: target %>
+        <% else %>
+            <%= link_to access_right.access_to_category, investors_path(category: access_right.access_to_category), target: target %>
+        <% end %>
+    </td>
+    <td>
+        <% access_rights.each_with_index do |ar, index| %>
+            <div>
+                <%= link_to ar.owner_type, polymorphic_path(ar.owner, tab: "access-rights-tab"), class: badges[index % badges.length] %>
+            </div>
+        <% end %>
+    </td>
+    <% if show_metadata == "Yes" %>
+    <td>
+        <% access_rights.each_with_index do |ar, index|%>
+            <% if ar.metadata.present? || ar.permissions.present? %>
+                <span class="<%= badges[index % badges.length] %>">
+                    <%= ar.metadata %>
+                    <%= "#{ar.owner_type} Permissions: #{ar.permissions}" if ar.permissions.present?  %>
+                </span>
+            <% end %>
+        <% end %>
+    </td>
+    <% end %>
+
+    <td>
+        <% access_rights.each_with_index do |ar, index|%>
+            <div>
+                <% if ar.granted_by.present?%>
+                    <span class="<%= badges[index % badges.length] %>">
+                        <%= "#{ar.owner_type} access granted by #{ar.granted_by&.full_name}" %>
+                    </span>
+                <% end %>
+            </div>
+        <% end %>
+    </td>
+
+    <td>
+        <% access_rights.each_with_index do |ar|%>
+            <div>
+                <%= button_to "Delete #{ar.owner_type} Access", access_right_path(ar, back_to: request.original_url), method: :delete, class: "btn btn-outline-danger" ,
+                form_class: "deleteButton" , data: {msg: "This will remove #{ar.owner_type} access for this investor. Proceed?", action: "click->confirm#popup" , turbo: false } %>
+            </div>
+        <% end %>
+    </td>
+</tr>
+<% end %>

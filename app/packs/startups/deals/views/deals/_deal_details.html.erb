@@ -8,7 +8,7 @@
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-         data-action="click->tabdetails#loadData">Deal Docs</a>
+         data-action="click->tabdetails#loadData">Documents</a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
@@ -80,7 +80,7 @@
             owner_type: "Deal",
             entity_id: deal.entity_id) %>
 
-          <% params[:form_type] = "deal_form" %>
+          <% params[:form_type] = "deals/access_rights_form" %>
           <%= render "access_rights/index", access_rights: deal.access_rights.includes(:investor, :owner), access_right: access_right %>
         </div>
       </div>

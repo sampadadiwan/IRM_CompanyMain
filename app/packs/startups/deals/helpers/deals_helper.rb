@@ -72,4 +72,34 @@ module DealsHelper
       [column.name, column.kanban_cards.count]
     end
   end
+
+  def get_grouped_access_rights(access_rights)
+    access_rights.group_by do |ar|
+      if ar.access_to_investor_id.present?
+        [:access_to_investor_id, ar.access_to_investor_id]
+      elsif ar.access_to_category.present?
+        [:access_to_category, ar.access_to_category]
+      else
+        [:user_id, ar.user_id]
+      end
+    end
+  end
+
+  def filter_by_owner(grouped_access_rights, access)
+    case access
+    when "both"
+      grouped_access_rights = grouped_access_rights.select do |_, access_rights|
+        access_rights.count > 1
+      end
+    when "deal"
+      grouped_access_rights = grouped_access_rights.select do |_, access_rights|
+        access_rights.any? { |ar| ar.owner_type == "Deal" }
+      end
+    when "folder"
+      grouped_access_rights = grouped_access_rights.select do |_, access_rights|
+        access_rights.any? { |ar| ar.owner_type == "Folder" }
+      end
+    end
+    grouped_access_rights
+  end
 end

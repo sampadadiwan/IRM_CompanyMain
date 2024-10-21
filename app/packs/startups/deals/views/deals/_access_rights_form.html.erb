@@ -2,7 +2,7 @@
   <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
   <div class="dynamic_form card shadow mb-4" data-controller="access">
     <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
+      <h6 class="m-0 font-weight-bold text-primary">Grant Access: <%= access_right.owner_type %></h6>
     </div>
     <div class="card-body" data-controller="access">
       <%= form_with(model: access_right, class: "", id: "access_rights_form") do |form| %>
@@ -17,6 +17,7 @@
           </div>
         <% end %>
 
+        <%= hidden_field_tag :partial_to_use, params[:partial_to_use] %>
 
         <div class="form-group" hidden='hidden'>
           <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
@@ -32,10 +33,10 @@
           users = current_user.entity.employees
           investor_advisors = current_user.entity.investor_advisors
         %>
-      
+
         <div class="form-group">
             <%= form.label :access_type %>
-            <%= form.select :email_or_cat, types, {}, class: "form-control", 
+            <%= form.select :email_or_cat, types, {}, class: "form-control",
               name: "email_or_cat", "data-action": "change->access#onChange" %>
         </div>
 
@@ -49,22 +50,30 @@
             <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "advisor_id"  %>
         </div>
 
-        <% if access_right.owner_type == "DealInvestor" %>          
-          <% investors = [access_right.owner.investor]  %>
-          
-          <div class="form-group" id="investor_form_group">
-              <%= form.label :access_to_investor_id, "Select Stakeholder" %>
-              <%= form.select :access_to_investor_id, investors.map{|c| [c.investor_name, c.id]}, 
-                {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
-                "data-action": "change->access#addErrorCheck" %>
-          </div>
-        <% end %>
+        <%  investors = if access_right.owner_type == "Deal"
+                          access_right.owner.investors
+                        elsif access_right.owner_type == "Folder"
+                          access_right.owner.owner.investors
+                        end
+                      %>
+        <div class="form-group" id="investor_form_group">
+            <%= form.label :access_to_investor_id, "Select Stakeholder" %>
+            <%= form.select :access_to_investor_id, investors.map{|c| [c.investor_name, c.id]},
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+              "data-action": "change->access#addErrorCheck" %>
+        </div>
 
-      
+      <% if access_right.access_type == "Folder" %>
+        <div class="form-group">
+          <%= form.label :cascade, "Apply to files and sub folders" %>
+          <%= form.check_box :cascade, class: "form-check-input"  %>
+        </div>
+      <% end %>
+
       <div class="form-group" id="permissions_form_group">
         <% AccessRight.permissions.pairs.each do |key, val| %>
           <%= form.label :permissions, key %>
-          <%= form.check_box :permissions, {name: "access_right[permissions][]",  
+          <%= form.check_box :permissions, {name: "access_right[permissions][]",
                 val: val, id: "permissions_#{val}", class: "form-check-input-horizontal"}, val, nil   %>
         <% end %>
       </div>

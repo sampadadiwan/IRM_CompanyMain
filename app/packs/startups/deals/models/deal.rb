@@ -45,6 +45,10 @@ class Deal < ApplicationRecord
     deal_investors.each(&:create_activities)
   end
 
+  def deal_documents_folder
+    document_folder.children.where(name: "Deal Documents", folder_type: :regular, entity_id:, owner: self).first_or_create
+  end
+
   def broadcast_message(message, level = "info")
     broadcast_replace_to [self, "deal_message"],
                          partial: '/deals/deal_message',
@@ -70,6 +74,10 @@ class Deal < ApplicationRecord
 
   def activity_names
     DealActivity.templates(self).collect(&:title)
+  end
+
+  def data_room_name
+    "Overview"
   end
 
   def folder_path

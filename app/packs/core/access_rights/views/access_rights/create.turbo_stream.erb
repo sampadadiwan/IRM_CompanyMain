@@ -1,11 +1,11 @@
 <% @access_rights.each do |access_right| %>
+    <% partial_to_use ||= @partial_to_use.presence || "access_right" %>
+    <%= turbo_stream.prepend('access_rights_table_body',
+        partial: partial_to_use, locals: { access_right: access_right }) %>
 
-    <%= turbo_stream.prepend('access_rights_table_body', 
-        partial: "access_rights/access_right", locals: { access_right: access_right }) %>
-
-    <%= turbo_stream.replace('toasts', partial: "layouts/success_toast", 
+    <%= turbo_stream.replace('toasts', partial: "layouts/success_toast",
         locals: { message: "Granted access to: #{access_right.to_s} for #{access_right.access_type}" }) %>
-    
+
 <% end %>
 
 <%= turbo_stream.replace('new_access_right', partial: "access_rights/blank" ) %>

@@ -1,5 +1,6 @@
 class DealsController < ApplicationController
-  before_action :set_deal, only: %w[show update destroy edit]
+  include DealsHelper
+  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals or /deals.json
@@ -30,6 +31,32 @@ class DealsController < ApplicationController
     render "index"
   end
 
+  def consolidated_access_rights
+    @access_rights = policy_scope(AccessRight).includes(:owner, :investor, :user)
+
+    @bread_crumbs['Access Overview'] = nil
+    @deal_documents_folder = @deal.deal_documents_folder
+
+    @access_rights = @access_rights.where(owner_id: @deal.id, owner_type: "Deal").or(@access_rights.where(owner_id: @deal_documents_folder.id, owner_type: "Folder"))
+    query = params[:search][:value] if params[:search] && params[:search][:value].present?
+    if query.present?
+      ids = AccessRightIndex.filter(term: { entity_id: current_user.entity_id })
+                            .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                   query:, default_operator: 'and' }).per(100).map(&:id)
+
+      @access_rights = @access_rights.where(id: ids)
+    end
+    @access_rights = @access_rights.order(owner_type: :asc, created_at: :desc)
+    @grouped_access_rights = get_grouped_access_rights(@access_rights)
+
+    @grouped_access_rights = filter_by_owner(@grouped_access_rights, params[:access])
+    if params[:all].blank?
+      @grouped_access_rights = Kaminari.paginate_array(@grouped_access_rights.to_a).page(params[:page])
+      params[:per_page] ||= 10
+      @grouped_access_rights = @grouped_access_rights.per(params[:per_page].to_i)
+    end
+  end
+
   # GET /deals/1 or /deals/1.json
   def show
     if params[:chart].present?
@@ -48,8 +75,8 @@ class DealsController < ApplicationController
           # make board the default view if deal has a board
           if params[:grid_view].present?
             render "grid_view"
-          elsif params[:preview].present?
-            render "show"
+          elsif params[:overview].present? || current_user.curr_role_investor?
+            redirect_to overview_deal_path(@deal)
           elsif @deal.kanban_board.present?
             redirect_to board_path(@deal.kanban_board)
           else
@@ -59,6 +86,8 @@ class DealsController < ApplicationController
       end
     end
   end
+
+  def overview; end
 
   # GET /deals/new
   def new
@@ -140,7 +169,12 @@ class DealsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal
     @deal = Deal.find(params[:id])
-    path = @deal.kanban_board.present? ? board_path(@deal.kanban_board) : deal_path(@deal)
+    deals_path = deal_investors_path if current_user.curr_role_investor?
+    path = if current_user.curr_role_investor?
+             overview_deal_path(@deal)
+           else
+             deal_path(@deal)
+           end
     @bread_crumbs = { Deals: deals_path, "#{@deal.name || '-'}": path }
     authorize(@deal)
   end

@@ -1,0 +1,120 @@
+<% frame = params[:frame] || "access_rights_frame" %>
+<%= turbo_frame_tag frame, target: "_top" do %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800 col-6">Access Rights Overview: <%= link_to @deal.name, deal_path(@deal) %></h1>
+  <%
+    deal_access_right ||= AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner: @deal, entity_id: @deal.entity_id, access_type: params[:access_type])
+
+    document_folder_access_right ||= AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner: @deal_documents_folder, entity_id: @deal.entity_id, access_type: "Folder")
+
+    form_type ||= params[:form_type] || "deals/access_rights_form"
+  %>
+
+  <span>
+    <% if form_type != "none" %>
+      <button class="btn btn-outline-info dropdown-toggle" type="button" id="grantAccessDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Grant Access
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="grantAccessDropdown">
+        <li>
+          <%= link_to "Grant Deal Access",
+                  new_access_right_path(
+                      "access_right[access_to_investor_id]": deal_access_right.access_to_investor_id,
+                      "access_right[access_type]": deal_access_right.access_type,
+                      "access_right[owner_id]": deal_access_right.owner_id,
+                      "access_right[owner_type]": deal_access_right.owner_type,
+                      "access_right[entity_id]": deal_access_right.entity_id,
+                      partial_to_use: "deals/access_rights_row",
+                      form_type: form_type),
+                      { data: { turbo_frame: 'new_access_right' },
+                      method: :get, class: "dropdown-item" } if deal_access_right && policy(deal_access_right.owner).update? %>
+        </li>
+        <li>
+          <%= link_to "Grant Document Folder Access",
+                  new_access_right_path(
+                      "access_right[access_to_investor_id]": document_folder_access_right.access_to_investor_id,
+                      "access_right[access_type]": document_folder_access_right.access_type,
+                      "access_right[owner_id]": document_folder_access_right.owner_id,
+                      "access_right[owner_type]": document_folder_access_right.owner_type,
+                      "access_right[entity_id]": document_folder_access_right.entity_id,
+                      partial_to_use: "deals/access_rights_row",
+                      form_type: form_type),
+                      { data: { turbo_frame: 'new_access_right' },
+                      method: :get, class: "dropdown-item" } if document_folder_access_right && policy(document_folder_access_right.owner).update? %>
+        </li>
+      </ul>
+    <% end %>
+
+      <button class="btn btn-outline-info dropdown-toggle" type="button" id="accessDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Access Rights
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="accessDropdown">
+        <li>
+          <%= link_to "All", consolidated_access_rights_deal_path(id: @deal.id), target: "_top", class: "dropdown-item", data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "View all access rights", turbo_frame: frame }  %>
+        </li>
+        <li>
+          <%= link_to "Both Accesses", consolidated_access_rights_deal_path(id: @deal.id, access: "both"), target: "_top", class: "dropdown-item", data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Items with Both Access", turbo_frame: frame }  %>
+        </li>
+        <li>
+          <%= link_to "Deal Access", consolidated_access_rights_deal_path(id: @deal.id, access: "deal"), class: "dropdown-item", data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Items with Deal Access", turbo_frame: frame }  %>
+        </li>
+        <li>
+          <%= link_to "Folder Access", consolidated_access_rights_deal_path(id: @deal.id, access: "folder"), class: "dropdown-item", data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Items with Folder Access", turbo_frame: frame }  %>
+        </li>
+      </ul>
+  </span>
+</div>
+
+<% if (deal_access_right || document_folder_access_right ) && form_type != "none" %>
+<%= turbo_frame_tag "new_access_right" do %>
+  <% end %>
+<% end %>
+
+<%
+  show_metadata ||= "Yes"
+%>
+<%=render SearchComponent.new(data_source: consolidated_access_rights_deal_path( params: params.to_unsafe_h, id: @deal.id), turbo_frame: frame) %>
+
+<div class="table-responsive">
+
+  <table id="access_rights_table" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Access To
+        </th>
+        <th>
+          Access Type
+        </th>
+        <% if show_metadata == "Yes" %>
+          <th>
+            Metadata
+          </th>
+        <% end %>
+        <th>
+          Granted By
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody id="access_rights_table_body">
+      <% @grouped_access_rights.each do |grouped_by, access_rights| %>
+        <%= render "consolidated_access_rights_row", grouped_by: grouped_by, access_rights: access_rights, show_metadata: show_metadata %>
+      <% end %>
+    </tbody>
+
+  </table>
+
+</div>
+
+<div class="alert alert-info text-center associated_entity">
+  Access rights work at the level of the stakeholder firm. To permission individuals from the stakeholder firms
+  please setup Stakeholder Users under a Stakeholder
+</div>
+<% if @grouped_access_rights.present? %>
+  <%= page_entries_info @grouped_access_rights, entry_name: 'item' %>
+  <%= paginate @grouped_access_rights, data: {turbo_frame: frame} %>
+<% end %>
+<% end %>

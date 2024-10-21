@@ -58,13 +58,13 @@ Scenario Outline: Add deal document
   Given there is an existing investor "" with "1" users
   Given the investors are added to the deal
   And I visit the deal details page
-  When I click "Deal Docs"
-  When I create a new document "<document>" in folder "Data Room"
+  When I click the last "Documents" link
+  When I create a new document "<document>" in folder "Overview"
   And an document should be created
   And an email must go out to the investors for the document
   And the deal document details must be setup right
   And I visit the deal details page
-  When I click "Deal Docs"
+  When I click the last "Documents" link
   And I should see the document in all documents page
 
 Examples:

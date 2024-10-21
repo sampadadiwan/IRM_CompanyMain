@@ -7,16 +7,11 @@
   <div class="kanban-filter">
     <%= render "/layouts/filter", associations: [], state: filter_state, hidden_fields: {boards: true, turbo:true, board_id: kanban_board.id} %>
   </div>
-  <div class="action-btn layout-top-spacing mb-8 d-flex align-items-center justify-content-between flex-wrap gap-6">
+  <div class="action-btn layout-top-spacing mb-4 d-flex align-items-center justify-content-between flex-wrap gap-6">
     <h1 class="h3 mb-0 text-gray-800">
     <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
-    <% if kanban_board.owner_type == "Deal" %>
-      <%= link_to polymorphic_path(kanban_board.owner, grid_view: true), target: "_self" do %>
-        <i class="ti ti-grid-pattern"></i>
-      <% end %>
-    <% end %>
     </h1>
-    <div class="d-flex align-items-center justify-content-end mb-7">
+    <div class="d-flex align-items-center justify-content-end">
       <% if filtered_results %>
         <form id="clear-filter-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
           <button type="submit" class="btn btn-primary filter-button">
@@ -26,13 +21,9 @@
           <input type="hidden" name="query" value=""> <!-- Empty query parameter -->
         </form>
       <% end %>
-      <% # Need to change this after discussing %>
-      <% if kanban_board.owner_type == "Deal" %>
-        <%= link_to deal_path(id: kanban_board.owner_id, chart: true), class: "btn btn-outline-success", data: { turbo: false } do %>
-          <i class="fas fa-chart-line"></i> Charts
-        <% end %>
-        <%= link_to "Preview", polymorphic_path(kanban_board.owner, preview: 'true'), class: "btn btn-outline-primary", target: "_blank" %>
-      <% end %>
+
+      <%= render "/boards/header_actions", owner: kanban_board.owner %>
+
       <form id="kanban-search-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
         <div class="search-box me-3">
           <input id="kanban-search-input" name="query" type="text" class="form-control" placeholder="Search...">
@@ -45,7 +36,6 @@
         </a>
         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
           <%= link_to 'Edit', edit_polymorphic_path(kanban_board.owner, turbo_frame_id: "board#{kanban_board.id}_edit", turbo: true), class: 'dropdown-item' %>
-          <%= link_to "Preview", polymorphic_path(kanban_board.owner, preview: 'true'), class: "dropdown-item", target: "_blank" if kanban_board.owner_type == "Deal" %>
           <a class="dropdown-item archived-columns" href="javascript:void(0);">Archived Columns</a>
         </div>
 
@@ -60,7 +50,7 @@
   <% end %>
 
 <div class="row scrumboard" id="cancel-row" data-controller="kanban-board" data-kanban-board-id="<%= kanban_board.id %>">
-  <div class="col-lg-12 layout-spacing pb-3">
+  <div class="col-lg-12 layout-spacing">
     <div data-simplebar="init" class="simplebar-scrollable-x">
       <div class="simplebar-wrapper" style="margin: 0px;">
         <div class="simplebar-height-auto-observer-wrapper">

@@ -1,8 +1,8 @@
 
 
 
-<% if params[:preview].present? %>
-  <%= render "/deals/preview", deal: @deal %>
+<% if params[:overview].present? %>
+  <%= render "/deals/overview", deal: @deal %>
 <% elsif params[:grid_view].present? %>
   <%= render "/deals/grid_view", deal: @deal %>
 <% else %>

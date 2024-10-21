@@ -1,4 +1,5 @@
 
-
-<%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity, search: @search %>
-<%= paginate @tasks %>
+<%= turbo_frame_tag "tasks_frame", target: "_top" do %>
+    <%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity, search: @search %>
+    <%= paginate @tasks, data: {turbo_frame: "tasks_frame"} %>
+<% end %>

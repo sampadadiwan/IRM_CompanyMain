@@ -31,7 +31,7 @@
         <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
           <span>Loading...</span>
         <% end %>
-        <%= link_to "Preview", deal_path(id: @deal.id, preview: true) , {class: "btn btn-outline-success"}%>
+        <%= link_to "Preview", deal_path(id: @deal.id, overview: true) , {class: "btn btn-outline-success"}%>
         <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-outline-primary"} do %>
           <i class="fa-lg fa-regular fa-file-excel"></i> Download
         <% end %>

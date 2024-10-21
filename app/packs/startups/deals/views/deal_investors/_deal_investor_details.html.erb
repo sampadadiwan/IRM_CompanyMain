@@ -5,8 +5,8 @@
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab"
               data-action="click->tabdetails#loadData">Deal Steps</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#chat-tab"
-              data-action="click->tabdetails#loadData">Chat</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
+              data-action="click->tabdetails#loadData">Tasks</a>
 
     <% if show_tranch %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tranche-tab">Tranche</a>
@@ -42,12 +42,10 @@
       </div>
     </div>
 
-    <div id="chat-tab" class="tab-pane fade">
-      <div id="messages" class="associated_entity">
-        <%= link_to messages_path(owner_id: deal_investor.id, owner_type: "DealInvestor", investor_id: deal_investor.investor_id), class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
+    <div id="tasks-tab" class="tab-pane fade">
+      <div id="tasks" class="associated_entity">
+        <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner: deal_investor, for_entity: deal_investor.entity), target: "_top" do %>
           <span>Loading...</span>
-        <% end %>
-        <%= turbo_frame_tag "messages_frame", target: "_top" do %>
         <% end %>
       </div>
     </div>

@@ -1,5 +1,5 @@
 <% owner ||= nil %>
-<% target ||= nil %>
+<% target ||= "_top" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Track Record</h1>
   <% options = {class: "btn btn-outline-primary"} %>
@@ -34,7 +34,7 @@
     </thead>
     <tbody>
       <% ci_track_records.each do |ci_track_record| %>
-        <%= render ci_track_record %>
+        <%= render "ci_track_records/ci_track_record", ci_track_record: ci_track_record, target: target %>
       <% end %>
     </tbody>
   </table>

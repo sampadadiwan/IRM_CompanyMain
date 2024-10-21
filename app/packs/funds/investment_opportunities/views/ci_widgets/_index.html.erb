@@ -1,5 +1,5 @@
 <% owner ||= nil %>
-<% target ||= nil %>
+<% target ||= "_top" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Widgets</h1>
   <% options = {class: "btn btn-outline-primary"} %>
@@ -25,7 +25,7 @@
     </thead>
     <tbody>
       <% ci_widgets.each do |ci_widget| %>
-        <%= render ci_widget %>
+        <%= render "ci_widgets/ci_widget", ci_widget: ci_widget, target: target %>
       <% end %>
     </tbody>
   </table>

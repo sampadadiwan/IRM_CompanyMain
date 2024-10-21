@@ -4,6 +4,12 @@ Given('I am at the deals page') do
   visit("/deals")
 end
 
+When('I click the last {string} link') do |args|
+  all('a', text: args).last.click
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  sleep(2)
+end
+
 When('I create a new deal {string}') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
@@ -271,7 +277,7 @@ Then('I should see the deal cards of the company') do
   DealInvestor.where(investor_entity_id: @entity.id).find_each do |di|
     expect(page).to have_content(di.deal.name)
     expect(page).to have_content(di.deal.status)
-    expect(page).to have_content("Data Room")
+    expect(page).to have_content("Overview")
     expect(page).to have_content("Queries")
   end
 end
@@ -311,7 +317,7 @@ Then('the deal data room should be setup') do
   puts @deal.data_room_folder.to_json
   @deal.data_room_folder.should_not
   @deal.data_room_folder.name.should
-  @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
+  @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}/Overview"
 end
 
 def select_investor_and_save(investor_id, tags)
@@ -436,14 +442,14 @@ When('I edit the deal "card_view_attrs={string}"') do |string|
   click_on("Edit")
   sleep(0.5)
   fill_in('Tags', with: "Deal Tag")
-  find('.select2-selection--multiple').click
+  # find('.select2-selection--multiple').click
 
-  string.split(",").each do |attr|
-    attr = attr.strip
-    # Find the search field within the dropdown and enter 'Status'
-    find('.select2-search__field').set("#{attr}")
-    find('li.select2-results__option', text: "#{attr}").click
-  end
+  # string.split(",").each do |attr|
+  #   attr = attr.strip
+  #   # Find the search field within the dropdown and enter 'Status'
+  #   find('.select2-search__field').set("#{attr}")
+  #   find('li.select2-results__option', text: "#{attr}").click
+  # end
   click_on("Save")
   sleep(2)
 end
@@ -457,7 +463,7 @@ Then('deal and cards should be updated') do
   click_on("Deal")
   sleep(0.5)
   expect(page).to have_content("Deal Tag")
-  expect(page).to have_content(@deal.reload.card_view_attrs.map(&:titleize)&.join(", "))
+  expect(page).to have_content(@deal.reload.card_view_attrs&.map(&:titleize)&.join(", "))
 end
 
 When('i click on deal details i should see the tabs "{string}"') do |string|
@@ -521,7 +527,6 @@ end
 Given('I add widgets for the deal') do
   click_on("Widgets")
   click_on("New Widget")
-  switch_to_window windows.last
 
   fill_in('ci_widget_title', with: "Left Widget")
   select("Left", from: "ci_widget_image_placement")
@@ -532,15 +537,12 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
-  page.driver.browser.close
-  switch_to_window windows.first
 
   visit(deal_path(@deal))
   element = all('.show_details_link').last
   element.click
   click_on("Widgets")
   click_on("New Widget")
-  switch_to_window windows.last
   fill_in('ci_widget_title', with: "Center Widget")
   select("Center", from: "ci_widget_image_placement")
   details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
@@ -550,15 +552,12 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
-  page.driver.browser.close
-  switch_to_window windows.first
 
   visit(deal_path(@deal))
   element = all('.show_details_link').last
   element.click
   click_on("Widgets")
   click_on("New Widget")
-  switch_to_window windows.last
   fill_in('ci_widget_title', with: "Right Widget")
   select("Right", from: "ci_widget_image_placement")
   details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
@@ -568,8 +567,6 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
-  page.driver.browser.close
-  switch_to_window windows.first
 end
 
 Given('I add track record for the deal') do
@@ -578,20 +575,18 @@ Given('I add track record for the deal') do
   element.click
   click_on("Track Record")
   click_on("New Track Record")
-  switch_to_window windows.last
   fill_in('ci_track_record_name', with: "Test Track Record")
   fill_in('ci_track_record_prefix', with: "good")
   fill_in('ci_track_record_value', with: "250000")
   fill_in('ci_track_record_suffix', with: "bad")
   fill_in('ci_track_record_details', with: "Track record details")
   click_on("Save")
-  page.driver.browser.close
   switch_to_window windows.first
 end
 
 When('I go to deal preview') do
   visit(deal_path(@deal))
-  click_on("Preview")
+  click_on("Overview")
   switch_to_window windows.last
 end
 
@@ -608,4 +603,173 @@ Then('I can see the deal preview details') do
     expect(page).to have_content(track_record.suffix)
     expect(page).to have_content(track_record.details.gsub(/<\/?div>/, ''))
   end
+end
+
+
+Given('I click on the Add Item and create a new Stakeholder {string} and save') do |arg|
+  @inv = FactoryBot.build(:investor)
+  key_values(@inv, arg)
+  first('button', text: "Add Item").click
+  sleep(0.25)
+  puts "\n####Creating New Stakeholder - #{@inv.investor_name} with #{@inv.primary_email}####\n"
+
+  click_on("New Stakeholder")
+  fill_in('investor_investor_name', with: @inv.investor_name)
+  select("LP", from: "investor_category")
+  fill_in('investor_primary_email', with: @inv.primary_email)
+  click_on("Save")
+  sleep(3)
+  visit(current_url)
+end
+
+Given('I click on the Add Item and select {string} Investor and save') do |investor_name|
+  puts "\n####Creating New Deal Investor - #{investor_name}####\n"
+  select_investor_name_and_save(investor_name, Faker::Company.profession)
+  visit(current_url)
+end
+
+def select_investor_name_and_save(investor_name, tags)
+  first('button', text: "Add Item").click
+  sleep(1)
+  select(investor_name, from: "deal_investor_investor_id")
+  input_field = find_by_id('deal_investor_tags')
+  input_field.set(tags) if tags.present?
+  sleep(0.5)
+  click_button('Save')
+  sleep(2)
+end
+
+Given('I give deal access to {string}') do |investor_name|
+  visit(deal_path(@deal))
+  element = all('.show_details_link').last
+  element.click
+  click_on("Access Rights")
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  puts "\n####Granting Deal Access to #{investor_name}####\n"
+  sleep(2)
+  click_on("Grant Access")
+  find('.select2-selection--multiple').click
+  find('.select2-search__field').set(investor_name)
+  find('li.select2-results__option', text: investor_name).click
+  click_on("Save")
+  sleep(1)
+end
+
+When('I go to the deal access overview') do
+  @deal = Deal.last
+  path = consolidated_access_rights_deal_path(id: @deal.id)
+  visit(path)
+end
+
+Then('I should see the {string} {string} access') do |number, access_type|
+  expect(page).to have_content("#{access_type.titleize} access granted by").exactly(number.to_i).times
+end
+
+Given('I give {string} access to {string} from the deal access overview') do |access_type, investor_name|
+  puts "\n####Granting #{access_type} Access from Access Overview to #{investor_name}####\n"
+
+  visit(consolidated_access_rights_deal_path(id: @deal.id))
+  sleep(2)
+  click_on("Grant Access")
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  button_text = access_type.titleize
+  button_text = "Document Folder" if access_type == "folder"
+  click_on("Grant #{button_text.titleize} Access")
+  sleep(0.3)
+  find('.select2-selection--multiple').click
+  find('.select2-search__field').set(investor_name)
+  find('li.select2-results__option', text: investor_name).click
+
+  check("access_right_cascade") if access_type == "folder"
+
+  click_on("Save")
+  sleep(1)
+end
+
+Given('I delete {string} access to {string} from the deal access overview') do |access_type, investor_name|
+  puts "\n####Deleting #{access_type} Access from Access Overview of #{investor_name}####\n"
+  visit(consolidated_access_rights_deal_path(id: @deal.id))
+  first('button', text: "Delete #{access_type.titleize} Access").click
+  click_on("Proceed")
+end
+
+Given('Investor {string} has a user with email {string}') do |investor_name, email|
+  @investor = Investor.find_by(investor_name: investor_name)
+  @user = FactoryBot.create(:user, email: email, entity: @investor.investor_entity)
+  @investor_access = InvestorAccess.new(entity: @investor.entity, investor: @investor,
+                                        first_name: @user.first_name, last_name: @user.last_name,
+                                        email: @user.email, granter: User.first, approved: true)
+  @investor_access.save!
+  puts "\n####Investor Access####\n"
+  puts @investor_access.to_json
+end
+
+Given('user {string} has deals enabled') do |email|
+  @user ||= User.find_by(email: email)
+  @user.entity.permissions.set(:enable_deals)
+  @user.entity.save
+  @user.permissions.set(:enable_deals)
+  @user.save
+end
+
+When('I go to the deal investors page') do
+  visit(deal_investors_path)
+end
+
+Then('I should see the deal card {string}') do |deal_name|
+  expect(page).to have_content(@deal.name)
+  expect(page).to have_content("Overview")
+  expect(page).to have_content("Queries")
+end
+
+When('I go to investor deal overview') do
+  @deal ||= Deal.last
+  visit(overview_deal_path(@deal))
+end
+
+When('I click Deal Documents in the overview') do
+  all('a', text: "Documents").last.click
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+end
+
+Then('I should see the deal documents') do
+  sleep(1)
+  expect(page).to have_content("Documents: Deal Documents")
+  @deal.deal_documents_folder.documents.each do |doc|
+    expect(page).to have_content(doc.name)
+  end
+end
+
+Then('I should not see the deal documents') do
+  sleep(1)
+  expect(page).not_to have_content("Documents: Deal Documents")
+end
+
+When('I click on deals document') do
+  @deal_document = @deal.deal_documents_folder.documents.last
+  click_on(@deal_document.name)
+end
+
+Then('I should see the document details') do
+  expect(page).to have_content("Viewing: #{@deal_document.name}")
+end
+
+Given('User {string} deals folder access is removed') do |email|
+  @user ||= User.find_by(email: email)
+  @deal.deal_documents_folder.access_rights.where(access_to_investor_id: @investor.id).destroy_all
+end
+
+Then('I should see {string}') do |message|
+  expect(page).to have_content(message)
+end
+
+Given('User {string} deals access is removed') do |email|
+  @user ||= User.find_by(email: email)
+  @deal.access_rights.where(access_to_investor_id: @investor.id).destroy_all
+end
+
+Then('I cannot see the deal card {string}') do |deal_name|
+  expect(page).not_to have_content(@deal.name)
+  expect(page).not_to have_content("Overview")
+  expect(page).not_to have_content("Queries")
 end

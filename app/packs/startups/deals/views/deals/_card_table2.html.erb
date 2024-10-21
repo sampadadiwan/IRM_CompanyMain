@@ -1,6 +1,12 @@
 <% col_size ||= 4 %>
 <div class="io_facts row">
-
+ <%
+    params[:force_units] = deal.entity.default_currency_units
+    if params[:force_units] == "Crores" && deal.amount.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+  %>
   <div class="col-<%=col_size%>">
     <div class="card">
       <div class="card-body">
@@ -18,12 +24,7 @@
     </div>
   </div>
 
-  <%
-    if params[:force_units] == "Crores" && deal.amount.to_d < 100_00000
-        # If committed_amount is less than a crore, then show in lakhs
-        params[:force_units] = "Lakhs"
-    end
-  %>
+
 
   <div class="col-<%=col_size%>">
     <div class="card">
@@ -34,7 +35,7 @@
             <i class="ti ti-ticket fs-6"></i>
           </div>
           <div class="ms-3 align-self-center">
-            <h3 class="mb-0 fs-6"><%=  deal.start_date %></h3>
+            <h3 class="mb-0 fs-6"><%=  deal.start_date&.strftime("%d %b %Y") %></h3>
             <span class="text-muted">Start Date</span>
           </div>
         </div>

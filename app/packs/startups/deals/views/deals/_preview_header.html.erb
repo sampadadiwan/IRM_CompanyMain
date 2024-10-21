@@ -1,13 +1,21 @@
 <div class="col d-flex align-items-stretch">
     <div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
-    <div class="card-body position-relative">
-        <div class="row">
-        <div class="col-sm-9">
-            <div class="d-flex align-items-center mb-7">
-                <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center"><%= link_to deal.name, deal_path(deal, preview:true) %></h3>
+        <div class="card-body position-relative">
+            <div class="row">
+                <!-- Use col-12 to take full width, and d-flex to control content alignment -->
+                <div class="col-12 d-flex justify-content-between align-items-center">
+                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">
+                    <%= link_to deal.name, overview_deal_path(deal) %>
+                    </h3>
+                    <!-- Use ms-auto to push the button all the way to the right -->
+                    <% deal_doc_folder = deal.deal_documents_folder %>
+                    <% if current_user.entity_id == deal.entity_id || (current_user.curr_role_investor? && Folder.where(id: deal_doc_folder.id).for_investor(current_user, deal.entity).first.present?) %>
+                        <span class="ms-auto">
+                        <%= link_to "Deal Documents", folder_documents_path(entity_id: deal.entity_id, folder_id: deal_doc_folder.id, parent_folder_id: deal.document_folder_id), class: "btn btn-outline-primary btn-lg" %>
+                        </span>
+                    <% end %>
+                </div>
             </div>
         </div>
-        </div>
-    </div>
     </div>
 </div>

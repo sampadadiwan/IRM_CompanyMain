@@ -16,9 +16,7 @@
 <%= render "/ci_widgets/preview_widgets2", owner: deal %>
 
 <div class="row">
-    <% deal.documents.each do |doc| %>
-        <% if doc.tag_list&.split(",")&.map(&:strip)&.include?("preview") %>
-            <div class="col"><%= render "/deals/preview_document", document: doc %></div>
-        <% end %>
+    <% deal.data_room_folder.documents.each do |doc| %>
+        <div class="col"><%= render "/deals/preview_document", document: doc %></div>
     <% end %>
 </div>

@@ -12,7 +12,7 @@
   end
 
   Given('I should have {string} to the document') do |doc_access|
-    Pundit.policy(@user, @document).show?.should == (doc_access == "true")  
+    Pundit.policy(@user, @document).show?.should == (doc_access == "true")
   end
 
   Given('I should not have access to the document') do
@@ -67,9 +67,9 @@ When('I fill and submit the new document page') do
   find("#doc_actions").click
   click_on("New Document")
   sleep(4)
-  if page.has_css?("#document_name") 
+  if page.has_css?("#document_name")
     fill_in("document_name", with: @document.name)
-  elsif page.has_css?("#other_name") 
+  elsif page.has_css?("#other_name")
     fill_in("other_name", with: @document.name)
   end
 
@@ -162,12 +162,12 @@ Then('I should see the document in all documents page') do
 end
 
 Then('the deal document details must be setup right') do
-  @deal.data_room_folder.name.should == "Data Room"
+  @deal.data_room_folder.name.should == "Overview"
   @deal.data_room_folder.owner.should == @deal
 
   @document.owner.should == @deal
-  @document.folder.name.should == "Data Room"
-  @document.folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
+  @document.folder.name.should == "Overview"
+  @document.folder.full_path.should == "/Deals/#{@deal.name}/Overview"
 end
 
 

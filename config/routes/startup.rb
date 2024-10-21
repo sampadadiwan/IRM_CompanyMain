@@ -54,7 +54,9 @@ resources :deal_investors do
 end
 resources :deals do
   get 'search', on: :collection
+  get 'overview', on: :member
   get 'investor_deals', on: :collection
+  get 'consolidated_access_rights', on: :member
 end
 
 resources :investments do
