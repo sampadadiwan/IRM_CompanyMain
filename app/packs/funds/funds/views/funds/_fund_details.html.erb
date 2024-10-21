@@ -70,6 +70,11 @@
               <% end %>
 
               <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
               <% end %>
 
           </div>

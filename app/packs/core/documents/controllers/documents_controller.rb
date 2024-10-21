@@ -41,12 +41,12 @@ class DocumentsController < ApplicationController
                      Document.none
                    end
 
-      if params[:no_folders].present?
-        @documents = @documents.where(folder_id: params[:folder_id])
-      else
-        @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
-        @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
-      end
+      @documents = if params[:no_folders].present?
+                     @documents.where(folder_id: params[:folder_id])
+                   else
+                     @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+                     # @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
+                   end
       # Newest docs first
       @documents = @documents.includes(:folder).order(id: :desc)
 

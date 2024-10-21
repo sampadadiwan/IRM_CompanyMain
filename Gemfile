@@ -190,7 +190,7 @@ group :development do
   # gem 'rails-erd'
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
-  # gem "rack-mini-profiler"
+  gem "rack-mini-profiler"
 
   # For memory profiling
   # gem 'memory_profiler'

@@ -11,6 +11,4 @@ json.dt_actions render(
   locals: { interest: }
 )
 
-if interest.json_fields.present?
-  json.merge! interest.json_fields
-end
+json.merge! interest.json_fields if interest.json_fields.present?
