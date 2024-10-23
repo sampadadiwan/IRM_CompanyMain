@@ -37,7 +37,7 @@ Given('I go to create InvestorKyc {string}') do |args|
   sleep(1)
 
   click_on("Save")
-  sleep(1)
+  sleep(5)
   @og_pan_verification_response = {}
   @og_bank_verification_response = {}
 end

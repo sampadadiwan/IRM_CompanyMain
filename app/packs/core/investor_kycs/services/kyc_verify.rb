@@ -13,7 +13,8 @@ class KycVerify
         'Content-Type' => 'application/json'
       },
       body: {
-        id_no: pan
+        id_no: pan,
+        unique_request_id: SecureRandom.hex(5)
       }.to_json,
       debug_output: Rails.env.development? ? $stdout : nil
     )
@@ -30,7 +31,7 @@ class KycVerify
         },
 
         body: {
-          unique_request_id: rand(5**5),
+          unique_request_id: SecureRandom.hex(5),
           front_part: File.new(file_path),
           should_verify: "true"
         }
@@ -71,6 +72,7 @@ class KycVerify
         'Content-Type' => 'application/json'
       },
       body: {
+        unique_request_id: SecureRandom.hex(5),
         beneficiary_account_no: account_number,
         beneficiary_ifsc: ifsc,
         beneficiary_name: full_name
@@ -96,7 +98,7 @@ class KycVerify
       body: {
         id_no: pan,
         fi_code:,
-        unique_request_id: rand(5**5)
+        unique_request_id: SecureRandom.hex(5)
       }.to_json
     )
   end
@@ -119,7 +121,7 @@ class KycVerify
         ckyc_no: ckyc_number,
         date_of_birth: birth_date, # dd-MM-yyyy format
         fi_code:,
-        unique_request_id: rand(5**5)
+        unique_request_id: SecureRandom.hex(5)
       }.to_json
     )
     ckyc_response = downloaded_response.parsed_response
@@ -138,7 +140,7 @@ class KycVerify
       body: {
         pan_no: pan,
         dob: dob&.strftime("%m/%d/%Y"), # DD/MM/YYYY format
-        unique_request_id: rand(5**5)
+        unique_request_id: SecureRandom.hex(5)
       }.to_json
     )
     kra_response = downloaded_response.parsed_response
