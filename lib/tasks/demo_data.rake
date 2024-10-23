@@ -492,26 +492,30 @@ namespace :irm do
       end
 
       sale.reload
-      sale.entity.investors.not_holding.sample(3).each do | investor |
+      sale.entity.investors.not_holding.sample(5).each do | investor |
         
           if investor.investor_entity.employees.empty?
             FactoryBot.create(:user, entity: investor.investor_entity)
           end
 
-          qty = ((sale.total_offered_quantity / 100) - rand(10))*100
-          price = rand(2) > 0 ? sale.min_price : sale.max_price
-          short_listed = rand(4) > 0
-          escrow_deposited = rand(2) > 0
-          interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
-              investor_id: investor.id, secondary_sale: sale,
-              quantity: qty, price: price, user_id: investor.investor_entity.employees.sample.id, 
-              short_listed_status: Interest::STATUS_SHORT_LISTED, escrow_deposited: escrow_deposited)
-          
-          # interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
-          interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
+          (1..80).each do
+            qty = ((sale.total_offered_quantity / 100) - rand(10))*100
+            qty = qty > 0 ? qty : sale.total_offered_quantity
+            
+            price = rand(2) > 0 ? sale.min_price : sale.max_price
+            short_listed = rand(4) > 0
+            escrow_deposited = rand(2) > 0
+            interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
+                investor_id: investor.id, secondary_sale: sale,
+                quantity: qty, price: price, user_id: investor.investor_entity.employees.sample.id, 
+                short_listed_status: Interest::STATUSES.sample, escrow_deposited: escrow_deposited)
+            
+            # interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
+            interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
 
-          interest.save!
-          puts interest.to_json
+            interest.save!
+            puts interest.to_json
+          end
       end
       
     end

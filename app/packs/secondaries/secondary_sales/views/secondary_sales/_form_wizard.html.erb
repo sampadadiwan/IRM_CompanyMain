@@ -176,6 +176,15 @@
                         <%= form.select :offer_form_type_id, form_types, {}, class: "form-control" %>
                         <small class="text-muted"> Select the custom form used for Offers.</small>
                     </div>
+                    
+                        <% if params[:debug].present? %>
+                        <div class="form-group">
+                            <%= form.label :offer_pivot_custom_fields %>
+                            <%= form.text_field :offer_pivot_custom_fields, class: "form-control" %>
+                            <small class="text-muted"> Comma separated list of offer custom fields to show in Pivot. </small>
+                        </div>
+                        <% end %>
+
                     <% end %>
 
                     <% form_types = current_user.entity.form_types.where(name: "Interest").map{|ft| ["#{ft.name}: #{ft.tag}", ft.id]} %>
@@ -185,6 +194,14 @@
                         <%= form.select :interest_form_type_id, form_types, {}, class: "form-control" %>
                         <small class="text-muted"> Select the custom form used for Interests.</small>
                     </div>
+
+                        <% if params[:debug].present? %>
+                        <div class="form-group">
+                            <%= form.label :interest_pivot_custom_fields %>
+                            <%= form.text_field :interest_pivot_custom_fields, class: "form-control" %>
+                            <small class="text-muted"> Comma separated list of interest custom fields to show in Pivot. </small>
+                        </div>
+                        <% end %>
                     <% end %>
 
                     <div class="form-group">

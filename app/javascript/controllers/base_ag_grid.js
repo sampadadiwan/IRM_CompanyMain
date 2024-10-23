@@ -7,21 +7,29 @@ export default class BaseAgGrid extends Controller {
 
     static values = {
         lazyLoadData: String, // Do we want to eager or lazy load (for tabs)
-        tableName: String // Which table id are we targeting
+        tableName: String, // Which table id are we targeting
+        customFields: String // Custom fields to be added to the grid
     }
 
     
 
     connect() {
-        console.log(`connect AgGrid: ${this.tableNameValue}`);
-        console.log(`Datatable setup for ${this.tableNameValue}`);
         let source = $(this.tableNameValue).data('source')
         console.log(`source = ${source}`);
+        console.log(`tableNameValue = ${this.tableNameValue}`);
         console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
+        console.log(`customFieldsValue = ${this.customFieldsValue}`);
 
         if (this.lazyLoadDataValue == "false") {
             this.init(this.tableNameValue);
         }
+    }
+
+    snakeToHuman(str) {
+        return str
+          .split('_') // Split the string by underscores
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter
+          .join(' '); // Join the words with spaces
     }
 
 
@@ -45,15 +53,15 @@ export default class BaseAgGrid extends Controller {
                 sortable: true,
                 minWidth: 120,
             },
-            // onGridReady: (event) => {
-            //     this.gridOptions.api = event.api;
-            //     this.gridOptions.columnApi = event.columnApi;
-            //     this.restoreColumnState(this.gridOptions);
-            // },
+            onGridReady: (event) => {
+                this.gridOptions.api = event.api;
+                this.gridOptions.columnApi = event.columnApi;
+                this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
+            },
               
-            // onColumnVisible: (event) => {
-            //     saveColumnState(this.gridOptions);
-            // },
+            onColumnVisible: (event) => {
+                this.saveColumnVisibilityState(this.gridOptions, this.tableNameValue);
+            },
 
             autoGroupColumnDef: { 
                 minWidth: 200,
@@ -75,6 +83,10 @@ export default class BaseAgGrid extends Controller {
             suppressDragLeaveHidesColumns: true,
             suppressMakeColumnVisibleAfterUnGroup: true,
             suppressRowGroupHidesColumns: true,
+            pagination: true,
+            paginationPageSizeSelector: [25, 50, 100],
+            paginationPageSize: 25,
+            
              // adds subtotals
             groupIncludeFooter: this.includeFooter(),
             // includes grand total
@@ -131,34 +143,41 @@ export default class BaseAgGrid extends Controller {
 
     }
 
+    saveColumnVisibilityState(gridOptions, columnStateKey) {
+        if (gridOptions.columnApi) {
+            console.log('Saving column visibility state');
     
+            // Get the column state
+            const columnState = gridOptions.columnApi.getColumnState();
+    
+            // Filter the state to only include visibility (hide) property
+            const filteredColumnState = columnState.map(col => ({
+                colId: col.colId,   // The column ID
+                hide: col.hide      // Column visibility (true if hidden)
+            }));
+    
+            // Save the filtered state to localStorage
+            localStorage.setItem(columnStateKey, JSON.stringify(filteredColumnState));
+            console.log('Column visibility state saved:', filteredColumnState);
+        }
+    }
 
-    // saveColumnState(gridOptions) {
-    //     // let gridOptions = this.gridOptions;
-    //     let columnStateKey = 'myGridColumnState_v1'; // Use a unique key for your grid
-    //     if (gridOptions.columnApi) {
-    //         console.log('Saving column state');
-    //         const columnState = gridOptions.columnApi.getColumnState();
-    //         localStorage.setItem(columnStateKey, JSON.stringify(columnState));
-    //     }
-    // }
-
-    // restoreColumnState(gridOptions) {        
-    //     // let gridOptions = this.gridOptions;
-    //     let columnStateKey = 'myGridColumnState_v1'; // Use a unique key for your grid
-    //     let columnState = JSON.parse(localStorage.getItem(columnStateKey));
-        
-    //     console.log('Restoring column state');
-    //     console.log(columnState);
-
-    //     if (columnState && gridOptions.columnApi) {
-    //       const isStateValid = gridOptions.columnApi.applyColumnState(columnState);
-    //       if (!isStateValid) {
-    //         console.warn('Failed to restore column state, perhaps the columns have changed.');
-    //       }
-    //     }
-    // }
-
+    restoreColumnVisibilityState(gridOptions, columnStateKey) {
+        const savedColumnState = JSON.parse(localStorage.getItem(columnStateKey));
+    
+        console.log('Restoring column visibility state:', savedColumnState);
+    
+        if (savedColumnState && gridOptions.columnApi) {
+            const isStateValid = gridOptions.columnApi.applyColumnState({
+                state: savedColumnState,
+                applyOrder: false // Only apply visibility, not the column order
+            });
+    
+            if (!isStateValid) {
+                console.warn('Failed to restore column visibility state. The columns may have changed.');
+            }
+        }
+    }
 
     loadData() {
         let source = $(this.tableNameValue).data('source')

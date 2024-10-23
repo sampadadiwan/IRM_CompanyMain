@@ -10,7 +10,7 @@
     </tr>
   </thead>
   <tbody>
-    <% interest.audits.each do |audit| %>
+    <% interest.audits.includes(:user).each do |audit| %>
         <% audit.audited_changes.each do |key, value| %>
             <% if ["price", "quantity", "short_listed_status"].include?(key) && value[0] != value[1] %>
                 <tr>

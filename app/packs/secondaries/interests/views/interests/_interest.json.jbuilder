@@ -1,4 +1,4 @@
-json.extract! interest, :id, :entity_id, :quantity, :price, :allocation_quantity, :user_id, :interest_entity_id, :secondary_sale_id, :created_at, :updated_at, :buyer_entity_name
+json.extract! interest, :id, :entity_id, :quantity, :price, :allocation_quantity, :user_id, :interest_entity_id, :secondary_sale_id, :buyer_entity_name
 
 json.investor_name interest.investor&.investor_name
 json.user interest.user&.full_name
@@ -10,5 +10,11 @@ json.dt_actions render(
   formats: [:html],
   locals: { interest: }
 )
+json.created_at l(interest.created_at)
+json.updated_at l(interest.updated_at)
 
-json.merge! interest.json_fields if interest.json_fields.present?
+if interest.secondary_sale.interest_pivot_custom_fields.present?
+  pivot_custom_fields = interest.secondary_sale.interest_pivot_custom_fields.split(",")
+  filtered_fields = interest.json_fields.slice(*pivot_custom_fields.map(&:to_s))
+  json.merge! filtered_fields if interest.json_fields.present?
+end

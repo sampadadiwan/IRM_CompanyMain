@@ -18,12 +18,21 @@ export default class extends BaseAgGrid {
       numberFormatColumn(controller, "allocation_amount", "Allocation Amount", formatNumberWithCommas),
       html_column(controller, "short_listed_status", "Status"),
       html_column(controller, "verified", "Verified"),
-
-      textColumn(controller, "created_at", "Created At", "sum"),
-      
-
-      { "field": "dt_actions", cellRenderer: this.html, headerName: "Actions" }
     ];
+
+    let snakeToHuman = this.snakeToHuman;
+    // Add custom fields if any
+    if (this.customFieldsValue) {
+      let customFields = this.customFieldsValue.split(",");
+      customFields.forEach(function (field) {
+        columnDefs.push(textColumn(controller, field, snakeToHuman(field)));
+      });
+    }
+
+    // Finally push the created at
+    columnDefs.push(textColumn(controller, "created_at", "Created At"));
+    columnDefs.push({ "field": "dt_actions", cellRenderer: this.html, headerName: "Actions" });
+    
 
     return columnDefs;
   }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_18_151036) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_21_070603) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2755,6 +2755,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_18_151036) do
     t.boolean "disable_pan_kyc", default: false
     t.boolean "disable_bank_kyc", default: false
     t.text "custom_matching_fields"
+    t.text "cmf_allocation_percentage"
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.boolean "show_holdings", default: true
@@ -2765,6 +2766,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_18_151036) do
     t.decimal "allocation_quantity", precision: 10, scale: 2, default: "0.0"
     t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "notification_employee_ids"
+    t.text "interest_pivot_custom_fields"
+    t.text "offer_pivot_custom_fields"
     t.index ["data_room_folder_id"], name: "index_secondary_sales_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"
