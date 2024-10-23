@@ -26,6 +26,10 @@ class InterestRmPolicy < SaleBasePolicy
     permissioned_rm? && rm_mapping.permissions.update? && record.short_listed_status == Interest::STATUS_PENDING
   end
 
+  def send_email_to_change?
+    !update?
+  end
+
   def create?
     permissioned_rm? && rm_mapping.permissions.create?
   end

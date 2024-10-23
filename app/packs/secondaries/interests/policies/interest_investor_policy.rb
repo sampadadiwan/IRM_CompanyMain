@@ -26,6 +26,10 @@ class InterestInvestorPolicy < SaleBasePolicy
     permissioned_investor?(:buyer) && record.short_listed_status == Interest::STATUS_PENDING
   end
 
+  def send_email_to_change?
+    !update?
+  end
+
   def create?
     permissioned_investor?(:buyer)
   end

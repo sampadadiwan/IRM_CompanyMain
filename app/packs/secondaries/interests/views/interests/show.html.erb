@@ -6,7 +6,12 @@
     <% if policy(@interest).update? %>
       <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-outline-primary" } %> 
       <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% elsif policy(@interest).send_email_to_change? %>
+      <% emails = @interest.secondary_sale.notification_users.map(&:email).join(",").presence || @interest.secondary_sale.support_email %>
+      <%= link_to 'Send Email', "mailto:#{emails}?subject=Request changes to Interest for #{@interest.buyer_entity_name}", class: 'btn btn-outline-success' %>
     <% end %>
+
+
 
     <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on. Please ensure all documents have been uploaded before proceeding." %>
 

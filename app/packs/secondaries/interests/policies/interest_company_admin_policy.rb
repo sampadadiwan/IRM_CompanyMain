@@ -23,6 +23,10 @@ class InterestCompanyAdminPolicy < SaleBasePolicy
     permissioned_employee?(:update)
   end
 
+  def send_email_to_change?
+    false
+  end
+
   def create?
     permissioned_employee?(:create) && record.secondary_sale.manage_interests
   end
