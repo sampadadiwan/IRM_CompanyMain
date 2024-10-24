@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_21_070603) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_24_042741) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1473,6 +1473,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_21_070603) do
     t.decimal "carry", precision: 24, scale: 8, default: "0.0"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.string "isin", limit: 15
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"

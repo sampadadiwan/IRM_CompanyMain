@@ -30,6 +30,11 @@
       </div>
 
       <div class="form-group">
+        <%= form.label :isin %>
+        <%= form.text_field :isin, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
         <%= form.label :management_fee %>
         <%= form.number_field :management_fee, class: "form-control", step: :any  %>
         <small class="text-muted">Management Fee as a %</small>
