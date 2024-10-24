@@ -1,23 +1,25 @@
-<% username = @user&.full_name || "User"%>
-<p>Dear <%=username%></p>
+<% username = @user&.full_name || "User" %>
+<p>Dear <%= username %></p>
 <p>
-
     You have been granted access to the <%= @access_right.access_type %> '<%= @access_right.owner.name %>' by <%= @access_right.entity.name %>.
 </p>
-<%if @access_right.access_type != "Approval"%>
+<% if @access_right.access_type != "Approval" %>
     <%
         details = @access_right.owner.try(:notes)
         details ||= @access_right.owner.try(:details)
         details ||= @access_right.owner.try(:text)
 
-        if details
+        if details.present?
+            details = details.to_plain_text if details.is_a?(ActionText::RichText)
+        else
+            details = nil
+        end
     %>
-        <%= details.is_a?(ActionText::RichText) ? details.to_plain_text : details %>
-
+    <% if details.present? %>
+        <%= details %>
     <% end %>
-<%end%>
+<% end %>
 
 <p>
     <p class="btn btn-outline-primary"><%= link_to "View #{@access_right.access_type}", [@access_right.owner, subdomain: @access_right.entity.sub_domain] %></p>
-
 </p>
