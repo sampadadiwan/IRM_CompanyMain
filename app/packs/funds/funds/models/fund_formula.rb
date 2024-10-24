@@ -22,7 +22,7 @@ class FundFormula < ApplicationRecord
 
   validates :tag_list, length: { maximum: 255 }
 
-  scope :with_tags, ->(tags) { where(tags.map { |_tag| "tag_list LIKE ?" }.join(" OR "), *tags.map { |tag| "%#{tag}%" }) }
+  scope :with_tags, ->(tags) { where(tags.map { |_tag| "fund_formulas.tag_list LIKE ?" }.join(" OR "), *tags.map { |tag| "%#{tag}%" }) }
   scope :templates, -> { where(is_template: true) }
 
   delegate :to_s, to: :name
