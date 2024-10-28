@@ -18,7 +18,7 @@
                 form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
             <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } if policy(@secondary_sale).allocate? %>
-           
+
 
             <%
               document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
@@ -53,7 +53,7 @@
             <%= link_to "Allocated Offers",
                 offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :gt, 0)),
                 {class: "dropdown-item" } %>
-            
+
             <%= link_to "Un Allocated Interests",
                 interests_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
                 {class: "dropdown-item" } %>
@@ -88,7 +88,7 @@
                 interests_secondary_sale_path(@secondary_sale, report: "completion_report"),
                 class: "dropdown-item" %>
 
-            <%= link_to "E-Signatures Report" , report_secondary_sale_path(id: @secondary_sale.id, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
+            <%= link_to "eSignatures Report" , report_secondary_sale_path(id: @secondary_sale.id, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
 
           </div>
         </div>

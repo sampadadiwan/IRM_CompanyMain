@@ -1,6 +1,7 @@
+<% esign_provider_digio = e_signature.entity.entity_setting.esign_provider == "Digio" %>
 <div class="card shadow mb-4">
   <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">E-Signature</h6>
+      <h6 class="m-0 font-weight-bold text-primary">eSignature</h6>
   </div>
   <div class="card-body">
   <% labels ||= nil %>
@@ -21,10 +22,12 @@
         <% end %>
       </div>
 
+      <% if esign_provider_digio %>
       <div class="form-group col">
         <%= f.label :signature_type %>
         <%= f.select :signature_type, ["Aadhaar", "Electronic"], {}, class: "form-control"  %>
       </div>
+      <% end %>
 
       <div class="form-group col">
         <%= f.label :notes %>

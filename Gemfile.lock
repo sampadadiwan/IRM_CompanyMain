@@ -76,6 +76,7 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    Ascii85 (1.1.1)
     RubyInline (3.14.1)
       ZenTest (~> 4.3)
     ZenTest (4.12.2)
@@ -184,6 +185,7 @@ GEM
     administrate-field-shrine (0.0.5)
       administrate (> 0.5.0)
       rails (>= 4.2)
+    afm (0.2.2)
     after_commit_action (1.1.0)
       activerecord (>= 3.0.0)
       activesupport (>= 3.0.0)
@@ -377,6 +379,11 @@ GEM
       declarative (>= 0.0.9, < 1.0.0)
       representable (>= 3.1.1, < 4)
     docile (1.4.0)
+    docusign_esign (4.0.0)
+      addressable (~> 2.7, >= 2.7.0)
+      json (~> 2.1, >= 2.1.0)
+      jwt (~> 2.2, >= 2.2.1)
+      typhoeus (~> 1.0, >= 1.0.1)
     dotenv (3.1.2)
     dotenv-rails (3.1.2)
       dotenv (= 3.1.2)
@@ -430,6 +437,8 @@ GEM
     erubis (2.7.0)
     et-orbi (1.2.11)
       tzinfo
+    ethon (0.16.0)
+      ffi (>= 1.15.0)
     eu_central_bank (1.7.0)
       money (~> 6.13, >= 6.13.6)
       nokogiri (~> 1.9)
@@ -444,14 +453,29 @@ GEM
       railties (>= 5.0.0)
     faker (3.4.1)
       i18n (>= 1.8.11, < 2)
-    faraday (2.12.0)
-      faraday-net_http (>= 2.0, < 3.4)
-      json
-      logger
+    faraday (1.10.4)
+      faraday-em_http (~> 1.0)
+      faraday-em_synchrony (~> 1.0)
+      faraday-excon (~> 1.1)
+      faraday-httpclient (~> 1.0)
+      faraday-multipart (~> 1.0)
+      faraday-net_http (~> 1.0)
+      faraday-net_http_persistent (~> 1.0)
+      faraday-patron (~> 1.0)
+      faraday-rack (~> 1.0)
+      faraday-retry (~> 1.0)
+      ruby2_keywords (>= 0.0.4)
+    faraday-em_http (1.0.0)
+    faraday-em_synchrony (1.0.0)
+    faraday-excon (1.1.0)
+    faraday-httpclient (1.0.1)
     faraday-multipart (1.0.4)
       multipart-post (~> 2)
-    faraday-net_http (3.3.0)
-      net-http
+    faraday-net_http (1.0.2)
+    faraday-net_http_persistent (1.2.0)
+    faraday-patron (1.0.0)
+    faraday-rack (1.0.0)
+    faraday-retry (1.0.3)
     ffi (1.17.0-x86_64-linux-gnu)
     foreman (0.88.1)
     friendly_id (5.5.1)
@@ -466,6 +490,7 @@ GEM
     has_scope (0.8.2)
       actionpack (>= 5.2)
       activesupport (>= 5.2)
+    hashery (2.1.2)
     hashie (5.0.0)
     hightop (0.4.0)
       activesupport (>= 6.1)
@@ -507,6 +532,8 @@ GEM
     json-schema (4.3.1)
       addressable (>= 2.8)
     json2table (1.0.7)
+    jwt (2.9.3)
+      base64
     kaminari (1.2.2)
       activesupport (>= 4.1.0)
       kaminari-actionview (= 1.2.2)
@@ -532,7 +559,6 @@ GEM
     letter_opener (1.10.0)
       launchy (>= 2.2, < 4)
     libreconv (0.9.5)
-    logger (1.6.1)
     loofah (2.22.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -570,8 +596,6 @@ GEM
     multipart-post (2.4.1)
     mutex_m (0.2.0)
     mysql2 (0.5.6)
-    net-http (0.4.1)
-      uri
     net-imap (0.4.14)
       date
       net-protocol
@@ -632,6 +656,12 @@ GEM
       racc
     pastel (0.8.0)
       tty-color (~> 0.5)
+    pdf-reader (2.12.0)
+      Ascii85 (~> 1.0)
+      afm (~> 0.2.1)
+      hashery (~> 2.0)
+      ruby-rc4
+      ttfunk
     pragmatic_segmenter (0.3.24)
     prism (0.30.0)
     prometheus_exporter (2.1.1)
@@ -885,6 +915,8 @@ GEM
       trailblazer-activity-dsl-linear (>= 1.2.0, < 1.4.0)
       trailblazer-developer (>= 0.1.0, < 0.2.0)
     trailblazer-option (0.1.2)
+    ttfunk (1.8.0)
+      bigdecimal (~> 3.1)
     tty-color (0.6.0)
     tty-cursor (0.7.1)
     tty-prompt (0.23.1)
@@ -899,6 +931,8 @@ GEM
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
+    typhoeus (1.4.1)
+      ethon (>= 0.9.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uber (0.1.0)
@@ -908,7 +942,6 @@ GEM
       aws-sdk-s3 (~> 1.0)
       content_disposition (~> 1.0)
       roda (>= 2.27, < 4)
-    uri (0.13.1)
     version_gem (1.1.4)
     view_component (3.12.1)
       activesupport (>= 5.2.0, < 8.0)
@@ -989,6 +1022,7 @@ DEPENDENCIES
   debug
   devise
   devise-api!
+  docusign_esign (~> 4.0.0.rc1)
   dotenv-rails
   draper
   enumerize
@@ -997,6 +1031,7 @@ DEPENDENCIES
   exception_notification
   factory_bot_rails
   faker
+  faraday (~> 1.10.3)
   foreman
   friendly_id (~> 5.5.0)
   groupdate
@@ -1027,6 +1062,7 @@ DEPENDENCIES
   packs-rails
   paranoia
   parser
+  pdf-reader
   prometheus_exporter
   pry-byebug
   public_activity

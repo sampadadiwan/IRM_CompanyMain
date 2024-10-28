@@ -1,9 +1,9 @@
-<% 
-commands = [ 
+<%
+commands = [
     ["New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": @fund.id)],
     ["Upload Commitments", new_import_upload_path("import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "CapitalCommitment")],
-    ["Download Commitments", capital_commitments_path(all: true, fund_id: @fund.id, format: :xlsx)] 
-] 
+    ["Download Commitments", capital_commitments_path(all: true, fund_id: @fund.id, format: :xlsx)]
+]
 
 %>
 <%= render "funds/hotkeys", commands:, model: @fund %>
@@ -18,7 +18,7 @@ commands = [
   <%= render "funds/show", fund: @fund %>
 <% end %>
 
-  <div>        
+  <div>
     <% if policy(@fund).update? %>
 
       <div class="btn-group">
@@ -33,7 +33,7 @@ commands = [
                 <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Basic Reports</a>
                 <ul class="dropdown-menu">
                     <li>
-                        <%= link_to "E-Signatures Report" , report_fund_path(@fund, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>                                                                        
+                        <%= link_to "eSignatures Report" , report_fund_path(@fund, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
                     </li>
                     <li>
                         <%= link_to "Fund Export" , export_fund_path(@fund), {class: "dropdown-item" } %>
@@ -54,8 +54,8 @@ commands = [
                       <%= link_to "Advisor Payouts" , report_fund_path(@fund, report: "dashboard/advisor_payouts"), {class: "dropdown-item" } %>
                     </li>
                 </ul>
-            </li>            
-            
+            </li>
+
             <div class="dropdown-divider"></div>
 
             <%= link_to "Sign In Report" , report_fund_path(@fund, report: "dashboard/sign_in_count"), {class: "dropdown-item" } %>
@@ -151,7 +151,7 @@ commands = [
                 <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Account Entries</a>
                 <ul class="dropdown-menu">
                     <li>
-                        <%= link_to "Fund Account Entries", account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true), class: "dropdown-item" %>                                            
+                        <%= link_to "Fund Account Entries", account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true), class: "dropdown-item" %>
                     </li>
                     <li>
                         <%= link_to "Allocation Formulas" , fund_formulas_path(fund_id: @fund.id), {class: "dropdown-item" } %>
@@ -160,8 +160,8 @@ commands = [
                         <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund, run_allocations: true), class: "dropdown-item" if policy(@fund).allocate? %>
                     </li>
                 </ul>
-              </li> 
-                          
+              </li>
+
             <% end %>
 
             <% if policy(@fund).update? %>
@@ -175,7 +175,7 @@ commands = [
                   <a href="#" id="misc_action_menu" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Misc</a>
                   <ul class="dropdown-menu">
                       <li>
-                          <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), {class: "dropdown-item"} %>                                            
+                          <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), {class: "dropdown-item"} %>
                       </li>
                       <li>
                           <%= link_to "Add Investor Notice" , new_investor_notice_path( "investor_notice[owner_id]": @fund.id, "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>
@@ -186,9 +186,9 @@ commands = [
                       <li>
                         <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
                       </li>
-                      
+
                   </ul>
-                </li>                             
+                </li>
               </div>
             <% end %>
 
@@ -204,7 +204,7 @@ commands = [
             <% end %>
 
 
-            
+
         </div>
       </div>
 

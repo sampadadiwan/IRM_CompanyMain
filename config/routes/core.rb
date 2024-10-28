@@ -121,6 +121,7 @@ resources :documents do
   patch 'send_for_esign', on: :member
   patch 'force_send_for_esign', on: :member
   patch 'cancel_esign', on: :member
+  patch 'resend_for_esign', on: :member
   patch 'send_all_for_esign', on: :collection
   post 'signature_progress', on: :collection
   post 'download', on: :collection

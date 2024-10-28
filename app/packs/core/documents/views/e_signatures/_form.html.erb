@@ -1,3 +1,9 @@
+<% esign_provider_digio = if esign_provider_digio.nil?
+                            params.key?(:esign_provider_digio) ? params[:esign_provider_digio].to_s == 'true' : true
+                          else
+                            esign_provider_digio
+                          end %>
+
 <% labels ||= nil %>
 <div class='nested-fields row'>
       <div class="form-group col">
@@ -14,11 +20,13 @@
         <% end %>
       </div>
 
+    <% if esign_provider_digio %>
     <div class="form-group col">
       <%= f.label :signature_type, "Signature" %>
       <%= f.select :signature_type, ["Aadhaar", "Electronic"], {}, class: "form-control"  %>
       <small class="text-muted">Type of Signature</small>
     </div>
+    <% end %>
 
     <div class="form-group col">
       <%= f.label :notes %>

@@ -3,7 +3,7 @@ class ESignaturesController < ApplicationController
 
   # GET /e_signatures or /e_signatures.json
   def index
-    @e_signatures = policy_scope(ESignature)
+    @e_signatures = policy_scope(ESignature).order(:position)
   end
 
   # GET /e_signatures/1 or /e_signatures/1.json

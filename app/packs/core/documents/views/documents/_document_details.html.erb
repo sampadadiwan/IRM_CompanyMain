@@ -4,13 +4,14 @@
       <% if document.entity_id == current_user&.entity_id %>
         <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
 
+        <% esign_provider_digio = document.entity.entity_setting.esign_provider == "Digio" ? true : false %>
         <% if document.e_signatures.present? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#signatures-tab">
           Signatures
         </a>
         <% end %>
 
-        <% if document.stamp_papers.present? %>
+        <% if esign_provider_digio && document.stamp_papers.present? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stamp-papers-tab">
           Stamp Papers
         </a>
@@ -48,7 +49,7 @@
 
             <div id="signatures-tab" class="tab-pane fade">
               <div id="e_signatures" class="associated_entity">
-                <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document %>
+                <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document, esign_provider_digio: esign_provider_digio %>
               </div>
             </div>
 
@@ -86,7 +87,7 @@
           </div>
         </div>
 
-       
+
 
     </div>
 

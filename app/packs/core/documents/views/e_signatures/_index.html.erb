@@ -1,11 +1,19 @@
 <% owner ||= nil %>
+<% esign_provider_digio = if esign_provider_digio.nil?
+                            params.key?(:esign_provider_digio) ? params[:esign_provider_digio].to_s == 'true' : true
+                          else
+                            esign_provider_digio
+                          end %>
+
 <h1 class="h3 mb-0 text-gray-800">E Signatures</h1>
 <div class="d-sm-flex align-items-center justify-content-end mb-4">
   <%= button_to "Send For eSignatures" , send_for_esign_document_path(owner), {class: "btn btn-outline-primary", method: :patch} if owner && policy(owner).send_for_esign? %>
 
   <%= button_to "Get eSignatures' updates" , fetch_esign_updates_document_path(owner), {class: "btn btn-outline-primary", method: :post} if owner && policy(owner).fetch_esign_updates? %>
-  
+
   <% msg = "This option is to be used only when you want to change the type of signature for a signatory.  After this, the document will have to be signed by all signatories again (even if it was signed earlier)." %>
+
+  <%= button_to "Re-Send for eSignatures" , resend_for_esign_document_path(owner), {class: "btn btn-outline-primary", method: :patch} if owner && policy(owner).resend_for_esign? %>
 
   <%= button_to "Cancel eSignatures" , cancel_esign_document_path(owner), {class: "btn btn-outline-danger", method: :patch} if owner && policy(owner).cancel_esign? %>
 </div>
@@ -19,10 +27,11 @@
         <th>
           Label
         </th>
+        <% if esign_provider_digio %>
         <th>
           Signature Type
         </th>
-
+        <% end %>
         <th>
           Status
         </th>
@@ -32,12 +41,12 @@
     </thead>
     <tbody>
       <% e_signatures.each do |e_signature| %>
-        <%= render e_signature %>
+        <%= render "e_signatures/e_signature", e_signature: e_signature, esign_provider_digio: esign_provider_digio %>
       <% end %>
     </tbody>
   </table>
 </div>
 
 <div class="alert alert-info text-center associated_entity">
-  The option to send a document for E-signature is enabled only when the document is approved.
+  The option to send a document for eSignature is enabled only when the document is approved.
 </div>

@@ -103,7 +103,7 @@
           </div>
 
 
-        <% end %>          
+        <% end %>
 
           <%= custom_form_fields(document, form) %>
 
@@ -112,11 +112,29 @@
             <%= form.rich_text_area :text, class: "form-control trix-content"  %>
           </div>
 
+          <% esign_provider_digio = @document.entity.entity_setting.esign_provider == "Digio"%>
+
           <div id="sign_display_on_page">
             <hr>
-            <h5> E-Signatures </h5>
-            <%= form.label :esign_display_on_page %>
-            <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
+
+            <h5> eSignatures </h5>
+
+            <div class='nested-fields row'>
+              <div class="form-group col">
+                <%= form.label :esign_display_on_page %>
+                <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
+              </div>
+
+              <% unless esign_provider_digio %>
+                <div class="form-group col">
+                  <%= form.label :force_esign_order, "Force eSign Order" %>
+                  <% force_order_checked = document.force_esign_order.nil? ? true : document.force_esign_order %>
+                  <%= form.check_box :force_esign_order, class: "form-check-input", checked: force_order_checked %>
+              <small class="text-muted">Signers will be sent the Document in the order they are added</small>
+                </div>
+              <% end %>
+
+            </div>
             <br>
           </div>
 
@@ -125,6 +143,7 @@
               @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil
               @labels ||= ["Investor Signatories", "Other"] if @document.folder && @document.folder.name == "KYC Templates"
             %>
+            <% params[:esign_provider_digio] = esign_provider_digio %>
             <%= form.fields_for :e_signatures do |f| %>
               <%= render 'e_signature_fields', f: %>
             <% end %>
@@ -132,6 +151,7 @@
             </div>
           </div>
 
+          <% if esign_provider_digio %>
           <div id='stamp_papers'>
           <hr>
             <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
@@ -142,6 +162,7 @@
               <%= render 'stamp_paper_fields', f: %>
             <% end %>
           </div>
+          <% end %>
 
           <div class="form-group">
             <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-success", id: "add_signature_btn" %>

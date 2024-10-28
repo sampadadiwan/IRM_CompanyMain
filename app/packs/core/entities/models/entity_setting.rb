@@ -10,12 +10,18 @@ class EntitySetting < ApplicationRecord
   serialize :kpi_doc_list, type: Array
 
   before_save :ensure_single_kra_enabled, if: -> { kra_enabled_changed? && kra_enabled == true }
+  before_save :check_esign_provider
   before_create :set_kanban_steps
   # Add new flags to the end of this list
   flag :custom_flags, %i[no_password_login]
 
   def ckyc_or_kra_enabled?
     ckyc_enabled || kra_enabled
+  end
+
+  def check_esign_provider
+    self.esign_provider = "Digio" if esign_provider.blank?
+    self.esign_provider = esign_provider.strip.capitalize
   end
 
   def to_s

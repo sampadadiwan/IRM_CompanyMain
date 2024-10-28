@@ -36,6 +36,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     call_basis: Field::String,
+    esign_provider: Field::String,
     digio_client_id: Field::String,
     digio_client_secret: Field::String,
     digio_cutover_date: Field::DateTime,
@@ -93,6 +94,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kra_enabled
     fi_code
     stamp_paper_tags
+    esign_provider
     digio_client_id
     digio_client_secret
     digio_cutover_date
@@ -132,6 +134,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kra_enabled
     fi_code
     stamp_paper_tags
+    esign_provider
     digio_client_id
     digio_client_secret
     digio_cutover_date

@@ -51,6 +51,10 @@ class DocumentPolicy < ApplicationPolicy
     update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && !record.esign_expired? && record.approved
   end
 
+  def resend_for_esign?
+    update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && record.approved && record.resend_for_esign?
+  end
+
   def force_send_for_esign?
     update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && user.has_cached_role?(:company_admin)
   end
@@ -60,11 +64,18 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def cancel_esign?
-    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
+    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided?
   end
 
   def fetch_esign_updates?
-    update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
+    res = update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
+    if record.entity.entity_setting.esign_provider == "Docusign" && !Rails.env.test?
+      # hit the docusign api every 15 minutes
+      eligible_for_update = record.last_status_updated_at.nil? ? true : record.last_status_updated_at < 900.seconds.ago
+      res && eligible_for_update
+    else
+      res
+    end
   end
 
   def edit?
@@ -77,7 +88,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def destroy?
     (permissioned_employee?(:destroy) &&
-    (!record.sent_for_esign || record.esign_expired? || record.esign_failed?)) || support?
+    (!record.sent_for_esign || record.esign_expired? || record.esign_failed? || record.esign_voided?)) || support?
   end
 
   def show_investor?

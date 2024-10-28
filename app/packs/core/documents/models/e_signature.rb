@@ -53,20 +53,23 @@ class ESignature < ApplicationRecord
   end
 
   def new_status?(payload_status)
-    ESignature.where(id:).where.not(status: payload_status).where.not(status: %w[signed expired]).update_all(status: payload_status).positive?
+    esigns = ESignature.where(id:)
+    esigns.where.not(status: [payload_status, "signed", "expired"]).or(esigns.where(status: nil)).update_all(status: payload_status).positive?
   end
 
-  # status can be [nil, "signed", "failed", "requested"]
+  # status can be [nil, "signed", "failed", "requested", "cancelled", "voided", "expired", "sent"]
   def status_badge
     case status&.downcase
-    when "signed"
+    when "signed", "completed"
       "success"
-    when "failed", "cancelled", "expired"
+    when "failed", "cancelled", "expired", "voided"
       "danger"
     when "requested"
       "warning"
-    else
+    when "sent"
       "info"
+    else
+      "secondary"
     end
   end
 end

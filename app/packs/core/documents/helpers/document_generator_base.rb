@@ -104,7 +104,7 @@ module DocumentGeneratorBase
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
     # Clone some attributes of the template
-    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page"))
+    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page", "force_esign_order"))
 
     # Get the name of the doc we are generating
     generated_document.name = generated_document_name

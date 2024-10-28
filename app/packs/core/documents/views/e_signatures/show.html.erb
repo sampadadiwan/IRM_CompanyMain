@@ -1,3 +1,4 @@
+<% esign_provider_digio = @e_signature.entity.entity_setting.esign_provider == "Digio" %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">E Signature</h1>
@@ -28,6 +29,7 @@
       <%= @e_signature.label %>
     </td>
   </tr>
+  <% if esign_provider_digio %>
   <tr>
     <td>
       Signature Type
@@ -36,6 +38,7 @@
       <%= @e_signature.signature_type %>
     </td>
   </tr>
+  <% end %>
   <tr>
     <td>
       Document

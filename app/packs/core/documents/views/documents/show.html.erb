@@ -88,7 +88,7 @@
                      </td>
                   </tr>
 
-                  
+
                   <% if @document.from_template %>
                      <tr>
                         <td>
@@ -145,15 +145,39 @@
                   </tr>
                   <% end %>
 
-                  <% if !@document.template && @document.e_signatures.present? %>
+                  <% if @document.signature_enabled %>
+
+                     <% if !@document.template %>
+                     <tr>
+                        <td>
+                           eSignature Status
+                        </td>
+                        <td>
+                           <%= @document.esign_status&.titleize %>
+                        </td>
+                     </tr>
+                     <% end %>
+
                   <tr>
                      <td>
-                        E-Signature status
+                        eSignature On Page
                      </td>
                      <td>
-                        <%= @document.esign_status&.titleize %>
+                        <%= @document.display_on_page&.titleize %>
                      </td>
                   </tr>
+
+                     <% if @document.entity.entity_setting.esign_provider != "Digio"%>
+                        <tr>
+                           <td>
+                              Enforce eSignatures Order
+                           </td>
+                           <td>
+                              <%= display_boolean @document.force_esign_order %>
+                           </td>
+                        </tr>
+                     <% end %>
+
                   <% end %>
 
 
@@ -165,12 +189,12 @@
 </div>
 
 <% if current_user %>
-   
+
    <div style="display: inline-block;">
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} if policy(@document).update? %>
 
       <%= button_to "Approve", document_path(@document, "document[approved]": true, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).approve? %>
-      
+
       <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
    </div>

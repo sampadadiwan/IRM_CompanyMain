@@ -8,7 +8,8 @@ class Document < ApplicationRecord
   include Trackable.new(associated_with: :owner)
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
-  SKIP_ESIGN_UPDATE_STATUSES = %w[Cancelled Completed cancelled completed expired Expired].freeze
+  SKIP_ESIGN_UPDATE_STATUSES = %w[cancelled completed expired voided].freeze
+  RESEND_FOR_ESIGN_STATUSES = %w[cancelled voided expired].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
@@ -105,6 +106,18 @@ class Document < ApplicationRecord
     esign_status&.casecmp?("failed")
   end
 
+  def esign_voided?
+    esign_status&.casecmp?("voided")
+  end
+
+  def eligible_for_esign_update?
+    SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase)
+  end
+
+  def resend_for_esign?
+    sent_for_esign && e_signatures.all? { |esign| esign.email.present? } && approved && RESEND_FOR_ESIGN_STATUSES.include?(esign_status&.downcase) && e_signatures.count.positive?
+  end
+
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner
@@ -194,7 +207,7 @@ class Document < ApplicationRecord
   end
 
   def to_be_esigned?
-    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status) && e_signatures.count.positive?
+    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase) && e_signatures.count.positive?
   end
 
   def to_be_approved?

@@ -41,7 +41,7 @@
     @user = @employee_investor
     if given == "given" || given == "yes"
       @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Investor")
-      
+
       ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor,
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
@@ -73,7 +73,7 @@
 
           puts "\n####Access Right####\n"
           puts @access_right.to_json
-          
+
           ia = InvestorAccess.create(entity: inv.entity, investor: inv,
           first_name: @user.first_name, last_name: @user.last_name,
           email: @user.email, granter: nil, approved: true )
@@ -118,7 +118,7 @@
           # @access_right.permissions.set(:destroy)
           @access_right.save
           @user.reload
-      
+
 
           puts "\n####Access Right####\n"
           ap @access_right
@@ -484,7 +484,7 @@ Then('the remittance rollups should be correct') do
   end
 end
 
-Then('user {string} have {string} access to the fund') do |truefalse, accesses|  
+Then('user {string} have {string} access to the fund') do |truefalse, accesses|
   accesses.split(",").each do |access|
     puts "##Checking access #{access} on fund #{@fund.name} for #{@user.email} as #{truefalse}"
     Pundit.policy(@user, @fund).send("#{access}?").to_s.should == truefalse
@@ -515,7 +515,7 @@ Then('user {string} have {string} access to the fund unit settings') do |truefal
   accesses.split(",").each do |access|
     @fund.fund_unit_settings.each do |fus|
       puts "##Checking access #{access} on FUS #{fus} for #{@user.email} as #{truefalse}"
-      if @user.curr_role == "employee"        
+      if @user.curr_role == "employee"
         Pundit.policy(@user, fus).send("#{access}?").to_s.should == truefalse
       elsif @user.curr_role == "investor"
         Pundit.policy(@user, fus).send("#{access}?").to_s.should == "false"
@@ -536,7 +536,7 @@ end
 
 Then('user {string} have {string} access to the fund units') do |truefalse, accesses|
   accesses.split(",").each do |access|
-    @fund.fund_units.each do |fu|      
+    @fund.fund_units.each do |fu|
       puts "##Checking access #{access} on Fund Unit #{fu} for #{@user.email} as #{truefalse}"
       if @user.curr_role == "employee"
         Pundit.policy(@user, fu).send("#{access}?").to_s.should == truefalse
@@ -648,7 +648,7 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
   accesses.split(",").each do |access|
     @fund.capital_commitments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
-      
+
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       elsif(@user.investor_advisor?)
@@ -1235,7 +1235,7 @@ Then('the user goes to the fund e-signature report') do
   visit(fund_path(@fund))
   click_on("Reports")
   find("#basic_reports").hover
-  click_on("E-Signatures Report")
+  click_on("eSignatures Report")
   sleep(2)
 end
 
@@ -1800,7 +1800,7 @@ Then('the capital distribution payments must have the data in the sheet {string}
     cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
 
     puts "Checking import of #{cdp.to_json}"
-      
+
     cdp.amount.to_d.should == row_data["Amount"].to_d
     cdp.cost_of_investment.to_d.should == row_data["Cost Of Investment"].to_d
     cdp.payment_date.should == Date.parse(row_data["Payment Date"].to_s)

@@ -3,22 +3,22 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
   include DocumentHelper
 
-  skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
+  skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign resend_for_esign]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download]
   after_action :verify_policy_scoped, only: []
 
   def signature_progress
     # Check response  - if contains proper info then update doc esign status
     # if not then just respond with 200 OK
-    DigioEsignHelper.new.update_signature_progress(params)
+    EsignHelper.update_signature_progress(params)
     # Always respond with 200 OK - Expected from Digio
     render json: "Ok"
   end
 
   def fetch_esign_updates
     DocumentEsignUpdateJob.new.perform(@document.id, current_user.id)
-    redirect_to [@document, { tab: "signatures-tab" }], notice: "Fetching Updates for E-Signatures"
+    redirect_to [@document, { tab: "signatures-tab" }], notice: "Fetching Updates for eSignatures"
   end
 
   # GET /documents or /documents.json
@@ -91,17 +91,30 @@ class DocumentsController < ApplicationController
 
   def send_for_esign
     if @document.send_for_esign(user_id: current_user.id)
-      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was queued for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document - #{@document.name} was queued for eSignature."
     else
-      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for eSignature."
     end
   end
 
   def force_send_for_esign
     if @document.send_for_esign(force: params[:force], user_id: current_user.id)
-      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was queued for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document - #{@document.name} was queued for eSignature."
     else
-      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for eSignature."
+    end
+  end
+
+  def resend_for_esign
+    if @document.resend_for_esign?
+      result = ResendDocumentForEsign.wtf?(document: @document, user_id: current_user.id)
+      if result.success?
+        redirect_to [@document, { tab: "signatures-tab" }], notice: "Document - #{@document.name} was queued for eSignature."
+      else
+        redirect_to [@document, { tab: "signatures-tab" }], alert: "Document - #{@document.name} cannot be sent for eSignature - #{result[:errors]}"
+      end
+    else
+      redirect_to [@document, { tab: "signatures-tab" }], alert: "Document - #{@document.name} cannot be sent for eSignature."
     end
   end
 
@@ -110,26 +123,33 @@ class DocumentsController < ApplicationController
     if params[:folder_id].present?
       folder = Folder.find(params[:folder_id])
       authorize(folder, :send_for_esign?)
+      EsignJob.perform_later(nil, current_user.id, folder_id: params[:folder_id])
+      redirect_to request.referer, notice: "Documents under folder - #{folder.name} queued for eSignature"
+    else
+      redirect_to request.referer, alert: "Folder not found!"
     end
-    DigioEsignJob.perform_later(params[:document_id], current_user.id, folder_id: params[:folder_id])
   end
 
   # allows to add a button to cancel esigning on document
   def cancel_esign
+    eligible_for_update = true
+    if @document.entity.entity_setting.esign_provider == "Docusign"
+      eligible_for_update = @document.last_status_updated_at.nil? ? true : @document.last_status_updated_at < 900.seconds.ago
+    end
     # update the esign status of the document before cancelling
-    if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(@document.esign_status)
-      DigioEsignHelper.new.update_esign_status(@document)
+    if @document.eligible_for_esign_update? && eligible_for_update
+      EsignHelper.new(@document).update_esign_status
       @document.reload
     end
-    if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(@document.esign_status)
-      DigioEsignHelper.new.cancel_esign(@document)
+    if @document.eligible_for_esign_update?
+      EsignHelper.new(@document).cancel_esign
       if @document.esign_status.casecmp?("cancelled")
-        redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's E-Signature(s) was cancelled"
+        redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's eSignature(s) was cancelled"
       else
-        redirect_to [@document, { tab: "signatures-tab" }], alert: "Error cancelling E-Signature(s)"
+        redirect_to [@document, { tab: "signatures-tab" }], alert: "Error cancelling eSignature(s)"
       end
     else
-      redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's E-Signature(s) cannot be cancelled"
+      redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's eSignature(s) cannot be cancelled - status is #{@document.esign_status}"
     end
   end
 
@@ -290,7 +310,7 @@ class DocumentsController < ApplicationController
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved,
-                                     :tag_list, :folder_id, :file, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
+                                     :tag_list, :folder_id, :file, :force_esign_order, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
   end
 end
 # rubocop:enable Metrics/ClassLength

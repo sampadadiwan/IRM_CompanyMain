@@ -1,3 +1,8 @@
+<% esign_provider_digio = if esign_provider_digio.nil?
+                            params.key?(:esign_provider_digio) ? params[:esign_provider_digios].to_s == 'true' : true
+                          else
+                            esign_provider_digio
+                          end %>
 
 <tr id="<%= dom_id e_signature %>">
   <td>
@@ -6,9 +11,12 @@
   <td>
     <%= e_signature.label %>
   </td>
+
+  <% if esign_provider_digio %>
   <td>
     <%= e_signature.signature_type %>
   </td>
+  <% end %>
 
   <td>
     <%if e_signature.status.present? %>

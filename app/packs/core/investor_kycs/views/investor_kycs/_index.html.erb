@@ -1,5 +1,5 @@
-<% 
-  lazy_load_data ||= false 
+<%
+  lazy_load_data ||= false
   import_upload_id ||= params[:import_upload_id]
 %>
 <% data_source ||= investor_kycs_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) %>
@@ -45,7 +45,7 @@
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "E-Signatures Report" , report_entity_path(id: entity_id, report: "dashboard/e_signatures"), {class: "dropdown-item" } if policy(ESignature).index? %>
+            <%= link_to "eSignatures Report" , report_entity_path(id: entity_id, report: "dashboard/e_signatures"), {class: "dropdown-item" } if policy(ESignature).index? %>
 
             <%= link_to "Generate Kyc Docs", generate_all_docs_investor_kycs_path(entity_id:, q: params[:q].to_unsafe_h), class: "dropdown-item" if params[:q].present? && policy(investor_kyc).new?  %>
 
@@ -99,7 +99,7 @@
         col_params[:column_names] = InvestorKyc::INVESTOR_COLUMN_NAMES
         col_params[:column_fields] = InvestorKyc::INVESTOR_COLUMN_FIELDS
       end
-      column_names, field_list = get_columns(InvestorKyc, params: col_params) 
+      column_names, field_list = get_columns(InvestorKyc, params: col_params)
     %>
 
      <div class="table-responsive" data-controller="investor-kycs"

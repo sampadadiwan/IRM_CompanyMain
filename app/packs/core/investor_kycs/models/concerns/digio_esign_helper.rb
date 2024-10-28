@@ -1,5 +1,6 @@
 require 'base64'
 
+# rubocop:disable Metrics/ClassLength
 class DigioEsignHelper
   include HTTParty
   debug_output $stdout
@@ -13,7 +14,12 @@ class DigioEsignHelper
     @debug = Rails.env.development?
   end
 
-  def sign(document)
+  def sign(document, user_id)
+    response = send_document_for_esign(document)
+    update_document(response, document, user_id)
+  end
+
+  def send_document_for_esign(document)
     # Open the file you wish to encode
     tmpfile = document.file.download
     data = File.read(tmpfile.path)
@@ -41,9 +47,36 @@ class DigioEsignHelper
       body: body.to_json,
       debug_output: @debug ? $stdout : nil
     )
-
     Rails.logger.debug response
     response
+  end
+
+  # called after document is sent for esign to check response and update the document accordingly
+  # if success then update the document with provider_doc_id and esign_status as requested
+  # if failure then update the document with esign_status as failed
+  def update_document(response, doc, user_id)
+    json_res = JSON.parse(response.body)
+    if response.success?
+      doc.update(sent_for_esign: true, sent_for_esign_date: Time.zone.now, provider_doc_id: json_res["id"], esign_status: "requested")
+      EsignUpdateJob.perform_later(doc.id, user_id) if doc.eligible_for_esign_update?
+    else
+      doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: json_res["id"])
+
+      doc.e_signatures.each do |esign|
+        esign.add_api_update(json_res)
+        esign.update(status: "failed", api_updates: esign.api_updates)
+      end
+      msg = "Error sending #{doc.name} for e-signing - #{json_res['message']}"
+      ExceptionNotifier.notify_exception(StandardError.new(msg))
+      logger.error msg
+      send_notification(msg, user_id, :danger)
+    end
+  rescue JSON::ParserError => e
+    # 502 bad gateway response cannot be parsed
+    msg = "Error sending #{doc.name} for e-signing - #{e.message}"
+    ExceptionNotifier.notify_exception(StandardError.new(msg))
+    logger.error msg
+    send_notification(msg, user_id, :danger)
   end
 
   def retrieve_signed(esign_doc_id, auth_token)
@@ -57,7 +90,6 @@ class DigioEsignHelper
     )
 
     Rails.logger.debug response
-
     response
   end
 
@@ -110,7 +142,7 @@ class DigioEsignHelper
     ret = []
     esigns.order(:position).each do |esign|
       email = esign.email
-      sign_type = esign.signature_type.downcase || "aadhaar"
+      sign_type = esign.signature_type&.downcase || "aadhaar"
       reason = nil # fetch from esign or doc
       hash = {
         identifier: email,
@@ -170,6 +202,7 @@ class DigioEsignHelper
                      AUTH_TOKEN
                    end
       # Get api response
+
       response = retrieve_signed(doc.provider_doc_id, auth_token)
       overall_status = JSON.parse(response.body)["status"].presence || JSON.parse(response.body)["agreement_status"] # can be "completed" or "requested"
       if response.success? && overall_status.present?
@@ -181,8 +214,8 @@ class DigioEsignHelper
           # Find esignature for this email
           esign = doc.e_signatures.find_by(email: signer['identifier'])
           esign&.update_esign_response(signer['status'], response)
+          esign.save
         end
-        check_and_update_document_status(doc)
       else
         signatures_failed(doc, JSON.parse(response.body))
       end
@@ -202,6 +235,25 @@ class DigioEsignHelper
       ExceptionNotifier.notify_exception(e)
       Rails.logger.error e.message
     end
+  end
+
+  def check_and_update_document_status(document)
+    unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
+    signature_completed(document) if unsigned_esigns.count.zero? && !document.esign_completed?
+  end
+
+  def signature_completed(doc)
+    tmpfile = Tempfile.new([doc.name.to_s, ".pdf"], encoding: 'ascii-8bit')
+    auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
+                   doc.entity.entity_setting.digio_auth_token
+                 else
+                   AUTH_TOKEN
+                 end
+    content = DigioEsignHelper.new.download(doc.provider_doc_id, auth_token).body
+    tmpfile.write(content)
+    doc.signature_completed(tmpfile.path)
+    tmpfile.close
+    tmpfile.unlink
   end
 
   private
@@ -232,25 +284,6 @@ class DigioEsignHelper
     ExceptionNotifier.notify_exception(StandardError.new("E-Sign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
   end
 
-  def check_and_update_document_status(document)
-    unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
-    signature_completed(document) if unsigned_esigns.count < 1 && !document.esign_completed?
-  end
-
-  def signature_completed(doc)
-    tmpfile = Tempfile.new([doc.name.to_s, ".pdf"], encoding: 'ascii-8bit')
-    auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
-                   doc.entity.entity_setting.digio_auth_token
-                 else
-                   AUTH_TOKEN
-                 end
-    content = DigioEsignHelper.new.download(doc.provider_doc_id, auth_token).body
-    tmpfile.write(content)
-    doc.signature_completed(tmpfile.path)
-    tmpfile.close
-    tmpfile.unlink
-  end
-
   def signatures_failed(doc, response)
     e = StandardError.new("Error getting status for #{doc.name} - #{response}")
     ExceptionNotifier.notify_exception(e)
@@ -262,3 +295,4 @@ class DigioEsignHelper
     Rails.logger.error e.message
   end
 end
+# rubocop:enable Metrics/ClassLength

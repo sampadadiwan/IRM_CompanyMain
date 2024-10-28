@@ -6,6 +6,11 @@ Given('I am at the investor page') do
   visit("/investors")
 end
 
+Given('the esign provider is {string}') do |esign_provider|
+  entity_setting = @entity.entity_setting
+  entity_setting.update(esign_provider: esign_provider)
+end
+
 When('I create a new investor {string}') do |arg1|
   @investor_entity = FactoryBot.build(:entity, entity_type: "Investor")
   key_values(@investor_entity, arg1)
@@ -666,6 +671,8 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
 
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  sleep(7)
   check("document_template")
   click_on("Save")
   sleep(2)
@@ -677,11 +684,13 @@ Given('we Generate SOA for the first capital commitment') do
   @capital_commitment.save!
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
+  sleep(1)
   click_on("Generate SOA")
   @start_date = Date.parse "01/01/2020"
   @end_date = Date.parse "01/01/2021"
   fill_in('start_date', with: @start_date)
   fill_in('end_date', with: @end_date)
+  sleep(1)
   click_on("Generate SOA Now")
   sleep(2)
 end
@@ -700,8 +709,11 @@ Given('we Generate Commitment Agreement for the first capital commitment') do
 end
 
 Then('the {string} is successfully generated') do |name|
-  expect(page).to have_content("Generated")
   expect(page).to have_content("Documentation generation started, please check back in a few mins")
+  sleep(2)
+  visit(current_url)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content("Generated")
   generated_doc = Document.where(owner_tag: "Generated").last
   if name.include?("SOA")
     generated_doc.name.should == "#{name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{@capital_commitment}"
@@ -713,9 +725,8 @@ Then('the {string} is successfully generated') do |name|
 end
 
 Then('the document has {string} e_signatures') do |string|
-  allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
-
   # stub DigioEsignHelper's sign method to return
   @doc = Document.order(:created_at).last
   @esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "shrikantgour018@gmail.com", position: 1)
@@ -727,6 +738,24 @@ Then('the document has {string} e_signatures') do |string|
   click_on("Send For eSignatures")
 end
 
+Then('the document has {string} e_signatures by Docusign') do |string|
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_envelope).and_return(docusign_get_envelope)
+  allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:send_document_for_esign).and_return(sample_docusign_esign_init_response)
+  @doc = Document.order(:created_at).last
+  @esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "shrikantgour018@gmail.com", position: 1)
+  @esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "aseemak56@yahoo.com", position: 2)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["sent", "sent"], ESignature.pluck(:email)))
+  # stub DigioEsignHelper's sign method to return
+  visit(document_path(@doc))
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Send For eSignatures")
+  sleep(2)
+  visit(document_path(@doc))
+end
+
 Then('when the document is approved') do
   @doc = Document.last
   @doc.approved = true
@@ -734,7 +763,7 @@ Then('when the document is approved') do
 end
 
 Then('the document has {string} e_signatures with status {string}') do |string, string2|
-  allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
 
   # stub DigioEsignHelper's sign method to return
@@ -760,13 +789,27 @@ Then('the document is signed by the signatories') do
   click_on("Get eSignatures' updates")
 end
 
-Then('the esign completed document is present') do
-  allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
-  visit(document_path(@doc))
-  sleep(2)
+Then('the document is signed by the docusign signatories') do
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_envelope).and_return(docusign_get_envelope)
+  allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "completed"], ESignature.pluck(:email)))
+  allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
+  sleep(1)
+  visit(current_url)
+  sleep(3)
   click_on("Signatures")
+  sleep(2)
+  # click_on("Get eSignatures' updates")
+end
+
+Then('the esign completed document is present') do
+  # allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+  @doc = Document.last
+  sleep(4)
+  visit(document_path(@doc))
   sleep(1)
   # page should contain status requested
+  click_on("Signatures")
   expected_status = "Signed"
   expect(page).to have_content(expected_status)
   visit(capital_commitment_path(@capital_commitment))
@@ -775,6 +818,24 @@ Then('the esign completed document is present') do
   expect(page).to have_content("Signed").once
 end
 
+Then('the docusign esign completed document is present') do
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "completed"], ESignature.pluck(:email), "completed"))
+  allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
+  click_on("Get eSignatures' updates")
+  sleep(2)
+  visit(document_path(@doc))
+  sleep(1)
+  # page should contain status signed
+  click_on("Signatures")
+  expected_status = "Signed"
+  expect(page).to have_content(expected_status)
+  visit(capital_commitment_path(@capital_commitment))
+  xpath = "/html/body/div[2]/div[1]/div/div/div[7]/nav/a[1]"
+  documents_button = find(:xpath, xpath)
+  documents_button.click
+  # the signed document owner tag will be signed
+  expect(page).to have_content("Signed").once
+end
 
 Given('the template has esigns setup') do
   @fund.esign_emails = "shrikantgour018@gmail.com,aseemak56@yahoo.com"
@@ -818,7 +879,7 @@ Then('the document get digio callbacks') do
 end
 
 Then('the document is partially signed') do
-  allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_first_signed)
 
   visit(document_path(@doc))
@@ -838,6 +899,33 @@ Then('the document is partially signed') do
   expect(page).to have_content("Signed")
 end
 
+Then('the document is partially signed by Docusign') do
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_envelope).and_return(docusign_get_envelope)
+  allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:send_document_for_esign).and_return(sample_docusign_esign_init_response)
+  @doc = Document.order(:created_at).last
+  @esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "shrikantgour018@gmail.com", position: 1)
+  @esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "aseemak56@yahoo.com", position: 2)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "sent"], ESignature.pluck(:email)))
+  visit(document_path(@doc))
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Send For eSignatures")
+  sleep(2)
+  visit(document_path(@doc))
+  visit(current_path)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Get eSignatures' updates")
+  sleep(8)
+  visit(current_path)
+  click_on("Signatures")
+  # page should contain status requested
+  expect(page).to have_content("Requested")
+  expect(page).to have_content("Signed")
+end
+
 Then('the document esign is cancelled') do
   allow_any_instance_of(DigioEsignHelper).to receive(:hit_cancel_esign_api).and_return(cancel_api_success_response)
 
@@ -846,6 +934,59 @@ Then('the document esign is cancelled') do
   sleep(1)
   click_on("Cancel eSignatures")
   sleep(3)
+end
+
+Then('the docusign document esign is cancelled') do
+  allow_any_instance_of(DocusignEsignHelper).to receive(:cancel_docusign_api).and_return(cancel_docusign_api_response)
+
+  visit(document_path(@doc))
+  click_on("Signatures")
+  sleep(1)
+  click_on("Cancel eSignatures")
+  sleep(3)
+  expect(@doc.reload.esign_status.downcase).to(eq("cancelled"))
+end
+
+Then('the document can be resent for esign') do
+  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_first_signed)
+
+  sleep(2)
+  expect(page).to have_content("Re-Send for eSignatures")
+  click_on("Re-Send for eSignatures")
+  sleep(2)
+  visit(current_path)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Get eSignatures' updates")
+  visit(current_path)
+  click_on("Signatures")
+  sleep(2)
+  # page should contain status requested
+  expect(page).to have_content("Requested")
+  expect(page).to have_content("Signed")
+end
+
+Then('the docusign document can be resent for esign') do
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_envelope).and_return(docusign_get_envelope)
+  allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:send_document_for_esign).and_return(sample_docusign_esign_init_response)
+  allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "sent"], ESignature.pluck(:email)))
+
+  sleep(2)
+  expect(page).to have_content("Re-Send for eSignatures")
+  click_on("Re-Send for eSignatures")
+  sleep(2)
+  visit(current_path)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Get eSignatures' updates")
+  sleep(8)
+  visit(current_path)
+  click_on("Signatures")
+  # page should contain status requested
+  expect(page).to have_content("Requested")
+  expect(page).to have_content("Signed")
 end
 
 Then('the document and esign status is cancelled') do
@@ -859,6 +1000,9 @@ def cancel_api_success_response
   OpenStruct.new(success?: true)
 end
 
+def sample_docusign_esign_init_response
+  {"envelope_id": SecureRandom.uuid}
+end
 
 def sample_doc_esign_init_response
   OpenStruct.new(success?: true,
@@ -919,6 +1063,10 @@ def download_response
   OpenStruct.new(body: Document.last.file.download.read, success?: true)
 end
 
+def docusign_download_response
+  Document.last.file.download
+end
+
 def retrieve_signed_response
   OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
   success?: true,
@@ -932,6 +1080,12 @@ def retrieve_signed_response_signed
 end
 
 def retrieve_signed_response_first_signed
+  OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
+  success?: true,
+  signing_parties: [{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}])
+end
+
+def docusign_retrieve_signed_response_first_signed
   OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
   success?: true,
   signing_parties: [{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}])
@@ -1068,7 +1222,7 @@ Then('the kyc form should be sent {string} to the investor') do |flag|
   user = InvestorAccess.includes(:user).first.user
   open_email(user.email)
   if flag == "true"
-    expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}" 
+    expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
   else
     current_email.should == nil
   end
@@ -1079,7 +1233,7 @@ Then('the kyc form reminder should be sent {string} to the investor') do |flag|
   user = InvestorAccess.includes(:user).first.user
   open_email(user.email)
   if flag == "true"
-    expect(current_email.subject).to include "Reminder to update KYC: #{@investor_kyc.entity.name}" 
+    expect(current_email.subject).to include "Reminder to update KYC: #{@investor_kyc.entity.name}"
   else
     current_email.should == nil
   end
@@ -1180,6 +1334,29 @@ Then('the kycs users should receive the kyc reminder email') do
     end
   end
 end
+
+def docusign_envelope_api
+  OpenStruct.new(api_client: "")
+end
+
+def docusign_envelope_recipients_api(recipient_statuses, emails, envelope_status = "sent")
+  OpenStruct.new(signers: docusign_list_recipients(recipient_statuses, emails), get_envelope: docusign_get_envelope(envelope_status))
+end
+
+def docusign_list_recipients(statuses, emails)
+  statuses.zip(emails).map do |status, email|
+    OpenStruct.new(status: status, email: email)
+  end
+end
+
+def docusign_get_envelope(status = "sent")
+  OpenStruct.new(envelope: "Sample envelope", status: status)
+end
+
+def cancel_docusign_api_response
+  OpenStruct.new(envelope: "")
+end
+
 
 Then('mock UpdateDocumentFolderPathJob job') do
   UpdateDocumentFolderPathJob.perform_now(@investor_kyc.class.name, @investor_kyc.id)

@@ -21,9 +21,10 @@ module WithESignatures
   def e_signatures_for(model)
     return unless esign? && model
 
-    e_signatures.map do |e_signature|
+    e_signatures.order(:id).map do |e_signature|
       method = e_signature.label.delete(' ').underscore
       allowed_methods = %w[investor_signatories fund_signatories buyer_signatories seller_signatories]
+      @position = 1
       if model.respond_to?(method) && allowed_methods.include?(method)
         process_allowed_methods(model, method, e_signature)
       else
@@ -58,7 +59,8 @@ module WithESignatures
 
   def create_e_signature(email, label, _model, e_signature)
     e_signature = e_signature.dup
-    e_signature.assign_attributes(email:, label:)
+    e_signature.assign_attributes(email:, label:, position: @position)
+    @position += 1
     e_signature
   end
 
@@ -73,7 +75,7 @@ module WithESignatures
       if !sent_for_esign || force
         Rails.logger.debug { "Sending #{name} #{id} for e-signing" }
         # Tell the provider to send it for e-signing
-        DigioEsignJob.perform_later(id, user_id)
+        EsignJob.perform_later(id, user_id)
         true
       else
         Rails.logger.debug { "Document #{name} #{id} already queued for e-signing" }
@@ -94,6 +96,7 @@ module WithESignatures
       signed_doc.from_template = self
       signed_doc.owner = owner
       signed_doc.owner_tag = "Signed"
+      signed_doc.approved = true
       signed_doc.send_email = false
       signed_doc.locked = true
       signed_doc.save
