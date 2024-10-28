@@ -131,7 +131,7 @@ end
 
 Then('Path of folder and children should change') do
   expect(@deal.reload.document_folder.full_path).to(eq("/Deals/#{@deal.name}"))
-  expect(@deal.document_folder.children.first.full_path).to(eq("/Deals/#{@deal.name}/Data Room"))
+  expect(@deal.document_folder.children.first.full_path).to(eq("/Deals/#{@deal.name}/Overview"))
 end
 
 Then('I mock the folder path to be wrong') do

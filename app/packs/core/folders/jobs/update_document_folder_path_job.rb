@@ -1,14 +1,15 @@
 class UpdateDocumentFolderPathJob < ApplicationJob
-  queue_as :low
+  queue_as :serial
 
-  def perform(class_name, object_id)
+  def perform(class_name, owner_id)
     Chewy.strategy(:sidekiq) do
       model_class = class_name.constantize
-      object = model_class.find_by(id: object_id)
-      return unless object
+      owner = model_class.find_by(id: owner_id)
+      return unless owner
 
-      folder = object.document_folder
-      expected_full_path = object.folder_path
+      folder = owner.document_folder
+      return if folder.nil?
+      expected_full_path = owner.folder_path
       document_folder_name = expected_full_path.split("/").last
 
       update_folder(folder, expected_full_path, document_folder_name)

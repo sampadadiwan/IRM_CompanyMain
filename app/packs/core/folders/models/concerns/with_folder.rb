@@ -42,7 +42,7 @@ module WithFolder
 
   # Get or Create the folder based on folder_path
   def setup_document_folder
-    if folder_path.present?
+    if document_folder_id.blank? && folder_path.present?
       folder = Folder.where(entity_id:, full_path: folder_path).last
       # Since the folder gets created lazily, it sometimes gets called in a show action
       # So we need to ensure that its created on the primary and not replica
