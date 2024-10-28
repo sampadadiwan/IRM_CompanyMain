@@ -210,4 +210,28 @@ class Fund < ApplicationRecord
 
     Rails.logger.debug { "Total approved amount: #{total_approved_amount}" }
   end
+
+  def transfer_commitment(capital_commitment, to_commitments)
+    # Assume that the commitment adjustment is already created    
+
+    to_commitments.each do |commitment_id, percent_transferred|
+      to_capital_commitment = capital_commitments.find(commitment_id)
+      # copy over the remittances and the payments
+      to_capital_commitment.capital_remittances.each do |remittance|
+        new_remittance = remittance.dup
+        new_remittance.capital_commitment = to_capital_commitment
+        new_remittance.investor_id = to_capital_commitment.investor_id
+        new_remittance.folio_id = to_capital_commitment.folio_id
+        # Adjust the amounts based on the percentage transferred
+        new_remittance.call_amount_cents = (remittance.amount * percent_transferred).round(2)
+      end
+    end
+
+    # Delete the remittances
+    capital_commitment.capital_remittances.destroy_all
+    # Delete the Distribution payments
+    capital_commitment.capital_distribution_payments.destroy_all    
+
+
+  end
 end
