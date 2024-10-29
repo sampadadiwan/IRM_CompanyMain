@@ -9,8 +9,8 @@ class InvestorKycsBulkActionJob < BulkActionJob
     when "verify"
       investor_kyc.verified = true
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
-    when "bank_verification"
-      VerifyKycBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(id)
+    when "bankverification"
+      VerifyBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(obj_class: investor_kyc.class.to_s, obj_id: investor_kyc.id)
     when "unverify"
       investor_kyc.verified = false
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
