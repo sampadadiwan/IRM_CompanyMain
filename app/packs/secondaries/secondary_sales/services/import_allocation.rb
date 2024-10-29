@@ -10,7 +10,7 @@ class ImportAllocation < ImportUtil
     @allocations = []
   end
 
-  def save_row(user_data, _import_upload, _custom_field_headers, _ctx)
+  def save_row(user_data, import_upload, _custom_field_headers, _ctx)
     Rails.logger.debug { "Processing allocation #{user_data}" }
     offer = Offer.find(user_data["Offer Id"])
     secondary_sale = offer.secondary_sale
@@ -21,7 +21,7 @@ class ImportAllocation < ImportUtil
 
     allocation = Allocation.build_from(offer, interest, quantity, price)
     allocation.verified = verified
-
+    allocation.import_upload_id = import_upload.id
     allocation.save!
   end
 end
