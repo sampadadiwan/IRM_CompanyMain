@@ -40,7 +40,7 @@ class CapitalRemittance < ApplicationRecord
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
-  validates :folio_committed_amount_cents, :folio_call_amount_cents, numericality: { greater_than: 0 }
+  validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
 
   validates :status, length: { maximum: 10 }
   validates :folio_id, length: { maximum: 20 }
