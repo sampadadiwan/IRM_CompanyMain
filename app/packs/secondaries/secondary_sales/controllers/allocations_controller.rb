@@ -38,6 +38,8 @@ class AllocationsController < ApplicationController
 
     @allocations = @allocations.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
 
+    @allocations = @allocations.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+
     @allocations = @allocations.where(verified: params[:verified]) if params[:verified].present?
 
     @allocations = @allocations.includes(:entity, :secondary_sale, offer: :investor, interest: :investor)

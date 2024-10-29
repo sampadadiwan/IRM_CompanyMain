@@ -371,7 +371,7 @@ Given('there are {string} offers for the sale') do |approved_flag|
   )
   approved = approved_flag == "approved"
   Holding.all.each do |h|
-    offer = Offer.new(holding: h, entity: h.entity, secondary_sale: @sale,
+    offer = Offer.new(holding_id: h.id, entity: h.entity, secondary_sale: @sale,
                           user: h.entity.employees.sample, investor: h.investor, user_id: h.user_id,
                           quantity: h.quantity * @sale.percent_allowed / 100, approved: approved)
 
