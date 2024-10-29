@@ -16,7 +16,7 @@ class Folder < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
 
   validates :name, presence: true
-  validates :full_path, uniqueness: { scope: [:owner_id, :owner_type, :entity_id], message: "combination must be unique" }
+  validates :full_path, uniqueness: { scope: %i[owner_id owner_type entity_id], message: "combination must be unique" }
 
   before_create :set_defaults
   after_create :set_parent_permissions, if: :parent

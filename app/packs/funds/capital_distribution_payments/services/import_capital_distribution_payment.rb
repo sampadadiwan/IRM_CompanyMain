@@ -10,7 +10,11 @@ class ImportCapitalDistributionPayment < ImportUtil
 
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
+    raise "Fund not found" unless fund
+
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
+    raise "Capital Distribution not found" unless capital_distribution
+
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     folio_id = user_data["Folio No"]&.to_s
     capital_commitment = fund.capital_commitments.where(investor_id: investor&.id, folio_id:).first

@@ -90,7 +90,7 @@
         <div id="valuations-tab" class="tab-pane fade in show active">
           <div id="valuations" class="associated_entity">
             <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
-            <%= render "/valuations/index", valuations: Valuation.where(owner: investor).includes(:investment_instrument) %>
+            <%= render "/valuations/index", valuations: Valuation.where(owner: investor).includes(:investment_instrument, :entity, :owner) %>
           </div>
         </div>
 

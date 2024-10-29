@@ -12,7 +12,7 @@
           <div class="border-bottom">
             <div class="row">
               <% 
-                favs = current_user.favorites.order(id: :desc).limit(10).to_a
+                favs = current_user.favorites.includes(:favoritable).order(id: :desc).limit(10).to_a
                 fav_splits = favs.present? ? favs.each_slice((favs.length + 1)/2).to_a : favs
                 colors = ["info", "primary", "success", "warning", "danger", "secondary"]
               %>

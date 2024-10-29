@@ -212,7 +212,7 @@ class Fund < ApplicationRecord
   end
 
   def transfer_commitment(capital_commitment, to_commitments)
-    # Assume that the commitment adjustment is already created    
+    # Assume that the commitment adjustment is already created
 
     to_commitments.each do |commitment_id, percent_transferred|
       to_capital_commitment = capital_commitments.find(commitment_id)
@@ -230,8 +230,6 @@ class Fund < ApplicationRecord
     # Delete the remittances
     capital_commitment.capital_remittances.destroy_all
     # Delete the Distribution payments
-    capital_commitment.capital_distribution_payments.destroy_all    
-
-
+    capital_commitment.capital_distribution_payments.destroy_all
   end
 end
