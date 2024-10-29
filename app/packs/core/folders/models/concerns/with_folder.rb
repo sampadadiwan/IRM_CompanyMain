@@ -74,11 +74,12 @@ module WithFolder
   def update_root_folder
     return if respond_to?(:deleted?) && deleted?
     # Don't enque the job is document_folder is not present or path is not changed
-    return if document_folder_id.blank? || document_folder.full_path == self.folder_path
+    return if document_folder_id.blank? || document_folder.full_path == folder_path
+
     if Rails.env.test?
       $var ||= 0
       $var = $var + 1
-      puts "==== #{$var}"
+      Rails.logger.debug { "==== #{$var}" }
       UpdateDocumentFolderPathJob.perform_later(self.class.name, id)
     else
       UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, id)

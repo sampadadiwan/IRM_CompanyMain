@@ -1,3 +1,5 @@
+# This job is used to generate a report for a folder. It will take all the pdf files in the folder and generate a report using the template.html file in the folder.
+# It calls out to a python service which is in the xirr package. The service will generate a report and save it in the folder_path. The job will then check the folder_path for the output_report.html file and download it and save it as a document in the folder.
 class FolderLlmReportJob < ApplicationJob
   queue_as :low
 
@@ -21,11 +23,12 @@ class FolderLlmReportJob < ApplicationJob
       # curl -X POST "http://127.0.0.1:8000/generate-report/" -H "Content-Type: application/json" -d '{
       # "file_urls": ["https://example.com/file1.pdf", "https://example.com/file2.pdf"],
       # "template_html_url": "https://example.com/template.html",
-      # "callback_url": "https://your-callback-endpoint.com/callback"
       # }'
 
+      # This is part of the xirr_py package
+      # https://github.com/ausangshukla/xirr_py
       response = HTTParty.post(
-        "http://127.0.0.1:8000/generate-report/",
+        "http://localhost:8000/generate-report/",
         headers: {
           'Content-Type' => 'application/json'
         },

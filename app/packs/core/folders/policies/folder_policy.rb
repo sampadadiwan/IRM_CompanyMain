@@ -28,7 +28,7 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def generate_report?
-    update?
+    update? && user.enable_user_llm_chat
   end
 
   def edit?

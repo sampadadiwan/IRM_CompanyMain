@@ -12,9 +12,7 @@ class UpdateDocumentFolderPathJob < ApplicationJob
 
       expected_full_path = owner.folder_path
 
-      if folder_needs_update?(folder, expected_full_path)
-        update_folder_and_descendants(folder, expected_full_path)
-      end
+      update_folder_and_descendants(folder, expected_full_path) if folder_needs_update?(folder, expected_full_path)
     end
   end
 

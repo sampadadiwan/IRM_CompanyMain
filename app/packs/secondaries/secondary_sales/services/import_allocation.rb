@@ -21,7 +21,7 @@ class ImportAllocation < ImportUtil
 
     allocation = Allocation.build_from(offer, interest, quantity, price)
     allocation.verified = verified
-    
+
     allocation.save!
   end
 end

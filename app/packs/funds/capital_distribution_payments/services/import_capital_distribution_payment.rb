@@ -7,10 +7,11 @@ class ImportCapitalDistributionPayment < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug { "Processing capital_distribution_payment #{user_data}" }
-    
+
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
+
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     raise "Capital Distribution not found" unless capital_distribution
 
