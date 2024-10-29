@@ -11,30 +11,35 @@ class UpdateDocumentFolderPathJob < ApplicationJob
       return if folder.nil?
 
       expected_full_path = owner.folder_path
-      document_folder_name = expected_full_path.split("/").last
 
-      update_folder(folder, expected_full_path, document_folder_name)
-
-      update_descendants(folder)
+      if folder_needs_update?(folder, expected_full_path)
+        update_folder_and_descendants(folder, expected_full_path)
+      end
     end
   end
 
   private
 
-  def update_folder(folder, expected_full_path, document_folder_name)
-    folder.name = document_folder_name if folder.name != document_folder_name
+  def folder_needs_update?(folder, expected_full_path)
+    folder.name != expected_full_path.split("/").last || folder.full_path != expected_full_path
+  end
 
-    folder.full_path = expected_full_path if folder.full_path != expected_full_path
+  def update_folder_and_descendants(folder, expected_full_path)
+    folder.assign_attributes(
+      name: expected_full_path.split("/").last,
+      full_path: expected_full_path
+    )
     folder.set_defaults
     folder.save!
+
+    update_descendants(folder)
   end
 
   def update_descendants(folder)
-    folder.descendants.find_in_batches(batch_size: 50) do |batch|
-      batch.each do |child|
-        child.set_defaults
-        child.save!
-      end
+    folder.children.each do |child|
+      child.set_defaults
+      child.save!
+      update_descendants(child)
     end
   end
 end

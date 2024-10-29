@@ -143,11 +143,6 @@ class Fund < ApplicationRecord
     %w[name]
   end
 
-  after_update_commit :name_change, if: :saved_change_to_name?
-  def name_change
-    document_folder.update_columns(name:, full_path: folder_path)
-  end
-
   def default_currency_units
     currency == "INR" ? "Crores" : "Million"
   end

@@ -66,10 +66,19 @@ module WithFolder
     folder_path.split("/")[-1]
   end
 
+  # Whenever an instance is updated. Those changes might trigger folder path change
+  # Triggers a job whenever any update is done.
+  # Job creates the document_folder if not present-.
+  # Checks if document_folder path is same as expected.
+  # If not, then updates the path and descendants
   def update_root_folder
     return if respond_to?(:deleted?) && deleted?
-
+    # Don't enque the job is document_folder is not present or path is not changed
+    return if document_folder_id.blank? || document_folder.full_path == self.folder_path
     if Rails.env.test?
+      $var ||= 0
+      $var = $var + 1
+      puts "==== #{$var}"
       UpdateDocumentFolderPathJob.perform_later(self.class.name, id)
     else
       UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, id)
