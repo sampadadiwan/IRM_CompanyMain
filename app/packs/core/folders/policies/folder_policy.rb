@@ -27,6 +27,10 @@ class FolderPolicy < ApplicationPolicy
     (create? || support?) && !record.system?
   end
 
+  def generate_report?
+    update?
+  end
+
   def edit?
     update?
   end

@@ -1,5 +1,5 @@
 class FoldersController < ApplicationController
-  before_action :set_folder, only: %i[show edit update destroy download]
+  before_action :set_folder, only: %i[show edit update destroy download generate_report]
 
   # GET /folders or /folders.json
   def index
@@ -19,6 +19,11 @@ class FoldersController < ApplicationController
   def download
     DocumentDownloadJob.perform_later(@folder.id, current_user.id)
     redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
+  end
+
+  def generate_report
+    FolderLlmReportJob.perform_later(@folder.id, current_user.id)
+    redirect_to request.referer, notice: "Report generation has been started. You will be notified when it is ready."
   end
 
   # GET /folders/1/edit

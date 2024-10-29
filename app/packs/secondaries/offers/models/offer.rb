@@ -140,7 +140,7 @@ class Offer < ApplicationRecord
     if Rails.env.test?
       VerifyPanJob.perform_now(obj_class: self.class.to_s, obj_id: id)
     else
-      VerifyPanJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
+      VerifyPanJob.set(wait: rand(VerifyBankJob::DELAY_SECONDS).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
     end
   end
 
@@ -155,7 +155,7 @@ class Offer < ApplicationRecord
     if Rails.env.test?
       VerifyBankJob.perform_now(obj_class: self.class.to_s, obj_id: id)
     else
-      VerifyBankJob.set(wait: rand(300).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
+      VerifyBankJob.set(wait: rand(VerifyBankJob::DELAY_SECONDS).seconds).perform_later(obj_class: self.class.to_s, obj_id: id)
     end
   end
 

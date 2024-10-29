@@ -83,6 +83,7 @@ end
 
 resources :folders do
   get 'download', on: :member
+  post 'generate_report', on: :member
 end
 
 resources :investor_accesses do

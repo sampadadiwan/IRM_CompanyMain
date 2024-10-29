@@ -45,7 +45,7 @@
           </td>
         </tr>
 
-      
+
         <tr>
           <td>
             Secondary Sale
@@ -102,7 +102,7 @@
           <td>
             <%= display_boolean interest.verified %>
           </td>
-        </tr>        
+        </tr>
 
         <% if interest.allocation_quantity > 0 %>
         <tr>
@@ -116,7 +116,7 @@
             <%= interest.allocation_quantity %>
           </td>
         </tr>
-        
+
         <tr>
           <td>
             Allocation Amount
@@ -125,14 +125,14 @@
             <%= money_to_currency interest.allocation_amount, params %>
           </td>
         </tr>
-        
+
       <% end %>
 
 
           <tr>
             <td colspan="2" class="bg-primary"></td>
           </tr>
-         
+
           <tr>
             <td>
               Contact Name
@@ -182,6 +182,28 @@
             </td>
           </tr>
 
+
+          <tr>
+            <td>
+              Bank Account Number
+            </td>
+            <td>
+              <%= interest.bank_account_number %>
+              <br>
+              <%= render "investor_kycs/bank_verification", model: interest if current_user && !interest.secondary_sale.disable_bank_kyc %>
+            </td>
+          </tr>
+          <tr>
+
+          <tr>
+            <td>
+              IFSC Code
+            </td>
+            <td>
+              <%= interest.ifsc_code %>
+            </td>
+          </tr>
+
           <% if params[:debug].present? %>
             <tr>
               <td>
@@ -211,43 +233,20 @@
 
           <tr>
             <td>
-              Bank Account Number
+              Bank Verification Response
             </td>
             <td>
-              <%= interest.bank_account_number %>
-              <br>
-              <%= render "investor_kycs/bank_verification", model: interest if current_user && !interest.secondary_sale.disable_bank_kyc %>
+              <%= interest.bank_verification_response %>
             </td>
           </tr>
           <tr>
-
-          <tr>
             <td>
-              IFSC Code
+              Bank Verification Status
             </td>
             <td>
-              <%= interest.ifsc_code %>
+              <%= interest.bank_verification_status %>
             </td>
           </tr>
-
-          <% if params[:debug].present? %>
-            <tr>
-              <td>
-                Bank Verification Response
-              </td>
-              <td>
-                <%= interest.bank_verification_response %>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                Bank Verification Status
-              </td>
-              <td>
-                <%= interest.bank_verification_status %>
-              </td>
-            </tr>
-          <% end %>
 
           <tr id="completed">
             <td>

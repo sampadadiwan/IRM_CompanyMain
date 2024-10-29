@@ -5,6 +5,8 @@ class VerifyPanJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       @model = obj_class.constantize.find(obj_id)
       @model = @model.decorate if @model.decorator_class?
+      # remove when default decorator for kyc is fixed
+      @model = InvestorKycVerificationDecorator.decorate(obj_class.constantize.find(obj_id)) if obj_class.ends_with?("Kyc")
       if @model.pan_verification_enabled?
         verify
         if %w[InvestorKyc IndividualKyc NonIndividualKyc].include?(obj_class)

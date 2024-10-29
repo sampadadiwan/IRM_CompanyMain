@@ -9,6 +9,7 @@ class UpdateDocumentFolderPathJob < ApplicationJob
 
       folder = owner.document_folder
       return if folder.nil?
+
       expected_full_path = owner.folder_path
       document_folder_name = expected_full_path.split("/").last
 

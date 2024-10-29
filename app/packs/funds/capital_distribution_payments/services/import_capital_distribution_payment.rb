@@ -11,7 +11,6 @@ class ImportCapitalDistributionPayment < ImportUtil
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
-    
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     raise "Capital Distribution not found" unless capital_distribution
 
