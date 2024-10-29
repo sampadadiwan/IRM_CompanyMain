@@ -77,9 +77,6 @@ module WithFolder
     return if document_folder_id.blank? || document_folder.full_path == folder_path
 
     if Rails.env.test?
-      $var ||= 0
-      $var = $var + 1
-      Rails.logger.debug { "==== #{$var}" }
       UpdateDocumentFolderPathJob.perform_later(self.class.name, id)
     else
       UpdateDocumentFolderPathJob.set(wait: 5.minutes).perform_later(self.class.name, id)
