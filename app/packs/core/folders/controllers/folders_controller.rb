@@ -22,8 +22,13 @@ class FoldersController < ApplicationController
   end
 
   def generate_report
-    FolderLlmReportJob.perform_later(@folder.id, current_user.id)
-    redirect_to request.referer, notice: "Report generation has been started. You will be notified when it is ready."
+    report_type = params[:report_type]
+    if report_type.present?
+      FolderLlmReportJob.perform_later(@folder.id, current_user.id, report_type)
+      redirect_to request.referer, notice: "Report generation has been started. You will be notified when it is ready."
+    else
+      redirect_to request.referer, alert: "Report type is required"
+    end
   end
 
   # GET /folders/1/edit
