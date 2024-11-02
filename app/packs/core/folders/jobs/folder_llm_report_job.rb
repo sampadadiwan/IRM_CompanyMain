@@ -11,11 +11,23 @@ class FolderLlmReportJob < ApplicationJob
       template_url = nil
       folder.documents.each do |doc|
         if doc.name == "Report Template"
+          # Report template specific to this folder
           template_url = doc.file.url
         elsif doc.pdf?
           doc_urls << doc.file.url
         else
           Rails.logger.debug { "Skipping #{doc.name} as it is not a pdf or template" }
+        end
+      end
+
+      if template_url.nil?
+        # Get the template url from Funds/
+        folder.entity.folders.where(name: "Portfolio Templates").first.documents.each do |doc|
+          next unless doc.name == "Report Template"
+
+          Rails.logger.debug { "Found #{doc.name} in Portfolio Templates" }
+          template_url = doc.file.url
+          break
         end
       end
 
