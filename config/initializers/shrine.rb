@@ -35,7 +35,7 @@ Shrine.plugin :restore_cached_data # extracts metadata for assigned cached files
 Shrine.plugin :validation_helpers
 Shrine.plugin :validation
 Shrine.plugin :keep_files unless Rails.env.local?
-Shrine.plugin :determine_mime_type, analyzer: :marcel
+Shrine.plugin :determine_mime_type, analyzer: :marcel, analyzer_options: { filename_fallback: true }
 Shrine.plugin :presign_endpoint
 Shrine.plugin :uppy_s3_multipart # load the plugin
 # Shrine.plugin :instrumentation # adds instrumentation

@@ -108,6 +108,7 @@ class FolderLlmReportJob < ApplicationJob
           # Break out of the loop, as we are done
           break
         rescue StandardError => e
+          Rails.logger.error e.backtrace.join("\n")
           Rails.logger.error { "Failed to save output_report.html file as a document in the folder: #{e.message}" }
           send_notification("Failed to save output_report.html file as a document in the folder", user_id, :danger) if tries == 2
           sleep(5)
