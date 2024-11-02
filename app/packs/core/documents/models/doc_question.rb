@@ -1,6 +1,6 @@
 class DocQuestion < ApplicationRecord
-  enum qtype: { validation: "Validation", extraction: "Extraction" }
-  FOR_CLASSES = %w[InvestorKyc Offer Interest].freeze
+  enum qtype: { validation: "Validation", extraction: "Extraction", general: "General" }
+  FOR_CLASSES = %w[InvestorKyc Offer Interest Investor].sort.freeze
 
   attr_accessor :interpolated_question
 

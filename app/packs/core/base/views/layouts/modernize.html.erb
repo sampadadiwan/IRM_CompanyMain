@@ -111,6 +111,9 @@
           <% if params[:audit_trail].present? && params[:id].present? %>
             <!-- Audit Trail of the record with id -->
             <%= render "/layouts/audit" %>
+          <% elsif params[:compliance_checks].present? && params[:id].present? %>
+            <!-- Audit Trail of the record with id -->
+            <%= render "/compliance_checks/show_checks" %>
           <% else %>
             <!-- Page Content -->
             <%= yield %>

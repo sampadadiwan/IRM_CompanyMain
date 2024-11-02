@@ -211,4 +211,8 @@ class ApplicationPolicy
   def rm?
     user.has_cached_role?(:rm)
   end
+
+  def run_checks?
+    belongs_to_entity?(user, record) && user.entity.enable_compliance
+  end
 end

@@ -1,0 +1,42 @@
+<%= render FormCard.new(title: "Compliance Rules : #{compliance_rule.presence || 'New'}") do %>
+  <%= form_with(model: compliance_rule, validate: true) do |form| %>
+    <% if compliance_rule.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(compliance_rule.errors.count, "error") %> prohibited this compliance_rule from being saved:</h2>
+        <ul>
+          <% compliance_rule.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    
+    <div class="form-group">
+      <%= form.label :for_class, "For" %>
+      <%= form.select :for_class, ["PortfolioInvestment", "InvestorKyc", "CapitalCommitment", "CapitalRemittance", "CapitalDistribution", "Fund"].sort, {}, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :rule %>
+      <%= form.text_area :rule, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tags, class: "form-control"  %>
+      <small class="form-text text-muted">Comma separated tags</small>
+    </div>
+    <div class="form-group">
+      <%= form.label :schedule %>
+      <%= form.text_field :schedule, class: "form-control"  %>
+      <small class="form-text text-muted">Cron expression</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

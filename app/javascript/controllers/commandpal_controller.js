@@ -207,6 +207,16 @@ export default class extends Controller {
             }
           }
         );
+        children.unshift(
+          {name: "Compliance Checks",
+            // Add the parameter audit_trail=true to the existing URL and reload the page
+            handler: () => {  
+              let url = new URL(window.location.href);
+              url.searchParams.set('compliance_checks', 'true');
+              window.location = url;
+            }
+          }
+        );
       } else {
         console.log('The URL does not match the pattern');
         children.unshift(

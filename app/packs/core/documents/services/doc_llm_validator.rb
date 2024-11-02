@@ -24,7 +24,7 @@ class DocLlmValidator < Trailblazer::Operation
     open_ai_client = OpenAI::Client.new(access_token:, llm_options: { model:, temperature: })
 
     ctx[:open_ai_client] = open_ai_client
-    ctx[:doc_questions] = model.doc_questions.where(document_name: document.name)
+    ctx[:doc_questions] ||= model.doc_questions.where(document_name: document.name)
 
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
     ctx[:open_ai_client].present? && ctx[:doc_questions].present?
@@ -32,7 +32,7 @@ class DocLlmValidator < Trailblazer::Operation
 
   # Since we deal with vision models, who can read images much better than PDFs, we convert the pdf or doc into image before sending to llm
   def convert_file_to_image(ctx, model:, document:, **)
-    folder_path = "tmp/KycDocLlmValidator/#{model.class.name}/#{model.id}"
+    folder_path = "tmp/#{model.class.name}/#{model.id}"
     # make the directory if it does not exist
     FileUtils.mkdir_p(folder_path) unless File.directory?(folder_path)
     # setup the image path
@@ -93,40 +93,44 @@ class DocLlmValidator < Trailblazer::Operation
   end
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
-  def save_check_results(_ctx, model:, document:, doc_question_answers:, **)
-    model.doc_question_answers ||= {}
-    model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
-    model.doc_question_answers[document.name].each do |question, answer_and_explanation|
-      # Need better check for extraction
-      answer = answer_and_explanation["answer"]
-      if answer.blank? || VALIDATION_RESPONSES.exclude?(answer.to_s.downcase)
-        # Save any extracted data from the document to the model custom fields
-        if model.respond_to?(question.to_sym)
-          model.send(:"#{question}=", answer) # if model.send(question.to_sym).blank?
-        else
-          model.properties[question] = answer
+  def save_check_results(ctx, model:, document:, doc_question_answers:, **)
+    if ctx[:save_check_results] == false
+      true
+    else
+      model.doc_question_answers ||= {}
+      model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
+      model.doc_question_answers[document.name].each do |question, answer_and_explanation|
+        # Need better check for extraction
+        answer = answer_and_explanation["answer"]
+        if answer.blank? || VALIDATION_RESPONSES.exclude?(answer.to_s.downcase)
+          # Save any extracted data from the document to the model custom fields
+          if model.respond_to?(question.to_sym)
+            model.send(:"#{question}=", answer) # if model.send(question.to_sym).blank?
+          else
+            model.properties[question] = answer
+          end
         end
       end
-    end
 
-    all_docs_valid = true
-    # Scan the answers across all documents which have been examined by the llm to see if any of them are false
-    model.doc_question_answers.each do |doc_name, qna|
-      Rails.logger.debug { "Validating #{doc_name}" }
-      qna.each do |question, response|
-        answer = response["answer"]
-        Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
-        # Need to make this more deterministic in the future
-        next unless answer.to_s.downcase == "no" || answer.to_s.downcase == "false"
+      all_docs_valid = true
+      # Scan the answers across all documents which have been examined by the llm to see if any of them are false
+      model.doc_question_answers.each do |doc_name, qna|
+        Rails.logger.debug { "Validating #{doc_name}" }
+        qna.each do |question, response|
+          answer = response["answer"]
+          Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
+          # Need to make this more deterministic in the future
+          next unless answer.to_s.downcase == "no" || answer.to_s.downcase == "false"
 
-        # Validation has failed. Something is mismatched between the document and the model
-        Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }
-        all_docs_valid &&= false
+          # Validation has failed. Something is mismatched between the document and the model
+          Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }
+          all_docs_valid &&= false
+        end
       end
-    end
 
-    # Tell the model that the documents have been validated
-    model.mark_as_validated(all_docs_valid)
+      # Tell the model that the documents have been validated
+      model.mark_as_validated(all_docs_valid)
+    end
   end
 
   # Ensure assistant is deleted

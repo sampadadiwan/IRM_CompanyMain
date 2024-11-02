@@ -433,6 +433,8 @@ GEM
       multi_json
     enumerize (2.8.1)
       activesupport (>= 3.2)
+    eqn (1.6.5)
+      treetop (>= 1.2.0)
     erubi (1.13.0)
     erubis (2.7.0)
     et-orbi (1.2.11)
@@ -662,6 +664,7 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
+    polyglot (0.3.5)
     pragmatic_segmenter (0.3.24)
     prism (0.30.0)
     prometheus_exporter (2.1.1)
@@ -733,6 +736,7 @@ GEM
       i18n
     rdoc (6.7.0)
       psych (>= 4.0.0)
+    redcarpet (3.6.0)
     redis (4.8.1)
     redis-client (0.22.2)
       connection_pool
@@ -915,6 +919,8 @@ GEM
       trailblazer-activity-dsl-linear (>= 1.2.0, < 1.4.0)
       trailblazer-developer (>= 0.1.0, < 0.2.0)
     trailblazer-option (0.1.2)
+    treetop (1.6.12)
+      polyglot (~> 0.3)
     ttfunk (1.8.0)
       bigdecimal (~> 3.1)
     tty-color (0.6.0)
@@ -1026,6 +1032,7 @@ DEPENDENCIES
   dotenv-rails
   draper
   enumerize
+  eqn
   erubis
   eu_central_bank
   exception_notification
@@ -1072,6 +1079,7 @@ DEPENDENCIES
   rack-mini-profiler
   rails (~> 7.1)
   ransack
+  redcarpet
   redis (~> 4.0)
   rolify
   roo

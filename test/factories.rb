@@ -1,4 +1,20 @@
 FactoryBot.define do
+  factory :compliance_check do
+    entity { nil }
+    parent { nil }
+    owner { nil }
+    status { "MyString" }
+    explanation { "MyText" }
+  end
+
+  factory :compliance_rule do
+    entity { nil }
+    for_class { "MyString" }
+    rule { "MyText" }
+    tags { "MyString" }
+    schedule { "MyString" }
+  end
+
   factory :rm_mapping do
     rm { nil }
     investor { nil }

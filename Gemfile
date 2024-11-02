@@ -229,12 +229,14 @@ end
 gem "marginalia", "~> 1.11"
 # gem 'newrelic_rpm'
 gem 'aws-sdk-wafv2', require: false
+gem 'eqn'
 gem 'friendly_id', '~> 5.5.0'
 gem 'humanize'
 gem 'langchainrb'
 gem 'mini_magick'
 gem 'parser'
 gem 'prometheus_exporter'
+gem 'redcarpet'
 gem "ruby-openai", git: "https://github.com/alexrudall/ruby-openai.git"
 gem 'sendgrid-ruby'
 gem 'wikipedia-client'

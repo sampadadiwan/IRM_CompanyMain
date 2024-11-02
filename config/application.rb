@@ -55,11 +55,11 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/helpers")
     end
 
-    ci_view_paths = %w[ci_profiles]
+    ai_view_paths = %w[compliance_rules]
 
-    ci_view_paths.each do |view_path|
-      config.paths['app/views'].unshift("#{Rails.root}/app/packs/capital_introductions/#{view_path}/views")
-      config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/capital_introductions/#{view_path}/helpers")
+    ai_view_paths.each do |view_path|
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/views")
+      config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/helpers")
     end
 
     config.to_prepare do

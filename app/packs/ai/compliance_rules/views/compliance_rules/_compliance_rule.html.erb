@@ -1,0 +1,21 @@
+<tr id="<%= dom_id compliance_rule %>">
+  <td>
+    <%= compliance_rule.for_class %>
+  </td>
+  <td>
+    <%= compliance_rule.rule %>
+  </td>
+  <td>
+    <%= compliance_rule.tags %>
+  </td>
+  <td>
+    <%= compliance_rule.schedule %>
+  </td>
+  <td>
+    <%= display_boolean compliance_rule.enabled %>
+  </td>
+  <td>
+    <%= link_to "Show", compliance_rule , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_compliance_rule_path(compliance_rule), {class: "btn btn-outline-success"} if policy(compliance_rule).update? %>
+  </td>
+</tr>

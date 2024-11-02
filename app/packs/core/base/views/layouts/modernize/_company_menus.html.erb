@@ -127,6 +127,28 @@
             </div>
         </a>
 
+        <% if current_user.enable_compliance %>
+        <a href="<%= compliance_rules_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+            <i class="ti ti-report"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Compliance Rules</h6>
+            <span class="fs-2 d-block text-body-secondary"> Setup Compliance Rules</span>
+            </div>
+        </a>
+
+        <a href="<%= compliance_checks_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+            <i class="ti ti-list-check"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Compliance Checks</h6>
+            <span class="fs-2 d-block text-body-secondary"> View All Checks</span>
+            </div>
+        </a>
+        <% end %>
+
 
         <% end %>
 

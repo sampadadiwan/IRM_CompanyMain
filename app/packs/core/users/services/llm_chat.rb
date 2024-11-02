@@ -55,14 +55,14 @@ class LlmChat
     end
   end
 
+  NORMAL_INSTRUCTIONS = "You're a helpful AI assistant that can use the tools provided to respond to queries. Format the responses as html tables if required. Also format links as HTML hyperlinks in the response, do not show raw URLs in the response.".freeze
+
+  WHATSAPP_INSTRUCTIONS = "You're a helpful AI assistant that can use the tools provided to respond to queries. You will receive queries over whatsapp which will have a `[whatsapp]` prefix. In such case return format the responses by using new lines and vertical seperators to create tables.".freeze
+
   def assistant(llm_chat_instance)
     @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "o1-mini" })
 
-    normal_instructions = "You're a helpful AI assistant that can use the tools provided to respond to queries. Format the responses as html tables if required. Also format links as HTML hyperlinks in the response, do not show raw URLs in the response."
-
-    whstsaap_instructions = "You're a helpful AI assistant that can use the tools provided to respond to queries. You will receive queries over whatsapp which will have a `[whatsapp]` prefix. In such case return format the responses by using new lines and vertical seperators to create tables."
-
-    instructions = @whatsapp ? whstsaap_instructions : normal_instructions
+    instructions = @whatsapp ? WHATSAPP_INSTRUCTIONS : NORMAL_INSTRUCTIONS
 
     @assistant ||= Langchain::Assistant.new(
       llm: @llm,

@@ -19,7 +19,7 @@
       </thead>
       <tbody>
       <!-- Audit trail consist of own changes and changes from associations -->
-      <% @model.own_and_associated_audits.order(id: :desc).each do |audit| %>
+      <% @model.own_and_associated_audits.includes(:associated, :auditable, :user).order(id: :desc).each do |audit| %>
 
         <% 
           # Some associations may not have a path, so we need to check if the path is available

@@ -47,4 +47,24 @@ module DocumentHelper
     ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq
   end
+
+  def render_markdown(text)
+    return "" if text.blank?
+
+    renderer = Redcarpet::Render::HTML.new(
+      filter_html: true,
+      hard_wrap: true,
+      link_attributes: { rel: 'nofollow', target: '_blank' }
+    )
+    markdown = Redcarpet::Markdown.new(
+      renderer,
+      autolink: true,
+      tables: true,
+      fenced_code_blocks: true,
+      strikethrough: true,
+      superscript: true
+    )
+    html = markdown.render(text)
+    sanitize(html).html_safe
+  end
 end

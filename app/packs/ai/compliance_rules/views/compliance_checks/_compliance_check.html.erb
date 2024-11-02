@@ -1,0 +1,29 @@
+<tr id="<%= dom_id compliance_check %>">
+  <td>
+    <%= link_to compliance_check.parent %>
+  </td>
+  <td>
+    <%= compliance_check.parent_type %>
+  </td>
+  <td>
+    <%= link_to compliance_check.owner %>
+  </td>
+  <td>
+    <%= compliance_check.owner_type %>
+  </td>
+  <td>
+    <%= link_to compliance_check.compliance_rule.rule, compliance_check.compliance_rule if compliance_check.compliance_rule %>
+  </td>
+  <td>
+    <%= compliance_check.status&.humanize %>
+  </td>
+  <td>
+    <%= compliance_check.explanation %>
+  </td>
+  <td>
+    <%= l compliance_check.created_at %>
+  </td>
+  <td>
+    <%= link_to "Show", compliance_check , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

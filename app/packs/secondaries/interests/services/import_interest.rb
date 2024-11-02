@@ -38,6 +38,18 @@ class ImportInterest < ImportUtil
       interest.buyer_entity_name = user_data["Buyer Entity Name"]
     end
 
+    setup_shortlist(user_data, interest, import_upload)
+    setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS)
+
+    # For SecondarySale we can have multiple form types. We need to set the form type for the interest
+    ctx[:form_type_id] = secondary_sale.interest_form_type_id
+    interest.form_type_id = secondary_sale.interest_form_type_id
+
+    AccessRight.create(owner: interest.secondary_sale, entity: interest.entity, access_to_investor_id: interest.investor_id, metadata: "Buyer")
+    interest.save!
+  end
+
+  def setup_shortlist(user_data, interest, import_upload)
     # Allow only people who can short list to short list
     policy = InterestPolicy.new(import_upload.user, interest)
     if policy.short_list?
@@ -55,15 +67,6 @@ class ImportInterest < ImportUtil
         Rails.logger.debug { "User #{import_upload.user.email} does not have the right to #{short_listed_status} interest" }
       end
     end
-
-    setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS)
-
-    # For SecondarySale we can have multiple form types. We need to set the form type for the interest
-    ctx[:form_type_id] = secondary_sale.interest_form_type_id
-    interest.form_type_id = secondary_sale.interest_form_type_id
-
-    AccessRight.create(owner: interest.secondary_sale, entity: interest.entity, access_to_investor_id: interest.investor_id, metadata: "Buyer")
-    interest.save!
   end
 
   # extract the key data from the user data

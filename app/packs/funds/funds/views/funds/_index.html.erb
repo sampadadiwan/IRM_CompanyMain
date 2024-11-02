@@ -5,7 +5,7 @@
   <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
     <%= render "entities/vc_dashboard_menus" %>
 
-    <% funds.each do |fund| %>
+    <% funds.includes([:capital_commitments]).each do |fund| %>
         <%= render "/funds/card", fund: fund %>
     <% end %>
 

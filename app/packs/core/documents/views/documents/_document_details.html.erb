@@ -27,6 +27,12 @@
         Tasks
       </a>
 
+      <% if document.qna.present? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#qna-tab">
+        Q&A
+      </a>
+      <% end %>
+
 
     </nav>
 
@@ -84,6 +90,13 @@
             <% end %>
             <%= turbo_frame_tag "reminders_list", target: "_top" do %>
             <% end %>
+          </div>
+        </div>
+
+
+        <div id="qna-tab" class="tab-pane fade">
+          <div id="qna" class="associated_entity">            
+            <%= render_markdown(document.qna) %>
           </div>
         </div>
 

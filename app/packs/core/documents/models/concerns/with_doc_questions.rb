@@ -22,6 +22,16 @@ module WithDocQuestions
     entity.doc_questions.pluck(:document_name).uniq
   end
 
+  # Get all the questions for this model and document
+  def doc_questions_for(document)
+    doc_questions.where(document_name: document.name)
+  end
+
+  # GEt all the questions for this model
+  def doc_questions
+    entity.doc_questions.where(owner: entity, for_class: self.class.name)
+  end
+
   # This method is called by the DocLlmValidator service
   # Override this method in the class where this concern is included, to mark the specific model as validated if required
   def mark_as_validated(all_docs_valid)

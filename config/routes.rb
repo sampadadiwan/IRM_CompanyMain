@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  resources :compliance_checks do
+    post 'run_checks', on: :collection
+  end
+
+  resources :compliance_rules
   resources :rm_mappings
   resources :key_biz_metrics
   resources :incoming_emails

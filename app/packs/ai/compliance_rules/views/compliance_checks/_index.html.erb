@@ -1,0 +1,54 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Compliance Checks</h1>
+  <span>
+    <%#= link_to "New Compliance Check", new_compliance_check_path, {class: "btn btn-outline-primary"}  %>
+    <%= button_to "Run Compliance Check", run_checks_compliance_checks_path(owner_id: params[:owner_id], owner_type: params[:owner_type]), data: {action: "click->confirm#popup", msg: "This will run all applicable compliance checks against this record. Proceed?", method: :post }, class: "btn btn-outline-primary", method: :post  if params[:owner_id].present? && params[:owner_type].present?  %>
+
+    <%= link_to "Download", compliance_checks_path(params: params.to_unsafe_h, format: :xlsx), class: "btn btn-outline-success" %>
+  </span>
+
+</div>
+
+
+<div class="table-responsive" data-controller="datatable">
+  <table id="compliance_checks" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Parent
+        </th>
+        <th>
+          <%= sort_link @q, :parent_type, "Parent Type" %>
+        </th>
+        <th>
+          Owner
+        </th>
+        <th>
+          <%= sort_link @q, :owner_type, "Owner Type" %>
+        </th>
+        <th>
+          Compliance Rule
+        </th>
+        <th>
+          <%= sort_link @q, :status %>
+        </th>
+        <th>
+          Explanation
+        </th>
+        <th>
+          <%= sort_link @q, :created_at %>
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @compliance_checks.each do |compliance_check| %>
+        <%= render compliance_check %>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= paginate @compliance_checks %>
+
+</div>

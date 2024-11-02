@@ -3,6 +3,7 @@ class Entity < ApplicationRecord
   include EntityMerge
   include EntityEnabled
   include WithCustomNotifications
+  include EntityScopes
 
   # Make all models searchable
   update_index('entity') { self if index_record? }
@@ -102,6 +103,9 @@ class Entity < ApplicationRecord
   has_many :portfolio_cashflows
   has_many :aggregate_portfolio_investments
 
+  has_many :compliance_rules, dependent: :destroy
+  has_many :compliance_checks, dependent: :destroy
+
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy
   has_many :employees, class_name: "User", dependent: :destroy
@@ -115,19 +119,6 @@ class Entity < ApplicationRecord
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
-
-  default_scope { order(name: :asc) }
-  scope :holdings, -> { where(entity_type: "Holding") }
-  scope :vcs, -> { where(entity_type: "Investor") }
-  scope :startups, -> { where(entity_type: "Company") }
-  scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
-  scope :investor_advisors, -> { where(entity_type: "Investor Advisor") }
-  scope :family_offices, -> { where(entity_type: "Family Office") }
-  scope :funds, -> { where(entity_type: "Investment Fund") }
-  scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }
-
-  scope :perms, ->(p) { where_permissions(p.to_sym) }
-  scope :no_perms, ->(p) { where_not_permissions(p.to_sym) }
 
   before_save :check_url, :scrub_defaults, :update_kanban_permissions
   def check_url

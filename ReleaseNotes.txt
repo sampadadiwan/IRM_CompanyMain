@@ -1,3 +1,28 @@
+V8.0.21
+#####################################
+be84e8899 Allocation fix to support import_upload_id (#536)
+606ff2123 Removed global variable added for testing (#535)
+a62c69dfe Better policy for folder reports
+9feb0e769 Bulk Import for allocations (#523)
+c4b50dbb6 Folder job fixes for bug which Tejas experienced (#532)
+9bcfef69b Now call_amount for remittance can be < 0
+335f4aa39 Portfolio llm report (#534)
+f3ec5604b Added includes to load associations
+252063d56 Interest verificaion fixes main pull (#533)
+914648517 Added Rule for in account entry import
+097e2aa36 display custom fields in CDP
+94a072460 raise errors if fund or CD is not found in import
+c77dbc0eb Merged docusign
+5c87fc76c Added custom fields to CDP
+9fea1477a Make esign text consistent (#530)
+136cba7d2 Handle parallel document folder creation (#529)
+7c83a90df Fixed details block for access rights mail template (#526)
+aaa515e57 Added isin to FUS
+8dc935cb0 Fixed search by tag in fund formula (#524)
+69658e919 Send email btn now present in interest
+8b7a576e8 Digio param update (#519)
+af08a78ae Ag grid custom cols (#522)
+
 V8.0.17
 #####################################
 c12f4b5a9 Added audit trail for allocations
