@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Company Report</title>
+    <style>
+        /* CSS Variables for easy theming */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f4f6f8;
+            --section-bg: #ffffff;
+            --border-color: #dcdcdc;
+            --header-bg: #ecf0f1;
+            --footer-bg: #bdc3c7;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --max-width: 900px;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--primary-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: var(--max-width);
+            margin: 40px auto;
+            background-color: var(--section-bg);
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+            color: var(--secondary-color);
+        }
+
+        header p {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .section h2 {
+            display: flex;
+            align-items: center;
+            font-size: 1.6em;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 5px;
+        }
+
+        /* Adding icons to sections */
+        .section h2::before {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid var(--border-color);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: var(--footer-bg);
+            text-align: center;
+            color: #ffffff;
+            font-size: 0.9em;
+            border-radius: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            .section h2 {
+                font-size: 1.3em;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* Button Styling for Interactive Elements (if needed) */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header>
+            <h1>{Entity Name}</h1>
+            <p><strong>Portfolio Company:</strong> {Portfolio Company Name}</p>
+            <p><strong>Reporting Period:</strong> {Reporting Date}</p>
+        </header>
+
+        <!-- Key Points Section -->
+        <section class="section">
+            <h2>Key Points from Investor Presentation</h2>
+            <ul>
+                {Extract 8 to 10 key strategic updates as bullet points, of the company based on the investor presentation and operating metrics provided. These may include any new product launches, new market entry, any capital raise, or senior management team changes. Include any analysis of business or geographic segments if provided. Please cover all important points, and do not miss any key items.}
+            </ul>
+        </section>
+
+        <!-- Financial Analysis Section -->
+        <section class="section">
+            <h2>Financial Analysis</h2>
+            <p>
+                {Generate key insights about the financial performance of the Portfolio Company, in bullet points. These may include any significant increase or decrease in metrics both at volume and value level. Also include ingights into profitability metrics such as gross margin, Contribution Margin, EBITDA margin and balance sheet analysis such as current ratio, Advances and Payables outstanding.}
+            </p>
+            <h3>Key Financials</h3>
+            
+            {Pull out all the financials of the company available in a table format. Include metrics such as Revenue, EBITDA, Net Profit, Gross Margin, EBITDA Margin, Net Profit Margin, Current Ratio, Advances and Payables Outstanding. If possible add data from previous time periods for comparison}
+            
+        </section>
+
+        <!-- Key Queries Section -->
+        <section class="section">
+            <h2>Key Queries</h2>
+            <ul>
+                {Draft 8 to 10 key questions that the fund manager may want to ask from the Portfolio Company based on the review of the information provided to better understand the performance. Include any queries for understanding the risk assessment of the investment. Ask as many questions as possible to get a clear understanding of the company's performance.}
+            </ul>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            &copy; {Current Year} {Entity Name}. All rights reserved.
+        </footer>
+    </div>
+
+</body>
+</html>
