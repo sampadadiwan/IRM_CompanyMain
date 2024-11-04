@@ -18,7 +18,11 @@
       </div>
 
       <div class="form-group">
-        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>
+        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+      </div>
+
+      <div class=" alert alert-info text-muted">
+        Generate report for the fund <%= @fund %>. Note that the data will be sent to an external LLM for generation
       </div>
     <% end %>
 
