@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resources :ai_checks do
     post 'run_checks', on: :collection
+    get 'run_checks', on: :collection
   end
 
   resources :ai_rules

@@ -1,0 +1,28 @@
+<% owner = params[:owner_type].constantize.find(params[:owner_id]) %>
+<%= render NewCard.new do %>
+
+  <%= render FormCard.new(title: "Run Checks on: #{params[:owner_type]} #{owner}") do %>
+
+    <%= form_with(model: nil, url: run_checks_ai_checks_path(owner_id: params[:owner_id], owner_type: params[:owner_type], rule_type: "compliance"), method: :post) do |form| %>
+      
+      <%= form.text_field :owner_id, class: "form-control", hidden: true, value: params[:owner_id]  %>
+      <%= form.text_field :owner_type, class: "form-control", hidden: true, value: params[:owner_type]  %>
+      
+      <div class="form-group">
+        <%= form.label :schedule %>
+        <%= form.select :schedule, AiRule::schedules.invert, {include_blank: "All"}, class: "form-control", name: "schedule"  %>
+      </div>
+
+      <div class="form-group">
+       <%= form.label :rule_type %>
+       <%= form.select :rule_type, AiRule::rule_types.invert, {}, class: "form-control", name: "rule_type"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Run Checks Now", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
+  <% end %>
+  
+<% end %>

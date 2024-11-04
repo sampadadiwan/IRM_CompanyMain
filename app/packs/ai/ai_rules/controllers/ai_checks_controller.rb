@@ -21,9 +21,14 @@ class AiChecksController < ApplicationController
     schedule = params[:schedule]
     rule_type = params[:rule_type]
     authorize(model, :run_checks?)
-    # Run the compliance checks
-    AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)
-    redirect_to model, notice: "Compliance checks are being run in the background. Please check in a few mins"
+    
+    if request.post?
+      # Run the compliance checks
+      AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)
+      redirect_to model, notice: "Compliance checks are being run in the background. Please check in a few mins"
+    else
+      render :run_checks
+    end
   end
 
   # GET /ai_checks/1
