@@ -7,7 +7,7 @@ class FolderLlmReportJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       folder = Folder.find(folder_id)
       # Find all the files in this folder and add it to the signed_urls
-      doc_urls, template_url = get_documents(folder, report_type)
+      doc_urls, template_url = get_documents(folder, report_type, report_template_name)
 
       if template_url.nil? || doc_urls.empty?
         # Send a notification to the user
@@ -28,11 +28,11 @@ class FolderLlmReportJob < ApplicationJob
 
   private
 
-  def get_documents(folder, report_type)
+  def get_documents(folder, report_type, report_template_name)
     doc_urls = []
     template_url = nil
     folder.documents.each do |doc|
-      if doc.name == "Report Template"
+      if doc.name == report_template_name
         # Report template specific to this folder
         template_url = doc.file.url
       elsif doc.pdf?
@@ -45,7 +45,7 @@ class FolderLlmReportJob < ApplicationJob
     if template_url.nil?
       # Get the template url from Funds/
       folder.entity.folders.where(name: "#{report_type} Templates").first&.documents&.each do |doc|
-        next unless doc.name == "Report Template"
+        next unless doc.name == report_template_name
 
         Rails.logger.debug { "Found #{doc.name} in Portfolio Templates" }
         template_url = doc.file.url

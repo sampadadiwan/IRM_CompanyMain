@@ -69,7 +69,7 @@
                     { class: "dropdown-item d-none d-sm-block"} if policy(@folder).update? %>
 
             <% report_type = @folder.owner.class.name %>
-            <%= button_to "Generate Report", generate_report_folder_path(id: folder_id, report_type:), class: "dropdown-item", data: {action: "click->confirm#popup", msg: "This will send the documents in this folder to an external LLM to generate your report. Report Template must exist in #{report_type} Templates. Proceed?", method: :post } if @folder && policy(@folder).generate_report? %>
+            <%= link_to "Generate Report", generate_report_folder_path(id: folder_id, report_type:), class: "dropdown-item" if @folder && policy(@folder).generate_report? %>
 
             <%= button_to "Q&A", generate_qna_folder_path(id: folder_id, report_type:), class: "dropdown-item", data: {action: "click->confirm#popup", msg: "This will send the documents in this folder to an external LLM to generate answer to the questions for this document name setup by you. Proceed?", method: :post } if @folder && policy(@folder).generate_qna? %>
 
