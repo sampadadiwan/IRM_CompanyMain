@@ -22,6 +22,10 @@ class AiDataManager
     property :question, type: "string", description: "The validation question that needs to be answered", required: true
   end
 
+  define_function :extract_info, description: "extract information from the document" do
+    property :question, type: "string", description: "The information to be extracted", required: true
+  end
+
   define_function :get_document, description: "Get a named document from the record, may return nil" do
     property :document_name, type: "string", description: "name of the document", required: true
   end
@@ -57,6 +61,21 @@ class AiDataManager
     Rails.logger.debug { msg }
     @audit_log[:validate_document_result] = msg
     validation_results
+  end
+
+  def extract_info(question:)
+    msg = "CDM: extract_info called with document: #{@document.name} and question: #{question}"
+    @audit_log[:extract_info] = msg
+    Rails.logger.debug { msg }
+    document = @document
+    DocQuestion.new(question:)
+    result = DocLlmExtractor.wtf?(model: document.owner, document:, save_check_results: false)
+
+    extracted_info = result.success? ? result[:extracted_info] : "Error in validation"
+    msg = "CDM: extract_info results: #{extracted_info}"
+    Rails.logger.debug { msg }
+    @audit_log[:extracted_info] = msg
+    extracted_info
   end
 
   def get_document(document_name:)
@@ -105,20 +124,24 @@ class AiDataManager
     #   "Get the document with document name 'IC Approval Note WS' from the record, and check if it exists.  Validate whether it has all Approval Signatures at the bottom with real signatures"
     # ]
 
-    ComplianceAssistant.run_ai_checks(PortfolioInvestment.find(8), User.find(21), nil)
+    # ComplianceAssistant.run_ai_checks(PortfolioInvestment.find(8), User.find(21), nil)
 
     # fund_queries = [
     #   # "Get the associated data for CapitalCommitments from the record. For each commitment check that the percentage < 20%.",
     #   "Get the associated data for CapitalRemittances from the record. For each remittance check that the status is 'Paid'"
     # ]
 
-    ComplianceAssistant.run_ai_checks(Fund.find(1), User.find(21), nil)
+    # ComplianceAssistant.run_ai_checks(Fund.find(1), User.find(21), nil)
 
     # cc_queries = [
     #   "Get the record details. Then calculate the percentage < 10%. ",
     #   "Get the document with document name Directors From the record, and check if it exists. Validate whether it is signed by both directors."
     # ]
 
-    ComplianceAssistant.run_ai_checks(CapitalCommitment.find(1), User.find(21), nil)
+    # ComplianceAssistant.run_ai_checks(CapitalCommitment.find(1), User.find(21), nil)
+
+    dm = AiDataManager.new(PortfolioInvestment.find(8))
+    assistant = AiAssistant.new(dm, DocLlmExtractor::INSTRUCTIONS)
+    assistant.query("Get the document called 'KPIs' from the record and extract key financial information from it, and return the raw json.")
   end
 end

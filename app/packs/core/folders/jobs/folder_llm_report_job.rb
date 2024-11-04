@@ -16,12 +16,18 @@ class FolderLlmReportJob < ApplicationJob
         send_notification(msg, user_id, :danger)
       else
         # Now call the generate_report API
-        response = generate_report(doc_urls, template_url)
-        folder_path = response["folder_path"]
-        # Check for the output_report.html file in the folder_path
-        check_for_output_report(folder_path)
-        # Now download the output_report.html file and save it as a document in the folder
-        upload_file(folder, folder_path, user_id)
+        output_file_name = "#{report_template_name.parameterize(separator: '_').gsub('_template', '')}.html"
+        response = generate_report(doc_urls, template_url, output_file_name)
+        if response.code == 200
+          folder_path = response["folder_path"]
+          # Check for the output_report.html file in the folder_path
+          check_for_output_report(folder_path, output_file_name)
+          # Now download the output_report.html file and save it as a document in the folder
+          upload_file(folder, folder_path, user_id, output_file_name)
+        else
+          msg = "Failed to generate report, report server not reachable. Please try again."
+          send_notification(msg, user_id, :danger)
+        end
       end
     end
   end
@@ -56,7 +62,7 @@ class FolderLlmReportJob < ApplicationJob
     [doc_urls, template_url]
   end
 
-  def generate_report(doc_urls, template_url)
+  def generate_report(doc_urls, template_url, output_file_name)
     # This is part of the xirr_py package
     # https://github.com/ausangshukla/xirr_py
     response = HTTParty.post(
@@ -67,7 +73,8 @@ class FolderLlmReportJob < ApplicationJob
       body: {
         api_key: Rails.application.credentials["OPENAI_API_KEY"],
         file_urls: doc_urls,
-        template_html_url: template_url
+        template_html_url: template_url,
+        output_file_name:
       }.to_json
     )
 
@@ -75,32 +82,33 @@ class FolderLlmReportJob < ApplicationJob
     response
   end
 
-  def check_for_output_report(folder_path)
+  def check_for_output_report(folder_path, output_file_name)
     tries = 0
     # Now sleep for 2 mins and check the folder_path for the output_report.html file, and do this in a loop
     while tries < 8
       tries += 1
-      msg = "Checking #{tries} for output_report.html file in #{folder_path}"
+      msg = "Checking #{tries} for #{output_file_name} file in #{folder_path}"
       Rails.logger.debug msg
       sleep(30)
-      break if File.exist?("#{folder_path}/output_report.html")
+      break if File.exist?("#{folder_path}/#{output_file_name}")
     end
   end
 
   # rubocop:disable Rails/SkipsModelValidations
-  def upload_file(folder, folder_path, user_id)
+  # rubocop:disable Metrics/BlockNesting
+  def upload_file(folder, folder_path, user_id, output_file_name)
     # Now download the output_report.html file and save it as a document in the folder
-    if File.exist?("#{folder_path}/output_report.html")
+    if File.exist?("#{folder_path}/#{output_file_name}")
       msg = "Found output_report.html file in #{folder_path}"
       Rails.logger.debug msg
-
+      file_name = output_file_name.gsub(".html", "").humanize.titleize
       tries = 0
       while tries < 3
         begin
           # Save the output_report.html file as a document in the folder
-          doc_html = folder.documents.create!(file: File.open("#{folder_path}/output_report.html"), name: "Output Report", entity_id: folder.entity_id, user_id:, orignal: true, download: true)
+          doc_html = folder.documents.create!(file: File.open("#{folder_path}/#{output_file_name}"), name: file_name, entity_id: folder.entity_id, user_id:, orignal: true, download: true)
           # Save the output_report.html.docx file as a document in the folder
-          doc_word = folder.documents.create!(file: File.open("#{folder_path}/output_report.html.docx"), name: "Output Report Doc", entity_id: folder.entity_id, user_id:, orignal: true, download: true)
+          doc_word = folder.documents.create!(file: File.open("#{folder_path}/#{output_file_name}.docx"), name: "#{file_name} Doc", entity_id: folder.entity_id, user_id:, orignal: true, download: true)
           # Update the orignal flag for both the documents
           Document.where(id: [doc_html.id, doc_word.id]).update_all(orignal: true)
           # Send a notification to the user
@@ -109,8 +117,9 @@ class FolderLlmReportJob < ApplicationJob
           break
         rescue StandardError => e
           Rails.logger.error e.backtrace.join("\n")
-          Rails.logger.error { "Failed to save output_report.html file as a document in the folder: #{e.message}" }
-          send_notification("Failed to save output_report.html file as a document in the folder", user_id, :danger) if tries == 2
+          msg = "Failed to save #{output_file_name} file as a document in the folder"
+          Rails.logger.error { "#{msg}: #{e.message}" }
+          send_notification(msg, user_id, :danger) if tries == 2
           sleep(5)
         end
         # Sometimes we get an error while saving the document, so we will retry 3 times
@@ -125,5 +134,6 @@ class FolderLlmReportJob < ApplicationJob
       send_notification(msg, user_id, :danger)
     end
   end
+  # rubocop:enable Metrics/BlockNesting
   # rubocop:enable Rails/SkipsModelValidations
 end

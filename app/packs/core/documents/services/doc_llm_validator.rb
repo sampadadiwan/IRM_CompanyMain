@@ -6,7 +6,7 @@
 # Is the document valid or expired
 
 # THis action will have access to the kyc, the document, and the checks to do for this document
-class DocLlmValidator < Trailblazer::Operation
+class DocLlmValidator < DocLlmBase
   step :init
   step :convert_file_to_image
   step :run_checks_with_llm
@@ -18,47 +18,10 @@ class DocLlmValidator < Trailblazer::Operation
   # model: The model whose data needs to be validated against the document (ex InvestorKyc, Offer etc)
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
-    ctx[:llm_model] || "gpt-4o"
-    temperature = ctx[:temperature] || 0.1
-    access_token = Rails.application.credentials["OPENAI_API_KEY"]
-    open_ai_client = OpenAI::Client.new(access_token:, llm_options: { model:, temperature: })
-
-    ctx[:open_ai_client] = open_ai_client
+    super
     ctx[:doc_questions] ||= model.doc_questions.where(document_name: document.name)
-
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
     ctx[:open_ai_client].present? && ctx[:doc_questions].present?
-  end
-
-  # Since we deal with vision models, who can read images much better than PDFs, we convert the pdf or doc into image before sending to llm
-  def convert_file_to_image(ctx, model:, document:, **)
-    folder_path = "tmp/#{model.class.name}/#{model.id}"
-    # make the directory if it does not exist
-    FileUtils.mkdir_p(folder_path) unless File.directory?(folder_path)
-    # setup the image path
-    image_path = "#{folder_path}/#{document.id}.png"
-    ctx[:image_path] = image_path
-    ctx[:folder_path] = folder_path
-
-    if document.mime_type_includes?('pdf')
-      # convert pdf to image
-      document.file.download do |file|
-        ImageService.pdf_to_image(document, file, folder_path, image_path)
-      end
-      true
-    elsif document.mime_type_includes?('doc')
-      # convert doc to image
-    elsif document.mime_type_includes?('image')
-      # Copy the file to the image_path
-      document.file.download do |file|
-        FileUtils.cp(file.path, image_path)
-      end
-      Rails.logger.debug "File is already an image"
-      true
-    else
-      # raise error
-      raise "Cannot conver to image"
-    end
   end
 
   # Run the checks with the llm
@@ -131,21 +94,5 @@ class DocLlmValidator < Trailblazer::Operation
       # Tell the model that the documents have been validated
       model.mark_as_validated(all_docs_valid)
     end
-  end
-
-  # Ensure assistant is deleted
-  def cleanup(ctx, **)
-    Rails.logger.debug "Cleaning up"
-    ctx[:image_path]
-    # assistant.delete
-
-    # Delete the folder_path
-    FileUtils.rm_rf(ctx[:folder_path]) if !Rails.env.development? && ctx[:folder_path] && File.directory?(ctx[:folder_path])
-    true
-  end
-
-  def handle_errors(_ctx, **)
-    Rails.logger.error "Error in Doc LLM Validator"
-    true
   end
 end

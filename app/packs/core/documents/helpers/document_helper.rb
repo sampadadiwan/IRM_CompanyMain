@@ -48,6 +48,7 @@ module DocumentHelper
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq
   end
 
+  # rubocop:disable Rails/OutputSafety
   def render_markdown(text)
     return "" if text.blank?
 
@@ -67,4 +68,5 @@ module DocumentHelper
     html = markdown.render(text)
     sanitize(html).html_safe
   end
+  # rubocop:enable Rails/OutputSafety
 end
