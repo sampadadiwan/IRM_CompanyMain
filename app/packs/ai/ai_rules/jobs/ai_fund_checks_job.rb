@@ -1,5 +1,5 @@
 class AiFundChecksJob < ApplicationJob
-  queue_as :default
+  queue_as :ai_checks
 
   def perform(fund_id, user_id, rule_type, schedule)
     # Find the model

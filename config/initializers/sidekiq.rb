@@ -8,7 +8,7 @@ Sidekiq.configure_server do |config|
   # define a new capsule which processes jobs from the `serial and doc_gen` queue one at a time
   config.capsule("single-threaded") do |cap|
     cap.concurrency = 1
-    cap.queues = %w[serial doc_gen]
+    cap.queues = %w[serial doc_gen ai_checks]
   end
 
   Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
