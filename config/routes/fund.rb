@@ -97,6 +97,8 @@ resources :funds do
   get 'export', on: :member
   get 'check_access_rights', on: :member
   delete 'delete_all', on: :member
+  get 'generate_reports', on: :member
+  post 'generate_reports', on: :member
 end
 
 resources :expression_of_interests do

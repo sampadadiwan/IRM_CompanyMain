@@ -104,7 +104,7 @@ class FolderLlmReportJob < ApplicationJob
           # Update the orignal flag for both the documents
           Document.where(id: [doc_html.id, doc_word.id]).update_all(orignal: true)
           # Send a notification to the user
-          send_notification("Sucessfully generated report. Please refresh the screen.", user_id, :success)
+          send_notification("Sucessfully generated report in folder #{folder.name} for #{folder.owner.class.name}, #{folder.owner}. Please refresh the screen.", user_id, :success)
           # Break out of the loop, as we are done
           break
         rescue StandardError => e

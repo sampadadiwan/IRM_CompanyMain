@@ -9,12 +9,15 @@
     <% if fund && policy(fund).update? %>
       <%= link_to "New Investment",
           new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-          "portfolio_investment[fund_id]": params[:fund_id]),
-          {class: "btn btn-outline-primary"} if params[:fund_id].present?  %>
+          "portfolio_investment[fund_id]": fund.id),
+          {class: "btn btn-outline-primary"}  %>
 
-      <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} if params[:fund_id].present? %>
+      <%= link_to "Generate Portfolio Reports",
+          generate_reports_fund_path(fund, report_type: "AggregatePortfolioInvestment"), { class: "btn btn-outline-success"} %>
 
-        <%= link_to "Conversions", stock_conversions_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} %>
+      <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: fund.id), { class: "btn btn-outline-success"}  %>
+
+      <%= link_to "Conversions", stock_conversions_path(fund_id: fund.id), { class: "btn btn-outline-success"} %>
 
 
         <div class="btn-group">
@@ -26,14 +29,14 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
 
-              <%= link_to "Download Investments", aggregate_portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
+              <%= link_to "Download Investments", aggregate_portfolio_investments_path(fund_id: fund.id, format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
               <%#= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
               <div class="dropdown-divider"></div>
 
               <%= link_to "Upload",
-                  new_import_upload_path("import_upload[owner_id]": params[:fund_id],
+                  new_import_upload_path("import_upload[owner_id]": fund.id,
                   "import_upload[owner_type]": "Fund",
                   "import_upload[import_type]": "PortfolioInvestment",
                   "sample_upload": "PORTFOLIO_SAMPLE"),

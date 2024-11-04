@@ -21,7 +21,7 @@ class AiChecksController < ApplicationController
     schedule = params[:schedule]
     rule_type = params[:rule_type]
     authorize(model, :run_checks?)
-    
+
     if request.post?
       # Run the compliance checks
       AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)

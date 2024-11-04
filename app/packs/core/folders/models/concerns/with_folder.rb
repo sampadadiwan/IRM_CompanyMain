@@ -36,7 +36,6 @@ module WithFolder
   end
 
   def document_folder
-    Rails.logger.debug { "self.being_destroyed: #{being_destroyed}" }
     super || setup_document_folder unless being_destroyed || destroyed?
   end
 

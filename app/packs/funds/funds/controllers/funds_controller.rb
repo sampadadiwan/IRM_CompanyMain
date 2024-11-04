@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all]
+  before_action :set_fund, only: %i[show edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports]
 
   # GET /funds or /funds.json
   def index
@@ -33,6 +33,15 @@ class FundsController < ApplicationController
       @fund_report ||= FundReport.where(fund_id: @fund.id, name: params[:report].split('/').last.camelize).last
       @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Fund Reports': fund_reports_path(fund_id: @fund.id), "#{params[:report].split('/').last.camelize}": report_fund_path(@fund, fund_report_id: @fund_report.id, report: params[:report].to_s) } if @fund_report.present?
       render "/funds/#{params[:report]}"
+    end
+  end
+
+  def generate_reports
+    if request.post?
+      FundApiLlmReportJob.perform_later(@fund.id, current_user.id, report_template_name: params[:report_template_name])
+      redirect_to fund_path(@fund, tab: 'portfolio-investments-tab'), notice: "Report generation started, please check back in a few mins"
+    else
+      render "generate_reports"
     end
   end
 

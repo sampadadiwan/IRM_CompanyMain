@@ -1,0 +1,27 @@
+<% template_names = @fund.entity.folders.where(name: "AggregatePortfolioInvestment Templates").first.documents.pluck(:name) %>
+<%= render NewCard.new do %>
+
+  <%= render FormCard.new(title: "Generate Reports for #{@fund}") do %>
+
+    <%= form_with(model: nil, url: generate_reports_fund_path(@fund), method: :post) do |form| %>
+            
+      <div class="form-group">
+        <%= form.label :report_type %>
+        <%= form.select :report_type, ["AggregatePortfolioInvestment"], {}, class: "form-control", name: "report_type"  %>
+        <small class="form-text text-muted">Select the reports to generate.</small>
+      </div>
+
+      <div class="form-group">
+       <%= form.label :report_template_name %>
+       <%= form.select :report_template_name, template_names, {}, class: "form-control", name: "rule_type"  %>
+       <small class="form-text text-muted">Select the template to use for the report.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
+  <% end %>
+  
+<% end %>

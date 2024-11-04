@@ -7,6 +7,10 @@ class FundPolicy < FundBasePolicy
     show?
   end
 
+  def generate_reports?
+    update?
+  end
+
   def allocate?
     update?
   end
