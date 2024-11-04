@@ -1,0 +1,24 @@
+<tr id="<%= dom_id ai_rule %>">
+  <td>
+    <%= ai_rule.for_class %>
+  </td>
+  <td>
+    <%= ai_rule.rule %>
+  </td>
+  <td>
+    <%= ai_rule.rule_type_label %>
+  </td>
+  <td>
+    <%= ai_rule.tags %>
+  </td>
+  <td>
+    <%= ai_rule.schedule_label %>
+  </td>
+  <td>
+    <%= display_boolean ai_rule.enabled %>
+  </td>
+  <td>
+    <%= link_to "Show", ai_rule , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_ai_rule_path(ai_rule), {class: "btn btn-outline-success"} if policy(ai_rule).update? %>
+  </td>
+</tr>

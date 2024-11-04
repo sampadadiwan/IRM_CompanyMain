@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ComplianceRuleTest < ActiveSupport::TestCase
+class AiRuleTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end

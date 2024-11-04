@@ -128,7 +128,7 @@
         </a>
 
         <% if current_user.enable_compliance %>
-        <a href="<%= compliance_rules_path %>" class="py-8 px-7 d-flex align-items-center">
+        <a href="<%= ai_rules_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-report"></i>
             </span>
@@ -138,7 +138,7 @@
             </div>
         </a>
 
-        <a href="<%= compliance_checks_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
+        <a href="<%= ai_checks_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-list-check"></i>
             </span>

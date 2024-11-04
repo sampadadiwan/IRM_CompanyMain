@@ -1,0 +1,32 @@
+<tr id="<%= dom_id ai_check %>">
+  <td>
+    <%= link_to ai_check.parent %>
+  </td>
+  <td>
+    <%= ai_check.parent_type %>
+  </td>
+  <td>
+    <%= link_to ai_check.owner %>
+  </td>
+  <td>
+    <%= ai_check.owner_type %>
+  </td>
+  <td>
+    <%= link_to ai_check.ai_rule.rule, ai_check.ai_rule if ai_check.ai_rule %>
+  </td>
+  <td>
+    <%= ai_check.rule_type %>
+  </td>
+  <td>
+    <%= ai_check.status&.humanize %>
+  </td>
+  <td>
+    <%= ai_check.explanation %>
+  </td>
+  <td>
+    <%= l ai_check.created_at %>
+  </td>
+  <td>
+    <%= link_to "Show", ai_check , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_01_120419) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_04_032037) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -209,6 +209,38 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_01_120419) do
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
+  end
+
+  create_table "ai_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "ai_rule_id"
+    t.string "parent_type", null: false
+    t.bigint "parent_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "status", limit: 5
+    t.text "explanation"
+    t.json "audit_log"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "rule_type", limit: 15
+    t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
+    t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
+    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
+  end
+
+  create_table "ai_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "for_class", limit: 20
+    t.text "rule"
+    t.string "tags"
+    t.string "schedule", limit: 40
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "enabled", default: true
+    t.string "rule_type", limit: 15
+    t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
   end
 
   create_table "allocation_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -772,36 +804,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_01_120419) do
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
-  end
-
-  create_table "compliance_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.bigint "compliance_rule_id"
-    t.string "parent_type", null: false
-    t.bigint "parent_id", null: false
-    t.string "owner_type", null: false
-    t.bigint "owner_id", null: false
-    t.string "status", limit: 5
-    t.text "explanation"
-    t.json "audit_log"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["compliance_rule_id"], name: "index_compliance_checks_on_compliance_rule_id"
-    t.index ["entity_id"], name: "index_compliance_checks_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
-    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
-  end
-
-  create_table "compliance_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.string "for_class", limit: 20
-    t.text "rule"
-    t.string "tags"
-    t.string "schedule", limit: 40
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "enabled", default: true
-    t.index ["entity_id"], name: "index_compliance_rules_on_entity_id"
   end
 
   create_table "custom_grid_views", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3156,6 +3158,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_01_120419) do
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "ai_checks", "ai_rules"
+  add_foreign_key "ai_checks", "entities"
+  add_foreign_key "ai_rules", "entities"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
   add_foreign_key "allocation_runs", "users"
@@ -3226,9 +3231,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_01_120419) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
-  add_foreign_key "compliance_checks", "compliance_rules"
-  add_foreign_key "compliance_checks", "entities"
-  add_foreign_key "compliance_rules", "entities"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
   add_foreign_key "deal_activities", "deal_investors"

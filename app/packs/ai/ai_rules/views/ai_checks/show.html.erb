@@ -1,0 +1,59 @@
+<%= render FormCard.new(title: "#{@ai_check}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @ai_check.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Parent
+      </td>
+      <td>
+        <%= link_to @ai_check.parent %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @ai_check.owner %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= @ai_check.status %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Explanation
+      </td>
+      <td>
+        <%= @ai_check.explanation %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Logs
+      </td>
+      <td>
+        <%= Json2table.get_html_table(JSON.parse(@ai_check.audit_log), JsonTable::TABLE_OPTIONS).html_safe %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@ai_check).update? %>
+      <%= link_to "Edit", edit_ai_check_path(@ai_check), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @ai_check, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,4 +1,4 @@
 require 'test_helper'
 
-class ComplianceRuleDecoratorTest < Draper::TestCase
+class AiRuleDecoratorTest < Draper::TestCase
 end

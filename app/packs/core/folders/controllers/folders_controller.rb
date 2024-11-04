@@ -33,7 +33,8 @@ class FoldersController < ApplicationController
 
   def generate_qna
     owner = @folder.owner
-    DocLlmQnaJob.perform_later(owner.class.name, owner.id, current_user.id)
+    document_ids = @folder.documents.pluck(:id)
+    DocLlmQnaJob.perform_later(owner.class.name, owner.id, current_user.id, document_ids:)
     redirect_to request.referer, notice: "QnA generation has been started. You will be notified when it is ready."
   end
 

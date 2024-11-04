@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :compliance_check do
+  factory :ai_check do
     entity { nil }
     parent { nil }
     owner { nil }
@@ -7,7 +7,7 @@ FactoryBot.define do
     explanation { "MyText" }
   end
 
-  factory :compliance_rule do
+  factory :ai_rule do
     entity { nil }
     for_class { "MyString" }
     rule { "MyText" }

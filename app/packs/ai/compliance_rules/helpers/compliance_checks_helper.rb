@@ -1,2 +1,0 @@
-module ComplianceChecksHelper
-end

@@ -1,0 +1,49 @@
+<%= render FormCard.new(title: "Compliance Rules : #{ai_rule.presence || 'New'}") do %>
+  <%= form_with(model: ai_rule, validate: true) do |form| %>
+    <% if ai_rule.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(ai_rule.errors.count, "error") %> prohibited this ai_rule from being saved:</h2>
+        <ul>
+          <% ai_rule.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    
+    <div class="form-group">
+      <%= form.label :for_class, "For" %>
+      <%= form.select :for_class, ["PortfolioInvestment", "InvestorKyc", "CapitalCommitment", "CapitalRemittance", "CapitalDistribution", "Fund"].sort, {}, class: "form-control"  %>
+    </div>
+    
+    <div class="form-group">
+      <%= form.label :rule_type %>
+      <%= form.select :rule_type, AiRule::rule_types.invert, {include_blank: true}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :rule %>
+      <%= form.text_area :rule, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tags, class: "form-control"  %>
+      <small class="form-text text-muted">Comma separated tags</small>
+    </div>
+    <div class="form-group">
+      <%= form.label :schedule %>
+      <%= form.select :schedule, AiRule::schedules.invert, {include_blank: true},  class: "form-control"  %>
+      <small class="form-text text-muted">Cron expression</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

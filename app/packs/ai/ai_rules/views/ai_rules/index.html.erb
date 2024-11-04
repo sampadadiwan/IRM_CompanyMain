@@ -1,0 +1,37 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Rules</h1>
+  <%= link_to "New Rule", new_ai_rule_path, {class: "btn btn-outline-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="ai_rules" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          For 
+        </th>
+        <th>
+          Rule
+        </th>
+        <th>
+          Type
+        </th>
+        <th>
+          Tags
+        </th>
+        <th>
+          Schedule
+        </th>
+        <th>
+          Enabled
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @ai_rules.each do |ai_rule| %>
+        <%= render ai_rule %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -103,8 +103,8 @@ class Entity < ApplicationRecord
   has_many :portfolio_cashflows
   has_many :aggregate_portfolio_investments
 
-  has_many :compliance_rules, dependent: :destroy
-  has_many :compliance_checks, dependent: :destroy
+  has_many :ai_rules, dependent: :destroy
+  has_many :ai_checks, dependent: :destroy
 
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy

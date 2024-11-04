@@ -1,0 +1,2 @@
+module AiRulesHelper
+end

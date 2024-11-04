@@ -212,7 +212,8 @@ export default class extends Controller {
             // Add the parameter audit_trail=true to the existing URL and reload the page
             handler: () => {  
               let url = new URL(window.location.href);
-              url.searchParams.set('compliance_checks', 'true');
+              url.searchParams.set('ai_checks', 'true');
+              url.searchParams.set('rule_type', 'compliance');
               window.location = url;
             }
           }

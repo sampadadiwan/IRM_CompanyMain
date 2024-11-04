@@ -1,0 +1,46 @@
+<%= render FormCard.new(title: "Compliance Checks : #{ai_check.presence || 'New'}") do %>
+
+  <%= form_with(model: ai_check, validate: true) do |form| %>
+    <% if ai_check.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(ai_check.errors.count, "error") %> prohibited this ai_check from being saved:</h2>
+
+        <ul>
+          <% ai_check.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+      <div class="form-group">
+        <%= form.label :entity_id %>
+      <%= form.text_field :entity_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :parent_id %>
+      <%= form.text_field :parent_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :owner_id %>
+      <%= form.text_field :owner_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :status %>
+      <%= form.text_field :status, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :explanation %>
+      <%= form.text_area :explanation, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+
+<% end %>

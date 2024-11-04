@@ -1,4 +1,0 @@
-<%= render "/layouts/filter", associations: [] %>
-<%= turbo_frame_tag "compliance_checks_frame", target: "_top" do %>
-  <%= render "/compliance_checks/index", compliance_checks: @compliance_checks %>
-<% end %>
