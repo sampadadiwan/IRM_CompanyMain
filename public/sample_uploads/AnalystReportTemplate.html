@@ -10,6 +10,7 @@
         /* CSS Variables for easy theming */
         :root {
             --primary-color: #2c3e50;
+            --subtext-color: #6e7275;
             --secondary-color: #007bff;
             --accent-color: #e74c3c;
             --background-color: #f4f6f8;
@@ -38,6 +39,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border-radius: 10px;
             overflow: hidden;
+        }
+
+        .subtext {
+            display: block;
+            font-size: 0.7em;
+            color: var(--subtext-color);
         }
 
         header {
@@ -177,9 +184,16 @@
 
         <!-- Key Points Section -->
         <section class="section">
-            <h2>Key Points from Investor Presentation</h2>
+            <h2>Key points on Strategy</h2>
             <ul>
-                {Extract 8 to 10 key strategic updates as bullet points, of the company based on the investor presentation and operating metrics provided. These may include any new product launches, new market entry, any capital raise, or senior management team changes. Include any analysis of business or geographic segments if provided. Please cover all important points, and do not miss any key items.}
+                {Extract 8 to 10 key strategic updates as bullet points, of the company based on the investor presentation provided. These may include any new product launches, new market entry, any capital raise, or senior management team changes. Include any analysis of business or geographic segments if provided. Please cover all important points, and do not miss any key items.}
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Key Finance and Ops points</h2>
+            <ul>
+                {Extract 8 to 10 key financial or operational updates as bullet points, of the company based on the investor presentation provided. Please cover all important points, and do not miss any key items.}
             </ul>
         </section>
 
@@ -195,17 +209,57 @@
             
         </section>
 
+
+        <!-- Ops Analysis Section -->
+        <section class="section">
+            <h2>Ops Analysis</h2>
+            <p>
+                {Generate key insights about the operational performance of the Portfolio Company, in bullet points. These may include any significant increase or decrease in metrics both at volume and value level.}
+            </p>
+            <h3>Key Ops Metrics</h3>
+            
+            {Pull out all the operational metrics of the company available in a table format. If possible add data from previous time periods for comparison}
+            
+        </section>
+
         <!-- Key Queries Section -->
         <section class="section">
-            <h2>Key Queries</h2>
+            <h2>Key Operations Queries</h2>
             <ul>
-                {Draft 8 to 10 key questions that the fund manager may want to ask from the Portfolio Company based on the review of the information provided to better understand the performance. Include any queries for understanding the risk assessment of the investment. Ask as many questions as possible to get a clear understanding of the company's performance.}
+                {Draft 8 to 10 key questions that the fund manager may want to ask from the Portfolio Company based on the review of the information provided to better understand the operational performance. Ask as many questions as possible to get a clear understanding of the company's operational performance. For each question add subtext, which explains the context and why this question is important given the info in the documents.}  
+                {Question} 
+                <small class="subtext">{Subtext}</small>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Key Financial Queries</h2>
+            <ul>
+                {Draft 8 to 10 key questions that the fund manager may want to ask from the Portfolio Company based on the review of the information provided to better understand the financial performance. Ask as many questions as possible to get a clear understanding of the company's financial performance. For each question add subtext, which explains the context and why this question is important given the info in the documents.}  
+                {Question} 
+                <small class="subtext">{Subtext}</small>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Key Strategy Queries</h2>
+            <ul>
+                {Draft 8 to 10 key questions that the fund manager may want to ask from the Portfolio Company based on the review of the information provided to better understand the company strategy. Ask as many questions as possible to get a clear understanding of the company's strategy. For each question add subtext, which explains the context and why this question is important given the info in the documents.}  
+                {Question} 
+                <small class="subtext">{Subtext}</small>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Things not covered</h2>
+            <ul>
+                {Draft 8 to 10 key points that should have been covered by the company in the investor presentation but were not. These may include any key financial metrics, operational metrics, or strategic updates that were not covered in the presentation.}
             </ul>
         </section>
 
         <!-- Footer -->
         <footer class="footer">
-            &copy; {Current Year} {Entity Name}. All rights reserved.
+            &copy; {Entity Name}. All rights reserved.
         </footer>
     </div>
 
