@@ -4,7 +4,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign resend_for_esign]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download]
   after_action :verify_policy_scoped, only: []
 
@@ -241,6 +241,14 @@ class DocumentsController < ApplicationController
       end
       format.json { head :no_content }
     end
+  end
+
+  def send_document_notification
+    DocumentSender.send(@document, current_user.id, params[:custom_notification_id])
+
+    redirect_to document_url(@document), notice: "Document will be sent to the email addresses as requested."
+  rescue StandardError => e
+    redirect_to document_url(@document), alert: e.message
   end
 
   private

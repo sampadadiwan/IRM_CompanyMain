@@ -136,6 +136,7 @@ resources :documents do
   get 'approve', on: :collection
   post 'approve', on: :collection
   post 'bulk_actions', on: :collection
+  patch 'send_document_notification', on: :member
 end
 
 resources :entities do

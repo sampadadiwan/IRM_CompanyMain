@@ -323,3 +323,22 @@ Then('the template checkbox is not present') do
   expect(page).not_to have_text "Template"
   expect(page).not_to have_selector('#document_template')
 end
+
+Given('there is a Custom Notification for the entity') do
+  @document = Document.first
+  allow_any_instance_of(Document).to receive(:notification_users).and_return([@user])
+  @custom_notification = FactoryBot.create(:custom_notification, entity: @entity, owner: @entity, for_type: "Send Document", body: Faker::Lorem.paragraphs.join(". "), email_method: "send_document")
+end
+
+Then('user sends a single document using that Custom Notification') do
+  visit document_path(@document)
+  click_on "Send Document"
+  click_on "Send #{@custom_notification.subject}"
+  sleep(10)
+end
+
+Then('user recieves the document in email with a custom notification template') do
+  expect(@custom_notification.subject).to(eq(open_email(@user.email).subject))
+  expect(current_email.body).to(include(@custom_notification.body))
+  expect(current_email.attachments.first.filename).to(include(@document.name))
+end

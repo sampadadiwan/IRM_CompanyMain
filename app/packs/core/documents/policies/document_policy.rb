@@ -95,4 +95,8 @@ class DocumentPolicy < ApplicationPolicy
     not_generated_or_approved && Document.for_investor(user, record.entity)
                                          .where("documents.id=?", record.id).first.present?
   end
+
+  def send_document_notification?
+    update?
+  end
 end

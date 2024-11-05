@@ -53,28 +53,9 @@ class DocumentsBulkActionJob < BulkActionJob
   end
 
   def send_document(document, user_id, custom_notification_id)
-    # If the document is subject to approval and is approved only then send it
-    if (document.subject_to_approval? && document.approved) || !document.subject_to_approval?
-      if document.notification_users.present?
-        document.notification_users.each do |user|
-          DocumentNotifier.with(record: document,
-                                entity_id: document.entity_id,
-                                email_method: "send_document",
-                                custom_notification_id:).deliver(user)
-        rescue Exception => e
-          msg = "Error sending #{document.name} to #{user.email} #{e.message}"
-          set_error(msg, document, user_id)
-        end
-      else
-        msg = "No users to send #{document.name} #{document.id} to"
-        set_error(msg, document, user_id)
-      end
-
-    else
-      msg = "Document #{document.name} is not approved" unless document.approved
-      msg = "Document #{document.name} does not belong to KYC or Commitment" unless %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
-      set_error(msg, document, user_id)
-    end
+    DocumentSender.send(document, user_id, custom_notification_id)
+  rescue StandardError => e
+    set_error(e.message, document, user_id)
   end
 
   def set_error(msg, document, user_id)

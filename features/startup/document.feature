@@ -195,3 +195,17 @@ Scenario Outline: Template enabled even if owner is not present
 Examples:
   |user	    |entity                       |document   |
   |  	      |entity_type=Investment Fund  |test doc   |
+
+Scenario Outline: Send a document as Custom Notification
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Test fund" for the entity
+  And user goes to add a new document "<document>" for the fund
+  Then user should be able to save the document
+  Given there is a Custom Notification for the entity
+  Then user sends a single document using that Custom Notification
+  Then user recieves the document in email with a custom notification template
+
+Examples:
+  |user     |entity                       |document   |
+  |         |entity_type=Investment Fund  |test doc   |
