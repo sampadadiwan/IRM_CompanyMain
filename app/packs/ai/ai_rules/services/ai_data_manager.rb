@@ -39,6 +39,7 @@ class AiDataManager
 
   define_function :get_latest_data, description: "Get a latest associated data from the record, may return nil" do
     property :associated_data, type: "string", description: "associated data such as aggregate_portfolio_investment, fund, valuation etc required from 'from_name'", required: true
+    property :where, type: "string", description: "The where clause", required: false
     property :order_by, type: "string", description: "The order by field", required: false
   end
 
@@ -49,7 +50,7 @@ class AiDataManager
 
   def get_record_details(_record: nil)
     response = @record.to_json
-    @audit_log[:record_details] = response
+    @audit_log["#{@record.class.name} Details"] = JSON.parse(response)
     response
   end
 
@@ -64,7 +65,7 @@ class AiDataManager
     validation_results = result.success? ? result[:doc_question_answers] : "Error in validation"
     msg = "CDM: Validation results: #{validation_results}"
     Rails.logger.debug { msg }
-    @audit_log[:validate_document_result] = msg
+    @audit_log[question] = validation_results
     validation_results
   end
 
@@ -79,7 +80,7 @@ class AiDataManager
     extracted_info = result.success? ? result[:extracted_info] : "Error in validation"
     msg = "CDM: extract_info results: #{extracted_info}"
     Rails.logger.debug { msg }
-    @audit_log[:extracted_info] = msg
+    @audit_log[question] = extract_info
     extracted_info
   end
 
@@ -94,6 +95,13 @@ class AiDataManager
 
   def get_data(associated_data: nil, where: nil, sum_field: nil, count: false)
     msg = "CDM: get_data called with associated_data: #{associated_data}, where: #{where}, sum_field: #{sum_field}, count: #{count}"
+
+    al = []
+    al << "associated_data: #{associated_data}" if associated_data.present?
+    al << "where: #{where}" if where.present?
+    al << "sum_field: #{sum_field}" if sum_field.present?
+    al << "count: #{count}" if count
+
     Rails.logger.debug { msg }
     if associated_data.present?
       # Get the associated_data
@@ -110,26 +118,32 @@ class AiDataManager
           @associated_data = @associated_data.where(where)
         end
       end
+      @audit_log[al.join(", ") + " Query"] = @associated_data.to_sql
       # Send back the sum of the field if sum_field is present
       @associated_data = @associated_data.sum(sum_field.to_sym) if sum_field.present?
       # Send back the count of the associated data if count is true
       @associated_data = @associated_data.count if count
+      
       response = @associated_data.to_json
     else
       @record = from_name.constantize.where(id:).first
+      @audit_log[al.join(", ") + " Query"] = @record.to_sql
       response = @record.to_json
     end
 
-    @audit_log[:get_data] = response
+    @audit_log[al.join(", ") + " Value"] = JSON.parse(response)
+    
     response
   end
 
-  def get_latest_data(associated_data:, order_by: :id)
+  def get_latest_data(associated_data:, where: nil, order_by: :id)
     msg = "CDM: get_latest_data called with associated_data: #{associated_data}, order_by: #{order_by}"
     Rails.logger.debug { msg }
-    
-    response = @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc).first.to_json
-    @audit_log[:get_latest_data] = response
+    latest = @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc)
+    latest = latest.where(where) if where.present?
+    latest = latest.first    
+    response = latest.to_json
+    @audit_log["get_latest_data: #{associated_data} order_by #{order_by}"] = JSON.parse(response)
     response
   end
 

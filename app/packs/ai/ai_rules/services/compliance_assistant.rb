@@ -13,7 +13,7 @@ class ComplianceAssistant < AiAssistant
     ai_rules = ai_rules.for_schedule(schedule) if schedule.present?
 
     # The format_hint is used to tell the AI to respond with only json and no other text
-    format_hint = " Respond with only json and no other text. The json should have {result: yes or no and explanation: 'The explanation of the result'}"
+    format_hint = " Respond with only json and no other text. The json should have {result: yes or no and explanation: 'The facts and numbers that explain the result'}"
     results = {}
 
     ai_rules.each_with_index do |ai_rule, idx|
