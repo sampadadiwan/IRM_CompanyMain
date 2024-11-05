@@ -5,27 +5,30 @@
     <%= link_to "Download", ai_rules_path(format: :xlsx), {class: "btn btn-outline-success"}  %>
   </span>
 </div>
+
+<%= render "/layouts/filter", associations: [] %>
+
 <div class="table-responsive" data-controller="datatable">
   <table id="ai_rules" class="table table-bordered dataTable">
     <thead>
       <tr>
-        <th>
-          For 
+        <th>          
+          <%= sort_link @q, :for_class %> 
         </th>
         <th>
           Rule
         </th>
-        <th>
-          Type
+        <th>          
+          <%= sort_link @q, :rule_type %>
         </th>
         <th>
           Tags
         </th>
         <th>
-          Schedule
+          <%= sort_link @q, :schedule %>
         </th>
         <th>
-          Enabled
+          <%= sort_link @q, :enabled %>
         </th>
         <th>
         </th>

@@ -29,4 +29,8 @@ class AiRule < ApplicationRecord
   def schedule_label
     self.class.schedules[schedule]
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["created_at", "enabled", "for_class", "rule", "rule_type", "schedule", "tags", "updated_at"].sort
+  end
 end
