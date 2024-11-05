@@ -41,10 +41,10 @@ class AiAssistant
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
 
-  INSTRUCTIONS = "You are a research assistant who will be asked questions. You only looks at the data provided and produces detailed answers (min 5 lines of text) based on that data which includes facts and figures. You are not allowed to look at any external sources. The output should be in the form of a json object with the question as the key and the answer as the value. The answer should be a string and the explanation should be a string. For example {question: 'The question that was input', answer: 'Your answer', key_facts: 'Any numbers or specific data', explanation: 'Your explanation for the answer given'}. do not add ```json to the output.".freeze
+  QNA_INSTRUCTIONS = "You are a research assistant who will be asked questions. You only looks at the data provided and produces detailed answers (min 5 lines of text) based on that data. You are not allowed to look at any external sources. The output should be in the form of a json object with the question as the key and the answer as the value. The answer should be a string and the explanation should be a string. For example {question: 'The question that was input', answer: 'Your answer', key_facts: 'Extract all numbers and data supporting the answer'. do not add ```json to the output.".freeze
 
   def self.test
-    assistant = AiAssistant.new(nil, INSTRUCTIONS)
+    assistant = AiAssistant.new(nil, QNA_INSTRUCTIONS)
     assistant.addDocAsImage(Document.find(4892))
     assistant.query("What are the key points in this document?")
   end

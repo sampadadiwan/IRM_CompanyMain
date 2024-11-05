@@ -96,7 +96,7 @@
 
         <div id="qna-tab" class="tab-pane fade">
           <div id="qna" class="associated_entity">            
-            <%= render_markdown(document.qna) %>
+            <%= Json2table.get_html_table(document.qna, JsonTable::TABLE_OPTIONS).html_safe if document.qna %>
           </div>
         </div>
 
