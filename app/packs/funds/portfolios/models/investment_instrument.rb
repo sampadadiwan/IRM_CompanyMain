@@ -89,4 +89,8 @@ class InvestmentInstrument < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[category currency created_at investment_domicile name sector startup sub_category updated_at]
   end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[aggregate_portfolio_investment portfolio_company portfolio_investments]
+  end
 end

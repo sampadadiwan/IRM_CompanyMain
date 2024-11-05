@@ -27,7 +27,8 @@ class DocLlmQnaJob < ApplicationJob
     questions = model.doc_questions_for(document)
     assistant.addDocAsImage(document)
     results = questions.map do |question|
-      JSON.parse(assistant.query(question))
+      # JSON.parse(assistant.query(question))
+      assistant.query(question)
     end
     document.qna = results.to_json
     document.save

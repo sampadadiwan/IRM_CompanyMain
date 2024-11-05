@@ -32,6 +32,9 @@ class AiDataManager
 
   define_function :get_data, description: "Get a associated data  from the record, may return nil" do
     property :associated_data, type: "string", description: "associated data such as aggregate_portfolio_investment, fund, valuation etc required from 'from_name'", required: false
+    property :where, type: "string", description: "The where clause", required: false
+    property :sum_field, type: "string", description: "The sum field", required: false
+    property :count, type: "boolean", description: "The count of the associated data", required: false
   end
 
   define_function :get_latest_data, description: "Get a latest associated data from the record, may return nil" do
@@ -86,12 +89,30 @@ class AiDataManager
     @document.to_json
   end
 
-  def get_data(associated_data: nil)
-    msg = "CDM: get_data called with associated_data: #{associated_data}"
+  def get_data(associated_data: nil, where: nil, sum_field: nil, count: false)
+    msg = "CDM: get_data called with associated_data: #{associated_data}, where: #{where}, sum_field: #{sum_field}, count: #{count}"
     Rails.logger.debug { msg }
     @audit_log[:get_data] = msg
     if associated_data.present?
-      response = @record.send(associated_data.underscore.to_sym).to_json
+      # Get the associated_data
+      @associated_data = @record.send(associated_data.underscore.to_sym)
+      # Get the associated data with where clause
+
+      if where.present?
+        associated_data_class = associated_data.singularize.constantize
+        Rails.logger.debug { "#{associated_data_class} #{associated_data_class.respond_to?(:ransackable_associations)}" }
+        if associated_data_class.respond_to?(:ransackable_associations)
+          associations = associated_data_class.ransackable_associations.map(&:to_sym)
+          @associated_data = @associated_data.joins(associations).where(where)
+        else
+          @associated_data = @associated_data.where(where)
+        end
+      end
+      # Send back the sum of the field if sum_field is present
+      @associated_data = @associated_data.sum(sum_field.to_sym) if sum_field.present?
+      # Send back the count of the associated data if count is true
+      @associated_data = @associated_data.count if count
+      response = @associated_data.to_json
     else
       @record = from_name.constantize.where(id:).first
       response = @record.to_json
