@@ -48,7 +48,9 @@ class AiDataManager
   end
 
   def get_record_details(_record: nil)
-    @record.to_json
+    response = @record.to_json
+    @audit_log[:record_details] = response
+    response
   end
 
   def validate_document(question:)
@@ -84,15 +86,15 @@ class AiDataManager
   def get_document(document_name:)
     msg = "CDM: get_document called with document_name: #{document_name}"
     Rails.logger.debug { msg }
-    @audit_log[:get_document] = msg
     @document = @record.documents.where(name: document_name).last
-    @document.to_json
+    response = @document.to_json
+    @audit_log[:get_document] = response
+    response    
   end
 
   def get_data(associated_data: nil, where: nil, sum_field: nil, count: false)
     msg = "CDM: get_data called with associated_data: #{associated_data}, where: #{where}, sum_field: #{sum_field}, count: #{count}"
     Rails.logger.debug { msg }
-    @audit_log[:get_data] = msg
     if associated_data.present?
       # Get the associated_data
       @associated_data = @record.send(associated_data.underscore.to_sym)
@@ -117,14 +119,18 @@ class AiDataManager
       @record = from_name.constantize.where(id:).first
       response = @record.to_json
     end
+
+    @audit_log[:get_data] = response
     response
   end
 
   def get_latest_data(associated_data:, order_by: :id)
     msg = "CDM: get_latest_data called with associated_data: #{associated_data}, order_by: #{order_by}"
     Rails.logger.debug { msg }
-    @audit_log[:get_latest_data] = msg
-    @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc).first.to_json
+    
+    response = @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc).first.to_json
+    @audit_log[:get_latest_data] = response
+    response
   end
 
   def date_difference_in_days(start_date:, end_date:)
@@ -135,7 +141,9 @@ class AiDataManager
   end
 
   def current_date(_date: nil)
-    Time.zone.today.to_s
+    response = Time.zone.today.to_s
+    @audit_log[:current_date] = response
+    response
   end
 
   def self.test
