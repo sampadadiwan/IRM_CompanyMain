@@ -33,6 +33,7 @@ class EventsController < ApplicationController
 
     @event = Event.new(event_params.merge(start_time: parsed_start_time, end_time: parsed_end_time))
     @event.owner = @owner
+    @event.user = current_user
     @event.entity_id = current_user.entity_id
 
     authorize @event

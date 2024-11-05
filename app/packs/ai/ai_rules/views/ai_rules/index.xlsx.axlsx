@@ -1,0 +1,12 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Rules") do |sheet|
+  # Create the header row
+  sheet.add_row(%w[Id For Rule Type Tags Schedule Enabled Created])
+
+  # Create entries for each item
+  @ai_rules.each do |cc|
+    enabled = cc.enabled ? "Yes" : "No"
+    sheet.add_row [cc.id, cc.for_class, cc.rule, cc.rule_type, cc.tags, cc.schedule, enabled, l(cc.created_at)]
+  end
+end

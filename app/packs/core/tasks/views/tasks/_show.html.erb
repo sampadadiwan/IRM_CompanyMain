@@ -45,13 +45,13 @@
             <%= task.entity.name %>
           </td>
         </tr>
-        <% if task.entity != task.for_entity %>
+        <% if task.entity != task.for_entity && task.for_entity.present? %>
         <tr>
           <td>
             For
           </td>
           <td>
-            <%= task.for_entity.name %>
+            <%= task.for_entity&.name %>
           </td>
         </tr>
         <% end %>

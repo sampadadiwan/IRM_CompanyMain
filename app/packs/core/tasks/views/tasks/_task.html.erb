@@ -11,7 +11,7 @@
     <%= link_to task.owner_type, "/#{task.owner_type.underscore.pluralize}/#{task.owner_id}" %>
   </td>
   <td>
-    <%= task.for_entity.name %>
+    <%= task.for_entity&.name %>
   </td>
   <td>
     <%= l task.due_date if task.due_date %>

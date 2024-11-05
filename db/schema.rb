@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_04_032037) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_05_101702) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1179,9 +1179,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_04_032037) do
     t.bigint "entity_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_events_on_owner"
     t.index ["owner_type", "owner_id"], name: "index_events_on_owner_type_and_owner_id"
+    t.index ["user_id"], name: "index_events_on_user_id"
   end
 
   create_table "exception_tracks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3262,6 +3264,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_04_032037) do
   add_foreign_key "e_signatures", "users"
   add_foreign_key "entity_settings", "entities"
   add_foreign_key "events", "entities"
+  add_foreign_key "events", "users"
   add_foreign_key "excercises", "entities"
   add_foreign_key "excercises", "folders", column: "document_folder_id"
   add_foreign_key "excercises", "holdings"

@@ -33,3 +33,7 @@
   <%= link_to 'Edit', edit_event_path(@event), class: "btn btn-outline-primary" %>
   <%= link_to 'Back to Events', events_path(owner_id: @event.owner_id, owner_type: @event.owner_type), class: "btn btn-outline-secondary" %>
 </div>
+
+<div class="associated_entity">
+  <%= render "/tasks/index", tasks: @event.tasks, owner: @event, for_entity: @event.entity %>
+</div>
