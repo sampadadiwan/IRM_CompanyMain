@@ -1670,6 +1670,7 @@ Then('There should be {string} fund unit settings created with data in {string}'
     fus.management_fee.should == row_data["Management Fee %"]
     fus.setup_fee.should == row_data["Setup Fee %"]
     fus.carry.should == row_data["Carry %"]
+    fus.isin.should == row_data["Isin"]
 
     # Check that the custom fields got imported
     custom_field_headers.each do |cf_header|

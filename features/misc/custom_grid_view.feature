@@ -90,3 +90,17 @@ Examples:
   |user       |entity|
   |           |entity_type=Company|
   |           |entity_type=Company|
+
+Scenario Outline: Create custom grid view for FundUnitSetting
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the form type page
+  When I create a form type and custom grid view for "FundUnitSetting"
+  When I select each option and click Add
+  And I visit FundUnitSetting Page and find columns in the grid
+  When I visit Custom Grid View page and uncheck "isin"
+  And I should not find "isin" column in the Investor Grid
+
+Examples:
+  |user       |entity|
+  |           |entity_type=Company|

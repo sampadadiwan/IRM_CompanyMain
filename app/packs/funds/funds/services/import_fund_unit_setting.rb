@@ -1,5 +1,5 @@
 class ImportFundUnitSetting < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Class/Series", "Management Fee %",	"Setup Fee %",	"Carry %", "Update Only"].freeze
+  STANDARD_HEADERS = ["Fund", "Class/Series", "Management Fee %",	"Setup Fee %",	"Carry %", "Update Only", "Isin"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -43,7 +43,8 @@ class ImportFundUnitSetting < ImportUtil
                                         name: row_data["Class/Series"],
                                         management_fee: row_data["Management Fee %"].to_s,
                                         setup_fee: row_data["Setup Fee %"]&.to_s,
-                                        carry: row_data["Carry %"].to_s)
+                                        carry: row_data["Carry %"].to_s,
+                                        isin: row_data["Isin"])
 
     setup_custom_fields(row_data, fund_unit_setting, custom_field_headers)
 
