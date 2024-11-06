@@ -9,7 +9,7 @@
 <%= render FormCard.new(title: "Generate Documents for KYCs based on filters below. Count: #{@investor_kycs.count}") do %>
 
 <%= form_with(model: nil, url: generate_all_docs_investor_kycs_path(entity_id: params[:entity_id], q: params[:q].to_unsafe_h), html: {method: :post, "data-turbo": false}, "data-turbo": false) do |form| %>
-  
+
   <div class="form-group">
     <%= form.label :start_date %>
     <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
@@ -23,7 +23,7 @@
   <div class="form-group">
     <%= form.label :template_name, "Template" %>
     <% template_folder = current_user.entity.folders.where(name: "KYC Templates").first %>
-    <%= form.select :template_name, current_user.entity.documents.where(folder_id: template_folder&.id).template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", 
+    <%= form.select :template_name, current_user.entity.documents.where(folder_id: template_folder&.id).template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2",
     name: "document_template_ids[]", multiple: "multiple" %>
     <small class="text-muted">Select the template to be used for document generation from KYC Templates Folder. </small>
   </div>
@@ -40,4 +40,6 @@
 <% end %>
 
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments], disabled: true %>
-<%= render "/investor_kycs/index", investor_kycs: @investor_kycs %>
+<%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(params.to_unsafe_h), target: "_top" do %>
+  <p>Loading Investor KYCs...</p>
+<% end %>
