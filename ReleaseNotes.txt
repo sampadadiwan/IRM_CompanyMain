@@ -1,3 +1,26 @@
+V8.0.23
+#####################################
+ae64108b0 (tag: V8.0.22) Add isin in bulk import (#543)
+d02725558 Used turbo frame in generate-all-docs view and distinct instead of uniq in controller (#547)
+1d99f2770 Added better sort and search for ai_rules
+7ddb6b8d7 Added better audit logs for the compliance manager
+f565d631e Single investor soa (#528)
+7cd0c6f47 Calendar tasks, created post event creation (#544)
+e6317499d Added better handling for where and sum for the ai_data_manager
+9137b2963 Added internal QnA
+378c81fae Added DocAsImage to AiAssistant
+2b5b6a294 Fixed report generation name
+c3318cbba Added sample AnalystReportTemplate.html
+278761e09 Now allos choosing template for report gen
+a63acde94 Added job for all API AI reports
+ced682a8d Moved ai jobs to ai_checks sidekiq queue
+c4c77b9f3 Ai checks refactored (#542)
+66d031a8e Better error for mime types which are not supported
+9fcb59122 Better API reports (#541)
+9da395102 Portfolio reports from global templates  (#540)
+95717c64d Added compliance AI (#539)
+187ecf142 Fixed Account entries rule_for for import, updated excel (#538)
+
 V8.0.21
 #####################################
 be84e8899 Allocation fix to support import_upload_id (#536)
