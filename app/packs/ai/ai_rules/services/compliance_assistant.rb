@@ -25,7 +25,9 @@ class ComplianceAssistant < AiAssistant
       while tries < 3
         begin
           # Run the compliance rule
-          llm_response = JSON.parse(assistant.query(ai_rule.rule + format_hint))
+          response = assistant.query(ai_rule.rule + format_hint)
+          Rails.logger.debug response
+          llm_response = JSON.parse(response)
           results[ai_rule.rule] = llm_response
           Rails.logger.debug llm_response
 
@@ -39,6 +41,7 @@ class ComplianceAssistant < AiAssistant
           break
         rescue StandardError => e
           Rails.logger.error(e.backtrace.join("\n"))
+          send_notification("Error running compliance rule #{ai_rule.name} for #{ai_rule.for_class}. Error: #{e.message}", user_id, :error)
         end
         tries += 1
       end

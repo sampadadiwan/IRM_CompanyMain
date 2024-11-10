@@ -118,7 +118,7 @@ class AiDataManager
           @associated_data = @associated_data.where(where)
         end
       end
-      @audit_log["#{al.join(', ')} Query"] = @associated_data.to_sql
+      @audit_log["#{al.join(', ')} Query"] = @associated_data.respond_to?(:to_sql) ? @associated_data.to_sql : @associated_data
       # Send back the sum of the field if sum_field is present
       @associated_data = @associated_data.sum(sum_field.to_sym) if sum_field.present?
       # Send back the count of the associated data if count is true
@@ -131,6 +131,7 @@ class AiDataManager
       response = @record.to_json
     end
 
+    puts "CDM: get_data response: #{response}"
     @audit_log["#{al.join(', ')} Value"] = JSON.parse(response)
 
     response
