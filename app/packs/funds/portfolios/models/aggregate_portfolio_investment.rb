@@ -7,7 +7,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include WithCustomField
   include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
   include WithDocQuestions
-  
+
   belongs_to :entity, touch: true
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"

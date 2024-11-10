@@ -4,7 +4,8 @@ class AiChecksController < ApplicationController
   # GET /ai_checks
   def index
     @q = AiCheck.ransack(params[:q])
-    @ai_checks = policy_scope(@q.result).includes(:ai_rule, :parent, :owner).page(params[:page])
+
+    @ai_checks = policy_scope(@q.result).page(params[:page])
     @ai_checks = @ai_checks.where(parent_id: params[:parent_id]) if params[:parent_id].present?
     @ai_checks = @ai_checks.where(parent_type: params[:parent_type]) if params[:parent_type].present?
     @ai_checks = @ai_checks.where(owner_id: params[:owner_id]) if params[:owner_id].present?
@@ -12,20 +13,41 @@ class AiChecksController < ApplicationController
     @ai_checks = @ai_checks.where(status: params[:status]) if params[:status].present?
     @ai_checks = @ai_checks.where(rule_type: params[:rule_type]) if params[:rule_type].present?
 
+    @ai_checks = if params[:checklist].present?
+                   @ai_checks.includes(:ai_rule)
+                 else
+                   @ai_checks.includes(:ai_rule, :parent, :owner)
+                 end
+
     @ai_checks = @ai_checks.page(params[:page]) unless params[:format] == "xlsx"
   end
 
   def run_checks
     # Get the model to run the checks on
-    model = params[:owner_type].constantize.find(params[:owner_id])
+
+    if params[:parent_id].present?
+      @parent = params[:parent_type].constantize.find(params[:parent_id])
+      authorize(@parent, :run_checks?)
+      params[:for_classes]&.split(",") || AiRule::FOR_CLASSES
+    end
+
+    if params[:owner_id].present?
+      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      authorize(@owner, :run_checks?)
+    end
+
     schedule = params[:schedule]
     rule_type = params[:rule_type]
-    authorize(model, :run_checks?)
 
     if request.post?
       # Run the compliance checks
-      AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)
-      redirect_to model, notice: "Compliance checks are being run in the background. Please check in a few mins"
+      if params[:parent_id].present?
+        AiFundChecksJob.perform_later(params[:parent_type], params[:parent_id], current_user.id, AiRule::FOR_CLASSES, rule_type, schedule)
+        redirect_to @parent, notice: "Compliance checks are being run in the background. Please check in a few mins"
+      elsif params[:owner_id].present?
+        AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)
+        redirect_to @owner, notice: "Compliance checks are being run in the background. Please check in a few mins"
+      end
     else
       render :run_checks
     end

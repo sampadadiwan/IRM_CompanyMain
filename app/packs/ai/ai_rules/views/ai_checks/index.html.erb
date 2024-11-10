@@ -1,4 +1,4 @@
-<%= render "/layouts/filter", associations: [] %>
+<%= render "/layouts/filter", associations: [:ai_rule] %>
 <%= turbo_frame_tag "ai_checks_frame", target: "_top" do %>
   <%= render "/ai_checks/index", ai_checks: @ai_checks %>
 <% end %>

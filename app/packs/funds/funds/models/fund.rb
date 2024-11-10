@@ -44,6 +44,7 @@ class Fund < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
+  has_many :investor_kycs, through: :capital_commitments
 
   has_many :fund_formulas, dependent: :destroy
 

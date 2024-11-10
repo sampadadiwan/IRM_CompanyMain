@@ -13,4 +13,8 @@ class AiCheck < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[created_at owner_id owner_type parent_id parent_type status updated_at]
   end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[ai_rule]
+  end
 end

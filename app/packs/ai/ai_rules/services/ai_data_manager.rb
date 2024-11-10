@@ -90,7 +90,7 @@ class AiDataManager
     @document = @record.documents.where(name: document_name).last
     response = @document.to_json
     @audit_log[:get_document] = response
-    response    
+    response
   end
 
   def get_data(associated_data: nil, where: nil, sum_field: nil, count: false)
@@ -118,21 +118,21 @@ class AiDataManager
           @associated_data = @associated_data.where(where)
         end
       end
-      @audit_log[al.join(", ") + " Query"] = @associated_data.to_sql
+      @audit_log["#{al.join(', ')} Query"] = @associated_data.to_sql
       # Send back the sum of the field if sum_field is present
       @associated_data = @associated_data.sum(sum_field.to_sym) if sum_field.present?
       # Send back the count of the associated data if count is true
       @associated_data = @associated_data.count if count
-      
+
       response = @associated_data.to_json
     else
       @record = from_name.constantize.where(id:).first
-      @audit_log[al.join(", ") + " Query"] = @record.to_sql
+      @audit_log["#{al.join(', ')} Query"] = @record.to_sql
       response = @record.to_json
     end
 
-    @audit_log[al.join(", ") + " Value"] = JSON.parse(response)
-    
+    @audit_log["#{al.join(', ')} Value"] = JSON.parse(response)
+
     response
   end
 
@@ -141,7 +141,7 @@ class AiDataManager
     Rails.logger.debug { msg }
     latest = @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc)
     latest = latest.where(where) if where.present?
-    latest = latest.first    
+    latest = latest.first
     response = latest.to_json
     @audit_log["get_latest_data: #{associated_data} order_by #{order_by}"] = JSON.parse(response)
     response

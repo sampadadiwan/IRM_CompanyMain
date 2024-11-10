@@ -34,22 +34,21 @@ class DocLlmQnaJob < ApplicationJob
     document.save
   end
 
-
   def answers_from_fabric(model, document)
     questions_file = "/tmp/#{document.id}/questions.txt"
     FileUtils.mkdir_p(File.dirname(questions_file))
-    puts "Questions file: #{questions_file}"
+    Rails.logger.debug { "Questions file: #{questions_file}" }
     questions = model.doc_questions_for(document).map.with_index(1) { |item, index| "Q#{index}: #{item.question}" }
     File.open(questions_file, "w") do |file|
       questions.each { |question| file.puts(question) }
     end
-    
-    puts "Downloading file: #{document.name}"
+
+    Rails.logger.debug { "Downloading file: #{document.name}" }
     file = document.file.download
     # document.file.download do |file|
-      cmd = "pdftohtml -stdout #{file.path} | cat - #{questions_file} | fabric --pattern extract_wisdom"
-      results = FabricRunner.new.run_extract_answers(cmd)
-    # end    
+    cmd = "pdftohtml -stdout #{file.path} | cat - #{questions_file} | fabric --pattern extract_wisdom"
+    results = FabricRunner.new.run_extract_answers(cmd)
+    # end
 
     document.qna = results.to_json
     document.save
@@ -58,7 +57,6 @@ class DocLlmQnaJob < ApplicationJob
     File.delete(questions_file)
     File.delete(file.path)
   end
-
 
   def answers_from_api(model, document)
     # Get the questions for this document

@@ -4,6 +4,8 @@ class AiRule < ApplicationRecord
   enum rule_type: { 'compliance' => "Compliance", 'investor_relations' => "Investor Relations", 'investment_analyst' => "Investment Analyst" }
   enum schedule: { 'end_of_day' => "End of Day", 'end_of_month' => "End of Month", 'end_of_quarter' => "End of Quarter", 'end_of_year' => "End of Year" }
 
+  FOR_CLASSES = %w[AggregatePortfolioInvestment PortfolioInvestment InvestorKyc CapitalCommitment CapitalRemittance CapitalDistribution Fund].sort
+
   scope :for_class, ->(klass) { where(for_class: klass) }
   scope :enabled, -> { where(enabled: true) }
   scope :disabled, -> { where(enabled: false) }
@@ -30,7 +32,7 @@ class AiRule < ApplicationRecord
     self.class.schedules[schedule]
   end
 
-  def self.ransackable_attributes(auth_object = nil)
-    ["created_at", "enabled", "for_class", "rule", "rule_type", "schedule", "tags", "updated_at"].sort
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at enabled for_class rule rule_type schedule tags updated_at].sort
   end
 end

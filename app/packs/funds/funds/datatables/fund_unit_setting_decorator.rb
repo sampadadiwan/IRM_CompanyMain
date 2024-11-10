@@ -1,21 +1,11 @@
 class FundUnitSettingDecorator < ApplicationDecorator
-  def name
-    fund_unit_setting.name
-  end
+  delegate :name, to: :fund_unit_setting
 
-  def management_fee
-    fund_unit_setting.management_fee
-  end
+  delegate :management_fee, to: :fund_unit_setting
 
-  def setup_fee
-    fund_unit_setting.setup_fee
-  end
+  delegate :setup_fee, to: :fund_unit_setting
 
-  def carry
-    fund_unit_setting.carry
-  end
+  delegate :carry, to: :fund_unit_setting
 
-  def isin
-    fund_unit_setting.isin
-  end
+  delegate :isin, to: :fund_unit_setting
 end

@@ -1,18 +1,23 @@
 class AiFundChecksJob < ApplicationJob
   queue_as :ai_checks
 
-  def perform(fund_id, user_id, rule_type, schedule)
+  def perform(parent_type, parent_id, user_id, for_classes, rule_type, schedule)
     # Find the model
-    fund = Fund.find(fund_id)
+    parent = parent_type.constantize.find(parent_id)
 
-    # Run the checks for all the fund PortfolioInvestment
-    fund.portfolio_investments.each do |portfolio_investment|
-      AiChecksJob.perform_later('PortfolioInvestment', portfolio_investment.id, user_id, rule_type, schedule)
+    send_notification("Starting #{rule_type} #{schedule} checks..", user_id, :info)
+    for_classes.each do |for_class|
+      if for_class == parent.class.to_s
+        Rails.logger.debug { "Running checks for #{parent}, rule_type: #{rule_type}, schedule: #{schedule}" }
+        # AiChecksJob.perform_later(for_class, parent.id, user_id, rule_type, schedule)
+      else
+        parent.send(for_class.underscore.pluralize).each do |model|
+          puts "Running checks for #{model}, rule_type: #{rule_type}, schedule: #{schedule}"
+          # AiChecksJob.perform_later(for_class, model.id, user_id, rule_type, schedule)
+        end
+      end
     end
 
-    # Run the checks for all the fund CapitalCommitment
-    fund.capital_commitments.each do |capital_commitment|
-      AiChecksJob.perform_later('CapitalCommitment', capital_commitment.id, user_id, rule_type, schedule)
-    end
+    send_notification("Checks completed for #{parent}.", user_id)
   end
 end

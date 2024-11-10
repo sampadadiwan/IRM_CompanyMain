@@ -4,6 +4,9 @@
     <%#= link_to "New Compliance Check", new_ai_check_path, {class: "btn btn-outline-primary"}  %>
     <%= link_to "Run Compliance Check", run_checks_ai_checks_path(owner_id: params[:owner_id], owner_type: params[:owner_type], rule_type: "compliance"), class: "btn btn-outline-primary", method: :post  if params[:owner_id].present? && params[:owner_type].present?  %>
 
+    <%= link_to "View Checklist", ai_checks_path(params: params.to_unsafe_h, checklist: true), class: "btn btn-outline-success" %>
+    <%= link_to "View Details", ai_checks_path(params: params.except(:checklist).to_unsafe_h), class: "btn btn-outline-success" %>
+
     <%= link_to "Download", ai_checks_path(params: params.to_unsafe_h, format: :xlsx), class: "btn btn-outline-success" %>
   </span>
 
@@ -12,39 +15,53 @@
 
 <div class="table-responsive" data-controller="datatable">
   <table id="ai_checks" class="table table-bordered dataTable">
-    <thead>
-      <tr>
-        <th>
-          Parent
-        </th>
-        <th>
-          <%= sort_link @q, :parent_type, "Parent Type" %>
-        </th>
-        <th>
-          Owner
-        </th>
-        <th>
-          <%= sort_link @q, :owner_type, "Owner Type" %>
-        </th>
-        <th>
-          Compliance Rule
-        </th>
-        <th>
-          Type
+    <% if params[:checklist].present? %>
+      <thead>
+        <th>            
+            <%= sort_link @q, :ai_rule_name, "Compliance Rule" %>
         </th>
         <th>
           <%= sort_link @q, :status %>
         </th>
         <th>
-          Explanation
+          Date
         </th>
-        <th>
-          <%= sort_link @q, :created_at %>
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
+      </thead>
+    <% else %>
+      <thead>
+        <tr>
+          <th>
+            Parent
+          </th>
+          <th>
+            <%= sort_link @q, :parent_type, "Parent Type" %>
+          </th>
+          <th>
+            Owner
+          </th>
+          <th>
+            <%= sort_link @q, :owner_type, "Owner Type" %>
+          </th>
+          <th>            
+            <%= sort_link @q, :ai_rule_name, "Compliance Rule" %>
+          </th>
+          <th>
+            Type
+          </th>
+          <th>
+            <%= sort_link @q, :status %>
+          </th>
+          <th>
+            Explanation
+          </th>
+          <th>
+            <%= sort_link @q, :created_at %>
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+    <% end %>
     <tbody>
       <% @ai_checks.each do |ai_check| %>
         <%= render ai_check %>

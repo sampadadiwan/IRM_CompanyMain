@@ -58,6 +58,6 @@ class AiRulesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def ai_rule_params
-    params.require(:ai_rule).permit(:entity_id, :for_class, :rule_type, :rule, :tags, :schedule, :enabled)
+    params.require(:ai_rule).permit(:entity_id, :name, :for_class, :rule_type, :rule, :tags, :schedule, :enabled)
   end
 end
