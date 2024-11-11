@@ -1,4 +1,6 @@
-<% template_names = current_user.entity.folders.where(name: "#{@folder.owner.class.name} Templates").first.documents.pluck(:name) %>
+<% 
+  template_folder = current_user.entity.folders.where(name: "#{@folder.owner.class.name} Templates").first
+  template_names = template_folder ? template_folder.documents.pluck(:name) : [] %>
 <%= render NewCard.new do %>
 
   <%= render FormCard.new(title: "Generate Reports for #{@folder}") do %>

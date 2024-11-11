@@ -5,7 +5,7 @@ class AiFundChecksJob < ApplicationJob
     # Find the model
     parent = parent_type.constantize.find(parent_id)
 
-    send_notification("Starting #{rule_type} #{schedule} checks..", user_id, :info)
+    send_notification("Starting #{rule_type} for #{for_classes}, #{schedule} checks..", user_id, :info)
     for_classes.each do |for_class|
       if for_class == parent.class.to_s
         Rails.logger.debug { "Running checks for #{parent}, rule_type: #{rule_type}, schedule: #{schedule}" }

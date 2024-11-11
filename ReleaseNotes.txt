@@ -1,3 +1,11 @@
+V8.0.24
+#####################################
+e21098512 Show tags in ai_checks checklist
+89cecfe3d Fixed bug with data manager
+7177543c2 Add Ai rule label, and checklist format, multiple run screens for Checks (#553)
+819e30ae6 Integrated fabric with doc qna
+9f94e380d Archived db migration
+
 V8.0.23
 #####################################
 ae64108b0 (tag: V8.0.22) Add isin in bulk import (#543)

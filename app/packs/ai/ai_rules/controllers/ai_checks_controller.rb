@@ -38,11 +38,12 @@ class AiChecksController < ApplicationController
 
     schedule = params[:schedule]
     rule_type = params[:rule_type]
+    for_classes = params[:for_classes].presence || AiRule::FOR_CLASSES
 
     if request.post?
       # Run the compliance checks
       if params[:parent_id].present?
-        AiFundChecksJob.perform_later(params[:parent_type], params[:parent_id], current_user.id, AiRule::FOR_CLASSES, rule_type, schedule)
+        AiFundChecksJob.perform_later(params[:parent_type], params[:parent_id], current_user.id, for_classes, rule_type, schedule)
         redirect_to @parent, notice: "Compliance checks are being run in the background. Please check in a few mins"
       elsif params[:owner_id].present?
         AiChecksJob.perform_later(params[:owner_type], params[:owner_id], current_user.id, rule_type, schedule)
