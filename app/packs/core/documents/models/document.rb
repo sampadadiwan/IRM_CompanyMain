@@ -86,7 +86,6 @@ class Document < ApplicationRecord
     self.sent_for_esign = false if sent_for_esign.nil?
   end
 
-  before_create :setup_folder_defaults
   def setup_folder_defaults
     if folder
       self.printing = folder.printing

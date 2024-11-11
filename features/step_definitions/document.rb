@@ -342,3 +342,19 @@ Then('user recieves the document in email with a custom notification template') 
   expect(current_email.body).to(include(@custom_notification.body))
   expect(current_email.attachments.first.filename).to(include(@document.name))
 end
+
+Given('the template has permissions {string}') do |permissions|
+  sleep(2)
+  @template = Document.last
+  key_values(@template, permissions)
+  @template.save
+end
+
+Then('the generated SOA has permissions {string}') do |permissions|
+  @document = Document.where(owner_tag: "Generated").last
+  key_val = permissions.split(";").to_h { |kv| kv.split("=") }
+  key_val.each do |k, v|
+    puts "Asserting #{k} to #{v} on #{@document.name}"
+    @document.send("#{k}").to_s.should == v
+  end
+end
