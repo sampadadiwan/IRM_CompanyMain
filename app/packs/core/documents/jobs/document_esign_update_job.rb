@@ -14,7 +14,7 @@ class DocumentEsignUpdateJob < ApplicationJob
         if doc.eligible_for_esign_update?
           EsignUpdateJob.perform_later(doc.id, user_id)
         else
-          message = "Document - #{doc.name}'s E-Sign status update Skipped"
+          message = "Document - #{doc.name}'s eSign status update Skipped"
           # only showing user alert if a single document is getting updated
           UserAlert.new(message:, user_id:, level: "warning").broadcast if user_id.present? && document_id.present?
         end

@@ -23,7 +23,7 @@ class DocusignEsignHelper
 
   def send_document_for_esign(document)
     # if doc is not pdf then raise error
-    raise "Only PDF files are supported for E-Signing" unless document.file.mime_type.include?("pdf")
+    raise "Only PDF files are supported for eSigning" unless document.file.mime_type.include?("pdf")
 
     # TODO: add support for docx files
 
@@ -47,7 +47,7 @@ class DocusignEsignHelper
     # we do not handle erronous webhook requests
     # they are logged and ignored
     if params["event"].blank?
-      e = StandardError.new("E-Sign webhook not supported - \n #{params}")
+      e = StandardError.new("eSign webhook not supported - \n #{params}")
       Rails.logger.error(e.message)
       ExceptionNotifier.notify_exception(e)
       return

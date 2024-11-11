@@ -21,10 +21,10 @@ module WithESignatures
   def e_signatures_for(model)
     return unless esign? && model
 
+    @position = 1
     e_signatures.order(:id).map do |e_signature|
       method = e_signature.label.delete(' ').underscore
       allowed_methods = %w[investor_signatories fund_signatories buyer_signatories seller_signatories]
-      @position = 1
       if model.respond_to?(method) && allowed_methods.include?(method)
         process_allowed_methods(model, method, e_signature)
       else
@@ -71,14 +71,14 @@ module WithESignatures
   # This can be called from the controller to send the document for e-signing
   def send_for_esign(force: false, user_id: nil)
     if signature_enabled
-      Rails.logger.debug { "Signature enabled for #{name}, sending for e-signing" }
+      Rails.logger.debug { "Signature enabled for #{name}, sending for eSigning" }
       if !sent_for_esign || force
-        Rails.logger.debug { "Sending #{name} #{id} for e-signing" }
-        # Tell the provider to send it for e-signing
+        Rails.logger.debug { "Sending #{name} #{id} for eSigning" }
+        # Tell the provider to send it for eSigning
         EsignJob.perform_later(id, user_id)
         true
       else
-        Rails.logger.debug { "Document #{name} #{id} already queued for e-signing" }
+        Rails.logger.debug { "Document #{name} #{id} already queued for eSigning" }
         false
       end
     else

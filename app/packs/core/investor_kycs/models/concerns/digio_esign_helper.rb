@@ -66,14 +66,14 @@ class DigioEsignHelper
         esign.add_api_update(json_res)
         esign.update(status: "failed", api_updates: esign.api_updates)
       end
-      msg = "Error sending #{doc.name} for e-signing - #{json_res['message']}"
+      msg = "Error sending #{doc.name} for eSigning - #{json_res['message']}"
       ExceptionNotifier.notify_exception(StandardError.new(msg))
       logger.error msg
       send_notification(msg, user_id, :danger)
     end
   rescue JSON::ParserError => e
     # 502 bad gateway response cannot be parsed
-    msg = "Error sending #{doc.name} for e-signing - #{e.message}"
+    msg = "Error sending #{doc.name} for eSigning - #{e.message}"
     ExceptionNotifier.notify_exception(StandardError.new(msg))
     logger.error msg
     send_notification(msg, user_id, :danger)
@@ -109,6 +109,7 @@ class DigioEsignHelper
   def prepare_data(doc, file_name, encoded_file, display_on_page = "last")
     # if file name bigger than 100 chars then truncate and add ... till 100 chars
     file_name = "#{file_name[0..96]}..." if file_name.length > 100
+    sequential = doc.force_esign_order.nil? ? false : doc.force_esign_order
     data = {
       signers: prep_user_data(doc.e_signatures),
       expire_in_days: 90,
@@ -120,6 +121,7 @@ class DigioEsignHelper
       file_name:,
       file_data: encoded_file
     }
+    data[:sequential] = sequential if sequential
     if doc.stamp_papers.present?
       tags = {}
       doc.stamp_papers.each do |stamp_paper|
@@ -281,7 +283,7 @@ class DigioEsignHelper
     email = params.dig('payload', 'document', 'signer_identifier')
     esign = doc.e_signatures.find_by(email:)
     esign&.update_esign_response("failed", params['payload'])
-    ExceptionNotifier.notify_exception(StandardError.new("E-Sign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+    ExceptionNotifier.notify_exception(StandardError.new("eSign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
   end
 
   def signatures_failed(doc, response)

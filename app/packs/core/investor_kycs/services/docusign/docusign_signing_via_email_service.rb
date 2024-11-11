@@ -37,7 +37,7 @@ class DocusignSigningViaEmailService
 
     encoded_file = Base64.strict_encode64(data)
     # fetch from esign
-    raise "Only PDF files are supported for E-Signing" unless @doc.file.mime_type.include?("pdf")
+    raise "Only PDF files are supported for eSigning" unless @doc.file.mime_type.include?("pdf")
 
     document = DocuSign_eSign::Document.new
     # (document_base64: encoded_file, name: @doc.name, file_extension:, document_id: @doc.id )
@@ -97,6 +97,8 @@ class DocusignSigningViaEmailService
 
       pages = if doc.display_on_page.casecmp?("last")
                 [doc_last_page]
+              elsif doc.display_on_page.casecmp?("first")
+                [1]
               elsif doc.display_on_page.casecmp?("all")
                 (1..doc_last_page).to_a
               else

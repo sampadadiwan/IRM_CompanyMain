@@ -35,6 +35,12 @@ There are **4 flows** in the esigning process:
   - If we get a **failure response**, we update the document:
     - `sent_for_esign` to **true**
     - `esign_status` to **failed**
+    
+  - **Note:**
+    - We schedule a job to fetch updates after sending for esign because Digio does not provide a webhook for just sending for esign - only for signed or failed.
+    - We dont have esigns on specific pages for digio - as Digio required the page as well as the coordinates on that page for esign. With `First`,`All` or `Last` the position is determined automatically with overlap handling on Digio end. This overlap handling is complex and we do not want to handle it.
+    - The Aadhaar esigning option is only available for Digio atm so it doesn't show for other esign providers.
+    - Esigning in order (one after the other) is not working with Digio. We have to send all the signatories at once.
 
 - **Fetching updates:**
 
@@ -75,6 +81,9 @@ There are **4 flows** in the esigning process:
     - `sent_for_esign` to **true**
     - `esign_status` to **failed**
 
+  - **Note:**
+    - Sequencing is available for Docusign and is enabled by default via the checkbox in the document template - force esign order. If this is not checked, the signatories can sign in any order as they all receive the email at the same time.
+
 - **Fetching updates:**
 
   - We hit the fetch updates API.
@@ -98,6 +107,7 @@ There are **4 flows** in the esigning process:
 
   - With Docusign, the cancellation is basically voiding the envelope.
   - We hit the cancel esign API (we can also send the reason for voiding).
+  - The envolope can also be voided by the receipient of the document/envolope.
   - If we get a **success response**, we update the document:
     - `esign_status` to **cancelled/voided**
     - Update the document's esignatures to **cancelled/voided**

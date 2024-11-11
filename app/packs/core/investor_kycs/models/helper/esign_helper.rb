@@ -47,7 +47,7 @@ class EsignHelper
     elsif params.dig('payload', 'document', 'id').present?
       helper = DigioEsignHelper.new
     else
-      e = StandardError.new("E-Sign webhook not supported - \n #{params}")
+      e = StandardError.new("eSign webhook not supported - \n #{params}")
       Rails.logger.error(e.message)
       ExceptionNotifier.notify_exception(e)
     end

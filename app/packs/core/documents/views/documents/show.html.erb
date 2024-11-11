@@ -167,16 +167,14 @@
                      </td>
                   </tr>
 
-                     <% if @document.entity.entity_setting.esign_provider != "Digio"%>
-                        <tr>
-                           <td>
-                              Enforce eSignatures Order
-                           </td>
-                           <td>
-                              <%= display_boolean @document.force_esign_order %>
-                           </td>
-                        </tr>
-                     <% end %>
+                  <tr>
+                     <td>
+                        eSignatures Order
+                     </td>
+                     <td>
+                        <%= display_boolean @document.force_esign_order %>
+                     </td>
+                  </tr>
 
                   <% end %>
 

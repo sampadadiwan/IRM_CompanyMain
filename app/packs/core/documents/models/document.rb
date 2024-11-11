@@ -9,7 +9,7 @@ class Document < ApplicationRecord
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
   SKIP_ESIGN_UPDATE_STATUSES = %w[cancelled completed expired voided].freeze
-  RESEND_FOR_ESIGN_STATUSES = %w[cancelled voided expired].freeze
+  RESEND_FOR_ESIGN_STATUSES = %w[cancelled voided expired failed].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 

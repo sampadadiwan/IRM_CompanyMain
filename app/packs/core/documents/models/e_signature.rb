@@ -44,10 +44,10 @@ class ESignature < ApplicationRecord
     # DIGIO sometimes sends us old callbacks
     if new_status?(payload_status)
       add_api_update(payload)
-      message = "Document - #{document.name}'s E-Sign status updated"
+      message = "Document - #{document.name}'s eSign status updated"
       logger.info message
     else
-      e = StandardError.new("E-Sign already has status #{status} for #{document.name} - #{payload}")
+      e = StandardError.new("eSign already has status #{status} for #{document.name} - #{payload}")
       logger.error e.message
     end
   end

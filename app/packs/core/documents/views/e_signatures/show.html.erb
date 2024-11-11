@@ -67,6 +67,17 @@
     <% end %>
     </td>
   </tr>
+
+  <%if params[:debug].present? %>
+  <tr>
+    <td>
+      Api Updates
+    </td>
+    <td>
+      <%= @e_signature.api_updates %>
+    </td>
+  </tr>
+  <% end %>
 </table>
 <%= link_to "Edit", edit_e_signature_path(@e_signature), {class: "btn btn-outline-primary"} %>
 </div>

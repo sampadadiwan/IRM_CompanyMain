@@ -52,7 +52,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def resend_for_esign?
-    update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && record.approved && record.resend_for_esign?
+    update? && record.resend_for_esign?
   end
 
   def force_send_for_esign?
@@ -68,7 +68,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def fetch_esign_updates?
-    res = update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
+    res = update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided?
     if record.entity.entity_setting.esign_provider == "Docusign" && !Rails.env.test?
       # hit the docusign api every 15 minutes
       eligible_for_update = record.last_status_updated_at.nil? ? true : record.last_status_updated_at < 900.seconds.ago
