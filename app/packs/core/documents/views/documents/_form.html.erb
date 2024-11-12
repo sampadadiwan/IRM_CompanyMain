@@ -125,8 +125,7 @@
 
               <div class="form-group col">
                 <%= form.label :force_esign_order, "eSign Order" %>
-                <% force_order_checked = document.force_esign_order.nil? ? true : document.force_esign_order %>
-                <%= form.check_box :force_esign_order, class: "form-check-input", checked: force_order_checked %>
+                <%= form.check_box :force_esign_order, class: "form-check-input" %>
             <small class="text-muted">Signers will be sent the Document in the order they are added</small>
               </div>
 
