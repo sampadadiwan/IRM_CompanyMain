@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_10_063224) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_12_122051) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1038,7 +1038,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_10_063224) do
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
     t.datetime "last_status_updated_at"
-    t.boolean "force_esign_order", default: true
+    t.boolean "force_esign_order", default: false
     t.text "qna"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"

@@ -1,3 +1,18 @@
+V8.0.26
+#####################################
+f44eaf7f6 Added migration to change force esign order default to false (#560)
+a95641392 Update zip expiry to 1 day and its msg (#559)
+
+V8.0.25
+#####################################
+3c367ae56 Kpi spec fix (#556)
+57d4d786a Fixed folder name normalization
+1992c5ab7 Docusign updates 1 (#537)
+3c1c8da39 Remove collected_amount_cents positive check in capital remittance verify (#551)
+a5197251d Dont call setup_folder_defaults before_create (#550)
+b7b21b079 Added check before render markdown in documents qna tab (#554)
+
+
 V8.0.24
 #####################################
 e21098512 Show tags in ai_checks checklist
