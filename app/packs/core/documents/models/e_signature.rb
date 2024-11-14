@@ -10,7 +10,9 @@ class ESignature < ApplicationRecord
   # validates_presence_of :email, if: -> { !document.template }
   validates_format_of :email, with: Devise.email_regexp, multiline: true, if: -> { email.present? }
   validates_uniqueness_of :email, scope: :document_id, allow_blank: true, allow_nil: true, if: -> { email.present? }
-  validates_uniqueness_of :label, scope: %i[document_id signature_type], if: -> { document.template? && label.present? }
+  validates_uniqueness_of :label, scope: %i[document_id signature_type],
+                        if: -> { document.template? && label.present? && label != "Other" }
+
 
   scope :in_sequence, -> { order(:position) }
   scope :requested, -> { where(status: "requested") }
