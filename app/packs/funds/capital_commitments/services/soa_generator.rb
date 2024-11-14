@@ -49,9 +49,9 @@ class SoaGenerator
     committed_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), fund_currency)
     committed_amounts_between_dates = committed_amounts_before_end_date - committed_amounts_before_start_date
 
-    committed_folio_amounts_before_start_date = Money.new(capital_commitment.committed_folio_amount_cents_before(start_date), folio_currency)
-    committed_folio_amounts_before_end_date = Money.new(capital_commitment.committed_folio_amount_cents_before(end_date), folio_currency)
-    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_folio_amounts_before_start_date
+    committed_folio_amounts_before_start_date = Money.new(capital_commitment.committed_amount_cents_before(start_date), folio_currency)
+    committed_folio_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), folio_currency)
+    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_amounts_before_start_date
 
     @context = {
       date: Time.zone.today.strftime("%d %B %Y"),
