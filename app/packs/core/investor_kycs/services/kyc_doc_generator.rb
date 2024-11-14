@@ -87,6 +87,7 @@ class KycDocGenerator
 
     add_image(context, :investor_signature, investor_kyc.signature)
     add_image(context, :profile_image, investor_kyc.documents.where(owner_tag: "Profile Image").first&.file)
+    add_image(context, :profile_image_2, investor_kyc.documents.where(owner_tag: "Profile Image 2").first&.file) # rubocop:disable Naming/VariableNumber
 
     generate_custom_fields(context, investor_kyc)
 
