@@ -179,18 +179,39 @@ class DocumentsController < ApplicationController
 
   # POST /documents or /documents.json
   def create
-    @document = Document.new(document_params)
+    @document = Document.new(document_params.except(:e_signatures_attributes))
     @document.entity_id = @document.owner&.entity_id || current_user.entity_id
     @document.user_id = current_user.id
+
     authorize @document
+
     respond_to do |format|
-      if @document.save
-        format.html { save_and_upload }
-        format.json { render :show, status: :created, location: @document }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @document.errors, status: :unprocessable_entity }
+      ActiveRecord::Base.transaction do
+        if @document.save
+          # Create e-signatures after document is saved
+          if document_params[:e_signatures_attributes].present?
+            document_params[:e_signatures_attributes].each_value do |signature_attrs|
+              next if signature_attrs['_destroy'] == 'true'
+
+              @document.e_signatures.create!(
+                label: signature_attrs['label'],
+                signature_type: signature_attrs['signature_type'],
+                notes: signature_attrs['notes']
+              )
+            end
+          end
+
+          format.html { save_and_upload }
+          format.json { render :show, status: :created, location: @document }
+        else
+          format.html { render :new, status: :unprocessable_entity }
+          format.json { render json: @document.errors, status: :unprocessable_entity }
+        end
       end
+    rescue ActiveRecord::RecordInvalid => e
+      @document.errors.add(:base, "Failed to create signatures: #{e.message}")
+      format.html { render :new, status: :unprocessable_entity }
+      format.json { render json: @document.errors, status: :unprocessable_entity }
     end
   end
 
