@@ -2,7 +2,10 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Doc Questions</h1>
-  <%= link_to "New Doc Question", new_doc_question_path("doc_question[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+  <span>
+    <%= link_to "New Question", new_doc_question_path("doc_question[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Download", doc_questions_path(format: :xlsx), {class: "btn btn-outline-success"}  %>
+  </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

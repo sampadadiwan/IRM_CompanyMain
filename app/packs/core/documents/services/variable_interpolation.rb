@@ -26,7 +26,7 @@ class VariableInterpolation
       else
         # Replace the variables in the check with the actual values from the kyc
         evs.each do |var|
-          interpolated_question = check.gsub!("$#{var}", model.send(var.to_sym))
+          interpolated_question = check.gsub!("$#{var}", "'#{model.send(var.to_sym)}'")
           new_checks << "Question: #{interpolated_question}. Response Format Hint: #{doc_question.response_hint_text}"
         end
       end

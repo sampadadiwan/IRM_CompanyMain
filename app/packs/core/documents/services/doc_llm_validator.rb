@@ -21,6 +21,8 @@ class DocLlmValidator < DocLlmBase
     super
     ctx[:doc_questions] ||= model.doc_questions.where(document_name: document.name)
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
+    Rails.logger.debug "DocLlmValidator Error: No open ai client" if ctx[:open_ai_client].blank?
+    Rails.logger.debug "DocLlmValidator Error: No doc questions" if ctx[:doc_questions].blank?
     ctx[:open_ai_client].present? && ctx[:doc_questions].present?
   end
 
@@ -33,7 +35,7 @@ class DocLlmValidator < DocLlmBase
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
 
     messages = new_checks.map { |check| { type: "text", text: check } } + [
-      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given'}} " },
+      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}} " },
       { type: "image_url",
         image_url: {
           url: ImageService.encode_image(ctx[:image_path])
@@ -53,6 +55,10 @@ class DocLlmValidator < DocLlmBase
     ctx[:doc_question_answers] = response.dig("choices", 0, "message", "content")
     Rails.logger.debug ctx[:doc_question_answers]
     true
+  rescue StandardError => e
+    Rails.logger.debug e.backtrace
+    Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
+    false
   end
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze

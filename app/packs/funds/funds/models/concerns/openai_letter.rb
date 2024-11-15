@@ -1,11 +1,11 @@
 class OpenaiLetter
-  OPEN_AI_KEY = Rails.application.credentials[:OPEN_AI_KEY]
+  OPENAI_API_KEY = Rails.application.credentials[:OPENAI_API_KEY]
   attr_accessor :openai_client
 
   def initialize
-    Rails.logger.debug { "initialize using #{OPEN_AI_KEY}" }
+    Rails.logger.debug { "initialize using #{OPENAI_API_KEY}" }
     OpenAI.configure do |config|
-      config.access_token = OPEN_AI_KEY # Required.
+      config.access_token = OPENAI_API_KEY # Required.
       config.organization_id = "org-Ewg4M3psKcHc5qo9hFeXyUk7"
     end
     @openai_client = OpenAI::Client.new

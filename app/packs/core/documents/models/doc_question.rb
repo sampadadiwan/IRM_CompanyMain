@@ -13,6 +13,11 @@ class DocQuestion < ApplicationRecord
   validates :document_name, :question, :response_hint, length: { maximum: 255 }
   validates :qtype, length: { maximum: 10 }
 
+  scope :validations, -> { where(qtype: qtypes[:validation]) }
+  scope :extractions, -> { where(qtype: qtypes[:extraction]) }
+  scope :generals, -> { where(qtype: qtypes[:general]) }
+  scope :for_class, ->(for_class) { where(for_class:) }
+
   def to_s
     question
   end
