@@ -21,13 +21,20 @@ class AiAssistant
     @assistant
   end
 
-  def addDocAsImage(document)
+  def add_doc_as_image(document)
     ctx = {}
     DocUtils.convert_file_to_image(ctx, document:)
     assistant.add_message(
       content: "This is the contents of the document #{document.name}",
       image_url: ImageService.encode_image(ctx[:image_path])
     )
+  end
+
+  def add_doc_as_text(document)
+    document.file.download do |file|
+      assistant.add_message(content: "This is the contents of the document #{document.name}")
+      assistant.add_message(content: File.read(file.path))
+    end
   end
 
   def query(query_string)
@@ -45,7 +52,7 @@ class AiAssistant
 
   def self.test
     assistant = AiAssistant.new(nil, QNA_INSTRUCTIONS)
-    assistant.addDocAsImage(Document.find(4892))
+    assistant.add_doc_as_image(Document.find(4892))
     assistant.query("What are the key points in this document? provide a comprehensive analysis rather than a terse summary, please.")
   end
 end

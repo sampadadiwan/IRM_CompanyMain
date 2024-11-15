@@ -95,4 +95,34 @@ class KpiReport < ApplicationRecord
       Investor.find_by(entity_id: for_entity_id, investor_entity_id: entity_id)
     end
   end
+
+  # Used by the KpiExtractorService to create a new KpiReport
+
+  QUARTER_TO_MONTH = {
+    "Q1" => 1,   # January
+    "Q2" => 4,   # April
+    "Q3" => 7,   # July
+    "Q4" => 10   # October
+  }.freeze
+
+  def self.convert_to_date(input_string)
+    if input_string.match?(/\AQ[1-4] \d{4}\z/)
+      # Handle quarter strings like "Q1 2024"
+      quarter, year = input_string.split
+      year = year.to_i
+
+      # Map the quarter to the start month
+      month = QUARTER_TO_MONTH[quarter]
+
+      Date.new(year, month, 1)
+
+    elsif input_string.match?(/\ACY \d{4}\z/)
+      # Handle calendar year strings like "CY-2024"
+      year = input_string.split('-')[1].to_i
+      Date.new(year, 1, 1) # Start of the calendar year (January 1st)
+
+    else
+      raise ArgumentError, "Invalid format #{input_string}. Expected format: 'Q1 YYYY' or 'CY-YYYY'"
+    end
+  end
 end

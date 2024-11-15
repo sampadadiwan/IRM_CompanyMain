@@ -25,7 +25,7 @@ class DocLlmQnaJob < ApplicationJob
     assistant = AiAssistant.new(nil, AiAssistant::QNA_INSTRUCTIONS)
     # Get the questions for this document
     questions = model.doc_questions_for(document)
-    assistant.addDocAsImage(document)
+    assistant.add_doc_as_image(document)
     results = questions.map do |question|
       # JSON.parse(assistant.query(question))
       assistant.query(question)

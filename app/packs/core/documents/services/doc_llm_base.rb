@@ -20,7 +20,7 @@ class DocLlmBase < Trailblazer::Operation
   end
 
   # Since we deal with vision models, who can read images much better than PDFs, we convert the pdf or doc into image before sending to llm
-  def convert_file_to_image(ctx, model:, document:, **)
+  def convert_file_to_image(ctx, document:, **)
     # Convert the file to image, returns the folder_path and image_path in ctx
     DocUtils.convert_file_to_image(ctx, document:)
   end

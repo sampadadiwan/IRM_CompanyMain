@@ -4,7 +4,7 @@ class KpisController < ApplicationController
   # GET /kpis or /kpis.json
   def index
     @q = Kpi.ransack(params[:q])
-    @kpis = policy_scope(@q.result).includes(:kpi_report, :owner, :entity)
+    @kpis = policy_scope(@q.result).includes(kpi_report: :portfolio_company)
     @kpis = @kpis.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     authorize(Kpi)
   end

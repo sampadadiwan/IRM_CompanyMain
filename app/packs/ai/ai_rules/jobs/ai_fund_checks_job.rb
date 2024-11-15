@@ -12,7 +12,7 @@ class AiFundChecksJob < ApplicationJob
         AiChecksJob.perform_later(for_class, parent.id, user_id, rule_type, schedule)
       else
         parent.send(for_class.underscore.pluralize).each do |model|
-          puts "Running checks for #{model}, rule_type: #{rule_type}, schedule: #{schedule}"
+          Rails.logger.debug { "Running checks for #{model}, rule_type: #{rule_type}, schedule: #{schedule}" }
           AiChecksJob.perform_later(for_class, model.id, user_id, rule_type, schedule)
         end
       end

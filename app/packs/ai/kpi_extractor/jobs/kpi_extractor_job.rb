@@ -1,0 +1,2 @@
+class KpiExtractorJob < ApplicationJob
+end

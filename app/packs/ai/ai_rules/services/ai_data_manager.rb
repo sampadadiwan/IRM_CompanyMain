@@ -131,7 +131,7 @@ class AiDataManager
       response = @record.to_json
     end
 
-    puts "CDM: get_data response: #{response}"
+    Rails.logger.debug { "CDM: get_data response: #{response}" }
     @audit_log["#{al.join(', ')} Value"] = JSON.parse(response)
 
     response

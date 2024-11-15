@@ -229,6 +229,8 @@ Metrics/MethodLength:
     - 'app/packs/core/base/jobs/s3_check_job.rb'
     - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
     - 'app/packs/funds/capital_calls/services/import_capital_call.rb'
+    - 'app/packs/ai/ai_rules/services/ai_data_manager.rb'
+    - 'app/packs/ai/ai_rules/services/compliance_assistant.rb'
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'
