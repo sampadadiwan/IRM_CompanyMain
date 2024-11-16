@@ -33,7 +33,8 @@ class DefaultUnitAllocationEngine
     unit_premium_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : nil
 
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
-        capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present?
+        capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present? &&
+        capital_remittance.fund_units.blank?
       # Get the price for the unit type for this commitment from the call
 
       price_cents = unit_price_cents.to_d * 100
@@ -69,6 +70,7 @@ class DefaultUnitAllocationEngine
     unit_type = capital_remittance.capital_commitment.unit_type
     msg << "No unit type in commitment" if unit_type.blank?
     msg << "Invalid unit price in call, for unit type" if unit_type.present? && capital_remittance.capital_call.unit_prices[unit_type].blank?
+    msg << "Fund Units already allocated" if capital_remittance.fund_units.present?
     msg
   end
 

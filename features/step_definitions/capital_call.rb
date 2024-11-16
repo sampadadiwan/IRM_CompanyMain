@@ -42,3 +42,25 @@ end
 Given("it should create Capital Remittances according to the close percentage") do
 	expect(CapitalRemittance.pluck(:percentage)).to match_array([BigDecimal("10"), BigDecimal("20")])
 end
+
+Given('the remittances has some units already allocated') do
+  capital_remittance = CapitalRemittance.last
+  fund_unit = CapitalRemittance.last.fund_units.build(
+    fund_id:capital_remittance.capital_commitment.fund_id,
+    capital_commitment_id: capital_remittance.capital_commitment.id,
+    investor_id: capital_remittance.capital_commitment.investor_id,
+    entity_id: capital_remittance.entity_id,
+    unit_type: "Series A",
+    quantity: 100.0,
+    price: 50.0,
+    premium: 10.0,
+    issue_date: Date.today,
+    reason: "Initial Allocation"
+  )
+  fund_unit.save!
+end
+
+And("error email for fund units already allocated should be sent") do
+	current_email = open_email(User.first.email)
+	expect(current_email).to have_content("Fund Units already allocated")
+end
