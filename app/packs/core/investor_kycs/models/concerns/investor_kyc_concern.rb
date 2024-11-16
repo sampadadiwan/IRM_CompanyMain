@@ -61,4 +61,14 @@ module InvestorKycConcern
       false
     end
   end
+
+  def docs_for_investor
+    documents
+      .includes(:folder)
+      .where(owner_tag: "Generated", approved: true)
+      .or(documents.where.not(owner_tag: "Generated"))
+      .or(documents.where(owner_tag: nil))
+      .not_template
+      .order(:name)
+  end
 end

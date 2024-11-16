@@ -30,14 +30,15 @@
 
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
+          <% documents = current_user.entity_id == @investor_kyc.entity_id ? @investor_kyc.documents.includes(:folder) : @investor_kyc.docs_for_investor %>
           <% msg = nil %>
-          <%= render "/documents/index", documents: @investor_kyc.documents.includes(:folder),
+          <%= render "/documents/index", documents: documents,
               owner: @investor_kyc, entity: @investor_kyc.entity, msg: msg %>
         </div>
       </div>
 
       <div id="docs-validation-tab" class="tab-pane fade in show">
-        <div id="docs_validation" class="associated_entity">          
+        <div id="docs_validation" class="associated_entity">
           <%= Json2table.get_html_table(@investor_kyc.doc_question_answers, JsonTable::TABLE_OPTIONS).html_safe if @investor_kyc.doc_question_answers.present? %>
         </div>
       </div>

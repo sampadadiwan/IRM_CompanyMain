@@ -37,6 +37,8 @@ class CapitalCommitmentsController < ApplicationController
     kyc_ids = policy_scope(InvestorKyc).joins(:investor).pluck(:id)
     @documents = Document.where(owner_id: capital_commitment_ids, owner_type: "CapitalCommitment").or(Document.where(owner_id: kyc_ids, owner_type: "InvestorKyc"))
 
+    @documents = @documents.where(owner_tag: "Generated", approved: true).or(@documents.where.not(owner_tag: "Generated")).or(@documents.where(owner_tag: nil)).not_template if current_user.curr_role_investor?
+
     @documents = @documents.order(id: :desc)
 
     @no_folders = false
