@@ -55,7 +55,7 @@ end
 
 Given('I visit PortfolioInvestment Page and find 6 columns in the grid') do
   visit('/portfolio_investments')
-  @expected_columns = ["Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
+  @expected_columns = ["Portfolio Company", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
@@ -63,7 +63,7 @@ end
 
 Given('I visit PortfolioInvestment Page from reports') do
   visit(Report.first.url)
-  @expected_columns = ["Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
+  @expected_columns = ["Portfolio Company", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
