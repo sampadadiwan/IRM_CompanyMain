@@ -2,6 +2,7 @@ class CapitalDistributionPaymentDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "CapitalDistributionPayment.id", searchable: false },
+      distribution_name: { source: "CapitalDistribution.title", searchable: false },
       folio_id: { source: "CapitalDistributionPayment.folio_id", searchable: true },
       investor_name: { source: "CapitalDistributionPayment.investor_name", searchable: true },
       amount: { source: "CapitalDistributionPayment.amount_cents", searchable: false },
@@ -15,6 +16,7 @@ class CapitalDistributionPaymentDatatable < ApplicationDatatable
     records.map do |record|
       {
         id: record.id,
+        distribution_name: record.capital_distribution.title,
         folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
         amount: record.decorate.amount_explain,

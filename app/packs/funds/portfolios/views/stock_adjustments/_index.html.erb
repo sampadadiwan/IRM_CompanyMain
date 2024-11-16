@@ -11,14 +11,16 @@
 
     <thead>
       <tr>
-        <th>
-          Portfolio Company
-        </th>
+        <% unless params["portfolio_company_id"].present? %>
+          <th>
+            Portfolio Company
+          </th>
+        <% end %>
         <th>
           User
         </th>
         <th>
-          Type
+          Instrument
         </th>
         <th>
           Adjustment

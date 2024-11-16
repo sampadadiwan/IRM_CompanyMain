@@ -11,6 +11,10 @@ class InvestorKycDecorator < ApplicationDecorator
     end
   end
 
+  def entity_name
+    object.entity.name
+  end
+
   def bank_verification_enabled?
     entity.entity_setting.bank_verification
   end

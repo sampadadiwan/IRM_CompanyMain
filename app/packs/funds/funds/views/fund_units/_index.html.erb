@@ -21,16 +21,18 @@
   <table id="fund_units" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
-        <% if cols  == "all" %>
-        <th>
-          Fund
-        </th>
-        <th>
-          Investor
-        </th>
+        <% if cols == "all" && params[:investor_id].blank? %>
+          <th>Fund</th>
+          <th>Investor</th>
+        <% elsif cols == "all" %>
+          <th>Fund</th>
+          <th>Investing Entity</th>
         <% end %>
         <th>
           Unit Type
+        </th>
+        <th>
+          Folio Id
         </th>
         <th>
           Issue Date
@@ -54,6 +56,7 @@
         </th>
       </tr>
     </thead>
+
     <tbody>
       <% fund_units.each do |fund_unit| %>
         <%= render fund_unit %>

@@ -1,4 +1,12 @@
 <tr id="<%= dom_id portfolio_cashflow %>">
+  <% if params["portfolio_company_id"].present? %>
+    <td>
+      <%= link_to portfolio_cashflow.fund.name %>
+    </td>
+  <% end %>
+  <td>
+    <%= portfolio_cashflow.aggregate_portfolio_investment.investment_instrument %>
+  </td>
   <td>
     <%= l portfolio_cashflow.payment_date %>
   </td>
@@ -7,9 +15,6 @@
   </td>
   <td>
     <%= portfolio_cashflow.tag %>
-  </td>
-  <td>
-    <%= portfolio_cashflow.instrument %>
   </td>
   <td>
     <%= portfolio_cashflow.notes %>

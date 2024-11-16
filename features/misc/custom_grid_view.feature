@@ -8,12 +8,11 @@ Scenario Outline: Create custom grid view for Investors
   When I create a form type and custom grid view for "Investor"
   When I select each option and click Add
   And I visit Investor Page and find 6 columns in the grid
-	When I visit Custom Grid View page and uncheck "City"
-	Given I should not find "City" column in the Investor Grid
+	When I visit Custom Grid View page and uncheck "Category"
+	Given I should not find "Category" column in the Investor Grid
 
 Examples:
   |user	      |entity|
-  |  	        |entity_type=Company|
   |  	        |entity_type=Company|
 
 Scenario Outline: Create custom grid view for PortfolioInvestments
@@ -29,7 +28,6 @@ Scenario Outline: Create custom grid view for PortfolioInvestments
 Examples:
   |user       |entity|
   |           |entity_type=Company|
-  |           |entity_type=Company|
 
 Scenario Outline: Create custom grid view for PortfolioInvestments Reports
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -43,7 +41,6 @@ Scenario Outline: Create custom grid view for PortfolioInvestments Reports
 
 Examples:
   |user       |entity|
-  |           |entity_type=Company|
   |           |entity_type=Company|
 
 Scenario Outline: Create custom grid view for AggregatePortfolioInvestments
@@ -59,7 +56,6 @@ Scenario Outline: Create custom grid view for AggregatePortfolioInvestments
 Examples:
   |user       |entity|
   |           |entity_type=Company|
-  |           |entity_type=Company|
 
 Scenario Outline: Create custom grid view for CapitalCommitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -74,7 +70,6 @@ Scenario Outline: Create custom grid view for CapitalCommitment
 Examples:
   |user       |entity|
   |           |entity_type=Company|
-  |           |entity_type=Company|
 
 Scenario Outline: Create custom grid view for InvestorKyc
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -88,7 +83,6 @@ Scenario Outline: Create custom grid view for InvestorKyc
 
 Examples:
   |user       |entity|
-  |           |entity_type=Company|
   |           |entity_type=Company|
 
 Scenario Outline: Create custom grid view for FundUnitSetting

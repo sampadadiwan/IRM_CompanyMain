@@ -17,6 +17,14 @@
   <table id="portfolio_cashflows" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
+        <% if params.include?("portfolio_company_id") %>
+          <th>
+            Fund Name
+          </th>
+        <% end %>
+        <th>
+          Instrument
+        </th>
         <th>
           Payment Date
         </th>
@@ -25,9 +33,6 @@
         </th>
         <th>
           Tag
-        </th>
-        <th>
-          Instrument
         </th>
         <th>
           Notes

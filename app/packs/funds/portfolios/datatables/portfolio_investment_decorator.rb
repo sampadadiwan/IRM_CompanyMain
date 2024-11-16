@@ -5,8 +5,14 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
     portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment)
   end
 
+  delegate :category, to: :investment_instrument, prefix: true
+
   def portfolio_company_name
     h.link_to portfolio_investment.portfolio_company_name, portfolio_investment.aggregate_portfolio_investment
+  end
+
+  def investment_instrument_name
+    h.link_to object.investment_instrument, object.investment_instrument
   end
 
   def amount

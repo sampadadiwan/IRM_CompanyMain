@@ -1,7 +1,9 @@
 <tr id="<%= dom_id investor_access %>">
-  <td>
-    <%= investor_access.investor_name %>
-  </td>
+  <% unless params[:controller] == "investors" %>
+    <td>
+      <%= investor_access.investor_name %>
+    </td>
+  <% end %>
   <td>
     <%= investor_access.user.name if investor_access.user %>
   </td>

@@ -56,6 +56,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     params[:show_docs].present? ? object.documents.collect(&:name).join(", ") : ""
   end
 
+  def fund_name
+    h.link_to(fund.name, fund)
+  end
+
   def dt_actions
     links = []
     links << h.link_to('Show', h.capital_commitment_path(object), class: "btn btn-outline-primary")

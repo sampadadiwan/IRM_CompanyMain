@@ -8,11 +8,18 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
-  STANDARD_COLUMN_NAMES = ["Investor", "Capital Call", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[investor_name capital_call_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
+  STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[investor_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = STANDARD_COLUMN_NAMES - ["Investor", "Capital Call", "Verified"]
-  INVESTOR_COLUMN_FIELDS = STANDARD_COLUMN_FIELDS - %w[investor_name capital_call_name verified]
+  INVESTOR_COLUMN_NAMES = (STANDARD_COLUMN_NAMES - ["Investor", "Verified", "Folio No", "Status"])
+                          .insert(0, "Capital Call")
+                          .insert(1, "Folio Id")
+                          .insert(2, "Status")
+
+  INVESTOR_COLUMN_FIELDS = (STANDARD_COLUMN_FIELDS - %w[investor_name verified folio_id status])
+                           .insert(0, "capital_call_name")
+                           .insert(1, "folio_id")
+                           .insert(2, "status")
 
   update_index('capital_remittance') { self if index_record? }
 

@@ -32,9 +32,11 @@
     <table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
         <thead>
             <tr>
-                <th>
-                    Investor
-                </th>
+                <% unless params[:controller] == "investors" %>
+                    <th>
+                        Investor
+                    </th>
+                <% end %>
                 <th>
                     User
                 </th>

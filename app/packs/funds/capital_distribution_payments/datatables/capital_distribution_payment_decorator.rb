@@ -7,6 +7,10 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
     h.link_to object.folio_id, object.capital_commitment
   end
 
+  def distribution_name
+    h.link_to object.capital_distribution.title, object.capital_distribution
+  end
+
   def amount
     h.money_to_currency object.amount
   end

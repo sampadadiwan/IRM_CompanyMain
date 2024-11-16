@@ -11,6 +11,14 @@ class InvestorKyc < ApplicationRecord
                        "Kyc Verified" => "verified",
                        "Expired" => "expired" }.freeze
 
+  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor").freeze
+
+  INVESTOR_STANDARD_COLUMNS = { "Entity" => "entity_name",
+                                "Investing Entity" => "full_name",
+                                "Type" => "kyc_type",
+                                "Kyc Verified" => "verified",
+                                "Expired" => "expired" }.freeze
+
   # Make all models searchable
   update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
   include WithCustomField

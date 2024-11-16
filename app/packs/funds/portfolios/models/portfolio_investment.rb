@@ -87,15 +87,14 @@ class PortfolioInvestment < ApplicationRecord
   # This is used to improve the performance of the portfolio computations, in allocations
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
 
-  STANDARD_COLUMNS = { "For" => "for",
-                       "Company Name" => "portfolio_company_name",
+  STANDARD_COLUMNS = { "Portfolio Company" => "portfolio_company_name",
+                       "Instrument" => "investment_instrument_name",
                        "Investment Date" => "investment_date",
                        "Amount" => "amount",
                        "Quantity" => "quantity",
                        "Cost Per Share" => "cost",
                        "FMV" => "fmv",
                        "FIFO Cost" => "cost_of_sold",
-                       "Investment Type" => "category",
                        "Notes" => "notes" }.freeze
 
   def setup_aggregate

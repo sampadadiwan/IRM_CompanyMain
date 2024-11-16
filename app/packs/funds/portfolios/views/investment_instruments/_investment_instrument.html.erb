@@ -1,7 +1,9 @@
 <tr id="<%= dom_id investment_instrument %>">
-  <td>
-    <%= link_to investment_instrument.portfolio_company %>
-  </td>
+  <% if params[:portfolio_company_id].blank? %>
+    <td>
+      <%= link_to investment_instrument.portfolio_company %>
+    </td>
+  <% end %>
   <td>
     <%= link_to investment_instrument.name, investment_instrument %>
   </td>

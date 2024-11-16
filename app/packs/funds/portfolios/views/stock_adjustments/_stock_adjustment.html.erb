@@ -1,7 +1,9 @@
 <tr id="<%= dom_id stock_adjustment %>">
-  <td>
-    <%= stock_adjustment.portfolio_company.investor_name %>
-  </td>
+  <% unless params["portfolio_company_id"].present? %>
+    <td>
+      <%= stock_adjustment.portfolio_company.investor_name %>
+    </td>
+  <% end %>
   <td>
     <%= stock_adjustment.user.full_name %>
   </td>

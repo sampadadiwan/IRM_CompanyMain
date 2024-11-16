@@ -25,16 +25,25 @@ class CapitalCommitment < ApplicationRecord
   INVESTOR_COLUMN_FIELDS = %w[folio_id full_name unit_type committed_amount call_amount
                               collected_amount distribution_amount dt_actions].freeze
 
-  STANDARD_COLUMNS = { "Type" => "commitment_type",
-                       "Folio" => "folio_id",
+  STANDARD_COLUMNS = { "Folio" => "folio_id",
                        "Investor" => "investor_name",
                        "Investing Entity" => "investor_kyc_full_name",
                        "Unit Type" => "unit_type",
+                       "Fund Close" => "fund_close",
                        "Committed" => "committed_amount",
-                       "Percentage" => "percentage",
                        "Called" => "call_amount",
                        "Collected" => "collected_amount",
                        "Distributed" => "distribution_amount" }.freeze
+
+  INVESTOR_TAB_STANDARD_COLUMNS = {
+    "Fund Name" => "fund_name",
+    "Investing Entity" => "investor_kyc_full_name",
+    "Folio" => "folio_id"
+  }.merge(
+    STANDARD_COLUMNS.slice(*STANDARD_COLUMNS.keys - ["Fund Close", "Investor", "Investing Entity", "Folio"])
+  ).freeze
+
+  INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor", "Fund Close").freeze
 
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }

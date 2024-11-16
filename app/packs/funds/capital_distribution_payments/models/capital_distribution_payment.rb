@@ -8,8 +8,8 @@ class CapitalDistributionPayment < ApplicationRecord
   STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Amount", "Payment Date", "Completed", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name folio_id amount payment_date completed dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = STANDARD_COLUMN_NAMES - ["Investor"]
-  INVESTOR_COLUMN_FIELDS = STANDARD_COLUMN_FIELDS - %w[investor_name]
+  INVESTOR_COLUMN_NAMES = ["Distribution Name"] + STANDARD_COLUMN_NAMES - ["Investor"]
+  INVESTOR_COLUMN_FIELDS = ["distribution_name"] + STANDARD_COLUMN_FIELDS - %w[investor_name]
 
   include ForInvestor
   update_index('capital_distribution_payment') { self if index_record? }

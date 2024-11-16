@@ -8,9 +8,11 @@
     <table id="investment_instruments" class="table table-bordered dataTable jqDataTable">
       <thead>
         <tr>
-          <th>
-            Portfolio Company
-          </th>
+          <% if params[:portfolio_company_id].blank? %>
+            <th>
+              Portfolio Company
+            </th>
+          <% end %>
           <th>
             Name
           </th>

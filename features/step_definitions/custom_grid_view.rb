@@ -47,7 +47,7 @@ end
 
 Given('I visit Investor Page and find 6 columns in the grid') do
   visit('/investors')
-  @expected_columns = %w[City Stakeholder PAN Tags Category Access]
+  @expected_columns = %w[Stakeholder Tags Category Access]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
@@ -55,7 +55,7 @@ end
 
 Given('I visit PortfolioInvestment Page and find 6 columns in the grid') do
   visit('/portfolio_investments')
-  @expected_columns = ["For", "Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Investment Type", "Notes"]
+  @expected_columns = ["Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
@@ -63,7 +63,7 @@ end
 
 Given('I visit PortfolioInvestment Page from reports') do
   visit(Report.first.url)
-  @expected_columns = ["For", "Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Investment Type", "Notes"]
+  @expected_columns = ["Company Name", "Investment Date", "Amount", "Quantity", "Cost Per Share", "FMV", "FIFO Cost", "Notes"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
@@ -71,7 +71,7 @@ end
 
 Given('I visit AggregatePortfolioInvestment Page and find 6 columns in the grid') do
   visit('/aggregate_portfolio_investments')
-  @expected_columns = ["For", "Portfolio Company", "Fund Name", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share"]
+  @expected_columns = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end
@@ -79,7 +79,7 @@ end
 
 Given('I visit CapitalCommitment Page and find 6 columns in the grid') do
   visit('/capital_commitments')
-  @expected_columns = ["Type", "Folio", "Investor", "Investing", "Entity", "Unit", "Type", "Committed", "Percentage", "Called", "Collected", "Distributed"]
+  @expected_columns = ["Type", "Folio", "Investor", "Investing", "Entity", "Unit", "Type", "Committed", "Called", "Collected", "Distributed"]
   @expected_columns.each do |column_name|
     expect(page).to have_text(column_name)
   end

@@ -32,17 +32,18 @@ class AggregatePortfolioInvestment < ApplicationRecord
   validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMNS = {
-    "For" => "commitment_type",
     "Portfolio Company" => "portfolio_company_name",
     "Instrument" => "investment_instrument_name",
+    "Current Quantity" => "quantity",
     "Net Bought Amount" => "bought_amount",
     "Sold Amount" => "sold_amount",
-    "Current Quantity" => "quantity",
     "Fmv" => "fmv",
     "Avg Cost / Share" => "avg_cost"
   }.freeze
 
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
+
+  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company").freeze
 
   before_create :update_name
   def update_name
