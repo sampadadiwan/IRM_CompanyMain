@@ -38,7 +38,7 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
 
     if params[:group_fields].present?
-      df = AccountEntryDf.df(@account_entries, current_user, params)
+      df = AccountEntryDf.new.df(@account_entries, current_user, params)
       @adhoc_json = df.to_a.to_json
       template = params[:template].presence || "index"
     else
