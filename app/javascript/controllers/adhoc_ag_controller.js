@@ -54,8 +54,10 @@ class DynamicAgGrid {
             suppressMakeColumnVisibleAfterUnGroup: true,
             suppressRowGroupHidesColumns: true,
             pagination: true,
-            paginationPageSizeSelector: [25, 50, 100],
-            paginationPageSize: 25,
+            paginationPageSizeSelector: [50, 100, 200],
+            paginationPageSize: 50,
+            groupIncludeFooter: true,
+            groupIncludeTotalFooter: true,
             statusBar: {
                 statusPanels: [
                     { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' },
