@@ -1,5 +1,5 @@
 
-<%= render "/layouts/filter", associations: [:investor_kyc, :investor], hidden_fields: {card: params[:card]} %>
+<%= render "/layouts/filter", associations: [:investor_kyc, :investor], hidden_fields: {card: params[:card]}, include_template: "/capital_commitments/group_filter" %>
 
 <%= render ReportingComponent.new do %>
 

@@ -1,0 +1,27 @@
+
+<div class="row">
+  <%= form.hidden_field :template, name: "template", value: "index_group" %>
+
+  <div class="form-group col d-none">
+    <%= form.select :agg_type, ["sum", "count", "max", "min"], {selected: params[:agg_type]}, class: "form-control", name: "agg_type"  %>
+    <small class="form-text text-muted">Select aggregation function.</small>
+  </div>
+
+  <%
+    field_names = ["committed_amount", "collected_amount", "call_amount", "distribution_amount"]
+    options = names_options_humanize(field_names)    
+  %>
+  <div class="form-group col-5">
+    <%= form.select :agg_field, options, {include_hidden: false, selected: params[:agg_field]}, class: "form-control select2", name: "agg_field[]", multiple: true  %>
+    <small class="form-text text-muted">Select the field to aggregate.</small>
+  </div>
+
+  <%
+    field_names = ["fund_name", "investor_name", "commitment_type", "full_name", "kyc_type"]
+    options = names_options_humanize(field_names)    
+  %>
+  <div class="form-group col-7">
+    <%= form.select :group_fields, options, {include_hidden: false, selected: params[:group_fields]}, class: "form-control select2", name: "group_fields[]", multiple: true  %>
+    <small class="form-text text-muted">Select the fields to group by.</small>
+  </div>
+</div>

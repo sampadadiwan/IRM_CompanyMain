@@ -1,0 +1,15 @@
+
+            
+<%= render "/layouts/filter", associations: [:investment_instrument], include_template: "/portfolio_investments/group_filter" %>        
+
+<div class="associated_entity">
+    <% if @adhoc_json.present? && false %>
+        <div data-controller="datatable">
+            <%= Json2table.get_html_table(@adhoc_json, JsonTable::TABLE_OPTIONS).html_safe %>
+        </div>
+    <% else %>
+        <div data-controller="adhoc-ag">
+            <div id="adhoc_grid" class="<%= get_ag_theme %>" data-grid-data='<%=@adhoc_json.html_safe%>'></div>
+        </div>
+    <% end %>
+</div>

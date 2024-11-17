@@ -9,13 +9,18 @@ import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
 import "turbo_progress_bar"
 
+
+import "vega"
+import "vega-lite"
+import "vega-embed"
+
+window.dispatchEvent(new Event("vega:load"))
+
 Highcharts.setOptions({
 	lang: {
   	thousandsSep: ','
   }
 });
-
-
 
 // https://github.com/basecamp/trix/issues/624
 addEventListener("trix-initialize", event => {

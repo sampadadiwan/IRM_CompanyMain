@@ -91,4 +91,11 @@ module ApplicationHelper
     result = params.to_unsafe_h.extend(Hashie::Extensions::DeepLocate).deep_locate ->(k, v, _object) { k == key && v.include?(value) }
     result.present?
   end
+
+  def names_options_humanize(names)
+    options = names.map do |field|
+      [field.humanize.titleize, field]
+    end
+    options.sort_by! { |label, _value| label }
+  end
 end

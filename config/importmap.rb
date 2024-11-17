@@ -18,3 +18,8 @@ pin "turbo_progress_bar"
 pin "countup.js" # @2.8.0
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
+
+# For polars graphing
+pin "vega", to: "vega.js"
+pin "vega-lite", to: "vega-lite.js"
+pin "vega-embed", to: "vega-embed.js"

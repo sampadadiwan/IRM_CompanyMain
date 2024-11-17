@@ -17,13 +17,7 @@ class AccountEntriesController < ApplicationController
     end
   end
 
-  # GET /account_entries or /account_entries.json
-  def index
-    authorize AccountEntry
-
-    @q = AccountEntry.ransack(params[:q])
-
-    @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund) # apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)
+  def filter_index(params)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
@@ -36,10 +30,20 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(reporting_date: params[:reporting_date_start]..) if params[:reporting_date_start].present?
     @account_entries = @account_entries.where(reporting_date: ..params[:reporting_date_end]) if params[:reporting_date_end].present?
     @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
+  end
+
+  # GET /account_entries or /account_entries.json
+  def index
+    authorize AccountEntry
+
+    @q = AccountEntry.ransack(params[:q])
+
+    @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
+    filter_index(params)
 
     if params[:group_fields].present?
-      df = AccountEntryDf.new.df(@account_entries, current_user, params)
-      @adhoc_json = df.to_a.to_json
+      @data_frame = AccountEntryDf.new.df(@account_entries, current_user, params)
+      @adhoc_json = @data_frame.to_a.to_json
       template = params[:template].presence || "index"
     else
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)

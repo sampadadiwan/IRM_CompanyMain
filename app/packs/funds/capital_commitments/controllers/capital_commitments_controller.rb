@@ -18,13 +18,20 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitments = @capital_commitments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
 
-    if params[:all].blank?
+    template = "index"
+    if params[:group_fields].present?
+      @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, current_user, params)
+      @adhoc_json = @data_frame.to_a.to_json
+      template = params[:template].presence || "index"
+    elsif params[:all].blank?
       @capital_commitments = @capital_commitments.page(params[:page])
       @capital_commitments = @capital_commitments.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
     respond_to do |format|
-      format.html
+      format.html do
+        render template
+      end
       format.xlsx
       format.json do
         render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) if params[:jbuilder].blank?

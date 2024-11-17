@@ -10,13 +10,21 @@ class PortfolioInvestmentsController < ApplicationController
     @portfolio_investments = @portfolio_investments.where(investment_instrument_id: params[:investment_instrument_id]) if params[:investment_instrument_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
     @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, current_user, params)
-    if params[:all].blank?
+
+    template = "index"
+    if params[:group_fields].present?
+      @data_frame = PortfolioInvestmentDf.new.df(@portfolio_investments, current_user, params)
+      @adhoc_json = @data_frame.to_a.to_json
+      template = params[:template].presence || "index"
+    elsif params[:all].blank?
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
     respond_to do |format|
-      format.html
+      format.html do
+        render template
+      end
       format.turbo_stream { render partial: 'portfolio_investments/index', locals: { portfolio_investments: @portfolio_investments } }
       format.xlsx
     end

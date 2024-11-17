@@ -46,6 +46,8 @@ class AiPolars
     end
   end
 
+  # rubocop:disable Security/Eval
+  # rubocop:disable Naming/MethodParameterName
   def self.run_query(query, model_classes, _df)
     polars_query = generate_query(query, model_classes)
     Rails.logger.debug { "Polars Query: #{polars_query}" }
@@ -53,4 +55,6 @@ class AiPolars
     Rails.logger.debug { "Result: #{result}" }
     result
   end
+  # rubocop:enable Naming/MethodParameterName
+  # rubocop:enable Security/Eval
 end
