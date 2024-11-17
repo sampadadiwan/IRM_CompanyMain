@@ -2,6 +2,7 @@
 
   <%
     hidden_fields ||= {}
+    include_template ||= nil
     disabled ||= false
     state ||= "show"
     css_class||= "show_filter"
@@ -50,7 +51,7 @@
           <%= render "/layouts/filter_ext" %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
-          <% end %>
+          <% end %>          
 
           <div class="action float-end">
 
@@ -75,7 +76,7 @@
             <% if  %w[boards].include?(params[:controller]) %>
               <% @q = KanbanCard.ransack(@q.conditions) %>
             <% end %>
-
+            
             <%= f.button "", class: "btn btn-outline-primary search-button", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
               <i class="ti ti-search"></i>
             <% end %>
@@ -87,9 +88,14 @@
             <% end %>
           </div>
 
+          <% if include_template.present? %>
+            <%= render include_template, form: f %>
+          <% end %>
+
           <% hidden_fields.each do |key, value| %>
             <%= hidden_field_tag key, value if value %>
           <% end %>
+
 
       <% end %>
     <% end %>

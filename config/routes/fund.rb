@@ -43,6 +43,8 @@ end
 
 resources :account_entries do
   post 'delete_all', on: :collection
+  get 'adhoc', on: :collection
+  post 'adhoc', on: :collection
 end
 
 resources :fund_units

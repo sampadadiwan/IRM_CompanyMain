@@ -1,6 +1,6 @@
 
 
-<%= render "/layouts/filter", associations: [:capital_commitment] %>
+<%= render "/layouts/filter", associations: [:capital_commitment], include_template: "/account_entries/adhoc" %>
 
 <%= render ReportingComponent.new do %>
   <%= turbo_frame_tag "account_entries_list", target: "_top" do %>

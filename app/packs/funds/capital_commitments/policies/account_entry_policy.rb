@@ -3,6 +3,10 @@ class AccountEntryPolicy < FundBasePolicy
     user.enable_funds && user.curr_role != "investor"
   end
 
+  def adhoc?
+    index?
+  end
+
   def create?
     permissioned_employee?(:create)
   end

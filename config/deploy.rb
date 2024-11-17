@@ -249,6 +249,7 @@ namespace :IRM do
     on roles(:app) do
       execute :sudo, "apt-get update"
       execute :sudo, "apt-get upgrade -y"
+      execute :sudo, "journalctl --vacuum-time=2d"
       execute :sudo, "reboot"
     end
   end

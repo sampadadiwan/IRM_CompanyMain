@@ -71,7 +71,8 @@ class FolderLlmReportJob < ApplicationJob
         'Content-Type' => 'application/json'
       },
       body: {
-        api_key: Rails.application.credentials["OPENAI_API_KEY"],
+        openai_api_key: Rails.application.credentials["OPENAI_API_KEY"],
+        anthropic_api_key: Rails.application.credentials["ANTHROPIC_API_KEY"],
         file_urls: doc_urls,
         template_html_url: template_url,
         output_file_name:

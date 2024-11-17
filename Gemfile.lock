@@ -15,6 +15,12 @@ GIT
       activerecord (>= 5.0)
 
 GIT
+  remote: https://github.com/ausangshukla/json2table.git
+  revision: a83d56c8e84a0f988f5595f1798fc9ba901b2665
+  specs:
+    json2table (1.0.7)
+
+GIT
   remote: https://github.com/nejdetkadir/devise-api.git
   revision: 006bddee4bbe9f5ff9edc936d54725ce061be720
   branch: main
@@ -533,7 +539,6 @@ GEM
     json (2.7.2)
     json-schema (4.3.1)
       addressable (>= 2.8)
-    json2table (1.0.7)
     jwt (2.9.3)
       base64
     kaminari (1.2.2)
@@ -663,6 +668,8 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
+    polars-df (0.14.0-x86_64-linux)
+      bigdecimal
     polyglot (0.3.5)
     pragmatic_segmenter (0.3.24)
     prism (0.30.0)
@@ -947,6 +954,7 @@ GEM
       aws-sdk-s3 (~> 1.0)
       content_disposition (~> 1.0)
       roda (>= 2.27, < 4)
+    vega (0.4.0)
     version_gem (1.1.4)
     view_component (3.12.1)
       activesupport (>= 5.2.0, < 8.0)
@@ -1050,7 +1058,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
-  json2table
+  json2table!
   kaminari
   langchainrb
   letter_opener
@@ -1069,6 +1077,7 @@ DEPENDENCIES
   paranoia
   parser
   pdf-reader
+  polars-df
   prometheus_exporter
   pry-byebug
   public_activity
@@ -1110,6 +1119,7 @@ DEPENDENCIES
   turbo-rails
   tzinfo-data
   uppy-s3_multipart (~> 1.1)
+  vega
   view_component
   web-console
   webdrivers

@@ -3,12 +3,19 @@ class AccountEntriesController < ApplicationController
 
   after_action :verify_authorized, except: %i[index delete_all]
   before_action :set_account_entry, only: %i[show edit update destroy]
-  has_scope :entry_type
-  has_scope :folio_id
-  has_scope :unit_type
-  has_scope :reporting_date_start
-  has_scope :reporting_date_end
-  has_scope :cumulative, type: :boolean
+
+  def adhoc
+    authorize AccountEntry
+    if params[:query].present? || params[:group_fields].present?
+      @account_entries = policy_scope(AccountEntry)
+      df = AccountEntryDf.df(@account_entries, current_user, params)
+      if params[:group_fields].present?
+        @adhoc_json = df.to_a.to_json
+      elsif params[:query].present?
+        @adhoc_json = AiPolars.run_query(params[:query], [AccountEntry, CapitalCommitment, Fund], df)
+      end
+    end
+  end
 
   # GET /account_entries or /account_entries.json
   def index
@@ -16,20 +23,39 @@ class AccountEntriesController < ApplicationController
 
     @q = AccountEntry.ransack(params[:q])
 
-    @account_entries = apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)
+    @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund) # apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
-    @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-    @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
+
+    @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type].present?
+    @account_entries = @account_entries.where(folio_id: params[:folio_id]) if params[:folio_id].present?
+    @account_entries = @account_entries.where(unit_type: params[:unit_type]) if params[:unit_type].present?
+    @account_entries = @account_entries.where(reporting_date: params[:reporting_date_start]..) if params[:reporting_date_start].present?
+    @account_entries = @account_entries.where(reporting_date: ..params[:reporting_date_end]) if params[:reporting_date_end].present?
+    @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
+
+    if params[:group_fields].present?
+      df = AccountEntryDf.df(@account_entries, current_user, params)
+      @adhoc_json = df.to_a.to_json
+      template = params[:template].presence || "index"
+    else
+      @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
+      @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
+      template = "index"
+    end
+
+    # Set the breadcrumbs
     fund_bread_crumbs("Account Entries")
 
     respond_to do |format|
-      format.html
+      format.html do
+        render template
+      end
       format.xlsx do
-        template = params[:template] || "index"
+        template = params[:template].presence || "index"
         render xlsx: template, filename: "account_entries.xlsx"
       end
       format.json do

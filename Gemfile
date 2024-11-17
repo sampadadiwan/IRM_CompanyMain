@@ -16,7 +16,7 @@ gem "sprockets-rails"
 gem 'acts_as_favoritor', git: "https://github.com/ausangshukla/acts_as_favoritor.git"
 gem "audited", "~> 5.0"
 gem 'enumerize'
-gem "json2table"
+gem "json2table", git: "https://github.com/ausangshukla/json2table.git"
 gem 'mail-logger'
 gem "mysql2", "~> 0.5"
 gem "noticed"
@@ -235,8 +235,10 @@ gem 'humanize'
 gem 'langchainrb'
 gem 'mini_magick'
 gem 'parser'
+gem 'polars-df'
 gem 'prometheus_exporter'
 gem 'redcarpet'
 gem "ruby-openai", git: "https://github.com/alexrudall/ruby-openai.git"
 gem 'sendgrid-ruby'
+gem 'vega'
 gem 'wikipedia-client'

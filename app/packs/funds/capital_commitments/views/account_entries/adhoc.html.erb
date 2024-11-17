@@ -1,0 +1,10 @@
+
+            
+<%= render "/layouts/filter", associations: [:capital_commitment], include_template: "/account_entries/adhoc" %>
+
+
+<div class="associated_entity" data-controller="datatable">
+    <% if @adhoc_json.present? %>
+        <%= Json2table.get_html_table(@adhoc_json, JsonTable::TABLE_OPTIONS).html_safe %>
+    <% end %>
+</div>

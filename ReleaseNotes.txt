@@ -1,3 +1,17 @@
+V8.0.27
+#####################################
+8af14334b Fund units check (#573)
+266f85e5f Columns remap (#555)
+c85d3c7c0 Added code to hide unapproved docs from investor for capital commitment and kyc (#572)
+52080399f Kyc validation tests (#571)
+5ddc079f8 Increase Template name limit to 50 for AllocationRun (#570)
+7854af2c3 Added KpiExtractorService to extract KPIs from a csv (#569)
+ef67e4279 Add folio currency amounts in doc gen (#568)
+51defb214 Allow other lables duplication in esign (#567)
+2bc67cfc1 Add folio currency amounts in doc gen (#566)
+a8ad47e11 Uniq signatures (#565)
+5d007476b Fixed alerts
+
 V8.0.26
 #####################################
 f44eaf7f6 Added migration to change force esign order default to false (#560)
