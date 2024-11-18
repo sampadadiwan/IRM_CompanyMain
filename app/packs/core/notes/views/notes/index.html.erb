@@ -3,9 +3,7 @@
 <%= render "/layouts/steps", steps: ["Add / Manage Notes", "Search Notes", "View Stakeholder Notes"].freeze %>
 
 <%= turbo_frame_tag "notes_frame", target: "_top" do %>
-
-<%=render "index" , notes: @notes %>
-<%=paginate @notes %>
-
+	<%=render "index" , notes: @notes %>
+	<%=paginate @notes %>
 <% end %>
        

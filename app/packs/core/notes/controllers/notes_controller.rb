@@ -15,7 +15,7 @@ class NotesController < ApplicationController
     end
 
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
-
+    @notes = NoteSearch.perform(@notes, current_user, params)
     @notes = @notes.with_all_rich_text.includes(:user, :investor)
                    .order("notes.id desc").page params[:page]
   end
