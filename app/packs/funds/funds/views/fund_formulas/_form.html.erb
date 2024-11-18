@@ -20,7 +20,7 @@
 
         <div class="form-group">
           <%= form.label :name %>
-          <%= form.text_field :name, class: "form-control", maxlength: 50  %>
+          <%= form.text_field :name, class: "form-control" %>
         </div>
 
         <div class="form-group">
@@ -62,16 +62,16 @@
           <%= form.label :description %>
           <%= form.text_area :description, class: "form-control"  %>
         </div>
-                
+
         <div class="form-group">
-          
+
           <div class="alert alert-info">
             <small>Please ensure proper spacing between formula tokens</small>
           </div>
 
           <%= form.label :formula %>
           <%= form.text_area :formula, class: "form-control #{'readonly-field' if !policy(fund_formula).create?}", readonly: !policy(fund_formula).create?, placeholder: "Read-only field"  %>
-          
+
         </div>
 
         <div class="form-group">
@@ -111,18 +111,18 @@
       <div class="col-12" data-controller="datatable ">
         <%= render FormCard.new(title: "Formula Templates") do %>
           <table class="table table-bordered dataTable jqDataTable">
-            
+
             <thead>
               <th>Name</th>
               <th>Formula</th>
             </thead>
-            
-            <% 
-              templates =  fund_formula.new_record? ? FundFormula.templates : FundFormula.templates.where(name: fund_formula.name) 
+
+            <%
+              templates =  fund_formula.new_record? ? FundFormula.templates : FundFormula.templates.where(name: fund_formula.name)
 
               templates = FundFormula.templates if templates.empty?
             %>
-                        
+
             <% templates.to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
               <% formulas.each_with_index do |formula, index| %>
                 <% attrs = formula.attributes.slice("name", "entry_type", "description", "formula", "rule_type", "rule_for", "roll_up").map{|k,v| ["fund_formula[#{k}]", v]}.to_h %>
@@ -130,7 +130,7 @@
                 <tr class="explanation <%=rule_type%>">
                   <td><%= link_to formula.name, formula %></td>
                   <td>
-                    <ul>                  
+                    <ul>
                       <li id="formula_<%="#{formula.id}"%>"> <%= formula.formula %></li>
                       <li>
                         <small class="text-muted"><%= formula.description %></small>
@@ -145,7 +145,7 @@
                 </tr>
               <% end %>
             <% end %>
-            
+
           </table>
         <% end %>
       </div>
@@ -160,7 +160,7 @@
             <tr id="AllocateAccountEntry-Name" class="explanation AllocateAccountEntry-Name">
               <td>Allocate Account Entry</td>
               <td>
-                <ul>                  
+                <ul>
                   <li> Uses the specific fund account entry with the same <b>Name</b> as the rule and allocates it to each commitment </li>
                   <li>fund_account_entry: The specific fund account entry getting allocated</li>
                   <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
@@ -168,13 +168,13 @@
                   <li>fund_formula: The formula currently being run</li>
                   <li>ae: The specific account entry being created for the commitment</li>
                 </ul>
-              </td>              
+              </td>
             </tr>
 
             <tr id="AllocateAccountEntry-EntryType" class="explanation AllocateAccountEntry-EntryType">
               <td>Allocate Account Entry</td>
               <td>
-                <ul>                  
+                <ul>
                   <li> Uses the specific fund account entry with the same <b>EntryType</b> as the rule and allocates it to each commitment </li>
                   <li>fund_account_entry: The specific fund account entry getting allocated</li>
                   <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
@@ -182,7 +182,7 @@
                   <li>fund_formula: The formula currently being run</li>
                   <li>ae: The specific account entry being created for the commitment</li>
                 </ul>
-              </td>              
+              </td>
             </tr>
 
             <tr id="AllocatePortfolio" class="explanation AllocatePortfolio">
@@ -238,7 +238,7 @@
             <tr id="GenerateCustomField" class="explanation GenerateCustomField">
               <td>Generate Custom Field</td>
               <td>
-                <ul>  
+                <ul>
                   <li>Does not create an Account Entry, but generates a variable with the name, which can be used in other rules</li>
                   <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
                   <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
