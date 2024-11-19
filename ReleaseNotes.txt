@@ -1,3 +1,8 @@
+V8.0.29
+#####################################
+3a0726f76 Removed 50 char limit from fund formulas form, now uses 125 char limit from model (#578)
+52e72e7fe Hurdle rate in commitment (#577)
+
 V8.0.27
 #####################################
 8af14334b Fund units check (#573)
