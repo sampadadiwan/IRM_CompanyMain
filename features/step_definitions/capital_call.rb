@@ -32,11 +32,35 @@ When("I create a Capital Call with upload call basis") do
 	sleep(2)
 end
 
+When("I create a Capital Call with investable call basis") do
+	visit("/funds/1")
+	sleep(0.5)
+	find('a.nav-link[href="#capital-calls-tab"]').click
+	sleep(0.2)
+	click_on("New Call")
+	sleep(0.2)
+	fill_in 'capital_call_name', with: 'Investable capital call'
+	sleep(1)
+	select 'Investable Capital Percentage', from: 'capital_call[call_basis]'
+	find('span.select2-selection--multiple').click
+	find('ul.select2-results__options', visible: true)
+	find('li.select2-results__option', text: 'Second Close').click
+	click_on('Save')
+	sleep(2)
+end
+
 Given("it should create a Capital Call with given data") do
 	capital_call = CapitalCall.last
 	expect(capital_call.name).to(eq("Upload capital call"))
 	expect(capital_call.call_basis).to(eq("Upload"))
 	expect(capital_call.fund_closes).to_not be_present
+end
+
+Given("it should create a Investable Capital Call with given data") do
+	capital_call = CapitalCall.last
+	expect(capital_call.name).to(eq("Investable capital call"))
+	expect(capital_call.call_basis).to(eq("Investable Capital Percentage"))
+	expect(capital_call.fund_closes).to(eq(["Second Close"]))
 end
 
 Given("it should create Capital Remittances according to the close percentage") do

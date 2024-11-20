@@ -398,13 +398,12 @@
 
    Then('I should see the capital call details') do
     find(".show_details_link").click
+    @capital_call = CapitalCall.last
     expect(page).to have_content(@capital_call.name)
     expect(page).to have_content(@capital_call.close_percentages["First Close"].to_i) if  @capital_call.call_basis == "Percentage of Commitment"
     expect(page).to have_content(money_to_currency @capital_call.amount_to_be_called) if  @capital_call.amount_to_be_called_cents > 0
 
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
-
-    @capital_call = CapitalCall.last
   end
 
   When('I mark the remittances as paid') do

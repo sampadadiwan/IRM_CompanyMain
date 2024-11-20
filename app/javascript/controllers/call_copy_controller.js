@@ -60,12 +60,19 @@ export default class extends Controller {
       $("#close-percentages-container").hide();
       $("#applicable-to-group").hide();
 
+      $(".percentage").each(function () {
+        $(this).val("");
+      });
     } else {
       $("#amount_to_be_called_group").show();
       $("#percentage_called_group").hide();
       $("#percentage-fields-container").hide();
       $("#close-percentages-container").hide();
       $("#applicable-to-group").show();
+
+      $(".percentage").each(function () {
+        $(this).val("");
+      });
     }
   }
 
