@@ -2,7 +2,11 @@
 # We have setup godaddy domain to route emails to SendGrid
 # email@local.caphive.app, email@dev.caphive.app and email@prod.caphive.app are all routed to SendGrid
 # SendGrid then forwards the email to our app with the original email address as the recipient
-# We parse the email address to get the owner_id and owner_type
+# 2 Use cases:
+  # 1. We parse the email address to get the owner_id and owner_type - this use case is to attach incoming emails to the owner Example: deal.1@prod.caphive.app or individual_kyc.23@prod.caphive.app
+  # 2. We also get incoming emails from potential portfolio companies with the investor presentation to the fund
+
+
 class IncomingEmail < ApplicationRecord
   include WithFolder
 
@@ -21,9 +25,17 @@ class IncomingEmail < ApplicationRecord
     match_data = to.match(/(?<owner_type>[\w_]+)\.(?<owner_id>\d+)@(?<subdomain>[\w-]+)\.(?<domain>[\w.-]+)/)
     return nil unless match_data
 
+    # Check if the email is sent to the investor presentations email
+    fund_entity = Entity.joins(:entity_setting).where("entity_settings.investor_presentations_email = ?", to).first
+
     if match_data[:owner_type].present? && match_data[:owner_id].present?
+      # This email is sent by a user, to a specific owner model
       self.owner = match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
       self.entity_id = owner.entity_id
+    elsif fund_entity.present?
+      # This email is sent by a potential portfolio company, with the investor presentation to the fund.
+      self.owner = fund_entity
+      self.entity_id = fund_entity.id
     else
       errors.add(:to, "Invalid email address, does not belong to any owner.")
     end
@@ -38,6 +50,18 @@ class IncomingEmail < ApplicationRecord
       document = documents.build(name: file.original_filename, entity:, user:, orignal: true)
       document.file = file.tempfile
       document.save
+    end
+  end
+
+  after_commit_Create: :perform_summarization
+  def perform_summarization
+    fund_entity = Entity.joins(:entity_setting).where("entity_settings.investor_presentations_email = ?", to).first
+    # This email is sent by a potential portfolio company, with the investor presentation to the fund.
+    if fund_entity.present?
+      # Summarize the documents and create a report for the fund
+      FolderLlmReportJob.perform_later(folder_id, self.document_folder_id, "Portfolio Company", report_template_name: "Investor Presentation Template")
+      # Also run Fabric to extract wisdom
+      
     end
   end
 

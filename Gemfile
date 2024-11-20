@@ -16,7 +16,7 @@ gem "sprockets-rails"
 gem 'acts_as_favoritor', git: "https://github.com/ausangshukla/acts_as_favoritor.git"
 gem "audited", "~> 5.0"
 gem 'enumerize'
-gem "json2table", git: "https://github.com/ausangshukla/json2table.git"
+gem "json2table"
 gem 'mail-logger'
 gem "mysql2", "~> 0.5"
 gem "noticed"
@@ -160,8 +160,8 @@ group :development, :test do
   gem "net-pop", github: "ruby/net-pop"
   gem 'net-ssh'
 
-  # gem 'parallel_tests'
   gem 'htmlbeautifier'
+  gem 'parallel_tests'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false

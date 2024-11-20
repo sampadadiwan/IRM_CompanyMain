@@ -5,6 +5,17 @@ V8.0.29
 
 V8.0.27
 #####################################
+686221cb7 Archived old migration
+aaf2bcf07 Added unit type to commitments group filter
+ce71f8768 Added sector to PI group filter
+dc557f798 Added col aggregates to adhoc ag grid
+26e13a036 Added group filters for AccountEntry, PI and Commitments (#576)
+308ad8c51 Added better group by names, for pivoting
+10340ba1d Added polars for pivoting account entries (#575)
+e0fabe3db Grids test fix (#574)
+
+V8.0.27
+#####################################
 8af14334b Fund units check (#573)
 266f85e5f Columns remap (#555)
 c85d3c7c0 Added code to hide unapproved docs from investor for capital commitment and kyc (#572)

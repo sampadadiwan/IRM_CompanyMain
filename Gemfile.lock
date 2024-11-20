@@ -15,12 +15,6 @@ GIT
       activerecord (>= 5.0)
 
 GIT
-  remote: https://github.com/ausangshukla/json2table.git
-  revision: a83d56c8e84a0f988f5595f1798fc9ba901b2665
-  specs:
-    json2table (1.0.7)
-
-GIT
   remote: https://github.com/nejdetkadir/devise-api.git
   revision: 006bddee4bbe9f5ff9edc936d54725ce061be720
   branch: main
@@ -539,6 +533,7 @@ GEM
     json (2.7.2)
     json-schema (4.3.1)
       addressable (>= 2.8)
+    json2table (1.0.7)
     jwt (2.9.3)
       base64
     kaminari (1.2.2)
@@ -652,6 +647,8 @@ GEM
       sorbet-runtime (>= 0.5.9914)
       zeitwerk (>= 2.6.1)
     parallel (1.25.1)
+    parallel_tests (4.7.2)
+      parallel
     paranoia (2.6.3)
       activerecord (>= 5.1, < 7.2)
     parse_packwerk (0.25.0)
@@ -1058,7 +1055,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
-  json2table!
+  json2table
   kaminari
   langchainrb
   letter_opener
@@ -1074,6 +1071,7 @@ DEPENDENCIES
   noticed
   overcommit (~> 0.58.0)
   packs-rails
+  parallel_tests
   paranoia
   parser
   pdf-reader

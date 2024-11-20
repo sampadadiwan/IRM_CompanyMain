@@ -3,7 +3,7 @@ module JsonTable
 
   TABLE_OPTIONS = {
     table_style: "margin: 5px;",
-    table_class: "table table-bordered no_hover_table jqDataTable",
+    table_class: "table table-bordered no_hover_table",
     table_attributes: ""
   }.freeze
 

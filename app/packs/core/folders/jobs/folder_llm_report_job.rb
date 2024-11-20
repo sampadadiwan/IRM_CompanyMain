@@ -53,7 +53,7 @@ class FolderLlmReportJob < ApplicationJob
       folder.entity.folders.where(name: "#{report_type} Templates").first&.documents&.each do |doc|
         next unless doc.name == report_template_name
 
-        Rails.logger.debug { "Found #{doc.name} in Portfolio Templates" }
+        Rails.logger.debug { "Found #{doc.name} in #{report_type} Templates" }
         template_url = doc.file.url
         break
       end
