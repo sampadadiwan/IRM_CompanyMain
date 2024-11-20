@@ -1,8 +1,8 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Valuations</h1>
-    <% 
-      owner_id = params[:owner_id].present? ? params[:owner_id] : current_user.entity_id 
-      owner_type = params[:owner_type].present? ? params[:owner_type] : "Entity" 
+    <%
+      owner_id = params[:owner_id] || local_assigns[:owner_id]
+      owner_type = params[:owner_type] || local_assigns[:owner_type]
     %>
     <span>
     <%= link_to "New Valuation", 
