@@ -1,6 +1,6 @@
 class Note < ApplicationRecord
   # include Trackable.new
-  update_index('note') { self if index_record? }
+  update_index('note') { self if index_record? || details.body_previously_changed? }
 
   # encrypts :details
   validates :details, presence: true
