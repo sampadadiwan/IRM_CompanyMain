@@ -41,8 +41,13 @@ class VerifyPanJob < ApplicationJob
 
   def init_offer(response)
     logger.debug response
-    @model.pan_verification_response = response&.to_h
-    @model.pan_verification_status = ""
+    if response[:status] != "success"
+      @model.pan_verification_status = "Failed to verify PAN card, please check PAN image"
+      @model.pan_verification_response = response[:resp]&.parsed_response
+    else
+      @model.pan_verification_response = response&.to_h
+      @model.pan_verification_status = ""
+    end
     @model.pan_verified = false
   end
 
