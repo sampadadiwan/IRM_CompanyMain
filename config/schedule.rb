@@ -19,7 +19,7 @@ every :reboot, roles: [:app] do
 end
 
 # Note times are in UTC, as our users are in IST 8:30 pm UTC is 2:00 am IST
-every 1.day, at: '02:30 am', roles: [:all] do
+every 1.day, at: '02:30 am', roles: [:app] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
 
