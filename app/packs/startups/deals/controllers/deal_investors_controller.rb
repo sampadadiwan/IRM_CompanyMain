@@ -95,7 +95,7 @@ class DealInvestorsController < ApplicationController
   def edit
     authorize @deal_investor
     setup_custom_fields(@deal_investor)
-    @kanban_card = KanbanCard.find_by(data_source_id: @deal_investor.id, data_source_type: @deal_investor.class)
+    @kanban_card = KanbanCard.find_by(data_source_id: @deal_investor.id, data_source_type: @deal_investor.class.name)
     @kanban_column = @kanban_card&.kanban_column
 
     respond_to do |format|

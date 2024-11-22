@@ -156,7 +156,6 @@
 
 <% da_ids = deal_investor.deal_activities.pluck(:id) %>
 <% sql = "#{deal_investor.documents.includes(:folder).to_sql}
-          # UNION #{deal_investor.deal.documents.includes(:folder).to_sql}
           UNION #{Document.includes(:folder).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
 <% documents= Document.find_by_sql(sql) %>
 

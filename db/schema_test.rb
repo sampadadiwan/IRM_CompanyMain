@@ -64,9 +64,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.datetime "generated_deleted", null: false, default: '1900-01-01 00:00:00'
 
-    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_account_entries_reporting_date_uniq", unique: true
+    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -549,7 +548,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
-    t.datetime "generated_deleted", null: false, default: "0000-01-01 00:00:00"
     t.json "json_fields"
     t.string "esign_emails"
     t.bigint "import_upload_id"
@@ -564,7 +562,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
-    t.index ["fund_id", "folio_id", "generated_deleted"], name: "unique_commitment", unique: true
+    t.index ["fund_id", "folio_id", "deleted_at"], name: "unique_commitment", unique: true
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
@@ -921,7 +919,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.json "json_fields"
     t.bigint "form_type_id"
     t.string "slug"
-    t.datetime "generated_deleted", null: false, default: "0000-01-01 00:00:00"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
@@ -929,7 +926,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
-    t.index ["investor_id", "deal_id", "generated_deleted"], name: "unique_deal_investor", unique: true
+    t.index ["investor_id", "deal_id", "deleted_at"], name: "unique_deal_investor", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end
