@@ -224,6 +224,8 @@ group :test do
 
   gem 'simplecov', require: false, group: :test
   gem "webdrivers"
+  gem 'sqlite3', '~> 1.4'
+
 end
 
 gem "marginalia", "~> 1.11"

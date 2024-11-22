@@ -2,6 +2,7 @@ class ApplicationRecord < ActiveRecord::Base
   SAFE_EVAL_REGEX = /alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/
 
   primary_abstract_class
+  include DatabaseRoleHelper
 
   # Currently we write and read from the primary database
   connects_to database: { writing: :primary, reading: :primary }

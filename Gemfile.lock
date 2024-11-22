@@ -879,6 +879,7 @@ GEM
       actionpack (>= 6.1)
       activesupport (>= 6.1)
       sprockets (>= 3.0.0)
+    sqlite3 (1.7.3-x86_64-linux)
     sshkit (1.23.0)
       base64
       net-scp (>= 1.1.2)
@@ -1111,6 +1112,7 @@ DEPENDENCIES
   solid_cache (= 0.4.2)
   spreadsheet
   sprockets-rails
+  sqlite3 (~> 1.4)
   stimulus-rails
   to_words
   trailblazer

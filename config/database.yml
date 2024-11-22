@@ -51,13 +51,13 @@ staging:
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test: &test
-  primary:
-    <<: *default
-    database: IRM_test
-  primary_replica:
-    <<: *default_replica
-    database: IRM_test
-    database_tasks: false
+  adapter: sqlite3
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  timeout: 5000
+  database: tmp/test.sqlite3<%= ENV['TEST_ENV_NUMBER'] %>
+  # database: ":memory:" # Use an in-memory database
+
+
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

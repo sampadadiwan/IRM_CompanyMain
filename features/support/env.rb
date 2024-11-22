@@ -51,6 +51,10 @@ end
 
 Before do |scenario|
   DatabaseCleaner.start
+  puts "Starting scenario: #{scenario.name}"
+  puts "Capybara.app_host: #{Capybara.app_host}"
+  puts "Capybara.server_host: #{Capybara.server_host}"
+  puts "Capybara.server_port: #{Capybara.server_port}"
 end
 
 After do |scenario|
@@ -68,13 +72,14 @@ end
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
-Capybara.server_port =  3000 + ENV['TEST_ENV_NUMBER'].to_i
+Capybara.server_port =  (3000 + ENV['TEST_ENV_NUMBER'].to_i)
 # Capybara.default_max_wait_time = 5
 
 Capybara.register_server :puma do |app, port, host|
   require 'puma'
   Puma::Server.new(app).tap do |s|
-    s.add_tcp_listener host, 3000 + ENV['TEST_ENV_NUMBER'].to_i
+    s.add_tcp_listener host, (3000 + ENV['TEST_ENV_NUMBER'].to_i)
+    puts "Starting Puma on #{host}:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
   end.run.join
 end
 
@@ -88,7 +93,6 @@ options.add_argument('--disable-translate')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
 options.add_argument('--window-size=1583,850')
-
 
 
 if ENV['BROWSER'] == "true"
