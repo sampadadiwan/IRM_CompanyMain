@@ -61,7 +61,8 @@ module KanbanCardManager
   end
 
   def destroy_kanban_card
-    kanban_card = KanbanCard.find_by(data_source_type: self.class, data_source_id: id)
+    binding.pry
+    kanban_card = KanbanCard.find_by(data_source_type: self.class.name, data_source_id: id)
     kanban_card.destroy
     ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_card.kanban_board.broadcast_data)
   end
