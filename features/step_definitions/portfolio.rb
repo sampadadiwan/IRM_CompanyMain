@@ -421,6 +421,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfull")
 
   visit(aggregate_portfolio_investment_path(@api))
   click_on("Widgets")
@@ -434,6 +435,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfull")
 
   visit(aggregate_portfolio_investment_path(@api))
   click_on("Widgets")
@@ -449,6 +451,7 @@ Given('I add widgets for the aggregate portfolio investment') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfull")
 end
 
 Given('I add track record for the aggregate portfolio investment') do
@@ -461,6 +464,7 @@ Given('I add track record for the aggregate portfolio investment') do
   fill_in('ci_track_record_suffix', with: "bad")
   fill_in('ci_track_record_details', with: "Track record details")
   click_on("Save")
+  expect(page).to have_content("successfull")
 end
 
 Given('I add preview documents for the aggregate portfolio investment') do
