@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -64,8 +64,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
-    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_account_entries_reporting_date_uniq", unique: true
+    t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
+    t.index ["capital_commitment_id", "name", "entry_type", "parent_id", "parent_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_on_capital_commitment_id_name_entry_type_parent_d92f7fd428", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -91,7 +91,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
 
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
-    t.text "body", size: :long
+    t.text "body"
     t.string "record_type", null: false
     t.bigint "record_id", null: false
     t.datetime "created_at", null: false
@@ -1170,6 +1170,19 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.string "domain"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
+  end
+
+  create_table "esign_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "document_id"
+    t.bigint "entity_id", null: false
+    t.json "request_data"
+    t.json "response_data"
+    t.json "webhook_data"
+    t.json "manual_update_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_esign_logs_on_document_id"
+    t.index ["entity_id"], name: "index_esign_logs_on_entity_id"
   end
 
   create_table "events", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3141,18 +3154,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
     t.index ["notification_id"], name: "index_whatsapp_logs_on_notification_id"
   end
 
-  add_foreign_key "access_rights", "entities"
-  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
-  add_foreign_key "access_rights", "users"
-  add_foreign_key "access_rights", "users", column: "granted_by_id"
-  add_foreign_key "account_entries", "capital_commitments"
-  add_foreign_key "account_entries", "entities"
-  add_foreign_key "account_entries", "exchange_rates"
-  add_foreign_key "account_entries", "form_types"
-  add_foreign_key "account_entries", "fund_formulas"
-  add_foreign_key "account_entries", "funds"
-  add_foreign_key "account_entries", "investors"
-  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
@@ -3266,6 +3267,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_18_124038) do
   add_foreign_key "e_signatures", "entities"
   add_foreign_key "e_signatures", "users"
   add_foreign_key "entity_settings", "entities"
+  add_foreign_key "esign_logs", "documents"
+  add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
   add_foreign_key "events", "users"
   add_foreign_key "excercises", "entities"
