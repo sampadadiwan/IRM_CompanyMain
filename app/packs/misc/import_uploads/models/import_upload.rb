@@ -35,11 +35,12 @@ class ImportUpload < ApplicationRecord
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 
   belongs_to :entity
-  belongs_to :owner, polymorphic: true
+  belongs_to :owner, -> { with_deleted }, polymorphic: true
   belongs_to :user
 
   validates :import_file_data, :name, presence: true
   validates :import_type, length: { maximum: 50 }
+  validate :owner_must_be_valid, on: :create
 
   include FileUploader::Attachment(:import_file)
   include FileUploader::Attachment(:import_results)
@@ -53,6 +54,12 @@ class ImportUpload < ApplicationRecord
 
   def broadcast_iu
     broadcast_update partial: "/import_uploads/show"
+  end
+
+  def owner_must_be_valid
+    if owner.blank? || owner.deleted?
+      errors.add(:owner, "Owner must be present and not deleted.")
+    end
   end
 
   def percent_completed
