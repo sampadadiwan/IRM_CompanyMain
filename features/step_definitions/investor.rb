@@ -1365,3 +1365,8 @@ end
 Then('Folder path should be present and correct') do
   expect(@investor_kyc.document_folder.full_path).to(eq(@investor_kyc.folder_path))
 end
+
+Then('the esign log is present') do
+  @doc = Document.last
+  expect(@doc.esign_log.present?).to(eq(true))
+end

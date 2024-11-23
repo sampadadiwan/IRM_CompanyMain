@@ -96,6 +96,7 @@ Scenario Outline: Send Generated SOA for Esign
   Then when the document is approved
   And the document has "2" e_signatures
   And the document is signed by the signatories
+  Then the esign log is present
   Then the esign completed document is present
 
 

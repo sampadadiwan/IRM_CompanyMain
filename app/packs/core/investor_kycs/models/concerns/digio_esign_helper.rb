@@ -47,6 +47,12 @@ class DigioEsignHelper
       body: body.to_json,
       debug_output: @debug ? $stdout : nil
     )
+    if document.esign_log.present?
+      document.esign_log.update(request_data: body.except(:file_data), response_data: response)
+      document.esign_log.save
+    else
+      EsignLog.create(entity_id: document.entity_id, document:, request_data: body.except(:file_data), response_data: response)
+    end
     Rails.logger.debug response
     response
   end
@@ -190,6 +196,12 @@ class DigioEsignHelper
       e = StandardError.new("Error cancelling #{doc.name} - #{response}")
       Rails.logger.error e.message
     end
+    if doc.esign_log.present?
+      doc.esign_log.manual_update_data.present? ? doc.esign_log.manual_update_data[Time.zone.now.to_s] = response.body : doc.esign_log.manual_update_data = { "#{Time.zone.now}": response.body }
+      doc.esign_log.save
+    else
+      EsignLog.create(entity_id: doc.entity_id, document: doc, manual_update_data: { "#{Time.zone.now}": response.body })
+    end
   end
 
   # fetch manual updates from digio
@@ -220,6 +232,12 @@ class DigioEsignHelper
         end
       else
         signatures_failed(doc, JSON.parse(response.body))
+      end
+      if doc.esign_log.present?
+        doc.esign_log.manual_update_data.present? ? doc.esign_log.manual_update_data[Time.zone.now.to_s] = response.body : doc.esign_log.manual_update_data = { "#{Time.zone.now}": response.body }
+        doc.esign_log.save
+      else
+        EsignLog.create(entity_id: doc.entity_id, document: doc, manual_update_data: { "#{Time.zone.now}": response.body })
       end
     end
   end
@@ -271,6 +289,12 @@ class DigioEsignHelper
         esign = doc.e_signatures.find_by(email: signer['identifier'])
         esign&.update_esign_response(signer['status'], params['payload'])
       end
+      if doc.esign_log.present?
+        doc.esign_log.webhook_data.present? ? doc.esign_log.webhook_data[Time.zone.now.to_s] = params : doc.esign_log.webhook_data = { "#{Time.zone.now}": params }
+        doc.esign_log.save
+      else
+        EsignLog.create(entity_id: doc.entity_id, document: doc, webhook_data: { "#{Time.zone.now}": params })
+      end
       check_and_update_document_status(doc)
     else
       Rails.logger.error "Document not found for digio provider_doc_id #{provider_doc_id}"
@@ -281,9 +305,17 @@ class DigioEsignHelper
   def process_esign_failure(params)
     doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
     email = params.dig('payload', 'document', 'signer_identifier')
-    esign = doc.e_signatures.find_by(email:)
-    esign&.update_esign_response("failed", params['payload'])
-    ExceptionNotifier.notify_exception(StandardError.new("eSign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+    if doc.present?
+      esign = doc.e_signatures.find_by(email:)
+      esign&.update_esign_response("failed", params['payload'])
+      ExceptionNotifier.notify_exception(StandardError.new("eSign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+      if doc.esign_log.present?
+        doc.esign_log.webhook_data.present? ? doc.esign_log.webhook_data[Time.zone.now.to_s] = params : doc.esign_log.webhook_data = { "#{Time.zone.now}": params }
+        doc.esign_log.save
+      else
+        EsignLog.create(entity_id: doc.entity_id, document: doc, webhook_data: { "#{Time.zone.now}": params })
+      end
+    end
   end
 
   def signatures_failed(doc, response)

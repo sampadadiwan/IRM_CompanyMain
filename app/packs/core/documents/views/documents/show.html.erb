@@ -176,6 +176,17 @@
                      </td>
                   </tr>
 
+                  <% if params[:debug].present?%>
+                     <tr>
+                        <td>
+                           eSign Provider ID
+                        </td>
+                        <td>
+                           <%= @document.provider_doc_id %>
+                        </td>
+                     </tr>
+                     <% end %>
+
                   <% end %>
 
 
@@ -201,8 +212,8 @@
      </button>
      <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
        <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
-         <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id), 
-                       method: :patch, 
+         <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
+                       method: :patch,
                        class: "dropdown-item" %>
        <% end %>
      </div>
