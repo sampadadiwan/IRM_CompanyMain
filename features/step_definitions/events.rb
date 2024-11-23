@@ -1,10 +1,10 @@
 Given('I create an event for deal') do
 	find('a[aria-label="Add an event"]').click
-  sleep(0.5)
+  #sleep(0.5)
 	within('td.bg-skyblue') do
     find('a', visible: false).click
   end
-  sleep(1)
+  #sleep(1)
 end
 
 Given("I add an event for today's date") do
@@ -12,7 +12,7 @@ Given("I add an event for today's date") do
   fill_in "Title", with: "Sample Event"
   fill_in "Description", with: "This is a sample event."
   click_button "Save"
-  sleep(1)
+  #sleep(1)
 end
 
 Given("I click on the Sample Event and validate the event creation") do

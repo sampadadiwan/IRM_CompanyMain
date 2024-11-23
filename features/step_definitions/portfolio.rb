@@ -15,7 +15,7 @@ include CurrencyHelper
     @new_portfolio_investment.compute_amount_cents
 
     visit(fund_path(@fund))
-    sleep(1)
+    #sleep(1)
     click_on "Portfolio"
     click_on "New Investment"
 
@@ -295,13 +295,10 @@ Given('The user generates all fund reports for the fund') do
   click_link("New Fund Report")
   select(@fund.name, from: "fund_report_fund_id")
   select("All", from: "fund_report_name")
-  fill_in('fund_report_start_date', with: "01/01/2020")
-  sleep(1)
-  fill_in('fund_report_end_date', with: "01/01/2024")
-  sleep(1)
+  fill_in('fund_report_start_date', with: "2020-01-01", wait: 100)
+  fill_in('fund_report_end_date', with: "2024-01-01", wait: 100)
   click_button("Save")
   sleep(2)
-
 end
 
 Then('There should be {string} reports created') do |string|

@@ -87,7 +87,8 @@
     sleep(2)
     check('Send email', allow_label_click: true)
     click_on("Save")
-    sleep(2)
+    expect(page).to have_content("successfull")
+    # #sleep(2)
   end
 
   Then('The document must be created with the owner set to the investment_opportunity') do
@@ -110,9 +111,10 @@
     fill_in('expression_of_interest_amount', with: @expression_of_interest.amount.to_i)
     select(@expression_of_interest.investor.investor_name, from: "expression_of_interest_investor_id")
     find('trix-editor').click.set(@expression_of_interest.details.to_plain_text)
-    sleep(2)
+    #sleep(2)
     click_on("Save")
-    sleep(2)
+    expect(page).to have_content("successfull")
+    # sleep(2)
   end
 
   Then('the EOI must be created') do
@@ -157,7 +159,11 @@
     within("#expression_of_interest_#{@expression_of_interest.id}") do
       click_on "Approve"
     end
-    sleep(1)
+    within(".eoi_approved") do
+      expect(page).to have_content("Yes")
+    end
+    
+    #sleep(1)
   end
 
   When('I add widgets for the investment_opportunity') do
@@ -173,6 +179,7 @@
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
     sleep(2)
     click_on("Save")
+    expect(page).to have_content("successfull")
 
     visit(investment_opportunity_path(@investment_opportunity))
     click_on("Widgets")
@@ -186,6 +193,7 @@
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
     sleep(2)
     click_on("Save")
+    expect(page).to have_content("successfull")
 
     visit(investment_opportunity_path(@investment_opportunity))
     click_on("Widgets")
@@ -201,6 +209,7 @@
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
     sleep(2)
     click_on("Save")
+    expect(page).to have_content("successfull")
   end
 
   When('I add track record for the investment_opportunity') do
@@ -213,6 +222,7 @@
     fill_in('ci_track_record_suffix', with: "bad")
     fill_in('ci_track_record_details', with: "Track record details")
     click_on("Save")
+    expect(page).to have_content("successfull")
   end
 
   When('I go to investment_opportunity preview') do

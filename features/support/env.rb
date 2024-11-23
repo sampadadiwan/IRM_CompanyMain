@@ -55,6 +55,7 @@ Before do |scenario|
   puts "Capybara.app_host: #{Capybara.app_host}"
   puts "Capybara.server_host: #{Capybara.server_host}"
   puts "Capybara.server_port: #{Capybara.server_port}"
+  Capybara.current_session.current_window.resize_to(1580, 900)
 end
 
 After do |scenario|
@@ -86,37 +87,50 @@ end
 Capybara.server_host = "localhost"
 Capybara.app_host = "http://localhost:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
 
-options = Selenium::WebDriver::Chrome::Options.new
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--disable-popup-blocking')
-options.add_argument('--disable-translate')
-options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
-options.add_argument('--window-size=1583,900')
 
-
-if ENV['BROWSER'] == "true"
-  Capybara.register_driver :selenium do |app|
-    Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-  end
-  Capybara.javascript_driver = :chrome #
-
-  Capybara.configure do |config|
-    config.default_max_wait_time = 10 # seconds
-    config.default_driver        = :selenium #
-  end
-else
-  options.add_argument('--headless')
-  Capybara.register_driver :selenium_chrome_headless do |app|
-    Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-  end
-  Capybara.javascript_driver = :selenium_chrome_headless # :chrome #
-
-  Capybara.configure do |config|
-    config.default_max_wait_time = 10 # seconds
-    config.default_driver        = :selenium_chrome_headless # :selenium #
-  end
+Capybara.register_driver(:playwright) do |app|
+  driver = Capybara::Playwright::Driver.new(app, browser_type: :chromium, headless: ENV["BROWSER"].blank?, )    
+  driver
 end
+
+
+Capybara.default_max_wait_time = 15
+Capybara.default_driver = :playwright
+Capybara.save_path = 'tmp/capybara'
+
+# options = Selenium::WebDriver::Chrome::Options.new
+# options.add_argument('--ignore-certificate-errors')
+# options.add_argument('--disable-popup-blocking')
+# options.add_argument('--disable-translate')
+# options.add_argument('--disable-dev-shm-usage')
+# options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
+# options.add_argument('--window-size=1583,900')
+
+
+# if ENV['BROWSER'] == "true"
+#   Capybara.register_driver :selenium do |app|
+#     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+#   end
+#   Capybara.javascript_driver = :chrome #
+
+#   Capybara.configure do |config|
+#     config.default_max_wait_time = 10 # seconds
+#     config.default_driver        = :selenium #
+#   end
+# else
+#   options.add_argument('--headless')
+#   Capybara.register_driver :selenium_chrome_headless do |app|
+#     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+#   end
+#   Capybara.javascript_driver = :selenium_chrome_headless # :chrome #
+
+#   Capybara.configure do |config|
+#     config.default_max_wait_time = 10 # seconds
+#     config.default_driver        = :selenium_chrome_headless # :selenium #
+#   end
+# end
+
+
 
 module IRMUtils
   def key_values(model, args)

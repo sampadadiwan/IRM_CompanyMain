@@ -121,7 +121,8 @@
     end
 
     click_on("Save")
-    sleep(1)
+    expect(page).to have_content("successfull")
+    # sleep(1)
 
   end
 
@@ -153,7 +154,7 @@
 
   Then('I should see the offer details') do
     if page.has_css?("#display_status_ok")
-      sleep(1)
+      #sleep(1)
       find("#display_status_ok").click
     end
 
@@ -291,9 +292,10 @@ Given('Given I upload a offer file {string}') do |file_name|
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
     sleep(4)
     click_on("Save")
-    sleep(4)
+    expect(page).to have_content("Import Upload:")
+    #sleep(4)
     ImportUploadJob.perform_now(ImportUpload.last.id)
-    sleep(5)
+    #sleep(5)
 
     ImportUpload.last.failed_row_count.should == 0
 end
@@ -368,6 +370,7 @@ Given('I add pan details to the offer') do
   sleep(1)
   click_on("Next")
   click_on("Save")
+  expect(page).to have_content("successfull")
 end
 
 Then('Pan Verification is triggered') do

@@ -104,10 +104,11 @@ end
 Then("I update the folder's name") do
   folder_to_update = Folder.find_by_name("B")
   visit edit_folder_path(folder_to_update)
-  sleep(0.2)
+  #sleep(0.2)
   fill_in 'folder_name', with: "B - Updated"
   click_on('Save')
-  sleep(2)
+  expect(page).to have_content("successfull")
+  #sleep(2)
 end
 
 Then('I children folder path should be updated') do
@@ -123,10 +124,11 @@ end
 
 Then('I edit the name of the deal') do
   visit edit_deal_path(@deal)
-  sleep(0.2)
+  #sleep(0.2)
   fill_in 'deal_name', with: 'Series B'
   click_on 'Save'
-  sleep(0.1)
+  expect(page).to have_content("successfull")
+  #sleep(0.1)
 end
 
 Then('Path of folder and children should change') do

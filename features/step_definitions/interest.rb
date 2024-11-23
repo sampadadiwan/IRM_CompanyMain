@@ -29,6 +29,7 @@
     fill_in("interest_quantity", with: @interest.quantity)
     fill_in("interest_price", with: @interest.price) unless @sale.price_type == "Fixed Price"
     click_on("Save")
+    expect(page).to have_content("successfull")
   end
 
   Then('when the interest sale is finalized') do
@@ -92,7 +93,7 @@
   
   
   Then('I should see the interest details') do
-    sleep(1)
+    #sleep(1)
     @created_interest = Interest.last
 
     @interest ||= @created_interest # If the interest was not created thru UI in the tests 
@@ -142,7 +143,7 @@
   end
 
   Then('the interest should be shortlisted') do
-    sleep(1)
+    #sleep(1)
     @created_interest.reload
     @created_interest.short_listed.should == true
     within("#short_listed") do
@@ -159,11 +160,12 @@ Given('given I upload an interests file {string}') do |file_name|
   click_on("Upload Interests")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(4)
+  sleep(2)
   click_on("Save")
-  sleep(4)
+  expect(page).to have_content("Import Upload:")
+  # sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(5)
+  # sleep(5)
 
   ImportUpload.last.failed_row_count.should == 0
 

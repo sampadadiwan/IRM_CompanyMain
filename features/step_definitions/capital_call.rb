@@ -1,52 +1,52 @@
 When('I create a Capital Call with percentage of commitment') do
 	visit("/funds/1")
-	sleep(0.5)
+	#sleep(0.5)
 	find('a.nav-link[href="#capital-calls-tab"]').click
-	sleep(0.2)
+	#sleep(0.2)
 	click_on("New Call")
-	sleep(0.2)
+	#sleep(0.2)
 	fill_in 'capital_call_name', with: 'Demo call'
-	sleep(1)
+	#sleep(1)
 	fill_in "capital_call[close_percentages][First Close]", with: "10"
 	fill_in "capital_call[close_percentages][Second Close]", with: "20"
-  find('input[name="capital_call[call_date]"]').set('13/09/2024')
-  find('input[name="capital_call[due_date]"]').set('13/11/2024')
+  find('input[name="capital_call[call_date]"]').set('2024-09-13')
+  find('input[name="capital_call[due_date]"]').set('2024-11-13')
   allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
   click_on('Save')
-  sleep(2)
+  expect(page).to have_content("Capital call was successfully")
 end
 
 When("I create a Capital Call with upload call basis") do
 	allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
 	visit("/funds/1")
-	sleep(0.5)
+	#sleep(0.5)
 	find('a.nav-link[href="#capital-calls-tab"]').click
-	sleep(0.2)
+	#sleep(0.2)
 	click_on("New Call")
-	sleep(0.2)
+	#sleep(0.2)
 	fill_in 'capital_call_name', with: 'Upload capital call'
-	sleep(1)
+	#sleep(1)
 	select 'Upload', from: 'capital_call[call_basis]'
 	fill_in 'Series A_price', with: '1'
 	click_on('Save')
-	sleep(2)
+	expect(page).to have_content("Capital call was successfully")
 end
 
 When("I create a Capital Call with investable call basis") do
 	visit("/funds/1")
-	sleep(0.5)
+	#sleep(0.5)
 	find('a.nav-link[href="#capital-calls-tab"]').click
-	sleep(0.2)
+	#sleep(0.2)
 	click_on("New Call")
-	sleep(0.2)
+	#sleep(0.2)
 	fill_in 'capital_call_name', with: 'Investable capital call'
-	sleep(1)
+	#sleep(1)
 	select 'Investable Capital Percentage', from: 'capital_call[call_basis]'
 	find('span.select2-selection--multiple').click
 	find('ul.select2-results__options', visible: true)
 	find('li.select2-results__option', text: 'Second Close').click
 	click_on('Save')
-	sleep(2)
+	expect(page).to have_content("Capital call was successfully")
 end
 
 Given("it should create a Capital Call with given data") do

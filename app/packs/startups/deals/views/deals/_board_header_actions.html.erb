@@ -1,5 +1,6 @@
 <%= link_to deal_path(id: object.id, chart: true), class: "btn btn-outline-success", data: { turbo: false } do %>
     <i class="fas fa-chart-line"></i> Charts
 <% end %>
-<%= link_to "Overview", overview_deal_path(id: object.id), class: "btn btn-outline-primary", target: "_blank" %>
+<% target = Rails.env.test? ? "_top" : "_blank" %> <!-- Playwright requires the same window to check details -->
+<%= link_to "Overview", overview_deal_path(id: object.id), class: "btn btn-outline-primary", data: { turbo: false }, target:  %>
 <%= link_to "Access Overview", consolidated_access_rights_deal_path(id: object.id), target: "_top", class: "btn btn-outline-info mt-0" %>

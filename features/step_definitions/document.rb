@@ -66,7 +66,7 @@ end
 When('I fill and submit the new document page') do
   find("#doc_actions").click
   click_on("New Document")
-  sleep(4)
+  #sleep(4)
   if page.has_css?("#document_name")
     fill_in("document_name", with: @document.name)
   elsif page.has_css?("#other_name")
@@ -83,9 +83,10 @@ When('I fill and submit the new document page') do
   puts "Selecting #{@document.folder.name}" if @document.folder_id
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 
-  sleep(3)
+  #sleep(3)
   click_on("Save")
-  sleep(5)
+  # sleep(5)
+  expect(page).to have_text "Document was successfully saved."
 end
 
 
@@ -255,7 +256,7 @@ Given('user goes to add a new template {string} for the fund') do |doc_name|
   click_on("Actions")
   find('#misc_action_menu').hover
   click_on("New Template")
-  sleep(2)
+  #sleep(2)
   fill_in("document_name", with: doc_name)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
   sleep(2)
@@ -299,7 +300,7 @@ end
 
 Then('user should be able to save the document') do
   click_on("Save")
-  sleep(2)
+  # sleep(2)
   expect(page).to have_text "Document was successfully saved."
 end
 
@@ -334,7 +335,7 @@ Then('user sends a single document using that Custom Notification') do
   visit document_path(@document)
   click_on "Send Document"
   click_on "Send #{@custom_notification.subject}"
-  sleep(10)
+  expect(page).to have_text "Document will be sent to the email addresses as requested."
 end
 
 Then('user recieves the document in email with a custom notification template') do
@@ -344,7 +345,7 @@ Then('user recieves the document in email with a custom notification template') 
 end
 
 Given('the template has permissions {string}') do |permissions|
-  sleep(2)
+  #sleep(2)
   @template = Document.last
   key_values(@template, permissions)
   @template.save

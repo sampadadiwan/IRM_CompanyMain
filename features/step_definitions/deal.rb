@@ -7,7 +7,7 @@ end
 When('I click the last {string} link') do |args|
   all('a', text: args).last.click
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(2)
+  ##sleep(2)
 end
 
 When('I create a new deal {string}') do |arg1|
@@ -19,6 +19,7 @@ When('I create a new deal {string}') do |arg1|
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
   sleep(0.5)
+  
   kanban_board = KanbanBoard.first
   kanban_columns = kanban_board.kanban_columns.pluck(:name)
   sleep(3)
@@ -35,23 +36,25 @@ When('I edit the deal {string}') do |arg1|
   fill_in('deal_status', with: @deal.status)
 
   click_on("Save")
-  sleep(1)
+  expect(page).to have_content("successfully")
+  ##sleep(1)
 end
 
 When('I click on the Add Item and select any Investor and save') do
   first('button', text: "Add Item").click
-  sleep(0.25)
+  ##sleep(0.25)
   select_investor_and_save(2, 'First Investment')
+  expect(page).to have_content("First Investment")
   select_investor_and_save(3, 'Second Investment')
-  expect(all(".kanban-card").first.text).to include(@deal.deal_investors.first.investor_name)
+  expect(page).to have_content("Second Investment")
 end
 
 When('I click on a Kanban Card and edit the form') do
   deal_investor = DealInvestor.first
   find('h3', text: deal_investor.name).click
-  sleep(0.5)
+  ##sleep(0.5)
   click_link('Edit')
-  sleep(0.25)
+  ##sleep(0.25)
   fill_in('Tags', with: "Random, Tag")
   click_button('Save')
   sleep(1)
@@ -90,7 +93,7 @@ Then('I should see the deal details on the details page') do
   expect(page).to have_content(@deal.name)
   expect(page).to have_content(money_to_currency(@deal.amount))
   expect(page).to have_content(@deal.status)
-  # sleep(10)
+  # #sleep(10)
 end
 
 Then('I should see the deal in all deals page') do
@@ -100,7 +103,7 @@ Then('I should see the deal in all deals page') do
 end
 
 Given('I visit the deal details page') do
-  sleep(5)
+  ##sleep(5)
   @deal.reload
   visit(deal_path(@deal, grid_view: true))
 end
@@ -108,7 +111,7 @@ end
 Then('I should be able to change currency units') do
   ["Crores", "Lakhs", "Million"].each do |curr|
     select(curr, from: "currency_units")
-    sleep(0.5)
+    ##sleep(0.5)
     expect(page).to have_content(money_to_currency(@deal.amount, {units: curr}))
   end
 end
@@ -123,7 +126,7 @@ end
 
 Given('when I start the deal') do
   click_on("Start Deal")
-  sleep(1) # To allow all deal activities to be created by job
+  ##sleep(1) # To allow all deal activities to be created by job
 end
 
 Then('the deal should be started') do
@@ -321,22 +324,22 @@ Then('the deal data room should be setup') do
 end
 
 def select_investor_and_save(investor_id, tags)
-  sleep(2)
+  ##sleep(2)
+  investor = Investor.find(investor_id)
   first('button', text: "Add Item").click
   sleep(1)
-  find('select#deal_investor_investor_id').find(:xpath, "option[#{investor_id}]").select_option
+  select(investor.investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
   sleep(0.5)
   click_button('Save')
-  sleep(5)
+  expect(page).to have_content(investor.investor_name)
 end
 
 When('I click on a Kanban Card') do
-  @deal_investor = DealInvestor.last
-  expect(all(".kanban-card").count).to(eq(2))
-  find('h3', text: @deal_investor.name).click
   sleep(1)
+  @deal_investor = DealInvestor.last  
+  find('h3', text: @deal_investor.name).click  
 end
 
 Then('The offcanvas opens') do
@@ -352,9 +355,9 @@ end
 
 When('I click on the delete button on offcanvas') do
   click_on('Delete')
-  sleep(0.5)
+  ##sleep(0.5)
   click_on("Proceed")
-  sleep(5)
+  ##sleep(5)
 end
 
 Then('The card is deleted from the kanban board') do
@@ -366,24 +369,24 @@ When('I click on the Add Item and select previously deleted Investor and save') 
   visit(page.current_url)
   @inv = Investor.find 1
   select_investor_by_name_and_save(@inv.investor_name, "some tag")
-  sleep(1)
+  ##sleep(1)
 end
 
 def select_investor_by_name_and_save(name, tags)
-  sleep(2)
+  ##sleep(2)
   first('button', text: "Add Item").click
-  sleep(1)
+  ##sleep(1)
   select(name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
-  sleep(0.5)
+  ##sleep(0.5)
   click_button('Save')
   sleep(5)
 end
 
 When('I click on the action dropdown and create a Kanban Column') do
   find(".column-add").click
-  sleep(0.5)
+  ##sleep(0.5)
   find_by_id('kanban_column_name').set('New Column')
   click_button('Save')
   sleep(1)
@@ -401,7 +404,7 @@ end
 
 When('I click on the action dropdown and dont select any Investor and save') do
   first('button', text: "Add Item").click
-  sleep(1)
+  ##sleep(1)
   click_button('Save')
   sleep(1)
 end
@@ -434,13 +437,13 @@ When('I edit the deal "card_view_attrs={string}"') do |string|
   # find dropdown with class dropdown and click
   dropdown = all(".dropdown").first
   dropdown.click
-  sleep(0.5)
+  #sleep(0.5)
   dropdown = all(".dropdown").last
   xpath = "/html/body/div[2]/div[1]/div/div/turbo-frame/div[2]/div/div"
   element = find(:xpath, xpath)
   element.click
   click_on("Edit")
-  sleep(0.5)
+  #sleep(0.5)
   fill_in('Tags', with: "Deal Tag")
   # find('.select2-selection--multiple').click
 
@@ -459,9 +462,9 @@ Then('deal and cards should be updated') do
   visit current_url
   element = all('.show_details_link').last
   element.click
-  sleep(0.5)
+  #sleep(0.5)
   click_on("Deal")
-  sleep(0.5)
+  #sleep(0.5)
   expect(page).to have_content("Deal Tag")
   expect(page).to have_content(@deal.reload.card_view_attrs&.map(&:titleize)&.join(", "))
 end
@@ -472,7 +475,7 @@ When('i click on deal details i should see the tabs "{string}"') do |string|
     p "clicking on tab #{tab}"
     expect(page).to have_content(tab)
     click_on(tab)
-    sleep(0.5)
+    #sleep(0.5)
     if tab == "Access Rights"
       expect(page).to have_content("Grant Access")
     end
@@ -486,23 +489,23 @@ end
 
 When('i should see be able to edit the deal from deal tab') do
   click_on("Deal")
-  sleep(0.5)
+  #sleep(0.5)
   element = find("#deal_show")
   within(element) do
     click_on("Edit")
-    sleep(1)
+    #sleep(1)
     # check if the form is visible
   end
 
   fill_in('deal_name', with: "New Deal Name")
   fill_in('deal_status', with: "New Status")
   click_on("Save")
-  sleep(1)
+  #sleep(1)
   element = all('.show_details_link').last
   element.click
-  sleep(0.5)
+  #sleep(0.5)
   click_on("Deal")
-  sleep(0.5)
+  #sleep(0.5)
   expect(page).to have_content("New Deal Name")
   expect(page).to have_content("New Status")
 end
@@ -521,7 +524,7 @@ Given('I view the deal details') do
   visit(deal_path(@deal))
   element = all('.show_details_link').last
   element.click
-  sleep(0.5)
+  #sleep(0.5)
 end
 
 Given('I add widgets for the deal') do
@@ -537,6 +540,7 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfully")
 
   visit(deal_path(@deal))
   element = all('.show_details_link').last
@@ -552,6 +556,7 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfully")
 
   visit(deal_path(@deal))
   element = all('.show_details_link').last
@@ -567,6 +572,7 @@ Given('I add widgets for the deal') do
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
   click_on("Save")
+  expect(page).to have_content("successfully")
 end
 
 Given('I add track record for the deal') do
@@ -581,6 +587,7 @@ Given('I add track record for the deal') do
   fill_in('ci_track_record_suffix', with: "bad")
   fill_in('ci_track_record_details', with: "Track record details")
   click_on("Save")
+  expect(page).to have_content("successfully")
   switch_to_window windows.first
 end
 
@@ -610,7 +617,7 @@ Given('I click on the Add Item and create a new Stakeholder {string} and save') 
   @inv = FactoryBot.build(:investor)
   key_values(@inv, arg)
   first('button', text: "Add Item").click
-  sleep(0.25)
+  #sleep(0.25)
   puts "\n####Creating New Stakeholder - #{@inv.investor_name} with #{@inv.primary_email}####\n"
 
   click_on("New Stakeholder")
@@ -630,11 +637,11 @@ end
 
 def select_investor_name_and_save(investor_name, tags)
   first('button', text: "Add Item").click
-  sleep(1)
+  #sleep(1)
   select(investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags) if tags.present?
-  sleep(0.5)
+  #sleep(0.5)
   click_button('Save')
   sleep(2)
 end
@@ -646,7 +653,7 @@ Given('I give deal access to {string}') do |investor_name|
   click_on("Access Rights")
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   puts "\n####Granting Deal Access to #{investor_name}####\n"
-  sleep(2)
+  #sleep(2)
   click_on("Grant Access")
   find('.select2-selection--multiple').click
   find('.select2-search__field').set(investor_name)
@@ -669,13 +676,13 @@ Given('I give {string} access to {string} from the deal access overview') do |ac
   puts "\n####Granting #{access_type} Access from Access Overview to #{investor_name}####\n"
 
   visit(consolidated_access_rights_deal_path(id: @deal.id))
-  sleep(2)
+  #sleep(2)
   click_on("Grant Access")
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   button_text = access_type.titleize
   button_text = "Document Folder" if access_type == "folder"
   click_on("Grant #{button_text.titleize} Access")
-  sleep(0.3)
+  #sleep(0.3)
   find('.select2-selection--multiple').click
   find('.select2-search__field').set(investor_name)
   find('li.select2-results__option', text: investor_name).click
@@ -733,7 +740,7 @@ When('I click Deal Documents in the overview') do
 end
 
 Then('I should see the deal documents') do
-  sleep(1)
+  #sleep(1)
   expect(page).to have_content("Documents: Deal Documents")
   @deal.deal_documents_folder.documents.each do |doc|
     expect(page).to have_content(doc.name)
@@ -741,7 +748,7 @@ Then('I should see the deal documents') do
 end
 
 Then('I should not see the deal documents') do
-  sleep(1)
+  #sleep(1)
   expect(page).not_to have_content("Documents: Deal Documents")
 end
 

@@ -208,7 +208,7 @@
 
     click_on "Save"
 
-    sleep(2)
+    expect(page).to have_content("Capital commitment was successfully")
   end
 
   Then('I should see the capital commitment details') do
@@ -310,7 +310,7 @@
     if @capital_call.call_basis == "Amount allocated on Investable Capital"
       @capital_call.fee_account_entry_names.each_with_index do |fee_name, idx|
         click_on "Add Fees"
-        sleep(1)
+        #sleep((1)
         within all(".nested-fields").last do
           select(fee_name, from: "fee_name")
           fill_in("fee_start_date", with: Time.zone.today - 10.years)
@@ -321,8 +321,8 @@
     end
     allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
     click_on "Save"
-    sleep(2)
-
+    # sleep(2)
+    expect(page).to have_content("Capital call was successfully")
   end
 
   Then('the no remittances should be created') do
@@ -381,7 +381,7 @@
     @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
 
     visit(capital_call_url(@capital_call))
-    sleep(2)
+    #sleep((2)
     click_on "Remittances"
 
     @capital_call.capital_remittances.each do |remittance|
@@ -413,7 +413,8 @@
       click_on "New Payment"
       fill_in('capital_remittance_payment_folio_amount', with: remittance.due_amount)
       click_on "Save"
-      sleep(2)
+      # sleep(2)
+      expect(page).to have_content("Capital remittance payment was successfully")
     end
   end
 
@@ -421,22 +422,22 @@
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_call_url(@capital_call))
-      sleep(1)
+      #sleep((1)
       click_on "Remittances"
-      sleep(1)
+      #sleep((1)
       within("#capital_remittance_#{remittance.id}") do
         click_on "Actions"
         click_on "Verify"
-        sleep(1)
+        #sleep((1)
       end
       click_on "Proceed"
-      sleep(1)
+      #sleep((1)
     end
   end
 
 
 Then('the capital call collected amount should be {string}') do |arg|
-  sleep(1)
+  #sleep((1)
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
   @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
@@ -807,7 +808,7 @@ When('I create a new capital distribution {string}') do |args|
   visit(fund_url(@fund))
 
   click_on "Distributions"
-  sleep(1)
+  #sleep((1)
   click_on "New Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
@@ -817,7 +818,8 @@ When('I create a new capital distribution {string}') do |args|
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
 
   click_on "Save"
-  sleep(2)
+  # sleep(2)
+  expect(page).to have_content("Capital distribution was successfully")
 
 end
 
@@ -842,7 +844,7 @@ Then('when the capital call is approved') do
   @capital_call.approved = true
   @capital_call.approved_by_user = @user
   CapitalCallUpdate.call(capital_call: @capital_call)
-  sleep(1)
+  #sleep((1)
   @capital_call.reload
 end
 
@@ -851,7 +853,7 @@ Then('when the capital distrbution is approved') do
   @capital_distribution.approved = true
   @capital_distribution.approved_by_user = @user
   @capital_distribution.save
-  sleep(1)
+  #sleep((1)
   @capital_distribution.reload
 end
 
@@ -888,7 +890,7 @@ Then('the capital distribution must reflect the payments') do
 end
 
 Then('the investors must receive email with subject {string}') do |subject|
-  sleep(2)
+  #sleep((2)
   Investor.all.each do |inv|
     if inv.emails.present?
       inv.emails.each do |email|
@@ -919,7 +921,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-  sleep(0.5)
+  #sleep((0.5)
   if page.has_button?("Upload / Download")
     click_on("Upload / Download")
     click_on("Upload")
@@ -931,13 +933,14 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(2)
   click_on("Save")
-  sleep(2)
+  # sleep(2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  if ImportUpload.last.import_type == "CapitalCall"
-    sleep(6)
-  else
-    sleep(4)
-  end
+  # if ImportUpload.last.import_type == "CapitalCall"
+  #   sleep(6)
+  # else
+  #   sleep(4)
+  # end
   # ImportUpload.last.failed_row_count.should == 0
 
 end
@@ -945,16 +948,17 @@ end
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
   visit(capital_call_path(@capital_call))
   click_on("Remittances")
-  sleep(2)
+  #sleep((2)
   click_on("Upload / Download")
   click_on("Upload Remittances")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/capital_remittances.xlsx"), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  # sleep(2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  # sleep(4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1235,7 +1239,7 @@ Then('the user goes to the fund e-signature report') do
   click_on("Reports")
   find("#basic_reports").hover
   click_on("eSignatures Report")
-  sleep(2)
+  #sleep((2)
 end
 
 Then('the user should see all esign report for all docs sent for esign') do
@@ -1250,10 +1254,11 @@ Then('when the capital commitment docs are generated') do
     visit(capital_commitment_path(cc))
     find("#commitment_actions").click
     click_on("Generate All Documents")
-    sleep(1)
-    click_on("Proceed")
-    sleep(8)
+    #sleep((1)
+    click_on("Proceed")    
     expect(page).to have_content("Documentation generation started")
+    # sleep(5)
+    expect(page).to have_content("generated successfully")
   end
 end
 
@@ -1272,8 +1277,8 @@ Then('when the capital call docs are generated') do
     click_on("Generate Documents")
     # sleep(1)
     # expect(page).to have_content("Documentation generation started")
-    sleep(20)
-    # expect(page).to have_content("Document #{@call_template.name} generated")
+    # sleep(20)
+    expect(page).to have_content("generated successfully")    
   end
 end
 
@@ -1322,7 +1327,7 @@ When('I visit the fund details page') do
 end
 
 When('I click on fund documents tab') do
-  sleep(1)
+  #sleep((1)
   find("#documents_tab").click()
 end
 
@@ -1417,15 +1422,16 @@ Then('Given I upload {string} file for Account Entries') do |file|
   @import_file = file
   visit(capital_commitment_path(@fund.capital_commitments.first))
   click_on("Account Entries")
-  sleep(1)
+  #sleep((1)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(1)
+  #sleep((1)
   click_on("Save")
-  sleep(2)
+  expect(page).to have_content("Import Upload:")
+  # sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  # sleep(4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1437,15 +1443,16 @@ Given('Given I upload {string} {string} error file for Account Entries') do |fil
   @import_file = file
   visit(capital_commitment_path(@fund.capital_commitments.first))
   click_on("Account Entries")
-  sleep(1)
+  #sleep((1)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == err_count.to_i
 end
 
@@ -1514,17 +1521,18 @@ Then('Given I upload {string} file for the remittances of the capital call') do 
   @import_file = file
   visit(capital_call_path(@fund.capital_calls.first))
   click_on("Remittances")
-  sleep(2)
+  #sleep((2)
   click_on("Upload / Download")
   click_on("Upload Payments")
-  sleep(2)
+  #sleep((2)
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  expect(page).to have_content("Import Upload:")
+  #sleep((2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1635,16 +1643,17 @@ Given('Given I upload a fund unit settings {string} for the fund') do |file_name
   visit(fund_url(@fund))
   click_on("Actions")
   click_on("Fund Unit Settings")
-  sleep(2)
+  sleep(1)
   click_on("Upload")
-  sleep(6)
+  #sleep((6)
   fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1708,31 +1717,33 @@ end
 
 Then('Given I upload {string} file for Distributions of the fund') do |string|
   visit(capital_distributions_url)
-  sleep(2)
+  #sleep((2)
   click_on("Upload")
-  sleep(2)
+  #sleep((2)
   fill_in('import_upload_name', with: "Test Distributions Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/capital_distributions.xlsx'), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('Given I upload {string} file for Fund Units of the fund') do |string|
   visit(fund_units_url)
-  sleep(2)
+  #sleep((2)
   click_on("Upload")
-  sleep(2)
+  #sleep((2)
   fill_in('import_upload_name', with: "Test Fund Units Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_units.xlsx'), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1770,14 +1781,15 @@ end
 
 Then('Given I upload {string} file for the Distribution Payments of the fund') do |file_name|
   visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[import_type]": "CapitalDistributionPayment"))
-  sleep(2)
+  #sleep((2)
   fill_in('import_upload_name', with: "Test CDP Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  #sleep((2)
   click_on("Save")
-  sleep(2)
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
+  #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
 end
 

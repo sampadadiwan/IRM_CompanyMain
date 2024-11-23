@@ -22,7 +22,8 @@
     fill_in("secondary_sale_max_price", with: @input_sale.max_price)
     click_on("Next")
     click_on("Save")
-    sleep(1)
+    expect(page).to have_content("successfull")
+    #sleep(1)
   end
 
   When('I visit the sale details page') do
@@ -75,7 +76,7 @@
 
 
   Then('the sale should become externally visible') do
-    sleep(1)
+    #sleep(1)
     @sale = SecondarySale.first
     puts "\n####Visible Sale####\n"
     puts "visible_externally = #{@sale.visible_externally}"
@@ -287,7 +288,7 @@ Given('when I make an offer for my holdings') do
   within("#holding_#{h.id}") do
     click_on("Offer")
   end
-  sleep(1)
+  #sleep(1)
 
   @new_offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
     secondary_sale_id: @sale.id, investor_id: h.investor_id)
@@ -393,7 +394,8 @@ Then('I should be able to create an interest in the sale') do
   fill_in("interest_quantity", with: @sale.total_offered_quantity)
   fill_in("interest_price", with: @sale.min_price)
   click_on("Save")
-  sleep(1)
+  expect(page).to have_content("successfull")
+  #sleep(1)
 end
 
 
@@ -665,7 +667,7 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
   puts "All emails #{all_emails.uniq}"
 
   @sale.investor_users("Seller").collect(&:email).each do |email|
-    sleep(1)
+    #sleep(1)
     puts "Checking investor email #{email} with subject #{subject}"
     open_email(email)
     expect(current_email.subject).to eq subject
@@ -856,14 +858,14 @@ Then('when the allocations are verified {string}') do |verified|
   visit(secondary_sale_path(@sale))
   click_on("View Allocations")
   click_on("All Allocations")
-  sleep(3)
+  sleep(1)
   click_on("Bulk Actions")
   if verified == "true"
     click_on("Verify")
   else
     click_on("Unverify")
   end
-  sleep(2)
+  sleep(1)
   click_on("Proceed")
   sleep(12)
   @sale.reload

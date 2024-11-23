@@ -3,17 +3,18 @@ Given('I upload an allocation file {string}') do |file_name|
   @import_allocation_file_name = file_name
   visit('/offers')
   first(:link, 'Show').click
-  sleep(0.2)
+  #sleep(0.2)
   click_on('Allocations')
-  sleep(2)
+  #sleep(2)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(4)
+  #sleep(4)
   click_on("Save")
-  sleep(4)
+  #sleep(4)
+  expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(5)
+  #sleep(5)
   ImportUpload.last.failed_row_count.should == 0
 end
 

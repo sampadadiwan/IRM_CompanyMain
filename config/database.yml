@@ -57,6 +57,9 @@ test: &test
   database: tmp/test.sqlite3<%= ENV['TEST_ENV_NUMBER'] %>
   # database: ":memory:" # Use an in-memory database
 
+test2: &test
+  <<: *default
+  database: IRM_test<%= ENV['TEST_ENV_NUMBER'] %>
 
 
 # As with config/credentials.yml, you never want to store sensitive information,

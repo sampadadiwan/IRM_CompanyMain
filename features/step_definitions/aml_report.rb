@@ -47,21 +47,22 @@ Then('investor kyc and aml report is generated for it') do
   @investor_entity.entity_setting.aml_enabled = true
   @investor_entity.entity_setting.save!
   visit(investor_kycs_url)
-  sleep(2)
+  #sleep(2)
   click_on("New KYC")
   click_on("Individual")
-  sleep(3)
+  #sleep(3)
   pan = "testpannum555"
 
   fill_in('individual_kyc_full_name', with: "testname abc")
-  fill_in('individual_kyc_birth_date', with: "03/03/2020")
+  fill_in('individual_kyc_birth_date', with: "2020-03-03")
   fill_in('individual_kyc_PAN', with: pan)
   click_on("Next")
-  sleep(3)
+  #sleep(3)
   click_on("Next")
-  sleep(2)
+  #sleep(2)
   click_on("Save")
-  sleep(5)
+  #sleep(5)
+  expect(page).to have_content("successfully")
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0
   AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count > 0
 end
@@ -76,19 +77,20 @@ Then('investor kyc and aml report is not generated for it') do
   @investor.entity.entity_setting.aml_enabled = true
   @investor.entity.entity_setting.save!
   visit(investor_kycs_url)
-  sleep(2)
+  #sleep(2)
   click_on("New KYC")
   click_on("Individual")
-  sleep(3)
+  #sleep(3)
   pan = "testpannum555"
-  fill_in('individual_kyc_birth_date', with: "01/01/1955")
+  fill_in('individual_kyc_birth_date', with: "1955-01-01")
   fill_in('individual_kyc_PAN', with: pan)
   click_on("Next")
-  sleep(3)
+  #sleep(3)
   click_on("Next")
-  sleep(2)
+  #sleep(2)
   click_on("Save")
-  sleep(5)
+  #sleep(5)
+  expect(page).to have_content("successfully")
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should == 0
   AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count == 0
 end

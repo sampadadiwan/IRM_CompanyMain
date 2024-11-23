@@ -1,27 +1,27 @@
 Given('I am at the form type page') do
   visit("/form_types")
-  sleep(0.5)
+  #sleep(0.5)
 end
 
 Given('I am at the reports page') do
   visit("/reports")
-  sleep(0.5)
+  #sleep(0.5)
 end
 
 When('I create a report and custom grid view for {string}') do |report|
   select("Portfolio Investments", from: 'url')
-  sleep(0.5)
+  #sleep(0.5)
   find('a[aria-label="Save Report"]').click
-  sleep(0.5)
+  #sleep(0.5)
   fill_in('report_name', with: "PI Report")
   fill_in('report_category', with: "Portfolio Investments")
   click_on('Save')
-  sleep(0.5)
+  #sleep(0.5)
   visit("/reports")
-  sleep(0.5)
+  #sleep(0.5)
   find('.more-options.text-dark').click
   click_link("Configure Grid")
-  sleep(0.5)
+  #sleep(0.5)
 end
 
 When('I create a form type and custom grid view for {string}') do |form_type|
@@ -30,7 +30,7 @@ When('I create a form type and custom grid view for {string}') do |form_type|
   click_on('Save')
   sleep(0.5)
   click_on('Configure Grids')
-  sleep(1)
+  #sleep(1)
 end
 
 When("I select each option and click Add") do
@@ -39,7 +39,7 @@ When("I select each option and click Add") do
 
   options.each do |option_text|
     select option_text, from: 'grid_view_name_select'
-    sleep 0.25
+    sleep(0.25)
 
     select_box = find('select#grid_view_name_select')
   end
@@ -104,31 +104,31 @@ end
 When('I visit Custom Grid View page and uncheck {string}') do |column_name|
   form_type = FormType.first
   visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=FormType'
-  sleep(0.25)
+  #sleep(0.25)
   within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
   end
   
   click_on('Proceed')
-  sleep(0.25)
+  #sleep(0.25)
 end
 
 When('I visit Report Custom Grid View page and uncheck {string}') do |column_name|
   report = Report.first
   visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=Report'
-  sleep(0.25)
+  #sleep(0.25)
   within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
   end
   
   click_on('Proceed')
-  sleep(0.25)
+  #sleep(0.25)
 end
 
 
 Given('I should not find {string} column in the Investor Grid') do |column_name|
   visit('/investors')
-  sleep(0.25)
+  #sleep(0.25)
   
   column_title = column_name.capitalize
   
@@ -137,7 +137,7 @@ end
 
 Given('I should not find {string} column in the Portfolio Investment Grid') do |column_name|
   visit('/investors')
-  sleep(0.25)
+  #sleep(0.25)
   
   column_title = column_name.capitalize
   
@@ -146,7 +146,7 @@ end
 
 Given('I should not find {string} column in the Report PI Grid') do |column_name|
   visit(Report.first.url)
-  sleep(0.25)
+  #sleep(0.25)
   column_title = column_name.capitalize
   
   expect(page).not_to have_selector('thead th', text: column_title)

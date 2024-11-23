@@ -172,7 +172,6 @@ gem 'awesome_print'
 group :development, :staging, :test do
   gem 'factory_bot_rails'
   gem "faker"
-  gem "selenium-webdriver"
 end
 
 group :development do
@@ -223,9 +222,10 @@ group :test do
   gem 'rspec-rails'
 
   gem 'simplecov', require: false, group: :test
-  gem "webdrivers"
   gem 'sqlite3', '~> 1.4'
-
+  gem "webdrivers"
+  # gem "selenium-webdriver"
+  gem "capybara-playwright-driver"
 end
 
 gem "marginalia", "~> 1.11"

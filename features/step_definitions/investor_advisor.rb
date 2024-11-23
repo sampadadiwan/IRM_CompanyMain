@@ -13,12 +13,13 @@
     visit(fund_path(@fund))
     click_on("Import")
     click_on("Import Investor Advisors")
-    sleep(2)
+    #sleep(2)
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
     sleep(2)
     click_on("Save")
-    sleep(3)
+    # sleep(3)
+    expect(page).to have_content("Import Upload:")
     ImportUploadJob.perform_now(ImportUpload.last.id)
     ap InvestorAdvisor.all
   end
@@ -49,7 +50,7 @@
 
   
   Then('I switch to becoming the advisor for {string}') do |investor_name|
-    sleep(2)
+    #sleep(2)
     # Select the investor_name from the drop down with id investor_advisor
     within("#investor_advisors_form") do
       select(investor_name, from: "id")
