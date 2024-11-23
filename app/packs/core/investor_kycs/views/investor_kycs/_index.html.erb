@@ -37,6 +37,7 @@
       </div>
       <% end %>
 
+      <% if @investor.blank? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -54,10 +55,11 @@
           </div>
         </div>
       </div>
+      <% end %>
 
       <% if params[:q].present? %>
         <%= render "investor_kycs/bulk_actions" %>
-      <% else %>
+      <% elsif @investor.blank? %>
         <%= button_to "Send KYC Reminders", send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id), method: :post, class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false,
         method: :post, msg: "This will generate a notification to all investor users whose KYC is unverified"} if policy(InvestorKyc).send_kyc_reminder_to_all? %>
       <% end %>
@@ -100,10 +102,10 @@
     <table id="investor_kycs" class="table table-bordered dataTable action_table hover">
         <%
           default_columns_map = if current_user.curr_role == "investor"
-            InvestorKyc::INVESTOR_STANDARD_COLUMNS 
+            InvestorKyc::INVESTOR_STANDARD_COLUMNS
           else
             if params.include?("investor_id")
-              InvestorKyc::INVESTOR_TAB_STANDARD_COLUMNS 
+              InvestorKyc::INVESTOR_TAB_STANDARD_COLUMNS
             else
               InvestorKyc::STANDARD_COLUMNS
             end
