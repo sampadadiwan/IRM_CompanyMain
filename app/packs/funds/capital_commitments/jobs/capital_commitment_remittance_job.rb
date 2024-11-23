@@ -17,6 +17,7 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
     capital_commitment.fund.capital_calls.each do |capital_call|
       # Generate the remittance only if the call is for All or this Fund Close
       next unless capital_call.applicable_to.exists?(id: capital_commitment.id)
+      next if capital_call.call_basis == "Upload"
 
       status = capital_call.generate_remittances_verified ? "Paid" : "Pending"
       cr = CapitalRemittance.new(capital_call:, fund: capital_call.fund,
