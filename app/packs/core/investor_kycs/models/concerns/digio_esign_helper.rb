@@ -38,15 +38,7 @@ class DigioEsignHelper
                    AUTH_TOKEN
                  end
 
-    response = HTTParty.post(
-      "#{BASE_URL}/v2/client/document/uploadpdf",
-      headers: {
-        "authorization" => "Basic #{auth_token}",
-        'Content-Type' => 'application/json'
-      },
-      body: body.to_json,
-      debug_output: @debug ? $stdout : nil
-    )
+    response = hit_digio_esign_api(body, auth_token)
     if document.esign_log.present?
       document.esign_log.update(request_data: body.except(:file_data), response_data: response)
       document.esign_log.save
@@ -277,6 +269,18 @@ class DigioEsignHelper
   end
 
   private
+
+  def hit_digio_esign_api(body, auth_token)
+    HTTParty.post(
+      "#{BASE_URL}/v2/client/document/uploadpdf",
+      headers: {
+        "authorization" => "Basic #{auth_token}",
+        'Content-Type' => 'application/json'
+      },
+      body: body.to_json,
+      debug_output: @debug ? $stdout : nil
+    )
+  end
 
   # used in digio callbacks
   def process_esign_success(params)

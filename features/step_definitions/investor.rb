@@ -671,6 +671,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   visit(fund_path(Fund.last))
   sleep(3)
   click_on("Actions")
+  sleep(0.5)
   find('#misc_action_menu').hover
   sleep(2)
   click_on("New Template")
@@ -680,7 +681,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(4)
+  sleep(5)
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -734,7 +735,7 @@ Then('the {string} is successfully generated') do |name|
 end
 
 Then('the document has {string} e_signatures') do |string|
-  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
   # stub DigioEsignHelper's sign method to return
   @doc = Document.order(:created_at).last
@@ -772,7 +773,7 @@ Then('when the document is approved') do
 end
 
 Then('the document has {string} e_signatures with status {string}') do |string, string2|
-  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
 
   # stub DigioEsignHelper's sign method to return
@@ -791,10 +792,12 @@ end
 Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
+
+  sleep(3)
   visit(current_path)
-  sleep(2)
+  # sleep(2)
   click_on("Signatures")
-  sleep(1)
+  # sleep(1)
   click_on("Get eSignatures' updates")
 end
 
@@ -803,7 +806,7 @@ Then('the document is signed by the docusign signatories') do
   allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "completed"], ESignature.pluck(:email)))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
-  #sleep(1)
+  sleep(5)
   visit(current_url)
   #sleep(3)
   click_on("Signatures")
@@ -813,12 +816,10 @@ end
 
 Then('the esign completed document is present') do
   # allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
-  @doc = Document.last
-  #sleep(4)
+  @doc = Document.where(owner_tag: "Generated").last
+  sleep(4)
   visit(document_path(@doc))
-  # binding.pry
   sleep(1)
-  # page should contain status requested
   click_on("Signatures")
   expected_status = "Signed"
   expect(page).to have_content(expected_status)
@@ -829,6 +830,7 @@ Then('the esign completed document is present') do
 end
 
 Then('the docusign esign completed document is present') do
+  allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(["completed", "completed"], ESignature.pluck(:email), "completed"))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
@@ -889,14 +891,14 @@ Then('the document get digio callbacks') do
 end
 
 Then('the document is partially signed') do
-  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_first_signed)
 
   visit(document_path(@doc))
   click_on("Signatures")
   #sleep(1)
   click_on("Send For eSignatures")
-  #sleep(2)
+  sleep(3)
   visit(current_path)
   click_on("Signatures")
   #sleep(1)
@@ -922,7 +924,7 @@ Then('the document is partially signed by Docusign') do
   click_on("Signatures")
   #sleep(1)
   click_on("Send For eSignatures")
-  #sleep(2)
+  sleep(2)
   visit(document_path(@doc))
   visit(current_path)
   click_on("Signatures")
@@ -958,13 +960,13 @@ Then('the docusign document esign is cancelled') do
 end
 
 Then('the document can be resent for esign') do
-  allow_any_instance_of(DigioEsignHelper).to receive(:send_document_for_esign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_first_signed)
 
   #sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  #sleep(2)
+  sleep(2)
   visit(current_path)
   click_on("Signatures")
   #sleep(1)
@@ -991,7 +993,7 @@ Then('the docusign document can be resent for esign') do
   click_on("Signatures")
   #sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(8)
+  sleep(4)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested
@@ -1377,6 +1379,6 @@ Then('Folder path should be present and correct') do
 end
 
 Then('the esign log is present') do
-  @doc = Document.last
+  @doc = Document.where(owner_tag:"Generated").last
   expect(@doc.esign_log.present?).to(eq(true))
 end
