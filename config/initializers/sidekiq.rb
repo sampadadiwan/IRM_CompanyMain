@@ -11,7 +11,7 @@ Sidekiq.configure_server do |config|
     cap.queues = %w[serial doc_gen ai_checks]
   end
 
-  if Rails.env.production? || Rails.env.staging?
+  unless Rails.env.local?
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
     Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
     Sidekiq::Cron::Job.create(name: 'BackupDbJob', cron: 'every 1 hour', class: 'BackupDbJob')

@@ -96,7 +96,6 @@ class FolderLlmReportJob < ApplicationJob
   end
 
   # rubocop:disable Rails/SkipsModelValidations
-  # rubocop:disable Metrics/BlockNesting
   def upload_file(folder, folder_path, user_id, output_file_name)
     # Now download the output_report.html file and save it as a document in the folder
     if File.exist?("#{folder_path}/#{output_file_name}")
@@ -135,6 +134,5 @@ class FolderLlmReportJob < ApplicationJob
       send_notification(msg, user_id, :danger)
     end
   end
-  # rubocop:enable Metrics/BlockNesting
   # rubocop:enable Rails/SkipsModelValidations
 end

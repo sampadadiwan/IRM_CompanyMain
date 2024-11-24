@@ -68,7 +68,7 @@ class KycData < ApplicationRecord
         corr_address << response.dig("pan_details", field.to_s)
       end
     end
-    corr_address = corr_address.select(&:present?).join(", ").gsub(/,(?=\s*\d{6}\b)/, " -")
+    corr_address = corr_address.compact_blank.join(", ").gsub(/,(?=\s*\d{6}\b)/, " -")
   end
 
   def perm_address
@@ -84,7 +84,7 @@ class KycData < ApplicationRecord
         perm_address << response.dig("pan_details", field.to_s)
       end
     end
-    perm_address = perm_address.select(&:present?).join(", ").gsub(/,(?=\s*\d{6}\b)/, " -")
+    perm_address = perm_address.compact_blank.join(", ").gsub(/,(?=\s*\d{6}\b)/, " -")
   end
 
   def ckyc_number

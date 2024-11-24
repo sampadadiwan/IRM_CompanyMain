@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_24_092619) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -64,7 +64,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
     t.index ["capital_commitment_id", "name", "entry_type", "parent_id", "parent_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_on_capital_commitment_id_name_entry_type_parent_d92f7fd428", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
@@ -202,6 +202,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "show_portfolio", default: false
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -2872,7 +2873,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
     t.binary "key", limit: 1024, null: false
     t.binary "value", size: :long, null: false
     t.datetime "created_at", null: false
-    t.index ["key"], name: "index_solid_cache_entries_on_key", unique: true
+    t.bigint "key_hash", null: false
+    t.integer "byte_size", null: false
+    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
+    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
   create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

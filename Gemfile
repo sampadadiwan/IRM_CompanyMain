@@ -7,25 +7,25 @@ gem 'faraday', '~> 1.10.3'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'pdf-reader'
-gem "rails", "~> 7.1"
+gem "rails", "~> 7.2"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
 
 # Use mysql as the database for Active Record
 gem 'acts_as_favoritor', git: "https://github.com/ausangshukla/acts_as_favoritor.git"
-gem "audited", "~> 5.0"
+gem "audited"
 gem 'enumerize'
 gem "json2table"
 gem 'mail-logger'
-gem "mysql2", "~> 0.5"
+gem "mysql2"
 gem "noticed"
 gem 'trailblazer'
 gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 5.0"
+gem "puma", "< 6.0"
 # gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
 gem 'sablon'
@@ -44,7 +44,7 @@ gem 'rswag-api'
 gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
-gem "redis", "~> 4.0"
+gem "redis"
 # Background Jobs
 gem 'memoized'
 gem "sidekiq"
@@ -54,11 +54,11 @@ gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
 gem 'hashie'
 gem 'has_scope'
-gem "pundit", git: "https://github.com/varvet/pundit.git"
+gem "pundit"
 gem "rolify"
-gem "solid_cache", "0.4.2"
+gem "solid_cache", "1.0.2"
 
-gem 'activerecord-import', "1.5.0"
+gem 'activerecord-import'
 # Store env variables
 gem 'dotenv-rails'
 # Send error emails to support
@@ -146,7 +146,7 @@ gem "image_processing", "~> 1.2"
 # gem 'rmagick'
 gem "combine_pdf"
 
-gem "blazer", "~> 2.6"
+gem "blazer"
 gem 'public_activity'
 
 # gem "strong_migrations"
@@ -181,7 +181,7 @@ group :development do
   gem 'annotate'
   gem 'bullet'
   gem "letter_opener", group: :development
-  gem 'overcommit', '~> 0.58.0', require: false
+  gem 'overcommit', require: false
   gem "web-console"
 
   gem "better_errors"
@@ -204,7 +204,7 @@ group :development do
   gem 'capistrano', '~> 3.5'
   gem 'capistrano-bundler', '~> 2.0'
 
-  gem "capistrano3-puma"
+  gem "capistrano3-puma", "5.2.0"
   gem "capistrano-rails", require: false
   gem 'capistrano-rvm'
   gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
@@ -222,17 +222,17 @@ group :test do
   gem 'rspec-rails'
 
   gem 'simplecov', require: false, group: :test
-  gem 'sqlite3', '~> 1.4'
+  gem 'sqlite3'
   gem "webdrivers"
   # gem "selenium-webdriver"
   gem "capybara-playwright-driver"
 end
 
-gem "marginalia", "~> 1.11"
+gem "marginalia"
 # gem 'newrelic_rpm'
 gem 'aws-sdk-wafv2', require: false
 gem 'eqn'
-gem 'friendly_id', '~> 5.5.0'
+gem 'friendly_id'
 gem 'humanize'
 gem 'langchainrb'
 gem 'mini_magick'

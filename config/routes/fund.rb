@@ -101,6 +101,7 @@ resources :funds do
   delete 'delete_all', on: :member
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
+  get 'dashboard', on: :member
 end
 
 resources :expression_of_interests do

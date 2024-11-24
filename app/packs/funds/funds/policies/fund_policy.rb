@@ -43,6 +43,10 @@ class FundPolicy < FundBasePolicy
       )
   end
 
+  def dashboard?
+    update?
+  end
+
   def generate_fund_ratios?
     update?
   end

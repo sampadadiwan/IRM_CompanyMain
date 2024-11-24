@@ -57,9 +57,7 @@ class ImportUpload < ApplicationRecord
   end
 
   def owner_must_be_valid
-    if owner.blank? || owner.deleted?
-      errors.add(:owner, "Owner must be present and not deleted.")
-    end
+    errors.add(:owner, "Owner must be present and not deleted.") if owner.blank? || owner.deleted?
   end
 
   def percent_completed

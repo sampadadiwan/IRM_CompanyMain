@@ -792,9 +792,9 @@ Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
   visit(current_path)
-  #sleep(2)
+  sleep(2)
   click_on("Signatures")
-  #sleep(1)
+  sleep(1)
   click_on("Get eSignatures' updates")
 end
 

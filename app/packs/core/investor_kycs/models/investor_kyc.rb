@@ -244,7 +244,8 @@ class InvestorKyc < ApplicationRecord
         kyc.properties.delete(name) if val == "0"
       end
       kyc.save(validate: false)
-    end; nil
+    end
+    nil
   end
 
   # In some cases the agreement_unit_type is specified in the KYC, before a commitment is created.

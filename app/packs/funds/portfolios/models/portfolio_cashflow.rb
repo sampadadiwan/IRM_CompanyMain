@@ -14,6 +14,7 @@ class PortfolioCashflow < ApplicationRecord
   validates :tag, length: { maximum: 100 }
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
+  counter_culture :aggregate_portfolio_investment, column_name: 'portfolio_income_cents', delta_column: 'amount_cents'
 
   scope :actual, -> { where(tag: "Actual") }
   scope :not_actual, -> { where.not(tag: "Actual") }

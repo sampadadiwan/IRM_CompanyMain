@@ -51,7 +51,7 @@ class EoiDocGenerator
     file_name = generated_file_name(expression_of_interest)
     convert(template, context, file_name)
 
-    additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" "#{@io_doc_template_name} Signature"])
+    additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" + "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])
     add_header_footers(expression_of_interest, file_name, additional_headers, additional_footers)
   end

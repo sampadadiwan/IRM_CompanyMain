@@ -165,7 +165,7 @@ class User < ApplicationRecord
     InvestorAccess.where(email:).update(user_id: id)
     ia = InvestorAccess.where(email:).first
     # Sometimes the invite goes out via the investor access, hence we need to associate the user to the entity
-    if ia && (ia.investor && entity_id.nil?)
+    if ia&.investor && entity_id.nil?
       # Set the users entity
       self.entity_id = ia.investor.investor_entity_id
     end

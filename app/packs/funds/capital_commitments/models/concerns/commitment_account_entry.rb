@@ -116,7 +116,7 @@ module CommitmentAccountEntry
   def call_amount_cents_start_end(_start_date, _end_date, exclude_call_name: nil)
     total_cac = 0
     remittances = capital_remittances.joins(:capital_call)
-    remittances = remittances.where.not("capital_calls.name = ?", exclude_call_name) if exclude_call_name
+    remittances = remittances.where.not(capital_calls: { name: exclude_call_name }) if exclude_call_name
     remittances = remittances.where(remittance_date: @start_date..@end_date)
     remittances.each do |cr|
       total_cac += cr.call_amount_cents

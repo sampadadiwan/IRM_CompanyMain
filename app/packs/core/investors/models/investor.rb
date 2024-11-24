@@ -109,7 +109,7 @@ class Investor < ApplicationRecord
   scope :not_trust, -> { where(is_trust: false) }
   scope :is_trust, -> { where(is_trust: true) }
   scope :holding, -> { where(is_holdings_entity: true) }
-  scope :not_interacted, ->(no_of_days) { where(is_holdings_entity: false).where("last_interaction_date < ? ", Time.zone.today - no_of_days.days) }
+  scope :not_interacted, ->(no_of_days) { where(is_holdings_entity: false).where(last_interaction_date: ...(Time.zone.today - no_of_days.days)) }
 
   scope :with_access_rights, lambda { |entity_id, metadata|
     joins(entity: :access_rights).where(entity_id:).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata)

@@ -15,8 +15,10 @@ module CapHive
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
-    config.autoload_paths += Dir[Rails.root.join('app/components/**/'), Rails.root.join('app/packs/**/')]
-    config.autoload_paths += %W[#{config.root}/app/packs/startups]
+    config.autoload_paths += Rails.root.glob('app/components/**/')
+    config.autoload_paths += Rails.root.glob('app/packs/**/')
+    
+    # config.autoload_paths += %W[#{config.root}/app/packs/startups]
 
     core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings]
 

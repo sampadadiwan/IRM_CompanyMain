@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports]
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports]
 
   # GET /funds or /funds.json
   def index
@@ -57,6 +57,8 @@ class FundsController < ApplicationController
 
   # GET /funds/1 or /funds/1.json
   def show; end
+
+  def dashboard; end
 
   # GET /funds/new
   def new

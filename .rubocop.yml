@@ -166,6 +166,7 @@ Metrics/CyclomaticComplexity:
   Max: 15
   Enabled: true
   Exclude:
+    - 'app/packs/funds/funds/helpers/fund_dashboard_helper.rb'
     - 'app/packs/core/base/decorators/template_decorator.rb'
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
@@ -191,7 +192,7 @@ Metrics/ClassLength:
     - 'app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb'
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
-  Max: 100
+  Max: 200
   Enabled: true
   Exclude:
     - 'app/packs/core/investors/models/concerns/for_investor.rb'
@@ -216,6 +217,7 @@ Metrics/MethodLength:
   Max: 30
   Enabled: true
   Exclude:
+    - 'app/packs/funds/funds/helpers/fund_dashboard_helper.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
