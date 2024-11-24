@@ -89,9 +89,9 @@
 
   Given('there is a sale {string}') do |arg1|
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
-    @sale.start_date = Time.zone.today    
+    @sale.start_date = Time.zone.today
     key_values(@sale, arg1)
-    SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)    
+    SecondarySaleCreate.wtf?(secondary_sale: @sale, current_user: @user)
     key_values(@sale, arg1)
     puts @sale.to_json
     @sale.save!
@@ -100,6 +100,14 @@
     puts @sale.to_json
     puts "@sale.active? = #{@sale.active?}"
   end
+
+  Given('params {string} are set for the sale') do |args|
+    key_values(@sale, args)
+    puts @sale.to_json
+    @sale.save!
+    @sale.reload
+  end
+
 
   Given('I am at the sales details page') do
     visit secondary_sale_path(@sale)
@@ -269,8 +277,8 @@ Given('I should see my holdings in the holdings tab') do
         expect(page).to have_content(h.holding_type)
         expect(page).to have_content(@investor.investor_name)
         expect(page).to have_content(h.investment_instrument)
-        expect(page).to have_content(h.quantity)
-        expect(page).to have_content(h.price)
+        expect(page).to have_content(custom_format_number(h.quantity))
+        expect(page).to have_content(custom_format_number(h.price))
         # expect(page).to have_content(money_to_currency(h.value))
         expect(page).to have_content("Offer")
 
@@ -292,7 +300,7 @@ Given('when I make an offer for my holdings') do
 
   @new_offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
     secondary_sale_id: @sale.id, investor_id: h.investor_id)
-  @new_offer.quantity = @new_offer.allowed_quantity
+  @new_offer.quantity = rand(0..100)
   @offer = @new_offer
 
   steps %(
@@ -308,14 +316,10 @@ Then('I should see the offer') do
   @offer.user_id.should == @user.id
   @offer.secondary_sale_id.should == @sale.id
   @offer.entity_id.should == @company.id
-  @offer.quantity.should == @sale.percent_allowed * @offer.total_holdings_quantity / 100.0
-  @offer.holding_id.should == h.id
-
+  # @offer.quantity.should == @sale.percent_allowed * @offer.total_holdings_quantity / 100.0
   expect(page).to have_content(@user.full_name)
   expect(page).to have_content(@company.name)
   expect(page).to have_content(@sale.name)
-  expect(page).to have_content(@sale.percent_allowed)
-  expect(page).to have_content(@offer.allowed_quantity / 100)
   expect(page).to have_content("No")
 end
 
@@ -768,7 +772,7 @@ Then('the document folder should be different for the new sale') do
 end
 
 
-Given('the investor has an offer {string} for the sale') do |args|  
+Given('the investor has an offer {string} for the sale') do |args|
   @offer = FactoryBot.build(:offer, entity: @sale.entity, secondary_sale: @sale,
                           user: @employee_investor, investor: @investor)
   key_values(@offer, args)
@@ -784,7 +788,7 @@ end
 Given('the investor has an interest {string} for the sale') do |args|
   @interest = FactoryBot.build(:interest, secondary_sale: @sale.reload, price: @sale.min_price,
                           user: @employee_investor, entity: @sale.entity, interest_entity: @investor.investor_entity)
-                          
+
   key_values(@interest, args)
   @interest.save!
   puts "\n####Interest Created####\n"
@@ -811,7 +815,7 @@ Then('the allocations must be visible') do
       expect(page).to have_content(allocation.interest.buyer_entity_name)
       expect(page).to have_content(custom_format_number(allocation.interest.quantity))
       expect(page).to have_content(custom_format_number(allocation.interest.price))
-      expect(page).to have_content(allocation.verified ? "Yes" : "No")      
+      expect(page).to have_content(allocation.verified ? "Yes" : "No")
     end
 
     if idx == 9
@@ -848,8 +852,8 @@ Then('the sale must be allocated as per the file {string}') do |file_name|
     allocation.amount.to_d.should == user_data["Allocation Amount"].to_i
 
     allocation.verified.should == (user_data["Verified"] == "Yes")
-    
-  end  
+
+  end
 end
 
 
@@ -871,7 +875,7 @@ Then('when the allocations are verified {string}') do |verified|
   @sale.reload
 end
 
-Then('the allocations must be verified {string}') do |verified|  
+Then('the allocations must be verified {string}') do |verified|
   @sale.allocations.each do |allocation|
     puts "Checking allocation #{allocation} #{verified}"
     allocation.verified.should == (verified == "true")

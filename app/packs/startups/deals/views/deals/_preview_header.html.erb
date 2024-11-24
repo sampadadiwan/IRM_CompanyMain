@@ -11,7 +11,7 @@
                     <% deal_doc_folder = deal.deal_documents_folder %>
                     <% if current_user.entity_id == deal.entity_id || (current_user.curr_role_investor? && Folder.where(id: deal_doc_folder.id).for_investor(current_user, deal.entity).first.present?) %>
                         <span class="ms-auto">
-                        <%= link_to "Deal Documents", folder_documents_path(entity_id: deal.entity_id, folder_id: deal_doc_folder.id, parent_folder_id: deal.document_folder_id), class: "btn btn-outline-primary btn-lg" %>
+                        <%= link_to "Deal Documents", folder_documents_path(folder_id: deal_doc_folder.id), class: "btn btn-outline-primary btn-lg" %>
                         </span>
                     <% end %>
                 </div>

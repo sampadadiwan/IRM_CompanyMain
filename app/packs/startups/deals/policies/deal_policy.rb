@@ -22,7 +22,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show?
-    permissioned_employee? && user.enable_deals
+    (permissioned_employee? || permissioned_investor?) && user.enable_deals
   end
 
   def consolidated_access_rights?

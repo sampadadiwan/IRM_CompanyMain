@@ -15,6 +15,7 @@
 
   Given('Given I upload a kpis file for the portfolio company') do
     visit(investor_path(@portfolio_company))
+    page.execute_script("document.body.style.zoom = '80%'")
     click_on("Kpis")
     sleep(2)
     click_on("Actions")
@@ -60,6 +61,8 @@
   Then('when I setup the KPI mappings for the portfolio company') do
     visit(investor_path(@portfolio_company))
     click_on("Kpi Mapping")
+    page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+    sleep(2)
     click_on("Generate From Last Report")
     sleep(2)
   end
