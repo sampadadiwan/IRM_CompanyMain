@@ -64,7 +64,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_23_101042) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["capital_commitment_id", "name", "entry_type", "parent_id", "parent_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_on_capital_commitment_id_name_entry_type_parent_d92f7fd428", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"

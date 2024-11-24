@@ -740,9 +740,12 @@ When('I click Deal Documents in the overview') do
 end
 
 Then('I should see the deal documents') do
-  #sleep(1)
+  sleep(1)
   expect(page).to have_content("Documents: Deal Documents")
   @deal.deal_documents_folder.documents.each do |doc|
+    puts "Checking for #{doc.name}"
+    puts doc.access_rights.map{|ar| ar.investor.investor_name}
+    puts @user.entity.name
     expect(page).to have_content(doc.name)
   end
 end

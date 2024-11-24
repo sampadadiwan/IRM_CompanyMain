@@ -53,7 +53,7 @@ staging:
 test: &test
   adapter: sqlite3
   pool: 15
-  timeout: 5000
+  timeout: 10000
   database: tmp/test.sqlite3<%= ENV['TEST_ENV_NUMBER'] %>
   # database: ":memory:" # Use an in-memory database
 

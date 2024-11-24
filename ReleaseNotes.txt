@@ -1,3 +1,18 @@
+V8.0.34
+#####################################
+7bffd2da2 Fixed test connection pool
+d3b68c514 (origin/main, origin/HEAD) Replaced AE unique index to add parent
+623f99268 Skip remittance creation on call basis upload (#580)
+0c290c270 Playright integrated for new tests (#596)
+321f2ac1e handle deleted owners in imports and validate on create (#561)
+13e6cb5c6 Digio logs (#583)
+4a467727c hide kyc documents dropdown and reminders button in details tab (#591)
+3d771f2d4 Fixed board tests
+95339959c Fixed class name for query
+5499914dd Fixed query with class name
+beb5eb701 Added Sqllite for testing (#593)
+36e910e53 Updated how verify pan job handles failure response (#592)
+
 V8.0.29
 #####################################
 3a0726f76 Removed 50 char limit from fund formulas form, now uses 125 char limit from model (#578)
