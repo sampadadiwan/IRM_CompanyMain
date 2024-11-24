@@ -988,7 +988,7 @@ Then('the docusign document can be resent for esign') do
   #sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  #sleep(2)
+  sleep(3)
   visit(current_path)
   click_on("Signatures")
   #sleep(1)
