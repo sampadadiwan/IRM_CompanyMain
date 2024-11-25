@@ -1,5 +1,14 @@
 V8.0.34
 #####################################
+c83ce2706 Funds tests pass
+c8d540276 Fund Dashboard with better customization (#604)
+da02a390a Added delay for esign process to complete before validating (#599)
+26ab5b3e9 Fixed doc gen esign specs (#598)
+1d0cd2272 Fund dashboard + Upgrade of Gems (#597)
+0b35a70e1 Backup
+
+V8.0.34
+#####################################
 7bffd2da2 Fixed test connection pool
 d3b68c514 (origin/main, origin/HEAD) Replaced AE unique index to add parent
 623f99268 Skip remittance creation on call basis upload (#580)

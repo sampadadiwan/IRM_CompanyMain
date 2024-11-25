@@ -131,5 +131,51 @@ namespace :db do  desc "Backup database to AWS-S3"
       raise e
     end
   end
+
+  task :reset_replication => :environment do 
+    # Connection details for the source database
+    source_host = Rails.application.credentials[:DB_HOST]
+    source_user = Rails.application.credentials[:DB_USER]
+    source_password = Rails.application.credentials[:DB_PASS]
+    source_database = "IRM_#{Rails.env}"
+    source_port = 3306
+
+    # Connection details for the destination database
+    destination_host = Rails.application.credentials[:DB_HOST_REPLICA]
+    destination_user = Rails.application.credentials[:DB_USER]
+    destination_password = Rails.application.credentials[:DB_PASS]
+    destination_database = "IRM_#{Rails.env}"
+    destination_port = 3306
+
+    # Get the current binary log file and position from the source
+    result = source_client.query('SHOW MASTER STATUS')
+    binlog_file = result.first['File']
+    binlog_position = result.first['Position']
+    puts "Current binary log file: #{binlog_file}, position: #{binlog_position}"
+
+    # Set up replication on the destination
+    change_master_query = "CHANGE MASTER TO
+    MASTER_HOST='#{source_host}',
+    MASTER_USER='#{source_user}',
+    MASTER_PORT=#{source_port},
+    MASTER_PASSWORD='#{source_password}',
+    MASTER_LOG_FILE='#{binlog_file}',
+    MASTER_LOG_POS=#{binlog_position}"
+
+    puts "Setting up replication on the destination with query: #{change_master_query}"
+    # This is to make the slave different from the master
+    destination_client.query('SET GLOBAL server_id = 2')
+    # Stop and reset the replica
+    destination_client.query('STOP REPLICA')
+    destination_client.query('RESET REPLICA ALL')
+    # Setup the replica
+    destination_client.query(change_master_query)
+    # Start the replica
+    puts 'Starting slave replication on the destination'
+    destination_client.query('START REPLICA')
+    puts 'Replication setup complete!'
+
+    source_client.query('SHOW REPLICA STATUS')
+  end
   
 end
