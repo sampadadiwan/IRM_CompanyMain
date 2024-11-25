@@ -1,0 +1,25 @@
+module DashboardWidgetsHelper
+  def dashboard_widgets(dashboard_name, owner: nil)
+    # These are the available widgets for the dashboard_name
+    available_widgets = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
+    # Fetch the enabled widgets for the dashboard_name
+    widgets = DashboardWidget.enabled.where(dashboard_name:)
+    # Apply owner filter if provided
+    widgets = widgets.where(owner: owner) if owner
+    if widgets.empty?
+      # Return the available widgets if there are no custom widgets
+      DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
+    else
+      # Return the custom widgets defined by the user
+      dashboard_widgets = []
+      widgets.order(:position).each do |widget|
+        widget.path = available_widgets[widget.widget_name].path
+        dashboard_widgets << ["#{widget.widget_name} #{widget.tags}", widget]
+      end
+
+      dashboard_widgets.to_h
+    end
+  end
+
+  def widget_size; end
+end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_11_24_092619) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -840,6 +840,23 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_24_092619) do
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
+  end
+
+  create_table "dashboard_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "dashboard_name", limit: 30
+    t.bigint "entity_id", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "widget_name", limit: 30
+    t.string "tags", limit: 100
+    t.integer "position"
+    t.text "metadata"
+    t.string "size", limit: 10
+    t.boolean "enabled"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
 
   create_table "deal_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3244,6 +3261,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_24_092619) do
   add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
+  add_foreign_key "dashboard_widgets", "entities"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"
   add_foreign_key "deal_activities", "folders", column: "document_folder_id"

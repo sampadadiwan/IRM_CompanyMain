@@ -58,7 +58,16 @@ class FundsController < ApplicationController
   # GET /funds/1 or /funds/1.json
   def show; end
 
-  def dashboard; end
+  def dashboard
+    respond_to do |format|
+      format.html
+      format.pdf do
+        FerrumPdf.browser(timeout: 180)
+        pdf = render_pdf
+        send_data pdf, disposition: :inline, filename: "#{@fund.name}.pdf"
+      end
+    end
+  end
 
   # GET /funds/new
   def new

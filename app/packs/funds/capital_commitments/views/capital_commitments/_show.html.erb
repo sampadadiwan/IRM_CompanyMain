@@ -1,4 +1,5 @@
-<%= render ToggleCard.new(title: "Commitment: #{capital_commitment.investor_name}", css_class: "show_commitments", state: "closed") do %>
+<% toggle_state = params[:toggle_state] || "closed" %>
+<%= render ToggleCard.new(title: "Commitment: #{capital_commitment.investor_name}", css_class: "show_commitments", state: toggle_state) do %>
 
   <table class="table table-bordered dataTable">
     <tr class="">

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :dashboard_widgets
   resources :ai_checks do
     post 'run_checks', on: :collection
     get 'run_checks', on: :collection

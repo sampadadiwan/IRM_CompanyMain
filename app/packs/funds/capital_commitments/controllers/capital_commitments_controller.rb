@@ -107,7 +107,16 @@ class CapitalCommitmentsController < ApplicationController
   end
 
   # GET /capital_commitments/1 or /capital_commitments/1.json
-  def show; end
+  def show
+    respond_to do |format|
+      format.html
+      format.pdf do
+        FerrumPdf.browser(timeout: 60)
+        pdf = render_pdf
+        send_data pdf, disposition: :inline, filename: "#{@capital_commitment.folio_id}.pdf"
+      end
+    end
+  end
 
   def generate_documentation
     CapitalCommitmentDocJob.perform_later(@capital_commitment.fund_id, @capital_commitment.id, current_user.id, template_id: params[:template_id])

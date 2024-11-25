@@ -1,0 +1,58 @@
+<%= render FormCard.new(title: "Dashboard Widgets : #{dashboard_widget.presence || 'New'}") do %>
+  <%= form_with(model: dashboard_widget, validate: true) do |form| %>
+    
+    <% if dashboard_widget.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(dashboard_widget.errors.count, "error") %> prohibited this dashboard_widget from being saved:</h2>
+        <ul>
+          <% dashboard_widget.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :dashboard_name %>
+      <%= form.select :dashboard_name, ["Fund Dashboard"], {}, class: "form-control"  %>
+    </div>
+    
+    <%= form.hidden_field :owner_id %>
+    <%= form.hidden_field :owner_type %>
+    
+    <div class="form-group">
+      <%= form.label :widget_name %>
+      <%= form.select :widget_name, DashboardWidget::FUND_WIDGETS.collect(&:widget_name), {include_blank: true}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tags, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :size %>
+      <%= form.select :size, ["Large", "Medium", "Small"], {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :position %>
+      <%= form.number_field :position, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :metadata %>
+      <%= form.text_area :metadata, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+
+  <% end %>
+<% end %>

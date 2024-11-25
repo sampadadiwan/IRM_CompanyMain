@@ -1,0 +1,81 @@
+<%= render FormCard.new(title: "#{@dashboard_widget}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @dashboard_widget.dashboard_name %>
+      </td>
+    </tr>
+   
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= @dashboard_widget.owner %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Template
+      </td>
+      <td>
+        <%= @dashboard_widget.widget_name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= @dashboard_widget.tags %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Size
+      </td>
+      <td>
+        <%= @dashboard_widget.size %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Position
+      </td>
+      <td>
+        <%= @dashboard_widget.position %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Metadata
+      </td>
+      <td>
+        <%= @dashboard_widget.metadata %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Enabled
+      </td>
+      <td>
+        <%= display_boolean @dashboard_widget.enabled %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@dashboard_widget).update? %>
+      <%= link_to "Edit", edit_dashboard_widget_path(@dashboard_widget), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @dashboard_widget, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

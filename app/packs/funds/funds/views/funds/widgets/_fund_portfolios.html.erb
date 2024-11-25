@@ -1,0 +1,30 @@
+<% widget_size ||= "col-md-12" %>        
+<div class="<%= widget_size %> d-flex align-items-stretch" data-controller="datatable">
+  <div class="card w-100">
+    <div class="card-body">
+      <table class="table table-bordered dataTable action_table hover jqDataTable">
+        <thead>
+          <tr>
+            <th>Portfolio Company</th>
+            <th>Net Bought Amount</th>
+            <th>FMV</th>
+            <th>Income</th>
+            <th style="min-width:300px;">Ratios</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% fund.aggregate_portfolio_investments.includes(:portfolio_company).each do |api| %>
+            <tr>
+              <td><%= api.portfolio_company.investor_name %></td>
+              <td><%= money_to_currency(api.net_bought_amount, params) %></td>
+              <td><%= money_to_currency(api.fmv, params) %></td>
+              <td><%= money_to_currency(api.portfolio_income, {}) %></td>
+              <td><%= fund_ratios_line_chart(fund, ratio_names: ["IRR", "MOIC"], owner: api) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="mb-0">Portfolios</p>
+    </div>
+  </div>
+</div>

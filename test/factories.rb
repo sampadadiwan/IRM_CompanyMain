@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :dashboard_widget do
+    name { "MyString" }
+    entity { nil }
+    owner { nil }
+    template { "MyString" }
+    position { 1 }
+    metadata { "MyText" }
+    enabled { false }
+  end
+
   factory :ai_check do
     entity { nil }
     parent { nil }

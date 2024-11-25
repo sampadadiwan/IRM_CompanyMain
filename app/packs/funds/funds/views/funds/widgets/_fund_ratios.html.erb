@@ -1,0 +1,15 @@
+
+<% 
+  widget_size ||= "col-md-6" 
+  name ||= nil 
+  args ||= {}
+%>
+
+<div class="<%= widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">
+      <%= fund_ratios_line_chart(fund, **args) %>
+      <p class="mb-0"><%= name || "Fund Ratios" %></p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+
+<tr id="<%= dom_id dashboard_widget %>">
+  <td>
+    <%= dashboard_widget.dashboard_name %>
+  </td>
+  <td>
+    <%= dashboard_widget.owner %>
+  </td>
+  <td>
+    <%= dashboard_widget.widget_name %>
+  </td>
+  <td>
+    <%= dashboard_widget.tags %>
+  </td>
+  <td>
+    <%= dashboard_widget.size %>
+  </td>
+  <td>
+    <%= dashboard_widget.position %>
+  </td>
+  <td>
+    <%= dashboard_widget.metadata %>
+  </td>
+  <td>
+    <%= display_boolean dashboard_widget.enabled %>
+  </td>
+  <td>
+    <%= link_to "Show", dashboard_widget , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_dashboard_widget_path(dashboard_widget), {class: "btn btn-outline-success"}%>
+  </td>
+</tr>

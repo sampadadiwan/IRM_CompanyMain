@@ -75,9 +75,8 @@ module FundDashboardHelper
           }
         }
       },
-      title: { text: "Account Entries by Type" },
       xAxis: { title: { text: "Reporting Date" } },
-      yAxis: { title: { text: "Sum of Values" } },
+      yAxis: { title: { text: "Amount" } },
       **chart_theme_color
     }
   end
