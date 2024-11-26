@@ -10,8 +10,8 @@ Rails.application.routes.draw do
   resources :key_biz_metrics
   resources :incoming_emails
   resources :doc_questions
-  mount Rswag::Ui::Engine => '/api-docs'
-  mount Rswag::Api::Engine => '/api-docs'
+  # mount Rswag::Ui::Engine => '/api-docs'
+  # mount Rswag::Api::Engine => '/api-docs'
   mount ActionCable.server => '/cable'
   resources :support_client_mappings
   draw :admin

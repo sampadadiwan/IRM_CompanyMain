@@ -40,8 +40,8 @@ gem "stimulus-rails"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
-gem 'rswag-api'
-gem 'rswag-ui'
+# gem 'rswag-api'
+# gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
 gem "redis"
