@@ -47,7 +47,7 @@ class ImportUpload < ApplicationRecord
 
   after_create_commit :run_import_job
   def run_import_job
-    ImportUploadJob.set(wait_until: 2.seconds).perform_later(id) unless Rails.env.test?
+    ImportUploadJob.set(wait: 2.seconds).perform_later(id) unless Rails.env.test?
   end
 
   after_save_commit :broadcast_iu, on: [:update]
