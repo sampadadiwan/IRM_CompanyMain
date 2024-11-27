@@ -359,3 +359,82 @@ Then('the generated SOA has permissions {string}') do |permissions|
     @document.send("#{k}").to_s.should == v
   end
 end
+
+Given('investor has access right {string} in the folder') do |arg1|
+  @access_right = AccessRight.new(owner: @folder, entity: @entity)
+  key_values(@access_right, arg1)
+  puts @access_right.to_json
+
+  @access_right.save
+  puts "\n####Access Right####\n"
+  puts @access_right.to_json
+end
+
+Given('given there is a Folder {string} for the entity') do |args|
+  @entity ||= Entity.first
+  @folder = Folder.new(entity: @entity, name: "Test Folder")
+  key_values(@folder, args)
+  @folder.save!
+  puts "\n####Folder####\n"
+  puts @folder.to_json
+end
+
+Given('the folder has a subfolder {string}') do |args|
+  @entity ||= Entity.first
+  @subfolder = Folder.new(entity: @entity, name: "Sub Folder", parent: @folder)
+  key_values(@subfolder, args)
+  @subfolder.save!
+  puts "\n####Sub Folder####\n"
+  puts @subfolder.to_json
+end
+
+Given('given there is a document {string} under the folder') do |string|
+  @document = Document.new(entity: @entity, name: "Test",
+    folder: @subfolder, file: File.new("public/sample_uploads/GrantLetter.docx", "r"), user_id: 1)
+  key_values(@document, string)
+  @document.save!
+
+  puts "\n####Document####\n"
+  puts @document.to_json
+end
+
+Given('I create a new Stakeholder {string} and save') do |args|
+  @temp_inv = FactoryBot.build(:investor)
+  key_values(@temp_inv, args)
+  visit(investors_path)
+  click_on("New")
+  fill_in('investor_investor_name', with: @temp_inv.investor_name)
+  select(@temp_inv.category, from: "investor_category")
+  fill_in('investor_primary_email', with: @temp_inv.primary_email)
+  click_on("Save")
+  sleep(1)
+  @investor = Investor.last
+end
+
+When('I go to see the investor documents of the entity') do
+  visit("/documents/investor?entity_id=#{@entity.id}")
+  sleep(3)
+end
+
+Then('I cannot see the documents') do
+  expect(page).not_to have_text(@folder.name)
+  expect(page).not_to have_text(@subfolder.name)
+  expect(page).not_to have_text(@document.name)
+end
+
+When('I go to see the document') do
+  visit(document_path(@document))
+end
+
+Then('I should see the documents') do
+  expect(page).to have_text(@folder.name)
+  expect(page).to have_text(@document.name)
+end
+
+Then('I should see the documents details') do
+  expect(page).to have_text("Viewing: #{@document.name}")
+end
+
+Given('folders access right is deleted') do
+  AccessRight.where(owner: @folder).destroy_all
+end
