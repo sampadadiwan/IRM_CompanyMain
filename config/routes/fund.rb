@@ -121,3 +121,8 @@ resources :investment_opportunities do
   get 'finalize_allocation', on: :member
   get 'no_password_show', on: :collection
 end
+
+resources :allocation_runs do
+  patch 'lock', on: :member
+  patch 'unlock', on: :member
+end

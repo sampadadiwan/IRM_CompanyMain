@@ -120,6 +120,9 @@
             Status
           </th>
           <th>
+            Locked
+          </th>
+          <th>
             
           </th>
       </tr>
@@ -160,7 +163,19 @@
             <%= runs.status %>
           </td>
           <td>
-            <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>
+            <%= display_boolean runs.locked %>
+          </td>
+          <td>
+            <% if runs.locked %>
+              <%= form_with url: unlock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                <%= button_tag "Unlock", class: "btn btn-sm btn-outline-warning", data: { confirm: "Are you sure you want to unlock this AllocationRun?" } %>
+              <% end %>
+            <% else %>
+              <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>
+              <%= form_with url: lock_allocation_run_path(runs), method: :patch, class: "d-inline" do %>
+                <%= button_tag "Lock", class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" } %>
+              <% end %>
+            <% end %>
           </td>
         </tr>
       <% end %>

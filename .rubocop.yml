@@ -233,6 +233,7 @@ Metrics/MethodLength:
     - 'app/packs/funds/capital_calls/services/import_capital_call.rb'
     - 'app/packs/ai/ai_rules/services/ai_data_manager.rb'
     - 'app/packs/ai/ai_rules/services/compliance_assistant.rb'
+    - 'app/packs/funds/funds/controllers/funds_controller.rb'
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'

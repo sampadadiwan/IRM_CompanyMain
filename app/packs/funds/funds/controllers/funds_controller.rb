@@ -171,16 +171,25 @@ class FundsController < ApplicationController
       tag_list = nil
       tag_list = params[:tag_list].join(",") if params[:tag_list].present? && params[:tag_list].is_a?(Array)
       user_id = current_user.id
+      
+      if params["run_allocations"]
+        existing_allocation_run = AllocationRun.locked_and_overlapping(@fund.id, start_date, end_date)
+        if existing_allocation_run
+          flash[:alert] = "This AllocationRun already exists for the specified period and is locked. Start Date - #{existing_allocation_run.start_date.strftime('%d-%m-%Y')} and End Date - #{existing_allocation_run.end_date.strftime('%d-%m-%Y')}."
+          redirect_back(fallback_location: root_path) and return
+        end
+      end
 
       allocation_run = AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
     rescue StandardError
       Rails.logger.debug "allocate: Dates not sent properly"
       redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
+      return
     end
 
     if start_date.present? && end_date.present?
       AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, tag_list:, run_allocations:, explain:, user_id:, generate_soa:, template_name:, fund_ratios:, sample:, allocation_run_id: allocation_run.id)
-      redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few mins and refresh the page")
+      redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.")
     else
       redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
     end
