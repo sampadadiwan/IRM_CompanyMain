@@ -2,15 +2,15 @@ class AiAssistant
   include Langchain::DependencyHelper
   include Rails.application.routes.url_helpers
 
-  def initialize(data_manager, instructions)
+  def initialize(data_manager, instructions, tools: [Langchain::Tool::Calculator.new])
     @data_manager = data_manager
     @instructions = instructions
-    @tools = [Langchain::Tool::Calculator.new]
+    @tools = tools
     @tools << @data_manager if @data_manager.present?
   end
 
   def assistant
-    @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { model: "gpt-4o" })
+    @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { request_timeout: 600 }, default_options: {request_timeout: 600, chat_model: "gpt-4o-mini" })
 
     @assistant ||= Langchain::Assistant.new(
       llm: @llm,

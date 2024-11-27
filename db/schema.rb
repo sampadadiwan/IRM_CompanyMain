@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_26_123922) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -260,6 +260,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
     t.boolean "run_allocations", default: true
     t.string "status"
     t.string "tag_list"
+    t.boolean "locked"
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"

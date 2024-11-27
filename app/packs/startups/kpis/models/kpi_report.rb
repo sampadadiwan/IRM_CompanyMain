@@ -105,7 +105,47 @@ class KpiReport < ApplicationRecord
     "Q4" => 10   # October
   }.freeze
 
-  def self.convert_to_date(input_string)
+  DATES_MAP = [
+    { input: "Q1 2024", output: "01-01-2024" },
+    { input: "Q3 2024", output: "01-07-2024" },
+    { input: "Jan 24", output: "01-01-2024" },
+    { input: "January 24", output: "01-01-2024" },
+    { input: "May 22", output: "01-05-2022" },
+    { input: "CY-2024", output: "01-01-2024" },
+    { input: "CY-2025", output: "01-01-2025" },
+  ].freeze
+
+  CONVERT_TO_DATE = {}
+
+  def self.convert_to_date(query)
+    date = CONVERT_TO_DATE[query]
+    if date.nil?
+      # Use few shot prompt template to generate a report url
+      prompt = Langchain::Prompt::FewShotPromptTemplate.new(
+        # The prefix is the text should contain the model class and the searchable attributes
+        prefix: "You are a financial analyst who can convert dates in different formats to a standard date format. Convert the given date to a standard date format, dont provide additional info, just the date in dd-mm-yyyy format.",
+        suffix: "Input: {query}\nOutput:",
+        example_prompt: Langchain::Prompt::PromptTemplate.new(
+          input_variables: %w[input output],
+          template: "Input: {input}\nOutput: {output}"
+        ),
+        examples: DATES_MAP,
+        input_variables: ["query"]
+      )
+
+      llm_prompt = prompt.format(query:)
+
+      @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"])
+      llm_response = @llm.chat(messages: [{ role: "user", content: llm_prompt }]).completion
+      Rails.logger.debug llm_response   
+      response = llm_response.sub(/^Output:\s*/, '')
+      date = Date.parse(response)
+      CONVERT_TO_DATE[query] = date
+    end
+    date
+  end
+
+  def self.convert_to_date2(input_string)
     if input_string.match?(/\AQ[1-4] \d{4}\z/)
       # Handle quarter strings like "Q1 2024"
       quarter, year = input_string.split
