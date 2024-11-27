@@ -69,6 +69,15 @@
                 <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
               </div>
             </div>
+            
+        <% end %>
+
+        <% if document.entity_id == current_user&.entity_id %>
+          <div id="viewed-by-tab" class="tab-pane fade">
+            <div id="viewed_by" class="associated_entity">
+              <%= render "/viewed_bies/index", viewed_bies: policy_scope(document.viewed_bies) %>
+            </div>
+          </div>
         <% end %>
 
         <div id="tasks-tab" class="tab-pane fade">
@@ -104,13 +113,7 @@
             <%#= Json2table.get_html_table(document.qna, JsonTable::TABLE_OPTIONS).html_safe if document.qna %>
             <%= render_markdown(document.qna[1..-2].gsub('\\\\', '\\').gsub('\n', "\n").gsub('```markdown', '').gsub('```', '').gsub('\"', '')) if document.qna.present? %>
           </div>
-        </div>
-
-        <div id="viewed-by-tab" class="tab-pane fade">
-          <div id="viewed_by" class="associated_entity">
-            <%= render "/viewed_bies/index", viewed_bies: policy_scope(document.viewed_bies) %>
-          </div>
-        </div>
+        </div>        
 
     </div>
 

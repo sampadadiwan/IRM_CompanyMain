@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_27_094208) do
     create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -260,6 +260,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
       t.boolean "run_allocations", default: true
       t.string "status"
       t.string "tag_list"
+      t.boolean "locked"
       t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
       t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
       t.index ["user_id"], name: "index_allocation_runs_on_user_id"
@@ -3163,6 +3164,18 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
       t.index ["investor_kyc_id"], name: "index_video_kycs_on_investor_kyc_id"
       t.index ["user_id"], name: "index_video_kycs_on_user_id"
     end
+    create_table "viewed_bies", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+      t.string "owner_type", null: false
+      t.bigint "owner_id", null: false
+      t.bigint "user_id"
+      t.bigint "entity_id", null: false
+      t.integer "count", default: 0
+      t.datetime "created_at", null: false
+      t.datetime "updated_at", null: false
+      t.index ["entity_id"], name: "index_viewed_bies_on_entity_id"
+      t.index ["owner_type", "owner_id"], name: "index_viewed_bies_on_owner"
+      t.index ["user_id"], name: "index_viewed_bies_on_user_id"
+    end
   
     create_table "whatsapp_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
       t.bigint "notification_id", null: false
@@ -3521,6 +3534,8 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_25_074126) do
     add_foreign_key "video_kycs", "entities"
     add_foreign_key "video_kycs", "investor_kycs"
     add_foreign_key "video_kycs", "users"
+    add_foreign_key "viewed_bies", "entities"
+    add_foreign_key "viewed_bies", "users"
     add_foreign_key "whatsapp_logs", "notifications"
   end
   
