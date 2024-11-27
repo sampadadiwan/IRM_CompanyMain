@@ -1,0 +1,29 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Viewed By</h1>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="viewed_bies" class="table table-bordered dataTable">
+    <tbody>
+    <thead>
+      <tr>
+        <th>
+          User
+        </th>
+        <th>
+          Views
+        </th>
+        <th>
+          On
+        </th>
+      </tr>
+    </thead>
+
+    <% viewed_bies.each do |viewed_by| %>
+      <%= render viewed_by %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>

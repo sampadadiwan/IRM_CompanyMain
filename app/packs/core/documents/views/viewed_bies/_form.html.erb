@@ -1,0 +1,31 @@
+<%= render FormCard.new(title: "Viewed Bies : #{viewed_by.presence || 'New'}") do %>
+
+  <%= form_with(model: viewed_by, validate: true) do |form| %>
+    <% if viewed_by.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(viewed_by.errors.count, "error") %> prohibited this viewed_by from being saved:</h2>
+
+        <ul>
+          <% viewed_by.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+      <div class="form-group">
+        <%= form.label :owner_id %>
+      <%= form.text_field :owner_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :user_id %>
+      <%= form.text_field :user_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+
+<% end %>

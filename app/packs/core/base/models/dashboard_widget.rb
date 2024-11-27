@@ -22,9 +22,11 @@ class DashboardWidget < ApplicationRecord
     "#{dashboard_name} #{widget_name} #{tags}"
   end
 
+  # rubocop:disable Security/Eval
   def metadata_args
     eval(metadata) if metadata
   end
+  # rubocop:enable Security/Eval
 
   def widget_size
     case size

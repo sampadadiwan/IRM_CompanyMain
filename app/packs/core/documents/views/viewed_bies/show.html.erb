@@ -1,0 +1,31 @@
+<%= render FormCard.new(title: "#{@viewed_by}") do %>
+<table class="table table-bordered dataTable">
+
+          <tr>
+        <td>
+          Owner
+        </td>
+        <td>
+          <%= @viewed_by.owner_id %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= @viewed_by.user_id %>
+        </td>    
+      </tr>
+    
+  
+</table>
+
+<div class="associated_entity">
+  <% if policy(@viewed_by).update? %>
+    <%= link_to "Edit", edit_viewed_by_path(@viewed_by), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Delete", @viewed_by, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+</div>
+
+<% end %>

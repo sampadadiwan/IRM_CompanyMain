@@ -1,0 +1,12 @@
+
+<tr id="<%= dom_id viewed_by %>">
+  <td>
+    <%= viewed_by.user&.full_name %>
+  </td>
+  <td>
+    <%= viewed_by.count %>
+  </td>
+  <td>
+    <%= l viewed_by.created_at %>
+  </td>
+</tr>

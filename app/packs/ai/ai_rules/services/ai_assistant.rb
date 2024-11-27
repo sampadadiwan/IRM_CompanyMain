@@ -10,7 +10,7 @@ class AiAssistant
   end
 
   def assistant
-    @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { request_timeout: 600 }, default_options: {request_timeout: 600, chat_model: "gpt-4o-mini" })
+    @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { request_timeout: 600 }, default_options: { request_timeout: 600, chat_model: "gpt-4o-mini" })
 
     @assistant ||= Langchain::Assistant.new(
       llm: @llm,

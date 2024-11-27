@@ -171,7 +171,7 @@ class FundsController < ApplicationController
       tag_list = nil
       tag_list = params[:tag_list].join(",") if params[:tag_list].present? && params[:tag_list].is_a?(Array)
       user_id = current_user.id
-      
+
       if params["run_allocations"]
         existing_allocation_run = AllocationRun.locked_and_overlapping(@fund.id, start_date, end_date)
         if existing_allocation_run

@@ -87,7 +87,13 @@ class DocumentsController < ApplicationController
   end
 
   # GET /documents/1 or /documents/1.json
-  def show; end
+  def show
+    ActiveRecord::Base.connected_to(role: :writing) do
+      vb = ViewedBy.where(owner: @document, user: current_user, entity_id: @document.entity_id).first_or_initialize
+      vb.count += 1
+      vb.save
+    end
+  end
 
   def send_for_esign
     if @document.send_for_esign(user_id: current_user.id)

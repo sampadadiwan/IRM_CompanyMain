@@ -112,10 +112,10 @@ class KpiReport < ApplicationRecord
     { input: "January 24", output: "01-01-2024" },
     { input: "May 22", output: "01-05-2022" },
     { input: "CY-2024", output: "01-01-2024" },
-    { input: "CY-2025", output: "01-01-2025" },
+    { input: "CY-2025", output: "01-01-2025" }
   ].freeze
 
-  CONVERT_TO_DATE = {}
+  CONVERT_TO_DATE = {}.freeze
 
   def self.convert_to_date(query)
     date = CONVERT_TO_DATE[query]
@@ -137,7 +137,7 @@ class KpiReport < ApplicationRecord
 
       @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"])
       llm_response = @llm.chat(messages: [{ role: "user", content: llm_prompt }]).completion
-      Rails.logger.debug llm_response   
+      Rails.logger.debug llm_response
       response = llm_response.sub(/^Output:\s*/, '')
       date = Date.parse(response)
       CONVERT_TO_DATE[query] = date

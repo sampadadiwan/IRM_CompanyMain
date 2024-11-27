@@ -21,6 +21,11 @@
             data-action="click->tabdetails#loadData">
           Reminders
         </a>
+
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewed-by-tab"
+            data-action="click->tabdetails#loadData">
+          Viewed By
+        </a>
       <% end %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
@@ -101,7 +106,11 @@
           </div>
         </div>
 
-
+        <div id="viewed-by-tab" class="tab-pane fade">
+          <div id="viewed_by" class="associated_entity">
+            <%= render "/viewed_bies/index", viewed_bies: policy_scope(document.viewed_bies) %>
+          </div>
+        </div>
 
     </div>
 

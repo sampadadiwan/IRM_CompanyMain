@@ -21,6 +21,7 @@ class Document < ApplicationRecord
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :e_signatures, dependent: :destroy
   has_one :esign_log, dependent: :destroy
+  has_many :viewed_bies, as: :owner, dependent: :destroy
   belongs_to :user
 
   belongs_to :entity
@@ -181,6 +182,10 @@ class Document < ApplicationRecord
 
   def pdf?
     file&.mime_type&.include?('pdf')
+  end
+
+  def excel?
+    file&.mime_type&.include?('spreadsheet')
   end
 
   def mime_type_includes?(file_type)

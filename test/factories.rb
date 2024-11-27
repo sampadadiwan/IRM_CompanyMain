@@ -1,4 +1,9 @@
 FactoryBot.define do
+  factory :viewed_by do
+    owner { nil }
+    user { nil }
+  end
+
   factory :dashboard_widget do
     name { "MyString" }
     entity { nil }

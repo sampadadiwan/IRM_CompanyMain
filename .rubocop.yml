@@ -4,6 +4,8 @@ require:
   - rubocop-rails
   - rubocop-rspec
 
+Style/SafeNavigationChainLength:
+  Enabled: false
 Rails/I18nLocaleTexts:
   Enabled: false
 Style/FrozenStringLiteralComment:

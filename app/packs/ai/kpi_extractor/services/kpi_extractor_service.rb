@@ -18,7 +18,7 @@ class KpiExtractorService < AiAssistant
 
     response = JSON.parse(llm_response)
     response.each do |kpi|
-      puts kpi
+      Rails.logger.debug kpi
       begin
         as_of = KpiReport.convert_to_date(kpi["date"])
         kpi_report = KpiReport.find_or_create_by(entity_id: portfolio_company.entity_id, as_of:, user_id: 21, portfolio_company:)
