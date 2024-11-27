@@ -1,3 +1,14 @@
+V8.0.37
+#####################################
+c39c778f9 (HEAD -> main, origin/main, origin/HEAD) Cascade rights delete fix (#609)
+af094137d Updated test schema
+54be3a78f Added Viewed by to docs (#608)
+11ba2fc07 Updated doc controller to show docs if access to folder is granted (#607)
+134399747 Kpi extractor refined
+6b0ed8b19 Lock allocation runs (#590)
+1ad0a44d0 Removed rswag
+2b144815e Added additional grouping for commitment reports
+
 V8.0.34
 #####################################
 c83ce2706 Funds tests pass
