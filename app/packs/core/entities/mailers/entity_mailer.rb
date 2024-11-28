@@ -27,7 +27,7 @@ class EntityMailer < ApplicationMailer
   end
 
   def add_support_to_cc
-    @cc ||= []
-    @cc << ENV.fetch('SUPPORT_EMAIL', nil)
+    support_email = ENV.fetch('SUPPORT_EMAIL', nil)
+    @cc.present? ? @cc += ",#{support_email}" : @cc = support_email
   end
 end
