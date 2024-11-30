@@ -208,17 +208,19 @@
 
       <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
-
-     <button class="btn btn-outline-primary dropdown-toggle" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-       Send Document
-     </button>
-     <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
-       <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
-         <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
-                       method: :patch,
-                       class: "dropdown-item" %>
-       <% end %>
-     </div>
+      
+      <%unless current_user.curr_role == "investor"%>
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Send Document
+        </button>
+        <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
+          <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
+            <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
+                          method: :patch,
+                          class: "dropdown-item" %>
+          <% end %>
+        </div>
+      <% end %>
    </div>
    <%= render "documents/document_details", document: @document if policy(@document).update? %>
 

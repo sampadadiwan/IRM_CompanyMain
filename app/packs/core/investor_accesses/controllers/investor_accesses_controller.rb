@@ -7,6 +7,7 @@ class InvestorAccessesController < ApplicationController
     authorize(InvestorAccess)
     @q = InvestorAccess.ransack(params[:q])
     @investor_accesses = policy_scope(@q.result).includes(:investor, :user)
+    @investor_accesses = InvestorAccessSearch.perform(@investor_accesses, current_user, params)
     @investor_accesses = @investor_accesses.where(approved: params[:approved]) if params[:approved].present?
     @investor_accesses = @investor_accesses.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @investor_accesses = @investor_accesses.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
