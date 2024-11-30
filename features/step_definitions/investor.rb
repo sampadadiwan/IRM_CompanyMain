@@ -718,6 +718,56 @@ Given('we Generate Commitment Agreement for the first capital commitment') do
   #sleep(2)
 end
 
+Then('we Generate Commitment Agreement for the first capital commitment again') do
+  @original_doc = Document.where(owner_tag: "Generated").last
+  visit(capital_commitment_path(@capital_commitment))
+  find("#commitment_actions").click
+  click_on("Generate #{@template_name}")
+  click_on("Proceed")
+end
+
+Then('the original document is replaced') do
+  @generated_doc = Document.where(owner_tag: "Generated").last
+  @generated_doc.should_not == @original_doc
+  @generated_doc.created_at.should > @original_doc.created_at
+end
+
+Then('the last generated document is approved') do
+  @doc = Document.where(owner_tag: "Generated").last
+  @doc.approved = true
+  @doc.save!
+end
+
+Given('we Generate All Documents for the first capital commitment') do
+  @capital_commitment = CapitalCommitment.last
+  @capital_commitment.investor_kyc = InvestorKyc.last
+  @capital_commitment.save!
+
+  visit(capital_commitment_path(@capital_commitment))
+  find("#commitment_actions").click
+  click_on("Generate All Documents")
+  click_on("Proceed")
+end
+
+Then('we get the email with error {string}') do |error|
+  sleep(1)
+  @user = User.first
+  current_email = nil
+  emails_sent_to(@user.email).each do |email|
+    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+    current_email = email if email.subject == "Errors"
+  end
+  expect(current_email.body).to include error
+end
+
+Then('we get the email with approved document exists error') do
+  error = "Approved document already exists for  #{@capital_commitment.investor_kyc.full_name} - #{@capital_commitment.folio_id} with template #{@template_name}"
+  steps %(
+    Then we get the email with error "#{error}"
+  )
+end
+
+
 Then('the {string} is successfully generated') do |name|
   expect(page).to have_content("Documentation generation started, please check back in a few mins")
   #sleep(2)

@@ -22,13 +22,20 @@ class DocGenJob < ApplicationJob
     signed_or_sent_for_esign.where("name like ?", "%#{template.name}%").present?
   end
 
+  def approved_document_already_exists?(model, template)
+    model.documents.approved.where("name like ?", "%#{template.name}%").present?
+  end
+
   def valid_inputs
+    @error_msg ||= []
     if templates.blank?
       send_notification("No templates found", @user_id, "danger")
+      @error_msg << { msg: "No templates found" }
       false
     end
     if models.blank?
       send_notification("No records found", @user_id, "danger")
+      @error_msg << { msg: "No records found" }
       false
     end
 
@@ -43,8 +50,8 @@ class DocGenJob < ApplicationJob
   def cleanup_previous_docs(model, template); end
 
   # The actual process of generating the document
-  def generate(start_date, end_date, user_id)
-    @error_msg = []
+  def generate(start_date, end_date, user_id) # rubocop:disable Metrics/MethodLength
+    @error_msg ||= []
     succeeded = 0
     failed = 0
 
@@ -57,8 +64,9 @@ class DocGenJob < ApplicationJob
         # Validate the model before generating the document
         valid, msg = validate(model)
         signed_document_already_exists = signed_document_already_exists?(model, template)
+        approved_document_already_exists = approved_document_already_exists?(model, template)
 
-        if valid && !signed_document_already_exists
+        if valid && !signed_document_already_exists && !approved_document_already_exists
           # Cleanup previously generated documents if required
           cleanup_previous_docs(model, template)
           # Generate the document
@@ -69,6 +77,7 @@ class DocGenJob < ApplicationJob
           succeeded += 1
         else
           msg = "Signed document already exists for #{model} with template #{template.name}" if signed_document_already_exists
+          msg = "Approved document already exists for  #{model} with template #{template.name}" if approved_document_already_exists
           # Send notification if the model is not valid
           send_notification(msg, user_id, "danger")
           @error_msg << { msg:, model: }
