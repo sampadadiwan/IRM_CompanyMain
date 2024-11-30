@@ -1,18 +1,19 @@
-<% cache_if((current_user != nil), ["InvestorHeader", entity]) do %>
+<% cache_if(current_user.present?, ["#{@model}Header", entity]) do %>
     <thead>
         <tr>
-            <% @columns = @columns_map %>
+            <% @columns = @columns.presence || @columns_map %>
+
             <% @columns.each do |column_name, attribute| %>
                 <th>
                     <% if attribute.present? && !attribute.starts_with?("custom_field") %>
-                        <%= sort_link @q, attribute, column_name, data: {turbo_frame: @turbo_frame} %>
+                    <%= sort_link @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
                     <% else %>
-                        <%= column_name %>
+                    <%= column_name %>
                     <% end %>
                 </th>
             <% end %>
             <th>
-                <!-- Actions -->
+            <!-- Actions -->
             </th>
         </tr>
     </thead>

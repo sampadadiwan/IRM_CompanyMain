@@ -1,3 +1,10 @@
+V8.0.38
+#####################################
+9eb50ce11 Doc generation validations (#603)
+89b30b6e6 Investor access search (#613)
+35ff32fc9 Downgraded aws gems
+43520ea26 Make cc list comma seperated instead of an array (#610)
+
 V8.0.37
 #####################################
 c39c778f9 (HEAD -> main, origin/main, origin/HEAD) Cascade rights delete fix (#609)

@@ -17,6 +17,13 @@ class RansackTableHeader < ViewComponent::Base
 
   attr_accessor :columns, :entity, :current_user
 
+  def columns
+    @columns ||= @columns_map.presence || @model::STANDARD_COLUMNS
+  end
+
+  private
+
+  # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)
     report = Report.find_by(id: @report_id)
     columns = fetch_report_columns(report) if report.present?
@@ -26,8 +33,6 @@ class RansackTableHeader < ViewComponent::Base
 
     columns
   end
-
-  private
 
   def fetch_report_columns(report)
     report.selected_columns.presence || @model::STANDARD_COLUMNS

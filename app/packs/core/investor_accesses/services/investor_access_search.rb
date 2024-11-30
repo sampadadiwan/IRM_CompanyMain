@@ -9,8 +9,8 @@ class InvestorAccessSearch
     entity_ids = [current_user.entity_id]
 
     InvestorAccessIndex.filter(terms: { entity_id: entity_ids })
-             .query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS, query:, default_operator: 'and' })
-             .per(1000)
-             .map(&:id)
+                       .query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS, query:, default_operator: 'and' })
+                       .per(1000)
+                       .map(&:id)
   end
 end

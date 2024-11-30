@@ -56,7 +56,7 @@ gem 'hashie'
 gem 'has_scope'
 gem "pundit"
 gem "rolify"
-gem "solid_cache", "1.0.2"
+gem "solid_cache"
 
 gem 'activerecord-import'
 # Store env variables
