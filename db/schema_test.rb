@@ -3538,3 +3538,4 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_27_094208) do
     add_foreign_key "viewed_bies", "users"
     add_foreign_key "whatsapp_logs", "notifications"
   end
+  

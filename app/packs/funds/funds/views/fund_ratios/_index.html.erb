@@ -1,20 +1,11 @@
 <% fund ||= nil %>
 <% valuation ||= nil %>
-<% import_upload_id ||= nil %>
-<% data_source ||= fund_ratios_path(fund_id: fund&.id, import_upload_id: import_upload_id, format: :json, all: true) %>
+<% data_source ||= fund_ratios_path(fund_id: fund&.id, format: :json, all: true) %>
 <% lazy_load_data ||= false %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
   <span>
-    <% if fund.present? %>
-      <%= link_to "Upload", 
-                        new_import_upload_path("import_upload[owner_id]": fund.id, 
-                        "import_upload[owner_type]": "Fund", 
-                        "import_upload[import_type]": "FundRatio", 
-                        "sample_upload": "FUND_RATIO"), 
-                        { class: "btn btn-outline-primary"}   %> 
-    <% end %>
     <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
         class: "btn btn-outline-success" , form_class: "deleteButton" ,
         data: {action: "click->confirm#popup" , turbo: false,
