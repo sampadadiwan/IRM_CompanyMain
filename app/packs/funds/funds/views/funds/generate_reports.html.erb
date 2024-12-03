@@ -1,4 +1,5 @@
-<% template_names = @fund.entity.folders.where(name: "AggregatePortfolioInvestment Templates").first.documents.pluck(:name) %>
+<% template_folder = @fund.entity.folders.where(name: "AggregatePortfolioInvestment Templates").first
+  template_names = template_folder ? template_folder.documents.pluck(:name) : [] %>
 <%= render NewCard.new do %>
 
   <%= render FormCard.new(title: "Generate Reports for #{@fund}") do %>
