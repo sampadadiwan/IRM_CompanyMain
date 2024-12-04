@@ -4,22 +4,22 @@
       <% if document.orignal && policy(document).not_generated_or_approved %>
           <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
             <i class="fas fa-download"></i>
-          <% end %>          
+          <% end %>
       <% end %>
-  </td>  
+  </td>
   <td>
     <%= document.tag_list %>
     <%= document.owner_tag %>
-    
+
     <% if document.subject_to_approval? %>
       <% status = document.approved ? "Approved" : "Pending Approval" %>
       <%= render DisplayBooleanComponent.new(bool: document.approved).
         with_content(status)  %>
     <% end %>
-  </td>  
+  </td>
 
-  <td>
-    <%= l document.created_at %>  
+  <td data-sort="<%= document.created_at.to_i %>">
+    <%= l document.created_at %>
   </td>
 
   <td>
