@@ -1,5 +1,5 @@
-<% 
-    params[:force_units] = capital_commitment.fund.default_currency_units 
+<%
+    params[:force_units] = capital_commitment.fund.default_currency_units
     if params[:force_units] == "Crores" && capital_commitment.committed_amount.to_d < 100_00000
         # If committed_amount is less than a crore, then show in lakhs
         params[:force_units] = "Lakhs"
@@ -12,12 +12,12 @@
         <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
             <div class="mb-3 mb-sm-0">
                 <div class="row">
-                    <%= image_tag capital_commitment.entity.logo.url(expires_in: 60*60*24*7), class: "col cc-card-logo" if capital_commitment.entity.logo %>       
+                    <%= image_tag capital_commitment.entity.logo.url(expires_in: 60*60*24*7), class: "col cc-card-logo" if capital_commitment.entity.logo %>
 
                     <span class="col">
                     <h4 class="card-title fw-semibold">
-                        <%= link_to "#{capital_commitment.fund.name}: #{capital_commitment.entity.name}", capital_commitment.fund %> 
-                    </h4>                
+                        <%= link_to "#{capital_commitment.fund.name}: #{capital_commitment.entity.name}", capital_commitment.fund %>
+                    </h4>
 
                     <span class="fs3 mb-1">
                         <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
@@ -25,15 +25,15 @@
                     </span>
 
                 </div>
-                
-            </div>     
-            
+
+            </div>
+
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
-                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ], id: "capital_commitment_#{capital_commitment.id}", 
+                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ], id: "capital_commitment_#{capital_commitment.id}",
                  library: {
-                   plotOptions: { 
+                   plotOptions: {
                         column: {
                             pointWidth: 40,
                             dataLabels: {
@@ -77,11 +77,23 @@
                 </div>
 
                 <div>
-                    
+
                     <div class="text-center">
-                        <a href="<%= fund_path(capital_commitment.fund) %>" class="btn btn-outline-primary w-100">
-                            View Details
-                        </a>
+                        <div class="row">
+
+                            <div class="col-6">
+                                <a href="<%= fund_path(capital_commitment.fund, tab: "commitments-tab") %>" class="btn btn-outline-primary w-100">
+                                    Fund Details
+                                </a>
+
+                            </div>
+                            <div class="col-6">
+
+                                <a href="<%= fund_path(capital_commitment.fund, tab: "docs-tab") %>" class="btn btn-outline-primary w-100">
+                                    Fund Documents
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -103,7 +115,7 @@
                             <table class="table">
                                 <% capital_commitment.fund.fund_ratios.where(owner: capital_commitment.fund, name: ["XIRR", "TVPI", "Portfolio Value to Cost"]).order(id: :desc).limit(3).each do |fund_ratio| %>
                                     <tr>
-                                        <td><%= link_to fund_ratio.name, fund_ratio %></td> 
+                                        <td><%= link_to fund_ratio.name, fund_ratio %></td>
                                         <td><%= fund_ratio.display_value %></td>
                                     </tr>
                                 <% end %>
@@ -123,13 +135,13 @@
                             <table class="table">
                                 <% capital_commitment.docs_for_investor.limit(2).order(id: :desc).each do |doc| %>
                                     <tr>
-                                        <td><%= link_to doc.name, doc %></td> 
+                                        <td><%= link_to doc.name, doc %></td>
                                         <td><%= l doc.created_at.to_date %></td>
                                     </tr>
                                 <% end %>
                                 <% capital_commitment.fund.data_room_folder.documents.limit(2).order(id: :desc).each do |doc| %>
                                     <tr>
-                                        <td><%= link_to doc.name, doc %></td> 
+                                        <td><%= link_to doc.name, doc %></td>
                                         <td><%= l doc.created_at.to_date %></td>
                                     </tr>
                                 <% end %>
@@ -140,7 +152,7 @@
                 </div>
             <% end %>
         </div>
-        
+
         <!-- div class="col-lg-12 col-md-6">
         <div class="card">
             <div class="card-body">
