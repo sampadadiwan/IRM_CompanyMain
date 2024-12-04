@@ -27,9 +27,7 @@
 <%= turbo_frame_tag "new_investor_access" do %>
 <% end %>
 
-<%=render SearchComponent.new(data_source: investor_accesses_path(params: params.to_unsafe_h), turbo_frame: "investor_accesses_frame") %>
-
-<div class="table-responsive">
+<div class="table-responsive" data-controller="datatable">
 
     <table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
         <thead>
