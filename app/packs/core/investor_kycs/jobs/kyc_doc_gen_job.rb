@@ -41,6 +41,16 @@ class KycDocGenJob < DocGenJob
     model.documents.not_templates.where(name: template.name).find_each(&:destroy)
   end
 
+  def generate_doc_name(model, template, start_date, end_date)
+    is_soa_doc = template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/
+
+    if is_soa_doc && start_date && end_date
+      "#{template.name} #{start_date} to #{end_date} - #{model}"
+    else
+      "#{template.name} - #{model}"
+    end
+  end
+
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
               user_id, entity_id: nil)
 

@@ -705,6 +705,39 @@ Given('we Generate SOA for the first capital commitment') do
   #sleep(2)
 end
 
+Then('we Generate SOA for the first capital commitment again') do
+  @og_soa_created_at = @capital_commitment.documents.generated.last.created_at
+  steps %(
+    Given we Generate SOA for the first capital commitment
+  )
+end
+
+Then('we Generate SOA for the first capital commitment with different time') do
+  @og_soa_created_at = @capital_commitment.documents.generated.last.created_at
+  @capital_commitment = CapitalCommitment.last
+  @capital_commitment.investor_kyc = InvestorKyc.last
+  @capital_commitment.save!
+  visit(capital_commitment_path(@capital_commitment))
+  find("#commitment_actions").click
+  #sleep(1)
+  click_on("Generate SOA")
+  @start_date = Date.parse "01/02/2020"
+  @end_date = Date.parse "01/02/2021"
+  fill_in('start_date', with: @start_date)
+  fill_in('end_date', with: @end_date)
+  click_on("Generate SOA Now")
+end
+
+Then('the unapproved SOA is replaced') do
+  expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
+end
+
+Given('the generated SOA is approved') do
+  @generated_soa = @capital_commitment.documents.generated.last
+  @generated_soa.approved = true
+  @generated_soa.save!
+end
+
 Given('we Generate Commitment Agreement for the first capital commitment') do
   @capital_commitment = CapitalCommitment.last
   @capital_commitment.investor_kyc = InvestorKyc.last

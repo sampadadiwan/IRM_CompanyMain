@@ -36,6 +36,10 @@ class CapitalCommitmentDocJob < DocGenJob
     docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
   end
 
+  def generate_doc_name(model, template, _start_date, _end_date)
+    "#{template.name} - #{model}"
+  end
+
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(fund_id, capital_commitment_id, user_id = nil, template_id: nil)
     @start_date = Time.zone.now

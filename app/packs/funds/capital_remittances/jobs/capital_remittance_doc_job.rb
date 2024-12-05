@@ -33,6 +33,10 @@ class CapitalRemittanceDocJob < DocGenJob
     model.documents.not_templates.where(name: template.name).find_each(&:destroy)
   end
 
+  def generate_doc_name(model, template, _start_date, _end_date)
+    "#{template.name} - #{model}"
+  end
+
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
   def perform(capital_call_id, capital_remittance_id, user_id, template_id: nil)
     @capital_call_id = capital_call_id

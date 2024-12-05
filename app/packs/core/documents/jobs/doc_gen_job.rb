@@ -17,13 +17,21 @@ class DocGenJob < ApplicationJob
   # Validates the model before generating the document
   def validate(model); end
 
-  def signed_document_already_exists?(model, template)
+  def signed_document_already_exists?(model, doc_name)
     signed_or_sent_for_esign = model.documents.signed.or(model.documents.sent_for_esign)
-    signed_or_sent_for_esign.where("name like ?", "%#{template.name}%").present?
+    signed_or_sent_for_esign.where("name like ?", "%#{doc_name}%").present?
   end
 
-  def approved_document_already_exists?(model, template)
-    model.documents.approved.where("name like ?", "%#{template.name}%").present?
+  def approved_document_already_exists?(model, doc_name)
+    model.documents.approved.where("name like ?", "%#{doc_name}%").present?
+  end
+
+  def generate_doc_name(model, template, start_date, end_date)
+    if start_date && end_date
+      "#{template.name} #{start_date} to #{end_date} - #{model}"
+    else
+      "#{template.name} - #{model}"
+    end
   end
 
   def valid_inputs
@@ -58,13 +66,14 @@ class DocGenJob < ApplicationJob
     send_notification("Documentation generation started", user_id, "info")
 
     # Loop through each template and model and generate the documents
-    models.each_with_index do |model, midx|
+    models.each_with_index do |model, midx| # rubocop:disable Metrics/BlockLength
       templates_to_use = templates(model)
       templates_to_use.each_with_index do |template, tidx|
         # Validate the model before generating the document
         valid, msg = validate(model)
-        signed_document_already_exists = signed_document_already_exists?(model, template)
-        approved_document_already_exists = approved_document_already_exists?(model, template)
+        doc_name = generate_doc_name(model, template, Time.zone.parse(start_date.to_s).strftime("%d %B,%Y"), Time.zone.parse(end_date.to_s).strftime("%d %B,%Y"))
+        signed_document_already_exists = signed_document_already_exists?(model, doc_name)
+        approved_document_already_exists = approved_document_already_exists?(model, doc_name)
 
         if valid && !signed_document_already_exists && !approved_document_already_exists
           # Cleanup previously generated documents if required
