@@ -190,6 +190,19 @@ namespace :IRM do
   desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
+      # Upload logrotate configuration
+      logrotate_config_path = "/home/ubuntu/IRM/shared/log/logrotate.conf"
+
+      # Upload the logrotate configuration from the local machine to the server
+      upload! StringIO.new(File.read('./config/deploy/logrotate.conf')), logrotate_config_path
+
+      # Ensure the parent directory exists
+      execute :sudo, "mkdir -p /home/ubuntu/IRM/shared/log"
+
+      # Set the correct ownership and permissions for the logrotate config file
+      execute :sudo, 'chown root:root /home/ubuntu/IRM/shared/log/logrotate.conf'
+      execute :sudo, 'chmod 644 /home/ubuntu/IRM/shared/log/logrotate.conf'
+      
       # Define the paths
       monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
@@ -221,7 +234,7 @@ namespace :IRM do
       # for nginx config
       local_nginx_conf = "/tmp/nginx_IRM_#{fetch(:stage)}"
       generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
-      execute :sudo, :ln, "-s", "#{nginx_config_path}/nginx_IRM_#{fetch(:stage)}", "/etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)}"
+      execute :sudo, "ln -s #{nginx_config_path}/nginx_IRM_#{fetch(:stage)} /etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)} || true"
 
       # for monitrc
       local_monitrc = "/tmp/monitrc"
