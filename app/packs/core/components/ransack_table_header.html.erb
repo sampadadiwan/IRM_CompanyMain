@@ -1,4 +1,4 @@
-<% cache_if(current_user.present?, ["#{@model}Header", entity]) do %>
+<%# cache_if(current_user.present?, ["#{@model}Header", entity]) do %>
     <thead>
         <tr>
             <% @columns = @columns.presence || @columns_map %>
@@ -17,4 +17,4 @@
             </th>
         </tr>
     </thead>
-<% end %>
+<%# end %>
