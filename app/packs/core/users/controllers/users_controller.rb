@@ -107,9 +107,6 @@ class UsersController < ApplicationController
   def update
     authorize @user
 
-    @user.extended_permissions = 0 if params[:user][:extended_permissions].blank?
-    @user.permissions = 0 if params[:user][:permissions].blank?
-
     respond_to do |format|
       if @user.update(user_params)
 
