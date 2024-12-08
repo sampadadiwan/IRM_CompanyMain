@@ -13,13 +13,10 @@ class RansackTableHeader < ViewComponent::Base
     @turbo_frame = turbo_frame
     @report_id = report_id
     @columns_map = get_columns(@entity, default_columns_map)
+    @columns ||= @columns_map.presence || @model::STANDARD_COLUMNS
   end
 
   attr_accessor :columns, :entity, :current_user
-
-  def columns
-    @columns ||= @columns_map.presence || @model::STANDARD_COLUMNS
-  end
 
   private
 
