@@ -27,6 +27,7 @@ class PortfolioInvestmentsController < ApplicationController
       end
       format.turbo_stream { render partial: 'portfolio_investments/index', locals: { portfolio_investments: @portfolio_investments } }
       format.xlsx
+      format.json
     end
   end
 

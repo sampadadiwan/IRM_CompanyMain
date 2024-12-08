@@ -1,5 +1,4 @@
 class CapitalRemittancesCountersJob < BulkActionJob
-  
   queue_as :serial
 
   def perform(fund_ids, user_id = nil)
