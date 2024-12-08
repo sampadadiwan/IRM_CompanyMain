@@ -1,3 +1,14 @@
+V8.0.41
+#####################################
+36372af73 Minor fix for table headers
+962e3ea3e Portfolio shown in AG Grid (#633)
+2c06e3d21 Changed remittance partial to fix bug with verify refresh showing incorrect cols
+061ffa288 Allow for remittances to be recomputed when remittance payment is deleted
+6bb3e67eb Removed restting of permissions for user on update
+591e1f757 Kpi no investor login (#632)
+60527856f Disable table header cache (#631)
+67c4174e6 Logrotate (#600)
+
 V8.0.40
 #####################################
 addd02642 Check exact doc names for doc gen (#627)

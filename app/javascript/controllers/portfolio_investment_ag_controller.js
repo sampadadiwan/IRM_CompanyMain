@@ -9,13 +9,7 @@ export default class extends BaseAgGrid {
     let textColumn = this.textColumn;
 
     let columnDefs = [
-      // textColumn(controller, "portfolio_company_name", "Portfolio Company"),
-      {
-        field: 'portfolio_company_name',
-        headerName: 'Portfolio Company',
-        rowGroup: true, // This will group by this column by default
-        hide: true, // Hide the column from the grid as it will appear in the grouping panel
-      },
+      textColumn(controller, "portfolio_company_name", "Portfolio Company", "", true, true, true),
       textColumn(controller, "instrument_name", "Instrument"),
       textColumn(controller, "investment_date", "Investment Date"),
       numberFormatColumn(controller, "amount", "Amount", formatNumberWithCommas),
@@ -41,6 +35,12 @@ export default class extends BaseAgGrid {
     
 
     return columnDefs;
+  }
+
+
+  restoreGrouping() {
+    // Programmatically restore grouping
+    this.gridOptions.columnApi.setRowGroupColumns(['portfolio_company_name']);
   }
 
   

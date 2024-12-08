@@ -50,7 +50,7 @@ export default class BaseAgGrid extends Controller {
                 flex: 1,
                 resizable: true,
                 filter: 'agTextColumnFilter',
-                sortable: true,
+                sortable: true,                
                 minWidth: 120,
             },
             onGridReady: (event) => {
@@ -242,12 +242,13 @@ export default class BaseAgGrid extends Controller {
           };
     }
 
-    textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true) {
+    textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true, rowGroup = false) {
         return { 
             field: field,
             headerName: headerName, 
             filter: "agSetColumnFilter", 
             enableRowGroup: enableRowGroup, 
+            rowGroup: rowGroup,
             enablePivot: enablePivot, 
             chartDataType: 'category',
             aggFunc: aggFunc}
