@@ -1,4 +1,7 @@
 class CapitalRemittancesCountersJob < BulkActionJob
+  
+  queue_as :serial
+
   def perform(fund_ids, user_id = nil)
     send_notification("Recalculating counters for Capital Remittances ....", user_id, :info) if user_id
     # We need to rollup the counters for the Capital Remittances

@@ -30,7 +30,7 @@ class CapitalRemittancePayment < ApplicationRecord
                   execute_after_commit: true
 
   # This must come after the counter_cultures above
-  after_commit :unverify_remittance, unless: ->(crp) { crp.deleted? || crp.destroyed? }
+  after_commit :unverify_remittance #, unless: ->(crp) { crp.deleted? || crp.destroyed? }
 
   validates_uniqueness_of :reference_no, scope: :fund_id, if: -> { reference_no.present? }
   validates :reference_no, length: { maximum: 40 }
