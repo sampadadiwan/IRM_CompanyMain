@@ -1,3 +1,19 @@
+V8.0.40
+#####################################
+addd02642 Check exact doc names for doc gen (#627)
+16f4eb1b4 Header cache fix (#626)
+30cf25968 remove check to disable filter on docs report (#625)
+9ee73b6a2 Fixed sorting by date for documents (#622)
+5efb717ae Commitment card buttons (#623)
+0af5e7653 Added datatable search box to investor access (#621)
+a4faf1c9c Generate report nil check (#620)
+
+V8.0.39
+#####################################
+23f78e76e Added folio id and Investing Entity to remittance download file (#618)
+c5978cbe6 Run ImportFixCountsJob before API save (#619)
+ece78e377 Solid cache fix to enable page caching (#616)
+
 V8.0.38
 #####################################
 9eb50ce11 Doc generation validations (#603)

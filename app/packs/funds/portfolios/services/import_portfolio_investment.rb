@@ -6,7 +6,7 @@ class ImportPortfolioInvestment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(ctx, import_upload:, **)
+  def post_process(_ctx, import_upload:, **)
     ImportFixCountsJob.perform_now(import_upload.id)
     # This ensures all the counters for this funds API are fixed
     # PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }

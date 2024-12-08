@@ -17,7 +17,7 @@
             <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
                 <% funds = policy_scope(Fund).page(params[:page]) %>
 
-                <% funds.each do |fund| %>
+                <% funds.includes(:capital_commitments).each do |fund| %>
                     <%= render "/funds/card", fund: %>
                 <% end %>
 

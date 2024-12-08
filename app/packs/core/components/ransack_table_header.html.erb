@@ -1,20 +1,21 @@
+
 <%# cache_if(current_user.present?, ["#{@model}Header", entity]) do %>
     <thead>
         <tr>
             <% @columns = @columns.presence || @columns_map %>
 
-            <% @columns.each do |column_name, attribute| %>
-                <th>
-                    <% if attribute.present? && !attribute.starts_with?("custom_field") %>
-                    <%= sort_link @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
-                    <% else %>
-                    <%= column_name %>
-                    <% end %>
-                </th>
-            <% end %>
+        <% @columns.each do |column_name, attribute| %>
             <th>
-            <!-- Actions -->
+                <% if attribute.present? && !attribute.starts_with?("custom_field") %>
+                <%= sort_link @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
+                <% else %>
+                <%= column_name %>
+                <% end %>
             </th>
-        </tr>
-    </thead>
+        <% end %>
+        <th>
+        <!-- Actions -->
+        </th>
+    </tr>
+</thead>
 <%# end %>

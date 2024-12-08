@@ -20,8 +20,6 @@ class GridViewPreference < ApplicationRecord
   private
 
   def touch_entity
-    if owner.is_a?(FormType) && owner.entity.present?
-      owner.entity.touch
-    end
+    owner.entity.touch if owner.is_a?(FormType) && owner.entity.present?
   end
 end

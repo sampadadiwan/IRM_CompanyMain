@@ -4,8 +4,14 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents, :entity, :user, :portfolio_company)
+    @kpi_reports = policy_scope(@q.result)
     authorize(KpiReport)
+
+    @kpi_reports = if params[:grid_view].present?
+                     @kpi_reports.includes(:kpis, :documents, :entity, :portfolio_company, :owner)
+                   else
+                     @kpi_reports.includes(:kpis, :documents, :entity, :user, :portfolio_company)
+                   end
 
     if params[:months].present?
       date = Time.zone.today - params[:months].to_i.months
