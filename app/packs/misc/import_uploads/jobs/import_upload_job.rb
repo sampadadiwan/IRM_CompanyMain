@@ -19,6 +19,8 @@ class ImportUploadJob < ApplicationJob
       end
 
       import_upload.save
+
+      send_notification("Import of #{import_upload.name} is complete", import_upload.user_id)
     end
   end
 end

@@ -67,6 +67,7 @@ class KpiReportsController < ApplicationController
   def create
     @kpi_report = KpiReport.new(kpi_report_params)
     authorize @kpi_report
+    setup_doc_user(@kpi_report)
 
     respond_to do |format|
       if @kpi_report.save
@@ -81,6 +82,7 @@ class KpiReportsController < ApplicationController
 
   # PATCH/PUT /kpi_reports/1 or /kpi_reports/1.json
   def update
+    setup_doc_user(@kpi_report)
     respond_to do |format|
       if @kpi_report.update(kpi_report_params)
         format.html { redirect_to kpi_report_url(@kpi_report), notice: "Kpi report was successfully updated." }
@@ -118,6 +120,6 @@ class KpiReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_report_params
-    params.require(:kpi_report).permit(:entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy])
+    params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

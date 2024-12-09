@@ -2,6 +2,7 @@ class KpiReport < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include WithFolder
+  include Trackable.new
 
   PERIODS = ["Month", "Quarter", "Semi Annual", "Annual"].freeze
 
@@ -12,6 +13,7 @@ class KpiReport < ApplicationRecord
   belongs_to :user
   has_many :kpis, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
+  has_many :import_uploads, as: :owner, dependent: :destroy
 
   validates :period, length: { maximum: 12 }
   validates :as_of, presence: true
@@ -25,11 +27,19 @@ class KpiReport < ApplicationRecord
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
   end
 
+  after_create_commit :import_kpis
+  def import_kpis
+    kpi_file = self.documents.where(name: "KPIs").first
+    if kpi_file.present?
+      ImportUpload.create(entity_id: entity_id, owner: self, import_type: "Kpi", name: "KPIs", import_file_data: kpi_file.file_data, user_id: user_id)
+    end
+  end
+
   def custom_kpis
     if form_type
       my_kpis = kpis.to_a
       form_type.form_custom_fields.each do |custom_field|
-        kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.custom_form_field.id == custom_field.id }
+        kpis << Kpi.new(name: custom_field.name, entity_id:) unless custom_field.field_type == "File" ||  my_kpis.any? { |kpi| kpi.custom_form_field.id == custom_field.id }
       end
     end
     kpis

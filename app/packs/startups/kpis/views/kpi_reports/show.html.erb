@@ -75,6 +75,18 @@
       <%= @kpi_report.user.full_name %>
     </td>
   </tr>
+
+  <% if @kpi_report.import_uploads.present? %>
+  <tr>
+    <td>
+      Imported Data
+    </td>
+    <td>
+      <%= link_to @kpi_report.import_uploads.last %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
   <% if policy(@kpi_report).update? %>
