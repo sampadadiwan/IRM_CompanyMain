@@ -111,7 +111,7 @@
             end
           end
         %>
-        <% ransack_table_header = RansackTableHeader.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame) %>
+        <% ransack_table_header = RansackTableHeader.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer) %>
         <%= render ransack_table_header %>
       <tbody>
         <% investor_kycs.each do |investor_kyc| %>

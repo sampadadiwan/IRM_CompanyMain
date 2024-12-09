@@ -2,7 +2,7 @@ class RansackTableHeader < ViewComponent::Base
   include Ransack::Helpers::FormHelper
   include ApplicationHelper
 
-  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "")
+  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil)
     super
     @model = model
     @q = q.presence || @model.ransack
@@ -12,13 +12,24 @@ class RansackTableHeader < ViewComponent::Base
     @css_class = css_class
     @turbo_frame = turbo_frame
     @report_id = report_id
-    @columns_map = get_columns(@entity, default_columns_map)
-    @columns ||= @columns_map.presence || @model::STANDARD_COLUMNS
+    @columns = fetch_columns(@entity, @default_columns_map)
+    @referrer = referrer
   end
 
   attr_accessor :columns, :entity, :current_user
 
   private
+
+  def cache_key
+    ["#{@model.to_s}Header", current_user, entity, @referrer]
+  end
+
+  def fetch_columns(entity, default_columns_map)
+  Rails.cache.fetch(cache_key, expires_in: 5.days) do
+    get_columns(entity, default_columns_map)
+  end
+end
+
 
   # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)

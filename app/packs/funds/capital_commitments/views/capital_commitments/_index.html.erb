@@ -29,7 +29,7 @@
             end
           end
         %>
-        <% ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame) %>
+        <% ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer) %>
         <%= render ransack_table_header %>
       <tbody>
         <% capital_commitments.each do |capital_commitment| %>

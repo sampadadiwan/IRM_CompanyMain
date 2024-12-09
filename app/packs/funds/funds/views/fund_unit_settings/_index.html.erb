@@ -18,7 +18,7 @@
 
 <div class="table-responsive">
   <table id="fund_unit_settings" class="table table-bordered dataTable action_table hover">
-      <% ransack_table_header = RansackTableHeader.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame) %>
+      <% ransack_table_header = RansackTableHeader.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame, referrer: request.referrer) %>
       <%= render ransack_table_header %>
     <tbody>
       <% fund_unit_settings.each do |fund_unit_setting| %>
