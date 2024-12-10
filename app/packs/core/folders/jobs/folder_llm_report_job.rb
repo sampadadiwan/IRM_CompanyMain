@@ -3,6 +3,14 @@
 class FolderLlmReportJob < ApplicationJob
   queue_as :low
 
+  def template_to_output_file_name(template_name)
+    "#{template_name.parameterize(separator: '_').gsub('_template', '')}.html"
+  end
+
+  def file_name_from_output_file_name(output_file_name)
+    output_file_name.gsub(".html", "").gsub("html", "").humanize.titleize
+  end
+
   def perform(folder_id, user_id, report_type, report_template_name: "Report Template")
     Chewy.strategy(:sidekiq) do
       folder = Folder.find(folder_id)
@@ -16,7 +24,17 @@ class FolderLlmReportJob < ApplicationJob
         send_notification(msg, user_id, :danger)
       else
         # Now call the generate_report API
-        output_file_name = "#{report_template_name.parameterize(separator: '_').gsub('_template', '')}.html"
+        output_file_name = template_to_output_file_name(report_template_name) 
+        name = file_name_from_output_file_name(output_file_name)
+
+        # Check if the report has already been generated
+        if folder.documents.where(name: name).exists?
+          msg = "Report already generated for #{folder.name}. Skipping report generation."
+          Rails.logger.debug { msg }
+          send_notification(msg, user_id, :info)
+          return
+        end
+
         response = generate_report(doc_urls, template_url, output_file_name)
         if response.code == 200
           folder_path = response["folder_path"]
@@ -53,7 +71,7 @@ class FolderLlmReportJob < ApplicationJob
       folder.entity.folders.where(name: "Portfolio Report Templates").first&.documents&.each do |doc|
         next unless doc.name == report_template_name
 
-        Rails.logger.debug { "Found #{doc.name} in #{report_type} Templates" }
+        Rails.logger.debug { "Found #{doc.name} in Portfolio Report Templates folder" }
         template_url = doc.file.url
         break
       end
@@ -99,9 +117,9 @@ class FolderLlmReportJob < ApplicationJob
   def upload_file(folder, folder_path, user_id, output_file_name)
     # Now download the output_report.html file and save it as a document in the folder
     if File.exist?("#{folder_path}/#{output_file_name}")
-      msg = "Found output_report.html file in #{folder_path}"
+      msg = "Found #{output_file_name} file in #{folder_path}"
       Rails.logger.debug msg
-      file_name = output_file_name.gsub(".html", "").humanize.titleize
+      file_name = file_name_from_output_file_name(output_file_name)
       tries = 0
       while tries < 3
         begin

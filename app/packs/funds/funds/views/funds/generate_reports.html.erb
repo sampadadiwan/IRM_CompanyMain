@@ -35,6 +35,19 @@
         <small class="form-text text-muted">Select the end date.</small>
       </div>
 
+
+      <div class="form-group">
+        <%= form.label :include_kpis, "Include KPIs" %>
+        <%= form.check_box :include_kpis, class: "form-check-input"  %>
+        <small class="text-muted">Check this to include the KPIs for the dates input above, in the report</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :include_apis, "Include Portfolio Data" %>
+        <%= form.check_box :include_apis, class: "form-check-input"  %>
+        <small class="text-muted">Check this to include the Portfolio Investments data for the dates input above, in the report</small>
+      </div>
+
       <div class="form-group">
         <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
       </div>
