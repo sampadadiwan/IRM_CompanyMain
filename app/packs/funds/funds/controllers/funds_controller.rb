@@ -38,9 +38,16 @@ class FundsController < ApplicationController
 
   def generate_reports
     if request.post?
-      FundApiLlmReportJob.perform_later(@fund.id, current_user.id, report_template_name: params[:report_template_name])
+      # Generate the report if this is a post request
+      FundLlmReportJob.perform_later(
+        @fund.id, current_user.id, params[:report_type],
+        report_template_name: params[:report_template_name],
+        start_date: params[:start_date], end_date: params[:end_date]
+      )
+
       redirect_to fund_path(@fund, tab: 'portfolio-investments-tab'), notice: "Report generation started, please check back in a few mins"
     else
+      # Show the form to generate the report
       render "generate_reports"
     end
   end

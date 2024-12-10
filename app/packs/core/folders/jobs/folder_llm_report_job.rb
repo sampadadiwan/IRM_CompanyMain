@@ -50,7 +50,7 @@ class FolderLlmReportJob < ApplicationJob
 
     if template_url.nil?
       # Get the template url from Funds/
-      folder.entity.folders.where(name: "#{report_type} Templates").first&.documents&.each do |doc|
+      folder.entity.folders.where(name: "Portfolio Report Templates").first&.documents&.each do |doc|
         next unless doc.name == report_template_name
 
         Rails.logger.debug { "Found #{doc.name} in #{report_type} Templates" }

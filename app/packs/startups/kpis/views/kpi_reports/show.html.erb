@@ -9,6 +9,17 @@
     </td>
   </tr>
 
+  <% if @kpi_report.portfolio_company %>
+  <tr>
+    <td>
+      Portfolio Company
+    </td>
+    <td>
+      <%= link_to @kpi_report.portfolio_company %>
+    </td>
+  </tr>
+  <% end %>
+
   <% if @kpi_report.owner %>
   <tr>
     <td>
@@ -48,15 +59,7 @@
       </td>
     </tr>
   <% end %>
-  <tr>
-    <td>
-      As Of
-    </td>
-    <td>
-      <%= l @kpi_report.as_of %>
-    </td>
-  </tr>
-
+  
   <%= display_custom_fields(@kpi_report, collapsed: false) if current_user %>
 
   <tr>

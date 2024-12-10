@@ -1,3 +1,9 @@
+V8.0.42
+#####################################
+8b62bab96 Cache custom columns (#635)
+385998506 Kpi report custom fields and import (#634)
+272edf444 Added better rowGroup param for base_ag_grid
+
 V8.0.41
 #####################################
 36372af73 Minor fix for table headers

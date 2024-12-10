@@ -19,6 +19,11 @@
     <%= form.text_field :form_type_id, class: "form-control", hidden: true %>
 
     <div class="form-group">
+      <%= form.label :portfolio_company_id %>
+      <%= form.select :portfolio_company_id, kpi_report.entity.investors.portfolio_companies.map{|pc| [pc.investor_name, pc.id]}, {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
       <%= form.label :as_of %>
       <%= form.date_field :as_of, class: "form-control"  %>
     </div>

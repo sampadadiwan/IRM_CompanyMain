@@ -21,15 +21,14 @@ class RansackTableHeader < ViewComponent::Base
   private
 
   def cache_key
-    ["#{@model.to_s}Header", current_user, entity, @referrer]
+    ["#{@model}Header", current_user, entity, @referrer]
   end
 
   def fetch_columns(entity, default_columns_map)
-  Rails.cache.fetch(cache_key, expires_in: 5.days) do
-    get_columns(entity, default_columns_map)
+    Rails.cache.fetch(cache_key, expires_in: 5.days) do
+      get_columns(entity, default_columns_map)
+    end
   end
-end
-
 
   # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)
