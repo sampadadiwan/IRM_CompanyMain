@@ -24,11 +24,11 @@ class FolderLlmReportJob < ApplicationJob
         send_notification(msg, user_id, :danger)
       else
         # Now call the generate_report API
-        output_file_name = template_to_output_file_name(report_template_name) 
+        output_file_name = template_to_output_file_name(report_template_name)
         name = file_name_from_output_file_name(output_file_name)
 
         # Check if the report has already been generated
-        if folder.documents.where(name: name).exists?
+        if folder.documents.exists?(name: name)
           msg = "Report already generated for #{folder.name}. Skipping report generation."
           Rails.logger.debug { msg }
           send_notification(msg, user_id, :info)
@@ -52,7 +52,7 @@ class FolderLlmReportJob < ApplicationJob
 
   private
 
-  def get_documents(folder, report_type, report_template_name)
+  def get_documents(folder, _report_type, report_template_name)
     doc_urls = []
     template_url = nil
     folder.documents.each do |doc|

@@ -37,6 +37,9 @@ class DocumentsBulkActionJob < BulkActionJob
       if document.to_be_esigned?
         EsignJob.set(wait: rand(15).seconds).perform_later(document.id, user_id)
         sleep(1) # This is so that we dont flood Digio/Docusign, throttle requests sent
+      elsif !document.approved
+        msg = "Document #{document.name} is not approved."
+        set_error(msg, document, user_id)
       else
         msg = "Document #{document.name} is not ready for eSignature"
         set_error(msg, document, user_id)
