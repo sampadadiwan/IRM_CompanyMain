@@ -20,7 +20,8 @@ class DocumentMailer < ApplicationMailer
   end
 
   def email_link
-    @link = @document.file.url
+    # Link will expire in 1 week
+    @link = @document.file.url(expires_in: (60 * 60 * 24 * 7))
     subject = "Download link"
     send_mail(subject:)
   end
