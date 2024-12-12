@@ -1,3 +1,16 @@
+V8.0.44
+#####################################
+249e926ac Fetch pan card using owner tag for kyc, interest and offer (#614)
+516aa7a67 Better footer error (#629)
+f40f5f2a0 Fix for Turbo lazy load for commitments in onboarding report (#638)
+
+V8.0.43
+#####################################
+7970b517e Added better not approved message when esigning fails
+2f00a6d20 Download link now expires in 7 days
+5a2b5d1bc Skpis report generation if report already exists
+4edafd112 Added report generation from KPI report
+
 V8.0.42
 #####################################
 8b62bab96 Cache custom columns (#635)
