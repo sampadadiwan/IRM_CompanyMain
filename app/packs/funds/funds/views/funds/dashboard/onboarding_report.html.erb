@@ -6,6 +6,10 @@
     column_names = ["Type", "Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Documents", "Onboarding Complete", " "].join(",")
     field_list = ["commitment_type", "folio_id", "investor_name", "full_name", "unit_type", "committed_amount", "document_names", "onboarding_completed", "dt_actions"].join(",")
   %>
-  <%= render "/capital_commitments/index", column_names:, field_list:, title:,
-        lazy_load_data: false, data_source: capital_commitments_path(fund_id: @fund.id, all: true, onboarding_completed: false, show_docs: true, format: :json) %>
+  
+  <turbo-frame id="<%= "capital_commitments_frame" %>" 
+               src="<%= url_for(controller: "capital_commitments", action: :index, onboarding_completed: false) %>" 
+               loading="lazy" target="_top">
+    <p>Loading Capital Commitments...</p>
+  </turbo-frame>
 </div>
