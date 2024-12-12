@@ -216,7 +216,7 @@ class Interest < ApplicationRecord
   end
 
   def pan_card
-    documents.where("name like ?", "%PAN%").last&.file
+    documents.where(owner_tag: "PAN").last&.file
   end
 
   def validate_bank

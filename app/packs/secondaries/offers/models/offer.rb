@@ -246,7 +246,7 @@ class Offer < ApplicationRecord
   end
 
   def pan_card
-    documents.where("name like ?", "%PAN%").last&.file
+    documents.where(owner_tag: "PAN").last&.file
   end
 
   def signature
@@ -283,7 +283,7 @@ class Offer < ApplicationRecord
       doc = from_offer.documents.where("name like ?", "%Signature%").last
       Document.find_or_create_by(name: "Signature", file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
 
-      doc = from_offer.documents.where("name like ?", "%PAN%").last
+      doc = from_offer.documents.where(owner_tag: "PAN").last
       Document.find_or_create_by(name: "PAN", file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
     end
   end
