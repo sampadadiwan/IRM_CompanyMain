@@ -124,6 +124,35 @@ Scenario Outline: Only Unapproved Commitment Agreement is replaced
     |user	    |entity                         |role       |given  |should	|access | crud |email|
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|
 
+Scenario Outline: Footer error in Generating Commitment Agreement
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "entity_type=Family Office"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
+  Given there is a fund "name=Test fund" for the entity
+  And another user is "<given>" fund advisor access to the fund
+  And the access right has access "<crud>"
+  Given the user has role "<role>"
+  Given the fund has capital commitments from each investor
+  And each Investor has an approved Investor Kyc
+  Given the fund has "2" capital call
+  Given the capital calls are approved
+  Given the fund has "2" capital distribution
+  Given the capital distributions are approved
+  Given the fund has a template "Commitment Agreement Template2" of type "Commitment Template"
+  And we Generate Commitment Agreement for the first capital commitment
+  Then the "Commitment Agreement Template2" is successfully generated
+  Given the commitment has a corrupted footer for the template
+  Then we Generate Commitment Agreement for the first capital commitment with corrupt "header"
+  Then we get the email with error "<footer_error>"
+  Given the commitment has a corrupted header for the template
+  Then we Generate Commitment Agreement for the first capital commitment with corrupt "footer"
+  Then we get the email with error "<header_error>"
+
+  Examples:
+    |user	    |entity                         |role       |given  |should	|access | crud |email|footer_error|header_error|
+    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|Error adding Footer:|Error adding Header:|
+
 Scenario Outline: Unapproved SOA is replaced for a Capital Commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

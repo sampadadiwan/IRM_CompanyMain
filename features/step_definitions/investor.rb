@@ -751,12 +751,32 @@ Given('we Generate Commitment Agreement for the first capital commitment') do
   #sleep(2)
 end
 
+Then('we Generate Commitment Agreement for the first capital commitment with corrupt {string}') do |string|
+  steps %(
+    Then we Generate Commitment Agreement for the first capital commitment again
+  )
+  sleep 3
+end
+
+
 Then('we Generate Commitment Agreement for the first capital commitment again') do
   @original_doc = Document.where(owner_tag: "Generated").last
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
   click_on("Generate #{@template_name}")
   click_on("Proceed")
+end
+
+Given('the commitment has a corrupted footer for the template') do
+  Document.create!(entity: @capital_commitment.entity, name: "#{@template_name} Footer",
+  text: Faker::Company.catch_phrase, user: @user, owner: @capital_commitment,
+  folder: @capital_commitment.document_folder, file: File.new("public/sample_uploads/corrupt.pdf", "r"))
+end
+
+Given('the commitment has a corrupted header for the template') do
+  Document.create!(entity: @capital_commitment.entity, name: "#{@template_name} Header",
+  text: Faker::Company.catch_phrase, user: @user, owner: @capital_commitment,
+  folder: @capital_commitment.document_folder, file: File.new("public/sample_uploads/corrupt.pdf", "r"))
 end
 
 Then('the original document is replaced') do

@@ -68,6 +68,10 @@ module DocumentGeneratorBase
         file = header.file.download
         header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
+      rescue StandardError => e
+        msg = "Error adding Header: #{header.name}: #{e.message}"
+        Rails.logger.error { msg }
+        raise msg
       end
     end
   end
@@ -91,6 +95,10 @@ module DocumentGeneratorBase
         Rails.logger.debug { "Adding footer #{file_path}" }
         header_footer_download_path << file_path
         combined_pdf << CombinePDF.load(file_path)
+      rescue StandardError => e
+        msg = "Error adding Footer: #{footer.name}: #{e.message}"
+        Rails.logger.error { msg }
+        raise msg
       end
     end
   end
