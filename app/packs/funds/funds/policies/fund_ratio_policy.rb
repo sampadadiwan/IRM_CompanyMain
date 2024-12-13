@@ -27,7 +27,7 @@ class FundRatioPolicy < FundBasePolicy
   end
 
   def update?
-    create?
+    FundPolicy.new(user, record.fund).create?
   end
 
   def edit?

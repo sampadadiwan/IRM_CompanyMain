@@ -34,7 +34,7 @@ module PortfolioHelper
   def api_xirr_chart(api)
     xirrs = FundRatio.where(entity_id: api.entity_id, fund_id: api.fund_id,
                             owner: api,
-                            name: "IRR")
+                            name: "XIRR")
                      .order(end_date: :asc)
                      .pluck(:end_date, :value)
 

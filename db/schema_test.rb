@@ -1448,6 +1448,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_09_034516) do
       t.string "owner_type"
       t.bigint "owner_id"
       t.json "cash_flows"
+      t.bigint "import_upload_id"
       t.boolean "latest", default: false
       t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
       t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
@@ -3541,4 +3542,3 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_09_034516) do
     add_foreign_key "viewed_bies", "users"
     add_foreign_key "whatsapp_logs", "notifications"
   end
-  
