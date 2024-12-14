@@ -27,7 +27,7 @@ class FundRatioPolicy < FundBasePolicy
   end
 
   def update?
-    FundPolicy.new(user, record.fund).create?
+    FundPolicy.new(user, record.fund).create? && record.import_upload_id.present?
   end
 
   def edit?
