@@ -1,5 +1,5 @@
 <div class="nested-fields">
-  <%= form_with(method: :get, url: @data_source,  data: { controller: "search", turbo_frame: @turbo_frame }, class: "search-form d-flex justify-content-between align-items-center") do |form| %>
+  <%= form_with(model: @model, method: :get, url: @data_source,  data: { controller: "search", turbo_frame: @turbo_frame }, class: "search-form d-flex justify-content-between align-items-center") do |form| %>
     <div class="d-flex align-items-center search-form-per-page" >
       <% current_per_page = params.dig("per_page").presence || 10 %>
       <%= form.number_field "per_page", { id: "per_page_input", class: "form-control", data: { target: "search.perPageInput", toggle: "tooltip", title: "Items per page" }, value: current_per_page } %>

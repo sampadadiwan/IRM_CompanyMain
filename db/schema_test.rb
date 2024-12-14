@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_12_09_034516) do
+ActiveRecord::Schema[7.2].define(version: 2024_12_14_051247) do
     create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -2228,6 +2228,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_09_034516) do
       t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
       t.index ["pan"], name: "index_investors_on_pan"
       t.index ["slug"], name: "index_investors_on_slug", unique: true
+      t.index ["tag_list"], name: "index_investors_on_tag_list"
     end
   
     create_table "kanban_boards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

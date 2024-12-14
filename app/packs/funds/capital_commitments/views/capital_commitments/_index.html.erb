@@ -13,8 +13,7 @@
 
 <%capital_commitments_frame = "capital_commitments_frame"%>
 
-<%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:,
-                            import_upload_id:), turbo_frame: capital_commitments_frame) %>
+<%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
 
 <div class="table-responsive">
     <table id="capital_commitments" class="table table-bordered dataTable action_table hover">

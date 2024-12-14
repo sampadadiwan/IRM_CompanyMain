@@ -3,7 +3,9 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # ruby "3.1.2"
 gem 'docusign_esign', '~> 4.0.0.rc1'
-gem 'faraday', '~> 1.10.3'
+gem 'faraday'
+gem 'faraday-typhoeus'
+
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'pdf-reader'
@@ -25,7 +27,7 @@ gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "< 6.0"
+gem "puma"
 # gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
 gem 'sablon'
@@ -96,8 +98,8 @@ gem 'ajax-datatables-rails'
 gem 'draper'
 
 # This is the S3 upload gem
-gem 'shrine', '~> 3.3'
-gem 'uppy-s3_multipart', '~> 1.1'
+gem 'shrine'
+gem 'uppy-s3_multipart'
 
 # Nested for fields
 gem 'cocoon'
@@ -139,10 +141,10 @@ gem 'rubyzip'
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 
 # Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", "1.15.0", require: false
+gem "bootsnap", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing"
 # gem 'rmagick'
 gem "combine_pdf"
 
