@@ -1,0 +1,71 @@
+<%= render FormCard.new(title: "#{@ticker_feed}") do %>
+<table class="table table-bordered dataTable">
+
+          <tr>
+        <td>
+          Ticker
+        </td>
+        <td>
+          <%= @ticker_feed.ticker %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Price Cents
+        </td>
+        <td>
+          <%= money_to_currency @ticker_feed.price %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Name
+        </td>
+        <td>
+          <%= @ticker_feed.name %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Source
+        </td>
+        <td>
+          <%= @ticker_feed.source %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          For Date
+        </td>
+        <td>
+          <%= l @ticker_feed.for_date %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          For Time
+        </td>
+        <td>
+          <%= l @ticker_feed.for_time %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Price Type
+        </td>
+        <td>
+          <%= @ticker_feed.price_type %>
+        </td>    
+      </tr>
+    
+  
+</table>
+
+<div class="associated_entity">
+  <% if policy(@ticker_feed).update? %>
+    <%= link_to "Edit", edit_ticker_feed_path(@ticker_feed), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Delete", @ticker_feed, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+</div>
+
+<% end %>

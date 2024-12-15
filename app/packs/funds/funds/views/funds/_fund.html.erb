@@ -8,6 +8,9 @@
     <%= link_to fund.name, fund %>
   </td>
   <td>
+    <%= fund.category %>
+  </td>
+  <td>
     <% if fund.tag_list.present? %>      
       <% fund.tag_list.split(",").each do |tag| %>
         <span class="mb-1 badge rounded-pill font-medium bg-primary text-primary"><%= link_to tag, funds_path(tag:) %></span>

@@ -6,7 +6,6 @@ gem 'docusign_esign', '~> 4.0.0.rc1'
 gem 'faraday'
 gem 'faraday-typhoeus'
 
-
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'pdf-reader'
 gem "rails", "~> 7.2"

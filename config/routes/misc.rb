@@ -54,3 +54,4 @@ resources :grid_view_preferences do
 end
 
 resources :events
+resources :ticker_feeds

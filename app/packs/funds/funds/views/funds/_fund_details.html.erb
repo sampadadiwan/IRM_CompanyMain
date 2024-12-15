@@ -6,8 +6,12 @@
           data-action="click->tabdetails#loadData">Commitments</a>
 
       <% if fund.entity_id == current_user.entity_id %>
+        
+        <% unless false && fund.cat3? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">Calls</a>
+        <% end %>
+
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distributions-tab"
             data-action="click->tabdetails#loadData">Distributions</a>
 
@@ -90,12 +94,14 @@
 
         <% if fund.entity_id == current_user.entity_id %>
 
+        <% unless false && fund.cat3? %>
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">
             <%= render "/capital_calls/index", fund: fund,
                 lazy_load_data: true, data_source: capital_calls_path(fund_id: fund.id, all: true) %>
           </div>
         </div>
+        <% end %>
 
         <div id="capital-distributions-tab" class="tab-pane fade in">
           <div id="capital-distributions" class="associated_entity">

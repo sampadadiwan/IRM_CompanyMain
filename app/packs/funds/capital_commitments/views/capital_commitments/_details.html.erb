@@ -2,8 +2,11 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
+
+    <% unless false && capital_commitment.fund.cat3? %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#remittances-tab"
           data-action="click->tabdetails#loadData">Remittances</a>
+    <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#distributions-tab"
           data-action="click->tabdetails#loadData">Distributions</a>
@@ -50,12 +53,15 @@
       </div>
     </div>
 
+
+    <% unless false && capital_commitment.fund.cat3? %>
     <div id="remittances-tab" class="tab-pane fade in">
           <div id="remittances" class="associated_entity">
             <%= render "/capital_remittances/index", capital_commitment_id: capital_commitment.id,
                 lazy_load_data: true, data_source: capital_remittances_path(capital_commitment_id: capital_commitment.id, all: true, status: "", verified: "", for_commitment: true) %>
           </div>     
     </div>
+    <% end %>
 
     <div id="distributions-tab" class="tab-pane fade in">
           <div id="distributions" class="associated_entity">

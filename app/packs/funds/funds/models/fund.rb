@@ -229,4 +229,8 @@ class Fund < ApplicationRecord
     # Delete the Distribution payments
     capital_commitment.capital_distribution_payments.destroy_all
   end
+
+  def cat3?
+    category == "Category III"
+  end
 end

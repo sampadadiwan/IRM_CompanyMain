@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :ticker_feed do
+    ticker { "MyString" }
+    price_cents { "9.99" }
+    name { "MyString" }
+    source { "MyString" }
+    for_date { "2024-12-14" }
+    for_time { "2024-12-14 12:46:12" }
+    price_type { "MyString" }
+  end
+
   factory :viewed_by do
     owner { nil }
     user { nil }

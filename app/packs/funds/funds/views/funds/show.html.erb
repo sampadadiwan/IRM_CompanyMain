@@ -44,6 +44,7 @@ commands = [
                     <li>
                       <%= link_to "Fund Numbers" , report_fund_path(@fund, report: "dashboard/chart"), {class: "dropdown-item" } %>
                     </li>
+
                     <li>
                       <%= link_to "Folio Numbers" , report_fund_path(@fund, report: "dashboard/folio_numbers"), {class: "dropdown-item" } %>
                     </li>
@@ -58,6 +59,9 @@ commands = [
 
             <div class="dropdown-divider"></div>
 
+            
+            <%= link_to "Dashboard" , dashboard_fund_path(@fund), {class: "dropdown-item" } %>
+                    
             <%= link_to "Sign In Report" , report_fund_path(@fund, report: "dashboard/sign_in_count"), {class: "dropdown-item" } %>
             <%= link_to "Onboarding Report" , report_fund_path(@fund, report: "dashboard/onboarding_report", show_docs: true), {class: "dropdown-item" } %>
 

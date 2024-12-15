@@ -53,7 +53,6 @@ class KycDocGenJob < DocGenJob
 
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
               user_id, entity_id: nil)
-
     @document_template_ids = document_template_ids
     @investor_kyc_id = investor_kyc_id
     @entity_id = entity_id

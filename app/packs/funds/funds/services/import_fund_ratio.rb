@@ -47,11 +47,7 @@ class ImportFundRatio < ImportUtil
   # For now. We want to disable investor fund ratios as this is unclear from product perspective.
   def find_owner(fund, user_data, entity)
     # Validate that if "Folio No" is present, "Portfolio Company" and "Instrument" are blank
-    if user_data["Folio No"].present?
-      if user_data["Portfolio Company"].present? || user_data["Instrument"].present?
-        raise "Invalid Owner: If 'Folio No' is present, 'Portfolio Company' and 'Instrument' must be blank."
-      end
-    end
+    raise "Invalid Owner: If 'Folio No' is present, 'Portfolio Company' and 'Instrument' must be blank." if user_data["Folio No"].present? && (user_data["Portfolio Company"].present? || user_data["Instrument"].present?)
 
     if user_data["Folio No"].present?
       fund.capital_commitments.find_by(folio_id: user_data["Folio No"]).tap do |capital_commitment|
@@ -71,7 +67,6 @@ class ImportFundRatio < ImportUtil
       fund
     end
   end
-
 
   def parse_value(value)
     value.to_d
@@ -126,9 +121,7 @@ class ImportFundRatio < ImportUtil
       end_date: attrs[:end_date]
     )
 
-    if existing_fund_ratio
-      raise "Fund Ratio already exists for the given period (end date: #{attrs[:end_date]})"
-    end
+    raise "Fund Ratio already exists for the given period (end date: #{attrs[:end_date]})" if existing_fund_ratio
 
     fund_ratio = FundRatio.new(
       fund_id: attrs[:fund].id,

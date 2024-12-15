@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_12_14_051247) do
+ActiveRecord::Schema[7.2].define(version: 2024_12_14_071612) do
     create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -3035,6 +3035,18 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_14_051247) do
       t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
       t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
       t.index ["user_id"], name: "index_tasks_on_user_id"
+    end
+    create_table "ticker_feeds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+      t.string "ticker", limit: 10
+      t.decimal "price_cents", precision: 20, scale: 2
+      t.string "name", limit: 100
+      t.string "source", limit: 10
+      t.date "for_date"
+      t.datetime "for_time"
+      t.string "price_type", limit: 3
+      t.string "currency", limit: 3
+      t.datetime "created_at", null: false
+      t.datetime "updated_at", null: false
     end
   
     create_table "user_alerts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

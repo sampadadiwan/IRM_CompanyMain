@@ -16,7 +16,6 @@
 class SecondarySaleAllocationEngine < BaseAllocationEngine
   def initialize(secondary_sale, user_id:, priority: :time,
                  matching_priority: :supply_driven)
-
     super
   end
 
