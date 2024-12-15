@@ -148,11 +148,7 @@ namespace :recovery do
     end
   end
 
-  task :stop_kuma do
-    on roles(:app) do |_host|
-      execute :docker, 'stop uptime-kuma|| true'
-    end
-  end
+  
 end
 
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
