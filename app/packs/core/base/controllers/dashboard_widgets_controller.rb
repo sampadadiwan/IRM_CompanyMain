@@ -10,6 +10,10 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets/1
   def show; end
 
+  def ops_dashboard
+    authorize DashboardWidget
+  end
+
   # GET /dashboard_widgets/new
   def new
     @dashboard_widget = DashboardWidget.new

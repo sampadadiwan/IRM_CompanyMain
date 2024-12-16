@@ -14,7 +14,7 @@
 
     <div class="form-group">
       <%= form.label :dashboard_name %>
-      <%= form.select :dashboard_name, ["Fund Dashboard"], {}, class: "form-control"  %>
+      <%= form.select :dashboard_name, ["Fund Dashboard", "Ops Dashboard"], {}, class: "form-control"  %>
     </div>
     
     <%= form.hidden_field :owner_id %>
@@ -22,7 +22,7 @@
     
     <div class="form-group">
       <%= form.label :widget_name %>
-      <%= form.select :widget_name, DashboardWidget::FUND_WIDGETS.collect(&:widget_name), {include_blank: true}, class: "form-control"  %>
+      <%= form.select :widget_name, DashboardWidget.all_widgets.collect(&:widget_name), {include_blank: true}, class: "form-control"  %>
     </div>
 
     <div class="form-group">
@@ -32,7 +32,7 @@
 
     <div class="form-group">
       <%= form.label :size %>
-      <%= form.select :size, ["Large", "Medium", "Small"], {}, class: "form-control"  %>
+      <%= form.select :size, ["XL", "Large", "Medium", "Small", "XS"], {}, class: "form-control"  %>
     </div>
 
     <div class="form-group">

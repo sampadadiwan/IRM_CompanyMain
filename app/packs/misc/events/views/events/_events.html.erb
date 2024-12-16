@@ -1,0 +1,30 @@
+<div class="table-responsive">
+  <table class="table table-bordered table-day-calendar mb-0">
+    <thead>
+      <tr class="text-center bg-light">
+        <th class="time-slot-column-day">Date</th>
+        <th>Events</th>
+      </tr>
+    </thead>
+    <tbody>
+
+    <% events.each do |event| %>
+        <tr>
+          <td class="time-slot-column-day text-center">
+            <%= l event.start_time %>
+          </td>
+          <td class="events-cell-day">
+            
+            <div class="events-list-day">
+                <div class="event-item-day">
+                  <%= link_to event_path(event), class: 'event-item', data: { turbo: false } do %>
+                    <%= event.title %> - <%= event.start_time.strftime('%I:%M %p') %>
+                  <% end %>
+                </div>            
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

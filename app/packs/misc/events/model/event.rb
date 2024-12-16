@@ -8,6 +8,8 @@ class Event < ApplicationRecord
   validates :title, presence: true
   validates :start_time, presence: true
 
+  scope :upcoming_events, -> { where('start_time > ?', Time.zone.now) }
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[owner_type]
   end

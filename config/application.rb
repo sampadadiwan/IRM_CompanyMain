@@ -15,7 +15,7 @@ module CapHive
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
-    config.autoload_paths += Rails.root.glob('app/components/**/')
+    # config.autoload_paths += Rails.root.glob('app/components/**/')
     config.autoload_paths += Rails.root.glob('app/packs/**/')
 
     # config.autoload_paths += %W[#{config.root}/app/packs/startups]

@@ -1,5 +1,5 @@
 class DashboardWidget < ApplicationRecord
-  acts_as_list scope: :owner
+  acts_as_list scope: %i[owner dashboard_name]
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
 
@@ -14,8 +14,14 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolios", path: "funds/widgets/fund_portfolios", size: "Large")
   ].freeze
 
+  OPS_WIDGETS = [
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Large"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Small")
+  ].freeze
+
   WIDGETS = {
-    "Fund Dashboard" => FUND_WIDGETS
+    "Fund Dashboard" => FUND_WIDGETS,
+    "Ops Dashboard" => OPS_WIDGETS
   }.freeze
 
   def to_s
@@ -30,11 +36,15 @@ class DashboardWidget < ApplicationRecord
 
   def widget_size
     case size
+    when "XS"
+      "col-md-3"
     when "Small"
       "col-md-4"
     when "Medium"
       "col-md-6"
     when "Large"
+      "col-md-9"
+    when "XL"
       "col-md-12"
     else
       "col"
@@ -52,5 +62,9 @@ class DashboardWidget < ApplicationRecord
       dashboard_widget.owner = owner
       dashboard_widget.save
     end
+  end
+
+  def self.all_widgets
+    WIDGETS.values.flatten
   end
 end

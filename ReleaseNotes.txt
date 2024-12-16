@@ -1,3 +1,13 @@
+V8.0.45
+#####################################
+7226b5cb6 Remove uptime kuma from deploy
+3b5ba0678 Cat3 funds basic changes (#643)
+2fa2841d1 Edit access for Ratio should only be available for the once those are bulk uploading (#642)
+ba8f317b8 Upgrade gems 2 (#641)
+5d5ab279e Import fund ratio (#617)
+1af0c4787 Fix ransack attribute for Commitment (#639)
+a0be76f1f Added release notes
+
 V8.0.44
 #####################################
 249e926ac Fetch pan card using owner tag for kyc, interest and offer (#614)
