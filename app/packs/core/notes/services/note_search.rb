@@ -1,7 +1,7 @@
 class NoteSearch
   def self.perform(notes, current_user, params)
     notes = notes.where(id: search_ids(params, current_user)) if params[:search] && params[:search][:value].present?
-    notes.distinct
+    notes
   end
 
   def self.search_ids(params, current_user)

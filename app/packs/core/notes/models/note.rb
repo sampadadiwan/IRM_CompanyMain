@@ -26,7 +26,7 @@ class Note < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[details created_at]
+    %w[details created_at on]
   end
 
   def self.ransackable_associations(_auth_object = nil)
