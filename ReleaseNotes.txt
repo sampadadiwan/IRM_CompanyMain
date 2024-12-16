@@ -1,5 +1,18 @@
 V8.0.45
 #####################################
+69fad64be Added last_interaction_date to investors show
+2f0ba8742 Added additional link if download link expires
+6485b6887 Added default sort order for notes
+619fba1fd Added better ransack to notes
+9b9916b2b Added notes to ops dashboard
+de43b973e Added No interaction widget to ops dashboard
+92f06fc3c Copy values should effect only one field group (#646)
+6e1d927ff Seperate action to setup logrotate (#644)
+e5752dd42 Investor tab default columns fix (#645)
+a13e36b59 Added ops dashboard
+
+V8.0.45
+#####################################
 7226b5cb6 Remove uptime kuma from deploy
 3b5ba0678 Cat3 funds basic changes (#643)
 2fa2841d1 Edit access for Ratio should only be available for the once those are bulk uploading (#642)

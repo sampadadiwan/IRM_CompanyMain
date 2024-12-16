@@ -3,11 +3,12 @@
   name ||= nil 
   args ||= {}
   days = args[:days] || 30
+  categories = args[:categories] 
 %>
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
     <div class="card-body">            
-        <%= turbo_frame_tag "investors_frame", target: "_top", src: "/investors?not_interacted=#{days}&title=Investors: No Interaction" do %>            
+        <%= turbo_frame_tag "investors_frame", target: "_top", src: "/investors?categories=#{categories}&not_interacted=#{days}&title=Investors: No Interaction" do %>            
         <%end%>
         <p class="mb-0"><%= name || "Investors: No Interaction" %></p>
     </div>

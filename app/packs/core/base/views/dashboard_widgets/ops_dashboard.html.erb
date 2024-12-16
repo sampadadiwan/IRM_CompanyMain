@@ -1,10 +1,9 @@
+<%= render "/investors/stats" %>
 
-<% cache_if(false && current_user != nil, cache_key(["ops_dashboard", current_user, current_user.entity])) do %>
-    <div class="row">    
-        
-        <% dashboard_widgets("Ops Dashboard").each do |name, dashboard_widget| %>
-            <%= render dashboard_widget.path, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args  %>
-        <% end %>
+<div class="row">    
+    
+    <% dashboard_widgets("Ops Dashboard").each do |name, dashboard_widget| %>
+        <%= render dashboard_widget.path, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args  %>
+    <% end %>
 
-    </div>
-<% end %>
+</div>

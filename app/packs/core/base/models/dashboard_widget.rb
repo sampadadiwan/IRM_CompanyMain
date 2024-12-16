@@ -15,11 +15,11 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   OPS_WIDGETS = [
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Large"),
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Small"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Investors No Interaction", path:
-    "dashboard_widgets/widgets/investors_no_interaction", size: "Large"),
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Notes", path: "dashboard_widgets/widgets/notes", size: "XS")
+    "dashboard_widgets/widgets/investors_no_interaction", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Notes", path: "dashboard_widgets/widgets/notes", size: "Medium")
   ].freeze
 
   WIDGETS = {
