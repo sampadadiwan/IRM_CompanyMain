@@ -12,7 +12,7 @@ class RansackTableHeader < ViewComponent::Base
     @css_class = css_class
     @turbo_frame = turbo_frame
     @report_id = report_id
-    @columns = fetch_columns(@entity, @default_columns_map)
+    @columns = fetch_columns(@entity, default_columns_map)
     @referrer = referrer
   end
 
