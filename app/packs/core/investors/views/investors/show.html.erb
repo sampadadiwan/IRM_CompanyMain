@@ -84,6 +84,7 @@
 
     <%= display_custom_fields(@investor) if current_user %>
 
+    <% if @investor.last_interaction_date.present? %>
     <tr>
       <td>
         Last Interaction
@@ -92,6 +93,7 @@
         <%= l @investor.last_interaction_date %>
       </td>
     </tr>
+    <% end %>
 
   </table>
 
