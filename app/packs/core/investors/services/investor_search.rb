@@ -1,7 +1,8 @@
 class InvestorSearch
   def self.search(investors, params, current_user)
-    investors = investors.where(category: params[:category]) if params[:category]
-    investors = investors.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id]
+    investors = investors.where(category: params[:category]) if params[:category].present?
+    investors = investors.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    investors = investors.not_interacted(params[:not_interacted].to_i) if params[:not_interacted].present?
 
     if params[:owner_id].present? && params[:owner_type].present?
       owner = params[:owner_type].constantize.find(params[:owner_id])

@@ -1,0 +1,15 @@
+<% 
+  widget_size ||= "col-md-6" 
+  name ||= nil 
+  args ||= {}
+  days = args[:days] || 30
+%>
+<div class="<%= widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">            
+        <%= turbo_frame_tag "investors_frame", target: "_top", src: "/investors?not_interacted=#{days}" do %>            
+        <%end%>
+        <p class="mb-0"><%= name || "Investors: No Interaction" %></p>
+    </div>
+  </div>
+</div>
