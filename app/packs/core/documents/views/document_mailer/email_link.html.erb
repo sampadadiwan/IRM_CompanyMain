@@ -4,8 +4,13 @@ Dear User
     <%= render "/custom_notifications/mail" %>
 <% else %>
     <p>
-        The zipfile of the documents you requested is available at the link below. Note this link will expire in 1 day
+        The zipfile of the documents you requested is available at the link below. Note this link will expire in 7 days.
     </p>
 <% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'Download Zip', @link %></p>
+
+<p>
+    If the link has expired, please use this <%= link_to 'Download Link', document_url(@document, subdomain: @document.entity.sub_domain) %>    
+</p>
+
