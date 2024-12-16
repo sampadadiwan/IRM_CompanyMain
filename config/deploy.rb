@@ -154,6 +154,21 @@ end
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
 # E.x bundle exec cap staging IRM:setup
 namespace :IRM do
+  def configure_logrotate
+    logrotate_config_path = "/home/ubuntu/IRM/shared/log/logrotate.conf"
+    upload! StringIO.new(File.read('./config/deploy/logrotate.conf')), logrotate_config_path
+    execute :sudo, "mkdir -p /home/ubuntu/IRM/shared/log"
+    execute :sudo, 'chown root:root /home/ubuntu/IRM/shared/log/logrotate.conf'
+    execute :sudo, 'chmod 644 /home/ubuntu/IRM/shared/log/logrotate.conf'
+  end
+
+  desc 'Setup logrotate configuration'
+  task :setup_logrotate do
+    on roles(:app) do
+      configure_logrotate
+    end
+  end
+
   desc 'Set environment variable on remote host based on a local file'
   task :set_rails_master_key do
     on roles(:app) do
@@ -186,19 +201,8 @@ namespace :IRM do
   desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
-      # Upload logrotate configuration
-      logrotate_config_path = "/home/ubuntu/IRM/shared/log/logrotate.conf"
-
-      # Upload the logrotate configuration from the local machine to the server
-      upload! StringIO.new(File.read('./config/deploy/logrotate.conf')), logrotate_config_path
-
-      # Ensure the parent directory exists
-      execute :sudo, "mkdir -p /home/ubuntu/IRM/shared/log"
-
-      # Set the correct ownership and permissions for the logrotate config file
-      execute :sudo, 'chown root:root /home/ubuntu/IRM/shared/log/logrotate.conf'
-      execute :sudo, 'chmod 644 /home/ubuntu/IRM/shared/log/logrotate.conf'
-      
+      configure_logrotate
+    
       # Define the paths
       monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
