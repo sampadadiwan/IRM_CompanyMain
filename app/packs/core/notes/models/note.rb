@@ -24,4 +24,12 @@ class Note < ApplicationRecord
     investor.last_interaction_date = created_at
     investor.save
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[details created_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor user]
+  end
 end
