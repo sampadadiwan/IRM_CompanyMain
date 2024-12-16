@@ -6,18 +6,8 @@
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
     <div class="card-body">
-    
-      <%= turbo_frame_tag "tasks_frame", target: "_top" do %>
-        <% 
-          if current_user.has_cached_role?(:company_admin)
-            tasks = Task.incomplete.where(entity_id: current_user.entity_id).includes(:user, :for_entity)
-          else
-            tasks = Task.incomplete.where(assigned_to_id: current_user.id).includes(:user, :for_entity)
-          end
-          tasks = tasks.page(params[:page]) 
-        %>
-        <%= render "tasks/index", for_entity: current_user.entity, tasks:  %>
-        <%= paginate tasks, data: {turbo_frame: "tasks_frame"} %>
+      <% src = current_user.has_cached_role?(:company_admin) ? "/tasks" : "/tasks?assigned_to_id=#{current_user.id}" %>
+      <%= turbo_frame_tag "tasks_frame", target: "_top", src: do %>
       <% end %>
 
       <p class="mb-0"><%= name || "My Tasks" %></p>
