@@ -7,8 +7,8 @@ export default class extends Controller {
     this.call_basis_changed();
   }
 
-  copy_all(e) {
-    e.preventDefault();
+  copy_all(event) {
+    event.preventDefault();
 
     function copyFieldValues(fieldClass) {
       let firstValue = $(`.${fieldClass}`)[0].value;
@@ -19,16 +19,19 @@ export default class extends Controller {
       });
     }
 
-    if ($(".price").length > 0) {
-      copyFieldValues('price');
-    }
-
     if ($(".premium").length > 0) {
       copyFieldValues('premium');
     }
+    if (event.target.closest(".field-group").id == "price-container") {
+      if ($(".price").length > 0) {
+        copyFieldValues('price');
+      }
+    }
 
-    if ($(".percentage").length > 0) {
-      copyFieldValues('percentage');
+    if (event.target.closest(".field-group").id == "close-percentages-container") {
+      if ($(".percentage").length > 0) {
+        copyFieldValues('percentage');
+      }
     }
   }
 

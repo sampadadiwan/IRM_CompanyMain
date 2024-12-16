@@ -43,7 +43,7 @@
                         class: "form-control select2 select2-multiple", multiple: "multiple" %>
       </div>
 
-      <div id="close-percentages-container">
+      <div id="close-percentages-container" class="field-group">
         <% capital_call.fund.capital_commitments.pluck(:fund_close).uniq.each_with_index do |fund_close, index| %>
           <% close_name = fund_close %>
           <% percentage_value = capital_call.close_percentages&.dig(close_name) || 0 %>
@@ -89,7 +89,7 @@
       </div>
 
       <% if capital_call.fund.unit_types.present? %>
-        <div>
+        <div id="price-container" class="field-group" >
           <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
             <% 
               unit_type = unit_type.strip 
