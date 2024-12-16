@@ -1,63 +1,51 @@
-
-
-<table class="table table-bordered dataTable ">
-
-      <tr>
-        <td>
-          Stakeholder
-        </td>
-        <td>
-          <%= link_to @note.investor %>
-        </td>    
-      </tr>
-    
-       <tr>
-        <td>
-          Details
-        </td>
-        <td>
-          <%= @note.details %>
-          On: <%= l @note.on if @note.on%>
-        </td>    
-      </tr>
-
-      <% if @note.reminder %>
-
+<%= render ToggleCard.new(title: "Note: #{@note.investor.investor_name}", css_class: "show_note") do %>
+  <table class="table table-bordered dataTable ">
+    <tr>
+      <td>
+        Stakeholder
+      </td>
+      <td>
+        <%= link_to @note.investor %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @note.details %>
+        On: <%= l @note.on if @note.on%>
+      </td>
+    </tr>
+    <% if @note.reminder %>
       <tr>
         <td>
           Reminder Emails
         </td>
         <td>
           <%= @note.reminder.email %>
-        </td>    
+        </td>
       </tr>
-
-
       <tr>
         <td>
           Reminder Date
         </td>
         <td>
           <%= l @note.reminder.due_date %>
-        </td>    
+        </td>
       </tr>
-
-
       <tr>
         <td>
           Reminder Sent
         </td>
         <td>
           <%= display_boolean @note.reminder.sent %>
-        </td>    
+        </td>
       </tr>
-
-      <% end %>
-  
-</table>
-
-
+    <% end %>
+  </table>
+<% end %>
 <div>
-  <%= link_to "Edit", edit_note_path(@note), {class: "btn btn-outline-primary"} if policy(@note).update? %> 
+  <%= link_to "Edit", edit_note_path(@note), {class: "btn btn-outline-primary"} if policy(@note).update? %>
   <%= button_to "Delete", @note, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} %>
 </div>

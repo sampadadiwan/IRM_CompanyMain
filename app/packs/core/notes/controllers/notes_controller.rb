@@ -4,6 +4,10 @@ class NotesController < ApplicationController
   # GET /notes or /notes.json
   def index
     @q = Note.ransack(params[:q])
+    if params[:q].nil? || params[:q][:s].blank?
+      @q.sorts = 'on desc' # Set your default sort column and direction
+    end
+    
     @notes = policy_scope(@q.result)
 
     if params[:investor_id]
