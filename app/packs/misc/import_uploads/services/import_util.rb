@@ -87,7 +87,7 @@ class ImportUtil < Trailblazer::Operation
   # get header row without the mandatory *
   def get_headers(headers)
     # The headers are transformed by strip, squeeze and titleize and then stripped of *
-    ret_headers = headers.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
   end
@@ -113,7 +113,7 @@ class ImportUtil < Trailblazer::Operation
           end
 
           # This sanitizes each row by stripping and squeezing spaces
-          sanitized_row = row.map { |x| x&.to_s&.strip&.squeeze(" ") }
+          sanitized_row = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
           # Ensure the Audit trail is created as the user who uploaded the file
           Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)

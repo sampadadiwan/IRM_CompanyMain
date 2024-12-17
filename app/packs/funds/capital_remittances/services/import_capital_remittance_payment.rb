@@ -95,8 +95,10 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     # Find the capital_commitment from either the folio_id or virtual_bank_account
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first if folio_id
+    raise "Investor commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
+
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first if virtual_bank_account
-    raise "Investor commitment not found" unless capital_commitment
+    raise "Investor commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
     raise "Capital Remittance not found" unless capital_remittance

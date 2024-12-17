@@ -41,7 +41,7 @@ Scenario Outline: Import capital commitments - Large set
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
-  
+
 @import
 Scenario Outline: Import capital calls
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
@@ -49,7 +49,7 @@ Scenario Outline: Import capital calls
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B, Series C, Series C1" for the entity
   And Given I upload an investors file for the fund
   # And Given I upload an investors file large for the fund
-  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund  
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   # And Given I upload "capital_commitments_multi_currency_large.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
   Then I should see the "Import in progress"
@@ -92,9 +92,9 @@ Scenario Outline: Import capital remittance
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a fund "<fund>" for the entity
-  And Given I upload an investors file for the fund  
+  And Given I upload an investors file for the fund
   Given the fund has capital call template
-  Given the investors are added to the fund  
+  Given the investors are added to the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   When I create a new capital call "<call>"
   Then I should see the capital call details
@@ -116,7 +116,7 @@ Scenario Outline: Import capital remittance
   Given I filter the "capital_remittances" by "verified=false"
   And I trigger the bulk action for "Toggle Verify"
   # Then I should see the "Verify completed"
-  And the remittances have verified set to "true"  
+  And the remittances have verified set to "true"
   And the remittance rollups should be correct
 
   Examples:
@@ -150,16 +150,52 @@ Scenario Outline: Import capital distributions payments
   And Given I upload "capital_distribution_payments.xlsx" file for the Distribution Payments of the fund
   Then There should be "6" distribution payments created
   And the capital distribution payments must have the data in the sheet "capital_distribution_payments.xlsx"
-  
 
+@import
+Scenario Outline: Import commitment and distribution fund documents
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And The commitments have investor kycs linked
+  And Given I upload "capital_distributions_no_payments_1.xlsx" file for "Distributions" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "3" capital distributions created
+  And Given I upload "capital_distribution_payments.xlsx" file for the Distribution Payments of the fund
+  Then There should be "6" distribution payments created
+  And the capital distribution payments must have the data in the sheet "capital_distribution_payments.xlsx"
+  Given I upload fund documents "commitment_and_distribution_fund_docs.zip"
+  Then I should see the "Import in progress"
+  Then The proper documents must be uploaded for the commitments and distributions
+  Then I should see the commitment and distribuition docs upload errors
 
+@import
+Scenario Outline: Import capital remittance payments
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency_1.xlsx" file for "Commitments" of the fund
+  And Given I upload "capital_calls_no_remittances_1.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "4" capital calls created
+  And Given I upload "capital_remittance_payments_multi_currency_errors.xlsx" file for the remittances of the capital call with errors
+  Then There should be "6" remittance payments created
+  And I should see the remittance payments upload errors
 
-
-
-
-
-
-
-
-
-
+@import
+Scenario Outline: Import capital remittance fund documents
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency_1.xlsx" file for "Commitments" of the fund
+  And The commitments have investor kycs linked
+  And Given I upload "capital_calls_no_remittances_1.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "4" capital calls created
+  Given I upload fund documents "remittance_fund_docs.zip"
+  Then I should see the "Import in progress"
+  Then The proper documents must be uploaded for the remittances
+  And I should see the remittance docs upload errors

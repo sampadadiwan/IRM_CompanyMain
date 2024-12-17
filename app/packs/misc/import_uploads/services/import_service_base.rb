@@ -1,7 +1,10 @@
 class ImportServiceBase < Trailblazer::Operation
   def read_file(ctx, import_file:, import_upload:, **)
     data = Roo::Spreadsheet.open(import_file.path).sheet(0) # open spreadsheet
-    headers = get_headers(data.row(1)) # data.row(1).each{|x| x.gsub!("*", "")}.each{|x| x.strip!}
+    first_row = data.row(1)
+    raise("The first sheet is blank or the first row is empty.") if first_row.compact.empty? # `compact` removes nils, so empty array means no data
+
+    headers = get_headers(first_row) # data.row(1).each{|x| x.gsub!("*", "")}.each{|x| x.strip!}
     Rails.logger.debug { "## headers = #{headers}" }
     import_upload.status = nil
     import_upload.error_text = nil
@@ -33,7 +36,7 @@ class ImportServiceBase < Trailblazer::Operation
   # get header row without the mandatory *
   def get_headers(headers)
     # The headers are transformed by strip, squeeze and titleize and then stripped of *
-    ret_headers = headers.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    ret_headers = headers.compact.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
     Rails.logger.debug { "ret_headers = #{ret_headers}" }
     ret_headers
   end

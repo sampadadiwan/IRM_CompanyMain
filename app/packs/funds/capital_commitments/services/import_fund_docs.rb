@@ -1,7 +1,7 @@
 class ImportFundDocs < ImportUtil
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Fund", "Investor", "Folio No", "Document Type", "Document Name", "File Name",
+  STANDARD_HEADERS = ["Fund", "Investing Entity", "Folio No", "Document Type", "Document Name", "File Name",
                       "Tags", "Send Email", "Folder", "Call / Distribution Name"].freeze
   attr_accessor :commitments
 
@@ -12,6 +12,7 @@ class ImportFundDocs < ImportUtil
   def initialize(**)
     super
     @commitments = []
+    @docs_added = []
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, context)
@@ -39,17 +40,20 @@ class ImportFundDocs < ImportUtil
   def save_fund_doc(user_data, import_upload, _custom_field_headers, context)
     Rails.logger.debug { "Processing fund doc #{user_data}" }
 
-    # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
-    raise "Fund #{user_data['Fund']} not found" unless fund
+    if @docs_added.include?(user_data['File Name'])
+      raise "#{user_data['File Name']} cannot be uploaded again"
+    else
+      @docs_added << user_data['File Name']
+    end
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
+    # Get the Model
+    model = fetch_required_fields(user_data, import_upload)
+
     folio_id = user_data["Folio No"].presence
     send_email = user_data["Send Email"] == "Yes"
     file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
 
-    model = find_model(user_data, fund, investor)
-    if fund && investor && model
+    if model
       # Create the doc and attach it to the commitment
       if Document.exists?(owner: model, entity_id: model.entity_id,
                           name: user_data["Document Name"])
@@ -72,20 +76,16 @@ class ImportFundDocs < ImportUtil
       end
     elsif model.nil?
       [false, "#{user_data['Document Type']} not found for #{folio_id}"]
-    elsif investor.nil?
-      [false, "Investor not found"]
-    else
-      [false, "Fund not found"]
     end
   end
 
-  def find_model(user_data, fund, investor)
+  def find_model(user_data, fund, kyc)
     folio_id = user_data["Folio No"].presence
 
     case user_data["Document Type"]
     when "Commitment"
-      cc = CapitalCommitment.where(fund_id: fund.id, folio_id:, investor_id: investor.id).last
-      raise "Capital Commitment not found for #{folio_id} and #{investor}" unless cc
+      cc = CapitalCommitment.where(fund_id: fund.id, folio_id:, investor_kyc_id: kyc.id).last
+      raise "Capital Commitment not found for #{fund.name}, #{folio_id} and #{kyc.full_name}" unless cc
 
       return cc
     when "Remittance"
@@ -95,8 +95,9 @@ class ImportFundDocs < ImportUtil
       call = CapitalCall.where(fund_id: fund.id, name: call_name).last
       raise "Capital Call not found for #{call_name}" unless call
 
-      capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id, investor_id: investor.id).last
-      raise "Capital Remittance not found for #{call_name}, #{folio_id} and #{investor}" unless capital_remittance
+      capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id, investor_id: kyc.investor_id).last
+
+      raise "Capital Remittance not found for #{fund.name}, #{call_name}, #{folio_id} and #{kyc.full_name}" unless capital_remittance && capital_remittance.investor_kyc.id == kyc.id
 
       return capital_remittance
     when "Distribution"
@@ -104,15 +105,29 @@ class ImportFundDocs < ImportUtil
       raise "Distribution Name not found" unless distribution_name
 
       distribution = CapitalDistribution.where(fund_id: fund.id, title: distribution_name).last
-      raise "Capital Distribution not found for #{distribution_name}" unless distribution
+      raise "Capital Distribution not found for #{fund.name}, #{distribution_name}" unless distribution
 
-      cdp = CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id, investor_id: investor.id).last
-      raise "Capital Distribution Payment not found for #{distribution_name}, #{folio_id} and #{investor}" unless cdp
+      cdp = CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id, investor_id: kyc.investor_id).last
+      raise "Capital Distribution Payment not found for #{fund.name}, #{distribution_name}, #{folio_id} and #{kyc.full_name}" unless cdp && cdp.investor_kyc.id == kyc.id
 
       return cdp
     end
 
     nil
+  end
+
+  def fetch_required_fields(user_data, import_upload)
+    raise "Fund is blank" if user_data["Fund"].blank?
+    raise "Investing Entity is blank" if user_data["Investing Entity"].blank?
+    raise "Folio No is blank" if user_data["Folio No"].blank?
+
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
+    raise "Fund #{user_data['Fund']} not found" unless fund
+
+    kyc = import_upload.entity.investor_kycs.where(full_name: user_data["Investing Entity"]).first
+    raise "Investing Entity #{user_data['Investing Entity']} not found" unless kyc
+
+    find_model(user_data, fund, kyc)
   end
 
   def post_process(_ctx, unzip_dir:, **)

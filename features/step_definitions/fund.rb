@@ -1237,7 +1237,9 @@ Then('the user goes to the fund e-signature report') do
   ESignature.create!(user: @user, entity: @fund.entity, document: @template_dup, status: "failed")
   visit(fund_path(@fund))
   click_on("Reports")
+  sleep(0.5)
   find("#basic_reports").hover
+  sleep(0.5)
   click_on("eSignatures Report")
   #sleep((2)
 end
@@ -1255,9 +1257,9 @@ Then('when the capital commitment docs are generated') do
     find("#commitment_actions").click
     click_on("Generate All Documents")
     #sleep((1)
-    click_on("Proceed")    
+    click_on("Proceed")
     expect(page).to have_content("Documentation generation started")
-    sleep(5)
+    sleep(1)
     expect(page).to have_content("generated successfully")
   end
 end
@@ -1278,7 +1280,7 @@ Then('when the capital call docs are generated') do
     # sleep(1)
     # expect(page).to have_content("Documentation generation started")
     # sleep(20)
-    expect(page).to have_content("generated successfully")    
+    expect(page).to have_content("generated successfully")
   end
 end
 
@@ -1465,7 +1467,7 @@ Then('I should see that the duplicate account entries are not uploaded') do
   data.each_with_index do |row, idx|
     next if idx < 21 # skip rows
     # column after headers should have error "Duplicate, already present"
-    row[headers.length - 2].include?("Duplicate, already present").should == true
+    row[headers.length].include?("Duplicate, already present").should == true
   end
 end
 
@@ -2002,5 +2004,192 @@ Given('there are payments for each remittance') do
     unless cr.capital_remittance_payments.exists?
       cr.capital_remittance_payments.create!(fund_id: cr.fund_id, entity_id: cr.entity_id, folio_amount_cents: cr.folio_call_amount_cents, payment_date: cr.remittance_date)
     end
+  end
+end
+
+
+Given('I upload fund documents {string}') do |zip|
+  @import_file = zip
+  visit(fund_path(@fund))
+  click_on("Import")
+  #sleep((2)
+  click_on("Import Documents")
+  #sleep((2)
+  fill_in('import_upload_name', with: "Commitments and Distribution Docs Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  #sleep((2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  #sleep((4)
+end
+
+Then('The proper documents must be uploaded for the commitments and distributions') do
+  expect(ImportUpload.last.failed_row_count).to eq(10)
+  doc1 = Document.where(name: "Tax Statement").first
+  expect(doc1.owner).to eq(CapitalCommitment.where(fund: @fund, folio_id: "6").first)
+  doc2 = Document.where(name: "Distribution letter").first
+  cd = CapitalDistribution.where(fund: @fund, title: "Distribution 1").first
+  expect(doc2.owner).to eq(CapitalDistributionPayment.where(fund: @fund, capital_distribution_id: cd.id).first)
+end
+
+Then('I should see the commitment and distribuition docs upload errors') do
+  import_upload = ImportUpload.last
+  tempfile = import_upload.import_results.download
+  file = File.open(tempfile.path, "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    p row[headers.length]
+    next if idx.zero? # skip header row
+    if idx == 1 or idx == 2
+      row[headers.length].include?("Success").should == true
+    end
+    if idx == 3
+      row[headers.length].include?("Fund Absent Fund not found").should == true
+    end
+    if idx == 4
+      row[headers.length].include?("Investing Entity Investor 99 not found").should == true
+    end
+    if idx == 5
+      row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
+    end
+    if idx == 6
+      row[headers.length].include?("Distribution Name not found").should == true
+    end
+    if idx == 7
+      row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true
+    end
+    if idx == 8
+      row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
+    end
+    if idx == 9
+      row[headers.length].include?("Fund is blank").should == true
+    end
+    if idx == 10
+      row[headers.length].include?("Investing Entity is blank").should == true
+    end
+    if idx == 11
+      row[headers.length].include?("Folio No is blank").should == true
+    end
+    if idx == 12
+      row[headers.length].include?("file1.pdf cannot be uploaded again").should == true
+    end
+  end
+end
+
+Then('Given I upload {string} file for the remittances of the capital call with errors') do |file|
+  @import_file = file
+  visit(capital_call_path(@fund.capital_calls.first))
+  click_on("Remittances")
+  #sleep((2)
+  click_on("Upload / Download")
+  click_on("Upload Payments")
+  #sleep((2)
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  #sleep((2)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  #sleep((2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  #sleep((4)
+  ImportUpload.last.failed_row_count.should_not == 0
+end
+
+Then('I should see the remittance payments upload errors') do
+  import_upload = ImportUpload.last
+  tempfile = import_upload.import_results.download
+  file = File.open(tempfile.path, "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+    if idx < 7
+      row[headers.length].include?("Success").should == true
+    end
+    if idx == 7
+      row[headers.length].include?("Fund not found").should == true
+    end
+    if idx == 8
+      row[headers.length].include?("Capital Call not found").should == true
+    end
+    if idx == 9
+      row[headers.length].include?("Investor not found").should == true
+    end
+    if idx == 10
+      row[headers.length].include?("Folio No or Virtual Bank Account must be specified").should == true
+    end
+    if idx == 11
+      row[headers.length].include?("Investor commitment not found for folio C999").should == true
+    end
+    if idx == 12
+      row[headers.length].include?("Investor commitment not found for virtual bank account 99998888").should == true
+    end
+    if idx == 13
+      row[headers.length].include?("Capital Remittance not found").should == true
+    end
+  end
+end
+
+Then('The proper documents must be uploaded for the remittances') do
+  expect(ImportUpload.last.failed_row_count).to eq(7)
+  doc1 = Document.where(name: "Remittance doc 1").first
+  cc = CapitalCall.find_by(fund: @fund, name: "Capital Call 4")
+  investor = Investor.find_by(investor_name: "Investor 1", entity: @fund.entity)
+  expect(doc1.owner).to eq(CapitalRemittance.where(fund: @fund, folio_id: "6", investor_id: investor.id, capital_call_id: cc.id).first)
+  doc2 = Document.where(name: "Remittance doc 2").first
+  cc = CapitalCall.find_by(fund: @fund, name: "Capital Call 8")
+  investor = Investor.find_by(investor_name: "Investor 2", entity: @fund.entity)
+  expect(doc2.owner).to eq(CapitalRemittance.where(fund: @fund, folio_id: "7", investor_id: investor.id, capital_call_id: cc.id).first)
+end
+
+Then('I should see the remittance docs upload errors') do
+  import_upload = ImportUpload.last
+  tempfile = import_upload.import_results.download
+  file = File.open(tempfile.path, "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    p row[headers.length]
+    next if idx.zero? # skip header row
+    if idx == 1 or idx == 2
+      row[headers.length].include?("Success").should == true
+    end
+    if idx == 3
+      row[headers.length].include?("Call Name not found").should == true
+    end
+    if idx == 4
+      row[headers.length].include?("Capital Call not found for Some capital call").should == true
+    end
+    if idx == 5
+      row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
+    end
+    if idx == 6
+      row[headers.length].include?("Fund is blank").should == true
+    end
+    if idx == 7
+      row[headers.length].include?("Investing Entity is blank").should == true
+    end
+    if idx == 8
+      row[headers.length].include?("Folio No is blank").should == true
+    end
+    if idx == 9
+      row[headers.length].include?("file1.pdf cannot be uploaded again").should == true
+    end
+  end
+end
+
+And('The commitments have investor kycs linked') do
+  @fund.capital_commitments.each do |cc|
+    p "Linking kyc for Commitment #{cc.id}"
+    investor = cc.investor
+    kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, full_name: investor.investor_name)
+    kyc.save(validate: false)
+    cc.investor_kyc_id = kyc.id
+    cc.save!
   end
 end
