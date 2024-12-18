@@ -194,3 +194,24 @@ Scenario Outline: Create investor kyc
   Then I select one and see the edit page and save
 
 
+Scenario: Investor Entity Update
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I have Boards Permissions
+  When I create a new deal "<deal>"
+  Then I should see the "<msg>"
+  And an deal should be created
+  Given I click on the Add Item and create a new Stakeholder "investor_name=Good Investor;primary_email=goodinv@email.com" and save
+  Given I click on the Add Item and select "<investor1>" Investor and save
+  Given I give deal access to "<investor1>"
+  Given Investor "Good Investor" has a user with email "good1@email.com"
+  Given the investor has investor notice entry
+  Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
+  And I update the investors investor entity id
+  Then investor entity id should be updated in expected objects
+
+
+  Examples:
+  |user	      |entity               |deal                             |msg	| investor1 |
+  |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|Good Investor|

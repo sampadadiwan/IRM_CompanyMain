@@ -19,7 +19,7 @@ When('I create a new deal {string}') do |arg1|
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
   sleep(0.5)
-  
+
   kanban_board = KanbanBoard.first
   kanban_columns = kanban_board.kanban_columns.pluck(:name)
   sleep(3)
@@ -338,8 +338,8 @@ end
 
 When('I click on a Kanban Card') do
   sleep(1)
-  @deal_investor = DealInvestor.last  
-  find('h3', text: @deal_investor.name).click  
+  @deal_investor = DealInvestor.last
+  find('h3', text: @deal_investor.name).click
 end
 
 Then('The offcanvas opens') do
@@ -633,6 +633,7 @@ Given('I click on the Add Item and select {string} Investor and save') do |inves
   puts "\n####Creating New Deal Investor - #{investor_name}####\n"
   select_investor_name_and_save(investor_name, Faker::Company.profession)
   visit(current_url)
+  @deal_investor = DealInvestor.last
 end
 
 def select_investor_name_and_save(investor_name, tags)

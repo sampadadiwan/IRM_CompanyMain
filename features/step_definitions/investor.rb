@@ -1485,3 +1485,22 @@ Then('the esign log is present') do
   @doc = Document.where(owner_tag:"Generated").last
   expect(@doc.esign_log.present?).to(eq(true))
 end
+
+Given('the investor has investor notice entry') do
+  @investor ||= Investor.last
+  @notice = InvestorNotice.create!(entity_id: @entity.id, owner: Deal.last, start_date:Date.today, end_date: Date.today + 1.month, active: true, title: "Test 1")
+  @notice_entry = InvestorNoticeEntry.create!(investor_id: @investor.id, investor_notice_id: @notice.id,
+                                         investor_entity_id: @investor.investor_entity_id,
+                                         entity_id: @investor.entity_id, active: true)
+end
+
+Given('I update the investors investor entity id') do
+  @investor.update(investor_entity_id: Entity.last.id)
+end
+
+Then('investor entity id should be updated in expected objects') do
+  @investor.reload
+  expect(@deal_investor.reload.investor_entity_id).to(eq(@investor.investor_entity_id))
+  expect(@notice_entry.reload.investor_entity_id).to(eq(@investor.investor_entity_id))
+  expect(InvestorAccess.last.investor_entity_id).to(eq(@investor.investor_entity_id))
+end

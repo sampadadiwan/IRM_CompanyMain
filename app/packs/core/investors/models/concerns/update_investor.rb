@@ -141,10 +141,18 @@ module UpdateInvestor
     Investor.where(investor_entity_id:).count == 1 && !exclude_category
   end
 
-  def change_investor_entity(investor_entity)
-    update_column(:investor_entity_id, investor_entity.id)
+  def change_investor_entity
+    ActiveRecord::Base.transaction do
+      # update_column(:investor_entity_id, investor_entity.id)
+      old_entity_id = changes["investor_entity_id"]&.first
+      return unless old_entity_id
 
-    entity.investor_accesses.where(investor_entity_id: investor_entity.id).update_all(investor_entity_id: investor_entity.id)
-    InvestorNoticeEntry.where(entity_id:, investor_entity_id: investor_entity.id).update_all(investor_entity_id: investor_entity.id)
+      entity.investor_accesses.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
+      entity.deal_investors.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
+      InvestorNoticeEntry.where(entity_id:, investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
+    end
+  rescue StandardError => e
+    Rails.logger.error "Error updating investor entity: #{e.message}"
+    errors.add(:investor_entity_id, "Could not be updated - #{e.message}")
   end
 end
