@@ -3,6 +3,8 @@ class DashboardWidget < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
 
+  validates :dashboard_name, :widget_name, :size, :tags, presence: true
+
   scope :enabled, -> { where(enabled: true) }
   attr_accessor :path
 
