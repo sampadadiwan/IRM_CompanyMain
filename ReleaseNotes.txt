@@ -1,4 +1,15 @@
-V8.0.45
+V8.0.48
+#####################################
+626fe36eb Added widget validation for tags
+59e6eb862 Fixed finding dashboard widgets for entity
+5de26ba6d Investor entity update fix (#649)
+8ab8d32d8 Deal investor tabs (#650)
+0beec5ac2 Now investing entity is matched in fund docs upload, added error if f… (#602)
+8c4908544 Docs and tasks tab in offcanvas for deal investor (#647)
+7615fdfca Fixed tests with last_interaction_date
+57495b81a Now enable categories for no interaction widget
+
+V8.0.46
 #####################################
 69fad64be Added last_interaction_date to investors show
 2f0ba8742 Added additional link if download link expires

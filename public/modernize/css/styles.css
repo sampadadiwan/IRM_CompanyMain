@@ -21771,9 +21771,7 @@ body .scrumboard .card {
   margin-bottom: 15px;
   border: none;
 }
-body .scrumboard .card .card-body {
-  padding: 0;
-}
+
 body .scrumboard .card .card-body .task-body .task-bottom {
   display: flex;
   align-items: center;

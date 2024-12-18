@@ -2,7 +2,7 @@
 <%= turbo_frame_tag turbo_tag do%>
 <% offcanvas_id = "offcanvas_#{kanban_card.data_source_type}#{kanban_card.data_source_id}Column#{kanban_card.kanban_column_id}" %>
 <div id="kanban_card_<%= kanban_card.id %>" draggable="true" class="card ui-sortable-handle kanban-card" data-kanban-column-id="<%=kanban_column_id%>" data-kanban-card-id="<%= kanban_card.id %>"  data-offcanvas-id="<%=offcanvas_id%>" >
-  <div class="card-body">
+  <div class="card-body kanban_card">
     <div class="task-header">
       <div>
         <h3 class="item-head fw-semibold small-heading" data-item-title="Investor Name"><%= kanban_card.title %></h3>
