@@ -1,4 +1,4 @@
-V8.0.48
+V8.0.49
 #####################################
 626fe36eb Added widget validation for tags
 59e6eb862 Fixed finding dashboard widgets for entity

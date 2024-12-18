@@ -10,7 +10,7 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets/1
   def show; end
 
-  def ops_dashboard
+  def ir_dashboard
     authorize DashboardWidget
   end
 
