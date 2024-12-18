@@ -1,11 +1,9 @@
 
-<% cache_if(current_user != nil, cache_key(["fund_numbers_dashboard", @fund])) do %>
-    <%= render '/funds/fund_stats', fund: @fund %>
-    <div class="row">    
-        
-        <% dashboard_widgets("Fund Dashboard").each do |name, dashboard_widget| %>
-            <%= render dashboard_widget.path, fund: @fund, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args  %>
-        <% end %>
+<%= render '/funds/fund_stats', fund: @fund %>
+<div class="row">    
+    
+    <% dashboard_widgets("Fund Dashboard", current_user.entity_id).each do |name, dashboard_widget| %>
+        <%= render dashboard_widget.path, fund: @fund, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args  %>
+    <% end %>
 
-    </div>
-<% end %>
+</div>
