@@ -142,27 +142,34 @@
 <div class="d-inline-flex">
   <%= link_to "Details", deal_investor_path(deal_investor), class: "btn btn-outline-primary", target: "_blank" %>
   <%= link_to "Edit", edit_deal_investor_path(deal_investor, turbo_frame: turbo_tag), class: "btn btn-outline-secondary", data: { turbo_stream: true } if update_allowed %>
-  <%= link_to "Tasks", tasks_path(owner: deal_investor, for_entity: deal_investor.entity), class: "btn btn-outline-secondary", target: "_blank" %>
   <%= form_with(model: deal_investor, url: deal_investor_path(deal_investor), method: :delete) do |form| %>
     <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
   <% end %>
 </div>
+<div class="associated_entity" data-controller="tabs tabdetails">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" href="#docs-tab" data-action="click->tabdetails#loadData">Documents</a>
+      <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab" data-action="click->tabdetails#loadData">Tasks</a>
+    </nav>
 
-<hr>
-<h5 class="mb-0 text-gray-800  d-none d-sm-block">
-  Documents
-</h5>
-<hr>
+    <div class="tab-content">
+      <div id="docs-tab" class="tab-pane fade show active">
+        <div id="docs" class="associated_entity">
+          <%= turbo_frame_tag "documents_tree_frame",
+                              src: folder_documents_path(entity_id: deal_investor.entity_id, folder_id: deal_investor.document_folder.id),
+                              target: "_top", loading: :lazy do %>
+          <% end %>
+        </div>
+      </div>
 
-<% da_ids = deal_investor.deal_activities.pluck(:id) %>
-<% sql = "#{deal_investor.documents.includes(:folder).to_sql}
-          UNION #{Document.includes(:folder).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
-<% documents= Document.find_by_sql(sql) %>
-
-<% documents.each do |document| %>
-<div>
-    <%= link_to document.name, document_path(document.id), target: "_blank" %>
-</div>
-<% end %>
-
+      <div id="tasks-tab" class="tab-pane fade">
+        <div id="tasks" class="associated_entity">
+          <%= turbo_frame_tag "tasks_frame",
+                              src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, entity_id: deal_investor.entity_id),
+                              target: "_top", loading: :lazy do %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
 <% end %>

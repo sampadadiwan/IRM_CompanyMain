@@ -27,11 +27,11 @@
                                         owner_id: owner&.id, owner_type: owner&.class&.name), 
                                         data: { turbo_frame: 'task_list' },
                                         class: "btn btn-outline-sm btn-outline-warning " if for_entity || owner %>
-
+        
         <%= link_to "New Task" , new_task_path("task[for_entity_id]": for_entity.id, 
                                         "task[entity_id]": params[:entity_id],
-                                        "task[owner_id]": owner&.id,
-                                        "task[owner_type]": owner&.class&.name), 
+                                        "task[owner_id]": owner&.id || params[:owner_id],
+                                        "task[owner_type]": owner&.class&.name || params[:owner_type]), 
                                         data: { turbo_frame: 'new_task' },
                                         class: "btn btn-outline-sm btn-outline-primary " if for_entity || owner %>
     </h6>

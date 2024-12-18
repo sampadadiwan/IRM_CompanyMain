@@ -19,12 +19,13 @@ export default class extends Controller {
       });
     }
 
-    if ($(".premium").length > 0) {
-      copyFieldValues('premium');
-    }
     if (event.target.closest(".field-group").id == "price-container") {
       if ($(".price").length > 0) {
         copyFieldValues('price');
+      }
+
+      if ($(".premium").length > 0) {
+        copyFieldValues('premium');
       }
     }
 
