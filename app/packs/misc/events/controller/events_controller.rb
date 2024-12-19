@@ -1,5 +1,5 @@
 class EventsController < ApplicationController
-  before_action :set_owner, except: %i[show edit]
+  before_action :set_owner, except: %i[show]
   before_action :set_event, only: %i[show edit update]
 
   def index
