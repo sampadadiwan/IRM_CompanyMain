@@ -1,3 +1,13 @@
+V8.0.50
+#####################################
+bf9312c70 Fixed bug with fund dashboard
+d674d1eac Added migration for Widget names
+0b560d722 _form partial for Events (#654)
+ec8bdc37d Added notes to deal investor
+a0320d059 Investor dashboard (#652)
+7da85955b Broadcast update flag to UI only when relevant data is updated in Dat… (#651)
+986a3a984 Added menu for IR Dashboard
+
 V8.0.49
 #####################################
 626fe36eb Added widget validation for tags
