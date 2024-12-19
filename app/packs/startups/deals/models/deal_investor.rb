@@ -44,7 +44,8 @@ class DealInvestor < ApplicationRecord
     "Status" => "status",
     "Deal Lead" => "deal_lead",
     "Source" => "source",
-    "Notes" => "notes"
+    "Notes" => "notes",
+    "Tags" => "tags"
   }.freeze
 
   scope :for, ->(user) { where("investors.investor_entity_id=?", user.entity_id).joins(:investor) }

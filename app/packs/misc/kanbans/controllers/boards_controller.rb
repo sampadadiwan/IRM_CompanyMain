@@ -117,7 +117,8 @@ class BoardsController < ApplicationController
     @kanban_board = KanbanBoard.find(params[:id])
     authorize @kanban_board
     @bread_crumbs = { Boards: boards_path, "#{@kanban_board.name}": board_path(@kanban_board) }
-
+    @owner_type = "KanbanBoard"
+    @owner_id = @kanban_board.id
     if @kanban_board.owner_type != @kanban_board.class.to_s
       owner_path = polymorphic_path(@kanban_board.owner_type.to_s.pluralize.downcase)
       @bread_crumbs = { "#{@kanban_board.owner_type&.to_s&.pluralize}": owner_path, "#{@kanban_board.name}": board_path(@kanban_board) } if owner_path.present?

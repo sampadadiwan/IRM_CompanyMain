@@ -57,7 +57,9 @@ module KanbanCardManager
     else
       kanban_card = KanbanCard.create!(kanban_card_attrs)
     end
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_card.kanban_board.broadcast_data)
+    if (previous_changes.keys & self.class::CARD_VIEW_ATTRS.values).present?
+      ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_card.kanban_board.broadcast_data)
+    end
   end
 
   def destroy_kanban_card

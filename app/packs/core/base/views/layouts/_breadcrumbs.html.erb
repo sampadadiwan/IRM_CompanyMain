@@ -12,28 +12,20 @@
             <ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="/">Home</a></li>
               <% @bread_crumbs.each do |tag, link| %>
-                <li class="breadcrumb-item"><a href="<%=link%>"><%= tag %></a></li>
+                <li class="breadcrumb-item"><a href="<%= link %>"><%= tag %></a></li>
               <% end %>
             </ol>
           </nav>
         </div>
 
         <div class="col-md-2 col-sm-2">
-            <% if params[:id].present?  %>
-              <%= button_to favorites_path(favoritable_type: controller_name.classify, favoritable_id: params[:id]), "data-bs-toggle": "tooltip", title: "Add to Favorites", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :post  do %>
+            <% owner_id = @owner_id || params[:id] %>
+            <% if owner_id.present? %>
+              <%= button_to favorites_path(favoritable_type: @owner_type || controller_name.classify, favoritable_id: owner_id), "data-bs-toggle": "tooltip", title: "Add to Favorites", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :post  do %>
                 <i class="ti ti-heart"></i>
               <% end %>
-              <% 
-                if controller_name.classify == "Board" 
-                  kanban_board = KanbanBoard.find(params[:id])
-                  owner_type = kanban_board.owner_type
-                  owner_id = kanban_board.owner_id
-                else
-                  owner_type = controller_name.classify
-                  owner_id = params[:id]
-                end
-              %>
-              <%= link_to events_path(owner_type: owner_type, owner_id: owner_id), "data-bs-toggle": "tooltip", title: "Add an event", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :get  do %>
+
+              <%= link_to events_path(owner_type: @owner_type || controller_name.classify, owner_id: @owner_id || params[:id]), "data-bs-toggle": "tooltip", title: "Add an event", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :get  do %>
                 <i class="ti ti-calendar"></i>
               <% end %>
             <% end %>
