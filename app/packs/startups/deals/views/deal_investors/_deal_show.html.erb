@@ -150,6 +150,7 @@
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" href="#docs-tab" data-action="click->tabdetails#loadData">Documents</a>
       <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab" data-action="click->tabdetails#loadData">Tasks</a>
+      <a class="nav-link" data-bs-toggle="pill" href="#notes-tab" data-action="click->tabdetails#loadData">Notes</a>
     </nav>
 
     <div class="tab-content">
@@ -171,5 +172,15 @@
         </div>
       </div>
     </div>
+
+    <div id="notes-tab" class="tab-pane fade">
+        <div id="notes" class="associated_entity">
+          <%= turbo_frame_tag "notes_frame",
+                              src: notes_path(investor_id: deal_investor.investor_id, entity_id: deal_investor.entity_id), target: "_top", loading: :lazy do %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
   </div>
 <% end %>
