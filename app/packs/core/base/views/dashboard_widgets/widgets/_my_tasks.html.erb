@@ -2,12 +2,15 @@
   widget_size ||= "col-md-6" 
   name ||= nil 
   args ||= {}
+  uri_params ||= {}
+  src = current_user.has_cached_role?(:company_admin) ? "/tasks" : "/tasks?assigned_to_id=#{current_user.id}"
+  uri = URI(src)
+  uri.query = URI.encode_www_form(uri_params) if uri_params.present?
 %>
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
     <div class="card-body">
-      <% src = current_user.has_cached_role?(:company_admin) ? "/tasks" : "/tasks?assigned_to_id=#{current_user.id}" %>
-      <%= turbo_frame_tag "tasks_frame", target: "_top", src: do %>
+      <%= turbo_frame_tag "tasks_frame", target: "_top", src: uri.to_s do %>
       <% end %>
 
       <p class="mb-0"><%= name || "My Tasks" %></p>

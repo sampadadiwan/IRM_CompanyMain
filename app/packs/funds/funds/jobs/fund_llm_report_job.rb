@@ -20,6 +20,7 @@ class FundLlmReportJob < ApplicationJob
   end
 
   def kpi_reports(fund, user_id, report_template_name, start_date: nil, end_date: nil)
+    Rails.logger.debug { "Generating KPI reports for fund: #{fund.name} from #{start_date} to #{end_date}" }
     apis = fund.aggregate_portfolio_investments
     apis.each do |api|
       send_notification("Generating report for portfolio company: #{api.portfolio_company.investor_name}", user_id)
@@ -40,6 +41,7 @@ class FundLlmReportJob < ApplicationJob
   end
 
   def api_reports(fund, user_id, report_template_name, start_date: nil, end_date: nil)
+    Rails.logger.debug { "Generating API reports for fund: #{fund.name} from #{start_date} to #{end_date}" }
     apis = fund.aggregate_portfolio_investments
     apis.each do |api|
       # Get the latest folder created for this api

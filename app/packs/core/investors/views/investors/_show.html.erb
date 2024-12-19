@@ -1,0 +1,98 @@
+<%= render ToggleCard.new(title: "Stakeholder: #{@investor.investor_name}", css_class: "show_investors", state: "closed") do %>
+
+  <table class="table table-bordered dataTable ">
+
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @investor.investor_name %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Category
+      </td>
+      <td>
+        <%= @investor.category %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Primary Email
+      </td>
+      <td>
+        <%= @investor.primary_email %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        <%= Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
+      </td>
+      <td>
+        <%= @investor.pan %>
+        <% if @investor.pan&.strip != @investor.investor_entity.pan&.strip %>
+          <span class="badge bg-danger">Mismatched PAN, please contact support</span>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investee Entity
+      </td>
+      <td>
+        <%= link_to @investor.entity.name, @investor.entity %>
+      </td>
+    </tr>
+    
+    <% if params[:debug].present? %>
+      <tr>
+        <td>
+          Investor Entity
+        </td>
+        <td>
+          <%= link_to @investor.investor_entity.name, @investor.investor_entity %>
+        </td>
+      </tr>
+    <% end %>
+
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= raw @investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if @investor.tag_list %>
+      </td>
+    </tr>
+    
+    
+    <tr>
+      <td>
+        City
+      </td>
+      <td>
+        <%= @investor.city %>
+      </td>
+    </tr>
+
+    <%= display_custom_fields(@investor) if current_user %>
+
+    <% if @investor.last_interaction_date.present? %>
+    <tr>
+      <td>
+        Last Interaction
+      </td>
+      <td>
+        <%= l @investor.last_interaction_date %>
+      </td>
+    </tr>
+    <% end %>
+
+  </table>
+
+<% end %>

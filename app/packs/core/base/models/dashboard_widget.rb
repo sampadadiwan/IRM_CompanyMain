@@ -17,16 +17,25 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   OPS_WIDGETS = [
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Investors No Interaction", path:
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Investors No Interaction", path:
     "dashboard_widgets/widgets/investors_no_interaction", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Ops: Notes", path: "dashboard_widgets/widgets/notes", size: "Medium")
+    DashboardWidget.new(dashboard_name: "Ops Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium")
+  ].freeze
+
+  INVESTOR_WIDGETS = [
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "KYCs", path: "investors/widgets/kycs", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium"),
   ].freeze
 
   WIDGETS = {
     "Fund Dashboard" => FUND_WIDGETS,
-    "Ops Dashboard" => OPS_WIDGETS
+    "Ops Dashboard" => OPS_WIDGETS,
+    "Investor Dashboard" => INVESTOR_WIDGETS
   }.freeze
 
   def to_s

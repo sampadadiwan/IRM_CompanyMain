@@ -11,6 +11,10 @@ class InvestorPolicy < ApplicationPolicy
     user.entity_id == record.investor_entity_id || permissioned_employee?(:investor_read)
   end
 
+  def dashboard?
+    show?
+  end
+
   def create?(emp_perm = :investor_create)
     permissioned_employee?(emp_perm)
   end

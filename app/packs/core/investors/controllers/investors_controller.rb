@@ -1,5 +1,5 @@
 class InvestorsController < ApplicationController
-  before_action :set_investor, only: %w[show update destroy edit]
+  before_action :set_investor, only: %w[show update destroy edit dashboard]
   after_action :verify_authorized, except: [:merge]
 
   # GET /investors or /investors.json
@@ -19,6 +19,8 @@ class InvestorsController < ApplicationController
       format.json { render json: InvestorDatatable.new(params, investors: @investors) }
     end
   end
+
+  def dashboard; end
 
   def merge
     @entity = current_user.has_cached_role?(:super) ? Entity.find(params[:entity_id]) : current_user.entity

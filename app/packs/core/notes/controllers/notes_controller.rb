@@ -20,6 +20,8 @@ class NotesController < ApplicationController
     end
 
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
+    @notes = @notes.where(investor_id: params[:owner_id]) if params[:owner_id].present? && params[:owner_type] == "Investor"
+
     @notes = NoteSearch.perform(@notes, current_user, params)
     @notes = @notes.with_all_rich_text.includes(:user, :investor).page params[:page]
   end

@@ -13,13 +13,13 @@
           </tr>
         </thead>
         <tbody>
-          <% fund.aggregate_portfolio_investments.includes(:portfolio_company).each do |api| %>
+          <% @fund.aggregate_portfolio_investments.includes(:portfolio_company).each do |api| %>
             <tr>
               <td><%= api.portfolio_company.investor_name %></td>
               <td><%= money_to_currency(api.net_bought_amount, params) %></td>
               <td><%= money_to_currency(api.fmv, params) %></td>
               <td><%= money_to_currency(api.portfolio_income, {}) %></td>
-              <td><%= fund_ratios_line_chart(fund, ratio_names: ["IRR", "MOIC"], owner: api) %></td>
+              <td><%= fund_ratios_line_chart(@fund, ratio_names: ["IRR", "MOIC"], owner: api) %></td>
             </tr>
           <% end %>
         </tbody>

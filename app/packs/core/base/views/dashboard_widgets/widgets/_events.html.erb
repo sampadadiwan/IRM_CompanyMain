@@ -2,11 +2,15 @@
   widget_size ||= "col-md-6" 
   name ||= nil 
   args ||= {}
+  uri_params ||= {}
+  events = Event.where(entity_id: current_user.entity_id)
+  events = events.where(uri_params) if uri_params.present?
+  events = events.upcoming_events.limit(10)
 %>
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
     <div class="card-body">
-      <%= render "events/events", events: Event.where(entity_id: current_user.entity_id).upcoming_events.limit(10) %>
+      <%= render "events/events", events:  %>
       <p class="mb-0"><%= name || "Upcoming Events" %></p>
     </div>
   </div>

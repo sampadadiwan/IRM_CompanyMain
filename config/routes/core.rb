@@ -114,6 +114,7 @@ resources :investors do
   get 'search', on: :collection
   get 'merge', on: :collection
   post 'merge', on: :collection
+  get 'dashboard', on: :member
 end
 
 resources :investor_notice_entries
