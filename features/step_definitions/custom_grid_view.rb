@@ -33,6 +33,22 @@ When('I create a form type and custom grid view for {string}') do |form_type|
   #sleep(1)
 end
 
+When('I create a derived field {string}') do |form_type|
+  click_link('New Form Type')
+  find('select[name="form_type[name]"]').select(form_type)
+  click_on('Save')
+  sleep(0.5)
+  click_on('Configure Grids')
+
+  click_link('Add Derived Field')
+  sleep(2)
+  fill_in "Enter Grid View Key", with: "instrument_name"
+  fill_in "Label", with: "PI's Instrument"
+  select "TextField", from: "Data Type"
+  fill_in "Sequence", with: 1
+  click_button "Save"
+end
+
 When("I select each option and click Add") do
   select_box = find('select#grid_view_name_select')
   options = select_box.all('option').map(&:text)
@@ -152,3 +168,9 @@ Given('I should not find {string} column in the Report PI Grid') do |column_name
   expect(page).not_to have_selector('thead th', text: column_title)
 end
 
+When("I visit Portfolio Investment AG Grid and find the derived field") do
+  visit portfolio_investments_path(filter: true)
+  check('ag_grid')
+  find('button.search-button[aria-label="Search"]').click
+  expect(page).to have_content("PI's Instrument")
+end

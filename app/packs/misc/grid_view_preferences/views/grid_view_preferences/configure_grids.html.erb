@@ -1,10 +1,23 @@
 <h1>Configure Grid View Preferences</h1>
+
+<%= turbo_frame_tag "new_grid_view_preference" do %>
+<% end %>
+
+<!-- Add New Field Form -->
 <%= render FormCard.new(title: "Add New Field") do %>
-  <%= form_with(url: grid_view_preferences_path, method: :post, validate: true, id: "grid_view_form", data: { controller: "grid-view", grid_view_target: "form" }, local: true) do |form| %>
+  <%= form_with(model: GridViewPreference.new, url: grid_view_preferences_path, method: :post, validate: true, id: "grid_view_form", data: { controller: "grid-view", grid_view_target: "form" }, local: true) do |form| %>
 
     <div class="form-group">
       <%= form.label :key, "Select Grid View Name" %>
       <%= form.select :key, options_for_select(@field_options.to_a), { prompt: 'Select the column to add' }, class: "form-control", id: "grid_view_name_select", data: { grid_view_target: "select" } %>
+      <small class="text-muted"> 
+        <%= link_to new_grid_view_preference_path("grid_view_preference[owner_type]": @parent.class.name, 
+                                                 "grid_view_preference[owner_id]": @parent.id, 
+                                                 turbo: true), 
+                                                 data: { turbo_frame: "new_grid_view_preference" } do %>
+          <span>Add Derived Field</span>
+        <% end %>
+      </small>
     </div>
 
     <%= form.hidden_field :owner_type, value: @parent.class.name %>
@@ -17,7 +30,7 @@
     <thead>
       <tr>
         <th>Attribute</th>
-        <th>Action</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -25,6 +38,8 @@
         <tr class="column column_<%= preference.key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.key %>" data-row-id="<%= preference.id %>">
           <td><i class="fas fa-arrows-alt handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
           <td>
+            <%= link_to "Show", grid_view_preference_path(preference), {class: "btn btn-outline-success"} %>
+            <%= link_to 'Edit', edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} %>
             <%= button_to "Delete", preference, method: :delete, class: "btn btn-outline-danger",
               form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} %>
           </td>

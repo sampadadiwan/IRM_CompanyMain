@@ -2,40 +2,41 @@ import  BaseAgGrid from "controllers/base_ag_grid"
 export default class extends BaseAgGrid {
 
   columnDefs() {
-    let controller = this;
-    let html_column = this.html_column;
-    let formatNumberWithCommas = this.formatNumberWithCommas;
-    let numberFormatColumn = this.numberFormatColumn;
-    let textColumn = this.textColumn;
+    const controller = this;
+    const html_column = this.html_column;
+    const formatNumberWithCommas = this.formatNumberWithCommas;
+    const numberFormatColumn = this.numberFormatColumn;
+    const textColumn = this.textColumn;
+    const snakeToHuman = this.snakeToHuman;
 
-    let columnDefs = [
-      textColumn(controller, "portfolio_company_name", "Portfolio Company", "", true, true, true),
-      textColumn(controller, "instrument_name", "Instrument"),
-      textColumn(controller, "investment_date", "Investment Date"),
-      numberFormatColumn(controller, "amount", "Amount", formatNumberWithCommas),
-      numberFormatColumn(controller, "quantity", "Quantity", formatNumberWithCommas),
-      numberFormatColumn(controller, "cost_per_share", "Cost Per Share", formatNumberWithCommas),
-      numberFormatColumn(controller, "fmv", "FMV", formatNumberWithCommas),
-      numberFormatColumn(controller, "cost_of_sold", "FIFO Cost", formatNumberWithCommas),
-      html_column(controller, "notes", "Notes")
-    ];
+    const customColumns = JSON.parse(document.getElementsByClassName("portfolio_investment_ag_grid")[0].dataset.customColumns)
 
-    let snakeToHuman = this.snakeToHuman;
-    // Add custom fields if any
-    if (this.customFieldsValue) {
-      let customFields = this.customFieldsValue.split(",");
-      customFields.forEach(function (field) {
-        columnDefs.push(textColumn(controller, field, snakeToHuman(field)));
-      });
-    }
+    let columnDefs = [];
+    console.log(customColumns)
+    customColumns.forEach((column) => {
+      const { key, label, data_type } = column;
 
-    // Finally push the created at
+      if (data_type === "String") {
+        columnDefs.push(textColumn(controller, key, label));
+      } else if (data_type === "Number") {
+        columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
+      } else if (data_type === "Html" || data_type === "Boolean" || data_type === "Text") {
+        columnDefs.push(html_column(controller, key, label));
+      } else {
+        columnDefs.push(textColumn(controller, key, label));
+      }
+    });
+
     columnDefs.push(textColumn(controller, "created_at", "Created At"));
-    columnDefs.push({ "field": "dt_actions", cellRenderer: this.html, headerName: "Actions" });
-    
+    columnDefs.push({
+      field: "dt_actions",
+      cellRenderer: this.html,
+      headerName: "Actions",
+    });
 
     return columnDefs;
   }
+
 
 
   restoreGrouping() {

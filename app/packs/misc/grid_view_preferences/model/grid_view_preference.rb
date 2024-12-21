@@ -6,6 +6,8 @@ class GridViewPreference < ApplicationRecord
   after_save :touch_entity
   after_destroy :touch_entity
 
+  scope :not_derived, -> { where("derived_field IS NOT TRUE") }
+
   def self.get_column_name(parent, key)
     begin
       column_name = parent.name.constantize::STANDARD_COLUMNS.key(key)
@@ -15,6 +17,22 @@ class GridViewPreference < ApplicationRecord
     return column_name if column_name.present?
 
     key.gsub("custom_fields.", "").humanize
+  end
+
+  DEFAULT_DATA_TYPE = "String".freeze
+  def custom_data_type
+    if data_type.present?
+      data_type
+    elsif key.include?("custom_fields.")
+      DEFAULT_DATA_TYPE
+    else
+      column = owner.name.constantize.columns_hash[key]
+      if column.nil?
+        nil
+      else
+        column.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
+      end
+    end
   end
 
   private

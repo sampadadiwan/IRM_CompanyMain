@@ -29,6 +29,17 @@ Examples:
   |user       |entity|
   |           |entity_type=Company|
 
+Scenario Outline: Create custom AG grid view for PortfolioInvestments
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the form type page
+  And I create a derived field "PortfolioInvestment"
+  When I visit Portfolio Investment AG Grid and find the derived field
+
+Examples:
+  |user       |entity|
+  |           |entity_type=Company|
+
 Scenario Outline: Create custom grid view for PortfolioInvestments Reports
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

@@ -1,11 +1,16 @@
 class GridViewPreferencesController < ApplicationController
-  before_action :set_grid_view_preference, only: %i[destroy update_column_sequence]
+  before_action :set_grid_view_preference, only: %i[destroy update_column_sequence show edit update]
   skip_before_action :verify_authenticity_token, only: %i[update_column_sequence]
   after_action :verify_authorized, except: %i[configure_grids]
 
   def create
     parent = find_parent
-    column_name = GridViewPreference.get_column_name(parent, params[:key])
+    column_name = if grid_view_preference_params[:derived_field]
+      grid_view_preference_params[:label]
+    else
+      GridViewPreference.get_column_name(parent, grid_view_preference_params[:key])
+    end
+
     grid_view_preference = parent.grid_view_preferences.find_by(key: params[:key])
 
     if grid_view_preference
@@ -14,9 +19,12 @@ class GridViewPreferencesController < ApplicationController
       end
     else
       grid_view_preference = parent.grid_view_preferences.build(
-        key: params[:key],
+        key: grid_view_preference_params[:key],
         name: column_name,
-        entity_id: parent.entity_id
+        entity_id: parent.entity_id,
+        label: grid_view_preference_params[:label],
+        data_type: grid_view_preference_params[:data_type],
+        derived_field: grid_view_preference_params[:derived_field]
       )
 
       respond_to do |format|
@@ -30,10 +38,43 @@ class GridViewPreferencesController < ApplicationController
     authorize grid_view_preference
   end
 
+  def new
+    @grid_view_preference = GridViewPreference.new()
+    @grid_view_preference.owner_id = params[:grid_view_preference][:owner_id]
+    @grid_view_preference.owner_type = params[:grid_view_preference][:owner_type]
+    @grid_view_preference.entity_id = current_user.entity_id
+    @grid_view_preference.derived_field = true
+    authorize @grid_view_preference
+
+    @frame = params[:turbo_frame] || "new_grid_view_preference"
+    if params[:turbo]
+      render turbo_stream: [
+        turbo_stream.replace(@frame, partial: "grid_view_preferences/form", locals: { grid_view_preference: @grid_view_preference, frame: @frame })
+      ]
+    end
+  end
+
+  def show
+  end
+
+  def edit
+  end
+
+  def update
+    respond_to do |format|
+      if @grid_view_preference.update(grid_view_preference_params)
+        format.html { redirect_to @grid_view_preference, notice: "Grid View Preference was successfully updated." }
+        format.json { render json: { message: "Updated successfully" }, status: :ok }
+      else
+        format.html { render :edit, alert: "Failed to update Grid View Preference." }
+        format.json { render json: @grid_view_preference.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
   def update_column_sequence
     permitted_params = params.permit(:index, :key)
     index = permitted_params[:index].to_i
-    permitted_params[:key]
     if @grid_view_preference
       @grid_view_preference.sequence = index + 1
 
@@ -77,8 +118,9 @@ class GridViewPreferencesController < ApplicationController
   private
 
   def find_parent
-    owner_type = params[:owner_type]
-    owner_id = params[:owner_id]
+    permitted_params = params.permit(:owner_type, :owner_id)
+    owner_type = permitted_params[:owner_type] || params[:grid_view_preference][:owner_type]
+    owner_id = permitted_params[:owner_id] || params[:grid_view_preference][:owner_id]
 
     if owner_type.present? && owner_id.present?
       owner_type.constantize.find(owner_id)
@@ -90,5 +132,9 @@ class GridViewPreferencesController < ApplicationController
   def set_grid_view_preference
     @grid_view_preference = GridViewPreference.find(params[:id])
     authorize @grid_view_preference
+  end
+
+  def grid_view_preference_params
+    params.require(:grid_view_preference).permit(:name, :key, :data_type, :label, :selected, :sequence, :derived_field)
   end
 end

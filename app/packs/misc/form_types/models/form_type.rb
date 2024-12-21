@@ -96,8 +96,20 @@ class FormType < ApplicationRecord
   end
 
   def selected_columns
-    grid_view_preferences.order(:sequence)
-                         .pluck(:name, :key)
+    grid_view_preferences.not_derived.order(:sequence)
+                         .map { |preference| [preference.label.presence || preference.name, preference.key] }
                          .to_h
+  end
+
+  def ag_grids_columns
+    grid_view_preferences.order(:sequence).map do |preference|
+      custom_data_type = preference.custom_data_type
+      next if custom_data_type.nil?
+      {
+        label: preference.label.presence || preference.name,
+        key: preference.key,
+        data_type: custom_data_type.presence
+      }
+    end.compact
   end
 end

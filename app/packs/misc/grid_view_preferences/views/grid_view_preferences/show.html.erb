@@ -1,0 +1,50 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">Grid View Preference Details: <%= @grid_view_preference.owner.name %></h6>
+  </div>
+  <div class="card-body">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>Name</td>
+        <td><%= @grid_view_preference.name %></td>
+      </tr>
+
+      <tr>
+        <td>DataType</td>
+        <td>
+          <% 
+            data_type = if @grid_view_preference.data_type.present?
+                          @grid_view_preference.data_type
+                        elsif @grid_view_preference.key.include?("custom_fields.")
+                          "String"
+                        else
+                          @grid_view_preference.owner.name.constantize.columns_hash[@grid_view_preference.key]&.type.to_s.capitalize
+                        end 
+          %>
+          <%= data_type %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>Label</td>
+        <td><%= @grid_view_preference.label %></td>
+      </tr>
+
+      <tr>
+        <td>Sequence</td>
+        <td><%= @grid_view_preference.sequence %></td>
+      </tr>
+
+      <tr>
+        <td>Owner</td>
+        <td>
+          <%= link_to "#{@grid_view_preference.owner_type} - #{@grid_view_preference.owner.respond_to?(:name) ? @grid_view_preference.owner.name : @grid_view_preference.owner.class.to_s}", polymorphic_path(@grid_view_preference.owner) %>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="actions">
+  <%= link_to 'Edit', edit_grid_view_preference_path(@grid_view_preference), {class: "btn btn-outline-primary"} %>
+</div>

@@ -29,4 +29,17 @@ class ApplicationRecord < ActiveRecord::Base
     previous_changes.empty? || previous_changes.keys.map(&:to_sym).intersect?(index_class::SEARCH_FIELDS)
     # Only if they have changed we index to ES
   end
+
+  DEFAULT_DATA_TYPE = "String".freeze
+  def self.ag_grids_default_columns
+    self::STANDARD_COLUMNS.map do |label, key|
+      data_type = if key.include?("custom_fields.")
+                    DEFAULT_DATA_TYPE
+                  else
+                    columns_hash[key]&.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
+                  end
+
+      { label: label, key: key, data_type: data_type }
+    end
+  end
 end
