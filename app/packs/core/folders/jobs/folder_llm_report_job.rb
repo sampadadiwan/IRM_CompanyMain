@@ -11,7 +11,7 @@ class FolderLlmReportJob < ApplicationJob
     output_file_name.gsub(".html", "").gsub("html", "").humanize.titleize
   end
 
-  def perform(folder_id, user_id, report_type, report_template_name: "Report Template")
+  def perform(folder_id, user_id, report_type, report_template_name: "Report Template", kpis: nil, apis: nil)
     Chewy.strategy(:sidekiq) do
       folder = Folder.find(folder_id)
       # Find all the files in this folder and add it to the signed_urls
@@ -35,7 +35,12 @@ class FolderLlmReportJob < ApplicationJob
           return
         end
 
-        response = generate_report(doc_urls, template_url, output_file_name)
+        # We need to send the kpis and apis as json data to the report server
+        additional_data = {}
+        additional_data[:kpis] = JSON.parse(kpis) if kpis.present?
+        additional_data[:portfolio_investments] = JSON.parse(apis) if apis.present?
+
+        response = generate_report(doc_urls, template_url, output_file_name, additional_data:)
         if response.code == 200
           folder_path = response["folder_path"]
           # Check for the output_report.html file in the folder_path
@@ -80,7 +85,7 @@ class FolderLlmReportJob < ApplicationJob
     [doc_urls, template_url]
   end
 
-  def generate_report(doc_urls, template_url, output_file_name)
+  def generate_report(doc_urls, template_url, output_file_name, additional_data: nil)
     # This is part of the xirr_py package
     # https://github.com/ausangshukla/xirr_py
     response = HTTParty.post(
@@ -93,6 +98,7 @@ class FolderLlmReportJob < ApplicationJob
         anthropic_api_key: Rails.application.credentials["ANTHROPIC_API_KEY"],
         file_urls: doc_urls,
         template_html_url: template_url,
+        additional_data: additional_data&.to_json,
         output_file_name:
       }.to_json
     )

@@ -18,7 +18,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
-  monetize :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :unrealized_gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
 
   STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze

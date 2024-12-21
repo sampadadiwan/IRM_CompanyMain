@@ -42,6 +42,8 @@ class FundsController < ApplicationController
       FundLlmReportJob.perform_later(
         @fund.id, current_user.id, params[:report_type],
         report_template_name: params[:report_template_name],
+        include_kpis: params[:include_kpis],
+        include_apis: params[:include_apis],
         start_date: params[:start_date], end_date: params[:end_date]
       )
 

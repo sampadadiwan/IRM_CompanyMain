@@ -1,3 +1,9 @@
+V8.0.51
+#####################################
+cc4b50d7f Made ratio col optional in the card view
+884ba85d7 Added more widgets to Fund dashboard (#656)
+e2b5df860 Fixed bug in investor dashboard
+
 V8.0.50
 #####################################
 bf9312c70 Fixed bug with fund dashboard
