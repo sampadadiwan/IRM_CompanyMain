@@ -103,7 +103,7 @@ class FormType < ApplicationRecord
   def ag_grids_columns
     grid_view_preferences.order(:sequence).filter_map do |preference|
       custom_data_type = preference.custom_data_type
-      next if custom_data_type.nil?
+      # next if custom_data_type.nil?
 
       {
         label: preference.label.presence || preference.name,

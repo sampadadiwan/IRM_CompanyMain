@@ -20,7 +20,7 @@ export default class extends BaseAgGrid {
         columnDefs.push(textColumn(controller, key, label));
       } else if (data_type === "Number" || data_type === "Decimal") {
         columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
-      } else if (data_type === "Html" || data_type === "Boolean" || data_type === "Text") {
+      } else if (data_type === "Html" || data_type === "Boolean") {
         columnDefs.push(html_column(controller, key, label));
       } else {
         columnDefs.push(textColumn(controller, key, label));

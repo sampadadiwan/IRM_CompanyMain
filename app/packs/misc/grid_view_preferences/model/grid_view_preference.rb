@@ -19,6 +19,12 @@ class GridViewPreference < ApplicationRecord
     key.gsub("custom_fields.", "").humanize
   end
 
+  # Ensure we have some data type for the column
+  before_save :set_data_type, if: -> { data_type.blank? }
+  def set_data_type
+    self.data_type = custom_data_type
+  end
+
   DEFAULT_DATA_TYPE = "String".freeze
   def custom_data_type
     if data_type.present?
@@ -26,7 +32,7 @@ class GridViewPreference < ApplicationRecord
     elsif key.include?("custom_fields.")
       DEFAULT_DATA_TYPE
     else
-      column = owner.name.constantize.columns_hash[key]
+      column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash[key + "_cents"]
       if column.nil?
         nil
       else
