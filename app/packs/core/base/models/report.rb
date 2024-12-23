@@ -42,8 +42,7 @@ class Report < ApplicationRecord
 
   def selected_columns
     grid_view_preferences.order(:sequence)
-                       .map { |preference| [preference.label.presence || preference.name, preference.key] }
-                       .to_h
+                         .to_h { |preference| [preference.label.presence || preference.name, preference.key] }
   end
 
   def to_s

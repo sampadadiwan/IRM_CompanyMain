@@ -1,5 +1,4 @@
 <table class="table table-bordered dataTable ">
-
   <tr>
     <td>
       Deal
@@ -28,7 +27,6 @@
       <%= deal_investor.status %>
     </td>
   </tr>
-
   <tr>
     <td>
       Tier
@@ -37,8 +35,7 @@
       <%= deal_investor.tier %>
     </td>
   </tr>
-
-    <tr>
+  <tr>
     <td>
       Deal Lead
     </td>
@@ -46,7 +43,6 @@
       <%= deal_investor.deal_lead %>
     </td>
   </tr>
-
   <tr>
     <td>
       Source
@@ -55,7 +51,6 @@
       <%= deal_investor.source %>
     </td>
   </tr>
-
   <tr>
     <td>
       Tags
@@ -64,7 +59,6 @@
       <%= deal_investor.tags %>
     </td>
   </tr>
-
   <tr>
     <td>
       Pre Money Valuation
@@ -89,9 +83,7 @@
       <%= money_to_currency deal_investor.secondary_investment, params %>
     </td>
   </tr>
-
   <% if deal_investor.entity.is_fund? %>
-
     <tr>
       <td>
         Fee
@@ -100,7 +92,6 @@
         <%= money_to_currency deal_investor.fee, params %>
       </td>
     </tr>
-
     <tr>
       <td>
         Total
@@ -110,9 +101,7 @@
         <%= money_to_currency deal_investor.total, params %>
       </td>
     </tr>
-
   <% end %>
-
   <tr>
     <td>
       Entity
@@ -121,16 +110,13 @@
       <%= link_to deal_investor.entity_name, deal_investor.entity %>
     </td>
   </tr>
-
   <tr>
     <td>
-       Notes
+      Remarks
     </td>
     <td>
-       <%= deal_investor.notes %>
+      <%= deal_investor.notes %>
     </td>
- </tr>
-
+  </tr>
   <%= display_custom_fields(@deal_investor) %>
-
 </table>

@@ -6,10 +6,10 @@ class GridViewPreferencesController < ApplicationController
   def create
     parent = find_parent
     column_name = if grid_view_preference_params[:derived_field]
-      grid_view_preference_params[:label]
-    else
-      GridViewPreference.get_column_name(parent, grid_view_preference_params[:key])
-    end
+                    grid_view_preference_params[:label]
+                  else
+                    GridViewPreference.get_column_name(parent, grid_view_preference_params[:key])
+                  end
 
     grid_view_preference = parent.grid_view_preferences.find_by(key: params[:key])
 
@@ -39,7 +39,7 @@ class GridViewPreferencesController < ApplicationController
   end
 
   def new
-    @grid_view_preference = GridViewPreference.new()
+    @grid_view_preference = GridViewPreference.new
     @grid_view_preference.owner_id = params[:grid_view_preference][:owner_id]
     @grid_view_preference.owner_type = params[:grid_view_preference][:owner_type]
     @grid_view_preference.entity_id = current_user.entity_id
@@ -54,11 +54,9 @@ class GridViewPreferencesController < ApplicationController
     end
   end
 
-  def show
-  end
+  def show; end
 
-  def edit
-  end
+  def edit; end
 
   def update
     respond_to do |format|

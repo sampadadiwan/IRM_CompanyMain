@@ -4,8 +4,11 @@ class DailyMorningJob < ApplicationJob
       VestedJob.perform_now
       Rails.logger.debug "Entity.recompute_all"
       Entity.recompute_all
+
       # DocumentEsignUpdateJob.perform_now
+
       Rails.logger.debug "Delete old notifications"
+      # We may have to increase the limit of 2 months to 1 year for certain clients who pay us more.
       Noticed::Notification.where(created_at: ..(Time.zone.today - 2.months)).find_each(&:destroy)
       Noticed::Event.where(created_at: ..(Time.zone.today - 2.months)).find_each(&:destroy)
 
