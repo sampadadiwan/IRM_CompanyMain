@@ -1,6 +1,8 @@
+# All these are called for computing the call_amount from CapitalRemittance.calc_call_amount_cents
 module CapitalRemittanceCallBasis
   extend ActiveSupport::Concern
 
+  # compute the call amount based on the percentage of the commitment
   def call_basis_percentage_commitment
     self.percentage = if capital_call.close_percentages&.dig(capital_commitment.fund_close).present?
                         capital_call.close_percentages[capital_commitment.fund_close].to_d
@@ -39,6 +41,7 @@ module CapitalRemittanceCallBasis
     logger.error "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, call_amount_cents = #{call_amount_cents}, folio_call_amount_cents = #{folio_call_amount_cents} found for #{capital_commitment} for #{capital_call}"
   end
 
+  # compute the call amount based on the uploaded remittance
   def call_basis_upload
     # This is for direct upload of remittances, where the folio_call_amount includes the capital fees
     self.folio_call_amount_cents -= folio_capital_fee_cents

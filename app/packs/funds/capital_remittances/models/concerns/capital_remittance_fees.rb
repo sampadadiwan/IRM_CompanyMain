@@ -50,7 +50,7 @@ module CapitalRemittanceFees
       Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
       self.capital_fee_cents = total_capital_fees_cents
       self.other_fee_cents = total_other_fees_cents
-      json_fields["total_drawdown_amount"] = currency_from_cents(call_amount_cents + other_fee_cents, fund.currency, {})
+      # json_fields["total_drawdown_amount"] = currency_from_cents(call_amount_cents + other_fee_cents, fund.currency, {})
     end
   end
 

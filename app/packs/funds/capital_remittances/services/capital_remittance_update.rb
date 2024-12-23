@@ -1,6 +1,6 @@
 class CapitalRemittanceUpdate < CapitalRemittanceAction
-  step :set_call_amount
   step :setup_call_fees
+  step :set_call_amount
   step :set_status
   step :set_payment_date
   step :save
