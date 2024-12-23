@@ -8,8 +8,7 @@ class FundLlmReportJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       # Get the fund
       fund = Fund.find(fund_id)
-      
-      
+
       case report_type
       when "KpiReport"
         kpi_reports(fund, user_id, report_template_name, include_kpis:, include_apis:, start_date:, end_date:)
@@ -25,7 +24,6 @@ class FundLlmReportJob < ApplicationJob
   end
 
   def kpi_reports(fund, user_id, report_template_name, include_kpis: false, include_apis: false, start_date: nil, end_date: nil)
-    Rails.logger.debug { "Generating KPI reports for fund: #{fund.name} from #{start_date} to #{end_date}" }
 
     # Get the kpi for this api which are within the date range
     kpi_reports = fund.entity.kpi_reports.where(as_of: start_date..end_date).order(as_of: :desc)
@@ -34,7 +32,7 @@ class FundLlmReportJob < ApplicationJob
 
       kpi_reports.each do |kpi_report|
         # Get the output folder for this report
-        output_folder_name = "KpiReport-" + kpi_report.as_of.strftime("%Y-%m-%d")
+        output_folder_name = "KpiReport-#{kpi_report.as_of.strftime('%Y-%m-%d')}"
         output_folder_id = get_output_folder(fund, output_folder_name).id
 
         # Check if we need to include the KPIs
@@ -48,7 +46,6 @@ class FundLlmReportJob < ApplicationJob
         end
       end
 
-
     else
       msg = "Generate Report: No KPI reports found for portfolio company: #{api.portfolio_company.investor_name}"
       Rails.logger.debug { msg }
@@ -57,29 +54,14 @@ class FundLlmReportJob < ApplicationJob
   end
 
 
-  # This is to use the jbuilder template to produce json
-  def to_json(models)
-    if models&.length&.positive?
-      model = models[0]
-      renderer = ApplicationController.renderer.new
-      renderer.render(template: "#{model.class.name.underscore.pluralize}/index", formats: [:json], assigns: { "#{model.class.name.underscore.pluralize}": models })
-
-    end
-  end
-
   def get_output_folder(fund, folder_name)
-    
     # Get the folder called Portfolio Company Reports under the fund
     pcr_folder = fund.document_folder.children.find_by(name: "Portfolio Company Reports")
-    if pcr_folder.nil?
-      pcr_folder = fund.document_folder.children.create(name: "Portfolio Company Reports", entity_id: fund.entity_id, owner: fund)
-    end
+    pcr_folder = fund.document_folder.children.create(name: "Portfolio Company Reports", entity_id: fund.entity_id, owner: fund) if pcr_folder.nil?
 
     # Get the folder for the end date
     folder = pcr_folder.children.find_by(name: folder_name)
-    if folder.nil?
-      folder = pcr_folder.children.create(name: folder_name, entity_id: fund.entity_id, owner: fund)
-    end
+    folder = pcr_folder.children.create(name: folder_name, entity_id: fund.entity_id, owner: fund) if folder.nil?
 
     folder
   end

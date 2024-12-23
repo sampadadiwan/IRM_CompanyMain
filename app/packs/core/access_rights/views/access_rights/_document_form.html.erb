@@ -61,6 +61,11 @@
             class: "form-control select2-multiple", disabled: "disabled", multiple: "multiple",
             "data-action": "change->access#addErrorCheck"  %>
           </div>
+
+          <div class="form-group" id="tag_form_group">
+            <%= form.label :tag_list, "Enter Tags (CSV)" %>
+            <%= form.text_field :tag_list, class: "form-control", id: "tag_list" %>
+          </div>
           
           <% investors = access_right.owner.entity.investors  %>
           

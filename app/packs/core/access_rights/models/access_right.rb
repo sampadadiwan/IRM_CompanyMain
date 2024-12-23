@@ -1,13 +1,16 @@
 class AccessRight < ApplicationRecord
   include Trackable.new
 
+  # To allow tag_list for creating new access rights
+  attr_accessor :tag_list
+
   update_index('access_right') { self if index_record? }
 
   ALL = "All".freeze
   SELF = "Self".freeze
   SUMMARY = "Summary".freeze
   VIEWS = [ALL, SELF].freeze
-  TYPES = ["All Users for Specific Stakeholder", "All Stakeholder of Specific Category"].freeze
+  TYPES = ["All Users for Specific Stakeholder", "All Stakeholders of Specific Category", "All Stakeholders with Tag"].freeze
 
   # Additional permissions for access rights, for employees/advisors specifically
   flag :permissions, %i[create read update destroy]

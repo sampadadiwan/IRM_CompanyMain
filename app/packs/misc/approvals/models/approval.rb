@@ -80,7 +80,7 @@ class Approval < ApplicationRecord
 
     if ar.new_record?
       ar.status = "Pending"
-      ar.save!
+      ar.save
       logger.debug "Creating pending ApprovalResponse for #{inv.investor_name}"
     else
       logger.debug "ApprovalResponse already exists for #{inv.investor_name}"

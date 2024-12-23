@@ -44,7 +44,7 @@ export default class extends Controller {
         this.showInvestor();
         this.showMetadata();
         break;
-      case "All Stakeholder of Specific Category":
+      case "All Stakeholders of Specific Category":
         // hide category & disable
         this.hideAll();
         this.showCategory();
@@ -71,6 +71,12 @@ export default class extends Controller {
         this.showInvestorUsers();
         this.hidePermissons();
         break;
+      case "All Stakeholders with Tag":
+          // hide category & disable
+          this.hideAll();
+          this.showTagList();
+          this.showMetadata();
+          break;
       default:
     }
   }
@@ -184,6 +190,18 @@ export default class extends Controller {
     $('#access_right_user_id').removeClass('required');
   }
 
+  showTagList() {
+    $("#tag_form_group").show();
+    $('#tag_list').prop('disabled', "");
+    $('#tag_list').addClass('required');
+  }
+
+  hideTagList() {
+    $("#tag_form_group").hide();
+    $('#tag_list').prop('disabled', "disabled");
+    $('#tag_list').removeClass('required');
+  }
+
   hidePermissons() {
     $("#permissions_form_group").hide();
   }
@@ -200,6 +218,7 @@ export default class extends Controller {
     this.hideInvestorUsers();
     this.hidePermissons();
     this.hideInvestorAdvisor();
+    this.hideTagList();
   }
 
 }
