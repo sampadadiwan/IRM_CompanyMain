@@ -8,51 +8,51 @@
 
         <% if fund && policy(fund).update? %>
 
-            <%= link_to "New Commitment", 
-                        new_capital_commitment_path("capital_commitment[fund_id]": fund.id),  
-                        { class: "btn btn-outline-primary", data: { turbo: false } } %>            
-            
+            <%= link_to "New Commitment",
+                        new_capital_commitment_path("capital_commitment[fund_id]": fund.id),
+                        { class: "btn btn-outline-primary", data: { turbo: false } } %>
+
             <div class="btn-group">
                 <div class="dropdown">
-                    <button class="btn btn-outline-success dropdown-toggle" type="button" 
+                    <button class="btn btn-outline-success dropdown-toggle" type="button"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Generate
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    
+
                     <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
 
-                        <%= button_to "All Documents", 
-                                      generate_documentation_fund_path(fund), 
-                                      method: :patch, 
-                                      class: "dropdown-item", 
-                                      form_class: "deleteButton", 
-                                      data: { action: "click->confirm#popup", method: :patch, msg: "", turbo: false } %>
+                        <%= button_to "All Documents",
+                                      generate_documentation_fund_path(fund),
+                                      method: :patch,
+                                      class: "dropdown-item",
+                                      form_class: "deleteButton",
+                                      data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } %>
 
                         <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
-                            <%= button_to template.name, 
-                                          generate_documentation_fund_path(fund, template_id: template.id), 
-                                          method: :patch, 
-                                          class: "dropdown-item", 
-                                          form_class: "deleteButton", 
-                                          data: { action: "click->confirm#popup", method: :patch, msg: "", turbo: false } %>
+                            <%= button_to template.name,
+                                          generate_documentation_fund_path(fund, template_id: template.id),
+                                          method: :patch,
+                                          class: "dropdown-item",
+                                          form_class: "deleteButton",
+                                          data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } %>
                         <% end %>
 
-                        <%= link_to "Generate SOA", 
-                                    allocate_form_fund_path(fund, generate_soa: true), 
-                                    class: "dropdown-item", 
+                        <%= link_to "Generate SOA",
+                                    allocate_form_fund_path(fund, generate_soa: true),
+                                    class: "dropdown-item",
                                     data: { turbo: false } if policy(fund).allocate? %>
 
                     </div>
                 </div>
             </div>
 
-            <%= link_to "Upload", 
-                        new_import_upload_path("import_upload[owner_id]": fund.id, 
-                        "import_upload[owner_type]": "Fund", 
-                        "import_upload[import_type]": "CapitalCommitment", 
-                        "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
-                        { class: "btn btn-outline-primary", data: { turbo: false } } %> 
+            <%= link_to "Upload",
+                        new_import_upload_path("import_upload[owner_id]": fund.id,
+                        "import_upload[owner_type]": "Fund",
+                        "import_upload[import_type]": "CapitalCommitment",
+                        "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"),
+                        { class: "btn btn-outline-primary", data: { turbo: false } } %>
 
         <% end %>
 
