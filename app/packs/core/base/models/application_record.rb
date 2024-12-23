@@ -36,7 +36,9 @@ class ApplicationRecord < ActiveRecord::Base
       data_type = if key.include?("custom_fields.")
                     DEFAULT_DATA_TYPE
                   else
-                    columns_hash[key]&.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
+                    columns_hash[key]&.type.to_s.capitalize.presence || 
+                    columns_hash[key + "_cents"]&.type.to_s.capitalize.presence ||
+                    DEFAULT_DATA_TYPE
                   end
 
       { label: label, key: key, data_type: data_type }

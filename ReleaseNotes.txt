@@ -1,3 +1,16 @@
+V8.0.52
+#####################################
+8aa39f870 Added deleted access rights in investor view
+986572931 Fixed access rights tab for investors
+2a57c29a2 Added tag list to create access rights (#662)
+d1a36c550 Added remittance fees computation fix
+81df1dd20 Updated msg for commitment doc gen, move investor entity update to after commit (#660)
+4e133f161 Generate reports with folders under Funds
+2f4729705 Renamed Note to Remarks for deal investor
+08bf1b63f Use Default columns fix (#658)
+9c9cba2fc Generate reports adds kpi and api to report (#657)
+00e0b79ff Ag grids custom columns (#637)
+
 V8.0.51
 #####################################
 cc4b50d7f Made ratio col optional in the card view

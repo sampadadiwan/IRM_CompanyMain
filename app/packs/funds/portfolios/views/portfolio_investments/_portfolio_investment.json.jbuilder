@@ -7,7 +7,7 @@ json.cost_per_share portfolio_investment.cost.to_f
 json.fmv portfolio_investment.fmv.to_f
 json.cost_of_sold portfolio_investment.cost_of_sold.to_f
 json.created_at l(portfolio_investment.created_at)
-json.instrument_name portfolio_investment.investment_instrument.name
+json.investment_instrument_name portfolio_investment.investment_instrument.name
 
 # Explicitly render the HTML partial as a string
 json.dt_actions ApplicationController.render(
