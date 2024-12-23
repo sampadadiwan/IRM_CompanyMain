@@ -92,7 +92,7 @@ class PortfolioInvestment < ApplicationRecord
                        "Investment Date" => "investment_date",
                        "Amount" => "amount",
                        "Quantity" => "quantity",
-                       "Cost Per Share" => "cost",
+                       "Cost Per Share" => "cost_per_share",
                        "FMV" => "fmv",
                        "FIFO Cost" => "cost_of_sold",
                        "Notes" => "notes" }.freeze
