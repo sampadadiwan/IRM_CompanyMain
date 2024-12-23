@@ -1,5 +1,5 @@
 class InvestorIndex < Chewy::Index
-  SEARCH_FIELDS = %i[investor_name investee_name category tag_list city properties pan].freeze
+  SEARCH_FIELDS = %i[investor_name investee_name category tag_list city properties pan primary_email].freeze
 
   index_scope Investor.includes(:investor_entity, :entity)
   field :investor_name

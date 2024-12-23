@@ -3,19 +3,21 @@
 class FolderLlmReportJob < ApplicationJob
   queue_as :low
 
-  def template_to_output_file_name(template_name)
-    "#{template_name.parameterize(separator: '_').gsub('_template', '')}.html"
+  def template_to_output_file_name(output_file_name_prefix, template_name)
+    name = "#{template_name.parameterize(separator: '_').gsub('_template', '')}.html"
+    output_file_name_prefix.present? ? "#{output_file_name_prefix}_#{name}" : name
   end
 
   def file_name_from_output_file_name(output_file_name)
     output_file_name.gsub(".html", "").gsub("html", "").humanize.titleize
   end
 
-  def perform(folder_id, user_id, report_type, report_template_name: "Report Template", kpis: nil, apis: nil)
+  def perform(folder_id, user_id, report_template_name: "Report Template", kpis: nil, apis: nil, output_folder_id: nil, output_file_name_prefix: nil)
     Chewy.strategy(:sidekiq) do
       folder = Folder.find(folder_id)
+      output_folder = output_folder_id.present? ? Folder.find(output_folder_id) : folder
       # Find all the files in this folder and add it to the signed_urls
-      doc_urls, template_url = get_documents(folder, report_type, report_template_name)
+      doc_urls, template_url = get_documents(folder, report_template_name)
 
       if template_url.nil? || doc_urls.empty?
         # Send a notification to the user
@@ -24,12 +26,12 @@ class FolderLlmReportJob < ApplicationJob
         send_notification(msg, user_id, :danger)
       else
         # Now call the generate_report API
-        output_file_name = template_to_output_file_name(report_template_name)
+        output_file_name = template_to_output_file_name(output_file_name_prefix, report_template_name)
         name = file_name_from_output_file_name(output_file_name)
 
         # Check if the report has already been generated
-        if folder.documents.exists?(name: name)
-          msg = "Report already generated for #{folder.name}. Skipping report generation."
+        if output_folder.documents.exists?(name: name)
+          msg = "Report already generated for #{output_folder.name}. Skipping report generation."
           Rails.logger.debug { msg }
           send_notification(msg, user_id, :info)
           return
@@ -46,7 +48,7 @@ class FolderLlmReportJob < ApplicationJob
           # Check for the output_report.html file in the folder_path
           check_for_output_report(folder_path, output_file_name)
           # Now download the output_report.html file and save it as a document in the folder
-          upload_file(folder, folder_path, user_id, output_file_name)
+          upload_file(output_folder, folder_path, user_id, output_file_name)
         else
           msg = "Failed to generate report, report server not reachable. Please try again."
           send_notification(msg, user_id, :danger)
@@ -57,7 +59,7 @@ class FolderLlmReportJob < ApplicationJob
 
   private
 
-  def get_documents(folder, _report_type, report_template_name)
+  def get_documents(folder, report_template_name)
     doc_urls = []
     template_url = nil
     folder.documents.each do |doc|

@@ -58,7 +58,7 @@ class IncomingEmail < ApplicationRecord
     # This email is sent by a potential portfolio company, with the investor presentation to the fund.
     if fund_entity.present?
       # Summarize the documents and create a report for the fund
-      FolderLlmReportJob.perform_later(folder_id, document_folder_id, "Portfolio Company", report_template_name: "Investor Presentation Template")
+      FolderLlmReportJob.perform_later(folder_id, document_folder_id, report_template_name: "Investor Presentation Template")
       # Also run Fabric to extract wisdom
     end
   end

@@ -47,7 +47,7 @@ class FundsController < ApplicationController
         start_date: params[:start_date], end_date: params[:end_date]
       )
 
-      redirect_to fund_path(@fund, tab: 'portfolio-investments-tab'), notice: "Report generation started, please check back in a few mins"
+      redirect_to fund_path(@fund, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
     else
       # Show the form to generate the report
       render "generate_reports"
