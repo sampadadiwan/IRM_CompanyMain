@@ -22,6 +22,10 @@
     <td>
         <%= access_right.metadata %>
         <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
+        <% if access_right.deleted_at.present? %>
+            <span class="badge bg-danger">Deleted</span>
+            <%= l access_right.deleted_at %>
+        <% end %>
     </td>
     <% end %>
 
@@ -35,6 +39,6 @@
 
     <td>
         <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger" ,
-              form_class: "deleteButton" , data: {msg: "This will remove access for this investor from the fund and all documents of this fund. Proceed?", action: "click->confirm#popup" , turbo: true} %>
+              form_class: "deleteButton" , data: {msg: "This will remove access for this investor from the fund and all documents of this fund. Proceed?", action: "click->confirm#popup" , turbo: true} unless access_right.deleted_at.present? %>
     </td>
 </tr>
