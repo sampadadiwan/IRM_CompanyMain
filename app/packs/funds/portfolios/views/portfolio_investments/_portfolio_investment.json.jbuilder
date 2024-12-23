@@ -9,6 +9,9 @@ json.cost_of_sold portfolio_investment.cost_of_sold.to_f
 json.created_at l(portfolio_investment.created_at)
 json.investment_instrument_name portfolio_investment.investment_instrument.name
 
+# Send the custom_fields
+json.custom_fields portfolio_investment.json_fields
+
 # Explicitly render the HTML partial as a string
 json.dt_actions ApplicationController.render(
   partial: "portfolio_investments/dt_actions",
