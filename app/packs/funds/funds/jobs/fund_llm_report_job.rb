@@ -24,7 +24,6 @@ class FundLlmReportJob < ApplicationJob
   end
 
   def kpi_reports(fund, user_id, report_template_name, include_kpis: false, include_apis: false, start_date: nil, end_date: nil)
-
     # Get the kpi for this api which are within the date range
     kpi_reports = fund.entity.kpi_reports.where(as_of: start_date..end_date).order(as_of: :desc)
 
@@ -52,7 +51,6 @@ class FundLlmReportJob < ApplicationJob
       send_notification(msg, user_id)
     end
   end
-
 
   def get_output_folder(fund, folder_name)
     # Get the folder called Portfolio Company Reports under the fund

@@ -212,6 +212,8 @@ Metrics/ParameterLists:
     - 'app/packs/funds/funds/services/fund_unit_transfer_service.rb'
     - 'app/packs/core/components/ransack_table_header.rb'
     - 'app/packs/core/documents/helpers/document_generator_base.rb'
+    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
+    - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'
@@ -236,6 +238,8 @@ Metrics/MethodLength:
     - 'app/packs/ai/ai_rules/services/ai_data_manager.rb'
     - 'app/packs/ai/ai_rules/services/compliance_assistant.rb'
     - 'app/packs/funds/funds/controllers/funds_controller.rb'
+    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
+    - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'
@@ -255,6 +259,7 @@ Metrics/BlockLength:
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
     - '**/index.xlsx.axlsx'
+    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
   AllowedMethods:
     - context
     - describe

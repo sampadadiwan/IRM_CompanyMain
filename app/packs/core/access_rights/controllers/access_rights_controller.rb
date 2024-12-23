@@ -11,11 +11,14 @@ class AccessRightsController < ApplicationController
 
     @access_rights = @access_rights.deals.where(access_to_investor_id: params[:access_to_investor_id]) if params[:access_to_investor_id].present?
 
-    @access_rights = with_owner_access(@access_rights)
-
+    # Note that if we are filtering by investor, we are not using the owner_id
+    # This is because in the investor we have to investor and for investor access rights
+    # This is required to make the investors/investor_details partial work for access_rights
     if params[:investor_id].present?
       investor = Investor.find(params[:investor_id])
       @access_rights = @access_rights.for_investor(investor)
+    else
+      @access_rights = with_owner_access(@access_rights)
     end
 
     @access_rights = @access_rights.page(params[:page])

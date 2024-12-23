@@ -18,13 +18,10 @@ every :reboot, roles: [:app] do
   command 'sudo docker run -d --rm --name=node-exporter -p 9100:9100  prom/node-exporter'
 end
 
-# Note times are in UTC, as our users are in IST 8:30 pm UTC is 2:00 am IST
-every 1.day, at: '02:30 am', roles: [:app] do
+# Reboot servers, but first run logrotate
+every :saturday, at: '2:50 am', roles: [:app] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
-
-# Reboot servers
-# Note times are in UTC, as our users are in IST 10:30 pm UTC is 4:00 am IST
 every :saturday, at: '3:00 am', roles: [:app] do
   command 'sudo reboot'
 end

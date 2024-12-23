@@ -113,26 +113,22 @@ class ApplicationMailer < ActionMailer::Base
 
   # Convinience method to send mail with simply the subject
   def send_mail(subject: nil, template_path: nil, template_name: nil)
-    if ENV["NO_EMAILS"] == "true"
-      Rails.logger.info "No emails are being sent as NO_EMAILS is set to true"
-    else
-      # Change the subject if we have a custom notification
-      if @custom_notification
-        subject = @custom_notification.subject
-        attach_custom_notification_documents
-      end
-      # send the email
-      if @to.present?
-        if template_path.present? && template_name.present?
-          mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:, template_path:, template_name:)
-        else
-          mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
-        end
+    # Change the subject if we have a custom notification
+    if @custom_notification
+      subject = @custom_notification.subject
+      attach_custom_notification_documents
+    end
+    # send the email
+    if @to.present?
+      if template_path.present? && template_name.present?
+        mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:, template_path:, template_name:)
       else
-        msg = "No to email address, hence not sending any email"
-        Rails.logger.info msg
-        raise msg
+        mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
       end
+    else
+      msg = "No to email address, hence not sending any email"
+      Rails.logger.info msg
+      raise msg
     end
   end
 
