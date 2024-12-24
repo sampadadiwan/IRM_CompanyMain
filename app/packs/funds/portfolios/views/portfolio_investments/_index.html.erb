@@ -1,5 +1,8 @@
 <%
   aggregate_portfolio_investment ||= nil
+  if params[:aggregate_portfolio_investment_id].present?
+    aggregate_portfolio_investment ||= AggregatePortfolioInvestment.find_by(id: params[:aggregate_portfolio_investment_id])
+  end
   import_upload_id ||= nil
 %>
 
@@ -7,12 +10,14 @@
   <h1 class="h3 mb-0 text-gray-800"><%= params[:title] || "Portfolio Investments" %></h1>
 
   <span>
-    <% if aggregate_portfolio_investment && policy(aggregate_portfolio_investment).add_investment? %>
+    <% if (aggregate_portfolio_investment && policy(aggregate_portfolio_investment).add_investment?) %>
 
       <%= link_to "New Portfolio Investment",
           new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
           "portfolio_investment[fund_id]": params[:fund_id],
-          "portfolio_investment[portfolio_company_id]": params[:portfolio_company_id]),
+          "portfolio_investment[aggregate_portfolio_investment_id]": aggregate_portfolio_investment&.id,
+          "portfolio_investment[investment_instrument_id]": aggregate_portfolio_investment&.investment_instrument_id,
+          "portfolio_investment[portfolio_company_id]": aggregate_portfolio_investment&.portfolio_company_id),
           {class: "btn btn-outline-primary"} if params[:fund_id].present? %>
 
       <%= link_to "Upload",
