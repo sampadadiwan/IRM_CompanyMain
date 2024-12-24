@@ -32,11 +32,15 @@ class GridViewPreference < ApplicationRecord
     elsif key.include?("custom_fields.")
       DEFAULT_DATA_TYPE
     else
-      column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash[key + "_cents"]
-      if column.nil?
-        nil
-      else
-        column.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
+      begin
+        column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash[key + "_cents"]
+        if column.nil?
+          nil
+        else
+          column.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
+        end
+      rescue
+        DEFAULT_DATA_TYPE
       end
     end
   end

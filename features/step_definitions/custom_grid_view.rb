@@ -44,7 +44,7 @@ When('I create a derived field {string}') do |form_type|
   sleep(2)
   fill_in "Enter Grid View Key", with: "instrument_name"
   fill_in "Label", with: "PI's Instrument"
-  select "TextField", from: "Data Type"
+  select "String", from: "Data Type"
   fill_in "Sequence", with: 1
   click_button "Save"
 end
