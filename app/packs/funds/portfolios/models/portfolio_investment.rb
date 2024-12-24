@@ -180,4 +180,8 @@ class PortfolioInvestment < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[fund portfolio_company investment_instrument]
   end
+
+  def name
+    "#{portfolio_company_name} #{investment_instrument.name} #{investment_date}"
+  end
 end
