@@ -1,5 +1,11 @@
 V8.0.52
 #####################################
+e3718cf57 Better details on grid view preferences
+58e12f4b8 Added events/form
+3ede2f192 Fixed cost per share for PI grid
+06408f03e Added moment.js to format ag grid date cols
+6a00dde53 Added custom_fields to PI jbuilder, now shows custom fields in PI ag grid
+6e5f83577 Added better PI ag grid
 8aa39f870 Added deleted access rights in investor view
 986572931 Fixed access rights tab for investors
 2a57c29a2 Added tag list to create access rights (#662)

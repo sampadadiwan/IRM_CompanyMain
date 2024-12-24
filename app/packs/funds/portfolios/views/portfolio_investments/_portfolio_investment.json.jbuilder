@@ -2,7 +2,7 @@ json.extract! portfolio_investment, :id, :entity_id, :fund_id, :portfolio_compan
 json.url portfolio_investment_url(portfolio_investment, format: :json)
 
 json.quantity portfolio_investment.quantity.to_f
-json.amount portfolio_investment.amount.to_f
+json.amount portfolio_investment.quantity >= 0 ? portfolio_investment.amount.to_f : -portfolio_investment.amount.to_f
 json.cost portfolio_investment.cost.to_f
 json.fmv portfolio_investment.fmv.to_f
 json.cost_of_sold portfolio_investment.cost_of_sold.to_f
