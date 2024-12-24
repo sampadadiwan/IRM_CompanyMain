@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import moment from 'moment'; // instead of dayjs
 
 export default class BaseAgGrid extends Controller {
 
@@ -241,6 +242,66 @@ export default class BaseAgGrid extends Controller {
             }
           };
     }
+
+    /**
+     * Creates a date column definition for ag-Grid.
+     *
+     * @param {Object} controller  - Typically `this` (the controller instance).
+     * @param {string} field       - The data field in your JSON row data.
+     * @param {string} headerName  - The human-readable column header.
+     * @param {string} dateFormat  - A dayjs (or moment) format string. Defaults to 'YYYY-MM-DD'.
+     * @param {boolean} enableRowGroup - Enable row grouping on this column.
+     * @param {boolean} enablePivot - Enable pivot on this column.
+     * @param {boolean} rowGroup   - Whether or not this column itself is part of the row group.
+     * @return {Object} The column definition object for ag-Grid.
+     */
+    dateFormatColumn(
+        controller, 
+        field, 
+        headerName, 
+        dateFormat = null, 
+        enableRowGroup = true, 
+        enablePivot = true, 
+        rowGroup = false
+      ) {
+        return {
+          field: field,
+          headerName: headerName,
+          filter: 'agDateColumnFilter',   // enable date-specific filter
+          enableRowGroup: enableRowGroup,
+          enablePivot: enablePivot,
+          rowGroup: rowGroup,
+          chartDataType: 'category',
+          // Optionally, you can define a custom comparator for date filtering:
+          filterParams: {
+            comparator: (filterLocalDateAtMidnight, cellValue) => {
+              // cellValue is the raw value in the cell.
+              if (!cellValue) return -1;  // or 0, depending on your use case
+              // parse the date using dayjs or moment
+              const cellDate = dayjs(cellValue);
+              if (cellDate.isBefore(filterLocalDateAtMidnight)) return -1;
+              if (cellDate.isAfter(filterLocalDateAtMidnight)) return 1;
+              return 0;
+            },
+          },
+          valueFormatter: (params) => {
+            if (!params.value) return '';
+            
+            // 1. Use the browser's locale
+            const userLocale = navigator.language || navigator.userLanguage;
+
+            // 2. Set moment’s locale
+            const m = moment(params.value).locale(userLocale);
+
+            // 3. Format the date either using moment’s default locale format
+            //    or a fallback if you want something explicit.
+            //    - `m.format('L')` uses a standard localized date format.
+            //    - `m.format(dateFormat || 'L')` lets you override if you pass a specific format.
+            return m.format(dateFormat || 'L');
+          }
+        };
+      }
+   
 
     textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true, rowGroup = false) {
         return { 

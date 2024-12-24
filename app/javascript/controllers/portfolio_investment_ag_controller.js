@@ -6,6 +6,7 @@ export default class extends BaseAgGrid {
     const html_column = this.html_column;
     const formatNumberWithCommas = this.formatNumberWithCommas;
     const numberFormatColumn = this.numberFormatColumn;
+    const dateFormatColumn = this.dateFormatColumn;
     const textColumn = this.textColumn;
     const snakeToHuman = this.snakeToHuman;
 
@@ -18,6 +19,8 @@ export default class extends BaseAgGrid {
 
       if (data_type === "String") {
         columnDefs.push(textColumn(controller, key, label));
+      } else if (data_type === "Date") {
+          columnDefs.push(dateFormatColumn(controller, key, label));
       } else if (data_type === "Number" || data_type === "Decimal") {
         columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
       } else if (data_type === "Html" || data_type === "Boolean") {

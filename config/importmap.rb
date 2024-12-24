@@ -58,3 +58,4 @@ pin "urlpattern-polyfill" # @10.0.0
 pin "utf-8-validate" # @6.0.5
 pin "util" # @2.1.0
 pin "zlib" # @2.1.0
+pin "moment" # @2.30.1

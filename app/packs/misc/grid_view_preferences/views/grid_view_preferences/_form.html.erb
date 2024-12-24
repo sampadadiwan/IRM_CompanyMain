@@ -1,4 +1,4 @@
-<%= render FormCard.new(title: "Grid View Preference", css_class: "dynamic_form") do %>
+<%= render FormCard.new(title: "Grid View Preference #{grid_view_preference.name}", css_class: "dynamic_form") do %>
 
 <%= form_with(model: grid_view_preference, id: "grid_view_form", validates: true) do |form| %>
   <% if grid_view_preference.errors.any? %>
@@ -31,7 +31,7 @@
 
   <div class="form-group">
     <%= form.label :data_type, "Data Type", class: "col-sm-2 col-form-label" %>
-      <% field_types =  %w[String Number Decimal HTML] %>
+      <% field_types =  %w[String Number Decimal Date HTML].sort %>
       <%= form.select :data_type, options_for_select(field_types, grid_view_preference.data_type), { prompt: "Select Data Type" }, class: "form-control" %>
   </div>
 
