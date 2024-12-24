@@ -3,7 +3,7 @@ json.url portfolio_investment_url(portfolio_investment, format: :json)
 
 json.quantity portfolio_investment.quantity.to_f
 json.amount portfolio_investment.amount.to_f
-json.cost_per_share portfolio_investment.cost.to_f
+json.cost portfolio_investment.cost.to_f
 json.fmv portfolio_investment.fmv.to_f
 json.cost_of_sold portfolio_investment.cost_of_sold.to_f
 json.created_at l(portfolio_investment.created_at)
