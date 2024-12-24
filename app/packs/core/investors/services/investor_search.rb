@@ -20,7 +20,8 @@ class InvestorSearch
 
     if params[:search] && params[:search][:value].present?
       # This is only when the datatable sends a search query
-      query = "#{params[:search][:value]}*"
+      # If we have @ then its an email, so dont wildcard it
+      query = params[:search][:value].index("@") ? params[:search][:value] : "#{params[:search][:value]}*"
 
       ids = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
                          .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
