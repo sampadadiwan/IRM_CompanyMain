@@ -29,14 +29,26 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th>Attribute</th>
+        <th>Sequence</th>
+        <th>Name</th>
+        <th>Key</th>
+        <th>Label</th>
+        <th>Data Type</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       <% @parent.grid_view_preferences.order(:sequence).each do |preference| %>
         <tr class="column column_<%= preference.key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.key %>" data-row-id="<%= preference.id %>">
+          
+          <td><%= preference.sequence %></td>
+
           <td><i class="fas fa-arrows-alt handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
+          
+          <td><%= preference.key %></td>
+          <td><%= preference.label %></td>
+          <td><%= preference.data_type %></td>
+
           <td>
             <%= link_to "Show", grid_view_preference_path(preference), {class: "btn btn-outline-success"} %>
             <%= link_to 'Edit', edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} %>
