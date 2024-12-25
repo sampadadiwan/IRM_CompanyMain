@@ -8,6 +8,7 @@
 
     <%= button_to "Delete", @capital_remittance, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
 
+    <% unless current_user.curr_role_investor? %>
     <div class="btn-group">
         <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -38,6 +39,7 @@
             </div>
         </div>
     </div>
+    <% end %>
   </div>
 
 

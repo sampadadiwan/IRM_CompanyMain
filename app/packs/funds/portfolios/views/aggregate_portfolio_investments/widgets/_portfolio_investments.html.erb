@@ -1,0 +1,24 @@
+<% 
+  widget_size ||= "col-md-12" 
+  name ||= nil 
+  args ||= {}
+  uri_params ||= {}
+  fund_id ||= uri_params[:owner_id]
+  pi_uri = "/portfolio_investments?fund_id=#{fund_id}&ag=true&group_by_column=#{args[:group_by_column]}"
+  api_uri = "/aggregate_portfolio_investments?fund_id=#{fund_id}&grid_only=true"
+%>
+<div class="<%= widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">            
+        <% if args[:ag] %>
+            <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: pi_uri, lazy: true do %>            
+            <% end %>
+        <% else %>
+          <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top", src: api_uri, lazy: true do %>            
+          <% end %>
+        <% end %>
+    </div>
+  </div>
+</div>
+
+

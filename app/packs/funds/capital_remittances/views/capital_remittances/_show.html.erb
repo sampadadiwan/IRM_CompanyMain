@@ -26,7 +26,7 @@
 
         <tr>
           <td>
-            Remittance Date
+            Drawdown Date
           </td>
           <td>
             <%= l capital_remittance.remittance_date %>
@@ -46,7 +46,7 @@
 
         <tr>
           <td>
-            Investor
+            Investing Entity
           </td>
           <td>
             <% if current_user %>
@@ -75,16 +75,7 @@
           </td>
         </tr>
 
-        <% if capital_remittance.percentage > 0 %>
-        <tr>
-          <td>
-            Percentage
-          </td>
-          <td>
-            <%= capital_remittance.percentage %> %
-          </td>
-        </tr>
-        <% end %>
+        
 
         <% if capital_remittance.capital_fee_cents > 0 %>
         <tr>
@@ -209,19 +200,9 @@
           <% end %>
 
         <% end %>
+                
         
-        <% if capital_remittance.entity.permissions.enable_units? %>
-        <tr>
-          <td>
-            Units Issues
-          </td>
-          <td>
-            <%= capital_remittance.units_quantity %>
-          </td>
-        </tr>
-        <% end %>
-        
-        <% if current_user %>
+        <% if current_user && !current_user.curr_role_investor? %>
         
           <tr>
             <td>

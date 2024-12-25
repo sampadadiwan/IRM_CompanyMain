@@ -33,13 +33,13 @@ class GridViewPreference < ApplicationRecord
       DEFAULT_DATA_TYPE
     else
       begin
-        column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash[key + "_cents"]
+        column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash["#{key}_cents"]
         if column.nil?
           nil
         else
           column.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
         end
-      rescue
+      rescue StandardError
         DEFAULT_DATA_TYPE
       end
     end

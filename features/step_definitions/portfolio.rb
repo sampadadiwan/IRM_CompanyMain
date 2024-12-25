@@ -469,18 +469,23 @@ end
 
 Given('I add preview documents for the aggregate portfolio investment') do
   visit(aggregate_portfolio_investment_path(@api))
-  xpath = "/html/body/div[2]/div[1]/div/div/div[9]/nav/a[3]"
-  element = find(:xpath, xpath)
-  element.click
-  xpath = "/html/body/div[2]/div[1]/div/div/div[9]/div/div[3]/div/turbo-frame/div/div[2]/div/div[2]/turbo-frame/div[1]/span/div/div/button"
-  element = find(:xpath, xpath)
-  element.click
-  click_on("New Document")
+  # Click the documents tab
+  within(".api_details") do
+    click_on("Documents")
+    sleep(1)
+    # Click the new document button
+    find("#doc_actions").click
+    click_on("New Document")
+  end
+
   fill_in('document_name', with: "Test Document")
   fill_in('document_tag_list', with: "test, preview")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
+  
   click_on("Save")
+
+  
 end
 
 When('I go to aggregate portfolio investment preview') do

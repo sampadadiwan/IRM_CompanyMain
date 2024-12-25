@@ -1,0 +1,17 @@
+<% 
+  widget_size ||= "col-md-12" 
+  name ||= nil 
+  args ||= {}
+  uri_params ||= {}
+  fund_id ||= uri_params[:owner_id]
+  fund ||= uri_params[:fund]
+%>
+<div class="<%= widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">            
+        <%= investment_sold_by_company(fund) %>
+        <p class="mb-0"><%= name || "Sold %" %></p>
+    </div>
+  </div>
+</div>
+

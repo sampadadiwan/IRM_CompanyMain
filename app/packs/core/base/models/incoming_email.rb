@@ -1,4 +1,4 @@
-# SendGrid is used to route incoming emails to our app
+# SendGrid (login using support@caphive.com) is used to route incoming emails to our app
 # We have setup godaddy domain to route emails to SendGrid
 # email@local.caphive.app, email@dev.caphive.app and email@prod.caphive.app are all routed to SendGrid
 # SendGrid then forwards the email to our app with the original email address as the recipient

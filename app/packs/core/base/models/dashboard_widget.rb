@@ -34,10 +34,21 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium")
   ].freeze
 
+  PORTFOLIO_WIDGETS = [
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "FMV %", path: "aggregate_portfolio_investments/widgets/fmv_percentage", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Holding Cost %", path: "aggregate_portfolio_investments/widgets/holding_costs_percentage", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Bought %", path: "aggregate_portfolio_investments/widgets/bought_percentage", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Sold %", path: "aggregate_portfolio_investments/widgets/sold_percentage", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL")
+  ].freeze
+
   WIDGETS = {
     "Fund Dashboard" => FUND_WIDGETS,
     "Ops Dashboard" => OPS_WIDGETS,
-    "Investor Dashboard" => INVESTOR_WIDGETS
+    "Investor Dashboard" => INVESTOR_WIDGETS,
+    "Portfolio Dashboard" => PORTFOLIO_WIDGETS
   }.freeze
 
   def to_s

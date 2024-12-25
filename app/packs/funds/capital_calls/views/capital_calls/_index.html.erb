@@ -13,11 +13,10 @@
                 "import_upload[import_type]": "CapitalCall", 
                 "sample_upload": "CAPITAL_CALL_SAMPLE"), 
                 { class: "btn btn-outline-primary"}  %> 
-        <% end %>
 
-        <%= link_to "Download", capital_calls_path(fund_id: fund&.id, format: "xlsx"),  
+            <%= link_to "Download", capital_calls_path(fund_id: fund&.id, format: "xlsx"),  
                     {class: "btn btn-outline-success" }  %>
-
+        <% end %>
 
     </span>
 

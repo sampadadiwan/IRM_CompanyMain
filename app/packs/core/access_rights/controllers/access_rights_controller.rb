@@ -21,9 +21,7 @@ class AccessRightsController < ApplicationController
       @access_rights = with_owner_access(@access_rights)
     end
 
-    if params[:with_deleted].present?
-      @access_rights = @access_rights.with_deleted
-    end
+    @access_rights = @access_rights.with_deleted if params[:with_deleted].present?
 
     @access_rights = @access_rights.page(params[:page])
   end

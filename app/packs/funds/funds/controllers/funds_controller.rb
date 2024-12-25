@@ -69,7 +69,10 @@ class FundsController < ApplicationController
 
   def dashboard
     respond_to do |format|
-      format.html
+      format.html do
+        template = params[:template] || "dashboard"
+        render "funds/#{template}"
+      end
       format.pdf do
         FerrumPdf.browser(timeout: 180)
         pdf = render_pdf

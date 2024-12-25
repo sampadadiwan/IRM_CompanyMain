@@ -1,0 +1,15 @@
+<% 
+  widget_size ||= "col-md-12" 
+  name ||= nil 
+  args ||= {}
+  uri_params ||= {}
+  fund ||= uri_params[:fund]
+%>
+<div class="<%= widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">            
+        <%= render "aggregate_portfolio_investments/stats",  fund: %>
+    </div>
+  </div>
+</div>
+

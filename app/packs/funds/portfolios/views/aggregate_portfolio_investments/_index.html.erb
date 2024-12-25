@@ -50,7 +50,7 @@
 
 </div>
 
-<%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: %>
+<%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: fund unless params[:grid_only].present? %>
 
 <% api_turbo_frame = "aggregate_portfolio_investments_frame" %>
 <%=render SearchComponent.new(data_source: aggregate_portfolio_investments_path(params: params.to_unsafe_h, fund_id: params[:fund_id]), turbo_frame: api_turbo_frame) %>
@@ -84,5 +84,5 @@
 </div>
 
 <div class="associated_entity">
-  <%= render "aggregate_portfolio_investments/index_charts" %>
+  <%= render "aggregate_portfolio_investments/index_charts" unless params[:grid_only].present? %>
 </div>

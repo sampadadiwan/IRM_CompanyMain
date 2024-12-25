@@ -15,6 +15,9 @@
         <th>
           Tags
         </th>
+        <th>
+          Date
+        </th>
 
         <th>
         </th>
@@ -39,6 +42,9 @@
             <td>
                 <%= document.tag_list %>
                 <%= document.owner_tag %>
+            </td>
+            <td>
+                <%= l document.created_at %>
             </td>
             <td>
                 <%= link_to "Show", document, class: "btn btn-outline-primary" %>

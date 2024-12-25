@@ -58,6 +58,7 @@ export default class BaseAgGrid extends Controller {
                 this.gridOptions.api = event.api;
                 this.gridOptions.columnApi = event.columnApi;
                 this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
+                this.gridReady();
             },
               
             onColumnVisible: (event) => {
@@ -182,6 +183,7 @@ export default class BaseAgGrid extends Controller {
 
     loadData() {
         let source = $(this.tableNameValue).data('source')
+        let restoreColumnState = this.restoreColumnState;
         console.log(`loadData from ${source}`);
         fetch(source)
             .then(response => response.json())
@@ -190,7 +192,7 @@ export default class BaseAgGrid extends Controller {
                 console.log(`loadData completed from ${source}`);
                 console.log(data);
                 this.gridOptions.api.setRowData(data);
-                this.restoreColumnState(this.gridOptions);
+                // this.restoreColumnState(this.gridOptions);
             });
     }
 
@@ -386,6 +388,9 @@ export default class BaseAgGrid extends Controller {
 
     resetAllFilters() {
         this.gridOptions.api.setFilterModel(null);
+    }
+
+    gridReady(params) {
     }
     
 }

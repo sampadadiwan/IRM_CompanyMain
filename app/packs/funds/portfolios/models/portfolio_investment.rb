@@ -54,7 +54,6 @@ class PortfolioInvestment < ApplicationRecord
   validates :portfolio_company_name, length: { maximum: 100 }
   # validates :quantity, numericality: { other_than: 0 }, on: :create
 
-
   # For sells, roll up the amount_cents to the aggregate portfolio investment sold_amount_cents
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? "sold_amount_cents" : nil }, delta_column: 'amount_cents', column_names: {
     ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'

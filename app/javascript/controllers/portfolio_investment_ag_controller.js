@@ -40,13 +40,12 @@ export default class extends BaseAgGrid {
     return columnDefs;
   }
 
-
-
-  restoreGrouping() {
+  gridReady() {
     // Programmatically restore grouping
-    this.gridOptions.columnApi.setRowGroupColumns(['portfolio_company_name']);
+    let groupByColumn = document.getElementsByClassName("portfolio_investment_ag_grid")[0].dataset.groupByColumn;
+    if(groupByColumn) {
+      this.gridOptions.columnApi.setRowGroupColumns([groupByColumn]);
+    }
   }
-
-  
  
 }

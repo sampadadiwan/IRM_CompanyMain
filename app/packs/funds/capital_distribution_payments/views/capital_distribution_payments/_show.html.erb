@@ -26,14 +26,7 @@
             <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
           </td>
         </tr>
-        <tr>
-          <td>
-            Investor
-          </td>
-          <td>
-            <%= capital_distribution_payment.investor_name %>
-          </td>
-        </tr>
+        
 
         <tr>
           <td>
@@ -83,7 +76,7 @@
 
         <% end %>
 
-        <% if capital_distribution_payment.entity.permissions.enable_units? %>
+        <% if capital_distribution_payment.entity.permissions.enable_units? && !current_user&.curr_role_investor? %>
         <tr>
           <td>
             Units Redeemed

@@ -3,6 +3,8 @@
   if params[:aggregate_portfolio_investment_id].present?
     aggregate_portfolio_investment ||= AggregatePortfolioInvestment.find_by(id: params[:aggregate_portfolio_investment_id])
   end
+  fund_id ||= params[:fund_id].presence || aggregate_portfolio_investment&.fund_id
+  fund ||= Fund.find_by(id: fund_id) if fund_id.present?
   import_upload_id ||= nil
 %>
 
@@ -10,25 +12,25 @@
   <h1 class="h3 mb-0 text-gray-800"><%= params[:title] || "Portfolio Investments" %></h1>
 
   <span>
-    <% if (aggregate_portfolio_investment && policy(aggregate_portfolio_investment).add_investment?) %>
+    <% if (fund && policy(fund).update?) %>
 
       <%= link_to "New Portfolio Investment",
           new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-          "portfolio_investment[fund_id]": params[:fund_id],
+          "portfolio_investment[fund_id]": fund_id,
           "portfolio_investment[aggregate_portfolio_investment_id]": aggregate_portfolio_investment&.id,
           "portfolio_investment[investment_instrument_id]": aggregate_portfolio_investment&.investment_instrument_id,
           "portfolio_investment[portfolio_company_id]": aggregate_portfolio_investment&.portfolio_company_id),
-          {class: "btn btn-outline-primary"} if params[:fund_id].present? %>
-
+          {class: "btn btn-outline-primary"} %>
+  
       <%= link_to "Upload",
-          new_import_upload_path("import_upload[owner_id]": params[:fund_id],
+          new_import_upload_path("import_upload[owner_id]": fund_id,
           "import_upload[owner_type]": "Fund",
           "import_upload[import_type]": "PortfolioInvestment",
           "sample_upload": "PORTFOLIO_SAMPLE"),
           { class: "btn btn-outline-primary"}   %>
 
 
-      <%= link_to "Download", portfolio_investments_path(fund_id: params[:fund_id], aggregate_portfolio_investment_id: aggregate_portfolio_investment&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
+      <%= link_to "Download", portfolio_investments_path(fund_id: fund_id, aggregate_portfolio_investment_id: aggregate_portfolio_investment&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
 
     <% else %>
       <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
@@ -48,6 +50,7 @@
 
     <div class="portfolio_investment_ag_grid" data-controller="portfolio-investment-ag" data-portfolio-investment-ag-lazy-load-data-value=<%= false %>
       data-custom-columns='<%= custom_grid_columns.to_json %>'
+      data-group-by-column='<%= params[:group_by_column] %>'
       data-portfolio-investment-ag-table-name-value="#portfolio_investments_table" data-portfolio-investment-ag-custom-fields-value="" >
 
       <div id="portfolio_investments_table" class="<%= get_ag_theme %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
