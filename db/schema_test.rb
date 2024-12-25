@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_12_23_085100) do
+ActiveRecord::Schema[7.2].define(version: 2024_12_25_135249) do
   create_table "access_rights", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -856,6 +856,8 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_23_085100) do
         t.boolean "enabled"
         t.datetime "created_at", null: false
         t.datetime "updated_at", null: false
+        t.boolean "display_name", default: true
+        t.boolean "display_tag", default: false
         t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
         t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
       end
@@ -1448,8 +1450,9 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_23_085100) do
       t.string "owner_type"
       t.bigint "owner_id"
       t.json "cash_flows"
-      t.bigint "import_upload_id"
+      
       t.boolean "latest", default: false
+      t.bigint "import_upload_id"
       t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
       t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
       t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
