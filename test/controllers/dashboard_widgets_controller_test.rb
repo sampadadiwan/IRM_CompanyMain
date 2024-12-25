@@ -17,7 +17,7 @@ class DashboardWidgetsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create dashboard_widget" do
     assert_difference("DashboardWidget.count") do
-      post dashboard_widgets_url, params: { dashboard_widget: { enabled: @dashboard_widget.enabled, entity_id: @dashboard_widget.entity_id, metadata: @dashboard_widget.metadata, name: @dashboard_widget.name, owner_id: @dashboard_widget.owner_id, owner_type: @dashboard_widget.owner_type, position: @dashboard_widget.position, template: @dashboard_widget.template } }
+      post dashboard_widgets_url, params: { dashboard_widget: { enabled: @dashboard_widget.enabled, entity_id: @dashboard_widget.entity_id, metadata: @dashboard_widget.metadata, name: @dashboard_widget.widget_name, owner_id: @dashboard_widget.owner_id, owner_type: @dashboard_widget.owner_type, position: @dashboard_widget.position, template: @dashboard_widget.template } }
     end
 
     assert_redirected_to dashboard_widget_url(DashboardWidget.last)
@@ -34,7 +34,7 @@ class DashboardWidgetsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update dashboard_widget" do
-    patch dashboard_widget_url(@dashboard_widget), params: { dashboard_widget: { enabled: @dashboard_widget.enabled, entity_id: @dashboard_widget.entity_id, metadata: @dashboard_widget.metadata, name: @dashboard_widget.name, owner_id: @dashboard_widget.owner_id, owner_type: @dashboard_widget.owner_type, position: @dashboard_widget.position, template: @dashboard_widget.template } }
+    patch dashboard_widget_url(@dashboard_widget), params: { dashboard_widget: { enabled: @dashboard_widget.enabled, entity_id: @dashboard_widget.entity_id, metadata: @dashboard_widget.metadata, name: @dashboard_widget.widget_name, owner_id: @dashboard_widget.owner_id, owner_type: @dashboard_widget.owner_type, position: @dashboard_widget.position, template: @dashboard_widget.template } }
     assert_redirected_to dashboard_widget_url(@dashboard_widget)
   end
 

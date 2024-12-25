@@ -1,7 +1,14 @@
-<% widget_size ||= "col-md-12" %>        
-<div class="<%= widget_size %> d-flex align-items-stretch" data-controller="datatable">
-  <div class="card w-100">
-    <div class="card-body">
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  
+    <!-- This block becomes the `content` inside the component -->
+  
+
       <table class="table table-bordered dataTable action_table hover jqDataTable">
         <thead>
           <tr>
@@ -24,7 +31,5 @@
           <% end %>
         </tbody>
       </table>
-      <p class="mb-0">Portfolios</p>
-    </div>
-  </div>
-</div>
+
+<% end %>

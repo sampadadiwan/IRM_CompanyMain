@@ -71,6 +71,25 @@
         <%= display_boolean @dashboard_widget.enabled %>
       </td>
     </tr>
+    
+    <tr>
+      <td>
+        Display Name
+      </td>
+      <td>
+        <%= display_boolean @dashboard_widget.display_name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Display Tag
+      </td>
+      <td>
+        <%= display_boolean @dashboard_widget.display_tag %>
+      </td>
+    </tr>
+
   </table>
   <div class="associated_entity">
     <% if policy(@dashboard_widget).update? %>

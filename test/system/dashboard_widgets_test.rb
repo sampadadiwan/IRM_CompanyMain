@@ -17,7 +17,7 @@ class DashboardWidgetsTest < ApplicationSystemTestCase
     check "Enabled" if @dashboard_widget.enabled
     fill_in "Entity", with: @dashboard_widget.entity_id
     fill_in "Metadata", with: @dashboard_widget.metadata
-    fill_in "Name", with: @dashboard_widget.name
+    fill_in "Name", with: @dashboard_widget.widget_name
     fill_in "Owner", with: @dashboard_widget.owner_id
     fill_in "Owner type", with: @dashboard_widget.owner_type
     fill_in "Position", with: @dashboard_widget.position
@@ -35,7 +35,7 @@ class DashboardWidgetsTest < ApplicationSystemTestCase
     check "Enabled" if @dashboard_widget.enabled
     fill_in "Entity", with: @dashboard_widget.entity_id
     fill_in "Metadata", with: @dashboard_widget.metadata
-    fill_in "Name", with: @dashboard_widget.name
+    fill_in "Name", with: @dashboard_widget.widget_name
     fill_in "Owner", with: @dashboard_widget.owner_id
     fill_in "Owner type", with: @dashboard_widget.owner_type
     fill_in "Position", with: @dashboard_widget.position

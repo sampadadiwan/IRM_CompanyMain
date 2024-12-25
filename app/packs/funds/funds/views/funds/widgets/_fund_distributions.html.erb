@@ -1,9 +1,12 @@
-<% widget_size ||= "col-md-6" %>
-<div class="<%= widget_size %> d-flex align-items-stretch">
-  <div class="card w-100">
-    <div class="card-body">
-      <%= fund_distributions_by_quarter(@fund) %>
-      <p class="mb-0">Distribution</p>
-    </div>
-  </div>
-</div>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  
+    <!-- This block becomes the `content` inside the component -->
+    <%= fund_distributions_by_quarter(@fund) %>
+  
+<% end %>

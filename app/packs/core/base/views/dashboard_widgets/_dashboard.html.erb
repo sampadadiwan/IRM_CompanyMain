@@ -2,7 +2,7 @@
 <div class="row">    
     
     <% dashboard_widgets(dashboard_name, current_user.entity_id).each do |name, dashboard_widget| %>
-        <%= render dashboard_widget.path, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
+        <%= render dashboard_widget.path, widget: dashboard_widget, name:, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
     <% end %>
 
 </div>

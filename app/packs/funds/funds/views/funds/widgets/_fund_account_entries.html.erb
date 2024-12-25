@@ -1,13 +1,12 @@
-<% 
-  widget_size ||= "col-md-6" 
-  name ||= nil 
-  args ||= {}
-%>
-<div class="<%= widget_size %> d-flex align-items-stretch">
-  <div class="card w-100">
-    <div class="card-body">
-      <%= account_entries_line_chart(@fund, **args) %>
-      <p class="mb-0"><%= name || "Account Entries" %></p>
-    </div>
-  </div>
-</div>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  
+    <!-- This block becomes the `content` inside the component -->
+    <%= account_entries_line_chart(@fund, **args) %>
+  
+<% end %>
