@@ -1,17 +1,36 @@
 module FundStatisticsHelper
+  PIE_CHART_COLORS = [
+    "#5d87ff", "#65C18C", "#9ADCFF", "#364F6B", "#3FC1C9", "#54BAB9", "#FC5185", "#FFBCBC", "#EDF6E5", "#FF964F"
+  ].freeze
+
   def pie_chart_with_options(data)
-    pie_chart data, library: {
-                      **chart_theme_color,
-                      plotOptions: { pie: {
-                        dataLabels: {
-                          enabled: true,
-                          format: '{point.name}:<br>{point.percentage:.1f} %'
-                        }
-                      } }
-                    },
-                    #  stacked: false,
-                    decimal: ",",
-                    prefix: ""
+    options = {
+      library: {
+        **chart_theme_color,
+        plotOptions: {
+          pie: {
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}:<br>{point.percentage:.1f} %'
+            }
+          }
+        }
+      },
+      decimal: ",",
+      prefix: ""
+    }
+
+    # Add colors only if there are more than 10 data points
+    if data.size > 10
+      extended_colors = PIE_CHART_COLORS.dup
+      loop do
+        extended_colors += PIE_CHART_COLORS[1..] # Always start from index 1
+        break if extended_colors.size >= data.size
+      end
+      options[:colors] = extended_colors
+    end
+
+    pie_chart data, **options
   end
 
   def fund_commitment_amounts(fund)
