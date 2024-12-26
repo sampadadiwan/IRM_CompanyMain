@@ -1,35 +1,50 @@
-<%= render(
-      WidgetCardComponent.new(
-        widget: widget,
-        args: args,
-        widget_size: widget.widget_size
-      )
-    ) do %>
-  
-    <!-- This block becomes the `content` inside the component -->
-  
+<% 
+  args ||= {}
+  show_chart ||= args[:show_chart] 
+%>
 
-      <table class="table table-bordered dataTable action_table hover jqDataTable">
-        <thead>
-          <tr>
-            <th>Portfolio Company</th>
-            <th>Net Bought Amount</th>
-            <th>FMV</th>
-            <th>Income</th>
-            <th style="min-width:300px;">Ratios</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @fund.aggregate_portfolio_investments.includes(:portfolio_company).each do |api| %>
-            <tr>
-              <td><%= api.portfolio_company.investor_name %></td>
-              <td><%= money_to_currency(api.net_bought_amount, params) %></td>
-              <td><%= money_to_currency(api.fmv, params) %></td>
-              <td><%= money_to_currency(api.portfolio_income, {}) %></td>
-              <td><%= fund_ratios_line_chart(@fund, ratio_names: ["IRR", "MOIC"], owner: api) %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+<div class="<%= widget.widget_size %> d-flex align-items-stretch">
+  <div class="card w-100">
+    <div class="card-body">
 
-<% end %>
+      <div class="align-items-center justify-content-between mb-4">
+          <h1 class="h3 mb-0 text-gray-800">Portfolio</h1>
+      
+          <!-- This block becomes the `content` inside the component -->
+          
+          <div class="table-responsive">
+
+            <table class="table table-bordered dataTable action_table hover jqDataTable">
+              <thead>
+                <tr>
+                  <th>Portfolio Company</th>
+                  <th>Net Bought Amount</th>
+                  <th>FMV</th>
+                  <th>Income</th>
+                  <% if show_chart %>
+                    <th style="min-width:300px;">Ratios</th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% @fund.aggregate_portfolio_investments.includes(:portfolio_company).each do |api| %>
+                  <tr>
+                    <td><%= api.portfolio_company.investor_name %></td>
+                    <td><%= money_to_currency(api.net_bought_amount, params) %></td>
+                    <td><%= money_to_currency(api.fmv, params) %></td>
+                    <td><%= money_to_currency(api.portfolio_income, {}) %></td>
+                    <% if show_chart %>
+                      <td><%= fund_ratios_line_chart(@fund, ratio_names: ["IRR", "MOIC"], owner: api) %></td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>    
+      </div>
+
+      <p class="mb-0"><%= widget.widget_name if widget.display_name %> <%= widget.tags if widget.display_tag %></p>
+
+    </div>
+  </div>
+</div>
