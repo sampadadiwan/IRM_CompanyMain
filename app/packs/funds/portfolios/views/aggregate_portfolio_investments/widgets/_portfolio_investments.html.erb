@@ -1,6 +1,7 @@
 <% 
   uri_params ||= {}
-  fund_id ||= uri_params[:owner_id]
+  fund ||= uri_params[:fund]
+  fund_id ||= uri_params[:owner_id].presence || fund&.id
   args ||= {}
   pi_uri = "/portfolio_investments?fund_id=#{fund_id}&ag=true&group_by_column=#{args[:group_by_column]}"
   api_uri = "/aggregate_portfolio_investments?fund_id=#{fund_id}&grid_only=true"

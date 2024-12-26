@@ -57,7 +57,7 @@ class DashboardWidget < ApplicationRecord
 
   # rubocop:disable Security/Eval
   def metadata_args
-    eval(metadata) if metadata
+    metadata ? eval(metadata) : {}
   end
   # rubocop:enable Security/Eval
 
