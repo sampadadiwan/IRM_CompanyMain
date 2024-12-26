@@ -17,10 +17,21 @@ module WithCustomField
       where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{key}", value)
     }
 
-    ransacker :tin do
-      Arel.sql("json_fields->>'tin'")
+    # This is search for Json Fields via ransack
+    # Useage:  InvestorKyc.ransack(InvestorKyc.json_fields_query("json_fields.nationality_cont" => "India")).result
+    ransacker :json_fields, args: %i[parent ransacker_args] do |parent, args|
+      Rails.logger.debug { "parent: #{parent} args: #{args}" }
+      key = args
+      Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields],
+                                      Arel::Nodes.build_quoted("$.#{key}"))
     end
 
+
+    # Custom ransacker for searching JSON fields
+    ransacker :json_field_value, args: [:key] do |parent, args|
+      key = args.first
+      Arel.sql("(json_fields ->> '#{key}')")
+    end
 
     def setup_form_type
       # Ensure that the form type is set, if not already present

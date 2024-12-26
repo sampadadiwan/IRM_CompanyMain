@@ -75,8 +75,8 @@
     <% end %>
 
     <% if current_user.has_cached_role?(:company_admin) %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">
-          Documents
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#emails-tab">
+          Emails
       </a>
     <% end %>
 
@@ -234,12 +234,11 @@
       </div>
 
       <% if current_user.has_cached_role?(:company_admin) %>
-        <div id="docs-tab" class="tab-pane fade">
-          <div id="docs" class="associated_entity">
-
-            <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: investor.entity_id, folder_id: investor.document_folder.id), loading: :lazy do %>
+        <div id="emails-tab" class="tab-pane fade">
+          <div id="emails" class="associated_entity">
+            <%= turbo_frame_tag "incoming_emails_list", target: "_top", src: incoming_emails_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
+              Loading ...
             <% end %>
-
           </div>
         </div>
       <% end %>

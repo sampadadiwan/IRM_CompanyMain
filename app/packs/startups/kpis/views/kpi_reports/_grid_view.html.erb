@@ -8,10 +8,14 @@
         KPIs: 
         <% if params[:entity_id].present? %>
             <% if current_user.curr_role_investor? %>
-                <% @entity = Entity.find(params[:entity_id]) %>                
-                <% investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first %>
-                <%=  investor ? link_to(investor) : @entity.name %>
+                <% 
+                    @entity = Entity.find(params[:entity_id])                 
+                    investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first                     
+                %>
+            <% else %>
+                <% investor ||= Investor.where(id: params[:portfolio_company_id]).first %>                
             <% end %>
+            <%=  investor ? link_to(investor) : @entity.name %>
         <% end %>
     </h1>
 
@@ -27,6 +31,8 @@
                 Actions
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item" if investor %>
+
                 <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item" %>
 
                 <button class="dropdown-item", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 

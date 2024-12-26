@@ -1,41 +1,5 @@
 
-
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Incoming Emails</h1>
-  <%= link_to "New Incoming Email", new_incoming_email_path, {class: "btn btn-outline-primary"}  %>
-</div>
-
-<div class="table-responsive" data-controller="datatable">
-
-  <table id="incoming_emails" class="table table-bordered dataTable">
-    <thead>
-      <tr>
-        <th>
-          From
-        </th>
-        <th>
-          To
-        </th>
-        <th>
-          Subject
-        </th>
-        <th>
-          For
-        </th>
-        <th>
-          On
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-
-    <tbody>
-    <% @incoming_emails.each do |incoming_email| %>
-      <%= render incoming_email %>
-    <% end %>
-    </tbody>
-  </table>
-
-  <%= paginate @incoming_emails %>
-</div>
+<%= turbo_frame_tag "incoming_emails_list", target: "_top", loading: :lazy do %>    
+    <%= render "/incoming_emails/index", incoming_emails: @incoming_emails if @incoming_emails %>
+<% end %>
+            
