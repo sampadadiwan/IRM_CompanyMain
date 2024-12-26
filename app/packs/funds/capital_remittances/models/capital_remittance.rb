@@ -134,7 +134,7 @@ class CapitalRemittance < ApplicationRecord
                   elsif due_amount.to_f <= -10
                     "Overpaid"
                   else
-                    "Pending"
+                    capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
                   end
   end
 

@@ -30,7 +30,7 @@ export default class extends BaseAgGrid {
       }
     });
 
-    columnDefs.push(textColumn(controller, "created_at", "Created At"));
+    // columnDefs.push(textColumn(controller, "created_at", "Created At"));
     columnDefs.push({
       field: "dt_actions",
       cellRenderer: this.html,

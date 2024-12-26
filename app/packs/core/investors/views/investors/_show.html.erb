@@ -34,10 +34,7 @@
         <%= Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
       </td>
       <td>
-        <%= @investor.pan %>
-        <% if @investor.pan&.strip != @investor.investor_entity.pan&.strip %>
-          <span class="badge bg-danger">Mismatched PAN, please contact support</span>
-        <% end %>
+        <%= @investor.pan %>        
       </td>
     </tr>
 

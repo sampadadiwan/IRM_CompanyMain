@@ -29,9 +29,7 @@ class IncomingEmailsController < ApplicationController
     @q = IncomingEmail.ransack(params[:q])
 
     @incoming_emails = policy_scope(@q.result)
-    if params[:owner_type].present? && params[:owner_id].present?
-      @incoming_emails = @incoming_emails.where(owner_type: params[:owner_type], owner_id: params[:owner_id])
-    end
+    @incoming_emails = @incoming_emails.where(owner_type: params[:owner_type], owner_id: params[:owner_id]) if params[:owner_type].present? && params[:owner_id].present?
     @incoming_emails = @incoming_emails.order(id: :desc).page(params[:page])
   end
 

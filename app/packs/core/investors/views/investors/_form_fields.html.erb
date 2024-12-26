@@ -10,14 +10,15 @@
     <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control"  %>
   </div>
 
+  <% disabled = !investor.new_record? %>
   <div class="form-group" id="investor_name_group">
     <%= form.label :primary_email %>
-    <%= form.text_field :primary_email, class: "form-control", required: true, data: {validate: true} %>
+    <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true} %>
   </div>
 
   <div class="form-group" id="investor_name_group">
     <%= form.label :pan, Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
-    <%= form.text_field :pan, class: "form-control" %>
+    <%= form.text_field :pan, class: "form-control", disabled: %>
   </div>
 
   <div class="form-group">

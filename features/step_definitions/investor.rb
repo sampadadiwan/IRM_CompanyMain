@@ -35,10 +35,10 @@ When('I update the investor {string}') do |args|
   visit(edit_investor_path(@investor))
 
   fill_in('investor_investor_name', with: @investor.investor_name)
-  fill_in('investor_pan', with: @investor.pan)
+  # fill_in('investor_pan', with: @investor.pan)
   select("Founder", from: "investor_category")
   fill_in('investor_tag_list', with: @investor.tag_list)
-  fill_in('investor_primary_email', with: @investor_entity.primary_email)
+  # fill_in('investor_primary_email', with: @investor_entity.primary_email)
 
   click_on("Save")
 

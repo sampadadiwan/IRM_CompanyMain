@@ -257,5 +257,4 @@ class InvestorKyc < ApplicationRecord
   def doc_questions
     entity.doc_questions.where(owner: entity, for_class: "InvestorKyc")
   end
-
 end

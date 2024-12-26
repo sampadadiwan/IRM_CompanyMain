@@ -26,9 +26,8 @@ module WithCustomField
                                       Arel::Nodes.build_quoted("$.#{key}"))
     end
 
-
     # Custom ransacker for searching JSON fields
-    ransacker :json_field_value, args: [:key] do |parent, args|
+    ransacker :json_field_value, args: [:key] do |_parent, args|
       key = args.first
       Arel.sql("(json_fields ->> '#{key}')")
     end
