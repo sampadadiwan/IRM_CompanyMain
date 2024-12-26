@@ -1,3 +1,4 @@
+
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -7,6 +8,6 @@
     ) do %>
   
     <!-- This block becomes the `content` inside the component -->
-    <%= fund_cashflows(@fund, **args) %>
+    <%= fund_cashflows(@fund, **widget.metadata_args) %>
   
 <% end %>
