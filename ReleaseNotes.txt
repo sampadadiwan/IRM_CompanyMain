@@ -1,3 +1,20 @@
+V8.0.53
+#####################################
+74fde1d75 Fixed fund ratio tests
+4ecd68cbb Added separators for chart values
+1519c3ce5 Better fund ratio filter btns
+5e5d53050 Added better fund ratio calcs for portfolio company
+3e7ae49ef Investor update PAN fixes1 (#665)
+45c715fcf Added Emails tab to investor, and New KpiReport action
+93eea9d1b Added new widget component
+a79f223b6 Portfolio dashboard (#664)
+ebd7a1519 Avoid adjacent colors repeat (#663)
+de65ff19b Fixed grid view pref tests
+277f34e9f Allow 0 quantity for PI create
+7aed2192e Added new PI btn in API show
+fb5fccf66 Added investor search by primary email
+21e78004f Added -amount for PI for AG grid
+
 V8.0.52
 #####################################
 e3718cf57 Better details on grid view preferences

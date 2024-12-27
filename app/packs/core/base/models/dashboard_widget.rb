@@ -9,13 +9,14 @@ class DashboardWidget < ApplicationRecord
   attr_accessor :path
 
   FUND_WIDGETS = [
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Stats", path: "funds/stats", size: "Large"),
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Card", path: "funds/card", size: "Large"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Card", path: "funds/card", size: "Large"),
-    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Stats", path: "funds/stats", size: "Large")
+    
   ].freeze
 
   OPS_WIDGETS = [
