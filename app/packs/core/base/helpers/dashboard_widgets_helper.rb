@@ -14,7 +14,7 @@ module DashboardWidgetsHelper
       dashboard_widgets = []
       widgets.order(:position).each do |widget|
         widget.path = available_widgets[widget.widget_name].path
-        dashboard_widgets << ["#{widget.widget_name} #{widget_tag}", widget]
+        dashboard_widgets << ["#{widget.widget_name} #{widget.tags}", widget]
       end
 
       dashboard_widgets.to_h
