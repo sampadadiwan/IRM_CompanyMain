@@ -17,8 +17,9 @@ import "vega-embed"
 window.dispatchEvent(new Event("vega:load"))
 
 Highcharts.setOptions({
-	lang: {
-  	thousandsSep: ','
+  lang: {
+    thousandsSep: ',',
+    decimalPoint: '.'
   }
 });
 

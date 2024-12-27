@@ -67,12 +67,12 @@ module PortfolioHelper
   end
 
   def portfolio_last_xirr(fund)
-    api_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "AggregatePortfolioInvestment")
-    if api_frs.present?
-      portfolio_irr_ratios = api_frs.map { |fr| [fr.owner.to_s, fr.value] }
+    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
+    if pc_frs.present?
+      portfolio_irr_ratios = pc_frs.map { |fr| [fr.owner.investor_name, fr.value] }
 
       column_chart portfolio_irr_ratios, library: {
-        plotOptions: { line: {
+        plotOptions: { column: {
           dataLabels: {
             enabled: true,
             format: "{point.y:,.2f} %"

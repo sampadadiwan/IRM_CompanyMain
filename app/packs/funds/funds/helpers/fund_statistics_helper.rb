@@ -16,7 +16,6 @@ module FundStatisticsHelper
           }
         }
       },
-      decimal: ",",
       prefix: ""
     }
 
