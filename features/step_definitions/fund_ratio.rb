@@ -1,6 +1,7 @@
 Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_name|
   visit(fund_path(@fund))
   click_on("Ratios")
+  find("#fund_ratios_actions").click
   click_on("Upload")
   sleep(10)
   fill_in('import_upload_name', with: "Test Upload")
