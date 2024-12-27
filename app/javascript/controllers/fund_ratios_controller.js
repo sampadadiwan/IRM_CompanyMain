@@ -5,6 +5,7 @@ export default class extends ServerDatatableController {
   columns() {
     return [
       {"data": "owner_name"},
+      {"data": "owner_type"},
       {"data": "name"},
       {"data": "display_value"},
       {"data": "end_date"},

@@ -3,7 +3,8 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
-    @fund_ratios = policy_scope(FundRatio).includes(:fund, :capital_commitment)
+    @q = FundRatio.ransack(params[:q])
+    @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
     if params[:fund_id].present?
       @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
       @fund = @fund_ratios.last&.fund
@@ -12,7 +13,10 @@ class FundRatiosController < ApplicationController
     @fund_ratios = @fund_ratios.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
+
     @fund_ratios = @fund_ratios.where(owner_type: params[:owner_type]) if params[:owner_type].present?
+    @fund_ratios = @fund_ratios.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+
     @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
     respond_to do |format|

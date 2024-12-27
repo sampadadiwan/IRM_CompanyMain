@@ -29,6 +29,17 @@
   </tr>
   <% end %>
 
+  <% if @fund_ratio.owner %>
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= link_to @fund_ratio.owner %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Name

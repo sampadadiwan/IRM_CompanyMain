@@ -123,12 +123,87 @@ class FundPortfolioCalcs
 
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
-    @api_map ||= {}
+    @portfolio_company_irr_map ||= {}
 
-    if @api_map.empty?
+    if @portfolio_company_irr_map.empty?
+      # Get all the Portfolio companies
+      @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
+        portfolio_company = Investor.find(portfolio_company_id)
+        # Get all the portfolio investments for this portfolio company before the end date
+        portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
+        cf = Xirr::Cashflow.new
+
+        # Get the buy cash flows
+        Rails.logger.debug "#########BUYS#########"
+        portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
+          cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
+        end
+
+        Rails.logger.debug "#########SELLS#########"
+        # Get the sell cash flows
+        portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
+          cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
+        end
+
+        Rails.logger.debug "#########FMV & Portfolio CF#########"
+
+        # Get the FMV for this specific portfolio_company
+        @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
+          # Get the portfolio income cash flows
+          portfolio_cashflows = api.portfolio_cashflows.actual.where(portfolio_company_id:, payment_date: ..@end_date)
+          portfolio_cashflows.each do |pcf|
+            cf << Xirr::Transaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+          end
+
+          # Get the FMV for this specific portfolio_company
+          fmv_val = fmv_on_date(api, scenarios:).round(4)
+          cf << Xirr::Transaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
+          Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
+        end
+
+        # Calculate and store the xirr
+        lxirr = XirrApi.new.xirr(cf, "portfolio_company_irr:#{portfolio_company_id}")
+        xirr_val = lxirr ? (lxirr * 100).round(2) : 0
+        Rails.logger.debug { "#{portfolio_company_id} xirr = #{xirr_val}" }
+
+        cash_flows = return_cash_flows ? cf : nil
+        @portfolio_company_irr_map[portfolio_company_id] = { name: portfolio_company.investor_name, xirr: xirr_val, cash_flows: }
+      end
+
+    end
+
+    @portfolio_company_irr_map
+  end
+
+  def portfolio_company_cost_to_value
+    @portfolio_company_cost_map ||= {}
+
+    @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
+      portfolio_company = Investor.find(portfolio_company_id)
+      portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
+
+      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:amount_cents)
+      sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
+
+      total_fmv = 0
+      @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
+        total_fmv += fmv_on_date(api)
+      end
+
+      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: (sold_amount + total_fmv) / bought_amount } if bought_amount.positive?
+    end
+
+    @portfolio_company_cost_map
+  end
+
+  # Compute the XIRR for each API
+  def api_irr(return_cash_flows: false, scenarios: nil)
+    @api_irr_map ||= {}
+
+    if @api_irr_map.empty?
 
       @fund.aggregate_portfolio_investments.pool.each do |api|
-        portfolio_company_id = api.portfolio_company_id
+        api.portfolio_company_id
 
         portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
         cf = Xirr::Cashflow.new
@@ -159,21 +234,21 @@ class FundPortfolioCalcs
         Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
         # Calculate and store the xirr
 
-        lxirr = XirrApi.new.xirr(cf, "portfolio_company_irr:#{portfolio_company_id}")
+        lxirr = XirrApi.new.xirr(cf, "api_irr:#{api.id}")
         xirr_val = lxirr ? (lxirr * 100).round(2) : 0
         Rails.logger.debug { "#{api.id} xirr = #{xirr_val}" }
 
         cash_flows = return_cash_flows ? cf : nil
-        @api_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
+        @api_irr_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
       end
 
     end
 
-    @api_map
+    @api_irr_map
   end
 
-  def portfolio_company_cost_to_value
-    @api_map ||= {}
+  def api_cost_to_value
+    @api_cost_map ||= {}
 
     @fund.aggregate_portfolio_investments.pool.each do |api|
       portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
@@ -182,10 +257,10 @@ class FundPortfolioCalcs
       sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
       fmv = fmv_on_date(api)
 
-      @api_map[api.id] = { name: api.to_s, value_to_cost: (sold_amount + fmv) / bought_amount } if bought_amount.positive?
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (sold_amount + fmv) / bought_amount } if bought_amount.positive?
     end
 
-    @api_map
+    @api_cost_map
   end
 
   def fmv_on_date(aggregate_portfolio_investment = nil, scenarios: nil)
