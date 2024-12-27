@@ -31,7 +31,7 @@
     <td colspan="2">
 
         <%= render "/capital_remittances/index",
-                lazy_load_data: false, data_source: capital_remittances_path(fund_id: @fund.id, all: true, status: "Pending", verified: "", format: :json) %>
+                lazy_load_data: false, data_source: capital_remittances_path(fund_id: @fund.id, all: true, status: "Pending,Overdue", verified: "", format: :json) %>
     </td>
   </tr>
 
