@@ -8,8 +8,8 @@ class InvestorPolicy < ApplicationPolicy
         # Employee who has permission to read investors can see all investors
         scope.where(entity_id: user.entity_id)
       else
-        # No one else can see any investors
-        scope.none
+        # Can see investors for which the user has been granted specific access
+        scope.for_employee(user)
       end
     end
   end
@@ -59,6 +59,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    extended_permissioned_employee?(perm) || support?
+    base_perm = perm.to_s.gsub('investor_', '').to_sym 
+    (extended_permissioned_employee?(perm) || super(base_perm)) || support?
   end
 end

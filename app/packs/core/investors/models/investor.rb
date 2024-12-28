@@ -7,6 +7,7 @@ class Investor < ApplicationRecord
   include WithIncomingEmail
   include Pundit::Authorization
   include WithDocQuestions
+  include ForInvestor
 
   update_index('investor') { self if index_record? }
 
