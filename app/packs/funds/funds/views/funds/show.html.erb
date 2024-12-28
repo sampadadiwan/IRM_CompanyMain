@@ -83,7 +83,7 @@ commands = [
             <%= link_to "All Reports", fund_reports_path(fund_id: @fund.id), {class: "dropdown-item" }  %>
             <%= link_to "Corpus Details" , fund_reports_path(fund_id: @fund.id, name: "CorpusDetails"), {class: "dropdown-item" } %>
             <%= link_to "Information on Investments" , fund_reports_path(fund_id: @fund.id, name: "InformationOnInvestments" ), {class: "dropdown-item" } %>
-            <%= link_to "Info on Investors" , fund_reports_path(fund_id: @fund.id, name: "InfoOnInvestors"), {class: "dropdown-item" } %>
+            <%= link_to "Info on Stakeholders" , fund_reports_path(fund_id: @fund.id, name: "InfoOnInvestors"), {class: "dropdown-item" } %>
             <%= link_to "Download SEBI Report" , report_fund_path(@fund, report: "sebi_reports/sebi_report", report_class:"SebiReport"), {class: "dropdown-item" } %>
           </div>
         </div>
@@ -214,7 +214,7 @@ commands = [
 
               <%= link_to "Fund Units", fund_units_path(fund_id: @fund.id, cols: :all), {class: "dropdown-item" } %>
 
-              <%= link_to "View Investors", investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  if current_user.enable_investors %>
+              <%= link_to "View Stakeholders", investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  if current_user.enable_investors %>
             <% end %>
 
 
