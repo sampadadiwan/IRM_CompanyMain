@@ -59,7 +59,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    base_perm = perm.to_s.gsub('investor_', '').to_sym 
+    base_perm = perm.to_s.gsub('investor_', '').to_sym
     (extended_permissioned_employee?(perm) || super(base_perm)) || support?
   end
 end

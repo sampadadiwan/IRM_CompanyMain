@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_12_25_135249) do
+ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
   create_table "access_rights", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -853,10 +853,10 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_25_135249) do
         t.integer "position"
         t.text "metadata"
         t.string "size", limit: 10
-        t.boolean "enabled"
+        t.boolean "enabled", default: true
         t.datetime "created_at", null: false
         t.datetime "updated_at", null: false
-        t.boolean "display_name", default: true
+        t.boolean "display_name", default: false
         t.boolean "display_tag", default: false
         t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
         t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
