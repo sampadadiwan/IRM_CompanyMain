@@ -1,4 +1,19 @@
 class InvestorPolicy < ApplicationPolicy
+  class Scope < Scope
+    def resolve
+      if user.has_cached_role?(:company_admin)
+        # Company admin can see all investors
+        scope.where(entity_id: user.entity_id)
+      elsif user.enable_investors && user.get_extended_permissions.set?(:investor_read)
+        # Employee who has permission to read investors can see all investors
+        scope.where(entity_id: user.entity_id)
+      else
+        # No one else can see any investors
+        scope.none
+      end
+    end
+  end
+
   def index?
     user.enable_investors
   end

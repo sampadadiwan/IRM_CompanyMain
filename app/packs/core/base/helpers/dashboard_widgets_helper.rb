@@ -20,5 +20,4 @@ module DashboardWidgetsHelper
       dashboard_widgets.to_h
     end
   end
-
 end
