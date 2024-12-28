@@ -87,7 +87,7 @@ class ImportUtil < Trailblazer::Operation
         # Enqueue the job
         job_class.perform_later(import_upload.id)
       else
-        Rails.logger.debug("#{job_class_name} does not exist.")
+        Rails.logger.debug { "#{job_class_name} does not exist." }
         ImportFixCountsJob.perform_later(import_upload.id)
       end
     end
