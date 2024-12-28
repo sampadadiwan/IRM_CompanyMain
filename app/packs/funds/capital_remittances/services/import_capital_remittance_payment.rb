@@ -60,7 +60,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     end
 
     # Add the capital_remittance to the set, so we can save them after all the payment numbers are rolled up
-    @capital_remittance_ids[capital_remittance.id] = user_data["Verified"] == "Yes"
+    @capital_remittance_ids[capital_remittance.id.to_s] = user_data["Verified"] == "Yes"
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
@@ -114,22 +114,9 @@ class ImportCapitalRemittancePayment < ImportUtil
     true
   end
 
-  def post_process(ctx, import_upload:, **)
-    super
-
-    @capital_remittances = CapitalRemittance.where(id: @capital_remittance_ids.keys)
-    @capital_remittances.each do |capital_remittance|
-      # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
-      capital_remittance.verified = @capital_remittance_ids[capital_remittance.id]
-      CapitalRemittanceUpdate.call(capital_remittance:)
-      send_notification("Saving remittance payment for Folio: #{capital_remittance.folio_id}", import_upload.user_id)
-    end
-
-    # We need to run the counter cache update for the capital_remittances
-    # This usually takes a long time.
-    fund_ids = @capital_remittances.pluck(:fund_id).uniq
-    CapitalRemittancesCountersJob.perform_later(fund_ids, import_upload.user_id)
-
+  def post_process(_ctx, import_upload:, **)
+    # This had to be overridden as we need to pass the capital_remittance_ids to the job
+    ImportCapitalRemittancePaymentsFixCountsJob.perform_later(import_upload.id, @capital_remittance_ids)
     true
   end
 end

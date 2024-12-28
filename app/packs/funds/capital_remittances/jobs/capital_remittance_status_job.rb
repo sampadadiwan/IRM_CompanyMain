@@ -6,7 +6,7 @@ class CapitalRemittanceStatusJob < BulkActionJob
     CapitalRemittance.includes(:capital_call).pending.each do |remittance|
       if remittance.capital_call.call_date < Time.zone.today
         remittance.set_status
-        remittance.update_column(:status, remittance.status)
+        remittance.update_column(:status, remittance.status) # rubocop:disable Rails/SkipsModelValidations
       end
     end
   end

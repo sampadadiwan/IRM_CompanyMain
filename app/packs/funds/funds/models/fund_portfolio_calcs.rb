@@ -121,6 +121,8 @@ class FundPortfolioCalcs
     end
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/BlockLength
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
     @portfolio_company_irr_map ||= {}
@@ -174,6 +176,8 @@ class FundPortfolioCalcs
 
     @portfolio_company_irr_map
   end
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/BlockLength
 
   def portfolio_company_cost_to_value
     @portfolio_company_cost_map ||= {}
