@@ -76,7 +76,21 @@ class ImportUtil < Trailblazer::Operation
 
   def post_process(_ctx, import_upload:, **)
     # Update the counter caches
-    ImportFixCountsJob.perform_later(import_upload.id) if defer_counter_culture_updates
+    if defer_counter_culture_updates
+      # if specific FixCountsJob exists, use it
+      # This is needed as calling multiple jobs with perform later leads to bug in rollups - the values for some remittances are not rolled up.
+      # The specific job will ensure that the rollups are done correctly
+      job_class_name = "Import#{import_upload.model_class.to_s.pluralize}FixCountsJob"
+      if Object.const_defined?(job_class_name)
+        job_class = Object.const_get(job_class_name)
+
+        # Enqueue the job
+        job_class.perform_later(import_upload.id)
+      else
+        Rails.logger.dedbug("#{job_class_name} does not exist.")
+        ImportFixCountsJob.perform_later(import_upload.id)
+      end
+    end
     true
   end
 

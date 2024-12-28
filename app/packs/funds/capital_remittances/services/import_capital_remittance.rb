@@ -45,15 +45,4 @@ class ImportCapitalRemittance < ImportUtil
   def defer_counter_culture_updates
     true
   end
-
-  def post_process(ctx, import_upload:, **)
-    super
-
-    # We need to run the counter cache update for the capital_remittances
-    # This usually takes a long time.
-    fund_ids = CapitalRemittance.where(import_upload_id: import_upload.id).pluck(:fund_id).uniq
-    CapitalRemittancesCountersJob.perform_later(fund_ids, import_upload.user_id)
-
-    true
-  end
 end
