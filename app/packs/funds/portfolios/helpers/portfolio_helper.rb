@@ -34,7 +34,7 @@ module PortfolioHelper
   def api_xirr_chart(api)
     xirrs = FundRatio.where(entity_id: api.entity_id, fund_id: api.fund_id,
                             owner: api,
-                            name: "XIRR")
+                            name: "IRR")
                      .order(end_date: :asc)
                      .pluck(:end_date, :value)
 
@@ -73,6 +73,27 @@ module PortfolioHelper
 
       column_chart portfolio_irr_ratios, library: {
         plotOptions: { column: {
+          dataLabels: {
+            enabled: true,
+            format: "{point.y:,.2f} %"
+          }
+        } },
+        **chart_theme_color
+      }
+    else
+      "No data available."
+    end
+  end
+
+
+  def api_last_xirr(fund)
+    api_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "AggregatePortfolioInvestment")
+    if api_frs.present?
+      portfolio_irr_ratios = api_frs.map { |fr| [fr.owner.to_s, fr.value] }
+      puts portfolio_irr_ratios
+
+      column_chart portfolio_irr_ratios, library: {
+        plotOptions: { line: {
           dataLabels: {
             enabled: true,
             format: "{point.y:,.2f} %"
