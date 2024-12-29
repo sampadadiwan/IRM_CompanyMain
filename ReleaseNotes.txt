@@ -1,5 +1,16 @@
 V8.0.53
 #####################################
+574096b20 Renamed Investor to Stakeholder
+06823c395 Added download for FUS
+5b5aca1c0 Fixed API IRR chart
+4d06e14e0 Upgraded gems
+455ff1ce8 Fixed access rights to employees for investors
+94df1e357 Added FixCountsJob for import Remittance and remittance payments (#630)
+ee425bad3 Employee can see investors only if they have investor read access
+77e8873a8 Fixed default order of fund dashboard
+
+V8.0.53
+#####################################
 74fde1d75 Fixed fund ratio tests
 4ecd68cbb Added separators for chart values
 1519c3ce5 Better fund ratio filter btns

@@ -5,10 +5,10 @@ class CapitalDistributionPayment < ApplicationRecord
 
   include WithFolder
 
-  STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Amount", "Payment Date", "Completed", " "].freeze
+  STANDARD_COLUMN_NAMES = ["Stakeholder", "Folio No", "Amount", "Payment Date", "Completed", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name folio_id amount payment_date completed dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = ["Distribution Name"] + STANDARD_COLUMN_NAMES - ["Investor"]
+  INVESTOR_COLUMN_NAMES = ["Distribution Name"] + STANDARD_COLUMN_NAMES - ["Stakeholder"]
   INVESTOR_COLUMN_FIELDS = ["distribution_name"] + STANDARD_COLUMN_FIELDS - %w[investor_name]
 
   include ForInvestor

@@ -26,7 +26,7 @@ class CapitalCommitment < ApplicationRecord
                               collected_amount distribution_amount dt_actions].freeze
 
   STANDARD_COLUMNS = { "Folio" => "folio_id",
-                       "Investor" => "investor_name",
+                       "Stakeholder" => "investor_name",
                        "Investing Entity" => "investor_kyc_full_name",
                        "Unit Type" => "unit_type",
                        "Fund Close" => "fund_close",

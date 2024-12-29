@@ -8,10 +8,10 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
-  STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
+  STANDARD_COLUMN_NAMES = ["Stakeholder", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = (STANDARD_COLUMN_NAMES - ["Investor", "Verified", "Folio No", "Status"])
+  INVESTOR_COLUMN_NAMES = (STANDARD_COLUMN_NAMES - ["Stakeholder", "Verified", "Folio No", "Status"])
                           .insert(0, "Capital Call")
                           .insert(1, "Folio Id")
                           .insert(2, "Status")

@@ -6,7 +6,7 @@ class InvestorAccessesController < ApplicationController
   def index
     authorize(InvestorAccess)
     @q = InvestorAccess.ransack(params[:q])
-    @investor_accesses = policy_scope(@q.result).includes(:investor, :user)
+    @investor_accesses = policy_scope(@q.result).includes(:investor, :user, :granter)
     @investor_accesses = InvestorAccessSearch.perform(@investor_accesses, current_user, params)
     @investor_accesses = @investor_accesses.where(approved: params[:approved]) if params[:approved].present?
     @investor_accesses = @investor_accesses.where(investor_id: params[:investor_id]) if params[:investor_id].present?
