@@ -1,5 +1,9 @@
-V8.0.53
+V8.0.54
 #####################################
+0c73c7155 Fund unit reason format update (#624)
+0ae9590dc Deal inv form fix (#666)
+991f3d487 Renamed Investor col as Stakeholder
+eac49ebf1 Fixed debug statement
 574096b20 Renamed Investor to Stakeholder
 06823c395 Added download for FUS
 5b5aca1c0 Fixed API IRR chart

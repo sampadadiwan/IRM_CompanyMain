@@ -857,7 +857,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "display_name", default: false
-    t.boolean "display_tag", default: true
+    t.boolean "display_tag", default: false
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
@@ -1568,14 +1568,16 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
-    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.decimal "price_old", precision: 20, scale: 2, default: "0.0"
     t.string "owner_type"
     t.bigint "owner_id"
-    t.decimal "premium", precision: 20, scale: 2, default: "0.0"
+    t.decimal "premium_old", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.date "issue_date"
     t.bigint "import_upload_id"
     t.string "transfer", limit: 8
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
