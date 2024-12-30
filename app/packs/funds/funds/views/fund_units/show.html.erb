@@ -47,7 +47,7 @@
           Quantity
         </td>
         <td>
-          <%= @fund_unit.quantity %>
+          <%= number_with_delimiter(@fund_unit.quantity) %>
         </td>
       </tr>
       <tr>
@@ -55,7 +55,7 @@
           Price
         </td>
         <td>
-          <%= @fund_unit.price %>
+          <%= money_to_currency @fund_unit.price, params %>
         </td>
       </tr>
       <tr>
@@ -63,7 +63,7 @@
           Premium
         </td>
         <td>
-          <%= @fund_unit.premium %>
+          <%= money_to_currency @fund_unit.premium, params %>
         </td>
       </tr>
       <tr>

@@ -1365,9 +1365,9 @@ Then('there should be correct units for the calls payment for each investor') do
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
-      fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d
+      fu.price_cents.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d * 100.0
       amount_cents = fu.owner.collected_amount_cents < fu.owner.call_amount_cents ? fu.owner.collected_amount_cents : fu.owner.call_amount_cents
-      fu.quantity.round(2).should == ( amount_cents / ((fu.price + fu.premium)* 100)).round(2)
+      fu.quantity.round(2).should == ( amount_cents / (fu.price_cents + fu.premium_cents)).round(2)
     end
   end
 end
@@ -1413,8 +1413,8 @@ Then('there should be correct units for the distribution payments for each inves
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalDistributionPayment"
-      fu.price.should == fu.owner.capital_distribution.unit_prices[fu.unit_type].to_d
-      fu.quantity.should == -(fu.owner.cost_of_investment_cents / (fu.price * 100))
+      fu.price_cents == fu.owner.capital_distribution.unit_prices[fu.unit_type].to_d * 100
+      fu.quantity.should == -(fu.owner.cost_of_investment_cents / (fu.price_cents))
     end
   end
 end
@@ -1767,8 +1767,8 @@ Then('There should be {string} fund units created with data in the sheet') do |c
 
     fund_unit.quantity.should == row_data["Quantity"].to_f
     fund_unit.unit_type.should == row_data["Unit Type"]
-    fund_unit.price.should == row_data["Price"].to_f
-    fund_unit.premium.should == row_data["Premium"].to_f
+    fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
+    fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
     fund_unit.issue_date.should == row_data["Issue Date"]
     fund_unit.reason.should == row_data["Reason"]
     fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
@@ -1966,12 +1966,12 @@ Then('the units should be transferred') do
   to_fu = to_cc.fund_units.last
 
   from_fu.quantity.should == -@transfer_quantity
-  from_fu.price.should == @price
-  from_fu.premium.should == @premium
+  from_fu.price_cents.should == @price * 100
+  from_fu.premium_cents.should == @premium * 100
   from_fu.reason.should == "Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}"
   to_fu.quantity.should == @transfer_quantity
-  to_fu.price.should == @price
-  to_fu.premium.should == @premium
+  to_fu.price_cents.should == @price * 100
+  to_fu.premium_cents.should == @premium * 100
   to_fu.reason.should == "Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}"
 
 end
@@ -1984,16 +1984,16 @@ Then('I should be able to see the transferred fund units') do
 
   visit(fund_unit_path(from_fu))
   expect(page).to have_content(from_fu.quantity)
-  expect(page).to have_content(from_fu.price)
-  expect(page).to have_content(from_fu.premium)
+  expect(page).to have_content(money_to_currency(from_fu.price))
+  expect(page).to have_content(money_to_currency(from_fu.premium))
   expect(page).to have_content(from_fu.reason)
   expect(page).to have_content(from_fu.transfer&.titleize)
 
 
   visit(fund_unit_path(to_fu))
   expect(page).to have_content(to_fu.quantity)
-  expect(page).to have_content(to_fu.price)
-  expect(page).to have_content(to_fu.premium)
+  expect(page).to have_content(money_to_currency(to_fu.price))
+  expect(page).to have_content(money_to_currency(to_fu.premium))
   expect(page).to have_content(to_fu.reason)
   expect(page).to have_content(to_fu.transfer&.titleize)
 end

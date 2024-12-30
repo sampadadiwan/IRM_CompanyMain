@@ -1,4 +1,6 @@
 class DefaultUnitAllocationEngine
+  include CurrencyHelper
+
   def allocate_call(capital_call, reason, user_id)
     @error_msg = []
 
@@ -41,12 +43,13 @@ class DefaultUnitAllocationEngine
       premium_cents = unit_premium_cents.to_d * 100
 
       # Sometimes we collect more than the call amount, issue of funds units should be based on lesser of collected amount or call amount
-      net_call_amount_cents = (capital_remittance.call_amount_cents - capital_remittance.capital_fee_cents)
+      net_call_amount_cents = capital_remittance.call_amount_cents
       if capital_remittance.collected_amount_cents >= net_call_amount_cents
         amount_cents = net_call_amount_cents
-        reason += " Issuing units for net call amount #{net_call_amount_cents}"
+        reason += " - Issuing units for net call amount #{money_to_currency(Money.new(net_call_amount_cents, capital_remittance.fund.currency))}"
       else
         amount_cents = capital_remittance.collected_amount_cents
+        reason += " - Issuing units for net collected amount #{money_to_currency(capital_remittance.collected_amount)}"
       end
 
       quantity = price_cents.positive? ? (amount_cents / (price_cents + premium_cents)) : 0
@@ -79,8 +82,8 @@ class DefaultUnitAllocationEngine
 
     # Update quantity
     fund_unit.quantity = quantity
-    fund_unit.price = (price_cents / 100)
-    fund_unit.premium = (premium_cents / 100)
+    fund_unit.price_cents = price_cents
+    fund_unit.premium_cents = premium_cents
     fund_unit.total_premium_cents = (premium_cents * quantity)
     fund_unit.reason = reason
 

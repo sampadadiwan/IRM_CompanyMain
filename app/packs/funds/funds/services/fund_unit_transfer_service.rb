@@ -31,12 +31,13 @@ class FundUnitTransferService < Trailblazer::Operation
     # Get the reason for the transfer
     reason = ctx[:reason].presence || "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}"
     success = false
-
+    price_cents = price.to_d * 100.0
+    premium_cents = premium.to_d * 100.0
     FundUnit.transaction do
       # Setup the transfer from the from_commitment
-      from_fu = from_commitment.fund_units.create(entity_id: from_commitment.entity_id, unit_type: from_commitment.unit_type, investor_id: from_commitment.investor_id, quantity: -quantity, price:, premium:, fund:, reason:, issue_date: transfer_date, transfer: "out")
+      from_fu = from_commitment.fund_units.create(entity_id: from_commitment.entity_id, unit_type: from_commitment.unit_type, investor_id: from_commitment.investor_id, quantity: -quantity, price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "out")
       # Setup the transfer to the to_commitment
-      to_fu = to_commitment.fund_units.create(entity_id: to_commitment.entity_id, unit_type: to_commitment.unit_type, investor_id: to_commitment.investor_id, quantity:, price:, premium:, fund:, reason:, issue_date: transfer_date, transfer: "in")
+      to_fu = to_commitment.fund_units.create(entity_id: to_commitment.entity_id, unit_type: to_commitment.unit_type, investor_id: to_commitment.investor_id, quantity:, price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "in")
 
       if from_fu.valid? && to_fu.valid?
         success = true

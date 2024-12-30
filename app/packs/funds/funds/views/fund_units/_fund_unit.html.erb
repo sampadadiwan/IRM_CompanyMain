@@ -23,13 +23,13 @@
     <%= l fund_unit.issue_date if fund_unit.issue_date %>
   </td>
   <td>
-    <%= fund_unit.quantity %>
+    <%= number_with_delimiter(fund_unit.quantity) %>
   </td>
   <td>
-    <%= fund_unit.price %>
+    <%= money_to_currency fund_unit.price, params %>
   </td>
   <td>
-    <%= fund_unit.premium %>
+    <%= money_to_currency fund_unit.premium, params %>
   </td>
   <td>
     <%= money_to_currency fund_unit.amount, params %>
