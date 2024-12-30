@@ -129,7 +129,7 @@ class FundPortfolioCalcs
 
     if @portfolio_company_irr_map.empty?
       # Get all the Portfolio companies
-      @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
+      @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id| # rubocop:disable Metrics/BlockLength
         portfolio_company = Investor.find(portfolio_company_id)
         # Get all the portfolio investments for this portfolio company before the end date
         portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)

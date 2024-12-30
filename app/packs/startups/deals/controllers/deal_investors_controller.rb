@@ -154,8 +154,9 @@ class DealInvestorsController < ApplicationController
     @deal_investor.assign_attributes(deal_investor_params)
     @current_user = current_user
     @frame = params[:turbo_frame] || "deal_investor_form_offcanvas#{@deal_investor.id}"
+    @result = DealInvestorUpdate.wtf?(deal_investor: @deal_investor)
     respond_to do |format|
-      if DealInvestorUpdate.wtf?(deal_investor: @deal_investor).success?
+      if @result.success?
         ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         @message = "Deal investor was successfully updated."
         @deal_investor.deal.broadcast_message(@message)

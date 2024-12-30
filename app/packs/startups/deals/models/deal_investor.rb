@@ -32,6 +32,7 @@ class DealInvestor < ApplicationRecord
   validates :investor_id, uniqueness: { scope: :deal_id, message: "already added to this deal. Duplicate Investor." }
   validates :status, :tier, length: { maximum: 20 }
   validates :company_advisor, :investor_advisor, length: { maximum: 100 }
+  validates :deal_lead, :source, :tags, length: { maximum: 255 }
 
   STATUS = %w[Active Pending Declined].freeze
   CARD_VIEW_ATTRS = {
