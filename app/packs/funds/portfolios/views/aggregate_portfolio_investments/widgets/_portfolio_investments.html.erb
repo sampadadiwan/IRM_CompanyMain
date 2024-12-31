@@ -16,7 +16,7 @@
     ) do %>
   <!-- This block becomes the `content` inside the component -->
   <% if args[:ag] %>
-      <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: pi_uri, lazy: true do %>            
+      <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: pi_uri, loading: :lazy do %>            
       <% end %>
   <% else %>
     <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top", src: api_uri, lazy: true do %>            

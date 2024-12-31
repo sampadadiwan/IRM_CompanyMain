@@ -1,4 +1,5 @@
 class InvestorPolicy < ApplicationPolicy
+
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:company_admin)
@@ -9,11 +10,12 @@ class InvestorPolicy < ApplicationPolicy
         scope.where(entity_id: user.entity_id)
       else
         # Can see investors for which the user has been granted specific access
-        scope.for_employee(user)
+        # scope.for_employee(user)
+        scope.none
       end
     end
   end
-
+  
   def index?
     user.enable_investors
   end
@@ -59,7 +61,6 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    base_perm = perm.to_s.gsub('investor_', '').to_sym
-    (extended_permissioned_employee?(perm) || super(base_perm)) || support?
+    extended_permissioned_employee?(perm) || support?
   end
 end
