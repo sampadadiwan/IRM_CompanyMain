@@ -144,9 +144,10 @@ module UpdateInvestor
   def change_investor_entity
     ActiveRecord::Base.transaction do
       # update_column(:investor_entity_id, investor_entity.id)
-      old_entity_id = changes["investor_entity_id"]&.first
+      old_entity_id = saved_change_to_investor_entity_id&.first
       return unless old_entity_id
 
+      Rails.logger.debug { "Updating investor entity from #{old_entity_id} to #{investor_entity_id}" }
       entity.investor_accesses.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       entity.deal_investors.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       InvestorNoticeEntry.where(entity_id:, investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)

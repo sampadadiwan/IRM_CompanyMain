@@ -137,7 +137,7 @@ class Investor < ApplicationRecord
     cats
   end
 
-  after_commit :change_investor_entity, if: :investor_entity_changed?
+  after_commit :change_investor_entity, if: :saved_change_to_investor_entity_id?
 
   after_create_commit -> { InvestorAddedJob.perform_later(id) unless imported }
 
