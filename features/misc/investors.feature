@@ -101,7 +101,6 @@ Scenario Outline: Import investor kycs
   And the investor kycs must have the data in the sheet "investor_kycs.xlsx"
   And the imported data must have the form_type updated
   And the approved investor access should receive a notification
-  And Aml Report should be generated for each investor kyc
   And Given I upload an investor kyc "investor_kycs_update.xlsx" for employees
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
@@ -172,7 +171,6 @@ Scenario Outline: Create investor kyc
   Then I should see the investor kyc details on the details page
   Then the kyc form should be sent "<kyc_form_sent>" to the investor
   And the investor entity should have "enable_kycs" permissions
-  And the aml report should be generated for the investor kyc
   And notification should be sent "<kyc_update_notification>" to the employee for kyc update
   And when I Send KYC reminder for the kyc
   Then the kyc form reminder should be sent "true" to the investor
@@ -192,8 +190,6 @@ Scenario Outline: Create investor kyc
   And I create a new InvestorKyc with pan "ABCD9876F"
   Then I should see ckyc and kra data comparison page
   Then I select one and see the edit page and save
-
-
 Scenario: Investor Entity Update
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

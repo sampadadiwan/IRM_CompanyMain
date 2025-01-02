@@ -44,7 +44,7 @@ class InvestorKyc < ApplicationRecord
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
-  has_many :aml_reports, dependent: :destroy
+  has_one :aml_report, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
 
   accepts_nested_attributes_for :investor_kyc_sebi_data, allow_destroy: true
@@ -169,8 +169,14 @@ class InvestorKyc < ApplicationRecord
     investor.investor_entity.save
   end
 
-  def generate_aml_report(user_id = nil)
-    AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
+  def generate_aml_report(user_id)
+    if id.present? && full_name.present?
+      if Rails.env.test?
+        AmlReportJob.perform_now(id, user_id)
+      elsif id.present? && full_name.present?
+        AmlReportJob.perform_later(id, user_id)
+      end
+    end
   end
 
   def full_name_has_changed?

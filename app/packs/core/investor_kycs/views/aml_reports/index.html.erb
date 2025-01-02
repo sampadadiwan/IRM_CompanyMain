@@ -1,6 +1,0 @@
-
-
-<% investor_kyc = @investor_kyc.present? ? @investor_kyc : @aml_reports.first.investor_kyc if !investor_kyc.present? %>
-<% entity = @entity.present? ? @entity : (@investor.present? ? @investor.entity : (investor_kyc.present? ? investor_kyc.entity : current_user.entity )) if !entity.present? %>
-
-<%= render "/aml_reports/index", aml_reports: @aml_reports, entity: entity, investor_kyc: nil  %>

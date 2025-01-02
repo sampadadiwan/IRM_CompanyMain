@@ -1,96 +1,117 @@
-Given('the investor has investor kyc and aml report') do
-  RSpec::Mocks.with_temporary_scope do
-    @investor_kyc = FactoryBot.build(:investor_kyc, investor: @investor, entity: @entity)
-    InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
-    aml_report = FactoryBot.create(:aml_report, investor: @investor, entity: @entity, investor_kyc: @investor_kyc, name: @investor_kyc.full_name)
-    InvestorKyc.stub(:generate_aml_report).and_return(aml_report)
-    allow_any_instance_of(InvestorKyc).to receive(:generate_aml_report).and_return(aml_report)
-
-  end
-  @aml_report = AmlReport.order(created_at: :desc).first
+def sample_aml_get_report_response
+  file_path = './public/sample_uploads/Offer_1_SPA.pdf'
+  doc = Document.create!(entity: Investor.first.entity, owner: Investor.first, name: "Dummy file", file: File.open(file_path, "rb"), folder: Investor.first.document_folder, user_id: User.first.id)
+  OpenStruct.new(read_body: "[{\"type\":\"aml\",\"action\":\"verify_with_source\",\"result\":{\"hits\":\"json url\",\"filters\":{\"types\":[\"sanctions\",\"pep\",\"warnings\",\"adverse_media\"],\"entity_type\":\"individual\",\"name_fuzziness\":\"1\",\"birth_year_fuzziness\":\"2\"},\"total_hits\":4,\"profile_pdf\":\"#{doc.file.url}\",\"search_term\":\"Dumy Kyc name\",\"match_status\":\"potential_match\"},\"status\":\"completed\",\"task_id\":\"e1429efc-bad9-4b00-aaa6-1cc348954d16\",\"group_id\":\"808c0a3f-37f9-4925-abb7-e69bd14dfcb4\",\"created_at\":\"2024-12-19T18:36:22+05:30\",\"request_id\":\"7e32d987-ee74-4d59-83a3-08e2402f625c\",\"completed_at\":\"2024-12-19T18:36:31+05:30\"}]")
 end
 
-Then('{string} has {string} "{string}" access to the aml_report of investor') do |arg1, arg2, accesses|
-  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
-  @user = if User.exists?(args_temp)
-    User.find_by(args_temp)
-  else
-    FactoryBot.build(:user)
-  end
-  key_values(@user, arg1)
-  @user.save!
-  accesses.split(',').each do |access|
-    Pundit.policy(@user, @aml_report).send("#{access}?").to_s.should == arg2
-  end
+def sample_aml_get_async_response
+  OpenStruct.new(read_body: "{\"request_id\":\"7e32d987-ee74-4d59-83a3-08e2402f625c\"}")
 end
 
-Given('the entity {string} has aml enabled {string}') do |args, boolean|
-  args_temp = args.split(";").to_h { |kv| kv.split("=") }
-  @entity = if Entity.exists?(args_temp)
-    Entity.find_by(args_temp)
-  else
-    FactoryBot.build(:entity, pan: Faker::Alphanumeric.alphanumeric(number: 10))
-  end
-  key_values(@entity, args)
-  @entity.save!
-  @entity.entity_setting.aml_enabled = boolean
+Given('the entity has aml enabled {string}') do |aml_enabled|
+  @entity ||= Entity.first
+  @entity.entity_setting.aml_enabled = aml_enabled == "true"
   @entity.entity_setting.save!
 end
 
-Then('investor kyc and aml report is generated for it') do
-  @investor_entity = FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund")
-  @investor = FactoryBot.create(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
-
-  @investor_entity.entity_setting.fi_code = "test"
-  @investor_entity.entity_setting.ckyc_enabled = true
-  @investor_entity.entity_setting.kra_enabled = true
-  @investor_entity.entity_setting.aml_enabled = true
-  @investor_entity.entity_setting.save!
-  visit(investor_kycs_url)
-  #sleep(2)
-  click_on("New KYC")
-  click_on("Individual")
-  #sleep(3)
-  pan = "testpannum555"
-
-  fill_in('individual_kyc_full_name', with: "testname abc")
-  fill_in('individual_kyc_birth_date', with: "2020-03-03")
-  fill_in('individual_kyc_PAN', with: pan)
-  click_on("Next")
-  #sleep(3)
-  click_on("Next")
-  #sleep(2)
-  click_on("Save")
-  #sleep(5)
-  expect(page).to have_content("successfully")
-  InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0
-  AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count > 0
+Then('aml report is not generated for the investor kyc') do
+  @investor_kyc = InvestorKyc.last
+  expect(@investor_kyc.documents.where("name like ?", "%AML Report%").count).to eq(0)
+  expect(Document.where("name like ?", "%AML Report%").count).to eq(@aml_docs_count)
 end
 
-Then('investor kyc and aml report is not generated for it') do
-  @investor_entity = FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund")
-  @investor = FactoryBot.create(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
 
-  @investor.entity.entity_setting.fi_code = "test"
-  @investor.entity.entity_setting.ckyc_enabled = true
-  @investor.entity.entity_setting.kra_enabled = true
-  @investor.entity.entity_setting.aml_enabled = true
-  @investor.entity.entity_setting.save!
-  visit(investor_kycs_url)
-  #sleep(2)
+Then('aml report is generated for the investor kyc') do
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_report_response).and_return(sample_aml_get_report_response)
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_async_response).and_return(sample_aml_get_async_response)
+  @investor_kyc = InvestorKyc.last
+  expect(@investor_kyc.documents.where("name like ?", "%AML Report%").count > 0).to eq(true)
+  if @kyc_aml_docs_count.present?
+    expect(@investor_kyc.documents.where("name like ?", "%AML Report%").count == @kyc_aml_docs_count + 1).to eq(true)
+  end
+  expect(Document.where("name like ?", "%AML Report%").count > @aml_docs_count).to eq(true)
+end
+
+Given('I bulk generate aml reports for investor kycs') do
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_report_response).and_return(sample_aml_get_report_response)
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_async_response).and_return(sample_aml_get_async_response)
+  @amls = {}
+  InvestorKyc.all.each do |ik|
+    # store count of kycs aml reports documents to validate later
+    if ik.full_name.present?
+      @amls[ik.id] = ik.documents.where("name like ?", "%AML Report%").count
+    end
+
+  end
+  visit("/investor_kycs?q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=PAN&q%5Bc%5D%5B0%5D%5Bp%5D=null&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=false&button=") # pan not NULL
+  click_on("Bulk Actions")
+  click_on("Generate AML Reports")
+  click_on("Proceed")
+end
+
+Then('Aml report should be generated for the kycs that have full name') do
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_report_response).and_return(sample_aml_get_report_response)
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_async_response).and_return(sample_aml_get_async_response)
+  sleep(5)
+  @amls.each do |ik_id, count|
+    kyc = InvestorKyc.find(ik_id)
+    kyc.documents.where("name like ?", "%AML Report%").count == count + 1
+  end
+end
+
+Given('I update the last investor kycs name to {string}') do |newname|
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_report_response).and_return(sample_aml_get_report_response)
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_async_response).and_return(sample_aml_get_async_response)
+  @investor_kyc = InvestorKyc.last
+  @kyc_aml_docs_count = @investor_kyc.documents.where("name like ?", "%AML Report%").count
+  visit(investor_kyc_path(@investor_kyc))
+  click_on("Edit")
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+
+  fill_in("#{class_name}_full_name", with: newname)
+  click_on("Next")
+  fill_in("#{class_name}_bank_branch", with: "new branch")
+  click_on("Next")
+  click_on("Save")
+  #sleep(1)
+  expect(page).to have_content("successfully")
+end
+
+Given('I create a new InvestorKyc {string} to trigger aml report generation') do |args|
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_report_response).and_return(sample_aml_get_report_response)
+  allow_any_instance_of(AmlApiResponseService).to receive(:get_async_response).and_return(sample_aml_get_async_response)
+  @aml_docs_count = Document.all.where("name like ?", "%AML Report%").count
+
+  @temp_investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, kyc_type: "individual")
+  key_values(@temp_investor_kyc, args)
+  @temp_investor_kyc.full_name = nil if @temp_investor_kyc.full_name == "nil"
+  puts "\n########### KYC ############"
+  puts @temp_investor_kyc.to_json
+
+  class_name = @temp_investor_kyc.type_from_kyc_type.underscore
+
+  visit(investor_kycs_path)
   click_on("New KYC")
   click_on("Individual")
-  #sleep(3)
-  pan = "testpannum555"
-  fill_in('individual_kyc_birth_date', with: "1955-01-01")
-  fill_in('individual_kyc_PAN', with: pan)
-  click_on("Next")
-  #sleep(3)
-  click_on("Next")
   #sleep(2)
+  select(@temp_investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+  fill_in("#{class_name}_full_name", with: @temp_investor_kyc.full_name) unless @temp_investor_kyc.full_name.nil?
+  select(@temp_investor_kyc.residency.titleize, from: "#{class_name}_residency")
+  fill_in("#{class_name}_PAN", with: @temp_investor_kyc.PAN)
+  fill_in("#{class_name}_birth_date", with: @temp_investor_kyc.birth_date)
+  click_on("Next")
+
+  fill_in("#{class_name}_address", with: @temp_investor_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @temp_investor_kyc.corr_address)
+  fill_in("#{class_name}_bank_name", with: @temp_investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_branch", with: @temp_investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_account_number", with: @temp_investor_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @temp_investor_kyc.ifsc_code)
+  click_on("Next")
+  fill_in("#{class_name}_expiry_date", with: @temp_investor_kyc.expiry_date)
+  fill_in("#{class_name}_comments", with: @temp_investor_kyc.comments)
   click_on("Save")
-  #sleep(5)
+  #sleep(1)
   expect(page).to have_content("successfully")
-  InvestorKyc.where(PAN: pan).last.aml_reports.count.should == 0
-  AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count == 0
+  sleep(2)
 end

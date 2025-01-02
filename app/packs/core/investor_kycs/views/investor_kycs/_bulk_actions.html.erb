@@ -1,6 +1,6 @@
 
 <% if params[:q].present? %>
-  
+
 <div class="btn-group">
     <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
@@ -8,15 +8,15 @@
             Bulk Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        
+
             <% msg = "This will verify each KYC in the search results (including results on other pages). Proceed?" %>
-            <%= button_to "Verify", 
+            <%= button_to "Verify",
             bulk_actions_investor_kycs_path("bulk_action": "Verify", q: params.to_unsafe_h[:q], all: true),
-            class: "dropdown-item", form_class: "w-100", 
+            class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
             <% msg = "This will unverify each KYC in the search results (including results on other pages). Proceed?" %>
-            <%= button_to "Unverify", 
+            <%= button_to "Unverify",
             bulk_actions_investor_kycs_path("bulk_action": "Unverify", q: params.to_unsafe_h[:q], all: true),
             class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :post}  %>
@@ -24,16 +24,20 @@
 
             <div class="dropdown-divider"></div>
 
+            <%= button_to "Generate AML Reports",
+            generate_aml_reports_investor_kycs_path(q: params[:q].to_unsafe_h),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg: "This will generate AML Reports for all filtered KYCs. Proceed?", action: "click->confirm#popup", method: :post, turbo: false}  %>
 
             <% msg = "This will send a reminder to each KYC in the search results (including results on other pages). Proceed?" %>
-            <%= button_to "Send Reminder", 
+            <%= button_to "Send Reminder",
             bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true),
             class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
 
             <% msg = "This will try and verify the bank details using external bank APIs for KYCs below (including results on other pages). Proceed?" %>
-            <%= button_to "Verify Bank Details", 
+            <%= button_to "Verify Bank Details",
             bulk_actions_investor_kycs_path("bulk_action": "BankVerification", q: params.to_unsafe_h[:q], all: true),
             class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :post}  if current_user.entity.entity_setting.bank_verification %>

@@ -63,7 +63,11 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def generate_new_aml_report?
-    toggle_verified?
+    toggle_verified? && user.entity.entity_setting.aml_enabled
+  end
+
+  def generate_aml_reports?
+    user.entity.entity_setting.aml_enabled && index?
   end
 
   def assign_kyc_data?

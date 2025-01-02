@@ -4,11 +4,7 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
-    <% @entity = @investor_kyc.entity || current_user.entity.entity_setting.aml_enabled %>
-    <% if current_user.entity.entity_setting.aml_enabled %>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#aml-reports-tab"
-        data-action="click->tabdetails#loadData">Aml Reports</a>
-    <% end %>
+    <% @entity = @investor_kyc.entity%>
     <% if current_user.entity.entity_setting.ckyc_or_kra_enabled? %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kyc-datas-tab"
         data-action="click->tabdetails#loadData">Kyc Data</a>
@@ -42,14 +38,6 @@
           <%= Json2table.get_html_table(@investor_kyc.doc_question_answers, JsonTable::TABLE_OPTIONS).html_safe if @investor_kyc.doc_question_answers.present? %>
         </div>
       </div>
-
-      <% if current_user.entity.entity_setting.aml_enabled %>
-      <div id="aml-reports-tab" class="tab-pane fade in show">
-        <div id="aml-reports" class="associated_entity">
-          <%= render partial: "/aml_reports/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
-        </div>
-      </div>
-      <% end %>
 
       <% if current_user.entity.entity_setting.ckyc_or_kra_enabled? %>
       <div id="kyc-datas-tab" class="tab-pane fade in show">
