@@ -9,7 +9,7 @@ class DashboardWidgetPolicy < ApplicationPolicy
     true
   end
 
-  def ir_dashboard?
+  def dashboard?
     true
   end
 

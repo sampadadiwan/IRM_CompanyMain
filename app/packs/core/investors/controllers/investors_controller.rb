@@ -20,7 +20,10 @@ class InvestorsController < ApplicationController
     end
   end
 
-  def dashboard; end
+  def dashboard
+    @dashboard_name = params[:dashboard_name] || "Investor Dashboard"
+    @name = params[:name] || "Default"
+  end
 
   def merge
     @entity = current_user.has_cached_role?(:super) ? Entity.find(params[:entity_id]) : current_user.entity

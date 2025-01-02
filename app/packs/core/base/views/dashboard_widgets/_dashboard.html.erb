@@ -1,8 +1,18 @@
-<% uri_params ||= {} %>
+<% 
+    uri_params ||= {} 
+    name ||= "Default"
+%>
+
 <div class="row">    
     
-    <% dashboard_widgets(dashboard_name, current_user.entity_id).each do |name, dashboard_widget| %>
+    <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
         <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
+    <% end %>
+
+    <% if params[:debug].present? %>
+        <%= dashboard_name %>
+        <%= current_user.entity_id %>
+        <%= name %>
     <% end %>
 
 </div>

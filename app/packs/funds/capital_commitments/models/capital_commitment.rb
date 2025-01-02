@@ -137,9 +137,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def allowed_feeder_fund
-    if self.feeder_fund && self.feeder_fund.master_fund_id != self.fund_id
-      errors.add(:feeder_fund_id, "The feeder fund #{self.feeder_fund} must be a feeder fund of the fund #{self.fund}")
-    end
+    errors.add(:feeder_fund_id, "The feeder fund #{feeder_fund} must be a feeder fund of the fund #{fund}") if feeder_fund && feeder_fund.master_fund_id != fund_id
   end
 
   # Note for manual updates to committed amounts

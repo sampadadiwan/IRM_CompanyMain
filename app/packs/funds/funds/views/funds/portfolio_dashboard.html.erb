@@ -1,5 +1,0 @@
-<%= turbo_frame_tag "fund_portfolio_dashboard", target: "_top" do %>
-
-    <%= render "/dashboard_widgets/dashboard", dashboard_name: "Portfolio Dashboard", uri_params: {owner_id: @fund.id, owner_type: "Fund", fund: @fund} %>
-
-<% end %>

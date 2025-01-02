@@ -10,7 +10,9 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets/1
   def show; end
 
-  def ir_dashboard
+  def dashboard
+    @dashboard_name = params[:dashboard_name] || "Ops Dashboard"
+    @name = params[:name] || "Default"
     authorize DashboardWidget
   end
 
@@ -61,6 +63,6 @@ class DashboardWidgetsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def dashboard_widget_params
-    params.require(:dashboard_widget).permit(:dashboard_name, :entity_id, :owner_id, :owner_type, :widget_name, :position, :metadata, :enabled, :tags, :size, :display_name, :display_tag)
+    params.require(:dashboard_widget).permit(:dashboard_name, :name, :entity_id, :owner_id, :owner_type, :widget_name, :position, :metadata, :enabled, :tags, :size, :display_name, :display_tag)
   end
 end

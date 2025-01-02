@@ -157,7 +157,8 @@
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <div id="portfolio-investments-tab" class="tab-pane fade">
             <div id="portfolio_investments" class="associated_entity">
-              <%= turbo_frame_tag "fund_portfolio_dashboard", target: "_top", loading: :lazy, src: dashboard_fund_path(fund_or_master, template: "portfolio_dashboard") do %>
+              <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund_or_master, dashboard_name: "Portfolio Dashboard") do %>
+                Loading ...
               <% end %>              
             </div>
           </div>

@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   resources :viewed_bies
 
   resources :dashboard_widgets do
-    get 'ir_dashboard', on: :collection
+    get 'dashboard', on: :collection
   end
 
   resources :ai_checks do
