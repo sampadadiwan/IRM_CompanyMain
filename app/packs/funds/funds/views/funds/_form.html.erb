@@ -65,6 +65,12 @@
                   <% end %>
 
                   <div class="form-group">
+                    <%= form.label :master_fund_id %>
+                    <%= form.select :master_fund_id, fund.entity.funds.master_funds.map{|f| [f.name, f.id]}, {include_blank: true}, class: "form-control"  %>
+                    <small>Select the Master Fund only if this is a feeder fund</small>
+                  </div>
+
+                  <div class="form-group">
                     <%= form.label :commitment_doc_list %>
                     <%= form.text_field :commitment_doc_list, class: "form-control"  %>
                     <small>Comma separated list of documents to be uploaded into the commitment</small>

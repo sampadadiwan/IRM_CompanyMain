@@ -11,6 +11,17 @@
         </td>
       </tr>
 
+      <% if fund.master_fund_id.present? %>
+      <tr>
+        <td class="show_page_label">
+          Master Fund
+        </td>
+        <td>
+          <%= link_to fund.master_fund %>
+        </td>
+      </tr>
+      <% end %>
+
       <tr>
         <td>
           Category
@@ -242,70 +253,7 @@
             <%= display_boolean fund.show_portfolios %>
           </td>
         </tr>
-      <% end %>
-
-      <tr>
-          <td>
-            Registration Number
-          </td>
-          <td>
-            <%= fund.registration_number  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Category
-          </td>
-          <td>
-            <%= fund.category  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Sub Category
-          </td>
-          <td>
-            <%= fund.sub_category  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Sponsor Name
-          </td>
-          <td>
-            <%= fund.sponsor_name  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Manager Name
-          </td>
-          <td>
-            <%= fund.manager_name  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Contact Name
-          </td>
-          <td>
-            <%= fund.contact_name  %>
-          </td>
-      </tr>
-
-      <tr>
-          <td>
-            Contact Email
-          </td>
-          <td>
-            <%= fund.contact_email  %>
-          </td>
-      </tr>
+      <% end %>      
 
   </table>
 

@@ -47,7 +47,9 @@ class GridViewPreference < ApplicationRecord
 
   private
 
+  # rubocop:disable Rails/SkipsModelValidations
   def touch_entity
     owner.entity.touch if owner.is_a?(FormType) && owner.entity.present?
   end
+  # rubocop:enable Rails/SkipsModelValidations
 end

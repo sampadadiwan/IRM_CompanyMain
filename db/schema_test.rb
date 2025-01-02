@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_01_120037) do
   create_table "access_rights", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -548,7 +548,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
       t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
       t.bigint "exchange_rate_id"
       t.string "commitment_type", limit: 10, default: "Pool"
-      t.boolean "feeder_fund", default: false
+      t.boolean "is_feeder_fund", default: false
       t.date "commitment_date"
       t.datetime "generated_deleted", default: "1900-01-01 00:00:00"
       t.json "json_fields"
@@ -559,11 +559,13 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
       t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
       t.string "slug"
       t.boolean "compliant", default: false
+      t.bigint "feeder_fund_id"
       t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
       t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
       t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
       t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
       t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
+      t.index ["feeder_fund_id"], name: "index_capital_commitments_on_feeder_fund_id"
       t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
       t.index ["fund_id", "folio_id", "generated_deleted"], name: "unique_commitment", unique: true
       t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
@@ -1668,6 +1670,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
       t.date "first_close_date"
       t.date "last_close_date"
       t.string "slug"
+      t.bigint "master_fund_id"
       t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
       t.index ["deleted_at"], name: "index_funds_on_deleted_at"
       t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1676,6 +1679,7 @@ ActiveRecord::Schema[7.2].define(version: 2024_12_28_083631) do
       t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"
       t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
       t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
+      t.index ["master_fund_id"], name: "index_funds_on_master_fund_id"
       t.index ["slug"], name: "index_funds_on_slug", unique: true
       t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
     end

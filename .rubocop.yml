@@ -192,6 +192,7 @@ Metrics/ClassLength:
     - 'app/packs/secondaries/offers/models/offer.rb'
     - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
     - 'app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb'
+    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
   Max: 200

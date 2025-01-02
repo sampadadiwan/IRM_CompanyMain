@@ -14,11 +14,21 @@ class Fund < ApplicationRecord
     self if index_record?
   end
 
+  self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category]
+
   CATEGORIES = ["Category I", "Category II", "Category III"].freeze
+
+  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
+  scope :master_funds, -> { where(master_fund_id: nil) }
 
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
   belongs_to :trustee_signatory, class_name: "User", optional: true
+
+  # If this is a feeder fund, it will have a ref to the master_fund
+  belongs_to :master_fund, class_name: "Fund", optional: true
+  # If this is a master fund, it may have many feeder funds
+  has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
 
   has_many :fund_ratios, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
@@ -60,11 +70,11 @@ class Fund < ApplicationRecord
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
   validates_uniqueness_of :name, scope: :entity_id
 
-  validates :commitment_doc_list, :sponsor_name, :manager_name, :trustee_name, :contact_name, :contact_email, length: { maximum: 100 }
+  validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
-  validates :registration_number, length: { maximum: 20 }
+  # validates :registration_number, length: { maximum: 20 }
   validates :category, length: { maximum: 15 }
-  validates :sub_category, length: { maximum: 40 }
+  # validates :sub_category, length: { maximum: 40 }
 
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
@@ -232,5 +242,9 @@ class Fund < ApplicationRecord
 
   def cat3?
     category == "Category III"
+  end
+
+  def feeder_fund_commitments
+    master_fund.capital_commitments.where(feeder_fund_id: id) if master_fund.present?
   end
 end

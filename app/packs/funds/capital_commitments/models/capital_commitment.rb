@@ -62,6 +62,9 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :fund, touch: true
 
+  # If this is the commitment of a feeder fund, it will have a ref to the feeder_fund
+  belongs_to :feeder_fund, class_name: "Fund", optional: true
+
   # The allocated expenses and incomes
   has_many :account_entries, dependent: :destroy
   # The remitances linked to this commitment
@@ -99,6 +102,7 @@ class CapitalCommitment < ApplicationRecord
   validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
   normalizes :unit_type, with: ->(unit_type) { unit_type.strip.squeeze(" ") }
   validate :allowed_unit_type
+  validate :allowed_feeder_fund, if: proc { |c| c.feeder_fund_id.present? }
 
   delegate :currency, to: :fund
 
@@ -130,6 +134,12 @@ class CapitalCommitment < ApplicationRecord
     return unless unit_type
 
     errors.add(:unit_type, "#{unit_type} is not allowed. Allowed values: #{fund.unit_types}") unless fund.unit_types.include?(unit_type)
+  end
+
+  def allowed_feeder_fund
+    if self.feeder_fund && self.feeder_fund.master_fund_id != self.fund_id
+      errors.add(:feeder_fund_id, "The feeder fund #{self.feeder_fund} must be a feeder fund of the fund #{self.fund}")
+    end
   end
 
   # Note for manual updates to committed amounts

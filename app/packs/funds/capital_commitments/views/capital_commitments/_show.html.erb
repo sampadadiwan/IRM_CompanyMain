@@ -20,13 +20,24 @@
       </td>
     </tr>
 
+    <% if link_to capital_commitment.feeder_fund.present? %>
+    <tr class="">
+      <td>
+        Feeder Fund
+      </td>
+      <td>
+        <%= link_to capital_commitment.feeder_fund %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr class="">
       <td>
         Type
       </td>
       <td>
         <%= capital_commitment.commitment_type %>
-        <% if capital_commitment.feeder_fund %>
+        <% if capital_commitment.is_feeder_fund %>
           <br>
           <span class="badge bg-success">Feeder Fund</span>
         <% end %>

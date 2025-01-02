@@ -1,6 +1,6 @@
 class InvestorPolicy < ApplicationPolicy
-
   class Scope < Scope
+    # rubocop:disable Lint/DuplicateBranch
     def resolve
       if user.has_cached_role?(:company_admin)
         # Company admin can see all investors
@@ -14,8 +14,9 @@ class InvestorPolicy < ApplicationPolicy
         scope.none
       end
     end
+    # rubocop:enable Lint/DuplicateBranch
   end
-  
+
   def index?
     user.enable_investors
   end
