@@ -35,18 +35,18 @@
           <small class="text-muted">Select the Folio for the CoInvestment</small>
         </div>
 
-        <div class="form-group pool">
+        <div class="form-group pool" data-controller="capital-distribution">
           <%= form.label :distribution_on %>
-          <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, class: 'form-control' %>
+          <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, { class: "form-control", data: { action: "change->capital-distribution#distribution_on_changed" } } %>
           <small class="text-muted">Select the Folio for the CoInvestment</small>
         </div>
           
-        <div class="form-group">
+        <div class="form-group" id="capital_distributions_gross_amount">
           <%= form.label :gross_amount %> <span class="formatted_currency"></span>
           <%= form.number_field :gross_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="capital_distributions_cost_of_investment">
           <%= form.label :cost_of_investment, "Face Value For Redemption" %> <span class="formatted_currency"></span>
           <%= form.number_field :cost_of_investment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
 
@@ -55,7 +55,7 @@
           </small>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="capital_distributions_reinvestment">
           <%= form.label :reinvestment %> <span class="formatted_currency"></span>
           <%= form.number_field :reinvestment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
         </div>
@@ -75,7 +75,7 @@
                   name: "capital_distribution[unit_prices][#{unit_type}]", value: capital_distribution.unit_prices[unit_type] %>
 
               <% if index == 0 %>
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
                 </div>
               <% end %>
@@ -83,11 +83,6 @@
           <% end %>  
         </div>
         <% end %>
-
-        <div class="form-group">
-          <%= form.label :generate_payments %>
-          <%= form.check_box :generate_payments, class: "form-check-input"  %>
-        </div>
 
         <div class="form-group">
           <%= form.label :completed %>
@@ -98,8 +93,9 @@
           <%= form.label :notes %>
           <%= form.rich_text_area :notes, class: "form-control"  %>
         </div>
-
         <div class="form-group">
+          <%= link_to_add_association 'Add Distribution Fee', form, :distribution_fees, class: "btn btn-outline-success" %>
+
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         </div>
       </div>

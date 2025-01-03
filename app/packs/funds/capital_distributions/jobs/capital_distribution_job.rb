@@ -45,6 +45,7 @@ class CapitalDistributionJob < ApplicationJob
 
         next unless payment.valid?
 
+        payment.setup_distribution_fees
         payment.run_callbacks(:save) { false }
         payment.run_callbacks(:create) { false }
         @payments << payment

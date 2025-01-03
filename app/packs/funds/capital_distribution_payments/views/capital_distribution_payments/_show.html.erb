@@ -39,10 +39,44 @@
 
         <tr>
           <td>
-            Amount
+            Amount excluding fees
           </td>
           <td>
             <%= money_to_currency capital_distribution_payment.amount, params %>
+          </td>
+        </tr>
+
+        <% if capital_distribution_payment.fee_cents > 0 %>
+          <tr>
+            <% # Have added styles here as it's not working by adding this class %>
+            <td class="vertical-align-top" style="vertical-align: top;">
+              Fees
+            </td>
+            <td>
+              <div class="money-wrapper">
+                <span><%= money_to_currency capital_distribution_payment.fee, params %></span>
+              </div>
+              <ul class="fees-list">
+              <% @capital_distribution_payment.json_fields["fees_audit"]&.each do |fee_array| %>
+                  <% fee_array.each do |fee| %>
+                    <li class="fee-item">
+                      <span class="fee-name"><%= fee[0] %></span>
+                      <span class="fee-description"><%= fee[1] %></span>
+                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_distribution_payment.fund.currency, params) %></span>
+                    </li>
+                  <% end %>
+                <% end %>                
+              </ul>
+            </td>
+          </tr>
+        <% end %>
+
+        <tr>
+          <td>
+            Total Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.total_amount, params %>
           </td>
         </tr>
 

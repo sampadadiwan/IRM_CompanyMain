@@ -7,7 +7,8 @@ class CapitalDistribution < ApplicationRecord
 
   include ForInvestor
 
-  enum :distribution_on, ["Commitment Percentage", "Investable Capital Percentage"]
+  FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
+  enum :distribution_on, ["Commitment Percentage", "Investable Capital Percentage", "Upload"]
 
   belongs_to :fund, touch: true
   belongs_to :entity
@@ -19,13 +20,14 @@ class CapitalDistribution < ApplicationRecord
   # This is only for co_invest
   belongs_to :capital_commitment, optional: true
 
+  has_many :distribution_fees, inverse_of: :capital_distribution, dependent: :destroy
+  accepts_nested_attributes_for :distribution_fees, allow_destroy: true
+
   has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
   # Stores the prices for unit types for this call
   serialize :unit_prices, type: Hash
 
   monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
-
-  validates :gross_amount_cents, numericality: { greater_than: 0 }
 
   validates_uniqueness_of :title, scope: :fund_id
   validates :title, presence: true
@@ -79,6 +81,10 @@ class CapitalDistribution < ApplicationRecord
     end
   end
 
+  def fee_account_entry_names
+    fund.account_entries.where(entry_type: ["Income", "Tax"]).pluck(:name).uniq << "Other"
+  end
+
   def fund_units
     FundUnit.where(fund_id:, owner_type: "CapitalDistributionPayment", owner_id: capital_distribution_payment_ids)
   end
@@ -89,5 +95,9 @@ class CapitalDistribution < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[fund]
+  end
+
+  def distribution_on_upload?
+    distribution_on == "Upload"
   end
 end

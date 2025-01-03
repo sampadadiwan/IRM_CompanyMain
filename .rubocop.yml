@@ -162,6 +162,7 @@ Security/Eval:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
     - 'app/packs/funds/funds/models/fund_formula.rb'
+    - 'app/packs/funds/capital_distributions/models/distribution_fee.rb'
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:
@@ -239,8 +240,10 @@ Metrics/MethodLength:
     - 'app/packs/ai/ai_rules/services/ai_data_manager.rb'
     - 'app/packs/ai/ai_rules/services/compliance_assistant.rb'
     - 'app/packs/funds/funds/controllers/funds_controller.rb'
+    - 'app/packs/funds/capital_distribution_payments/models/concern/capital_distribution_fees.rb'
     - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
     - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
+
 Metrics/BlockNesting:
   Exclude:
     - 'app/packs/misc/approvals/models/approval_response.rb'

@@ -598,6 +598,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
       t.bigint "exchange_rate_id"
       t.json "json_fields"
       t.bigint "import_upload_id"
+      t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
+      t.decimal "total_amount_cents", precision: 20, scale: 2, default: "0.0"
       t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
       t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
       t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -1003,6 +1005,22 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
       t.index ["previous_refresh_token"], name: "index_devise_api_tokens_on_previous_refresh_token"
       t.index ["refresh_token"], name: "index_devise_api_tokens_on_refresh_token"
       t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
+    end
+
+    create_table "distribution_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+      t.string "name", limit: 50
+      t.date "start_date"
+      t.date "end_date"
+      t.string "notes"
+      t.bigint "entity_id", null: false
+      t.bigint "fund_id", null: false
+      t.bigint "capital_distribution_id", null: false
+      t.datetime "created_at", null: false
+      t.datetime "updated_at", null: false
+      t.boolean "formula", default: false
+      t.index ["capital_distribution_id"], name: "index_distribution_fees_on_capital_distribution_id"
+      t.index ["entity_id"], name: "index_distribution_fees_on_entity_id"
+      t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
     end
   
     create_table "doc_questions", force: :cascade do |t|

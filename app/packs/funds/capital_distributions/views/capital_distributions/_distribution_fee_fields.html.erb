@@ -1,0 +1,42 @@
+<div class='nested-fields'>
+  <div class='row'>
+    <% 
+      capital_distribution = f.object.capital_distribution
+      names = capital_distribution.fee_account_entry_names 
+    %>
+    <div class="form-group col" data-controller="otherselect" data-otherselect-select-id-value="#distribution_fee_fee_name">
+      <%= f.label :name %>
+      <%= f.select :name, names, { include_blank: true }, class: "form-control", id: "fee_name", data: { action: "change->otherselect#checkOtherName" } %>
+      <%= f.text_field :name, class: "form-control", disabled: true, id: "other_name", hidden: true %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :start_date %>
+      <%= f.date_field :start_date, class: "form-control", id: "fee_start_date" %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :end_date %>
+      <%= f.date_field :end_date, class: "form-control", id: "fee_end_date" %>
+    </div>
+  </div>
+
+  <div class='row'>
+    <% if current_user.support? %>
+      <div class="form-group col-md-2">
+        <%= f.label :formula %>
+        <%= f.check_box :formula, class: "form-check-input", id: "fee_formula" %>
+      </div>
+    <% end %>
+
+    <div class="form-group col-md-8">
+      <%= f.label :notes %>
+      <%= f.text_field :notes, class: "form-control", id: "fee_notes" %>
+    </div>
+
+    <div class="form-group col-md-1">    
+      <%= f.label :none, "&nbsp;".html_safe %>
+      <%= link_to_remove_association "Delete", f, class: "btn btn-outline-danger" %>
+    </div>
+  </div>
+</div>
