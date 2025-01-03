@@ -6,6 +6,7 @@ class CapitalDistributionPaymentDatatable < ApplicationDatatable
       folio_id: { source: "CapitalDistributionPayment.folio_id", searchable: true },
       investor_name: { source: "CapitalDistributionPayment.investor_name", searchable: true },
       amount: { source: "CapitalDistributionPayment.amount_cents", searchable: false },
+      total_amount: { source: "CapitalDistributionPayment.total_amount_cents", searchable: false },
       payment_date: { source: "CapitalDistributionPayment.payment_date", searchable: true },
       completed: { source: "CapitalDistributionPayment.completed", searchable: false },
       dt_actions: { source: "", orderable: false, searchable: false }
@@ -20,6 +21,7 @@ class CapitalDistributionPaymentDatatable < ApplicationDatatable
         folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
         amount: record.decorate.amount_explain,
+        total_amount: record.decorate.total_amount_explain,
         completed: record.decorate.display_boolean(record.completed),
         payment_date: record.decorate.display_date(record.payment_date),
         dt_actions: record.decorate.dt_actions,

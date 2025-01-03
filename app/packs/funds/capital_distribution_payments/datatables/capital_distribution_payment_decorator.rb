@@ -3,6 +3,10 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
     h.money_to_currency object.amount
   end
 
+  def total_amount_explain
+    h.money_to_currency object.total_amount
+  end
+
   def folio_id
     h.link_to object.folio_id, object.capital_commitment
   end
