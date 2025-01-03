@@ -31,8 +31,9 @@ module CapitalDistributionFees
         json_fields["fees_audit"] << fees_audit if fees_audit.present?
       end
 
-      self.fee_cents = total_fee_cents
-      self.total_amount_cents = self.amount_cents + total_fee_cents
+      self.fee_cents = total_fee_cents      
     end
+
+    self.total_amount_cents = self.amount_cents + total_fee_cents
   end
 end
