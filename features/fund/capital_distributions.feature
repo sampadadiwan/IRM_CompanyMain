@@ -2,7 +2,6 @@ Feature: Capital Distributions
   Capital Distributions fees
 
 Scenario Outline: Create a capital distribution
-  Given there is a user "<user>" for an entity "<entity>"
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity

@@ -292,24 +292,15 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
       t.index ["secondary_sale_id"], name: "index_allocations_on_secondary_sale_id"
     end
   
-  create_table "aml_reports", force: :cascade do |t|
+    create_table "aml_reports", force: :cascade do |t|
       t.bigint "entity_id", null: false
       t.bigint "investor_id", null: false
       t.bigint "investor_kyc_id", null: false
-      t.bigint "approved_by_id"
-      t.string "name"
       t.string "match_status"
-      t.boolean "approved", default: false
-      t.string "types"
-      t.json "source_notes"
-      t.json "associates"
-      t.json "fields"
-      t.json "response"
+      t.json "response_data"
       t.datetime "created_at", null: false
       t.datetime "updated_at", null: false
-      t.json "media"
-      t.datetime "approved_on"
-      t.index ["approved_by_id"], name: "index_aml_reports_on_approved_by_id"
+      t.json "request_data"
       t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
       t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
       t.index ["investor_kyc_id"], name: "index_aml_reports_on_investor_kyc_id"
@@ -861,7 +852,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
         t.datetime "created_at", null: false
         t.datetime "updated_at", null: false
         t.boolean "display_name", default: false
-        t.boolean "display_tag", default: false
+        t.boolean "display_tag", default: true
         t.string "name", limit: 20, default: "Default"
         t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
         t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
@@ -1007,7 +998,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
       t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
     end
 
-    create_table "distribution_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    create_table "distribution_fees", force: :cascade do |t|
       t.string "name", limit: 50
       t.date "start_date"
       t.date "end_date"
@@ -3262,7 +3253,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
     add_foreign_key "aml_reports", "entities"
     add_foreign_key "aml_reports", "investor_kycs"
     add_foreign_key "aml_reports", "investors"
-    add_foreign_key "aml_reports", "users", column: "approved_by_id"
     add_foreign_key "approval_responses", "approvals"
     add_foreign_key "approval_responses", "entities"
     add_foreign_key "approval_responses", "entities", column: "response_entity_id"
@@ -3283,6 +3273,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
     add_foreign_key "capital_commitments", "exchange_rates"
     add_foreign_key "capital_commitments", "folders", column: "document_folder_id"
     add_foreign_key "capital_commitments", "funds"
+    add_foreign_key "capital_commitments", "funds", column: "feeder_fund_id"
     add_foreign_key "capital_commitments", "investor_kycs"
     add_foreign_key "capital_commitments", "investors"
     add_foreign_key "capital_commitments", "users", column: "investor_signatory_id"
@@ -3397,6 +3388,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_02_074951) do
     add_foreign_key "funds", "entities"
     add_foreign_key "funds", "folders", column: "data_room_folder_id"
     add_foreign_key "funds", "folders", column: "document_folder_id"
+    add_foreign_key "funds", "funds", column: "master_fund_id"
     add_foreign_key "funds", "import_uploads"
     add_foreign_key "funds", "users", column: "fund_signatory_id"
     add_foreign_key "funds", "users", column: "trustee_signatory_id"

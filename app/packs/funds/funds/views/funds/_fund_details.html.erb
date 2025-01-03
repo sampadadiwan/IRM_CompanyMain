@@ -106,9 +106,8 @@
         <div id="capital-distributions-tab" class="tab-pane fade in">
           <div id="capital-distributions" class="associated_entity">
             <%= link_to capital_distributions_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_distributions_frame' } do %>
-              <span>Loading...</span>
+                <span>Loading...</span> 
             <% end %>
-
             <%= turbo_frame_tag "capital_distributions_frame", target: "_top" do %>
             <% end %>
           </div>
@@ -158,7 +157,9 @@
           <div id="portfolio-investments-tab" class="tab-pane fade">
             <div id="portfolio_investments" class="associated_entity">
               <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund_or_master, dashboard_name: "Portfolio Dashboard") do %>
-                Loading ...
+                
+                <%= render "/layouts/loading" %>
+                
               <% end %>              
             </div>
           </div>
