@@ -22,7 +22,7 @@ class IncomingEmailPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    belongs_to_entity?(user, record)
   end
 
   def edit?

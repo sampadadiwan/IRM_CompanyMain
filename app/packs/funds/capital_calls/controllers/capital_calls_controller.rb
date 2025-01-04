@@ -91,12 +91,13 @@ class CapitalCallsController < ApplicationController
     @capital_call.approved = true
     @capital_call.approved_by_user = current_user
 
+    result = CapitalCallApprove.call(capital_call: @capital_call)
     respond_to do |format|
-      if CapitalCallApprove.call(capital_call: @capital_call).success?
+      if result.success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully approved." }
         format.json { render :show, status: :created, location: @capital_call }
       else
-        format.html { render :new, status: :unprocessable_entity }
+        format.html { redirect_to capital_call_url(@capital_call), alert: "Call not approved: #{result[:errors]}" }
         format.json { render json: @capital_call.errors, status: :unprocessable_entity }
       end
     end

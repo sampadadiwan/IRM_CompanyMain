@@ -19,10 +19,10 @@ class IncomingEmail < ApplicationRecord
   # This is used to check if the incoming email is sent to an entities mailbox
   before_validation :match_mailbox
   def match_mailbox
-    self.entity = Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
-    if entity.present?
+    self.entity ||= Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
+    if self.entity.present?
       # Find the investor in this entity that matches the subject
-      self.owner = entity.investors.where(investor_name: subject.strip).first
+      self.owner ||= entity.investors.where(investor_name: subject.strip).first
     end
   end
 
@@ -39,12 +39,12 @@ class IncomingEmail < ApplicationRecord
 
     if match_data[:owner_type].present? && match_data[:owner_id].present?
       # This email is sent by a user, to a specific owner model
-      self.owner = match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
-      self.entity_id = owner.entity_id
+      self.owner ||= match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
+      self.entity_id ||= owner.entity_id
     elsif fund_entity.present?
       # This email is sent by a potential portfolio company, with the investor presentation to the fund.
-      self.owner = fund_entity
-      self.entity_id = fund_entity.id
+      self.owner ||= fund_entity
+      self.entity_id ||= fund_entity.id
     else
       errors.add(:to, "Invalid email address, does not belong to any owner.")
     end
