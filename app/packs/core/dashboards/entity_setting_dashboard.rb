@@ -10,6 +10,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     id: Field::Number,
     custom_dashboards: Field::String,
+    mailbox: Field::String,
     kpi_reminder_before: Field::Number,
     kpi_reminder_frequency: Field::String,
     sandbox: Field::BooleanEmoji,
@@ -78,6 +79,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     entity
+    mailbox
     test_account
     regulatory_env
     custom_dashboards
@@ -119,6 +121,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
+    mailbox
     regulatory_env
     test_account
     sandbox

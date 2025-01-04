@@ -79,9 +79,9 @@ class AmlApiResponseService
     data[:data][:filters][:pan_number] = pan if pan.present?
 
     # if dob.present?
-      year = dob.present? ? dob.year.to_s : "1900" # added as api gives error if this is not passed
-      data[:data][:filters][:birth_year] = year
-      data[:data][:filters][:birth_year_fuzziness] = "2"
+    year = dob.present? ? dob.year.to_s : "1900" # added as api gives error if this is not passed
+    data[:data][:filters][:birth_year] = year
+    data[:data][:filters][:birth_year_fuzziness] = "2"
     # end
     data.to_json
   end

@@ -1504,3 +1504,65 @@ Then('investor entity id should be updated in expected objects') do
   expect(@notice_entry.reload.investor_entity_id).to(eq(@investor.investor_entity_id))
   expect(InvestorAccess.last.investor_entity_id).to(eq(@investor.investor_entity_id))
 end
+
+
+Given('the entity_setting has {string}') do |args|
+  key_values(@entity.entity_setting, args)
+  @entity.entity_setting.save!
+end
+
+Given('there is an incoming email sent for this investor {string}') do |args|
+
+  @incoming_email = FactoryBot.build(:incoming_email)
+  key_values(@incoming_email, args)
+
+  RAILS_APP_URL = "http://localhost:3000/incoming_emails/sendgrid"
+
+  # Construct the request payload
+  email_payload = {
+    "text" => @incoming_email.body,
+    "html" => @incoming_email.body,
+    "sender_ip" => "209.85.218.49",
+    "headers" => "Content-Type: multipart/alternative; boundary=\"000000000000015679062ad824de\"\nDKIM-Signature: v=1; ...", # Truncated for brevity
+    "SPF" => "pass",
+    "envelope" => { "to" => [@incoming_email.to], "from" => @incoming_email.from }.to_json,
+    "attachments" => "0",
+    "to" => @incoming_email.to,
+    "subject" => @incoming_email.subject,
+    "spam_score" => "-0.1",
+    "spam_report" => "Spam detection software has NOT identified this email as spam.",
+    "charsets" => { "to" => "UTF-8", "from" => "UTF-8", "subject" => "UTF-8", "text" => "utf-8", "html" => "utf-8" }.to_json,
+    "dkim" => { "@gmail.com" => "pass" }.to_json,
+    "from" => @incoming_email.from
+  }
+
+  # Convert payload to JSON
+  json_payload = email_payload.to_json
+
+  # Create URI object
+  uri = URI.parse(RAILS_APP_URL)
+
+  # Send HTTP POST request
+  http = Net::HTTP.new(uri.host, uri.port)
+  request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+  request.body = json_payload
+
+  # Execute request and print response
+  response = http.request(request)
+  response.code.should == "200"
+end
+
+When('then the email should be {string} to the investor') do |added|
+
+  IncomingEmail.count.should == 1
+  last_incoming_email = IncomingEmail.last
+  if added == "true"
+    last_incoming_email.owner.should == Investor.find(1)
+  else
+    last_incoming_email.owner.should == nil
+  end
+  last_incoming_email.to.should == @incoming_email.to
+  last_incoming_email.from.should == @incoming_email.from
+  last_incoming_email.subject.should == @incoming_email.subject
+  last_incoming_email.body.should == @incoming_email.body
+end

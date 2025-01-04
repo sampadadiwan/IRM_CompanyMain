@@ -33,6 +33,12 @@
 
   <%= form.fields_for :entity_setting do |entity_setting_subform| %>
 
+    <div class="form-group">
+      <%= entity_setting_subform.label :mailbox %>
+      <%= entity_setting_subform.text_field :mailbox, class: "form-control"  %>
+      <small>Email address for incoming email</small>
+    </div>
+
     <% if entity.permissions.enable_kycs? %>
     <div class="form-group">
       <%= entity_setting_subform.label :individual_kyc_doc_list %>

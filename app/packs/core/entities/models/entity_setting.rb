@@ -7,6 +7,7 @@ class EntitySetting < ApplicationRecord
 
   validate :validate_ckyc_enabled
   validates :from_email, length: { maximum: 100 }
+  validates :mailbox, length: { maximum: 30 }
   serialize :kpi_doc_list, type: Array
 
   before_save :ensure_single_kra_enabled, if: -> { kra_enabled_changed? && kra_enabled == true }

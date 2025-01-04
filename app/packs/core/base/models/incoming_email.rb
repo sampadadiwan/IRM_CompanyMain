@@ -9,17 +9,27 @@
 class IncomingEmail < ApplicationRecord
   include WithFolder
 
-  belongs_to :owner, polymorphic: true
+  belongs_to :owner, polymorphic: true, optional: true
   belongs_to :entity
 
   def to_s
     "From: #{from}, Subj: #{subject}"
   end
 
+  # This is used to check if the incoming email is sent to an entities mailbox
+  before_validation :match_mailbox
+  def match_mailbox
+    self.entity = Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
+    if entity.present?
+      # Find the investor in this entity that matches the subject
+      self.owner = entity.investors.where(investor_name: subject.strip).first
+    end
+  end
+
   # Note self.to is set to the email address of the owner
   # Example: deal.1@prod.caphive.app or individual_kyc.23@prod.caphive.app
   # see WithIncomingEmail#incoming_email_address
-  before_validation :set_owner
+  before_validation :set_owner, if: -> { entity.nil? }
   def set_owner
     match_data = to.match(/(?<owner_type>[\w_]+)\.(?<owner_id>\d+)@(?<subdomain>[\w-]+)\.(?<domain>[\w.-]+)/)
     return nil unless match_data

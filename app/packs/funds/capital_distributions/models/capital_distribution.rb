@@ -82,7 +82,7 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def fee_account_entry_names
-    fund.account_entries.where(entry_type: ["Income", "Tax"]).pluck(:name).uniq << "Other"
+    fund.account_entries.where(entry_type: %w[Income Tax]).pluck(:name).uniq << "Other"
   end
 
   def fund_units
