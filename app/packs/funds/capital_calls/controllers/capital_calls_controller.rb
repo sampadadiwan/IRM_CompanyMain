@@ -92,7 +92,7 @@ class CapitalCallsController < ApplicationController
     @capital_call.approved_by_user = current_user
 
     respond_to do |format|
-      if CapitalCallUpdate.call(capital_call: @capital_call).success?
+      if CapitalCallApprove.call(capital_call: @capital_call).success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully approved." }
         format.json { render :show, status: :created, location: @capital_call }
       else

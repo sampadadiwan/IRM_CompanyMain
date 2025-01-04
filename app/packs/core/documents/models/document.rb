@@ -57,6 +57,7 @@ class Document < ApplicationRecord
   scope :generated, -> { where.not(from_template_id: nil) }
   scope :template, -> { where(template: true) }
   scope :approved, -> { where(approved: true) }
+  scope :not_approved, -> { where(approved: false) }
   scope :not_template, -> { where(template: false) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
   scope :not_sent_for_esign, -> { where(sent_for_esign: false) }
@@ -64,6 +65,7 @@ class Document < ApplicationRecord
   scope :generated_approved_or_others, lambda { |model|
     model.documents.includes(:folder).where(owner_tag: "Generated", approved: true).or(model.documents.where.not(owner_tag: "Generated")).or(model.documents.where(owner_tag: nil))
   }
+  scope :generated, -> { where(owner_tag: "Generated") }
 
   def to_s
     name

@@ -843,7 +843,9 @@ end
 Then('when the capital call is approved') do
   @capital_call.approved = true
   @capital_call.approved_by_user = @user
-  CapitalCallUpdate.call(capital_call: @capital_call)
+  result = CapitalCallApprove.wtf?(capital_call: @capital_call)
+  puts result
+  result.success?.should == true
   #sleep((1)
   @capital_call.reload
 end
