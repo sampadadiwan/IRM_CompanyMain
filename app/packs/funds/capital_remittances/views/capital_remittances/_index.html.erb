@@ -52,7 +52,7 @@
 
               <%= link_to "Download", xl_link,  {class: "dropdown-item" } %>
 
-              <% disabled = capital_call.call_basis == "Upload" ? "disabled" : nil   %>
+              <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil   %>
               <%= link_to "Upload Remittances",
                   new_import_upload_path("import_upload[owner_id]": capital_call.id,
                   "import_upload[owner_type]": "CapitalCall",
