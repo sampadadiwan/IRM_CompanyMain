@@ -3,7 +3,7 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
-    @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:entity, :fund, :capital_distribution, :capital_commitment)
+    @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:entity, :fund, :capital_distribution, :capital_commitment, :investor_kyc)
 
     @capital_distribution_payments = @capital_distribution_payments.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
@@ -114,6 +114,6 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_payment_params
-    params.require(:capital_distribution_payment).permit(:fund_id, :entity_id, :capital_distribution_id, :investor_id, :form_type_id, :amount, :payment_date, :completed, :folio_id, properties: {})
+    params.require(:capital_distribution_payment).permit(:fund_id, :entity_id, :capital_distribution_id, :investor_id, :form_type_id, :income, :payment_date, :completed, :folio_id, properties: {})
   end
 end

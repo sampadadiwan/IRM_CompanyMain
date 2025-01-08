@@ -1,0 +1,13 @@
+
+<table class="ae-list table table-bordered dataTable">
+    <% @capital_distribution_payment.json_fields["ae_audit"]&.each do |ae_array| %>
+        <% ae_array.filter{|ae| type.include?(ae[3]&.strip)}.each do |account_entry| %>
+            <tr class="ae-item">
+                <td class="ae-name"><%= account_entry[0] %></td>
+                <td class="ae-description"><%= account_entry[1] %></td>
+                <td class="ae-amount"><%= currency_from_cents(account_entry[2], @capital_distribution_payment.fund.currency, params) %></td>
+                <td class="ae-type"><%= account_entry[3] %></td>
+            </tr>
+        <% end %>
+    <% end %>                
+</table>

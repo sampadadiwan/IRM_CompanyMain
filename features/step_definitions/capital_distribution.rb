@@ -1,46 +1,87 @@
-When("I create a Capital Distribution") do
-	visit("/funds/1")
+When("I create a Capital Distribution {string}") do |args|
+	visit(fund_path(@fund))
+  @capital_distribution = FactoryBot.build(:capital_distribution, fund: @fund)
+  key_values(@capital_distribution, args)
 	click_on("Distributions")
 	click_on("New Distribution")
 
-	fill_in 'capital_distribution_title', with: 'Sample Distribution Title'
-	fill_in 'capital_distribution_gross_amount', with: '100000'
-  fill_in 'capital_distribution_cost_of_investment', with: '50000'
-  fill_in 'capital_distribution_reinvestment', with: '20000'
-  fill_in 'capital_distribution_distribution_date', with: '2024-12-15'
+	fill_in 'capital_distribution_title', with: @capital_distribution.title
+	fill_in 'capital_distribution_income', with: @capital_distribution.income.to_d
+  fill_in 'capital_distribution_cost_of_investment', with: @capital_distribution.cost_of_investment.to_d
+  fill_in 'capital_distribution_reinvestment', with: @capital_distribution.reinvestment.to_d
+  fill_in 'capital_distribution_distribution_date', with: @capital_distribution.distribution_date.strftime("%Y-%m-%d")
   
-  click_link 'Add Distribution Fee'
-
-  select 'Tax fee', from: 'fee_name'
-
-  fill_in 'fee_start_date', with: '2024-12-01'
-  fill_in 'fee_end_date', with: '2024-12-31'
-
-  if page.has_css?('#fee_formula')
-    check 'fee_formula'
+  
+  CapitalCommitment.first.account_entries.all.each do |ae|
+    # For each account entry, add a distribution fee
+    puts "Adding distribution fee for account entry #{ae}"
+    click_link 'Add Account Entries' 
+ 
+    within all('.nested-fields').last do
+      select ae.name, from: 'fee_name'
+      fill_in 'fee_start_date', with: (ae.reporting_date - 1.month).strftime("%Y-%m-%d")
+      fill_in 'fee_end_date', with: (ae.reporting_date + 1.month).strftime("%Y-%m-%d")
+      select ae.entry_type, from: 'fee_type'
+      fill_in 'fee_notes', with: "From account entry #{ae.id}"
+    end
   end
 
-  note = "(capital_commitment.call_fee_cents * 0.5)"
-  fill_in 'fee_notes', with: note
-
   click_button 'Save'
+  expect(page).to have_content("Capital distribution was successfully created")
+  # sleep(2)
 end
 
-Given("there is a AccountEntry for distribution") do
-	@fund.account_entries.create!(name: "Tax fee", reporting_date: "2024-12-02", entity_id: @fund.entity_id, entry_type: "Portfolio", capital_commitment_id: CapitalCommitment.first.id, amount_cents: 1000929, entry_type: "Tax")
+Given("there is a AccountEntry for distribution {string}") do |args|
+  CapitalCommitment.all.each do |cc|
+    ae = @fund.account_entries.build(entity_id: @fund.entity_id, capital_commitment_id: cc.id)
+    key_values(ae, args)
+    ae.save!
+    puts ae.to_json
+  end
 end
 
 Then('it should create Capital Distribution') do
-	sleep(20)
-	distribution = CapitalDistribution.first
-  expect(distribution.gross_amount_cents).to(eq(0.1e8))
-  expect(distribution.cost_of_investment_cents).to(eq(0.5e7))
-  expect(distribution.reinvestment_cents).to(eq(0.2e7))
-  expect(distribution.capital_distribution_payments.first.json_fields["tax_fee"]).to(eq("₹10,009.29"))
+  distribution = CapitalDistribution.first
+  expect(distribution.title).to(eq(@capital_distribution.title))
+  expect(distribution.income_cents).to(eq(@capital_distribution.income_cents))
+  expect(distribution.cost_of_investment_cents).to(eq(@capital_distribution.cost_of_investment_cents))
+  expect(distribution.reinvestment_cents).to(eq(@capital_distribution.reinvestment_cents))
+
+  total_amount_cents = @capital_distribution.income_cents + @capital_distribution.cost_of_investment_cents + @capital_distribution.reinvestment_cents
+
+  total_amount_cents +=  AccountEntry.where(fund_id: @fund.id).where.not(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
+  # total_amount_cents -=  AccountEntry.where(fund_id: @fund.id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
+
+  expect(distribution.gross_amount_cents).to(eq(total_amount_cents))    
 end
 
-Then('the amount payment should be shown on Capital Distribution Payment page') do
-  visit('/capital_distribution_payments/1')
-  expect(page).to have_content("Fees")
-  expect(page).to have_content("Total Amount")
+Then('the data should be correctly displayed for each Capital Distribution Payment') do
+  CapitalDistributionPayment.all.each do |cdp|
+    visit(capital_distribution_payment_path(cdp))
+    sleep(20)
+    puts "checking details of #{cdp}"
+
+    cdp.income_with_fees_cents.should == cdp.income_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income"]).sum(:amount_cents) - AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
+    cdp.cost_of_investment_with_fees_cents.should == cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["FV For Redemption"]).sum(:amount_cents)
+    cdp.reinvestment_with_fees_cents.should == cdp.reinvestment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Reinvestment"]).sum(:amount_cents)
+
+    cdp.net_payable_cents.should == cdp.income_with_fees_cents + cdp.cost_of_investment_with_fees_cents
+    cdp.gross_payable_cents.should == cdp.income_cents + cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income", "FV For Redemption"]).sum(:amount_cents)
+
+    expect(page).to have_content(money_to_currency cdp.net_payable, {})
+    expect(page).to have_content(money_to_currency cdp.income, {})
+    expect(page).to have_content(money_to_currency cdp.income_with_fees, {})    
+    expect(page).to have_content(money_to_currency cdp.cost_of_investment, {})
+    expect(page).to have_content(money_to_currency cdp.cost_of_investment_with_fees, {})
+    expect(page).to have_content(money_to_currency cdp.reinvestment, {})    
+
+    expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
+    expect(page).to have_content(cdp.capital_distribution.to_s)
+    expect(page).to have_content(cdp.capital_commitment.to_s)
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).each do |ae|    
+      name = FormCustomField.to_name(ae.name)
+      puts "checking details of #{name} in #{cdp.json_fields}"
+      expect(cdp.json_fields[name]).to(eq(money_to_currency(ae.amount, {})))        
+    end
+  end
 end

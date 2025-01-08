@@ -1,12 +1,4 @@
 class CapitalDistributionPaymentDecorator < ApplicationDecorator
-  def amount_explain
-    h.money_to_currency object.amount
-  end
-
-  def total_amount_explain
-    h.money_to_currency object.total_amount
-  end
-
   def folio_id
     h.link_to object.folio_id, object.capital_commitment
   end
@@ -15,8 +7,8 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
     h.link_to object.capital_distribution.title, object.capital_distribution
   end
 
-  def amount
-    h.money_to_currency object.amount
+  def income
+    h.money_to_currency object.income
   end
 
   # Just an example of a complex method you can add to you decorator

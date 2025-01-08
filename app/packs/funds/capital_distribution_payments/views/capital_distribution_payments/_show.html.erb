@@ -39,44 +39,19 @@
 
         <tr>
           <td>
-            Amount excluding fees
+            Gross Payable
           </td>
           <td>
-            <%= money_to_currency capital_distribution_payment.amount, params %>
+            <%= money_to_currency capital_distribution_payment.gross_payable, params %>
           </td>
         </tr>
 
-        <% if capital_distribution_payment.fee_cents > 0 %>
-          <tr>
-            <% # Have added styles here as it's not working by adding this class %>
-            <td class="vertical-align-top" style="vertical-align: top;">
-              Fees
-            </td>
-            <td>
-              <div class="money-wrapper">
-                <span><%= money_to_currency capital_distribution_payment.fee, params %></span>
-              </div>
-              <ul class="fees-list">
-              <% @capital_distribution_payment.json_fields["fees_audit"]&.each do |fee_array| %>
-                  <% fee_array.each do |fee| %>
-                    <li class="fee-item">
-                      <span class="fee-name"><%= fee[0] %></span>
-                      <span class="fee-description"><%= fee[1] %></span>
-                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_distribution_payment.fund.currency, params) %></span>
-                    </li>
-                  <% end %>
-                <% end %>                
-              </ul>
-            </td>
-          </tr>
-        <% end %>
-
         <tr>
           <td>
-            Total Amount
+            Net Payable
           </td>
           <td>
-            <%= money_to_currency capital_distribution_payment.total_amount, params %>
+            <%= money_to_currency capital_distribution_payment.net_payable, params %>
           </td>
         </tr>
 
@@ -89,8 +64,113 @@
           </td>
         </tr>
 
+        <% if capital_distribution_payment.cost_of_investment_cents != capital_distribution_payment.cost_of_investment_with_fees_cents %>
+        <tr>
+          <td class="vertical-align-top" style="vertical-align: top;">
+            Redemption Account Entries
+          </td>
+          <td>
+            <%= render "/capital_distribution_payments/account_entries", type: ["FV For Redemption"] %>
+          </td>
+        </tr>
 
-        <% if capital_distribution_payment.folio_amount != capital_distribution_payment.amount %>
+        <tr>
+          <td>
+            Net Face Value For Redemption
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.cost_of_investment_with_fees, params %>
+          </td>
+        </tr>
+        <% end %>
+
+        <tr>
+          <td>
+            Income
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.income, params %>
+          </td>
+        </tr>        
+
+        <% if capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents %>
+
+        <tr>
+          <td class="vertical-align-top" style="vertical-align: top;">
+            Other Account Entries
+          </td>
+          <td>
+            <%= render "/capital_distribution_payments/account_entries", type: ["Income", "Tax", "Expense"] %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Net Income 
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.income_with_fees, params %>
+          </td>
+        </tr>
+        <% end %>      
+
+
+        <tr>
+          <td>
+            Reinvestment
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.reinvestment, params %>
+          </td>
+        </tr>
+
+        <% if capital_distribution_payment.reinvestment_cents != capital_distribution_payment.reinvestment_with_fees_cents %>
+
+        <tr>
+          <td class="vertical-align-top" style="vertical-align: top;">
+            Reinvestment Account Entries
+          </td>
+          <td>
+            <%= render "/capital_distribution_payments/account_entries", type: ["Reinvestment"] %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Net Reinvestment
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.reinvestment_with_fees, params %>
+          </td>
+        </tr>
+        <% end %>
+
+        
+        <% if false && capital_distribution_payment.net_of_account_entries_cents > 0 %>
+          <tr>
+            <% # Have added styles here as it's not working by adding this class %>
+            <td class="vertical-align-top" style="vertical-align: top;">
+              Account Entries
+            </td>
+            <td>
+              <%= money_to_currency capital_distribution_payment.net_of_account_entries, params %>
+            </td>
+          </tr>
+          <tr>
+            <% # Have added styles here as it's not working by adding this class %>
+            <td class="vertical-align-top" style="vertical-align: top;">
+              Breakdown
+            </td>
+            <td>
+              <%= render "/capital_distribution_payments/account_entries", type: DistributionFee::TYPES %>
+            </td>
+          </tr>
+        <% end %>
+
+        
+
+
+        <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
         <tr>
           <td>
             Folio Amount

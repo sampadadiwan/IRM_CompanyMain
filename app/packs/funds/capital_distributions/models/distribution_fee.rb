@@ -4,6 +4,8 @@ class DistributionFee < ApplicationRecord
   belongs_to :capital_distribution
   validates :name, :start_date, :end_date, presence: true
 
+  TYPES = ["FV For Redemption", "Income", "Expense", "Tax", "Reinvestment"].freeze
+
   NESTED_ATTRIBUTES = %i[id name start_date end_date fee_type notes _destroy].freeze
   NESTED_ATTRIBUTES_WITH_FORMULA = %i[id name start_date end_date fee_type notes _destroy formula].freeze
 

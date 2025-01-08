@@ -19,6 +19,11 @@
       <%= f.label :end_date %>
       <%= f.date_field :end_date, class: "form-control", id: "fee_end_date" %>
     </div>
+
+    <div class="form-group col">
+      <%= f.label :fee_type %>
+      <%= f.select :fee_type, DistributionFee::TYPES, {include: :blank}, class: "form-control", id: "fee_type" %>
+    </div>
   </div>
 
   <div class='row'>

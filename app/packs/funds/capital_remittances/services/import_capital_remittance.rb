@@ -10,7 +10,7 @@ class ImportCapitalRemittance < ImportUtil
 
     fund, capital_call, investor, folio_id, capital_commitment = inputs(import_upload, user_data)
 
-    if fund && capital_call && investor && capital_commitment
+    if fund && capital_call && investor && capital_commitment && capital_commitment.investor_id == investor.id
 
       # Make the capital_remittance
       capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, folio_call_amount: user_data["Call Amount (Inclusive Of Capital Fees)"], folio_capital_fee: user_data["Capital Fees"], import_upload_id: import_upload.id, folio_other_fee: user_data["Other Fees"], payment_date: user_data["Payment Date"], created_by: "Upload", remittance_date: user_data["Remittance Date"])
@@ -27,6 +27,7 @@ class ImportCapitalRemittance < ImportUtil
       raise "Capital Call not found" unless capital_call
       raise "Investor not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
+      raise "Investor and Commitment do not match" if capital_commitment.investor_id != investor.id
     end
   end
 

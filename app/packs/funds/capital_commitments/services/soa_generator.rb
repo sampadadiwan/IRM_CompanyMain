@@ -172,7 +172,7 @@ class SoaGenerator
   end
 
   def distribution_amounts(capital_distribution_payments, currency)
-    amount_cents = capital_distribution_payments.sum(:amount_cents)
+    amount_cents = capital_distribution_payments.sum(:net_payable_cents)
     OpenStruct.new({
                      amount: Money.new(amount_cents, currency)
                    })

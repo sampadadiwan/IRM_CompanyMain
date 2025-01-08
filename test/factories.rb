@@ -427,7 +427,7 @@ FactoryBot.define do
   factory :capital_distribution do
     fund { Fund.all.sample }
     entity { fund.entity }
-    gross_amount { 1000000 * rand(1..5) }
+    income { 1000000 * rand(1..5) }
     cost_of_investment_cents { gross_amount * 0.8 }
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }

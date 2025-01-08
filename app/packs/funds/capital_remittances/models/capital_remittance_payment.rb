@@ -37,8 +37,7 @@ class CapitalRemittancePayment < ApplicationRecord
 
   def set_amount
     # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
-    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency,
-                                         folio_amount_cents, payment_date)
+    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency, folio_amount_cents, payment_date)
   end
 
   # Called after create, and also after remittance is verified (CapitalRemittanceVerify)

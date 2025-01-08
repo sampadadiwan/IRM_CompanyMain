@@ -62,9 +62,7 @@
               Other Fees
             </td>
             <td>
-              <div class="money-wrapper">
-                <span><%= money_to_currency @capital_remittance.other_fee, params %></span>
-              </div>              
+              <%= money_to_currency @capital_remittance.other_fee, params %>              
             </td>
           </tr>
         <% end %>

@@ -106,14 +106,14 @@ class DefaultUnitAllocationEngine
     msg = []
 
     if  capital_distribution_payment.completed &&
-        capital_distribution_payment.cost_of_investment_cents.positive? &&
+        capital_distribution_payment.cost_of_investment_with_fees_cents.positive? &&
         capital_distribution.unit_prices.present? &&
         capital_commitment.unit_type.present?
       # Get the price for the unit type for this commitment from the call
       unit_type = capital_commitment.unit_type
       price_cents = capital_distribution.unit_prices[unit_type].to_d * 100
       # Calculate the quantity to be allocated
-      quantity = price_cents.positive? ? (capital_distribution_payment.cost_of_investment_cents / price_cents) : 0
+      quantity = price_cents.positive? ? (capital_distribution_payment.cost_of_investment_with_fees_cents / price_cents) : 0
 
       fund_unit = find_or_new_payment(capital_distribution_payment, unit_type)
 
@@ -128,7 +128,7 @@ class DefaultUnitAllocationEngine
     else
       msg << "Skipping fund units generation for #{capital_distribution_payment.folio_id}"
       msg << "Payment not completed" unless capital_distribution_payment.completed
-      msg << "No payment amount" unless capital_distribution_payment.amount_cents.positive?
+      msg << "No payment amount" unless capital_distribution_payment.cost_of_investment_with_fees_cents.positive?
       msg << "No unit prices in distrbution" if capital_distribution.unit_prices.blank?
       msg << "No unit type in commitment" if capital_commitment.unit_type.blank?
       Rails.logger.debug msg.join(", ")

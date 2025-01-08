@@ -1,5 +1,5 @@
 class ImportCapitalDistributionPayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Amount", "Payment Date", "Completed", "Folio No", "Cost Of Investment"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Income", "Payment Date", "Completed", "Folio No", "Cost Of Investment"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -27,7 +27,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment.import_upload_id = import_upload.id
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.percentage = capital_commitment.percentage
-      capital_distribution_payment.amount = user_data["Amount"]
+      capital_distribution_payment.income = user_data["Income"]
       capital_distribution_payment.cost_of_investment = user_data["Cost Of Investment"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 

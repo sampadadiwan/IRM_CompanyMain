@@ -9,13 +9,14 @@
           new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), 
           {class: "btn btn-outline-primary" }  %>
 
-
+        <% disabled = capital_distribution.distribution_on != "Upload" ? "disabled" : nil %>
+      
         <%= link_to "Upload", 
             new_import_upload_path("import_upload[owner_id]": capital_distribution.id, 
             "import_upload[owner_type]": "CapitalDistribution", 
             "import_upload[import_type]": "CapitalDistributionPayment", 
             "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
+            { class: "btn btn-outline-primary #{disabled}"}  %> 
 
         <%= link_to "Download" , 
           capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, 

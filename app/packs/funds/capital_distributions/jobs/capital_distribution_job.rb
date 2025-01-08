@@ -16,19 +16,25 @@ class CapitalDistributionJob < ApplicationJob
       # Update the index
       CapitalDistributionPaymentIndex.import(@capital_distribution.capital_distribution_payments)
       # Update the counter caches
-      CapitalDistributionPayment.counter_culture_fix_counts
+      CapitalDistributionPayment.counter_culture_fix_counts where: { entity_id: @capital_distribution.entity_id }
+
+      # This is to ensure the gross_amount is computed correctly, after the payments have been computed
+      @capital_distribution.reload.save
     end
   end
 
   def generate_payments
     fund = @capital_distribution.fund
     capital_commitments = @capital_distribution.Pool? ? fund.capital_commitments.pool : [@capital_distribution.capital_commitment]
+
     # Need to distriute the capital based on the percentage holding of the fund by the investor
     capital_commitments.each do |cc|
       # Compute the amount based on the distribution_percentage of the capital_commitment
       percentage = @capital_distribution.distribution_percentage(cc)
-      amount_cents = (@capital_distribution.net_amount_cents * percentage / 100.0).round(2)
+
+      income_cents = (@capital_distribution.income_cents * percentage / 100.0).round(2)
       cost_of_investment_cents = (@capital_distribution.cost_of_investment_cents * percentage / 100.0).round(2)
+      reinvestment_cents = (@capital_distribution.reinvestment_cents * percentage / 100.0).round(2)
 
       if CapitalDistributionPayment.exists?(capital_distribution_id: @capital_distribution.id, capital_commitment_id: cc.id)
         Rails.logger.debug { "Skipping CapitalDistributionPayment for #{cc}, already exists" }
@@ -36,20 +42,23 @@ class CapitalDistributionJob < ApplicationJob
         payment = CapitalDistributionPayment.new(fund_id: @capital_distribution.fund_id,
                                                  entity_id: @capital_distribution.entity_id,
                                                  capital_distribution_id: @capital_distribution.id,
-                                                 capital_commitment_id: cc.id,
+                                                 capital_commitment_id: cc.id, reinvestment_cents:,
                                                  investor_id: cc.investor_id, cost_of_investment_cents:,
-                                                 investor_name: cc.investor_name, amount_cents:,
+                                                 investor_name: cc.investor_name, income_cents:,
                                                  payment_date: @capital_distribution.distribution_date,
                                                  percentage: percentage.round(2), folio_id: cc.folio_id,
                                                  completed: @capital_distribution.generate_payments_paid)
 
-        next unless payment.valid?
-
-        payment.setup_distribution_fees
-        payment.run_callbacks(:save) { false }
-        payment.run_callbacks(:create) { false }
-        @payments << payment
-        logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor_name} id #{payment.id}"
+        if payment.valid?
+          payment.setup_distribution_fees
+          payment.run_callbacks(:save) { false }
+          payment.run_callbacks(:create) { false }
+          @payments << payment
+          logger.debug "Created Payment of #{payment.net_payable} for #{cc.investor_name} id #{payment.id}"
+        else
+          logger.error "Error creating Payment for #{cc.investor_name} id #{payment.id}"
+          logger.error payment.errors.full_messages
+        end
       end
     end
   end

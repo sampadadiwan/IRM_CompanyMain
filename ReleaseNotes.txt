@@ -1,3 +1,19 @@
+V8.0.57
+#####################################
+ee42c7bb6 Better support for approval failure msg
+daee06a96 Added check for unapproved docs for call approval
+5f2cfbbd3 Disable upload remittances when call basis is not upload
+c40091018 Added tests for incoming email (#674)
+bf5270404 Fixed distribution tests
+6769cfde6 Merged distribution fees
+645654e18 Added investor category and sub-category in kyc excel download (#672)
+37751f6d2 Idfy amlv2 (#655)
+f6a447615 Fixed exchange rates dates
+d214443ac Sync test schema
+3c26ef14c Added delay before validating investor entity update (#661)
+8864fa996 Named dashboard (#671)
+f0bdae54d Feeder fund1 (#669)
+
 V8.0.56
 #####################################
 645654e18 Added investor category and sub-category in kyc excel download (#672)

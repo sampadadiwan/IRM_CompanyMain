@@ -3,7 +3,7 @@ class CapitalDistribution < ApplicationRecord
   include Trackable.new
 
   include WithFolder
-  include RansackerAmounts.new(fields: %w[carry cost_of_investment distribution_amount fee gross_amount net_amount reinvestment])
+  include RansackerAmounts.new(fields: %w[carry cost_of_investment distribution_amount fee gross_amount income reinvestment])
 
   include ForInvestor
 
@@ -27,7 +27,13 @@ class CapitalDistribution < ApplicationRecord
   # Stores the prices for unit types for this call
   serialize :unit_prices, type: Hash
 
-  monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
+  self.ignored_columns += %w[net_amount_cents]
+  # cost_of_investment - this is the FV for Redemption
+  # distribution_amount - this what has actually been distributed via payments & marked as completed
+  # gross_amount - this is the total amount that has to be distributed
+  # reinvestment - This is the amount that is reinvested
+  # income - This is the income from sale of portfolio that is to be distributed
+  monetize :income_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, :fee_cents, with_currency: ->(i) { i.fund.currency }
 
   validates_uniqueness_of :title, scope: :fund_id
   validates :title, presence: true
@@ -37,9 +43,14 @@ class CapitalDistribution < ApplicationRecord
   validates :distribution_date, presence: true
   validates :capital_commitment, presence: true, if: proc { |cd| cd.CoInvest? }
 
-  before_save :compute_net_amount
-  def compute_net_amount
-    self.net_amount_cents = gross_amount_cents - reinvestment_cents
+  before_save :compute_gross_amount
+  def compute_gross_amount
+    self.gross_amount_cents = if capital_distribution_payments.present?
+                                # If the payments have been computed, they they will contain the total amount which includes income_with_fees_cents and cost_of_investment_with_fees_cents.
+                                capital_distribution_payments.sum(:gross_payable_cents) + reinvestment_cents
+                              else
+                                income_cents + cost_of_investment_cents + reinvestment_cents
+                              end
   end
 
   after_create_commit :generate_distribution_payments, unless: :destroyed?
@@ -71,7 +82,8 @@ class CapitalDistribution < ApplicationRecord
       when "Investable Capital Percentage"
         # Investable Capital Percentage
         icp_entries = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..distribution_date)
-        icp_entries.order(reporting_date: :asc).last.amount_cents / 100.0
+        per = icp_entries.order(reporting_date: :asc).last
+        per.present? ? per.amount_cents / 100.0 : capital_commitment.percentage
       else
         raise "Unknown distribution_on for CD #{id}"
       end
@@ -82,7 +94,7 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def fee_account_entry_names
-    fund.account_entries.where(entry_type: %w[Income Tax]).pluck(:name).uniq << "Other"
+    fund.account_entries.where(entry_type: DistributionFee::TYPES).pluck(:name).uniq << "Other"
   end
 
   def fund_units
@@ -90,7 +102,7 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved carry commitment_type completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount net_amount reinvestment title updated_at]
+    %w[approved carry commitment_type completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount income reinvestment title updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

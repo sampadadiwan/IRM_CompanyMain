@@ -1,0 +1,24 @@
+<%
+cards_data = [
+  {path: nil, stat: money_to_currency(capital_distribution.gross_amount, params), subtitle: "Gross Payable", progress_bar_color: "primary"},
+    #{path: nil, stat: money_to_currency(capital_distribution.income, params), subtitle: "Income", progress_bar_color: "success"},
+    {path: nil, stat: money_to_currency(capital_distribution.distribution_amount, params), subtitle: "Net Payable", progress_bar_color: "success"},
+    {path: nil, stat: money_to_currency(capital_distribution.distribution_amount, params), subtitle: "Distributed", progress_bar_color: "warning"},
+    {path: nil, stat: l(capital_distribution.distribution_date), subtitle: "Distribution Date", progress_bar_color: "danger"}
+]
+%>
+
+<div class="row">
+    <% cards_data.each do |card_data| %>
+    
+        <%= render(NumberStatsComponent.new(
+            path: card_data[:path],
+            amount: card_data[:stat],
+            subtitle: card_data[:subtitle],
+            progress_bar_color: card_data[:progress_bar_color],
+            fs_size: 4
+        )) %>
+
+    <% end %>
+</div>
+

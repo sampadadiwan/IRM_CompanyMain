@@ -249,6 +249,7 @@
     @capital_commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(@capital_commitment, args)
     result = CapitalCommitmentCreate.call(capital_commitment: @capital_commitment)
+    result.success?.should == true
     puts "\n####CapitalCommitment####\n"
     puts @capital_commitment.to_json
   end
@@ -812,7 +813,7 @@ When('I create a new capital distribution {string}') do |args|
   click_on "New Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
-  fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
+  fill_in('capital_distribution_income', with: @capital_distribution.income)
   fill_in('capital_distribution_cost_of_investment', with: @capital_distribution.cost_of_investment)
   fill_in('capital_distribution_reinvestment', with: @capital_distribution.reinvestment)
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
@@ -829,7 +830,7 @@ Then('I should see the capital distrbution details') do
   expect(page).to have_content(@capital_distribution.title)
   expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
   expect(page).to have_content(money_to_currency(@capital_distribution.reinvestment))
-  expect(page).to have_content(money_to_currency(@capital_distribution.net_amount))
+  expect(page).to have_content(money_to_currency(@capital_distribution.income))
   expect(page).to have_content(@capital_distribution.distribution_date.strftime("%d/%m/%Y"))
 
   @new_capital_distribution = CapitalDistribution.last
@@ -865,7 +866,7 @@ Then('I should see the capital distrbution payments generated correctly') do
   @fund.capital_commitments.each do |cc|
     cdp = @capital_distribution.capital_distribution_payments.where(investor_id: cc.investor_id).first
     cdp.completed.should == false
-    cdp.amount_cents.should == cc.percentage *  @capital_distribution.net_amount_cents / 100
+    cdp.income_cents.should == cc.percentage *  @capital_distribution.income_cents / 100
   end
 end
 
@@ -874,7 +875,8 @@ Then('I should be able to see the capital distrbution payments') do
   @capital_distribution.capital_distribution_payments.includes(:investor).each do |p|
     within "#capital_distribution_payment_#{p.id}" do
       expect(page).to have_content(p.investor.investor_name)
-      expect(page).to have_content(money_to_currency(p.amount))
+      expect(page).to have_content(money_to_currency(p.gross_payable))
+      expect(page).to have_content(money_to_currency(p.net_payable))
       expect(page).to have_content(p.payment_date.strftime("%d/%m/%Y"))
       expect(page).to have_content(p.completed ? "Yes" : "No")
     end
@@ -887,8 +889,8 @@ end
 
 Then('the capital distribution must reflect the payments') do
   @capital_distribution.reload
-  @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
-  @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
+  @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
+  @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
 end
 
 Then('the investors must receive email with subject {string}') do |subject|
@@ -1050,9 +1052,10 @@ Then('the capital distributions must have the data in the sheet') do
     puts "Checking import of #{cc.title}"
     cc.title.should == user_data["Title"].strip
     cc.fund.name.should == user_data["Fund"]
-    cc.gross_amount_cents.should == user_data["Gross"].to_i * 100
+    cc.income_cents.should == user_data["Income"].to_i * 100
     cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
     cc.distribution_date.should == user_data["Date"]
+    cc.gross_amount_cents.round(0).should == (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents).round(0)
     cc.import_upload_id.should == ImportUpload.last.id
   end
 end
@@ -1094,7 +1097,7 @@ Then('the payments are generated for the capital distrbutions') do
       # puts cc.capital_distribution_payments.to_json
       capital_distribution_payments_count = cc.Pool? ? fund.capital_commitments.pool.count : 1 # There is only one commitment for each co_invest
       cc.capital_distribution_payments.count.should == capital_distribution_payments_count
-      cc.capital_distribution_payments.sum(:amount_cents).round(0).should == cc.net_amount_cents.round(0)
+      cc.capital_distribution_payments.sum(:income_cents).round(0).should == cc.income_cents.round(0)
     end
   end
 end
@@ -1209,7 +1212,8 @@ Then('I should be able to see my capital distributions') do
     if cc.investor_id == @investor.id
       puts "Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
-      expect(page).to have_content( money_to_currency(cc.amount) )
+      expect(page).to have_content( money_to_currency(cc.net_payable) )
+      expect(page).to have_content( money_to_currency(cc.gross_payable) )
       expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
     else
       puts "Not Visible"
@@ -1379,7 +1383,7 @@ Then('the corresponding distribution payments should be created') do
   CapitalDistributionPayment.count.should == CapitalCommitment.count
   CapitalDistributionPayment.all.each do |cdp|
     cdp.investor_id.should == cdp.capital_commitment.investor_id
-    cdp.amount_cents.should == (@capital_distribution.net_amount_cents * cdp.capital_commitment.percentage / 100)
+    cdp.income_cents.should == (@capital_distribution.income_cents * cdp.capital_commitment.percentage / 100)
     cdp.folio_id.should == cdp.capital_commitment.folio_id
     cdp.capital_distribution_id.should == @capital_distribution.id
     cdp.investor_name.should == cdp.capital_commitment.investor_name
@@ -1392,7 +1396,11 @@ Then('I should see the distribution payments') do
     within("#capital_distribution_payment_#{cdp.id}") do
       expect(page).to have_content(cdp.investor_name)
       expect(page).to have_content(cdp.folio_id)
-      expect(page).to have_content(money_to_currency(cdp.amount))
+      expect(page).to have_content(money_to_currency(cdp.gross_payable))
+      expect(page).to have_content(money_to_currency(cdp.net_payable))
+      # expect(page).to have_content(money_to_currency(cdp.cost_of_investment))
+      expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
+      # expect(page).to have_content(money_to_currency(cdp.reinvestment))
       expect(page).to have_content(cdp.completed ? "Yes" : "No")
     end
   end
@@ -1817,7 +1825,7 @@ Then('the capital distribution payments must have the data in the sheet {string}
 
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.amount.to_d.should == row_data["Amount"].to_d
+    cdp.income.to_d.should == row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should == row_data["Cost Of Investment"].to_d
     cdp.payment_date.should == Date.parse(row_data["Payment Date"].to_s)
     cdp.completed.should == (row_data["Completed"] == "Yes")

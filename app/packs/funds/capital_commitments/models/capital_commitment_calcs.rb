@@ -42,7 +42,7 @@ class CapitalCommitmentCalcs
 
   def distribution_cents
     @distribution_cents ||=
-      @capital_commitment.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:amount_cents)
+      @capital_commitment.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:net_payable_cents)
   end
 
   def dpi
@@ -78,7 +78,7 @@ class CapitalCommitmentCalcs
     end
 
     @capital_commitment.capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
-      cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}") if cdp.amount_cents != 0
+      cf << Xirr::Transaction.new(cdp.net_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}") if cdp.net_payable_cents != 0
     end
 
     cf << Xirr::Transaction.new(fmv_on_date, date: @end_date, notes: "FMV") if fmv_on_date != 0

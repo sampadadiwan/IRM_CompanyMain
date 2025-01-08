@@ -62,7 +62,7 @@ class AccountEntryAllocationHelper
       cached_commitment_fields["remittance_capital_fees"] = capital_commitment.capital_remittances.where(remittance_date: ..@end_date).sum(:capital_fee_cents)
       cached_commitment_fields["remittance_other_fees"] = capital_commitment.capital_remittances.where(remittance_date: ..@end_date).sum(:other_fee_cents)
 
-      cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:amount_cents)
+      cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:net_payable_cents)
 
       # Income and Expense
       cached_commitment_fields["income_before_start_date"] = AccountEntry.total_amount(capital_commitment.account_entries, entry_type: 'Income', end_date: @start_date)

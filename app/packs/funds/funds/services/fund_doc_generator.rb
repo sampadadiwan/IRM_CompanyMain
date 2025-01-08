@@ -97,7 +97,7 @@ class FundDocGenerator
     distributions = fund.capital_distribution_payments
     distributions = distributions.where(payment_date: start_date..) if start_date
     distributions = distributions.where(payment_date: ..end_date) if end_date
-    distribution_amount_cents = distributions.sum(:amount_cents)
+    distribution_amount_cents = distributions.sum(:net_payable_cents)
 
     OpenStruct.new({
                      committed_amount: Money.new(committed_amount_cents, currency),

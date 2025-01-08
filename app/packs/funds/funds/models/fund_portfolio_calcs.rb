@@ -17,7 +17,7 @@ class FundPortfolioCalcs
   end
 
   def distribution_cents
-    @distribution_cents ||= @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:amount_cents)
+    @distribution_cents ||= @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:net_payable_cents)
   end
 
   def reinvested_capital_cents
@@ -310,7 +310,7 @@ class FundPortfolioCalcs
     end
 
     @fund.capital_distribution_payments.includes(:investor).where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
-      cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}")
+      cf << Xirr::Transaction.new(cdp.net_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}")
     end
 
     cf << Xirr::Transaction.new(fmv_on_date(scenarios:), date: @end_date, notes: "FMV") if fmv_on_date != 0

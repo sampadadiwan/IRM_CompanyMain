@@ -9,6 +9,8 @@ class FundBasePolicy < ApplicationPolicy
         scope.for_company_admin(user)
       elsif user.has_cached_role?(:employee) && (user.entity.is_fund? || user.entity.is_group_company?)
         scope.for_employee(user)
+      elsif user.has_cached_role?(:super)
+        scope.all
       else
         scope.none
       end

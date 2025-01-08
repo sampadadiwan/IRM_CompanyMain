@@ -11,11 +11,11 @@ export default class extends Controller {
     let distribution_on = $("#capital_distribution_distribution_on").val()
 
     if (distribution_on === "Upload") {
-      $("#capital_distributions_gross_amount").hide();
+      $("#capital_distributions_income").hide();
       $("#capital_distributions_cost_of_investment").hide();
       $("#capital_distributions_reinvestment").hide();
     } else {
-      $("#capital_distributions_gross_amount").show();
+      $("#capital_distributions_income").show();
       $("#capital_distributions_cost_of_investment").show();
       $("#capital_distributions_reinvestment").show();
     }

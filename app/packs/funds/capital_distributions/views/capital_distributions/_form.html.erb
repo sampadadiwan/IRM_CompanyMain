@@ -24,31 +24,34 @@
           <%= form.text_field :title, class: "form-control"  %>
         </div>
 
+        <% disabled = capital_distribution.id.present? %>
+
         <div class="form-group" data-controller="hide-co-invest">
           <%= form.label :commitment_type %>
-          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
+          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, disabled:, class: "form-control commitment_type", data: {action: "change->hide-co-invest#onChange"} %>
         </div>
 
         <div class="form-group co-invest">
           <%= form.label :folio_id %>
-          <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
+          <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: "form-control", disabled: %>
           <small class="text-muted">Select the Folio for the CoInvestment</small>
         </div>
 
         <div class="form-group pool" data-controller="capital-distribution">
           <%= form.label :distribution_on %>
-          <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, { class: "form-control", data: { action: "change->capital-distribution#distribution_on_changed" } } %>
+          <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, { class: "form-control", disabled:, data: { action: "change->capital-distribution#distribution_on_changed" } } %>
           <small class="text-muted">Select the Folio for the CoInvestment</small>
         </div>
           
-        <div class="form-group" id="capital_distributions_gross_amount">
-          <%= form.label :gross_amount %> <span class="formatted_currency"></span>
-          <%= form.number_field :gross_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+        <div class="form-group" id="capital_distributions_income">
+          <%= form.label :income %> <span class="formatted_currency"></span>
+          <%= form.number_field :income, class: "form-control", disabled:, data: {action: "input->currencyformat#format"}   %>
+          <small class="text-muted">Income from sale of portfolio to be distributed</small>
         </div>
 
         <div class="form-group" id="capital_distributions_cost_of_investment">
           <%= form.label :cost_of_investment, "Face Value For Redemption" %> <span class="formatted_currency"></span>
-          <%= form.number_field :cost_of_investment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+          <%= form.number_field :cost_of_investment, class: "form-control", disabled:, data: {action: "input->currencyformat#format"}   %>
 
           <small class="small_text">
             Units are redeemed based on the cost of investments above and unit price specified below
@@ -57,16 +60,16 @@
 
         <div class="form-group" id="capital_distributions_reinvestment">
           <%= form.label :reinvestment %> <span class="formatted_currency"></span>
-          <%= form.number_field :reinvestment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+          <%= form.number_field :reinvestment, class: "form-control", disabled:, data: {action: "input->currencyformat#format"}   %>
         </div>
 
         <div class="form-group">
           <%= form.label :distribution_date %>
-          <%= form.date_field :distribution_date, class: "form-control"  %>
+          <%= form.date_field :distribution_date, class: "form-control", disabled:  %>
         </div>
 
         <% if capital_distribution.fund.unit_types.present? %>
-        <div data-controller="call-copy">
+        <div id="price-container" class="field-group" data-controller="call-copy">
           <% capital_distribution.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
             <div class="form-group">
               <% unit_type = unit_type.strip %>
@@ -94,7 +97,7 @@
           <%= form.rich_text_area :notes, class: "form-control"  %>
         </div>
         <div class="form-group">
-          <%= link_to_add_association 'Add Distribution Fee', form, :distribution_fees, class: "btn btn-outline-success" %>
+          <%= link_to_add_association 'Add Account Entries', form, :distribution_fees, class: "btn btn-outline-success" %>
 
           <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
         </div>

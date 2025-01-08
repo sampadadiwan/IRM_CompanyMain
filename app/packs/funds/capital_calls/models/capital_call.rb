@@ -27,7 +27,6 @@ class CapitalCall < ApplicationRecord
   has_many :capital_remittances, dependent: :destroy
   has_many :remittance_documents, through: :capital_remittances, source: :documents, class_name: "Document"
 
-
   # This is the list of call_fees to be pulled out of account entries for the folio
   has_many :call_fees, dependent: :destroy
   accepts_nested_attributes_for :call_fees, allow_destroy: true
