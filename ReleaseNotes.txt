@@ -1,3 +1,12 @@
+V8.0.59
+#####################################
+f00d54bea Removed old xirr call from ruby xirr libs
+951953872 (tag: V8.0.58) Added better log stmts
+c7303205b Disabled even_channel, as new rails does not need it
+19d51fd03 Better configure_grids? policy for FormType
+f19552e03 Distribution new computations (#679)
+c4ac0e5b5 Added check before showing link in remittance payment notification email (#675)
+
 V8.0.57
 #####################################
 ee42c7bb6 Better support for approval failure msg

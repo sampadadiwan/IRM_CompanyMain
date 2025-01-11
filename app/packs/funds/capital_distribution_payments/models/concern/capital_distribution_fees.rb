@@ -6,6 +6,7 @@ module CapitalDistributionFees
   extend ActiveSupport::Concern
   include CurrencyHelper
 
+  # rubocop:disable Metrics/BlockLength
   def setup_distribution_fees
     # Sum of the account_entries ex taxes and expenses
     net_ae_cents = 0
@@ -76,4 +77,5 @@ module CapitalDistributionFees
     self.net_payable_cents = income_cents + net_ae_cents + cost_of_investment_cents
     self.gross_payable_cents = income_cents + gross_ae_cents + cost_of_investment_cents
   end
+  # rubocop:enable Metrics/BlockLength
 end
