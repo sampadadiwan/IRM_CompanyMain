@@ -46,7 +46,7 @@ class EntitySetting < ApplicationRecord
   end
 
   # rubocop : disable Rails/SkipsModelValidations
-  def self.disable_all(reset_passowrd = false)
+  def self.disable_all(reset_passowrd = false) # rubocop:disable Style/OptionalBooleanParameter
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)
       User.update_all(whatsapp_enabled: false)

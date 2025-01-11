@@ -13,7 +13,7 @@
           <td>
             <%= @capital_remittance.capital_call.name %>
           </td>
-        </tr>   
+        </tr>
 
         <% if @capital_remittance.payment_date %>
         <tr>
@@ -31,10 +31,10 @@
             Folio No
           </td>
           <td>
-            <%= link_to @capital_remittance.folio_id, @capital_remittance.capital_commitment %>
+            <%= @capital_remittance.folio_id%>
           </td>
-        </tr> 
-        
+        </tr>
+
         <tr>
           <td>
             Call Amount
@@ -62,7 +62,7 @@
               Other Fees
             </td>
             <td>
-              <%= money_to_currency @capital_remittance.other_fee, params %>              
+              <%= money_to_currency @capital_remittance.other_fee, params %>
             </td>
           </tr>
         <% end %>
@@ -77,9 +77,9 @@
             </td>
           </tr>
 
-          
+
         <% end %>
-        
+
         <tr>
           <td>
             Collected Amount
@@ -99,18 +99,9 @@
           </td>
         </tr>
 
-        <tr>
-          <td>
-            Exchange Rate
-          </td>
-          <td>
-            <%= link_to @capital_remittance.exchange_rate if @capital_remittance.exchange_rate %>
-          </td>
-        </tr>
-
         <% end %>
 
-        
+
         <tr>
           <td>
             Due Amount

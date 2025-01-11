@@ -3,7 +3,7 @@
 <% if @custom_notification %>
 
     <%= render "/custom_notifications/mail" do %>
-        <%= render "/capital_remittance_payments/show", capital_remittance_payment: @capital_remittance_payment, current_user: nil, params: {} if @custom_notification.show_details %>
+        <%= render "capital_remittance_payment_mailer/capital_remittance_payment_email_details", capital_remittance_payment: @capital_remittance_payment, params: {} if @custom_notification.show_details %>
     <% end %>
 
 <% else %>
@@ -12,7 +12,7 @@
     </p>
 
     <p>
-        <%= render "/capital_remittance_payments/show", capital_remittance_payment: @capital_remittance_payment, current_user: nil, params: {} %>
+        <%= render "capital_remittance_payment_mailer/capital_remittance_payment_email_details", capital_remittance_payment: @capital_remittance_payment, params: {} %>
     </p>
 
     <p>
