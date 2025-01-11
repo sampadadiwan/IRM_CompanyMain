@@ -34,13 +34,32 @@ class AccountEntryAllocationHelper
 
   # generate the SOAs if the user has requested it, kick off SOA generation jobs
   def generate_soa(template_name)
-    CapitalCommitmentSoaJob.perform_later(@fund.id, nil, @start_date.to_s, @end_date.to_s, @user_id, template_name:)
+    begin
+      CapitalCommitmentSoaJob.perform_later(@fund.id, nil, @start_date.to_s, @end_date.to_s, @user_id, template_name:)
+      msg = "Done generating SOA for #{@start_date} - #{@end_date}"
+      Rails.logger.info msg
+      notify(msg, :success, @user_id)
+    rescue StandardError => e
+      Rails.logger.error e.backtrace
+      msg = "Error generating SOA for #{@start_date} - #{@end_date}: #{e.message}"
+      Rails.logger.error msg
+      notify(msg, :danger, @user_id)
+    end
   end
 
   # generate the Fund ratios if the user has requested it, kick off FundRatiosJob
   def generate_fund_ratios
-    FundRatiosJob.perform_now(@fund.id, nil, @end_date, @user_id, true)
-    notify("Done generating fund ratios for #{@start_date} - #{@end_date}", :success, @user_id)
+    begin
+      FundRatiosJob.perform_now(@fund.id, nil, @end_date, @user_id, true)
+      msg = "Done generating fund ratios for #{@start_date} - #{@end_date}"
+      Rails.logger.info msg
+      notify(msg, :success, @user_id)
+    rescue StandardError => e
+      Rails.logger.error e.backtrace
+      msg = "Error generating fund ratios for #{@start_date} - #{@end_date}: #{e.message}"
+      Rails.logger.error msg
+      notify(msg, :danger, @user_id)
+    end
   end
 
   def notify(message, level, user_id)
