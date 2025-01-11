@@ -42,7 +42,7 @@ class FormTypePolicy < ApplicationPolicy
   end
 
   def configure_grids?
-    update?
+    update? && record.name.constantize.const_defined?(:STANDARD_COLUMNS)
   end
 
   def clone?
