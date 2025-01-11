@@ -1,24 +1,24 @@
 <%= form_with(model: nil, method: :get, url: "/capital_remittances", id: "remittance_filter",  data: {turbo_frame: "capital_remittances_frame"} ) do |form| %>
-    
+
   <input name="capital_call_id" value="<%= capital_call_id%>" hidden="hidden">
 
-  <div class="form-group" data-controller="remittance">    
+  <div class="form-group" data-controller="remittance">
     <% status = params[:status].presence %>
-    <%= form.select :status, ["Paid", "Pending"], {selected: status, include_blank: "Payment Status"}, 
-        { id: "status", class: "form-control", 
+    <%= form.select :status, ["Paid", "Pending", "Overdue", "Overpaid"], {selected: status, include_blank: "Payment Status"},
+        { id: "status", class: "form-control",
         data: { action: "change->remittances#filterData" } } %>
-        
+
   </div>
 
   <div class="form-group" data-controller="remittance">
     <% verified = params[:verified].presence %>
-    <%= form.select :verified, [["Yes", true], ["No", false]], {selected: verified, include_blank: "Verified"}, 
-        { id: "verified", class: "form-control", 
+    <%= form.select :verified, [["Yes", true], ["No", false]], {selected: verified, include_blank: "Verified"},
+        { id: "verified", class: "form-control",
         data: { action: "change->remittances#filterData" } } %>
-        
+
   </div>
 
-  
+
   <%= form.submit "Submit", {hidden: true, id: "submit"}%>
 
 

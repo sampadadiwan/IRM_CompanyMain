@@ -109,7 +109,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def reminder_capital_call
-    capital_remittances.pending.each do |cr|
+    capital_remittances.where(status: %w[Pending Overdue]).find_each do |cr|
       cr.investor.notification_users(fund).each do |user|
         CapitalRemittanceNotifier.with(record: cr, entity_id:, email_method: :reminder_capital_remittance, msg: "Capital Call Reminder: #{fund.name}").deliver_later(user)
       end
