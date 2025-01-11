@@ -9,6 +9,7 @@ class UserAlert < ApplicationRecord
     broadcast_replace_to [user, "user_alert"],
                          partial: '/users/user_alert',
                          locals: { user_alert: self },
-                         target: "user_alert"
+                         target: "user_alert",
+                         id: "user_alert_#{Time.current.to_i}"
   end
 end
