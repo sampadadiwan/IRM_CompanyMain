@@ -148,7 +148,7 @@ class ApplicationPolicy
 
   def permissioned_investor?(metadata = "none", owner: nil)
     # Is the user an investor or holding
-    if (user.curr_role == 'investor' || user.curr_role == 'holding') &&
+    if %w[investor holding].include?(user.curr_role) &&
        !belongs_to_entity?(user, record)
 
       # Get the model to wich the access_rights are attached, for the policy record

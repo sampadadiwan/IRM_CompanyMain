@@ -22,7 +22,7 @@ module EntityEnabled
       Rails.logger.debug { "EntityEnabled.method_missing method_name: #{method_name} #{args}" }
       if method_name.to_s.ends_with?("=")
         flag_name = method_name.to_s.delete("=").to_sym
-        if args[0] == true || args[0] == "true" || args[0] == 1 || args[0] == "1"
+        if [true, "true", 1, "1"].include?(args[0])
           # puts "setting '#{flag_name}'"
           permissions.set(flag_name)
         else

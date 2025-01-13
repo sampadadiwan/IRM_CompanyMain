@@ -89,7 +89,7 @@ class DocLlmValidator < DocLlmBase
           answer = response["answer"]
           Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
           # Need to make this more deterministic in the future
-          next unless answer.to_s.downcase == "no" || answer.to_s.downcase == "false"
+          next unless %w[no false].include?(answer.to_s.downcase)
 
           # Validation has failed. Something is mismatched between the document and the model
           Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }

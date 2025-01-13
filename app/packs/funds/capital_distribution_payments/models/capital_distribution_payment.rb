@@ -132,8 +132,8 @@ class CapitalDistributionPayment < ApplicationRecord
     end
   end
 
-  def has_income?
-    income_cents.positive?
+  def has_gross_payable?
+    gross_payable_cents.positive?
   end
 
   def has_cost_of_investment?
