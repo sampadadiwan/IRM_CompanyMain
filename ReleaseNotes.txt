@@ -1,3 +1,14 @@
+V8.0.62
+#####################################
+bff7aea08 Used gross_payable_cents instead of amount_cents for dist payments (#681)
+511df6291 Rubocop changes
+
+V8.0.61
+#####################################
+acf97a4a7 Upgraded gems
+
+
+
 V8.0.59
 #####################################
 f00d54bea Removed old xirr call from ruby xirr libs

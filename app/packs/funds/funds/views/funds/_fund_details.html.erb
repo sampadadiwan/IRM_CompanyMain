@@ -70,7 +70,7 @@
                                         folder_id: fund.document_folder.id),
                                         class: "load_data_link",
                                         data: { turbo_frame: 'documents_tree_frame' } do %>
-                  <span>Loading...</span>
+                  <%= render "/layouts/loading" %>
               <% end %>
 
               <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
@@ -106,7 +106,7 @@
         <div id="capital-distributions-tab" class="tab-pane fade in">
           <div id="capital-distributions" class="associated_entity">
             <%= link_to capital_distributions_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_distributions_frame' } do %>
-                <span>Loading...</span> 
+                <%= render "/layouts/loading" %>
             <% end %>
             <%= turbo_frame_tag "capital_distributions_frame", target: "_top" do %>
             <% end %>
@@ -121,7 +121,7 @@
                                     owner_id: fund.id, owner_type: "Fund"),
                                     class: "load_data_link",
                                     data: { turbo_frame: 'task_list' } do %>
-              <span>Loading...</span>
+              <%= render "/layouts/loading" %>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
@@ -179,7 +179,7 @@
             <%= link_to fund_units_path(fund_id: fund.id),
                                     class: "load_data_link",
                                     data: { turbo_frame: 'fund_units_list' } do %>
-              <span>Loading...</span>
+              <%= render "/layouts/loading" %>
             <% end %>
             <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
             <% end %>
@@ -194,7 +194,7 @@
               <%= link_to access_rights_path(owner_id: fund.id, owner_type: "Fund",
                                              entity_id: current_user.entity_id, form_type:),
                           class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
-                <span>Loading...</span>
+                <%= render "/layouts/loading" %>
               <% end %>
 
               <%= turbo_frame_tag "access_rights_frame", target: "_top" do %>

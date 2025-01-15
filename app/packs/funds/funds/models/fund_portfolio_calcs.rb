@@ -100,6 +100,14 @@ class FundPortfolioCalcs
         cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
       end
 
+      # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
+      Rails.logger.debug "#########StockConversion#########"
+      @fund.stock_conversions.where(conversion_date: ..@end_date).each do |sc|
+        quantity = sc.from_quantity
+        pi = sc.from_portfolio_investment
+        cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+      end
+
       # Get the sell cash flows
       @fund.portfolio_investments.sells.where(investment_date: ..@end_date).find_each do |sell|
         cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
@@ -139,6 +147,14 @@ class FundPortfolioCalcs
         Rails.logger.debug "#########BUYS#########"
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
           cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
+        end
+
+        # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
+        Rails.logger.debug "#########StockConversion#########"
+        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).each do |sc|
+          quantity = sc.from_quantity
+          pi = sc.from_portfolio_investment
+          cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
         end
 
         Rails.logger.debug "#########SELLS#########"
@@ -217,6 +233,15 @@ class FundPortfolioCalcs
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
           cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
         end
+        
+        # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
+        Rails.logger.debug "#########StockConversion#########"
+        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).each do |sc|
+          quantity = sc.from_quantity
+          pi = sc.from_portfolio_investment
+          cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+        end
+
 
         Rails.logger.debug "#########SELLS#########"
         # Get the sell cash flows
@@ -248,6 +273,7 @@ class FundPortfolioCalcs
 
     end
 
+    puts @api_irr_map 
     @api_irr_map
   end
 
@@ -278,7 +304,7 @@ class FundPortfolioCalcs
       portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
       next if portfolio_investments.blank?
 
-      quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.quantity }
+      net_quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.net_quantity }
 
       portfolio_company_id = api.portfolio_company_id
 
@@ -288,7 +314,7 @@ class FundPortfolioCalcs
       raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation
 
       # Get the fmv for this portfolio_company on the @end_date
-      fmv_on_end_date_cents = quantity * valuation.per_share_value_in(@fund.currency, @end_date)
+      fmv_on_end_date_cents = net_quantity * valuation.per_share_value_in(@fund.currency, @end_date)
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
 
       # Aggregate the fmv across the fun
@@ -330,7 +356,7 @@ class FundPortfolioCalcs
     if return_cash_flows
       [(lxirr * 100).round(2), cf]
     else
-      (lxirr * 100).round(2)
+      [(lxirr * 100).round(2), nil]
     end
   end
 

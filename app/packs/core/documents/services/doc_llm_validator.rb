@@ -7,6 +7,8 @@
 
 # THis action will have access to the kyc, the document, and the checks to do for this document
 class DocLlmValidator < DocLlmBase
+  NO_LIST = %w[no false].freeze
+
   step :init
   step :convert_file_to_image
   step :run_checks_with_llm
@@ -82,6 +84,7 @@ class DocLlmValidator < DocLlmBase
       end
 
       all_docs_valid = true
+
       # Scan the answers across all documents which have been examined by the llm to see if any of them are false
       model.doc_question_answers.each do |doc_name, qna|
         Rails.logger.debug { "Validating #{doc_name}" }
@@ -89,7 +92,7 @@ class DocLlmValidator < DocLlmBase
           answer = response["answer"]
           Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
           # Need to make this more deterministic in the future
-          next unless %w[no false].include?(answer.to_s.downcase)
+          next unless NO_LIST.include?(answer.to_s.downcase)
 
           # Validation has failed. Something is mismatched between the document and the model
           Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }

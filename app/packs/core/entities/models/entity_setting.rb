@@ -51,7 +51,7 @@ class EntitySetting < ApplicationRecord
       EntitySetting.update_all(sandbox: true)
       User.update_all(whatsapp_enabled: false)
 
-      if reset_passowrd
+      if reset_password
         User.find_each do |u|
           u.password = "password"
           u.save

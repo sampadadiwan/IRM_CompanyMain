@@ -131,12 +131,4 @@ class CapitalDistributionPayment < ApplicationRecord
       0
     end
   end
-
-  def has_gross_payable?
-    gross_payable_cents.positive?
-  end
-
-  def has_cost_of_investment?
-    cost_of_investment_cents.positive?
-  end
 end
