@@ -128,13 +128,13 @@ class BackupDbJob < ApplicationJob
 
     unless bucket
       Rails.logger.debug { "\n Creating bucket #{bucket_name}" }
-      bucket = s3.create_bucket({
-                                  acl: "private", # accepts private, public-read, public-read-write, authenticated-read
-                                  bucket: bucket_name,
-                                  create_bucket_configuration: {
-                                    location_constraint: ENV.fetch("AWS_S3_REGION", nil) # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
-                                  }
-                                })
+      s3.create_bucket({
+                         acl: "private", # accepts private, public-read, public-read-write, authenticated-read
+                         bucket: bucket_name,
+                         create_bucket_configuration: {
+                           location_constraint: ENV.fetch("AWS_S3_REGION", nil) # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
+                         }
+                       })
     end
 
     Rails.logger.debug { "Uploading tmp/#{backup_filename}.gz to S3 bucket #{bucket_name}" }

@@ -18,7 +18,7 @@ module PortfolioComputations
         raise "Valuation not found for #{pi.portfolio_company.investor_name} on #{end_date}" unless valuation
 
         currency = model.instance_of?(::Fund) ? model.currency : model.fund.currency
-        total_fmv_end_date += pi.quantity * valuation.per_share_value_in(currency, end_date)
+        total_fmv_end_date += pi.net_quantity * valuation.per_share_value_in(currency, end_date)
       end
       total_fmv_end_date
     end

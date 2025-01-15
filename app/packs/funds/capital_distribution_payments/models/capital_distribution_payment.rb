@@ -131,5 +131,4 @@ class CapitalDistributionPayment < ApplicationRecord
       0
     end
   end
-
 end

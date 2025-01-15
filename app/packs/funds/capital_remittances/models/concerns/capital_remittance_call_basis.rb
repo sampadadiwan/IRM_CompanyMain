@@ -1,57 +1,91 @@
-# All these are called for computing the call_amount from CapitalRemittance.calc_call_amount_cents
 module CapitalRemittanceCallBasis
   extend ActiveSupport::Concern
 
-  # compute the call amount based on the percentage of the commitment
+  # Computes the call amount as a percentage of the commitment amount.
+  # The percentage is derived from the fund's closing percentages.
   def call_basis_percentage_commitment
+    # Determine the applicable percentage from capital call's close percentages.
     self.percentage = if capital_call.close_percentages&.dig(capital_commitment.fund_close).present?
                         capital_call.close_percentages[capital_commitment.fund_close].to_d
                       else
                         BigDecimal(0)
                       end
+
+    # Calculate the folio's portion of the call amount in its currency.
     self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
 
-    # Now compute the call amount in the fund currency.
-    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date)
+    # Convert the folio call amount to the fund's currency.
+    self.computed_amount_cents = convert_currency(
+      capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
+    )
 
-    # Now add the capital fees
+    # Include capital fees in both folio and fund currency calculations.
     self.folio_call_amount_cents += folio_capital_fee_cents
     self.call_amount_cents = computed_amount_cents + capital_fee_cents
+
+    logger.error "call_basis_percentage: computed_amount_cents = #{computed_amount_cents}, \
+                  call_amount_cents = #{call_amount_cents}, \
+                  folio_call_amount_cents = #{folio_call_amount_cents} \
+                  for #{capital_commitment} in #{capital_call}"
   end
 
-  # Example Investable Capital Percentage or Foreign Investable Capital Percentage
+  # Computes the call amount based on a specific account entry, such as
+  # "Investable Capital Percentage" or "Foreign Investable Capital Percentage".
   def call_basis_account_entry(account_entry_name)
-    # Get the percentage from the account_entry
-    ae = capital_commitment.account_entries.where(name: account_entry_name, reporting_date: ..capital_call.due_date).order(reporting_date: :desc).first
+    # Fetch the latest applicable account entry for the commitment before the due date.
+    ae = capital_commitment.account_entries.where(
+      name: account_entry_name, reporting_date: ..capital_call.due_date
+    ).order(reporting_date: :desc).first
+
+    # Assign the percentage from the account entry or default to zero.
     self.percentage = ae&.amount_cents || 0
 
+    # Log the result for debugging purposes.
     if ae.nil?
-      logger.error "No #{account_entry_name} found for #{capital_commitment} for #{capital_call}"
+      logger.error "No #{account_entry_name} found for #{capital_commitment} in #{capital_call}"
     else
-      logger.error "#{ae.amount_cents} found for #{capital_commitment} for #{capital_call.to_json}"
+      logger.error "#{ae.amount_cents} found for #{capital_commitment} in #{capital_call.to_json}"
     end
 
+    # Compute the call amount based on the retrieved percentage.
     self.computed_amount_cents = capital_call.amount_to_be_called_cents * percentage / 100.0
-
     self.call_amount_cents = computed_amount_cents + capital_fee_cents
 
-    # Now compute the folio call amount in the folio currency.
-    self.folio_call_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, call_amount_cents, remittance_date)
+    # Convert the computed call amount into the folio's currency.
+    self.folio_call_amount_cents = convert_currency(
+      fund.currency, capital_commitment.folio_currency, call_amount_cents, remittance_date
+    )
 
-    logger.error "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, call_amount_cents = #{call_amount_cents}, folio_call_amount_cents = #{folio_call_amount_cents} found for #{capital_commitment} for #{capital_call}"
+    # Log computation details for auditing purposes.
+    logger.error "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, \
+                  call_amount_cents = #{call_amount_cents}, \
+                  folio_call_amount_cents = #{folio_call_amount_cents} \
+                  for #{capital_commitment} in #{capital_call}"
   end
 
-  # compute the call amount based on the uploaded remittance
+  # Computes the call amount based on an uploaded remittance.
+  # This method assumes the folio_call_amount already includes capital fees.
   def call_basis_upload
-    # This is for direct upload of remittances, where the folio_call_amount includes the capital fees
+    # Remove the capital fee from the folio call amount before conversion.
     self.folio_call_amount_cents -= folio_capital_fee_cents
 
-    # Now compute the call amount in the fund currency.
-    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date)
+    # Convert the adjusted folio call amount to the fund's currency.
+    self.computed_amount_cents = convert_currency(
+      capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
+    )
 
-    # Now add the capital fees
+    # Restore the capital fees after conversion.
     self.folio_call_amount_cents += folio_capital_fee_cents
-    self.percentage = self.folio_call_amount_cents / capital_commitment.folio_committed_amount_cents * 100.0
+
+    # Calculate the percentage of the committed folio amount that is being called.
+    self.percentage = (folio_call_amount_cents / capital_commitment.folio_committed_amount_cents) * 100.0
+
+    # Compute the final call amount including capital fees.
     self.call_amount_cents = computed_amount_cents + capital_fee_cents
+
+    logger.error "call_basis_upload: computed_amount_cents = #{computed_amount_cents}, \
+                  call_amount_cents = #{call_amount_cents}, \
+                  folio_call_amount_cents = #{folio_call_amount_cents} \
+                  for #{capital_commitment} in #{capital_call}"
   end
 end
