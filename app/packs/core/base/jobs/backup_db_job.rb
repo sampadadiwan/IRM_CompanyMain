@@ -142,14 +142,14 @@ class BackupDbJob < ApplicationJob
     object.upload_file("tmp/#{backup_filename}.gz")
     Rails.logger.debug "Upload completed successfully"
 
-    # Removing old backups
-    Rails.logger.debug "Deleting old backups"
-    bucket.objects.each do |obj|
-      if obj.last_modified < (Time.zone.today - 1.week)
-        Rails.logger.debug { "Deleting DB backup from S3: #{obj.key}" }
-        obj.delete
-      end
-    end
+    # Removing old backups - This is now handled by S3 bucket management rules
+    # Rails.logger.debug "Deleting old backups"
+    # bucket.objects.each do |obj|
+    #   if obj.last_modified < (Time.zone.today - 1.week)
+    #     Rails.logger.debug { "Deleting DB backup from S3: #{obj.key}" }
+    #     obj.delete
+    #   end
+    # end
   rescue StandardError => e
     Rails.logger.error { "Error backing up database: #{e.message}" }
     Rails.logger.error { e.backtrace.join("\n") }
