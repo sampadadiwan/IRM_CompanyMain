@@ -3,9 +3,9 @@ class CapitalCommitmentCreate < CapitalCommitmentAction
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
   step :give_access_rights
-  step :create_remittance
   step :compute_percentage
   step :touch_investor
+  step :create_remittance
 
   def create_remittance(ctx, capital_commitment:, **)
     if capital_commitment.fund.capital_calls.count.positive? && ctx[:import_upload].blank?
