@@ -63,9 +63,12 @@ class CapitalRemittancePayment < ApplicationRecord
   end
 
   def unverify_remittance
-    capital_remittance.reload
-    capital_remittance.verified = false
-    CapitalRemittanceUpdate.call(capital_remittance:)
+    # When the payment is deleted, we need to unverify the remittance, but sometimes the call itself is deleted, which delete the remittance, so we need to check for whether the remittance is deleted or not  
+    unless capital_remittance.deleted? || capital_remittance.destroyed?
+      capital_remittance.reload
+      capital_remittance.verified = false
+      CapitalRemittanceUpdate.call(capital_remittance:) 
+    end
   end
 
   def to_s
