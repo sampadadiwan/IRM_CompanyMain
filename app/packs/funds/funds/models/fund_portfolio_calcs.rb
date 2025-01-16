@@ -293,11 +293,12 @@ class FundPortfolioCalcs
     Rails.logger.debug apis
 
     apis.each do |api|
-      portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+      # We hold in our portfolio only the buys and specifically thier net_quantity. Hence use only that for fmv
+      portfolio_investments = api.portfolio_investments.buys.where(investment_date: ..@end_date)
       next if portfolio_investments.blank?
 
       net_quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.net_quantity }
-
+      Rails.logger.debug { "#{api.portfolio_company.investor_name}: net_quantity = #{net_quantity}" }
       portfolio_company_id = api.portfolio_company_id
 
       valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: api.investment_instrument, valuation_date: ..@end_date).order(valuation_date: :asc).last
@@ -307,6 +308,7 @@ class FundPortfolioCalcs
 
       # Get the fmv for this portfolio_company on the @end_date
       fmv_on_end_date_cents = net_quantity * valuation.per_share_value_in(@fund.currency, @end_date)
+      # Applied only if there is a scenario
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
 
       # Aggregate the fmv across the fun
