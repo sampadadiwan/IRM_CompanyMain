@@ -17,12 +17,12 @@ class FundPortfolioCalcs
   end
 
   def distribution_cents
-    @distribution_cents ||= @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:net_payable_cents)
+    @distribution_cents ||= (
+        @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:gross_payable_cents) - 
+        @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:reinvestment_with_fees_cents)
+    )
   end
 
-  def reinvested_capital_cents
-    total_investment_sold_cents - distribution_cents
-  end
 
   def cash_in_hand_cents
     @cash_in_hand_cents ||= begin
@@ -43,14 +43,6 @@ class FundPortfolioCalcs
       ae = @fund.fund_account_entries.where(name: "Estimated Carry", reporting_date: ..@end_date).order(reporting_date: :asc).last
       ae&.amount_cents || 0
     end
-  end
-
-  def total_value_cents
-    fmv_cents + distribution_cents + cash_in_hand_cents + net_current_assets_cents
-  end
-
-  def net_total_value_cents
-    total_value_cents - estimated_carry_cents
   end
 
   def collected_cents
@@ -336,7 +328,10 @@ class FundPortfolioCalcs
     end
 
     @fund.capital_distribution_payments.includes(:investor).where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
-      cf << Xirr::Transaction.new(cdp.net_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}")
+      # Include the gross payable, but this contains the reinvestment amount
+      cf << Xirr::Transaction.new(cdp.gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}")
+      # Reduce by the reinvestment amount
+      cf << Xirr::Transaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}")
     end
 
     cf << Xirr::Transaction.new(fmv_on_date(scenarios:), date: @end_date, notes: "FMV") if fmv_on_date != 0
