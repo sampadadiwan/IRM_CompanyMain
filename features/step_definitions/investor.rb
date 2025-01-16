@@ -849,6 +849,7 @@ Then('the document has {string} e_signatures') do |string|
   click_on("Signatures")
   #sleep(1)
   click_on("Send For eSignatures")
+  sleep(4)
 end
 
 Then('the document has {string} e_signatures by Docusign') do |string|
