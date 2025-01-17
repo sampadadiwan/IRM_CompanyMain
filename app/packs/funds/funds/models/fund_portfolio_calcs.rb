@@ -17,12 +17,9 @@ class FundPortfolioCalcs
   end
 
   def distribution_cents
-    @distribution_cents ||= (
-        @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:gross_payable_cents) - 
-        @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:reinvestment_with_fees_cents)
-    )
+    @distribution_cents ||= @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:gross_payable_cents) -
+                            @fund.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:reinvestment_with_fees_cents)
   end
-
 
   def cash_in_hand_cents
     @cash_in_hand_cents ||= begin
@@ -94,7 +91,7 @@ class FundPortfolioCalcs
 
       # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
       Rails.logger.debug "#########StockConversion#########"
-      @fund.stock_conversions.where(conversion_date: ..@end_date).each do |sc|
+      @fund.stock_conversions.where(conversion_date: ..@end_date).find_each do |sc|
         quantity = sc.from_quantity
         pi = sc.from_portfolio_investment
         cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
@@ -143,7 +140,7 @@ class FundPortfolioCalcs
 
         # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
         Rails.logger.debug "#########StockConversion#########"
-        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).each do |sc|
+        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
           quantity = sc.from_quantity
           pi = sc.from_portfolio_investment
           cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
@@ -225,15 +222,14 @@ class FundPortfolioCalcs
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
           cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
         end
-        
+
         # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
         Rails.logger.debug "#########StockConversion#########"
-        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).each do |sc|
+        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
           quantity = sc.from_quantity
           pi = sc.from_portfolio_investment
           cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
         end
-
 
         Rails.logger.debug "#########SELLS#########"
         # Get the sell cash flows
@@ -265,7 +261,7 @@ class FundPortfolioCalcs
 
     end
 
-    puts @api_irr_map 
+    Rails.logger.debug @api_irr_map
     @api_irr_map
   end
 

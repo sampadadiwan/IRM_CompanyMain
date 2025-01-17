@@ -29,9 +29,11 @@
 
             <%= button_to "Validate Document Data", validate_docs_with_ai_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This try and validate the data in the documents and kyc. It will take a few minutes. Proceed?"} if policy(@investor_kyc).validate_docs_with_ai? %>
 
-            <%= link_to "Audit Trail" , generate_new_aml_report_investor_kyc_path(@investor_kyc, method: :put), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
+            <%= link_to "Audit Trail" , investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
 
             <%= button_to "Generate Aml Report", generate_new_aml_report_investor_kyc_path(@investor_kyc), method: :put, class: "dropdown-item" if policy(@investor_kyc).generate_new_aml_report? %>
+
+            <%= link_to "View Aml Reports", aml_report_path(@investor_kyc.aml_report), class: "dropdown-item" if @investor_kyc.aml_report && policy(@investor_kyc.aml_report).show? %>
           </div>
         </div>
       </div>

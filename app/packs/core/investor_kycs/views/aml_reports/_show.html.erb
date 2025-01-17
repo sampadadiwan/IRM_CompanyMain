@@ -1,0 +1,104 @@
+<%= render ToggleCard.new(title: "AML Report #{aml_report.investor_kyc.full_name}", css_class: "show_inv_entities", state:"closed") do %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= aml_report.entity.name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to aml_report.investor_kyc.investor.investor_name, aml_report.investor_kyc.investor %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investor KYC
+      </td>
+      <td>
+        <%= link_to aml_report.investor_kyc.to_s, aml_report.investor_kyc %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Match Status
+      </td>
+      <td>
+        <% if aml_report.match_status == "no_match" %>
+            <span class="badge bg-success" type="button">
+                <%= aml_report.match_status.titleize %>
+            </span>
+        <% elsif aml_report.match_status == "potential_match"%>
+            <span class="badge bg-warning" type="button">
+                <%= aml_report.match_status.titleize %>
+            </span>
+        <% end %>
+      </td>
+    </tr>
+
+    <% if params[:debug].present? %>
+    <tr>
+      <td>
+        Request Data
+      </td>
+      <td>
+        <table class="table table-bordered">
+        <% aml_report.request_data.each do |timestamp, data| %>
+            <tr>
+                <td colspan="2" class="text-nowrap"><strong><%= timestamp %></strong></td>
+            </tr>
+            <tr>
+                <td>
+                <%= Json2table.get_html_table(JSON.parse(data), JsonTable::TABLE_OPTIONS).html_safe%>
+                </td>
+            </tr>
+        <% end %>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Response Data
+      </td>
+      <td>
+        <table class="table table-bordered">
+            <% aml_report.response_data.each do |timestamp, data| %>
+              <tr>
+                <td colspan="2" class="text-nowrap"><strong><%= timestamp %></strong></td>
+              </tr>
+              <% data = [data] unless data.is_a?(Array)%>
+              <% if data.is_a?(Array) %>
+                <% data.each do |entry| %>
+                  <% entry.each do |key, value| %>
+                    <tr>
+                      <td><strong><%= key.titleize %></strong></td>
+                      <td><%= value %></td>
+                    </tr>
+                  <% end %>
+                <% end %>
+              <% end %>
+            <% end %>
+        </table>
+      </td>
+    </tr>
+    <% end %>
+
+  </table>
+
+    <div>
+
+    <%= button_to "Generate Aml Report", generate_new_aml_report_investor_kyc_path(@aml_report.investor_kyc), method: :put, class: "btn btn-outline-primary" if policy(@aml_report.investor_kyc).generate_new_aml_report? %>
+    </div>
+
+<% end %>

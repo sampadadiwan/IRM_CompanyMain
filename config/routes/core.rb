@@ -60,11 +60,7 @@ resources :investor_kyc_sebi_datas do
   get 'sub_categories', on: :collection
 end
 
-resources :aml_reports do
-  get 'search', on: :collection
-  post 'generate_new', on: :collection
-  put 'toggle_approved', on: :member
-end
+resources :aml_reports
 
 resources :kyc_datas do
   get 'search', on: :collection

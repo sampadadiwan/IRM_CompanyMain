@@ -49,17 +49,17 @@ class FundPolicy < FundBasePolicy
     else
       # He is an investor, so can see the portfolio only if show_portfolios is true
       (record.show_portfolios && permissioned_investor?) ||
-      # He can see the feeder fund
-      if record.feeder_funds.present?
-        allowed = false
-        record.feeder_funds.each do |feeder_fund|
-          allowed = FundPolicy.new(user, feeder_fund).dashboard?
-          break if allowed
+        # He can see the feeder fund
+        if record.feeder_funds.present?
+          allowed = false
+          record.feeder_funds.each do |feeder_fund|
+            allowed = FundPolicy.new(user, feeder_fund).dashboard?
+            break if allowed
+          end
+          allowed
+        else
+          false
         end
-        allowed
-      else
-        false
-      end
     end
   end
 

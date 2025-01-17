@@ -31,7 +31,7 @@ class AmlReportAsyncDownloadJob < ApplicationJob
     file_url = json_res.dig("result", "profile_pdf")
     if file_url.present?
       download_file(file_url, tmpfile)
-      Document.create(entity: aml_report.entity, owner: aml_report.investor_kyc, name: "AML Report - #{aml_report.investor_kyc.full_name}", file: File.open(tmpfile.path, "rb"), folder: aml_report.investor_kyc.document_folder, user_id: user_id, orignal: true)
+      Document.create(entity: aml_report.entity, owner: aml_report, name: "AML Report - #{aml_report.investor_kyc.full_name}", file: File.open(tmpfile.path, "rb"), folder: aml_report.document_folder, user_id: user_id, orignal: true, owner_tag: "AML")
       UserAlert.new(user_id: user_id, message: "Downloaded Aml Report for #{aml_report.investor_kyc.full_name}", level: :success).broadcast if user_id.present?
       aml_report.match_status = json_res.dig("result", "match_status")&.titleize
       aml_report.save
