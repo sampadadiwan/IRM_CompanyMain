@@ -254,7 +254,7 @@ Naming/MethodParameterName:
 
 Metrics/BlockLength:
   CountComments: false
-  Max: 25
+  Max: 30
   Exclude:
     - 'app/packs/misc/import_uploads/jobs/import_upload_job.rb'
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'

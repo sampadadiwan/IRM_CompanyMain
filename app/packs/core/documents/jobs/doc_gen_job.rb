@@ -66,7 +66,7 @@ class DocGenJob < ApplicationJob
     send_notification("Documentation generation started", user_id, "info")
 
     # Loop through each template and model and generate the documents
-    models.each_with_index do |model, midx| # rubocop:disable Metrics/BlockLength
+    models.each_with_index do |model, midx|
       templates_to_use = templates(model)
       templates_to_use.each_with_index do |template, tidx|
         # Validate the model before generating the document

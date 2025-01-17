@@ -219,26 +219,22 @@ class FundPortfolioCalcs
         cf = Xirr::Cashflow.new
 
         # Get the buy cash flows
-        Rails.logger.debug "#########BUYS#########"
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
           cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
         end
 
         # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
-        Rails.logger.debug "#########StockConversion#########"
         @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
           quantity = sc.from_quantity
           pi = sc.from_portfolio_investment
           cf << Xirr::Transaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
         end
 
-        Rails.logger.debug "#########SELLS#########"
         # Get the sell cash flows
         portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
           cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
         end
 
-        Rails.logger.debug "#########Portfolio CF#########"
         # Get the portfolio income cash flows, but only for pool and for this investment_type
         portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
         portfolio_cashflows.each do |pcf|
