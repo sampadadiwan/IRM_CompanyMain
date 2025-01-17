@@ -23,7 +23,6 @@ class CapitalDistributionJob < ApplicationJob
     end
   end
 
-  # rubocop:disable Metrics/MethodLength
   def generate_payments
     fund = @capital_distribution.fund
     capital_commitments = @capital_distribution.Pool? ? fund.capital_commitments.pool : [@capital_distribution.capital_commitment]
@@ -63,5 +62,4 @@ class CapitalDistributionJob < ApplicationJob
       end
     end
   end
-  # rubocop:enable Metrics/MethodLength
 end

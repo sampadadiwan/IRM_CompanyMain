@@ -1,3 +1,12 @@
+V8.0.63
+#####################################
+e963f8ff1 Changed fmv in fund ratios, to use net quantity for buys
+2074eb6a9 Adjusted XIRR for Reinvestment amounts
+564ffb6f4 unverify remittance is not to be called when remittance is deleted
+48e6f1b90 Moved touch investor before remittance creation to prevent deadlock (#684)
+82174b0a5 Fixes for Fund Ratios, adjustment for StockConversions (#683)
+e4dff751e Do not delete old backups - this is now done via S3 management rules
+
 V8.0.62
 #####################################
 bff7aea08 Used gross_payable_cents instead of amount_cents for dist payments (#681)

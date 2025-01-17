@@ -23,7 +23,6 @@ module JwtAuth
     end
 
     # most straightforward method
-    # rubocop:disable Metrics/MethodLength
     def get_docusign_access_token
       # Header
       header = {
@@ -120,6 +119,5 @@ module JwtAuth
         token.access_token
       end
     end
-    # rubocop:enable Metrics/MethodLength
   end
 end

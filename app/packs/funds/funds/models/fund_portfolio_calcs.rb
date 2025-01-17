@@ -9,7 +9,7 @@ class FundPortfolioCalcs
   end
 
   def fmv_cents
-    @fmv_cents ||= PortfolioInvestment.fmv_cents(@fund, @end_date)
+    @fmv_cents ||= fmv_on_date
   end
 
   def total_investment_sold_cents
@@ -57,7 +57,7 @@ class FundPortfolioCalcs
 
   def rvpi
     if collected_cents.positive? # ? (fmv_cents / collected_cents).round(2) : 0
-      ((fmv_cents + net_current_assets_cents + cash_in_hand_cents) / collected_cents).round(2)
+      ((fmv_cents + net_current_assets_cents + cash_in_hand_cents) / collected_cents)
     else
       0
     end
@@ -187,19 +187,20 @@ class FundPortfolioCalcs
   def portfolio_company_cost_to_value
     @portfolio_company_cost_map ||= {}
 
-    @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
+    @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
       portfolio_company = Investor.find(portfolio_company_id)
       portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
+      # Get the bought
+      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:cost_of_remaining_cents)
 
-      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:amount_cents)
-      sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
-
+      # Calc the total fmv for the portfolio_company
       total_fmv = 0
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         total_fmv += fmv_on_date(api)
       end
 
-      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: (sold_amount + total_fmv) / bought_amount } if bought_amount.positive?
+      # Store the value to cost ratio
+      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount } if bought_amount.positive?
     end
 
     @portfolio_company_cost_map

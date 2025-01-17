@@ -58,7 +58,7 @@ class DocGenJob < ApplicationJob
   def cleanup_previous_docs(model, template); end
 
   # The actual process of generating the document
-  def generate(start_date, end_date, user_id) # rubocop:disable Metrics/MethodLength
+  def generate(start_date, end_date, user_id)
     @error_msg ||= []
     succeeded = 0
     failed = 0

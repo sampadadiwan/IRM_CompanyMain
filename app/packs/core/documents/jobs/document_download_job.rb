@@ -3,7 +3,6 @@ class DocumentDownloadJob < ApplicationJob
   sidekiq_options retry: 0
   attr_accessor :tmp_dir
 
-  # rubocop:disable Metrics/MethodLength
   def perform(folder_id, user_id, document_ids = nil)
     # rubocop:disable Metrics/BlockLength
     Chewy.strategy(:sidekiq) do
@@ -47,7 +46,6 @@ class DocumentDownloadJob < ApplicationJob
     # rubocop:enable Metrics/BlockLength
   end
 
-  # rubocop:enable Metrics/MethodLength
   def add_documents(zipfile, user, folder_ids:, document_ids: nil, same_entity: false)
     # If the user is a company admin, they can download all documents
     no_check_individual_docs_access = same_entity && user.has_cached_role?(:company_admin)

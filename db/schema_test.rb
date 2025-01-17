@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_07_131333) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
   create_table "access_rights", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -301,6 +301,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_07_131333) do
       t.datetime "created_at", null: false
       t.datetime "updated_at", null: false
       t.json "request_data"
+      t.bigint "document_folder_id"
+      t.index ["document_folder_id"], name: "index_aml_reports_on_document_folder_id"
       t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
       t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
       t.index ["investor_kyc_id"], name: "index_aml_reports_on_investor_kyc_id"
@@ -590,12 +592,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_07_131333) do
       t.json "json_fields"
       t.bigint "import_upload_id"
       t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
-      t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
       t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"
       t.decimal "income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
       t.decimal "cost_of_investment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
       t.decimal "reinvestment_cents", precision: 20, scale: 2,  default: "0.0"
       t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2,  default: "0.0"
+      t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
+      
       t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
       t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
       t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
