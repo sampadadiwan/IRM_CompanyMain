@@ -97,7 +97,7 @@
   end
 
   Then('Sebi fields must be added') do
-    ["InvestorKyc", "IndividualKyc", "NonIndividualKyc", "InvestmentInstrument"].each do |class_name|
+    ["IndividualKyc", "NonIndividualKyc", "InvestmentInstrument"].each do |class_name|
       form_type = FormType.where(name: class_name, entity_id: @entity.id).first
       class_name.constantize::SEBI_REPORTING_FIELDS.stringify_keys.keys.each do |cf|
         form_type.form_custom_fields.pluck(:name).include?(cf).should be_truthy
@@ -111,7 +111,7 @@
   end
 
   Then('Sebi fields must be removed') do
-    ["InvestorKyc", "IndividualKyc", "NonIndividualKyc", "InvestmentInstrument"].each do |class_name|
+    ["IndividualKyc", "NonIndividualKyc", "InvestmentInstrument"].each do |class_name|
       form_type = FormType.where(name: class_name, entity_id: @entity.id).first
       class_name.constantize::SEBI_REPORTING_FIELDS.stringify_keys.keys.each do |cf|
         form_type.form_custom_fields.pluck(:name).include?(cf).should be_falsey

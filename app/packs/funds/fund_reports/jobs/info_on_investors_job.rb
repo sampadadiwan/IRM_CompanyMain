@@ -23,13 +23,13 @@ class InfoOnInvestorsJob
     @fund_report = FundReport.find_or_initialize_by(name: REPORT_NAME, name_of_scheme: @fund.name, fund: @fund, entity_id: @fund.entity_id, start_date:, end_date:)
 
     data = hash_tree
-
+    kycs = InvestorKyc.where(id: @fund.capital_commitments.where(commitment_date: ..end_date).select(:investor_kyc_id))
     # Table 1 data
-    data.merge!(report_table_1_data(@fund))
+    data.merge!(report_table_1_data(kycs, @fund))
     # Table 2 data
-    data.merge!(report_table_2_data(end_date, @fund))
+    data.merge!(report_table_2_data(kycs, end_date, @fund))
     # Table 3 data
-    data.merge!(report_table_3_data(end_date, @fund))
+    data.merge!(report_table_3_data(kycs, end_date, @fund))
 
     ######### Save the report
     @fund_report.data = data
@@ -48,13 +48,13 @@ class InfoOnInvestorsJob
     funds = funds.where(id: fund_id) if single
 
     funds.each_with_index do |scheme, index|
-      kycs = InvestorKyc.where(investor_kyc_id: scheme.capital_commitments.where(commitment_date: ..end_date).select(:investor_kyc_id))
+      kycs = InvestorKyc.where(id: scheme.capital_commitments.where(commitment_date: ..end_date).select(:investor_kyc_id))
       sr_no = index + 1
       scheme_name = scheme.name
       Rails.logger.debug { "InfoOnInvestors for #{scheme_name}" }
-      table_1_row_data = get_table_1_row_data(kycs, scheme, sr_no)
-      table_2_row_data = get_table_2_row_data(kycs, scheme, end_date, sr_no)
-      table_3_row_data = get_table_3_row_data(kycs, scheme, end_date, sr_no)
+      table_1_row_data = get_table_1_row_data(scheme, kycs, sr_no)
+      table_2_row_data = get_table_2_row_data(scheme, kycs, end_date, sr_no)
+      table_3_row_data = get_table_3_row_data(scheme, kycs, end_date, sr_no)
 
       table_1_index = index + TABLE_1_OFFSET
       table_2_index = index + TABLE_2_OFFSET
@@ -103,11 +103,11 @@ class InfoOnInvestorsJob
   end
 
   # rubocop:disable Metrics/MethodLength
-  def report_table_2_data(end_date, fund)
+  def report_table_2_data(kycs, end_date, fund)
     data = hash_tree
-    data["T2_Sponsor"]["Value"] = t2_calculate_sum("Sponsor", end_date, :amount, fund.id)
-    data["T2_Manager"]["Value"] = t2_calculate_sum("Manager", end_date, :amount, fund.id)
-    data["T2_Directors/Partners/Employees of Sponsor"]["Value"] = t2_calculate_sum("Directors/Partners/Employees of Sponsor", end_date, :amount, fund.id)
+    data["T2_Sponsor"]["Value"] = t2_calculate_sum(kycs, "Sponsor", end_date, :amount, fund.id)
+    data["T2_Manager"]["Value"] = t2_calculate_sum(kycs, "Manager", end_date, :amount, fund.id)
+    data["T2_Directors/Partners/Employees of Sponsor"]["Value"] = t2_calculate_sum(kycs, "Directors/Partners/Employees of Sponsor", end_date, :amount, fund.id)
     data["T2_Directors/Partners/Employees of Manager"]["Value"] = t2_calculate_sum(kycs, "Directors/Partners/Employees of Manager", end_date, :amount, fund.id)
     data["T2_Employee Benefit Trust of Manager"]["Value"] = t2_calculate_sum(kycs, "Employee Benefit Trust of Manager", end_date, :amount, fund.id)
     data["T2_Banks"]["Value"] = t2_calculate_sum(kycs, "Banks", end_date, :amount, fund.id)
@@ -213,7 +213,7 @@ class InfoOnInvestorsJob
     show_currency ? money_to_currency(money) : money
   end
 
-  def get_table_1_row_data(kycs, scheme, sr_no)
+  def get_table_1_row_data(scheme, kycs, sr_no)
     sponsor_count = kycs.search_custom_fields("investor_sub_category", "Sponsor").count
     manager_count = kycs.search_custom_fields("investor_sub_category", "Manager").count
     personnel_of_sponsor_count = kycs.search_custom_fields("investor_sub_category", ["Directors/Partners/Employees of Sponsor"]).count
