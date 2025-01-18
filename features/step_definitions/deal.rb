@@ -333,8 +333,9 @@ def select_investor_and_save(investor_id, tags)
   input_field.set(tags)
   sleep(0.5)
   click_button('Save')
-  expect(page).to have_content(investor.investor_name)
   sleep(2)
+  # binding.pry
+  expect(page).to have_content(investor.investor_name)
 end
 
 When('I click on a Kanban Card') do
