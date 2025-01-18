@@ -1407,6 +1407,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
       t.string "condition_params"
       t.string "condition_state", limit: 5, default: "show"
       t.boolean "internal", default: false
+      t.string "js_events"
       t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
       t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
     end
@@ -3263,6 +3264,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
     add_foreign_key "allocations", "offers"
     add_foreign_key "allocations", "secondary_sales"
     add_foreign_key "aml_reports", "entities"
+    add_foreign_key "aml_reports", "folders", column: "document_folder_id"
     add_foreign_key "aml_reports", "investor_kycs"
     add_foreign_key "aml_reports", "investors"
     add_foreign_key "approval_responses", "approvals"

@@ -1407,6 +1407,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
     t.string "condition_params"
     t.string "condition_state", limit: 5, default: "show"
     t.boolean "internal", default: false
+    t.string "js_events"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
