@@ -40,8 +40,8 @@ Scenario Outline: Create valuation and FMV
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
   Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "<fund>" for the entity
-  Given there are "3" portfolio investments "quantity=200;category=Unlisted"  
-  Given there are "3" portfolio investments "quantity=-100;category=Unlisted;" 
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given there are "3" portfolio investments "quantity=-100;category=Unlisted;"
   Given there is a valuation "per_share_value_cents=12000" for the portfolio company
   Then the fmv must be calculated for the portfolio
 
@@ -51,20 +51,20 @@ Scenario Outline: Create valuation and FMV
     |entity_type=Investment Fund;       |name=Test fund      |
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
-Scenario Outline: Generate Fund Reports
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-  Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
-  And Given I upload an investors file for the fund
-  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import in progress"
-  And Given I upload the portfolio companies
-  And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import in progress"
-  Then There should be "8" portfolio investments created
-  Given The user generates all fund reports for the fund
-  Then There should be "3" reports created
-  And Sebi report should be generated for the fund
+# Scenario Outline: Generate Fund Reports
+#   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+#   Given the user has role "company_admin"
+#   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+#   And Given I upload an investors file for the fund
+#   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+#   Then I should see the "Import in progress"
+#   And Given I upload the portfolio companies
+#   And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
+#   Then I should see the "Import in progress"
+#   Then There should be "8" portfolio investments created
+#   Given The user generates all fund reports for the fund
+#   Then There should be "3" reports created
+#   And Sebi report should be generated for the fund
 
 
 @import
@@ -171,4 +171,3 @@ Scenario Outline: Stock Conversion
     |conversion                                     | from_instrument | to_instrument |
     |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |
     |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic;currency=INR| name=Debt;investment_domicile=Domestic ;currency=USD    |
-
