@@ -30,21 +30,7 @@ class ImportCapitalRemittance < ImportUtil
         remittance_date: user_data["Remittance Date"]
       )
 
-      # Some funds are setup to user the folio amount as the basis for remittance generation. other the fund amount
-      # Folio Amount: Use the folio_committed_amount_cents as the basis for remittance generation.
-      # Fund Amount: Use the committed_amount_cents as the basis for remittance generation.    
-      remittance_generation_basis = fund.remittance_generation_basis
-      if fund.remittance_generation_basis == 'Folio Amount'
-        capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
-        capital_remittance.folio_capital_fee = user_data["Capital Fees"]
-        capital_remittance.folio_other_fee = user_data["Other Fees"]
-      elsif fund.remittance_generation_basis == 'Fund Amount'
-        capital_remittance.call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
-        capital_remittance.capital_fee = user_data["Capital Fees"]
-        capital_remittance.other_fee = user_data["Other Fees"]
-      else
-        raise "Unknown Fund.remittance_generation_basis: #{remittance_generation_basis}"
-      end
+      setup_amounts(user_data, capital_remittance, fund)
 
       # Set the verified status based on user data
       capital_remittance.verified = user_data["Verified"] == "Yes"
@@ -64,6 +50,24 @@ class ImportCapitalRemittance < ImportUtil
       raise "Investor not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
       raise "Investor and Commitment do not match" if capital_commitment.investor_id != investor.id
+    end
+  end
+
+  def setup_amounts(user_data, capital_remittance, fund)
+    # Some funds are setup to user the folio amount as the basis for remittance generation. other the fund amount
+    # Folio Amount: Use the folio_committed_amount_cents as the basis for remittance generation.
+    # Fund Amount: Use the committed_amount_cents as the basis for remittance generation.
+    remittance_generation_basis = fund.remittance_generation_basis
+    if fund.remittance_generation_basis == 'Folio Amount'
+      capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
+      capital_remittance.folio_capital_fee = user_data["Capital Fees"]
+      capital_remittance.folio_other_fee = user_data["Other Fees"]
+    elsif fund.remittance_generation_basis == 'Fund Amount'
+      capital_remittance.call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
+      capital_remittance.capital_fee = user_data["Capital Fees"]
+      capital_remittance.other_fee = user_data["Other Fees"]
+    else
+      raise "Unknown Fund.remittance_generation_basis: #{remittance_generation_basis}"
     end
   end
 

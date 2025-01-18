@@ -19,7 +19,6 @@
 # unrealized_gain_cents: Unrealized gain from the investment in cents.
 # compliant: Boolean indicating if the investment complies with regulations.
 
-
 class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder

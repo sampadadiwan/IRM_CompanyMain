@@ -268,8 +268,8 @@ class FundPortfolioCalcs
     @fund.aggregate_portfolio_investments.pool.each do |api|
       portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
 
-      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:amount_cents)
-      
+      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:cost_of_remaining_cents)
+
       fmv = fmv_on_date(api)
 
       @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / bought_amount) } if bought_amount.positive?

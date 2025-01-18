@@ -148,10 +148,10 @@ gem "image_processing"
 gem "combine_pdf"
 
 gem "blazer"
-gem 'public_activity'
 gem "net-pop", github: "ruby/net-pop"
-gem 'net-ssh'
 gem 'net-smtp'
+gem 'net-ssh'
+gem 'public_activity'
 
 # gem "strong_migrations"
 
@@ -161,7 +161,7 @@ group :development, :test do
   gem "bundler-audit"
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
-  
+
   gem 'htmlbeautifier'
   gem 'parallel_tests'
   gem 'pry-byebug'
