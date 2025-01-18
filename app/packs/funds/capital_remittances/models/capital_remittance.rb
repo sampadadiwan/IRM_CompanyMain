@@ -128,10 +128,36 @@ class CapitalRemittance < ApplicationRecord
     "#{capital_call.folder_path}/#{investor.investor_name.delete('/')}-#{folio_id.delete('/')}"
   end
 
+  # Sets the status of the capital remittance based on the remittance generation basis and due amounts.
+  #
+  # The status is determined by the following logic:
+  # - If the fund's remittance generation basis is "Folio Amount", the considered due amount is set to the folio due amount.
+  # - If the fund's remittance generation basis is "Fund Amount", the considered due amount is set to the due amount.
+  # - If the remittance generation basis is unknown, an error is raised.
+  #
+  # The status is then set based on the considered due amount:
+  # - If the absolute value of the considered due amount is less than or equal to 10, the status is set to "Paid".
+  # - If the considered due amount is less than or equal to -10, the status is set to "Overpaid".
+  # - If the capital call's due date is in the future, the status is set to "Pending".
+  # - Otherwise, the status is set to "Overdue".
+  #
+  # @raise [RuntimeError] if the fund's remittance generation basis is unknown.
   def set_status
-    self.status = if due_amount.to_f.abs <= 10
+    considered_due_amount = nil
+
+    # Determine the considered due amount based on the fund's remittance generation basis
+    if fund.remittance_generation_basis == "Folio Amount"
+      considered_due_amount = folio_due_amount
+    elsif fund.remittance_generation_basis == "Fund Amount"
+      considered_due_amount = due_amount
+    else
+      raise "Unknown Fund.remittance_generation_basis: #{fund.remittance_generation_basis}"
+    end
+
+    # Set the status based on the considered due amount and the capital call's due date
+    self.status = if considered_due_amount.to_f.abs <= 10
                     "Paid"
-                  elsif due_amount.to_f <= -10
+                  elsif considered_due_amount.to_f <= -10
                     "Overpaid"
                   else
                     capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
@@ -139,11 +165,11 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def due_amount
-    computed_amount + capital_fee + other_fee - collected_amount
+    call_amount + other_fee - collected_amount
   end
 
   def folio_due_amount
-    folio_call_amount + other_fee - folio_collected_amount
+    folio_call_amount + folio_other_fee - folio_collected_amount
   end
 
   def to_s

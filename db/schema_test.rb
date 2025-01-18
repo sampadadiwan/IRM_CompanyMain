@@ -598,7 +598,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
       t.decimal "reinvestment_cents", precision: 20, scale: 2,  default: "0.0"
       t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2,  default: "0.0"
       t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
-      
       t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
       t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
       t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
@@ -1693,6 +1692,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_16_012140) do
       t.date "last_close_date"
       t.string "slug"
       t.bigint "master_fund_id"
+      t.string "remittance_generation_basis", limit: 12, default: "Folio Amount"
       t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
       t.index ["deleted_at"], name: "index_funds_on_deleted_at"
       t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
