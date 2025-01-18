@@ -51,14 +51,6 @@ GIT
     rupees (0.1.0)
 
 GIT
-  remote: https://github.com/thimmaiah/xirr.git
-  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
-  specs:
-    xirr (0.6.1)
-      RubyInline (~> 3)
-      activesupport (~> 7.0)
-
-GIT
   remote: https://github.com/weshatheleopard/rubyXL.git
   revision: c44254f5d9b124650741877a7901f5052fbe9f6c
   specs:
@@ -70,9 +62,6 @@ GEM
   remote: https://rubygems.org/
   specs:
     Ascii85 (2.0.1)
-    RubyInline (3.14.1)
-      ZenTest (~> 4.3)
-    ZenTest (4.12.2)
     actioncable (7.2.2.1)
       actionpack (= 7.2.2.1)
       activesupport (= 7.2.2.1)
@@ -198,24 +187,24 @@ GEM
       activesupport (>= 5.2, < 8.2)
     awesome_print (1.9.2)
     aws-eventstream (1.3.0)
-    aws-partitions (1.1035.0)
-    aws-sdk-core (3.215.0)
+    aws-partitions (1.1040.0)
+    aws-sdk-core (3.216.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
       aws-sigv4 (~> 1.9)
       jmespath (~> 1, >= 1.6.1)
-    aws-sdk-ec2 (1.498.0)
-      aws-sdk-core (~> 3, >= 3.210.0)
+    aws-sdk-ec2 (1.501.0)
+      aws-sdk-core (~> 3, >= 3.216.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-kms (1.96.0)
-      aws-sdk-core (~> 3, >= 3.210.0)
+    aws-sdk-kms (1.97.0)
+      aws-sdk-core (~> 3, >= 3.216.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.177.0)
-      aws-sdk-core (~> 3, >= 3.210.0)
+    aws-sdk-s3 (1.178.0)
+      aws-sdk-core (~> 3, >= 3.216.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
-    aws-sdk-wafv2 (1.99.0)
-      aws-sdk-core (~> 3, >= 3.210.0)
+    aws-sdk-wafv2 (1.100.0)
+      aws-sdk-core (~> 3, >= 3.216.0)
       aws-sigv4 (~> 1.5)
     aws-sigv4 (1.11.0)
       aws-eventstream (~> 1, >= 1.0.2)
@@ -310,7 +299,7 @@ GEM
       js_regex (~> 3.7)
       rails (>= 6.1)
     cocoon (1.2.15)
-    code_ownership (1.38.1)
+    code_ownership (1.38.2)
       code_teams (~> 1.0)
       packs-specification
       sorbet-runtime (>= 0.5.11249)
@@ -320,7 +309,7 @@ GEM
     combine_pdf (1.0.29)
       matrix
       ruby-rc4 (>= 0.1.5)
-    concurrent-ruby (1.3.4)
+    concurrent-ruby (1.3.5)
     connection_pool (2.5.0)
     constant_resolver (0.2.0)
     content_disposition (1.0.0)
@@ -332,7 +321,7 @@ GEM
       tzinfo
       unicode (>= 0.4.4.5)
     csv (3.3.2)
-    cucumber (9.2.0)
+    cucumber (9.2.1)
       builder (~> 3.2)
       cucumber-ci-environment (> 9, < 11)
       cucumber-core (> 13, < 14)
@@ -550,8 +539,9 @@ GEM
       activerecord
       kaminari-core (= 1.2.2)
     kaminari-core (1.2.2)
-    langchainrb (0.19.2)
+    langchainrb (0.19.3)
       baran (~> 0.1.9)
+      csv
       json-schema (~> 4)
       matrix
       pragmatic_segmenter (~> 0.3.0)
@@ -617,12 +607,11 @@ GEM
     net-sftp (4.0.0)
       net-ssh (>= 5.0.0, < 8.0.0)
     net-smtp (0.5.0)
-      net-protocol
     net-ssh (7.3.0)
     nio4r (2.7.4)
     nokogiri (1.18.1-x86_64-linux-gnu)
       racc (~> 1.4)
-    noticed (2.5.1)
+    noticed (2.6.0)
       rails (>= 6.1.0)
     orm_adapter (0.5.0)
     ostruct (0.6.1)
@@ -665,7 +654,7 @@ GEM
     parse_packwerk (0.26.0)
       bigdecimal
       sorbet-runtime
-    parser (3.3.6.0)
+    parser (3.3.7.0)
       ast (~> 2.4.1)
       racc
     pastel (0.8.0)
@@ -692,7 +681,7 @@ GEM
     pry-byebug (3.10.1)
       byebug (~> 11.0)
       pry (>= 0.13, < 0.15)
-    psych (5.2.2)
+    psych (5.2.3)
       date
       stringio
     public_activity (3.0.1)
@@ -754,12 +743,12 @@ GEM
       activerecord (>= 6.1.5)
       activesupport (>= 6.1.5)
       i18n
-    rdoc (6.10.0)
+    rdoc (6.11.0)
       psych (>= 4.0.0)
     redcarpet (3.6.0)
     redis (5.3.0)
       redis-client (>= 0.22.0)
-    redis-client (0.23.0)
+    redis-client (0.23.2)
       connection_pool
     reform (2.6.2)
       disposable (>= 0.5.0, < 1.0.0)
@@ -779,7 +768,7 @@ GEM
       actionpack (>= 5.2)
       railties (>= 5.2)
     rexml (3.4.0)
-    roda (3.87.0)
+    roda (3.88.0)
       rack
     rolify (6.0.1)
     roo (2.10.1)
@@ -881,7 +870,7 @@ GEM
       activejob (>= 7.2)
       activerecord (>= 7.2)
       railties (>= 7.2)
-    sorbet-runtime (0.5.11751)
+    sorbet-runtime (0.5.11763)
     spreadsheet (1.3.3)
       bigdecimal
       ruby-ole
@@ -905,7 +894,7 @@ GEM
     sys-uname (1.3.1)
       ffi (~> 1.1)
     thor (1.3.2)
-    tilt (2.5.0)
+    tilt (2.6.0)
     timeout (0.4.3)
     to_words (1.1.1)
     trailblazer (2.1.3)
@@ -959,7 +948,7 @@ GEM
       concurrent-ruby (~> 1.0)
     uber (0.1.0)
     unicode (0.4.4.5)
-    unicode-display_width (3.1.3)
+    unicode-display_width (3.1.4)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
     uniform_notifier (1.16.0)
@@ -1089,6 +1078,7 @@ DEPENDENCIES
   money-rails (~> 1.12)
   mysql2
   net-pop!
+  net-smtp
   net-ssh
   noticed
   overcommit
@@ -1143,7 +1133,6 @@ DEPENDENCIES
   webdrivers
   whenever
   wikipedia-client
-  xirr!
   yajl-ruby
 
 BUNDLED WITH

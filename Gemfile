@@ -83,7 +83,7 @@ gem 'eu_central_bank'
 gem 'money-rails', '~>1.12'
 gem 'rupees', git: "https://github.com/thimmaiah/rupees.git"
 gem 'to_words'
-gem 'xirr', git: "https://github.com/thimmaiah/xirr.git"
+# gem 'xirr', git: "https://github.com/ausangshukla/xirr.git"
 
 # Admin screens
 gem "administrate"
@@ -149,6 +149,9 @@ gem "combine_pdf"
 
 gem "blazer"
 gem 'public_activity'
+gem "net-pop", github: "ruby/net-pop"
+gem 'net-ssh'
+gem 'net-smtp'
 
 # gem "strong_migrations"
 
@@ -158,9 +161,7 @@ group :development, :test do
   gem "bundler-audit"
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
-  gem "net-pop", github: "ruby/net-pop"
-  gem 'net-ssh'
-
+  
   gem 'htmlbeautifier'
   gem 'parallel_tests'
   gem 'pry-byebug'

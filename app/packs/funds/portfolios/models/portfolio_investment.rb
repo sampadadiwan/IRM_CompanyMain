@@ -1,3 +1,25 @@
+# Fields in the PortfolioInvestment Model:
+# -----------------------------------------
+# investment_date: Date on which the investment was made.
+# amount_cents: Amount invested in cents.
+# fmv_cents: Fair Market Value (FMV) of the investment in cents.
+# cost_cents: Cost of the investment per share in cents.
+# sold_quantity: Quantity of shares or units sold from this investment.
+# net_quantity: Net quantity after accounting for purchases, sales, and transfers.
+# cost_of_sold_cents: Cost of the sold portion of the investment in cents.
+# gain_cents: Realized gain from the investment in cents.
+# base_amount_cents: Base amount invested in cents before adjustments.
+# exchange_rate_id: ID of the exchange rate used for currency conversion (if applicable).
+# transfer_quantity: Quantity of shares or units transferred.
+# transfer_amount_cents: Amount transferred in cents.
+# net_amount_cents: Net amount of the investment after accounting for adjustments in cents.
+# net_bought_amount_cents: Net amount of shares or units bought in cents.
+# net_bought_quantity: Net quantity of shares or units bought.
+# cost_of_remaining_cents: Cost of remaining unsold shares or units in cents.
+# unrealized_gain_cents: Unrealized gain from the investment in cents.
+# compliant: Boolean indicating if the investment complies with regulations.
+
+
 class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder
