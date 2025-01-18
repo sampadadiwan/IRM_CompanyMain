@@ -46,13 +46,6 @@ class XirrCashflow < Array
     @max_date ||= map(&:date).max
   end
 
-  def compact_cf
-    # self
-    compact = Hash.new 0
-    each { |flow| compact[flow.date] += flow.amount }
-    XirrCashflow.new flow: compact.map { |key, value| XirrTransaction.new(value, date: key) }, options: options, period: period
-  end
-
   # First investment date
   # @return [Time]
   def min_date
@@ -71,18 +64,11 @@ class XirrCashflow < Array
     @temporary_period || @period
   end
 
+  # rubocop:disable Performance/CompareWithBlock
   def <<(arg)
     super
-    sort_by!(&:date)
+    sort! { |x, y| x.date <=> y.date }
     self
   end
-
-  private
-
-  # @api private
-  # Counts how many years from first to last transaction in the cashflow
-  # @return
-  def periods_of_investment
-    (max_date - min_date) / period
-  end
+  # rubocop:enable Performance/CompareWithBlock
 end
