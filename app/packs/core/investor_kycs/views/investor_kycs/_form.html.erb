@@ -104,7 +104,6 @@
               </div>
             <% end %>
 
-
             <%= custom_form_fields(investor_kyc, form, step: :one, required: is_investor) %>
 
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
@@ -182,13 +181,6 @@
             </div>
           <% end %>
 
-          <% if current_user.entity_id == investor_kyc.entity_id %>
-            <div data-controller="select">
-              <%= form.fields_for :investor_kyc_sebi_data do |kyc_sebi_data_subform| %>
-                <%= render "kyc_sebi_data_fields", form: kyc_sebi_data_subform, investor_kyc: investor_kyc %>
-              <% end %>
-            </div>
-          <% end %>
           <div class="form-group">
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
           </div>

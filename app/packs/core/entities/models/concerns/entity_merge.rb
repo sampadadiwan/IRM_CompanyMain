@@ -73,7 +73,6 @@ module EntityMerge
       Task.where(for_entity_id: defunct_entity.id).update_all(for_entity_id: retained_entity.id)
 
       defunct_entity.investor_kycs.update_all(entity_id: retained_entity.id)
-      defunct_entity.investor_kyc_sebi_datas.update_all(entity_id: retained_entity.id)
       defunct_entity.approvals.update_all(entity_id: retained_entity.id)
       defunct_entity.approval_responses.update_all(entity_id: retained_entity.id)
       ApprovalResponse.where(response_entity_id: defunct_entity.id).update_all(response_entity_id: retained_entity.id)

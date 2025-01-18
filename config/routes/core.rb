@@ -56,9 +56,6 @@ resources :investor_kycs do
   post 'bulk_actions', on: :collection
   post 'validate_docs_with_ai', on: :member
 end
-resources :investor_kyc_sebi_datas do
-  get 'sub_categories', on: :collection
-end
 
 resources :aml_reports
 
@@ -146,6 +143,7 @@ resources :entities do
   post 'delete_attachment', on: :collection
   post 'kpi_reminder', on: :member
   patch 'add_sebi_fields', on: :member
+  patch 'remove_sebi_fields', on: :member
   get 'merge', on: :collection
   post 'merge', on: :collection
 end

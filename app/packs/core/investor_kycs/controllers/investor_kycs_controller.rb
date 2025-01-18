@@ -86,9 +86,15 @@ class InvestorKycsController < ApplicationController
   # GET /investor_kycs/1/edit
   def edit
     if params[:kyc_type].present?
-      # The form is reloaded if the user changes the kyc type
-      @investor_kyc.kyc_type = params[:kyc_type]
-      @investor_kyc.type = @investor_kyc.type_from_kyc_type
+      ActiveRecord::Base.connected_to(role: :writing) do
+        # The form is reloaded if the user changes the kyc type
+        # when switching from individual to non individual the kyc form custom fields dont work properly as the custom fields have the initial kyc type_custom_field and the js cannot update it as it looks for the updated custom field.
+        # explaination of becomes - https://nts.strzibny.name/rails-activerecord-becomes/
+        @investor_kyc.kyc_type = params[:kyc_type]
+        @investor_kyc.type = @investor_kyc.type_from_kyc_type
+        @investor_kyc = @investor_kyc.becomes(@investor_kyc.type.constantize)
+        @investor_kyc.save(validate: false)
+      end
     end
     setup_custom_fields(@investor_kyc, type: @investor_kyc.type)
   end
@@ -102,12 +108,11 @@ class InvestorKycsController < ApplicationController
 
     respond_to do |format|
       if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
-
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
         format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+        format.json { render json: result[:errors], status: :unprocessable_entity }
       end
     end
   end
@@ -144,7 +149,7 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     respond_to do |format|
       investor_user = current_user.curr_role_investor?
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)
@@ -171,7 +176,7 @@ class InvestorKycsController < ApplicationController
       @investor_kyc.remove_images
     end
     respond_to do |format|
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false).success?
+      if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user: false).success?
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -184,14 +189,13 @@ class InvestorKycsController < ApplicationController
     investor_user = current_user.curr_role_investor?
     @investor_kyc.assign_attributes(investor_kyc_params)
     @investor_kyc.documents.each(&:validate)
-
     respond_to do |format|
       if InvestorKycUpdate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+        format.json { render json: result[:errors], status: :unprocessable_entity }
       end
     end
   end
@@ -202,12 +206,12 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
 
     respond_to do |format|
-      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycUpdate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+        format.json { render json: result[:errors], status: :unprocessable_entity }
       end
     end
   end
@@ -289,7 +293,7 @@ class InvestorKycsController < ApplicationController
                    :investor_kyc
                  end
 
-    params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :esign_emails, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, :agreement_unit_type, :agreement_committed_amount, documents_attributes: Document::NESTED_ATTRIBUTES, investor_kyc_sebi_data_attributes: InvestorKycSebiData::NESTED_ATTRIBUTES, properties: {})
+    params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :esign_emails, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, :agreement_unit_type, :agreement_committed_amount, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

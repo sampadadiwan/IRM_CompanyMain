@@ -4,14 +4,14 @@ export default class extends Controller {
 
     static cfe;
 
-  connect() {    
-    console.log("form_custom_fields_controller connect"); 
+  connect() {
+    console.log("form_custom_fields_controller connect");
 
     // Attach an 'input' event listener to all elements with the class 'custom_field'
     // When the input value changes, the 'valueChanged' function is called with the event target as an argument
     $( ".custom_field" ).on("input", (event)=>{
         this.valueChanged(event.target);
-    });   
+    });
 
     // Iterate over each element with the class 'custom_field'
     // If the value of the element is not an empty string, call the 'valueChanged' function with the element as an argument
@@ -22,17 +22,29 @@ export default class extends Controller {
     });
 
   }
- 
+
   initialize() {
     // Hide all elements with the class 'fcf.conditional.hide'
     $("body").find(".fcf.conditional").hide();
     // Show all elements with the class 'fcf.conditional.show'
     // $("body").find(".fcf.conditional.show").show();
+    // Initialize subcategories based on the selected category
+    const categoryDropdown = this.element.querySelector(
+      "select[id$='_investor_category']"
+    );
+
+    if (categoryDropdown) {
+      this.updateSubcategories(categoryDropdown.value, categoryDropdown);
+    }
+  }
+
+  investor_category_changed(event) {
+    this.updateSubcategories(event.target.value, event.target);
   }
 
   // This function is called when the value of an element with the class 'custom_field' changes
   valueChanged(changed_elem) {
-    
+
     // Get the id and value of the changed element
     let fcf_change_id = $( changed_elem ).attr("id");
     console.log(`fcf_change_id = ${fcf_change_id}`);
@@ -41,12 +53,12 @@ export default class extends Controller {
     console.log(`required_on_show = ${required_on_show}, ${val}`);
     let fcf_change_value = val.toLowerCase();
     // console.log( `Input ${fcf_change_id} changed to ${fcf_change_value}` );
-    
+
     // Iterate over each element with the class 'fcf.conditional' which is dependent on fcf_change_id
     $("body").find(`.fcf.conditional.${fcf_change_id}`).each((idx, elem) => {
         // We have a field that is dependent on the changed field
         // We have to use the criteria eq, not eq, etc. to match the value
-        // We have the state show, hide 
+        // We have the state show, hide
         let criteria = $(elem).attr("data-match-criteria")
         let data_match_value = $(elem).attr("data-match-value").toLowerCase();
         let matched = null;
@@ -55,7 +67,7 @@ export default class extends Controller {
         } else {
             matched = data_match_value == fcf_change_value ? "matched" : "not-matched";
         }
-                
+
         // Get the initial state of the element
         let initial_state = $(elem).hasClass("show") ? "show" : "hide";
         // Create a switch value to determine if the element should be shown or hidden
@@ -74,11 +86,11 @@ export default class extends Controller {
                 this.clear_form_elements(elem);
                 break;
         }
-    });   
+    });
   }
 
 
-  // This function is called when the conditional element is hidden. 
+  // This function is called when the conditional element is hidden.
   // It clears the form elements in the hidden element
   clear_form_elements(elem) {
     let has_file_input = $(elem).find(':file').length > 0;
@@ -88,7 +100,7 @@ export default class extends Controller {
       // see _file.html.erb custom field
       $(elem).find(':input').each(function() {
         switch(this.type) {
-            case 'file':         
+            case 'file':
                 // jQuery(this).val('');
                 break;
         }
@@ -131,7 +143,7 @@ export default class extends Controller {
       console.log("File input found");
       $(elem).find(':file').each(function() {
         let field_id = $(this).attr('id');
-        if(field_id) {          
+        if(field_id) {
           // Sometimes file has already been uploaded, so dont require it
           let req = $(`#document_required_${this.id}`).val();
           if(req == "true") {
@@ -141,7 +153,7 @@ export default class extends Controller {
         }
       });
       return;
-    } else {          
+    } else {
       $(elem).find(':input').each(function() {
         let required = $(this).parent(".form-group").attr('data-mandatory');
         console.log(`required = ${required}`);
@@ -151,6 +163,70 @@ export default class extends Controller {
         }
       });
     }
+  }
+
+  updateSubcategories(selectedCategory, categoryElement) {
+    const SEBI_INVESTOR_SUB_CATEGORIES_MAPPING = {
+      Internal: [
+        "Sponsor",
+        "Manager",
+        "Directors/Partners/Employees of Sponsor",
+        "Directors/Partners/Employees of Manager",
+        "Employee Benefit Trust of Manager",
+      ],
+      Domestic: [
+        "Banks",
+        "NBFCs",
+        "Insurance Companies",
+        "Pension Funds",
+        "Provident Funds",
+        "AIFs",
+        "Other Corporates",
+        "Resident Individuals",
+        "Non-Corporate (other than Trusts)",
+        "Trusts",
+      ],
+      Foreign: ["FPIs", "FVCIs", "NRIs", "Foreign Others"],
+      Other: [
+        "Domestic Developmental Agencies/Government Agencies",
+        "Others",
+      ],
+    };
+
+    // Find the subcategory dropdown within the same form
+    const formElement = categoryElement.closest("form");
+    const subCategoryDropdown = formElement.querySelector(
+      "select[id$='_investor_sub_category']"
+    );
+
+    if (!subCategoryDropdown) {
+      console.error("Subcategory dropdown not found");
+      return;
+    }
+
+    // Store the existing selected value
+    const existingValue = subCategoryDropdown.value;
+
+    // Get the subcategories for the selected category
+    const subCategories =
+      SEBI_INVESTOR_SUB_CATEGORIES_MAPPING[selectedCategory] || [];
+
+    // Clear the current subcategories
+    subCategoryDropdown.innerHTML = "";
+
+    // Populate the dropdown with new subcategories
+    subCategories.forEach((subCategory) => {
+      const option = document.createElement("option");
+      option.value = subCategory;
+      option.textContent = subCategory;
+
+      // Set as selected if it matches the existing value
+      if (subCategory === existingValue) {
+        option.selected = true;
+      }
+
+      subCategoryDropdown.appendChild(option);
+    });
   }
 
 }

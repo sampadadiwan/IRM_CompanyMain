@@ -77,21 +77,8 @@ class ImportInvestorKyc < ImportUtil
                InvestorKycUpdate.call(investor_kyc:, investor_user: false)
              end
 
-    update_investor_kyc_sebi_data(investor_kyc, user_data)
     raise result[:errors] unless result.success?
 
     result.success?
-  end
-
-  def update_investor_kyc_sebi_data(investor_kyc, user_data)
-    return if investor_kyc.investor_kyc_sebi_data.blank?
-
-    investor_kyc.investor_kyc_sebi_data.investor_category = user_data["Sebi Investor Category"]&.downcase
-    investor_kyc.investor_kyc_sebi_data.investor_sub_category = user_data["Sebi Investor Sub Category"]
-    if investor_kyc.investor_kyc_sebi_data.valid?
-      investor_kyc.investor_kyc_sebi_data.save
-    else
-      raise "Investor KYC Sebi Data errors: #{investor_kyc.investor_kyc_sebi_data.errors.full_messages}"
-    end
   end
 end

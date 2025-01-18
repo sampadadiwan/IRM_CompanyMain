@@ -1,5 +1,5 @@
 class EntitiesController < ApplicationController
-  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder add_sebi_fields]
+  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder add_sebi_fields remove_sebi_fields]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -18,11 +18,24 @@ class EntitiesController < ApplicationController
   end
 
   def add_sebi_fields
-    if @entity.investment_instruments.last.present?
-      @entity.investment_instruments.last.add_sebi_custom_fields
-      redirect_to entity_url(@entity), notice: "SEBI fields added"
-    else
-      redirect_to entity_url(@entity), notice: "No investment instruments found"
+    result = AddSebiFields.wtf?(entity: @entity)
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to @entity, notice: "SEBI Fields were successfully added." }
+      else
+        format.html { redirect_to @entity, alert: "Error adding SEBI Fields: #{result[:errors]}" }
+      end
+    end
+  end
+
+  def remove_sebi_fields
+    result = RemoveSebiFields.wtf?(entity: @entity)
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to @entity, notice: "SEBI Fields were successfully removed." }
+      else
+        format.html { redirect_to @entity, alert: "Error removing SEBI Fields: #{result[:errors]}" }
+      end
     end
   end
 

@@ -18,6 +18,24 @@ class InvestorKyc < ApplicationRecord
                                 "Type" => "kyc_type",
                                 "Kyc Verified" => "verified",
                                 "Expired" => "expired" }.freeze
+  SEBI_REPORTING_FIELDS = {
+    investor_category: "Select",
+    investor_sub_category: "Select"
+  }.freeze
+
+  SEBI_INVESTOR_CATEGORIES = %i[Internal Domestic Foreign Other].freeze
+
+  SEBI_INVESTOR_SUB_CATEGORIES_MAPPING = {
+    Internal: ["Sponsor", "Manager", "Directors/Partners/Employees of Sponsor", "Directors/Partners/Employees of Manager", "Employee Benefit Trust of Manager"],
+    Domestic: ["Banks", "NBFCs", "Insurance Companies", "Pension Funds", "Provident Funds", "AIFs", "Other Corporates", "Resident Individuals", "Non-Corporate (other than Trusts)", "Trusts"],
+    Foreign: ["FPIs", "FVCIs", "NRIs", "Foreign Others"],
+    Other: ["Domestic Developmental Agencies/Government Agencies", "Others"]
+  }.freeze
+
+  SELECT_FIELDS_OPTIONS = {
+    investor_category: SEBI_INVESTOR_CATEGORIES,
+    investor_sub_category: SEBI_INVESTOR_SUB_CATEGORIES_MAPPING
+  }.freeze
 
   # Make all models searchable
   update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
@@ -47,7 +65,6 @@ class InvestorKyc < ApplicationRecord
   has_one :aml_report, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
 
-  accepts_nested_attributes_for :investor_kyc_sebi_data, allow_destroy: true
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
   scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
   scope :agreement_uncalled, -> { where('agreement_committed_amount_cents > call_amount_cents') }
@@ -80,6 +97,21 @@ class InvestorKyc < ApplicationRecord
   def birth_date_cannot_be_in_the_future
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
   end
+
+  validate :sebi_investor_sub_category_heirarchy
+
+  def sebi_investor_sub_category_heirarchy
+    if json_fields["investor_category"].present?
+      json_fields["investor_sub_category"] = json_fields["investor_sub_category"].split(" - ", 2).last.strip if json_fields["investor_sub_category"].present?
+
+      Rails.logger.debug { "investor_category: #{json_fields['investor_category']}, investor_sub_category: #{json_fields['investor_sub_category']}" }
+      errors.add(:investor_category, "should be present to enter investor sub-category") if json_fields["investor_sub_category"].present? && json_fields["investor_category"].blank?
+
+      errors.add(:investor_category, "should be one of #{SEBI_INVESTOR_CATEGORIES.join(', ')}") if json_fields["investor_category"].present? && SEBI_INVESTOR_CATEGORIES.map { |x| x.to_s.downcase }.exclude?(json_fields["investor_category"].downcase)
+
+      errors.add(:investor_sub_category, "should be one of #{SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.stringify_keys[json_fields['investor_category']].join(', ')}") if json_fields["investor_category"].present? && json_fields["investor_sub_category"].present? && SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.stringify_keys[json_fields["investor_category"]]&.exclude?(json_fields["investor_sub_category"])
+    end
+  end
   # Customize form
   serialize :pan_verification_response, type: Hash
   serialize :bank_verification_response, type: Hash
@@ -88,12 +120,6 @@ class InvestorKyc < ApplicationRecord
   monetize :committed_amount_cents, :collected_amount_cents, :agreement_committed_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents, :other_fee_cents,
            with_currency: ->(i) { i.entity.currency }
-
-  def create_investor_kyc_sebi_data
-    InvestorKycSebiData.create(entity_id:, investor_kyc_id: id) if investor_kyc_sebi_data.blank?
-    reload
-    investor_kyc_sebi_data.present?
-  end
 
   # Should be called only from SendKycFormJob
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes

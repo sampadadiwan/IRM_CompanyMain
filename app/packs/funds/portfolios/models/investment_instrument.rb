@@ -57,31 +57,6 @@ class InvestmentInstrument < ApplicationRecord
                                          end
   end
 
-  def add_sebi_custom_fields
-    form_type = self.form_type.presence || FormType.find_or_create_by(name: self.class.name, entity_id:)
-
-    SEBI_REPORTING_FIELDS.each do |cust_field_key, type|
-      # Create the custom form fields for the form type
-      cust_field_key = cust_field_key.to_s
-      next if form_type.form_custom_fields.exists?(name: cust_field_key, field_type: type)
-
-      label = cust_field_key.humanize.titleize
-      if type == "Select"
-        form_type.form_custom_fields.create!(name: cust_field_key, label:, field_type: type, internal: true, meta_data: SELECT_FIELDS_OPTIONS.stringify_keys[cust_field_key].join(","))
-      else
-        label = label.upcase if label.casecmp?("isin")
-        label += " (if Type of Security chosen is Others)" if label.casecmp?("details of security")
-        begin
-          form_type.form_custom_fields.create!(name: cust_field_key, label:, field_type: type, internal: true)
-        rescue StandardError => e
-          msg = "Error creating custom field for #{cust_field_key} with type #{type} for #{form_type.name} - #{e.message}"
-          Rails.logger.error(msg)
-          ExceptionNotifier.notify_exception(e)
-        end
-      end
-    end
-  end
-
   def to_s
     name
   end
