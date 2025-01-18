@@ -24,6 +24,7 @@ class NotesController < ApplicationController
 
     @notes = NoteSearch.perform(@notes, current_user, params)
     @notes = @notes.with_all_rich_text.includes(:user, :investor).page params[:page]
+    @notes = @notes.per((params[:per_page] || 10).to_i)
   end
 
   def search

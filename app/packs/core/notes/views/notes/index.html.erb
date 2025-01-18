@@ -4,6 +4,4 @@
 
 <%= turbo_frame_tag "notes_frame", target: "_top" do %>
 	<%=render "index" , notes: @notes %>
-	<%=paginate @notes %>
 <% end %>
-       

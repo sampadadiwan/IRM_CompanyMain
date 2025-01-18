@@ -33,8 +33,12 @@
         <%= render partial: "/notes/note", locals: {note: note} %>
       <% end %>
     </tbody>
-    
+
   </table>
+  <% if notes.present? %>
+    <%= page_entries_info notes, entry_name: 'item' %>
+    <%= paginate notes, data: {turbo_frame: "notes_frame"} %>
+  <% end %>
 
 </div>
 

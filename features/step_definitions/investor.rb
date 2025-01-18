@@ -1567,3 +1567,27 @@ When('then the email should be {string} to the investor') do |added|
   last_incoming_email.subject.should == @incoming_email.subject
   last_incoming_email.body.should == @incoming_email.body
 end
+
+When('I go to the Investor Kycs index page') do
+  visit(investor_kycs_path)
+end
+
+When('I filter the investors with {string}') do |string|
+  @investor_kyc = InvestorKyc.find_by(full_name: string)
+  InvestorKycIndex.import!
+  sleep(1)
+  fill_in("search_input", with: string)
+  sleep(0.5)
+  # press enter key
+  find("#search_input").send_keys(:return)
+
+end
+
+Then('I should see the filtered investors with {string}') do |string|
+  expect(page).to have_content(string)
+  expect(page).to have_content(@investor_kyc.investor_name)
+  expect(page).to have_content(@investor_kyc.kyc_type.titleize)
+  expect(page).not_to have_content("Investor 2")
+  expect(page).not_to have_content("Investor 3")
+  expect(page).not_to have_content("Investor 4")
+end
