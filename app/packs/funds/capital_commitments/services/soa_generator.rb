@@ -4,15 +4,25 @@ class SoaGenerator
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
+  def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, _options: nil)
     if capital_commitment.investor_kyc
+      # Download the fund document template file
       fund_doc_template.file.download do |tempfile|
         fund_doc_template_path = tempfile.path
+
+        # Create a working directory for the capital commitment
         create_working_dir(capital_commitment)
+
+        # Generate the SOA document
         generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+
+        # Upload the generated document
         upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
+
+        # Notify the user if user_id is provided
         notify(fund_doc_template, capital_commitment, user_id) if user_id
       ensure
+        # Cleanup temporary files and directories
         cleanup
       end
     else

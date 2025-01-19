@@ -10,7 +10,7 @@
       
       <div class="form-group">
         <%= form.label :template_name %>
-        <%= form.select :template_name, @capital_commitment.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
+        <%= form.select :template_name, @capital_commitment.templates("SOA Template").map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
       </div>
 
       <div class="form-group">
@@ -21,6 +21,11 @@
       <div class="form-group">
         <%= form.label :end_date %>
         <%= form.date_field :end_date, class: "form-control", name: "end_date"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :for %>
+        <%= form.select :for, ["Commitment", "Investing Entity"], {}, class: "form-control", name: "for"  %>
       </div>
 
       <div class="form-group">

@@ -1,7 +1,7 @@
 class CapitalCommitmentSoaJob < DocGenJob
   def templates(model = nil)
     if model.present?
-      model.templates("SOA Template", @template_name)
+      model.templates("SOA Template", id: @template_id)
     else
       @fund.documents.templates.where(owner_tag: "SOA Template")
     end
@@ -35,7 +35,7 @@ class CapitalCommitmentSoaJob < DocGenJob
   end
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  def perform(fund_id, capital_commitment_id, start_date, end_date, user_id, template_name: nil)
+  def perform(fund_id, capital_commitment_id, start_date, end_date, user_id, template_id: nil)
     @fund_id = fund_id
     @fund = Fund.find(fund_id)
 
@@ -44,7 +44,7 @@ class CapitalCommitmentSoaJob < DocGenJob
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
-    @template_name = template_name
+    @template_id = template_id
 
     Chewy.strategy(:sidekiq) do
       generate(@start_date, @end_date, @user_id) if valid_inputs

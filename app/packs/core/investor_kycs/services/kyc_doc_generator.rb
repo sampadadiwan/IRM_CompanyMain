@@ -2,21 +2,54 @@ class KycDocGenerator
   include CurrencyHelper
   include DocumentGeneratorBase
 
+  # Parse options to extract fund_id, capital_commitment_id, and file_name
+  def parse_options(options)
+    fund_id = options[:fund_id]
+    capital_commitment_id = options[:capital_commitment_id]
+    file_name = nil
+
+    # If capital_commitment_id is present, find the capital commitment and generate a file name
+    if capital_commitment_id.present?
+      capital_commitment = CapitalCommitment.find(capital_commitment_id)
+      file_name = generated_file_name(capital_commitment)
+    end
+
+    # Return the parsed values as an array
+    [fund_id, capital_commitment_id, file_name]
+  end
+
   # investor_kyc - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  def initialize(investor_kyc, doc_template, start_date, end_date, user_id, options: nil)
+  def initialize(investor_kyc, doc_template, start_date, end_date, user_id, options: {})
     doc_template.file.download do |tempfile|
+      # Save the document template to a temporary file
       doc_template_path = tempfile.path
+      # Create a working directory for the document generation
       create_working_dir(investor_kyc)
 
-      fund_id = options.present? ? options[:fund_id] : nil
-      generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id)
+      # Generate the document
+      fund_id, capital_commitment_id, file_name = parse_options(options)
+      generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name:)
 
-      # Use a regular expression to check for the standalone word
-      is_soa_doc = doc_template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/
+      # Use a regular expression to check if this is an SOA template
+      is_soa_template = (doc_template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag.downcase =~ /\b#{Regexp.escape('soa')}\b/)
 
-      if is_soa_doc
-        upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
+      if is_soa_template
+        # Now in certain cases the doc is generated for a KYC and in certain cases for a commitment
+        # 1. The normal case is when the doc is generated for a KYC, mostly for Angel funds. In this case, we want to attach it to the KYC
+        # 2. The other case is when the doc is generated for a commitment, when we want to generate the SOA at the Investing Entity level, but is triggered at the commitment level. In this case we need to attach it to the commitment
+        if capital_commitment_id.present?
+          # Attach the generated document to the capital commitment
+          capital_commitment = CapitalCommitment.find(options[:capital_commitment_id])
+          upload(doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
+        else
+          # Attach the generated document to the investor KYC
+          upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
+        end
+      elsif options.present? && options[:capital_commitment_id].present?
+        capital_commitment = CapitalCommitment.find(options[:capital_commitment_id])
+        upload(doc_template, capital_commitment)
+      # Attach the generated document to the capital commitment
       else
         upload(doc_template, investor_kyc)
       end
@@ -107,7 +140,8 @@ class KycDocGenerator
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id)
+  # rubocop:disable Metrics/ParameterLists
+  def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name: nil)
     template = Sablon.template(File.expand_path(doc_template_path))
 
     context = prepare_context(investor_kyc, start_date, end_date, fund_id)
@@ -121,13 +155,14 @@ class KycDocGenerator
     Rails.logger.debug { "Using context #{context.keys} to render template" }
     Rails.logger.debug "Rendering template"
 
-    file_name = generated_file_name(investor_kyc)
+    file_name ||= generated_file_name(investor_kyc)
     convert(template, context, file_name)
 
     additional_footers = investor_kyc.documents.where(name: ["#{doc_template.name} Footer", "#{doc_template.name} Signature"])
     additional_headers = investor_kyc.documents.where(name: ["#{doc_template.name} Header", "#{doc_template.name} Stamp Paper"])
     add_header_footers(investor_kyc, file_name, additional_headers, additional_footers)
   end
+  # rubocop:enable Metrics/ParameterLists
 
   def amounts(investor_kyc, ccs, currency, start_date, end_date, fund_id)
     remittances = investor_kyc.capital_remittances.where(capital_commitment_id: ccs.pluck(:id))

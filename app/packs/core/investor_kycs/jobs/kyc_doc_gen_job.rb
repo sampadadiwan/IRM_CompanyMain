@@ -51,18 +51,19 @@ class KycDocGenJob < DocGenJob
     end
   end
 
+  # rubocop:disable Metrics/ParameterLists
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
-              user_id, entity_id: nil, fund_id: nil)
+              user_id, entity_id: nil, options: nil)
     @document_template_ids = document_template_ids
     @investor_kyc_id = investor_kyc_id
     @entity_id = entity_id
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
-    options = { fund_id: fund_id }
 
     Chewy.strategy(:sidekiq) do
       generate(@start_date, @end_date, @user_id, options:) if valid_inputs
     end
   end
+  # rubocop:enable Metrics/ParameterLists
 end

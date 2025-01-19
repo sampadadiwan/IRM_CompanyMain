@@ -19,9 +19,10 @@ module CommitmentDocuments
   end
 
   # Retrieves the templates to be used for rendering as SOA, FRA etc.
-  def templates(owner_tag, name = nil)
+  def templates(owner_tag, name: nil, id: nil)
     fund_templates = fund.documents.templates.where(owner_tag:)
     fund_templates = fund_templates.where(name:) if name
+    fund_templates = fund_templates.where(id:) if id
     fund_template_names = fund_templates.pluck(:name)
     # Try and get the template from the capital_commitment which override the fund templates
     commitment_templates = documents.templates.where(name: fund_template_names)
