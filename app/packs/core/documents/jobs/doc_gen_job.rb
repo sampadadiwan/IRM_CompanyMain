@@ -58,7 +58,7 @@ class DocGenJob < ApplicationJob
   def cleanup_previous_docs(model, template); end
 
   # The actual process of generating the document
-  def generate(start_date, end_date, user_id)
+  def generate(start_date, end_date, user_id, options: nil)
     @error_msg ||= []
     succeeded = 0
     failed = 0
@@ -79,7 +79,7 @@ class DocGenJob < ApplicationJob
           # Cleanup previously generated documents if required
           cleanup_previous_docs(model, template)
           # Generate the document
-          generator.new(model, template, start_date, end_date, user_id)
+          generator.new(model, template, start_date, end_date, user_id, options:)
           # Send notification if the document is generated successfully
           count = (midx * templates_to_use.length) + tidx + 1
           send_notification("#{count}: Generated #{template.name} for #{model}", user_id, "success")

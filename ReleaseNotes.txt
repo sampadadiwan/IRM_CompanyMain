@@ -1,3 +1,18 @@
+V8.0.64
+#####################################
+33aadef97 Rubocop fixes
+d34192402 Sebi fields fixes 180125 (#693)
+d40d3b281 Rotated prod aws key
+604cedfd1 Fixed api value_to_cost
+09bfe2c85 Search component fix (#691)
+b1ca37a84 Fixed commitment ratios
+23af6ebe4 Entity sebi fields flag (#678)
+129dbcabe Ruby 4.3.1 (#690)
+85b3987a5 Fix for computation of remittances for True North  (#689)
+8662e2b2e Fixed bug with Fund Ratios for FMV
+0a584ae87 Idfy amlv2 (#686)
+49e06b5dc Spec fix 160125 (#685)
+
 V8.0.63
 #####################################
 e963f8ff1 Changed fmv in fund ratios, to use net quantity for buys

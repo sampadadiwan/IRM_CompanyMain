@@ -4,7 +4,7 @@ class InterestDocGenerator
 
   attr_accessor :working_dir
 
-  def initialize(interest, template, _start_date, _end_date, _user_id)
+  def initialize(interest, template, _start_date, _end_date, _user_id, options: nil)
     create_working_dir(interest)
     template_path ||= download_template(template)
     generate(interest, template, template_path)

@@ -4,7 +4,7 @@ class AllocationSpaGenerator
 
   attr_accessor :working_dir
 
-  def initialize(allocation, template, _start_date, _end_date, _user_id)
+  def initialize(allocation, template, _start_date, _end_date, _user_id, options: nil)
     create_working_dir(allocation)
     template_path ||= download_template(template)
     generate(allocation, template, template_path)

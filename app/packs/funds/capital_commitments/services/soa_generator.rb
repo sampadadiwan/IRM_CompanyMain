@@ -4,7 +4,7 @@ class SoaGenerator
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil)
+  def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
     if capital_commitment.investor_kyc
       fund_doc_template.file.download do |tempfile|
         fund_doc_template_path = tempfile.path
