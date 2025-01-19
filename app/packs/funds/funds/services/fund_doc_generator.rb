@@ -6,7 +6,8 @@ class FundDocGenerator
 
   # fund - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  def initialize(fund, fund_doc_template, user_id = nil, _options: nil)
+  def initialize(fund, fund_doc_template, user_id = nil, options: nil)
+    Rails.logger.debug { "FundDocGenerator: #{fund}, #{fund_doc_template.name}, #{user_id}, #{options}" }
     @fund_doc_template_name = fund_doc_template.name
 
     fund_doc_template.file.download do |tempfile|

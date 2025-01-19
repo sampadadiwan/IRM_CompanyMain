@@ -4,7 +4,9 @@ class OfferSpaGenerator
 
   attr_accessor :working_dir
 
-  def initialize(offer, template, _start_date, _end_date, _user_id, _options: nil)
+  def initialize(offer, template, start_date, end_date, user_id, options: nil)
+    Rails.logger.debug { "OfferSpaGenerator #{offer.id}, #{template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
+
     create_working_dir(offer)
     template_path ||= download_template(template)
     generate(offer, template, template_path)

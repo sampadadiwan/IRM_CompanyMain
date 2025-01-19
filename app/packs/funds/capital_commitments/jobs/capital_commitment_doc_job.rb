@@ -3,7 +3,7 @@ class CapitalCommitmentDocJob < DocGenJob
     if @template_id.present?
       [Document.find(@template_id)]
     elsif model.present?
-      model.templates("Commitment Template", @template_name)
+      model.templates("Commitment Template", id: @template_id)
     else
       @fund.documents.templates.where(owner_tag: "Commitment Template")
     end

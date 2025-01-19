@@ -21,6 +21,8 @@ class KycDocGenerator
   # investor_kyc - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
   def initialize(investor_kyc, doc_template, start_date, end_date, user_id, options: {})
+    Rails.logger.debug { "KycDocGenerator #{investor_kyc.id}, #{doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
+
     doc_template.file.download do |tempfile|
       # Save the document template to a temporary file
       doc_template_path = tempfile.path

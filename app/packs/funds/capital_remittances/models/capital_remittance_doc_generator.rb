@@ -6,7 +6,9 @@ class CapitalRemittanceDocGenerator
 
   # capital_remittance - we want to generate the document for this remittance
   # fund document template - the document are we using as  template for generation
-  def initialize(capital_remittance, fund_doc_template, _start_date, _end_date, user_id, _options: nil)
+  def initialize(capital_remittance, fund_doc_template, start_date, end_date, user_id, options: nil)
+    Rails.logger.debug { "CapitalRemittanceDocGenerator #{capital_remittance.id},  #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
+
     @fund_doc_template_name = fund_doc_template.name
 
     fund_doc_template.file.download do |tempfile|

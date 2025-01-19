@@ -4,7 +4,9 @@ class InterestDocGenerator
 
   attr_accessor :working_dir
 
-  def initialize(interest, template, _start_date, _end_date, _user_id, _options: nil)
+  def initialize(interest, template, start_date, end_date, user_id, options: nil)
+    Rails.logger.debug { "InterestDocGenerator #{interest.id}, #{template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
+
     create_working_dir(interest)
     template_path ||= download_template(template)
     generate(interest, template, template_path)

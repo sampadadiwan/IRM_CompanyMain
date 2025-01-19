@@ -6,7 +6,9 @@ class EoiDocGenerator
 
   # expression_of_interest - we want to generate the document for this ExpressionOfInterest
   # investment_opportunity document template - the document are we using as  template for generation
-  def initialize(expression_of_interest, io_doc_template, user_id = nil, _options: nil)
+  def initialize(expression_of_interest, io_doc_template, user_id = nil, options: nil)
+    Rails.logger.debug { "EoiDocGenerator #{expression_of_interest.id}, #{io_doc_template.name}, #{user_id}, #{options} " }
+
     @io_doc_template_name = io_doc_template.name
 
     io_doc_template.file.download do |tempfile|
