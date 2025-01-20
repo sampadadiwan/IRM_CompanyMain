@@ -72,7 +72,7 @@
         </div>
         <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
       <% else %>
-          <%#= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
+          <%= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
           <%= render "/capital_remittances/bulk_actions" %>
       <% end %>
 

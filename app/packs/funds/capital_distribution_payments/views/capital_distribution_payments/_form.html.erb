@@ -20,21 +20,21 @@
         <%= form.text_field :capital_distribution_id, class: "form-control", hidden: true  %>
         <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
 
-      
+      <% disabled = !capital_distribution_payment.new_record? %>
       <div class="form-group">
         <%= form.label :investor_id %>
-        <%= form.select :investor_id, capital_distribution_payment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control  select2" %>
+        <%= form.select :investor_id, capital_distribution_payment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, disabled:, class: "form-control  select2" %>
       </div>
 
 
       <div class="form-group">
         <%= form.label :folio_id, "Folio No" %>
-        <%= form.text_field :folio_id, class: "form-control"  %>
+        <%= form.text_field :folio_id, disabled:, class: "form-control"  %>
       </div>
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :amount, "Amount in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
-        <%= form.text_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <%= form.text_field :amount, disabled:, class: "form-control", data: {action: "input->currencyformat#format"} %>
         <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
       </div>
 

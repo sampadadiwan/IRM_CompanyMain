@@ -4,7 +4,7 @@
     <span>
       <% if params[:capital_distribution_id] %>
       
-        <%= link_to "New Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": params[:capital_distribution_id]), {class: "btn btn-outline-primary" }  %>
+        <%#= link_to "New Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": params[:capital_distribution_id]), {class: "btn btn-outline-primary" }  %>
 
         <%= link_to "Download" , capital_distribution_payments_path(capital_distribution_id: params[:capital_distribution_id], format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
 

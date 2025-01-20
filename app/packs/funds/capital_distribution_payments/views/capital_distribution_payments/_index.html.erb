@@ -5,7 +5,7 @@
       <% capital_distribution ||= nil %>
       <% if capital_distribution %>
       
-        <%= link_to "New Payment", 
+        <%#= link_to "New Payment", 
           new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), 
           {class: "btn btn-outline-primary" }  %>
 

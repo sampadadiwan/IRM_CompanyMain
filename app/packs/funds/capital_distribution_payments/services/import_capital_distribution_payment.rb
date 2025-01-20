@@ -1,5 +1,5 @@
 class ImportCapitalDistributionPayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Income", "Payment Date", "Completed", "Folio No", "Cost Of Investment"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Distribution", "Income", "Payment Date", "Completed", "Folio No", "Face Value For Redemption", "Reinvestment"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -28,7 +28,8 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.percentage = capital_commitment.percentage
       capital_distribution_payment.income = user_data["Income"]
-      capital_distribution_payment.cost_of_investment = user_data["Cost Of Investment"]
+      capital_distribution_payment.reinvestment = user_data["Reinvestment"] 
+      capital_distribution_payment.cost_of_investment = user_data["Face Value For Redemption"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 
       setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
