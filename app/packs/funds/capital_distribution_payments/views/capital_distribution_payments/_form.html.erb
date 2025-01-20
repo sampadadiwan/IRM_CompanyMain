@@ -33,8 +33,20 @@
       </div>
 
       <div class="form-group" data-controller="currencyformat">
-        <%= form.label :amount, "Amount in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
-        <%= form.text_field :amount, disabled:, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <%= form.label :income, "Income distribution in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
+        <%= form.text_field :income, disabled:, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
+      </div>
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :cost_of_investment_cents, "Face Value For Redemption in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
+        <%= form.text_field :cost_of_investment_cents, disabled:, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
+      </div>
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :reinvestment, "Reinvestment in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
+        <%= form.text_field :reinvestment, disabled:, class: "form-control", data: {action: "input->currencyformat#format"} %>
         <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
       </div>
 

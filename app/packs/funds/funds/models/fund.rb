@@ -17,6 +17,7 @@ class Fund < ApplicationRecord
   self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category]
 
   CATEGORIES = ["Category I", "Category II", "Category III"].freeze
+  REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
 
   scope :feeder_funds, -> { where.not(master_fund_id: nil) }
   scope :master_funds, -> { where(master_fund_id: nil) }
