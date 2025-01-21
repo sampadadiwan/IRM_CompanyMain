@@ -1411,7 +1411,11 @@ end
 
 Given('the distribution payments are completed') do
   puts CapitalDistributionPayment.all.to_json
-  CapitalDistributionPayment.update(completed: true)
+
+  CapitalDistributionPayment.all.each do |cdp|
+    cdp.completed = true
+    CapitalDistributionPaymentUpdate.wtf?(capital_distribution_payment: cdp).success?.should == true
+  end
 end
 
 Given('Capital Distribution Payment Notification is sent') do
