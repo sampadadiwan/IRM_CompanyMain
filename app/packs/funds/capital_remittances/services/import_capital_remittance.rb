@@ -53,22 +53,10 @@ class ImportCapitalRemittance < ImportUtil
     end
   end
 
-  def setup_amounts(user_data, capital_remittance, fund)
-    # Some funds are setup to user the folio amount as the basis for remittance generation. other the fund amount
-    # Folio Amount: Use the folio_committed_amount_cents as the basis for remittance generation.
-    # Fund Amount: Use the committed_amount_cents as the basis for remittance generation.
-    remittance_generation_basis = fund.remittance_generation_basis
-    if fund.remittance_generation_basis == 'Folio Amount'
-      capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
-      capital_remittance.folio_capital_fee = user_data["Capital Fees"]
-      capital_remittance.folio_other_fee = user_data["Other Fees"]
-    elsif fund.remittance_generation_basis == 'Fund Amount'
-      capital_remittance.call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
-      capital_remittance.capital_fee = user_data["Capital Fees"]
-      capital_remittance.other_fee = user_data["Other Fees"]
-    else
-      raise "Unknown Fund.remittance_generation_basis: #{remittance_generation_basis}"
-    end
+  def setup_amounts(user_data, capital_remittance, _fund)
+    capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
+    capital_remittance.folio_capital_fee = user_data["Capital Fees"]
+    capital_remittance.folio_other_fee = user_data["Other Fees"]
   end
 
   # Method to retrieve necessary inputs from user data and import upload

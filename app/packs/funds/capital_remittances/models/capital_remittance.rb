@@ -143,16 +143,7 @@ class CapitalRemittance < ApplicationRecord
   #
   # @raise [RuntimeError] if the fund's remittance generation basis is unknown.
   def set_status
-    considered_due_amount = nil
-
-    # Determine the considered due amount based on the fund's remittance generation basis
-    if fund.remittance_generation_basis == "Folio Amount"
-      considered_due_amount = folio_due_amount
-    elsif fund.remittance_generation_basis == "Fund Amount"
-      considered_due_amount = due_amount
-    else
-      raise "Unknown Fund.remittance_generation_basis: #{fund.remittance_generation_basis}"
-    end
+    considered_due_amount = folio_due_amount
 
     # Set the status based on the considered due amount and the capital call's due date
     self.status = if considered_due_amount.to_f.abs <= 10

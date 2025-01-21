@@ -28,8 +28,7 @@ class FundDashboard < Administrate::BaseDashboard
     properties: Field::Text,
     distribution_amount_cents: Field::String.with_options(searchable: false),
     audits: Field::HasMany,
-    editable_formulas: Field::BooleanEmoji,
-    remittance_generation_basis: Field::Select.with_options(collection: Fund::REMITTANCE_GENERATION_BASIS)
+    editable_formulas: Field::BooleanEmoji
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -55,7 +54,6 @@ class FundDashboard < Administrate::BaseDashboard
     details
     collected_amount_cents
     tag_list
-    remittance_generation_basis
     created_at
     updated_at
     call_amount_cents
@@ -83,7 +81,6 @@ class FundDashboard < Administrate::BaseDashboard
     details
     collected_amount_cents
     tag_list
-    remittance_generation_basis
     call_amount_cents
     distribution_amount_cents
   ].freeze

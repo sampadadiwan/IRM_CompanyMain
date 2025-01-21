@@ -11,31 +11,13 @@ module CapitalRemittanceCallBasis
                         BigDecimal(0)
                       end
 
-    # Some funds are setup to user the folio amount as the basis for remittance generation. other the fund amount
-    # Folio Amount: Use the folio_committed_amount_cents as the basis for remittance generation.
-    # Fund Amount: Use the committed_amount_cents as the basis for remittance generation.
-    remittance_generation_basis = capital_call.fund.remittance_generation_basis
+    # Calculate the folio's portion of the call amount in its currency.
+    self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
 
-    if remittance_generation_basis == 'Folio Amount'
-      # Calculate the folio's portion of the call amount in its currency.
-      self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
-
-      # Convert FX
-      self.computed_amount_cents = convert_currency(
-        capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
-      )
-
-    elsif remittance_generation_basis == 'Fund Amount'
-      # Calculate the folio's portion of the call amount in the fund currency currency.
-      self.computed_amount_cents = percentage * capital_commitment.committed_amount_cents / 100.0
-
-      # Convert FX
-      self.folio_call_amount_cents = convert_currency(
-        fund.currency, capital_commitment.folio_currency, computed_amount_cents, remittance_date
-      )
-    else
-      raise "Unknown Fund.remittance_generation_basis: #{remittance_generation_basis}"
-    end
+    # Convert FX
+    self.computed_amount_cents = convert_currency(
+      capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
+    )
 
     # Include capital fees in both folio and fund currency calculations.
     self.folio_call_amount_cents += folio_capital_fee_cents
@@ -84,38 +66,15 @@ module CapitalRemittanceCallBasis
   # Computes the call amount based on an uploaded remittance.
   # This method assumes the folio_call_amount already includes capital fees.
   def call_basis_upload
-    # Some funds are setup to user the folio amount as the basis for remittance generation. other the fund amount
-    # Folio Amount: Use the folio_committed_amount_cents as the basis for remittance generation.
-    # Fund Amount: Use the committed_amount_cents as the basis for remittance generation.
-    remittance_generation_basis = capital_call.fund.remittance_generation_basis
+    # Convert the adjusted folio call amount to the fund's currency.
+    self.call_amount_cents = convert_currency(
+      capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
+    )
 
-    if remittance_generation_basis == 'Folio Amount'
+    self.computed_amount_cents = call_amount_cents - capital_fee_cents
 
-      # Convert the adjusted folio call amount to the fund's currency.
-      self.call_amount_cents = convert_currency(
-        capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
-      )
-
-      self.computed_amount_cents = call_amount_cents - capital_fee_cents
-
-      # Calculate the percentage of the committed folio amount that is being called.
-      self.percentage = (folio_call_amount_cents / capital_commitment.folio_committed_amount_cents) * 100.0
-
-    elsif remittance_generation_basis == 'Fund Amount'
-      # Convert FX of the full call amount including capital fees.
-      self.folio_call_amount_cents = convert_currency(
-        fund.currency, capital_commitment.folio_currency, call_amount_cents, remittance_date
-      )
-
-      # Remove the capital fee from the call amount for the computed_amount_cents
-      self.computed_amount_cents = call_amount_cents - capital_fee_cents
-
-      # Calculate the percentage of the committed fund amount that is being called.
-      self.percentage = (call_amount_cents / capital_commitment.committed_amount_cents) * 100.0
-
-    else
-      raise "Unknown Fund.remittance_generation_basis: #{remittance_generation_basis}"
-    end
+    # Calculate the percentage of the committed folio amount that is being called.
+    self.percentage = (folio_call_amount_cents / capital_commitment.folio_committed_amount_cents) * 100.0
 
     logger.error "call_basis_upload: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
