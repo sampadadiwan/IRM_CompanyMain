@@ -3,10 +3,10 @@ Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_n
   click_on("Ratios")
   find("#fund_ratios_actions").click
   click_on("Upload")
-  sleep(10)
+  sleep(2)
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(10)
+  sleep(2)
   click_on("Save")
   sleep(10)
   expect(page).to have_content("Import Upload:")

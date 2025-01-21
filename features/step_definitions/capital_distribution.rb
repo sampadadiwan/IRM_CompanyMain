@@ -58,7 +58,7 @@ end
 Then('the data should be correctly displayed for each Capital Distribution Payment') do
   CapitalDistributionPayment.all.each do |cdp|
     visit(capital_distribution_payment_path(cdp))
-    sleep(20)
+    # sleep(20)
     puts "checking details of #{cdp}"
 
     cdp.income_with_fees_cents.should == cdp.income_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income"]).sum(:amount_cents) - AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)

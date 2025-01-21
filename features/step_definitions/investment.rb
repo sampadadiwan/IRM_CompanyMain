@@ -518,7 +518,7 @@ Given('Given I upload a holdings file') do
   click_on("Save")
   sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(5)
+  # sleep(5)
 
   ImportUpload.last.failed_row_count.should == 0
 end
