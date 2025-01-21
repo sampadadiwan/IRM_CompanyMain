@@ -207,13 +207,12 @@ class KycDocGenerator
                    })
   end
 
-
   # Add the reporting entries for the investor kyc, note that since a KYC can be linked to multiple commitments, there could be multiple account entries with the same name (ex Setup Fees, one for each commitment), so sum them (Ex Sum of Setup Fees) before adding to the context
   def add_reporting_entries(context, investor_kyc, start_date, end_date)
     raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
-    raes.group_by{|ae| [ae.name, ae.entry_type]}.each do |name_entry_type, aes|
+    raes.group_by { |ae| [ae.name, ae.entry_type] }.each do |name_entry_type, aes|
       # Sum the amounts for the same name and entry type and create another dummy entry type
-      total_amount_cents = aes.sum(&:amount_cents)      
+      total_amount_cents = aes.sum(&:amount_cents)
       context["reporting_#{ae.template_field_name}"] = TemplateDecorator.decorate(AccountEntry.new(name: name_entry_type[0], entry_type: name_entry_type[1], amount_cents: total_amount_cents, currency: investor_kyc.entity.currency))
     end
   end

@@ -884,7 +884,10 @@ Then('I should be able to see the capital distrbution payments') do
 end
 
 Then('when the capital distrbution payments are marked as paid') do
-  @capital_distribution.capital_distribution_payments.update(completed: true)
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    cdp.completed = true
+    CapitalDistributionPaymentUpdate.wtf?(capital_distribution_payment: cdp).success?.should == true
+  end
 end
 
 Then('the capital distribution must reflect the payments') do
@@ -1825,10 +1828,16 @@ Then('the capital distribution payments must have the data in the sheet {string}
 
     puts "Checking import of #{cdp.to_json}"
 
+    cdp.investor_name.should == row_data["Investor"]
     cdp.income.to_d.should == row_data["Income"].to_d
-    cdp.cost_of_investment.to_d.should == row_data["Cost Of Investment"].to_d
+    cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
     cdp.payment_date.should == Date.parse(row_data["Payment Date"].to_s)
     cdp.completed.should == (row_data["Completed"] == "Yes")
+    cdp.income_with_fees.to_d.should == cdp.income.to_d
+    cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
+
+    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents
+    cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
   end
 end
 

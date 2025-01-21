@@ -9,15 +9,6 @@ class CapitalDistributionJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       @capital_distribution = CapitalDistribution.find(capital_distribution_id)
       generate_payments
-
-      Rails.logger.debug { "Importing #{@payments.length} CapitalDistributionPayment" }
-      # import the rows
-      CapitalDistributionPayment.import @payments, on_duplicate_key_ignore: true, track_validation_failures: true
-      # Update the index
-      CapitalDistributionPaymentIndex.import(@capital_distribution.capital_distribution_payments)
-      # Update the counter caches
-      CapitalDistributionPayment.counter_culture_fix_counts where: { entity_id: @capital_distribution.entity_id }
-
       # This is to ensure the gross_amount is computed correctly, after the payments have been computed
       @capital_distribution.reload.save
     end
@@ -49,17 +40,20 @@ class CapitalDistributionJob < ApplicationJob
                                                  percentage: percentage.round(2), folio_id: cc.folio_id,
                                                  completed: @capital_distribution.generate_payments_paid)
 
-        if payment.valid?
-          payment.setup_distribution_fees
-          payment.run_callbacks(:save) { false }
-          payment.run_callbacks(:create) { false }
-          @payments << payment
-          logger.debug "Created Payment of #{payment.net_payable} for #{cc.investor_name} id #{payment.id}"
-        else
-          logger.error "Error creating Payment for #{cc.investor_name} id #{payment.id}"
-          logger.error payment.errors.full_messages
+        CapitalDistributionPayment.skip_counter_culture_updates do
+          result = CapitalDistributionPaymentCreate.wtf?(capital_distribution_payment: payment)
+          if result.success?
+            @payments << payment
+            Rails.logger.debug { "Created Payment of #{payment.net_payable} for #{cc.investor_name} id #{payment.id}" }
+          else
+            Rails.logger.error { "Error creating Payment for #{cc.investor_name} id #{payment.id}" }
+            Rails.logger.error { payment.errors.full_messages }
+          end
         end
       end
     end
+
+    # Update the counter caches
+    CapitalDistributionPayment.counter_culture_fix_counts where: { entity_id: @capital_distribution.entity_id }
   end
 end

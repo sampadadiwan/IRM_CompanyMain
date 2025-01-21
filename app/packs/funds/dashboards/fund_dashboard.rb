@@ -29,7 +29,7 @@ class FundDashboard < Administrate::BaseDashboard
     distribution_amount_cents: Field::String.with_options(searchable: false),
     audits: Field::HasMany,
     editable_formulas: Field::BooleanEmoji,
-    remittance_generation_basis: Field::Select.with_options(collection: Fund::REMITTANCE_GENERATION_BASIS),
+    remittance_generation_basis: Field::Select.with_options(collection: Fund::REMITTANCE_GENERATION_BASIS)
   }.freeze
 
   # COLLECTION_ATTRIBUTES

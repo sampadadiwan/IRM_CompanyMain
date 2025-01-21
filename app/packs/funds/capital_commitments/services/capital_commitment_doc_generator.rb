@@ -7,7 +7,6 @@ class CapitalCommitmentDocGenerator
   # capital_commitment - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
   def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id, options: nil)
-
     Rails.logger.debug { "CapitalCommitmentDocGenerator #{capital_commitment.id}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
     @fund_doc_template_name = fund_doc_template.name
@@ -54,7 +53,7 @@ class CapitalCommitmentDocGenerator
     # Sometimes we have additional documents we want to append to the contribution agreement.
     # E.x Kyc PAN, KYC address proof etc
     additional_footers = []
-    
+
     append_to_commitment_agreement = capital_commitment.entity.entity_setting.append_to_commitment_agreement
     if append_to_commitment_agreement.present?
       doc_names = append_to_commitment_agreement.downcase.split(",")

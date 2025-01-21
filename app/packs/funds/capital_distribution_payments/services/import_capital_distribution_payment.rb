@@ -28,13 +28,17 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.percentage = capital_commitment.percentage
       capital_distribution_payment.income = user_data["Income"]
-      capital_distribution_payment.reinvestment = user_data["Reinvestment"] 
+      capital_distribution_payment.reinvestment = user_data["Reinvestment"]
       capital_distribution_payment.cost_of_investment = user_data["Face Value For Redemption"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 
       setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
+      capital_distribution_payment.setup_distribution_fees
 
-      capital_distribution_payment.save!
+      result = CapitalDistributionPaymentCreate.wtf?(capital_distribution_payment: capital_distribution_payment)
+      raise result[:errors] unless result.success?
+
+      result.success?
 
     else
       raise "Fund not found" unless fund
@@ -42,5 +46,9 @@ class ImportCapitalDistributionPayment < ImportUtil
       raise "Investor not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
     end
+  end
+
+  def defer_counter_culture_updates
+    true
   end
 end

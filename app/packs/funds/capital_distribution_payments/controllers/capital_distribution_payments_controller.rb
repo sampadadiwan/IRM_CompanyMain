@@ -65,9 +65,9 @@ class CapitalDistributionPaymentsController < ApplicationController
     @capital_distribution_payment.entity_id = @capital_distribution_payment.capital_distribution.entity_id
     @capital_distribution_payment.fund_id = @capital_distribution_payment.capital_distribution.fund_id
     authorize(@capital_distribution_payment)
-
+    result = CapitalDistributionPaymentCreate.wtf?(capital_distribution_payment: @capital_distribution_payment)
     respond_to do |format|
-      if @capital_distribution_payment.save
+      if result.success?
         format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: "Capital distribution payment was successfully created." }
         format.json { render :show, status: :created, location: @capital_distribution_payment }
       else
@@ -79,8 +79,9 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # PATCH/PUT /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def update
+    result = CapitalDistributionPaymentUpdate.wtf?(capital_distribution_payment: @capital_distribution_payment)
     respond_to do |format|
-      if @capital_distribution_payment.update(capital_distribution_payment_params)
+      if result.success?
         format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: "Capital distribution payment was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_distribution_payment }
       else

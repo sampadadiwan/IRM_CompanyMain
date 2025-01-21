@@ -81,19 +81,19 @@ class CapitalDistributionPayment < ApplicationRecord
     self.capital_commitment = fund.capital_commitments.where(investor_id:, folio_id:).first
   end
 
-  before_save :set_investor_name
+  # before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
   end
 
-  before_save :set_net_payable, if: :net_payable_cents_changed?
+  # before_save :set_net_payable, if: :net_payable_cents_changed?
   def set_net_payable
     # Since the distribution amount is always in the fund currency, we compute te converted folio_amount based on exchange rates.
     self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
                                                net_payable_cents, payment_date)
   end
 
-  after_commit :send_notification, if: ->(cdp) { cdp.completed && !cdp.destroyed? }
+  # after_commit :send_notification, if: ->(cdp) { cdp.completed && !cdp.destroyed? }
   def send_notification
     if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
       investor.notification_users(fund).each do |user|
@@ -102,7 +102,7 @@ class CapitalDistributionPayment < ApplicationRecord
     end
   end
 
-  after_commit :update_investor_entity
+  # after_commit :update_investor_entity
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def update_investor_entity
