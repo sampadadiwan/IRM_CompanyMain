@@ -7,6 +7,10 @@ class FundReportPolicy < FundBasePolicy
     permissioned_employee?
   end
 
+  def new?
+    create?
+  end
+
   def regenerate?
     create?
   end

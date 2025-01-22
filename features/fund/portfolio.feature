@@ -51,20 +51,20 @@ Scenario Outline: Create valuation and FMV
     |entity_type=Investment Fund;       |name=Test fund      |
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
-# Scenario Outline: Generate Fund Reports
-#   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-#   Given the user has role "company_admin"
-#   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
-#   And Given I upload an investors file for the fund
-#   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-#   Then I should see the "Import in progress"
-#   And Given I upload the portfolio companies
-#   And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
-#   Then I should see the "Import in progress"
-#   Then There should be "8" portfolio investments created
-#   Given The user generates all fund reports for the fund
-#   Then There should be "3" reports created
-#   And Sebi report should be generated for the fund
+Scenario Outline: Generate Fund Reports
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  And Given I upload the portfolio companies
+  And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "8" portfolio investments created
+  Given The user generates all fund reports for the fund
+  Then There should be "3" reports created
+  And Sebi report should be generated for the fund
 
 
 @import

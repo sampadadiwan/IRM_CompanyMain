@@ -21,7 +21,7 @@
 
         <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
         <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-      
+
       <div class="form-group">
         <%= form.label :name, "Class / Series / Unit Type" %>
         <% if fund_unit_setting.fund.unit_types.present? %>
@@ -52,11 +52,16 @@
         <small class="text-muted">Carry as a %</small>
       </div>
 
+      <div class="form-group">
+        <%= form.label :gp_units, "GP units" %>
+        <%= form.check_box :gp_units, class: "form-check-input"  %>
+      </div>
+
       <%= custom_form_fields(fund_unit_setting, form) %>
 
       <div class="form-group">
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
       </div>
     <% end %>
-  
+
 <% end %>

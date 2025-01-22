@@ -152,6 +152,7 @@ gem "net-pop", github: "ruby/net-pop"
 gem 'net-smtp'
 gem 'net-ssh'
 gem 'public_activity'
+gem 'rubyXL', git: "https://github.com/weshatheleopard/rubyXL.git"
 
 # gem "strong_migrations"
 
@@ -188,8 +189,6 @@ group :development do
 
   gem "better_errors"
   gem "binding_of_caller"
-
-  gem 'rubyXL', git: "https://github.com/weshatheleopard/rubyXL.git"
 
   # gem 'rails-erd'
 

@@ -59,9 +59,9 @@ commands = [
 
             <div class="dropdown-divider"></div>
 
-            
+
             <%= link_to "Dashboard" , dashboard_fund_path(@fund), {class: "dropdown-item" } %>
-                    
+
             <%= link_to "Sign In Report" , report_fund_path(@fund, report: "dashboard/sign_in_count"), {class: "dropdown-item" } %>
             <%= link_to "Onboarding Report" , report_fund_path(@fund, report: "dashboard/onboarding_report", show_docs: true), {class: "dropdown-item" } %>
 
@@ -76,15 +76,22 @@ commands = [
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Sebi Reports
+            Fund Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <%= link_to "Generate Reports", new_fund_report_path(fund_id: @fund.id), {class: "dropdown-item"} if policy(FundReport.new(fund_id: @fund.id, entity_id: @fund.entity_id)).new? %>
             <%= link_to "All Reports", fund_reports_path(fund_id: @fund.id), {class: "dropdown-item" }  %>
+
+            <div class="dropdown-divider"></div>
+
             <%= link_to "Corpus Details" , fund_reports_path(fund_id: @fund.id, name: "CorpusDetails"), {class: "dropdown-item" } %>
             <%= link_to "Information on Investments" , fund_reports_path(fund_id: @fund.id, name: "InformationOnInvestments" ), {class: "dropdown-item" } %>
             <%= link_to "Info on Stakeholders" , fund_reports_path(fund_id: @fund.id, name: "InfoOnInvestors"), {class: "dropdown-item" } %>
-            <%= link_to "Download SEBI Report" , report_fund_path(@fund, report: "sebi_reports/sebi_report", report_class:"SebiReport"), {class: "dropdown-item" } %>
+            <%= link_to "Download SEBI Report" , fund_report_path(fund_id: @fund.id, report: "sebi_report"), {class: "dropdown-item" } %>
+
+            <div class="dropdown-divider"></div>
+
+            <%= link_to "Download CRISIL Report" , fund_report_path(fund_id: @fund.id, report: "crisil_report"), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>
@@ -146,7 +153,7 @@ commands = [
               <%= link_to "Fund Approval" , new_approval_path("approval[owner_id]": @fund.id, "approval[owner_type]": "Fund"), {class: "dropdown-item" } %>
 
               <% if policy(@fund).run_checks? %>
-                
+
                 <div class="dropdown-divider"></div>
                 <%= link_to "Run Compliance Check", run_checks_ai_checks_path(parent_id: @fund.id, parent_type: "Fund", rule_type: "compliance"), class: "dropdown-item" %>
 

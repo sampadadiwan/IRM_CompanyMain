@@ -20,19 +20,6 @@ class FundsController < ApplicationController
     if params[:report].present? && params[:report] == "generate_reports"
       XlReportJob.perform_later(@fund.id, current_user.id)
       redirect_to fund_path(@fund), notice: "Report generation started, please check back in a few mins. Your report will be generated in the 'Fund Reports' folder."
-    elsif params[:report].present? && params[:report].split('/').last.casecmp?("sebi_report")
-      if @fund.documents.where("documents.name LIKE ?", "SEBI Report%").present?
-        doc = @fund.documents.where("documents.name LIKE ?", "SEBI Report%").last
-        redirect_to document_path(doc)
-      else
-        FundReportJob.perform_later(@fund.entity_id, @fund.id, "SEBI Report", Time.zone.today - 3.months, Time.zone.today, current_user.id)
-        redirect_to fund_path(@fund), notice: "SEBI Report generation started, please check back in a few mins"
-      end
-    else
-      @fund_report = FundReport.find(params[:fund_report_id]) if params[:fund_report_id].present?
-      @fund_report ||= FundReport.where(fund_id: @fund.id, name: params[:report].split('/').last.camelize).last
-      @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Fund Reports': fund_reports_path(fund_id: @fund.id), "#{params[:report].split('/').last.camelize}": report_fund_path(@fund, fund_report_id: @fund_report.id, report: params[:report].to_s) } if @fund_report.present?
-      render "/funds/#{params[:report]}"
     end
   end
 

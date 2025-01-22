@@ -1,0 +1,25 @@
+<%  fund_report ||= @fund_report
+    data = fund_report&.data
+%>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h4 mb-0 text-gray-800" style="width:100%">Half-yearly valuation<%= "(#{fund_report.start_date.strftime("%-d %b, %Y")} - #{fund_report.end_date.strftime("%-d %b, %Y")})" %></h1>
+    <span>
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Actions
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                    <%= button_to "Regenerate", regenerate_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).regenerate? %>
+                    <%= button_to "Download", download_page_fund_report_path(id: fund_report.id, single: true),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Download (All Funds)", download_page_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Delete", fund_report, method: :delete, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(fund_report).destroy? %>
+
+                </div>
+            </div>
+        </div>
+    </span>
+</div>
