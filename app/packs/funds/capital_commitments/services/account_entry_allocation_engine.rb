@@ -1,7 +1,7 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, tag_list: nil, run_allocations: true, explain: false, generate_soa: false, template_name: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
+  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, tag_list: nil, run_allocations: true, explain: false, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
@@ -9,7 +9,7 @@ class AccountEntryAllocationEngine
     @run_allocations = run_allocations
     @explain = explain
     @generate_soa = generate_soa
-    @template_name = template_name
+    @template_id = template_id
     @fund_ratios = fund_ratios
     @sample = sample
     @rule_for = rule_for
@@ -60,7 +60,7 @@ class AccountEntryAllocationEngine
     end
 
     @helper.generate_fund_ratios if @fund_ratios
-    @helper.generate_soa(@template_name) if @generate_soa
+    @helper.generate_soa(@template_id) if @generate_soa
   end
 
   def run_formula(fund_formula, fund_unit_settings)

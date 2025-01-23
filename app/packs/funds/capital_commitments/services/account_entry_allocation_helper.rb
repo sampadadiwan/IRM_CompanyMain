@@ -33,8 +33,8 @@ class AccountEntryAllocationHelper
   end
 
   # generate the SOAs if the user has requested it, kick off SOA generation jobs
-  def generate_soa(template_name)
-    CapitalCommitmentSoaJob.perform_later(@fund.id, nil, @start_date.to_s, @end_date.to_s, @user_id, template_name:)
+  def generate_soa(template_id)
+    CapitalCommitmentSoaJob.perform_later(@fund.id, nil, @start_date.to_s, @end_date.to_s, @user_id, template_id:)
     msg = "Done generating SOA for #{@start_date} - #{@end_date}"
     Rails.logger.info msg
     notify(msg, :success, @user_id)
