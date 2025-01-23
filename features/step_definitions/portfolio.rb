@@ -289,22 +289,24 @@ Given('there is an investment instrument for the portfolio company {string}') do
 end
 
 Given('The user generates all fund reports for the fund') do
-  visit(fund_path(@fund))
-  click_button("Sebi Reports")
-  click_link("All Reports")
-  click_link("New Fund Report")
-  select(@fund.name, from: "fund_report_fund_id")
-  select("All", from: "fund_report_name")
-  fill_in('fund_report_start_date', with: "2020-01-01", wait: 100)
-  fill_in('fund_report_end_date', with: "2024-01-01", wait: 100)
-  click_button("Save")
-  sleep(2)
+  %w[CorpusDetails InformationOnInvestments InfoOnInvestors SEBIReport].each do |report_name|
+    visit(fund_path(@fund))
+    click_button("Fund Reports")
+    click_link("All Reports")
+    click_link("New Fund Report")
+    select(@fund.name, from: "fund_report_fund_id")
+    select(report_name, from: "fund_report_name")
+    fill_in('fund_report_start_date', with: "2020-01-01", wait: 100)
+    fill_in('fund_report_end_date', with: "2024-01-01", wait: 100)
+    click_button("Save")
+    sleep(2)
+  end
 end
 
 Then('There should be {string} reports created') do |string|
   expect(page).to have_content("Fund report will be generated, please check back in a few mins")
   FundReport.where(fund_id: @fund.id).count.should == string.to_i
-  FundReportJob::ALL_REPORT_JOBS.each do |report_name|
+  SebiReportJob::ALL_REPORT_JOBS.each do |report_name|
     FundReport.where(fund_id: @fund.id).pluck(:name).include?(report_name).should == true
   end
 end
@@ -482,10 +484,10 @@ Given('I add preview documents for the aggregate portfolio investment') do
   fill_in('document_tag_list', with: "test, preview")
   attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
   sleep(0.5)
-  
+
   click_on("Save")
 
-  
+
 end
 
 When('I go to aggregate portfolio investment preview') do

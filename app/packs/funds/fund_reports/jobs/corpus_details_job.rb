@@ -43,7 +43,7 @@ class CorpusDetailsJob
   def generate_excel_report(fund_id, _start_date, end_date, excel, single: false)
     primary_fund = Fund.find(fund_id)
 
-    sheet = excel.worksheet(FundReportJob::REPORT_TO_SHEET[REPORT_NAME])
+    sheet = excel.worksheet(SebiReportJob::REPORT_TO_SHEET[REPORT_NAME])
 
     funds = primary_fund.entity.funds
     funds = funds.where(id: fund_id) if single

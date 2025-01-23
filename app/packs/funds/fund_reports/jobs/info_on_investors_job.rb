@@ -38,7 +38,7 @@ class InfoOnInvestorsJob
 
   def generate_excel_report(fund_id, _start_date, end_date, excel, single: false)
     fund = Fund.find(fund_id)
-    sheet1 = excel.worksheet(FundReportJob::REPORT_TO_SHEET[REPORT_NAME])
+    sheet1 = excel.worksheet(SebiReportJob::REPORT_TO_SHEET[REPORT_NAME])
     sheet2 = excel.worksheet(SHEET_2_NAME)
     sheet3 = excel.worksheet(SHEET_3_NAME)
 

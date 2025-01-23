@@ -1,5 +1,5 @@
 class FundReportsController < ApplicationController
-  before_action :set_fund_report, only: %i[show edit update destroy regenerate download_page]
+  before_action :set_fund_report, only: %i[edit update destroy regenerate download_page]
 
   # GET /fund_reports or /fund_reports.json
   def index
@@ -18,7 +18,26 @@ class FundReportsController < ApplicationController
   end
 
   # GET /fund_reports/1 or /fund_reports/1.json
-  def show; end
+  def show
+    if params[:report].present? && params[:fund_id].present?
+      @fund = Fund.find(params[:fund_id])
+      doc = @fund.documents.where("documents.name LIKE ?", "#{params[:report].titleize}%").last
+      if doc.present?
+        authorize(doc)
+        redirect_to document_path(doc)
+      else
+        fund_report = FundReport.new(fund_id: @fund.id, entity_id: @fund.entity_id)
+        authorize(fund_report)
+        name = params[:report].titleize.casecmp?("SEBI Report") ? "SEBI Report" : "CRISIL Report"
+        FundReportJob.perform_later(@fund.entity_id, @fund.id, name, Time.zone.today - 3.months, Time.zone.today, current_user.id)
+        redirect_to request.referer, notice: "#{name} generation started, please check back in a few mins"
+      end
+    else
+      @fund_report = FundReport.find(params[:id])
+      @bread_crumbs = { Funds: funds_path, "#{@fund_report.fund.name}": fund_path(@fund_report.fund), 'Fund Reports': fund_reports_path(fund_id: @fund_report.fund.id), "#{@fund_report.name.titleize}": fund_report_path(@fund_report, view: params[:view].to_s) }
+      authorize @fund_report
+    end
+  end
 
   # GET /fund_reports/new
   def new
@@ -27,6 +46,7 @@ class FundReportsController < ApplicationController
     @fund_report.entity_id = current_user.entity_id
     @fund_report.start_date ||= Time.zone.today - 3.months
     @fund_report.end_date ||= Time.zone.today
+    @bread_crumbs = { Funds: funds_path, "#{@fund_report.fund.name}": fund_path(@fund_report.fund), 'Fund Reports': fund_reports_path(fund_id: @fund_report.fund.id), New: nil }
     authorize @fund_report
   end
 
@@ -36,7 +56,7 @@ class FundReportsController < ApplicationController
   # POST /fund_reports or /fund_reports.json
   def create
     @fund_report = FundReport.new(fund_report_params)
-    @fund_report.entity_id = @fund_report.fund.entity_id
+    @fund_report.entity_id = @fund_report.fund.present? ? @fund_report.fund.entity_id : current_user.entity_id
     authorize @fund_report
 
     respond_to do |format|
@@ -44,7 +64,7 @@ class FundReportsController < ApplicationController
                                      @fund_report.start_date, @fund_report.end_date, current_user.id)
 
         format.html do
-          if @fund_report.name.casecmp?("sebi report")
+          if %w[sebireport crisilreport].include? @fund_report.name.downcase.delete("")
             # show notice and dont redirect
             redirect_to @fund_report.fund, notice: "Fund report will be generated, please check back in a few mins."
           else
@@ -107,7 +127,7 @@ class FundReportsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_fund_report
     @fund_report = FundReport.find(params[:id])
-    @bread_crumbs = { Funds: funds_path, "#{@fund_report.fund.name}": fund_path(@fund_report.fund), "#{@fund_report.name}": fund_report_path(@fund_report) }
+    @bread_crumbs = { Funds: funds_path, "#{@fund_report.fund.name}": fund_path(@fund_report.fund), 'Fund Reports': fund_reports_path(fund_id: @fund_report.fund.id), "#{@fund_report.name.titleize}": fund_report_path(@fund_report, view: params[:view].to_s) }
     authorize @fund_report
   end
 

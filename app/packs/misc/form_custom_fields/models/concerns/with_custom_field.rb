@@ -13,9 +13,15 @@ module WithCustomField
     before_create :setup_form_type, if: -> { respond_to?(:form_type_id) && form_type.blank? }
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
-    scope :search_custom_fields, lambda { |key, value|
-      where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{key}", value)
-    }
+    if Rails.env.test?
+      scope :search_custom_fields, lambda { |key, value|
+        where("json_extract(json_fields, ?) = ?", "$.#{key}", value)
+      }
+    else
+      scope :search_custom_fields, lambda { |key, value|
+        where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{key}", value)
+      }
+    end
 
     # This is search for Json Fields via ransack
     # Useage:  InvestorKyc.ransack(InvestorKyc.json_fields_query("json_fields.nationality_cont" => "India")).result

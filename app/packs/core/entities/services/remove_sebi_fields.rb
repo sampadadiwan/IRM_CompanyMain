@@ -10,7 +10,7 @@ class RemoveSebiFields < SebiFieldsActions
   end
 
   def remove_sebi_custom_fields_from_all_classes(ctx, entity:, **)
-    %w[InvestorKyc IndividualKyc NonIndividualKyc InvestmentInstrument].each do |class_name|
+    %w[IndividualKyc NonIndividualKyc InvestmentInstrument].each do |class_name|
       remove_custom_fields_to_form(ctx, class_name, entity)
     end
   end

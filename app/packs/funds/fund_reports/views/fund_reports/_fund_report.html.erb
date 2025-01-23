@@ -1,6 +1,7 @@
 <tr id="<%= dom_id fund_report %>">
   <td>
-    <%= link_to fund_report.name, report_fund_path(fund_report.fund, fund_report_id: fund_report.id, report: "sebi_reports/#{fund_report.name.underscore}") %>
+    <%= link_to fund_report.name, fund_report_path(fund_report, view: "report_view") %>
+    <%= fund_report_path(fund_report, view: "report_view") %>
   </td>
   <td>
     <%= link_to fund_report.fund %>
@@ -12,6 +13,6 @@
     <%= l fund_report.end_date %>
   </td>
   <td>
-    <%= link_to "Show", fund_report , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Show", fund_report_path(fund_report, view: "report_view") , {class: "btn btn-outline-primary"}%>
   </td>
 </tr>

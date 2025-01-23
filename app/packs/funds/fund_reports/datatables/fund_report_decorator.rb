@@ -4,7 +4,7 @@ class FundReportDecorator < ApplicationDecorator
   end
 
   def name
-    h.link_to object.name, h.report_fund_path(object.fund, fund_report_id: object.id, report: "sebi_reports/#{object.name.underscore}")
+    h.link_to object.name, h.fund_report_path(fund_report, view: "report_view")
   end
 
   # Just an example of a complex method you can add to you decorator
@@ -12,7 +12,7 @@ class FundReportDecorator < ApplicationDecorator
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions
   def dt_actions
     links = []
-    links << h.link_to('Show', h.report_fund_path(object.fund, fund_report_id: object.id, report: "sebi_reports/#{object.name.underscore}"), class: "btn btn-outline-primary")
+    links << h.link_to('Show', h.fund_report_path(fund_report, view: "report_view"), class: "btn btn-outline-primary")
     links << h.link_to('Edit', h.edit_fund_report_path(object), class: "btn btn-outline-success") if h.policy(object).update?
     h.safe_join(links, '')
   end
