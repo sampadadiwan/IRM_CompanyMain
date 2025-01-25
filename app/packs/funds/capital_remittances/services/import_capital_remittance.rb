@@ -1,5 +1,5 @@
 class ImportCapitalRemittance < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees)", "Capital Fees", "Other Fees", "Remittance Date", "Verified", "Folio No"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees, Folio Currency)", "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)", "Call Amount (Inclusive Of Capital Fees, Fund Currency)", "Capital Fees (Fund Currency)", "Other Fees (Fund Currency)", "Remittance Date", "Verified", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -54,9 +54,15 @@ class ImportCapitalRemittance < ImportUtil
   end
 
   def setup_amounts(user_data, capital_remittance, _fund)
-    capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees)"]
-    capital_remittance.folio_capital_fee = user_data["Capital Fees"]
-    capital_remittance.folio_other_fee = user_data["Other Fees"]
+    # Set the folio currency amounts based on user data
+    capital_remittance.folio_call_amount = user_data["Call Amount (Inclusive Of Capital Fees, Folio Currency)"]
+    capital_remittance.folio_capital_fee = user_data["Capital Fees (Folio Currency)"]
+    capital_remittance.folio_other_fee = user_data["Other Fees (Folio Currency)"]
+
+    # Sometimes we also get the amounts in fund currency
+    capital_remittance.call_amount = user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"] if user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"].present?
+    capital_remittance.capital_fee = user_data["Capital Fees (Fund Currency)"] if user_data["Capital Fees (Fund Currency)"].present?
+    capital_remittance.other_fee = user_data["Other Fees (Fund Currency)"] if user_data["Other Fees (Fund Currency)"].present?
   end
 
   # Method to retrieve necessary inputs from user data and import upload

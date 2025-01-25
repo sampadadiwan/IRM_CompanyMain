@@ -358,10 +358,15 @@
           remittance.investor.investor_name.should == user_data["Investor"].strip
           remittance.fund.name.should == user_data["Fund"]
           remittance.capital_call.name.should == user_data["Capital Call"]
-          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees)"].to_f * 100
-          remittance.capital_fee_cents.should == user_data["Capital Fees"].to_f * 100
-          remittance.other_fee_cents.should == user_data["Other Fees"].to_f * 100
-          remittance.collected_amount_cents.should == user_data["Collected Amount"].to_f * 100
+          
+          remittance.folio_call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees, Folio Currency)"].to_f * 100
+          remittance.folio_capital_fee_cents.should == user_data["Capital Fees (Folio Currency)"].to_f * 100
+          remittance.folio_other_fee_cents.should == user_data["Other Fees (Folio Currency)"].to_f * 100
+
+          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"].to_f * 100 if user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"].present?
+          remittance.capital_fee_cents.should == user_data["Capital Fees (Fund Currency)"].to_f * 100 if user_data["Capital Fees (Fund Currency)"].present?
+          remittance.other_fee_cents.should == user_data["Other Fees (Fund Currency)"].to_f * 100 if user_data["Other Fees (Fund Currency)"].present?
+
           remittance.status.should == "Pending"
           remittance.verified.should == (user_data["Verified"] == "Yes")
         end
@@ -992,7 +997,8 @@ Then('the capital commitments must have the data in the sheet') do
     cc.commitment_type.should == user_data["Type"]
     cc.commitment_date.should == Date.parse(user_data["Commitment Date"].to_s)
     cc.folio_currency.should == user_data["Folio Currency"]
-    cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
+    cc.folio_committed_amount_cents.should == user_data["Committed Amount (Folio Currency)"].to_i * 100
+    cc.committed_amount_cents.should == user_data["Committed Amount (Fund Currency)"].to_i * 100 if user_data["Committed Amount (Fund Currency)"].present?
     cc.folio_id.should == user_data["Folio No"].to_s
     cc.esign_emails.should == user_data["Investor Signatory Emails"]
     cc.import_upload_id.should == ImportUpload.last.id
@@ -1575,16 +1581,24 @@ Then('the capital remittance payments must have the data in the sheet') do
       cc.fund.name.should == user_data["Fund"]
       cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
       cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
-      cc.folio_amount_cents.should == user_data["Amount"].to_i * 100
+      cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_i * 100
+      
+      capital_commitment = cc.capital_remittance.capital_commitment
+      capital_commitment.folio_currency.should == user_data["Currency"]
+
+      if user_data["Amount (Fund Currency)"].present?
+        cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_i * 100 
+      else
+        amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, cc.payment_date).rate) : cc.amount_cents
+        cc.amount_cents.should == amount
+      end
+
+
       cc.reference_no.should == user_data["Reference No"].to_s
       cc.payment_date.should == user_data["Payment Date"]
       cc.import_upload_id.should == ImportUpload.last.id
 
-      capital_commitment = cc.capital_remittance.capital_commitment
-      capital_commitment.folio_currency.should == user_data["Currency"]
-
-      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, cc.payment_date).rate) : cc.amount_cents
-      cc.amount_cents.should == amount
+      
       # sleep(30)
     end
 end

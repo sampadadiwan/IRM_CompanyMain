@@ -113,21 +113,29 @@ module UpdateInvestor
   # Some folder names have the investor name in it, so if that changes, we need to change folder names
   def update_folder_names
     capital_commitments.each do |cc|
+      next unless cc.document_folder
+
       cc.document_folder.name = cc.folder_path.split("/")[-1]
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
     capital_remittances.each do |cc|
+      next unless cc.document_folder
+
       cc.document_folder.name = cc.folder_path.split("/")[-1]
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
     capital_distribution_payments.each do |cc|
+      next unless cc.document_folder
+
       cc.document_folder.name = cc.folder_path.split("/")[-1]
       cc.document_folder.set_defaults
       cc.document_folder.save
     end
     investor_kycs.each do |kyc|
+      next unless kyc.document_folder
+
       kyc.document_folder.name = kyc.folder_path.split("/")[-1]
       kyc.document_folder.set_defaults
       kyc.document_folder.save

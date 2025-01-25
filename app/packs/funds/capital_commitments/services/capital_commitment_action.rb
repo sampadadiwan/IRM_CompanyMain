@@ -1,4 +1,8 @@
 class CapitalCommitmentAction < Trailblazer::Operation
+  def set_orig_amounts(_ctx, capital_commitment:, **)
+    capital_commitment.set_orig_amounts
+  end
+
   def set_committed_amount(_ctx, capital_commitment:, **)
     capital_commitment.set_committed_amount
   end

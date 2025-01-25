@@ -36,8 +36,10 @@ class CapitalRemittancePayment < ApplicationRecord
   validates :reference_no, length: { maximum: 40 }
 
   def set_amount
-    # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
-    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency, folio_amount_cents, payment_date)
+    if amount_cents.zero?
+      # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates. In imports we have the amount_cents also already setup, so no conversion is needed
+      self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency, folio_amount_cents, payment_date)
+    end
   end
 
   # Called after create, and also after remittance is verified (CapitalRemittanceVerify)

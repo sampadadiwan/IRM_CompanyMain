@@ -7,13 +7,23 @@ module CapitalRemittanceFees
     if capital_call.call_basis == "Upload"
 
       # For uploads, convert fees from folio_currency to fund_currency
-      self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, remittance_date) : 0
-      self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, remittance_date) : 0
+      if capital_fee_cents.zero?
+        self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, remittance_date) : 0
+      end
+      if other_fee_cents.zero?
+        self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, remittance_date) : 0
+      end
 
     else
+
       # For other call bases, convert fees from fund_currency to folio_currency
-      self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, remittance_date) : 0
-      self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, remittance_date) : 0
+      if folio_capital_fee_cents.zero?
+        self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, remittance_date) : 0
+      end
+      if folio_other_fee_cents.zero?
+        self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, remittance_date) : 0
+      end
+
     end
   end
 

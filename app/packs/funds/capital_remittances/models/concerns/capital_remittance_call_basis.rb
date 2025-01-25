@@ -67,9 +67,11 @@ module CapitalRemittanceCallBasis
   # This method assumes the folio_call_amount already includes capital fees.
   def call_basis_upload
     # Convert the adjusted folio call amount to the fund's currency.
-    self.call_amount_cents = convert_currency(
-      capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
-    )
+    if call_amount_cents.zero?
+      self.call_amount_cents = convert_currency(
+        capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date
+      )
+    end
 
     self.computed_amount_cents = call_amount_cents - capital_fee_cents
 

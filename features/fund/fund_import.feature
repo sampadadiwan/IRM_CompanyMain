@@ -95,7 +95,7 @@ Scenario Outline: Import capital remittance
   And Given I upload an investors file for the fund
   Given the fund has capital call template
   Given the investors are added to the fund
-  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   When I create a new capital call "<call>"
   Then I should see the capital call details
   Then when the capital call is approved

@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount (Folio Currency)", "Currency", "Amount (Fund Currency)", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
   step nil, delete: :create_custom_fields
 
@@ -64,10 +64,11 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
-    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, _update_only = inputs
+    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, amount_cents, _update_only = inputs
     capital_remittance_payment.assign_attributes(entity_id: fund.entity_id, fund:,
                                                  capital_remittance:,
                                                  folio_amount_cents:,
+                                                 amount_cents:,
                                                  notes: user_data["Notes"],
                                                  reference_no: user_data["Reference No"],
                                                  payment_date: user_data["Payment Date"])
@@ -103,11 +104,12 @@ class ImportCapitalRemittancePayment < ImportUtil
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
     raise "Capital Remittance not found" unless capital_remittance
 
-    folio_amount_cents = user_data["Amount"].to_d * 100
+    folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
+    amount_cents = user_data["Amount (Fund Currency)"].present? ? user_data["Amount (Fund Currency)"].to_d * 100 : 0
     folio_currency = user_data["Currency"]
     update_only = user_data["Update Only"]
 
-    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, update_only]
+    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, amount_cents, update_only]
   end
 
   def defer_counter_culture_updates

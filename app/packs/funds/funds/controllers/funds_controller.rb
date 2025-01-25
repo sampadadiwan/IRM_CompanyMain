@@ -177,7 +177,7 @@ class FundsController < ApplicationController
           redirect_back(fallback_location: root_path) and return
         end
       end
-      template_name = Document.find(template_id).name
+      template_name = template_id ? Document.find(template_id).name : nil
       allocation_run = AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
     rescue StandardError => e
       Rails.logger.debug { "allocate: Errors #{e.message}" }
