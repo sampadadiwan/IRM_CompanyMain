@@ -386,9 +386,9 @@ class AccountEntryAllocationEngine
       ae.entity_id = @fund.entity_id
       # We also need to find the exchange rate to convert between the master fund and the feeder fund
       exchange_rate ||= @fund.entity.exchange_rates.where(
-                                      from: @fund.master_fund.currency, 
-                                      to: @fund.currency
-                                    ).latest.last
+        from: @fund.master_fund.currency,
+        to: @fund.currency
+      ).latest.last
 
       begin
         create_account_entry(ae, fund_formula, capital_commitment, master_fund_account_entry, binding)

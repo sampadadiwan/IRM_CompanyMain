@@ -14,4 +14,5 @@ class FundReportJob < ApplicationJob
       end
     end
   end
+  # rubocop:enable Metrics/ParameterLists
 end
