@@ -82,6 +82,8 @@ class AccountEntryAllocationEngine
       allocate_account_entries(fund_formula, fund_unit_settings, "name")
     when "AllocateAccountEntry-EntryType"
       allocate_account_entries(fund_formula, fund_unit_settings, "entry_type")
+    when "AllocateMasterFundAccountEntry"
+      allocate_master_fund_account_entries(fund_formula, fund_unit_settings, "name")
     when "CumulateAccountEntry"
       cumulate_account_entries(fund_formula, fund_unit_settings)
     when "GenerateAccountEntry"
@@ -342,13 +344,69 @@ class AccountEntryAllocationEngine
     Rails.logger.debug { "#{fund_formula.name}: Inserted #{count} roll_up records" }
   end
 
+  # This is allicable only for feeder funds
+  # Allocate the master fund account entries to the various capital commitments in the feeder fund
+  # The master fund, has a commitment for each unit_type from the feeder
+  # In the master fund, this commitment_in_master is allocated expenses, fees etc, when the allocations run within the master fund
+  # Here in the feeder fund, we want to allocate the above expenses, fees etc to the various commitments in the feeder fund for that unit type, i.e those that belong to commitment_in_master
+  def allocate_master_fund_account_entries(fund_formula, fund_unit_settings, name_or_entry_type = "name")
+    Rails.logger.debug { "allocate_master_fund_account_entries  #{fund_formula.name}" }
+
+    master_fund_account_entries_cache = {}
+
+    fund_formula.commitments(@end_date, @sample).each_with_index do |capital_commitment, idx|
+      # Check if we have a master fund account entry for this unit type
+      master_fund_account_entry = master_fund_account_entries_cache[capital_commitment.unit_type]
+      fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
+
+      if master_fund_account_entry.blank?
+
+        # Get the commitment_in_master for this unit type
+        commitment_in_master = capital_commitment.fund.commitments_in_master.where(unit_type: capital_commitment.unit_type).first
+        # Get the master fund account entry for this unit type from the master fund
+        master_fund_account_entry = commitment_in_master.account_entries.where(
+          name: fund_formula.name,
+          reporting_date: @start_date..@end_date,
+          cumulative: false,
+          commitment_type: fund_formula.commitment_type
+        ).first
+
+        # Cache it
+        master_fund_account_entries_cache[capital_commitment.unit_type] = master_fund_account_entry
+      end
+
+      Rails.logger.debug { "Allocating #{master_fund_account_entry} to #{capital_commitment}" }
+
+      # This is used to generate instance variables from the cached computed values
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
+
+      # Allocate this master_fund_account_entry to this capital_commitment
+      ae = master_fund_account_entry.dup
+      ae.fund_id = @fund.id
+      ae.entity_id = @fund.entity_id
+      # We also need to find the exchange rate to convert between the master fund and the feeder fund
+      exchange_rate ||= @fund.entity.exchange_rates.where(
+                                      from: @fund.master_fund.currency, 
+                                      to: @fund.currency
+                                    ).latest.last
+
+      begin
+        create_account_entry(ae, fund_formula, capital_commitment, master_fund_account_entry, binding)
+      rescue Exception => e
+        raise "Error in #{fund_formula.name} for #{capital_commitment} #{master_fund_account_entry}: #{e.message}"
+      end
+
+      @helper.notify("Completed #{@formula_index + 1} of #{@formula_count}: #{fund_formula.name} : #{idx + 1} commitments", :success, @user_id) if ((idx + 1) % 10).zero?
+    end
+  end
+
   # ALlocate account entries of the fund, to the varios capital commitments in the fund based on formulas
   # E.x fund_account_entry.amount_cents * capital_commitment.properties['opening_investable_capital_percentage'] / 100.0
   def allocate_account_entries(fund_formula, fund_unit_settings, name_or_entry_type = "name")
     Rails.logger.debug { "allocate_account_entries  #{fund_formula.name}" }
     # Compute the allocation
 
-    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date..).where(reporting_date: ..@end_date).where(commitment_type: fund_formula.commitment_type)
+    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date..@end_date).where(commitment_type: fund_formula.commitment_type)
 
     account_entries = name_or_entry_type == "name" ? account_entries.where(name: fund_formula.name) : account_entries.where(entry_type: fund_formula.name)
 

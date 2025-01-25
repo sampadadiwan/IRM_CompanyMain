@@ -110,12 +110,10 @@ class CashFlowJob
     data.sort_by { |key, _| Date.strptime(key, "%d-%m-%Y") }.to_h
   end
 
-  # rubocop:disable Metrics/MethodLength
   def get_row_data(fund)
     scheme_name = fund.name
     rows = []
     data = table_data(fund)
-    # rubocop:disable Metrics/BlockLength
     data.each do |date, values|
       if values["Remittance Payments Cash Flow"]["Value"].present?
         row = []
@@ -161,6 +159,4 @@ class CashFlowJob
     end
     rows
   end
-  # rubocop:enable Metrics/MethodLength
-  # rubocop:enable Metrics/BlockLength
 end

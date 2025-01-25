@@ -30,7 +30,7 @@
 
         <div class="form-group">
           <%= form.label :rule_type %>
-          <%= form.select :rule_type, ["AllocateAccountEntry-Name", "AllocateAccountEntry-EntryType", "AllocatePortfolio", "AllocatePortfolioInvestment", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
+          <%= form.select :rule_type, FundFormula::TYPES, {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
         </div>
 
 

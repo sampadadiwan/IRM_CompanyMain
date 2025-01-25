@@ -246,7 +246,7 @@ class Fund < ApplicationRecord
     category == "Category III"
   end
 
-  def commitments_from_feeder
+  def commitments_in_master
     master_fund.capital_commitments.where(feeder_fund_id: id) if master_fund.present?
   end
 end

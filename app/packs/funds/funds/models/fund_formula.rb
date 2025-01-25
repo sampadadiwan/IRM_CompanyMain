@@ -2,6 +2,8 @@ class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable.new
 
+  TYPES = %w[AllocateMasterFundAccountEntry AllocateAccountEntry-Name AllocateAccountEntry-EntryType AllocatePortfolio AllocatePortfolioInvestment GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage].sort.freeze
+
   belongs_to :fund, optional: true, touch: true
   belongs_to :entity, optional: true
   acts_as_list scope: %i[fund_id], column: :sequence
