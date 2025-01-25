@@ -18,8 +18,8 @@
         </thead>
 
         <tbody>
-        <% @fund.capital_commitments.includes(:documents).each do |commitment|%>
-            <% commitment.documents.sent_for_esign.each do |doc| %>
+        <% @fund.capital_commitments.includes(:investor).each do |commitment|%>
+            <% commitment.documents.includes(:e_signatures).sent_for_esign.each do |doc| %>
                 <%= render "documents/capital_commitment_esign_status",document: doc %>
             <% end %>
         <% end %>

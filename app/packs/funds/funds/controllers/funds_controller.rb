@@ -20,6 +20,8 @@ class FundsController < ApplicationController
     if params[:report].present? && params[:report] == "generate_reports"
       XlReportJob.perform_later(@fund.id, current_user.id)
       redirect_to fund_path(@fund), notice: "Report generation started, please check back in a few mins. Your report will be generated in the 'Fund Reports' folder."
+    else
+      render "/funds/#{params[:report]}"
     end
   end
 
