@@ -38,11 +38,13 @@ class AccountEntryAllocationHelper
     msg = "Done generating SOA for #{@start_date} - #{@end_date}"
     Rails.logger.info msg
     notify(msg, :success, @user_id)
+    true
   rescue Exception => e
     Rails.logger.error e.backtrace
     msg = "Error generating SOA for #{@start_date} - #{@end_date}: #{e.message}"
     Rails.logger.error msg
     notify(msg, :danger, @user_id)
+    false
   end
 
   # generate the Fund ratios if the user has requested it, kick off FundRatiosJob
@@ -51,11 +53,13 @@ class AccountEntryAllocationHelper
     msg = "Done generating fund ratios for #{@start_date} - #{@end_date}"
     Rails.logger.info msg
     notify(msg, :success, @user_id)
+    true
   rescue Exception => e
     Rails.logger.error e.backtrace
     msg = "Error generating fund ratios for #{@start_date} - #{@end_date}: #{e.message}"
     Rails.logger.error msg
     notify(msg, :danger, @user_id)
+    false
   end
 
   def notify(message, level, user_id)

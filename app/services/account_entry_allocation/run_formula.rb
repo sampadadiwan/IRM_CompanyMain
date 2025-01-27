@@ -1,0 +1,57 @@
+module AccountEntryAllocation
+  ############################################################
+  # 2. RunFormula Operation
+  ############################################################
+  class RunFormula < AllocationBaseOperation
+    step :run_formula
+
+    def run_formula(ctx, **)
+      fund               = ctx[:fund]
+      fund_formula       = ctx[:fund_formula]
+      ctx[:bulk_insert_records] = []
+
+      existing_record_count = fund.account_entries.generated.count
+
+      # Decide the "rollup name" and "rollup entry type"
+      rollup_name = fund_formula.name
+      rollup_entry_type = fund_formula.entry_type
+
+      Rails.logger.debug { "Running formula #{fund_formula.to_json}" }
+
+      # Run sub-operations based on rule_type
+      case fund_formula.rule_type
+      when "GenerateCustomField"
+        AccountEntryAllocation::GenerateCustomFields.wtf?(ctx)
+      when "AllocateAccountEntry", "AllocateAccountEntry-Name"
+        AccountEntryAllocation::AllocateAccountEntries.wtf?(ctx.merge(name_or_entry_type: "name"))
+      when "AllocateAccountEntry-EntryType"
+        AccountEntryAllocation::AllocateAccountEntries.wtf?(ctx.merge(name_or_entry_type: "entry_type"))
+      when "AllocateMasterFundAccountEntry"
+        AccountEntryAllocation::AllocateMasterFundAccountEntries.wtf?(ctx.merge(name_or_entry_type: "name"))
+      when "CumulateAccountEntry"
+        AccountEntryAllocation::CumulateAccountEntries.wtf?(ctx)
+      when "GenerateAccountEntry"
+        AccountEntryAllocation::GenerateAccountEntries.wtf?(ctx)
+      when "AllocatePortfolio"
+        AccountEntryAllocation::AllocateAggregatePortfolios.wtf?(ctx)
+      when "AllocatePortfolioInvestment"
+        AccountEntryAllocation::AllocatePortfolioInvestments.wtf?(ctx)
+        # For portfolio investments, override the rollup name
+        rollup_name = nil
+        rollup_entry_type = fund_formula.name
+      when "Percentage"
+        AccountEntryAllocation::ComputeCustomPercentage.wtf?(ctx)
+      end
+
+      # After the formula method sets up bulk_insert_records, do a bulk insert
+      sub_ctx = ctx.merge(
+        existing_record_count: existing_record_count,
+        rollup_name: rollup_name,
+        rollup_entry_type: rollup_entry_type
+      )
+      AccountEntryAllocation::BulkInsertData.wtf?(sub_ctx)
+
+      true
+    end
+  end
+end

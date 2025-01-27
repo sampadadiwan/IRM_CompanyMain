@@ -102,6 +102,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/funds/funds/jobs/fund_ratios_job.rb'
     - 'app/packs/core/folders/jobs/folder_defaults_job.rb'
     - 'app/packs/core/base/jobs/backup_db_job.rb'
+    - 'app/services/account_entry_allocation/*'
     
 Rails/HasAndBelongsToMany:
   Exclude:
@@ -175,6 +176,7 @@ Metrics/CyclomaticComplexity:
     - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
     - 'app/packs/secondaries/offers/services/offer_search_service.rb'
     - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
+    - 'app/packs/funds/capital_remittances/services/import_capital_remittance_payment.rb'
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
@@ -216,6 +218,8 @@ Metrics/ParameterLists:
     - 'app/packs/core/documents/helpers/document_generator_base.rb'
     - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
     - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
+    - 'app/services/account_entry_allocation/engine.rb'
+    - 'app/services/account_entry_allocation/create_account_entry.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'
@@ -243,6 +247,7 @@ Metrics/MethodLength:
     - 'app/packs/funds/capital_distribution_payments/models/concern/capital_distribution_fees.rb'
     - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
     - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
+    - 'app/services/account_entry_allocation/*'
 
 Metrics/BlockNesting:
   Exclude:

@@ -10,7 +10,7 @@ class AccountEntryAllocationJob < ApplicationJob
       fund = Fund.find(fund_id)
       user = User.find(user_id)
       Audited.audit_class.as_user(user) do
-        AccountEntryAllocationEngine.new(fund, start_date, end_date, run_allocations:, explain:, user_id:, generate_soa:, rule_for:, tag_list:, template_id:, fund_ratios:, sample:, allocation_run_id:).run_formulas
+        AccountEntryAllocation::Engine.new(fund, start_date, end_date, run_allocations:, explain:, user_id:, generate_soa:, rule_for:, tag_list:, template_id:, fund_ratios:, sample:, allocation_run_id:).call
       end
     end
   end

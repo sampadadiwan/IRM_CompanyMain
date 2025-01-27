@@ -2,10 +2,14 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "FundFormula") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Sequence", "Name", "Template", "Execution Time (ms)", "Rule Type", "Rule For", "Commitment Type", "Formula", "Entry Type", "Rollup", "Enabled", "Tags"])
+  sheet.add_row(["Fund", "Sequence", "Name", "Template", "Execution Time (ms)", "Rule Type", "Rule For", "Commitment Type", "Formula", "Entry Type", "Generate YTD, Quarterly, Since Inception numbers", "Rollup", "Enabled", "Tags"])
 
   # Create entries for each item
   @fund_formulas.each do |fu|
-    sheet.add_row [fu.fund.name, fu.sequence, fu.name, fu.template_field_name, fu.execution_time, fu.rule_type, fu.rule_for, fu.commitment_type, fu.formula, fu.entry_type, fu.roll_up, fu.enabled, fu.tag_list]
+    roll_up = fu.roll_up ? "Yes" : "No"
+    generate_ytd_qtly = fu.generate_ytd_qtly ? "Yes" : "No"
+    enabled = fu.enabled ? "Yes" : "No"
+
+    sheet.add_row [fu.fund.name, fu.sequence, fu.name, fu.template_field_name, fu.execution_time, fu.rule_type, fu.rule_for, fu.commitment_type, fu.formula, fu.entry_type, generate_ytd_qtly, roll_up, enabled, fu.tag_list]
   end
 end

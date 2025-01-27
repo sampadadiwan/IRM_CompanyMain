@@ -75,6 +75,12 @@
         </div>
 
         <div class="form-group">
+            <%= form.label :generate_ytd_qtly, "Generate Additional Numbers" %>
+            <%= form.check_box :generate_ytd_qtly, class: "form-check-input"  %>
+            <small>Generate YTD, Quarterly, Since Inception numbers</small>
+        </div>
+
+        <div class="form-group">
             <%= form.label :roll_up %>
             <%= form.check_box :roll_up, class: "form-check-input" %>
             <small>Ensure that the entries are rolled up into an aggregate amount</small>

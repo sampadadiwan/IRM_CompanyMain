@@ -34,7 +34,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
     # Make the capital_remittance
-    fund, capital_remittance, folio_amount_cents, update_only = inputs
+    fund, _, _, _, capital_remittance, folio_amount_cents, _, _, update_only = inputs
     capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
                                                                 folio_amount_cents:,
@@ -64,7 +64,7 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
-    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, amount_cents, _update_only = inputs
+    fund, _, _, _, capital_remittance, folio_amount_cents, _, amount_cents, = inputs
     capital_remittance_payment.assign_attributes(entity_id: fund.entity_id, fund:,
                                                  capital_remittance:,
                                                  folio_amount_cents:,
@@ -94,24 +94,22 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     raise "Folio No or Virtual Bank Account must be specified" if folio_id.blank? && virtual_bank_account.blank?
 
-    if folio_id.present?
-      # Find the capital_commitment from either the folio_id or virtual_bank_account
-      capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
-      raise "Investor commitment not found for folio #{folio_id}" if capital_commitment.blank?
-    elsif virtual_bank_account.present?
-      capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first
-      raise "Investor commitment not found for virtual bank account #{virtual_bank_account}" if capital_commitment.blank?
-    end
+    # Find the capital_commitment from either the folio_id or virtual_bank_account
+    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first if folio_id
+    raise "Investor commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
+
+    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first if virtual_bank_account
+    raise "Investor commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
     raise "Capital Remittance not found" unless capital_remittance
 
     folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
     amount_cents = user_data["Amount (Fund Currency)"].present? ? user_data["Amount (Fund Currency)"].to_d * 100 : 0
-    user_data["Currency"]
+    folio_currency = user_data["Currency"]
     update_only = user_data["Update Only"]
 
-    [fund, capital_remittance, folio_amount_cents, amount_cents, update_only]
+    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, amount_cents, update_only]
   end
 
   def defer_counter_culture_updates

@@ -81,8 +81,8 @@ class FundFormula < ApplicationRecord
     variables.uniq
   end
 
-  def parse_statement(binding)
-    statement = formula
+  def parse_statement(binding, external_formula: nil)
+    statement = external_formula || formula
     buffer = Parser::Source::Buffer.new('(string)')
     buffer.source = statement
     ast = Parser::CurrentRuby.new.parse(buffer)
