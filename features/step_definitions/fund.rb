@@ -248,7 +248,7 @@
     inv = Investor.last
     @capital_commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(@capital_commitment, args)
-    result = CapitalCommitmentCreate.call(capital_commitment: @capital_commitment)
+    result = CapitalCommitmentCreate.call(capital_commitment: @capital_commitment)    
     result.success?.should == true
     puts "\n####CapitalCommitment####\n"
     puts @capital_commitment.to_json

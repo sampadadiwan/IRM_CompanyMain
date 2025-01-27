@@ -1,3 +1,11 @@
+V8.0.67
+#####################################
+6a963faf6 Ytd quarterly allocations (#702)
+73f9de29b Feeder fund ratios (#701)
+d99f8da66 Esign report render fix (#697)
+629eaac55 Import fund and folio amounts (#699)
+3f0caceda Fixed bug with kyc_doc_gen_job options being nil
+
 V8.0.65
 #####################################
 69b6d80af Deleted Remittance generation basis
