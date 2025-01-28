@@ -51,6 +51,7 @@ class SoaGenerator
 
     distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
     account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
+    fund_account_entries = capital_commitment.fund.account_entries.where(folio_id: nil).includes(:capital_commitment, :fund)
     fund_ratios = capital_commitment.fund_ratios.includes(:capital_commitment, :fund)
     adjustments = capital_commitment.commitment_adjustments.includes(:capital_commitment, :fund)
 
@@ -132,6 +133,10 @@ class SoaGenerator
       account_entries: TemplateDecorator.new(account_entries),
       account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
       account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
+
+      fund_account_entries: TemplateDecorator.new(fund_account_entries),
+      fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      fund_account_entries_before_end_date: TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date)),
 
       fund_ratios: TemplateDecorator.decorate_collection(fund_ratios),
       fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
