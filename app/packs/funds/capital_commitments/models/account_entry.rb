@@ -60,7 +60,7 @@ class AccountEntry < ApplicationRecord
     # Since the account entry amount is always in the fund currency, we compute the converted folio_amount based on exchange rates.
     if folio_amount_cents.zero?
       self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
-                                               amount_cents, reporting_date)
+                                                 amount_cents, reporting_date)
     end
   end
 
