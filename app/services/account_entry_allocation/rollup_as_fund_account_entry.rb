@@ -16,7 +16,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly
         # Add the YTD and Quarterly rollups
         AccountEntryAllocation::CreateAccountEntry::ADDITONAL_AE.each do |ae_name|
-          rollups_for_name << ae_name + " " + fund_formula.name
+          rollups_for_name << ("#{ae_name} #{fund_formula.name}")
         end
       end
 
@@ -59,6 +59,7 @@ module AccountEntryAllocation
         entry_type: fund_formula.entry_type,
         generated: true,
         cumulative: true,
+        rule_for: fund_formula.rule_for,
         commitment_type: fund_formula.commitment_type,
         amount_cents: sum_cents
       )
