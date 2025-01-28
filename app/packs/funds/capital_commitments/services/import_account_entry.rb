@@ -1,5 +1,5 @@
 class ImportAccountEntry < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount", "Notes", "Type", "Rule For"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Type", "Rule For"].freeze
   attr_accessor :account_entries
 
   def standard_headers
@@ -15,7 +15,7 @@ class ImportAccountEntry < ImportUtil
     Rails.logger.debug { "Processing account_entry #{user_data}" }
 
     # Get the Fund
-    folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
+    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
 
     if fund && ((investor_name && capital_commitment) || investor_name.blank?)
       # ret_val = prepare_record(user_data, import_upload, custom_field_headers)
@@ -27,12 +27,12 @@ class ImportAccountEntry < ImportUtil
   end
 
   def save_account_entry(user_data, import_upload, custom_field_headers)
-    folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor, rule_for = get_fields(user_data, import_upload)
+    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for = get_fields(user_data, import_upload)
 
     if fund
 
       # Note this could be an entry for a commitment or for a fund (i.e no commitment)
-      account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:, fund:, capital_commitment:, investor:, reporting_date:, entry_type:, rule_for:, name:, amount_cents:)
+      account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:, fund:, capital_commitment:, investor:, reporting_date:, entry_type:, rule_for:, name:, amount_cents: fund_amount_cents, folio_amount_cents:)
 
       if account_entry.new_record? && account_entry.valid?
         account_entry.notes = user_data["Notes"]
@@ -58,7 +58,8 @@ class ImportAccountEntry < ImportUtil
     entry_type = user_data["Entry Type"].presence
     reporting_date = user_data["Reporting Date"].presence
     investor_name = user_data["Investor"]
-    amount_cents = user_data["Amount"].to_d * 100
+    folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
+    fund_amount_cents = user_data["Amount (Fund Currency)"].to_d * 100
     period = user_data["Period"]
     rule_for = user_data["Rule For"]&.downcase
 
@@ -69,6 +70,6 @@ class ImportAccountEntry < ImportUtil
     investor = capital_commitment&.investor
     raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
 
-    [folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor, rule_for]
+    [folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for]
   end
 end

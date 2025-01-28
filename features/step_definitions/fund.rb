@@ -1514,8 +1514,8 @@ Then('the account_entries must have the data in the sheet') do
       cc.fund.name.should == user_data["Fund"]
       cc.investor.investor_name.should == user_data["Investor"]
       cc.folio_id.should == user_data["Folio No"].to_s
-
-      cc.amount_cents.should == user_data["Amount"].to_f * 100
+      cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_f * 100
+      cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_f * 100 if user_data["Amount (Folio Currency)"].present?
       cc.entry_type.should == user_data["Entry Type"]
       cc.reporting_date.should == user_data["Reporting Date"]
       cc.notes.should == user_data["Notes"]

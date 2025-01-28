@@ -7,7 +7,7 @@ class Valuation < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   belongs_to :investment_instrument # , optional: true
 
-  validates :per_share_value, numericality: { greater_than: 0 }
+  validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
   validates_uniqueness_of :valuation_date, scope: %i[investment_instrument_id entity_id owner_id owner_type]
 

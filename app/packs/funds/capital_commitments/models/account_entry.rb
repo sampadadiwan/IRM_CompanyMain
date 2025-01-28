@@ -58,8 +58,10 @@ class AccountEntry < ApplicationRecord
   before_save :set_folio_amount, if: :capital_commitment
   def set_folio_amount
     # Since the account entry amount is always in the fund currency, we compute the converted folio_amount based on exchange rates.
-    self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
+    if folio_amount_cents.zero?
+      self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
                                                amount_cents, reporting_date)
+    end
   end
 
   before_save :setup_rule_for
