@@ -68,7 +68,7 @@ class AccountEntry < ApplicationRecord
   def setup_rule_for
     if fund_formula.present?
       # Set rule_for based on the presence and type of fund_formula
-      self.rule_for = fund_formula.reporting? ? "reporting" : "accounting"
+      self.rule_for ||= fund_formula.reporting? ? "reporting" : "accounting"
     elsif rule_for.blank? || rule_for.downcase != "reporting"
       self.rule_for = "accounting"
     end
