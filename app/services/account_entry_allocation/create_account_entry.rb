@@ -80,6 +80,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "Quarterly #{ae.name}"
+        ae.rule_for = "reporting"
         # Add the formula for the quarterly account entry
         formula = "capital_commitment.quarterly('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
         eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
@@ -93,6 +94,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "YTD #{ae.name}"
+        ae.rule_for = "reporting"
         # Add the formula for the year-to-date account entry
         formula = "capital_commitment.year_to_date('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
         eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
@@ -106,6 +108,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "Since Inception #{ae.name}"
+        ae.rule_for = "reporting"
         # add the formula for the since inception account entry
         formula = "capital_commitment.since_inception('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
         eval_formula(ctx, account_entry: ae, formula:, capital_commitment:, bdg:, parent:, **)
