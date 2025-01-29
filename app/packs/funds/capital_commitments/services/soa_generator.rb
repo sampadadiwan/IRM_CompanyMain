@@ -51,7 +51,7 @@ class SoaGenerator
 
     distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
     account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
-    fund_account_entries = capital_commitment.fund.account_entries.where(folio_id: nil).includes(:capital_commitment, :fund)
+    fund_account_entries = capital_commitment.fund.account_entries.fund_entries.includes(:capital_commitment, :fund)
     fund_ratios = capital_commitment.fund_ratios.includes(:capital_commitment, :fund)
     adjustments = capital_commitment.commitment_adjustments.includes(:capital_commitment, :fund)
 
@@ -221,6 +221,10 @@ class SoaGenerator
     raes = capital_commitment.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
     raes.each do |ae|
       context["reporting_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
+    end
+    raes = capital_commitment.fund.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", folio_id: nil)
+    raes.each do |ae|
+      context["reporting_fund_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
     end
   end
 

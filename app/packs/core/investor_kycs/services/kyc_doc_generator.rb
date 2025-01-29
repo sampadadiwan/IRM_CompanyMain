@@ -100,7 +100,7 @@ class KycDocGenerator
     capital_remittance_payments = investor_kyc.capital_remittance_payments
     capital_remittance_payments = capital_remittance_payments.where(fund_id: fund_id) if fund_id
 
-    {
+    context = {
       # Set the current date in the context
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
@@ -139,6 +139,14 @@ class KycDocGenerator
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date))
     }
+
+    if fund_id.present?
+      fund_account_entries = AccountEntry.where(fund_id: fund_id).fund_entries
+      context[:fund_account_entries] = TemplateDecorator.new(fund_account_entries)
+      context[:fund_account_entries_between_dates] = TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date))
+      context[:fund_account_entries_before_end_date] = TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date))
+    end
+    context
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
@@ -147,7 +155,7 @@ class KycDocGenerator
     template = Sablon.template(File.expand_path(doc_template_path))
 
     context = prepare_context(investor_kyc, start_date, end_date, fund_id)
-    add_reporting_entries(context, investor_kyc, start_date, end_date)
+    add_reporting_entries(context, investor_kyc, start_date, end_date, fund_id)
 
     add_image(context, :investor_signature, investor_kyc.signature)
     add_image(context, :profile_image, investor_kyc.documents.where(owner_tag: "Profile Image").first&.file)
@@ -208,7 +216,7 @@ class KycDocGenerator
   end
 
   # Add the reporting entries for the investor kyc, note that since a KYC can be linked to multiple commitments, there could be multiple account entries with the same name (ex Setup Fees, one for each commitment), so sum them (Ex Sum of Setup Fees) before adding to the context
-  def add_reporting_entries(context, investor_kyc, start_date, end_date)
+  def add_reporting_entries(context, investor_kyc, start_date, end_date, fund_id)
     raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
     first_commitment = investor_kyc.capital_commitments.first
     raes.group_by { |ae| [ae.name, ae.entry_type] }.each do |name_entry_type, aes|
@@ -216,6 +224,16 @@ class KycDocGenerator
       total_amount_cents = aes.sum(&:amount_cents)
       ae = AccountEntry.new(name: name_entry_type[0], entry_type: name_entry_type[1], amount_cents: total_amount_cents, capital_commitment: first_commitment, fund: first_commitment&.fund, reporting_date: aes[0].reporting_date)
       context["reporting_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
+    end
+
+    if fund_id.present?
+      # make sure to filter by fund id
+      fraes = AccountEntry.where(fund_id: fund_id, reporting_date: start_date..end_date, rule_for: "Reporting").fund_entries
+      fraes.group_by { |ae| [ae.name, ae.entry_type] }.each do |name_entry_type, aes|
+        total_amount_cents = aes.sum(&:amount_cents)
+        ae = AccountEntry.new(name: name_entry_type[0], entry_type: name_entry_type[1], amount_cents: total_amount_cents, fund_id: fund_id, reporting_date: aes[0].reporting_date)
+        context["reporting_fund_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
+      end
     end
   end
 
