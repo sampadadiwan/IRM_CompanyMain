@@ -14,7 +14,7 @@ module AccountEntryAllocation
       # For a formula "Setup Fees", we create a variable @setup_fees, set to the output of that formula.
       if ctx[:instance_variables].present?
         ctx[:instance_variables].each do |name, value|
-          Rails.logger.debug { "CreateAccountEntry: Setting instance variable: @#{name} = #{value}" }
+          Rails.logger.debug { "CreateAccountEntry: @#{name} = #{value}" }
           instance_variable_set(:"@#{name}", value)
         end
       end

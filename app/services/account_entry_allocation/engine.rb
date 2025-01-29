@@ -73,7 +73,7 @@ module AccountEntryAllocation
         variable_name = f.delete('.&:')
         # In the new refactored version, we store these in a hash, and convert them to instance variables in CreateAccountEntry
         @instance_variables[variable_name] = cached_commitment_fields[f]
-        Rails.logger.debug { "Engine: Setting up variable @#{variable_name} to #{cached_commitment_fields[f]}" }
+        # Rails.logger.debug { "Engine: @#{variable_name} to #{cached_commitment_fields[f]}" }
       end
     end
   end
