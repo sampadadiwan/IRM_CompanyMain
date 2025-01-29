@@ -63,13 +63,15 @@ class FundFormula < ApplicationRecord
     name.titleize.delete(' :,;').underscore
   end
 
-  def interpolate_formula
+  def interpolate_formula(eval_string: nil)
     # Regular expression to match variable names
 
-    statement = formula
+    statement = eval_string || formula
 
     # Define a regular expression to match different types of variables
-    variable_regex = /[@$]?[a-z_][a-zA-Z_0-9]*\b/
+    # variable_regex = /[@$]?[a-z_][a-zA-Z_0-9]*\b/
+    # Define a regex to match only instance variables (starting with @)
+    variable_regex = /@[\w_]+\b/
 
     # Extract all potential variables from the statement
     potential_variables = statement.scan(variable_regex)

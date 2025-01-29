@@ -39,13 +39,19 @@ module AccountEntryAllocation
         Rails.logger.error msg
         raise e
       rescue Exception => e
-        msg = "AllocationBaseOperation: Error in eval #{eval_string}: #{e.message}"
+        # We should try and print out the variables used in the eval_string
+        variables_used = ""
+        begin
+          FundFormula.new.interpolate_formula(eval_string:).each do |var|
+            variables_used += " #{var} = #{bdg.eval(var)}, "
+          end
+        rescue Exception => e
+          variables_used = "Error in getting variables used: #{e.message}"
+        end
+
+        msg = "AllocationBaseOperation: Error in eval #{eval_string}: #{e.message}. Variables used: #{variables_used}"
         Rails.logger.error msg
         raise msg
-
-        # This is so that, nothing in the DB changes due to eval
-        # TODO - Rollback is not working, need to investigate
-        # raise ActiveRecord::Rollback
       end
     end
     # rubocop:enable Lint/RescueException

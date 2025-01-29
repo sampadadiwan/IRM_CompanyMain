@@ -26,7 +26,6 @@ module AccountEntryAllocation
           commitment_type: fund_formula.commitment_type
         )
 
-        binding.pry
         # Since this is a rollup, we set the rule_for to reporting
         cumulative_ae.rule_for = "reporting"
 
