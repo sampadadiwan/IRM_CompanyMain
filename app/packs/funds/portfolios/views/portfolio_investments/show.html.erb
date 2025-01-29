@@ -48,7 +48,11 @@
           <%= l @portfolio_investment.investment_date if @portfolio_investment.investment_date %>
         </td>
       </tr>
+      
+      
+
       <% if @portfolio_investment.base_amount_cents != @portfolio_investment.amount_cents %>
+            
       <tr>
         <td>
           Base Amount
@@ -57,6 +61,7 @@
           <%= money_to_currency @portfolio_investment.base_amount, params %>
         </td>
       </tr>
+
       <% end %>
       <tr>
         <td>
@@ -66,6 +71,18 @@
           <%= money_to_currency @portfolio_investment.amount, params %>
         </td>
       </tr>
+
+      <% if @portfolio_investment.amount_cents != @portfolio_investment.ex_expenses_amount_cents %>
+      <tr>
+        <td>
+          Amount (Exluding Expenses) 
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.ex_expenses_amount, params %>
+        </td>
+      </tr>
+      <% end %>
+
 
       <% if @portfolio_investment.amount_cents != @portfolio_investment.net_amount_cents %>
       <tr>

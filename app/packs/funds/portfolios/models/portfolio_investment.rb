@@ -48,9 +48,9 @@ class PortfolioInvestment < ApplicationRecord
   validates :investment_date, :quantity, :amount_cents, presence: true
   validates :base_amount, :amount_cents, numericality: { greater_than_or_equal_to: 0 }
 
-  monetize :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
+  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
-  monetize :net_bought_amount_cents, :net_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   # We rollup net quantity to the API quantity, only for buys. This takes care of sells and transfers
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "quantity" : nil }, delta_column: 'net_quantity', column_names: {
@@ -133,12 +133,25 @@ class PortfolioInvestment < ApplicationRecord
     end
   end
 
+  # When we buy or sell there are transaction costs, outside of the buy / sell price
+  # Its assumed that these costs are recorded in the instrument currency
+  def expense_cents
+    expense_custom_fields_names = form_custom_fields.where(meta_data: "Expense").pluck(:name)
+    # Find the names from the expense_custom_fields_names in json_fields
+    # and add up the values after converting to decimal
+    expenses_from_cf = expense_custom_fields_names.filter_map { |name| json_fields[name].to_d }.sum * 100
+    buy? ? expenses_from_cf : -expenses_from_cf
+  end
+
   def compute_amount_cents
+    self.base_amount_cents = ex_expenses_base_amount_cents + expense_cents
     if fund.currency == investment_instrument.currency || investment_instrument.currency.nil?
       # No conversion required
+      self.ex_expenses_amount_cents = ex_expenses_base_amount_cents
       self.amount_cents = base_amount_cents
     else
       # Setup the conversion from the base currency to the fund currency
+      self.ex_expenses_amount_cents = convert_currency(investment_instrument.currency, fund.currency, ex_expenses_base_amount_cents, investment_date)
       self.amount_cents = convert_currency(investment_instrument.currency, fund.currency, base_amount_cents, investment_date)
       # This sets the exchange rate being used for the conversion
       self.exchange_rate = get_exchange_rate(investment_instrument.currency, fund.currency, investment_date)

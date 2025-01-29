@@ -238,7 +238,7 @@ FactoryBot.define do
     investment_instrument { entity.investment_instruments.sample }
     portfolio_company { entity.investors.portfolio_companies.sample }
     investment_date { Time.zone.today - 1.month - rand(48).months }
-    base_amount_cents { 10000000 * rand(1..20) }
+    ex_expenses_base_amount_cents { 10000000 * rand(1..20) }
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
     sub_category { "Equity" }
     category { "Unlisted" }

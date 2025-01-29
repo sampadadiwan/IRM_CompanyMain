@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_27_114420) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_29_115416) do
   create_table "access_rights", force: :cascade do |t|
       t.string "owner_type", null: false
       t.bigint "owner_id", null: false
@@ -2707,6 +2707,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_27_114420) do
       t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
       t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
       t.boolean "compliant", default: false
+      t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+      t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
       t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
       t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
       t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"

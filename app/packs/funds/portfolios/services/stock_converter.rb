@@ -52,8 +52,8 @@ class StockConverter < Trailblazer::Operation
     from_currency = from_portfolio_investment.investment_instrument.currency
     to_currency = to_portfolio_investment.investment_instrument.currency
 
-    base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, from_portfolio_investment.investment_date) * stock_conversion.from_quantity
-    to_portfolio_investment.base_amount_cents = base_amount_cents
+    ex_expenses_base_amount_cents = to_portfolio_investment.convert_currency(from_currency, to_currency, from_portfolio_investment.base_cost_cents, from_portfolio_investment.investment_date) * stock_conversion.from_quantity
+    to_portfolio_investment.ex_expenses_base_amount_cents = ex_expenses_base_amount_cents
     ctx[:to_portfolio_investment] = to_portfolio_investment
   end
 

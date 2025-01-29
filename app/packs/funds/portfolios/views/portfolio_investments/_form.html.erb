@@ -51,10 +51,10 @@
     </div>
 
     <div class="form-group" data-controller="currencyformat">
-      <%= form.label :base_amount, "Amount" %> <span class="formatted_currency"></span>
-      <%= form.number_field :base_amount, class: "form-control", step: :any,
+      <%= form.label :ex_expenses_base_amount, "Amount" %> <span class="formatted_currency"></span>
+      <%= form.number_field :ex_expenses_base_amount, class: "form-control", step: :any,
           data: {action: "input->currencyformat#format"} %>
-      <div id="base_amount_help_text"><small class="text-muted">Enter amount</small></div>
+      <div id="base_amount_help_text"><small class="text-muted">Enter amount without expenses</small></div>
     </div>
 
     <div class="form-group">

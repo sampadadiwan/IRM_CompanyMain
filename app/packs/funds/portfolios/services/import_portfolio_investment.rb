@@ -1,5 +1,5 @@
 class ImportPortfolioInvestment < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
+  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)",
                       "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
@@ -16,7 +16,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    portfolio_company_name, investment_date, base_amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
@@ -34,7 +34,7 @@ class ImportPortfolioInvestment < ImportUtil
     end
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
-      portfolio_company_name:, investment_date:, base_amount_cents:, quantity:, investment_instrument:, capital_commitment:, commitment_type:, fund:, entity_id: fund.entity_id
+      portfolio_company_name:, investment_date:, ex_expenses_base_amount_cents:, quantity:, investment_instrument:, capital_commitment:, commitment_type:, fund:, entity_id: fund.entity_id
     )
 
     if portfolio_investment.new_record?
@@ -49,7 +49,7 @@ class ImportPortfolioInvestment < ImportUtil
       portfolio_investment.portfolio_company = portfolio_company
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
 
-      result = PortfolioInvestmentCreate.call(portfolio_investment:)
+      result = PortfolioInvestmentCreate.wtf?(portfolio_investment:)
 
       raise result[:errors] unless result.success?
 
@@ -67,7 +67,7 @@ class ImportPortfolioInvestment < ImportUtil
   def inputs(user_data, import_upload)
     portfolio_company_name = user_data['Portfolio Company Name']
     investment_date = user_data["Investment Date"]
-    base_amount_cents = user_data["Amount"].to_d * 100
+    ex_expenses_base_amount_cents = user_data["Amount (Excluding Expenses)"].to_d * 100
     quantity = user_data["Quantity"].to_d
     instrument = user_data["Instrument"]
     investment_domicile = user_data["Investment Domicile"]
@@ -76,7 +76,7 @@ class ImportPortfolioInvestment < ImportUtil
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    [portfolio_company_name, investment_date, base_amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment]
+    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment]
   end
 
   def defer_counter_culture_updates

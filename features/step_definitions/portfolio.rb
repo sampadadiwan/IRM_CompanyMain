@@ -24,7 +24,7 @@ include CurrencyHelper
 
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
     select(investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
-    fill_in('portfolio_investment_base_amount', with: @new_portfolio_investment.base_amount)
+    fill_in('portfolio_investment_ex_expenses_base_amount', with: @new_portfolio_investment.ex_expenses_base_amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
 
     click_on "Save"
@@ -36,6 +36,7 @@ include CurrencyHelper
     @portfolio_investment.quantity.should == @new_portfolio_investment.quantity
     @portfolio_investment.amount.should == @new_portfolio_investment.amount
     @portfolio_investment.base_amount.should == @new_portfolio_investment.base_amount
+    @portfolio_investment.ex_expenses_base_amount.should == @new_portfolio_investment.ex_expenses_base_amount
     if @portfolio_investment.investment_instrument.currency != @portfolio_investment.fund.currency
       @portfolio_investment.amount_cents.should == @portfolio_investment.convert_currency(@portfolio_investment.investment_instrument.currency, @portfolio_investment.fund.currency, @portfolio_investment.base_amount_cents, @portfolio_investment.investment_date)
       @portfolio_investment.amount_cents.should_not == @portfolio_investment.base_amount_cents
@@ -141,7 +142,8 @@ Then('the portfolio investments must have the data in the sheet') do
     ap pi
     pi.portfolio_company_name.should == user_data["Portfolio Company Name"].strip
     pi.fund.name.should == user_data["Fund"]
-    pi.base_amount_cents.should == user_data["Amount"].to_d * 100
+    pi.ex_expenses_base_amount_cents.should == user_data["Amount (Excluding Expenses)"].to_d * 100
+    pi.base_amount_cents.should == pi.ex_expenses_base_amount_cents + pi.expense_cents
     if pi.investment_instrument.currency != pi.fund.currency
       pi.amount_cents.should == pi.convert_currency(pi.investment_instrument.currency, pi.fund.currency, pi.base_amount_cents, pi.investment_date)
     end
