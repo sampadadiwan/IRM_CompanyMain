@@ -30,15 +30,34 @@ class AccountEntry < ApplicationRecord
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   # Used in has_scope of controller
+  # Define a scope to filter records by a starting reporting date
   scope :reporting_date_start, ->(reporting_date_start) { where(reporting_date: reporting_date_start..) }
+
+  # Define a scope to filter records by an ending reporting date
   scope :reporting_date_end, ->(reporting_date_end) { where(reporting_date: ..reporting_date_end) }
+
+  # Define a scope to filter records by entry type
   scope :entry_type, ->(entry_type) { where(entry_type:) }
+
+  # Define a scope to filter records by folio ID
   scope :folio_id, ->(folio_id) { where(folio_id:) }
+
+  # Define a scope to filter records by unit type in the capital commitments table
   scope :unit_type, ->(unit_type) { where('capital_commitments.unit_type': unit_type) }
+
+  # Define a scope to filter records that are cumulative
   scope :cumulative, -> { where(cumulative: true) }
+
+  # Define a scope to filter records that are not cumulative
   scope :not_cumulative, -> { where.not(cumulative: true) }
+
+  # Define a scope to filter records that are generated
   scope :generated, -> { where(generated: true) }
 
+  # Define a scope to filter records that are fund entries (i.e., capital_commitment_id is nil)
+  scope :fund_entries, -> { where(capital_commitment_id: nil) }
+
+  # This stores the calculation explanation for the account entry
   serialize :explanation, type: Array
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }

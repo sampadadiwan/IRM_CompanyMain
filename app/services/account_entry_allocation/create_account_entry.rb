@@ -80,6 +80,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "Quarterly #{ae.name}"
+        # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # Add the formula for the quarterly account entry
         formula = "capital_commitment.quarterly('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
@@ -94,6 +95,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "YTD #{ae.name}"
+        # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # Add the formula for the year-to-date account entry
         formula = "capital_commitment.year_to_date('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
@@ -108,6 +110,7 @@ module AccountEntryAllocation
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
         ae.name = "Since Inception #{ae.name}"
+        # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
         # add the formula for the since inception account entry
         formula = "capital_commitment.since_inception('#{fund_formula.name}', nil, @start_date, @end_date) + #{@variable_name}"
