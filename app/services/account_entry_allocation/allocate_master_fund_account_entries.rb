@@ -22,12 +22,12 @@ module AccountEntryAllocation
     step :get_exchange_rate
     step :allocate_master_fund_account_entries
 
-    def get_exchange_rate(ctx, fund:, **)
+    def get_exchange_rate(ctx, fund:, end_date:, **)
       # Possibly exchange rate conversions, etc.
       exchange_rate = fund.entity.exchange_rates.where(
         from: fund.master_fund.currency,
         to: fund.currency
-      ).latest.last
+      ).where(as_of: ..end_date).order(as_of: :asc).last
 
       if exchange_rate.blank?
         msg = "No exchange rate found for #{fund.master_fund.currency} to #{fund.currency}"
