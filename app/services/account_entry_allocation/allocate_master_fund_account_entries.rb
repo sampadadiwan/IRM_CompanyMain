@@ -105,7 +105,7 @@ module AccountEntryAllocation
       if master_fund_account_entries.present?
         # Sum the amounts of all account entries in the master fund with this name
         # Convert the amount to the currency of the feeder fund using the exchange rate
-        master_aggregate_entry.entry_type = master_fund_account_entries.first.entry_type
+        master_aggregate_entry.entry_type = fund_formula.entry_type
         master_aggregate_entry.json_fields = master_fund_account_entries.first.json_fields
         master_aggregate_entry.amount_cents = master_fund_account_entries.sum(:amount_cents)
       else
@@ -133,7 +133,7 @@ module AccountEntryAllocation
 
       # Add the feeder fund amount to the master fund aggregate amount
       feeder_aggregate_entry.amount_cents = feeder_amount_cents
-      feeder_aggregate_entry.entry_type = feeder_account_entries.first&.entry_type
+      feeder_aggregate_entry.entry_type = fund_formula.entry_type
       # Return the aggregated account entry
       [master_aggregate_entry, feeder_aggregate_entry]
     end
