@@ -1,3 +1,19 @@
+V8.0.68
+#####################################
+2550e9b7c Pi expenses (#707)
+e29b07271 Feeder fund allocations (#706)
+ccde66564 Added filter for fund_id for account entries in KYC doc gen
+3f2ef6722 Add fund reporting acc entries to soa gen (#704)
+8d2694bff Better error msgs in allocations with formula variables
+0fa86a750 Now RollupAsFundAccountEntry marks entry as reporting only
+66c7bcda0 Now AE rule_for is set to reporting for YTD etc entries
+ea53429f4 Fixed dup entry error tests
+5daa7c24a The fund rollup rule_for is now set to the fund_formula.rule_for
+3b2e284f6 Defaults the YTD, QTR account entries to reporting
+85d8f1734 Added fund lvl acc entries in soa generator (#703)
+246825649 Added account entries import with folio and fund currency
+270f35ab1 Fixed file name for AllocateMasterFundAccountEntries
+
 V8.0.67
 #####################################
 6a963faf6 Ytd quarterly allocations (#702)

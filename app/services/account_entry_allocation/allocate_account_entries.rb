@@ -23,8 +23,17 @@ module AccountEntryAllocation
                         end
 
       if account_entries.present?
-        account_entries.each do |fund_account_entry|
+        # Sometimes we have multiple account_entries with the same name in this period, we want to group and sum them into one entry to allocate
+        account_entries.group_by(&:name).each_value do |fund_account_entries|
+          if fund_account_entries.length == 1
+            fund_account_entry = fund_account_entries.first
+          else
+            fund_account_entry = fund_account_entries.first.dup
+            fund_account_entry.amount = fund_account_entries.sum(&:amount)
+          end
+
           Rails.logger.debug { "allocate_account_entries: Allocating #{fund_account_entry}" }
+
           sub_ctx = ctx.merge(fund_account_entry: fund_account_entry)
           AccountEntryAllocation::AllocateEntry.wtf?(sub_ctx)
         end
