@@ -107,7 +107,7 @@ module AccountEntryAllocation
         # Convert the amount to the currency of the feeder fund using the exchange rate
         master_aggregate_entry.entry_type = master_fund_account_entries.first.entry_type
         master_aggregate_entry.json_fields = master_fund_account_entries.first.json_fields
-        master_aggregate_entry.amount_cents = master_fund_account_entries.sum(:amount_cents)        
+        master_aggregate_entry.amount_cents = master_fund_account_entries.sum(:amount_cents)
       else
         # If no account entries are present, set the amount to 0
         master_aggregate_entry.amount_cents = 0

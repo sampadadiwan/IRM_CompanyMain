@@ -62,10 +62,8 @@ module AccountEntryAllocation
         time_taken = ((Time.zone.now - run_start_time)).to_i
         notify("Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds", :success, user_id)
         allocation_run&.update_column(:status, "Success")
-        true
-      else
-        true
       end
+      true
     end
 
     # rubocop:disable Lint/RescueException

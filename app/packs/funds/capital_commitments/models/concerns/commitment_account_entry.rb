@@ -73,8 +73,9 @@ module CommitmentAccountEntry
   end
 
   def start_of_financial_year_date(end_date)
-    date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
-    (date + 3.months)
+    month_offset_for_fy = fund.custom_fields.month_offset_for_fy&.to_i || 3
+    date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
+    (date + month_offset_for_fy.months)
   end
 
   def start_of_financial_year(name, _entry_type, end_date)
