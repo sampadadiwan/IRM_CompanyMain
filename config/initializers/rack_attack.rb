@@ -1,5 +1,12 @@
+# See rack-attack.rb for more details
+require_relative '../../lib/middleware/log_404s' # Ensure this matches your file path
+Rails.application.config.middleware.insert_before(Rack::Attack, Log404s)
+
+
 module Rack
   class Attack
+
+     
     ### Configure Cache ###
 
     # If you don't want to use Rails.cache (Rack::Attack's default), then
@@ -9,7 +16,7 @@ module Rack
     # safelisting). It must implement .increment and .write like
     # ActiveSupport::Cache::Store
 
-    Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+    Rack::Attack.cache.store = Rails.cache
 
     Rack::Attack.enabled = false if Rails.env.test?
 
@@ -23,6 +30,7 @@ module Rack
     # counted by rack-attack and this throttle may be activated too
     # quickly. If so, enable the condition to exclude them from tracking.
 
+    
     # Throttle all requests by IP (60rpm)
     #
     # Key: "rack::attack:#{Time.now.to_i/:period}:req/ip:#{req.ip}"
@@ -40,8 +48,11 @@ module Rack
     # Throttle POST requests to /login by IP address
     #
     # Key: "rack::attack:#{Time.now.to_i/:period}:logins/ip:#{req.ip}"
-    throttle('logins/ip', limit: 5, period: 20.seconds) do |req|
-      req.ip if req.path == '/users/sign_in' && req.post?
+    throttle('logins/ip', limit: 5, period: 30.seconds) do |req|
+      if req.ip if req.path == '/users/sign_in' && req.get?
+        # Rails.logger.info "🔍 Throttle check: IP #{req.ip} requested login page"
+        req.ip
+      end
     end
 
     # Throttle POST requests to /login by email param
@@ -52,12 +63,51 @@ module Rack
     # throttle logins for another user and force their login requests to be
     # denied, but that's not very common and shouldn't happen to you. (Knock
     # on wood!)
-    throttle('logins/email', limit: 5, period: 20.seconds) do |req|
+    throttle('block_bad_sign_ins', limit: 5, period: 30.seconds) do |req|
       if req.path == '/users/sign_in' && req.post?
         # Normalize the email, using the same logic as your authentication process, to
         # protect against rate limit bypasses. Return the normalized email if present, nil otherwise.
         req.params['email'].to_s.downcase.gsub(/\s+/, "").presence
       end
+    end
+
+    # Throttle IPs that hit 404 errors multiple times
+    # Action	Effect
+    # Attacker sends 5 requests	Allowed
+    # Sends the 6th request within 10 seconds	Blocked for 5 minutes
+    # Attacker waits 10 seconds	Still blocked (not reset)
+    # Attacker tries again after 5 minutes	Allowed again
+    throttle('limit_404_errors', limit: 5, period: 10.seconds) do |req|
+      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      throttle_request = bad_request_count > 5
+    
+      if throttle_request
+        Rails.logger.info "Throttling IP #{req.ip} after #{bad_request_count} 404s"
+    
+        # Store a throttle flag for 10 minutes
+        Rails.cache.write("rack::attack:throttled:#{req.ip}", true, expires_in: 5.minutes)
+      end
+    
+      # Return true if the IP is currently throttled
+      Rails.cache.read("rack::attack:throttled:#{req.ip}").present? ? req.ip : nil
+    end
+
+    # Action	Effect
+    # Attacker sends 10 requests	Not blocked yet
+    # Attacker sends the 11th request	Blocked for 10 minutes
+    # After 10 minutes, they can try again	Can request again    
+    blocklist('block_ip_after_repeated_404s') do |req|
+      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      block_request = bad_request_count > 10
+    
+      if block_request
+        Rails.logger.info "Blocking IP #{req.ip} after #{bad_request_count} 404s"        
+        # Store a block flag for 10 minutes
+        Rails.cache.write("rack::attack:blocked:#{req.ip}", true, expires_in: 10.minutes)
+      end
+    
+      # Return true if IP is in the blocked list
+      Rails.cache.read("rack::attack:blocked:#{req.ip}").present?
     end
 
     ### Custom Throttle Response ###

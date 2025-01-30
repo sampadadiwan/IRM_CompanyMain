@@ -16,6 +16,8 @@ module CapHive
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
     config.autoload_paths += Rails.root.glob('app/packs/**/')
+    config.autoload_paths << Rails.root.join('lib')
+
 
     core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings]
 
@@ -109,6 +111,8 @@ module CapHive
     # We make sure that the ES index gets updated in the background.
     # This helps in reducing the impact to app if ES is down
     Chewy.request_strategy = :sidekiq
+
+   
 
     # config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []
