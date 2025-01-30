@@ -29,7 +29,7 @@ class ImportFundFormula < ImportUtil
     if fund_formula.id.present?
       raise "FundFormula #{fund_formula.id} already exists"
     else
-      fund_formula.assign_attributes(fund_id: fund.id, sequence: row_data["Sequence"], roll_up:, enabled: row_data["Enabled"], import_upload_id: import_upload.id, tag_list:, roll_up:, generate_ytd_qtly:)
+      fund_formula.assign_attributes(fund_id: fund.id, sequence: row_data["Sequence"], roll_up:, enabled: row_data["Enabled"], import_upload_id: import_upload.id, tag_list:, generate_ytd_qtly:)
       fund_formula.save!
     end
 
