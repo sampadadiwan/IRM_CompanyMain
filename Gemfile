@@ -194,6 +194,7 @@ group :development do
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   gem "rack-mini-profiler"
+  gem "ruby-prof"
 
   # For memory profiling
   # gem 'memory_profiler'
