@@ -21,6 +21,7 @@ class ImportFundFormula < ImportUtil
     rule_type = row_data["Rule Type"]
     rule_for = row_data["Rule For"]
     tag_list = row_data["Tag List"]
+    roll_up = row_data["Rollup"]&.downcase == "yes"
     generate_ytd_qtly = row_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes"
 
     fund_formula = fund.fund_formulas.find_or_initialize_by(entity_id: fund.entity_id, name:, formula:, entry_type:, rule_for:, rule_type:, commitment_type:, generate_ytd_qtly:)
@@ -28,7 +29,7 @@ class ImportFundFormula < ImportUtil
     if fund_formula.id.present?
       raise "FundFormula #{fund_formula.id} already exists"
     else
-      fund_formula.assign_attributes(fund_id: fund.id, sequence: row_data["Sequence"], roll_up: row_data["Rollup"], enabled: row_data["Enabled"], import_upload_id: import_upload.id, tag_list:)
+      fund_formula.assign_attributes(fund_id: fund.id, sequence: row_data["Sequence"], roll_up:, enabled: row_data["Enabled"], import_upload_id: import_upload.id, tag_list:, roll_up:, generate_ytd_qtly:)
       fund_formula.save!
     end
 
