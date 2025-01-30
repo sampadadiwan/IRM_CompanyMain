@@ -29,7 +29,8 @@ module AccountEntryAllocation
           entry_type: fund_formula.entry_type,
           generated: true,
           cumulative: false,
-          fund_formula: fund_formula
+          fund_formula: fund_formula,
+          rule_for: fund_formula.rule_for
         )
 
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
