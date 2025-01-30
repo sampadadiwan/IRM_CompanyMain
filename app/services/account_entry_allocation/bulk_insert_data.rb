@@ -61,7 +61,7 @@ module AccountEntryAllocation
       # For "GenerateAccountEntry" rule_type, we need to rollup the generated entries to the fund level
       if ["GenerateAccountEntry"].include? fund_formula.rule_type
         ctx[:bulk_insert_records] = []
-        AccountEntryAllocation::RollupAsFundAccountEntry.wtf?(ctx)
+        AccountEntryAllocation::RollupAsFundAccountEntry.call(ctx)
       end
 
       true

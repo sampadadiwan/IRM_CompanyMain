@@ -21,26 +21,26 @@ module AccountEntryAllocation
       # Run sub-operations based on rule_type
       case fund_formula.rule_type
       when "GenerateCustomField"
-        AccountEntryAllocation::GenerateCustomFields.wtf?(ctx)
+        AccountEntryAllocation::GenerateCustomFields.call(ctx)
       when "AllocateAccountEntry", "AllocateAccountEntry-Name"
-        AccountEntryAllocation::AllocateAccountEntries.wtf?(ctx.merge(name_or_entry_type: "name"))
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "name"))
       when "AllocateAccountEntry-EntryType"
-        AccountEntryAllocation::AllocateAccountEntries.wtf?(ctx.merge(name_or_entry_type: "entry_type"))
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type"))
       when "AllocateMasterFundAccountEntry"
-        AccountEntryAllocation::AllocateMasterFundAccountEntries.wtf?(ctx.merge(name_or_entry_type: "name"))
+        AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name"))
       when "CumulateAccountEntry"
-        AccountEntryAllocation::CumulateAccountEntries.wtf?(ctx)
+        AccountEntryAllocation::CumulateAccountEntries.call(ctx)
       when "GenerateAccountEntry"
-        AccountEntryAllocation::GenerateAccountEntries.wtf?(ctx)
+        AccountEntryAllocation::GenerateAccountEntries.call(ctx)
       when "AllocatePortfolio"
-        AccountEntryAllocation::AllocateAggregatePortfolios.wtf?(ctx)
+        AccountEntryAllocation::AllocateAggregatePortfolios.call(ctx)
       when "AllocatePortfolioInvestment"
-        AccountEntryAllocation::AllocatePortfolioInvestments.wtf?(ctx)
+        AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx)
         # For portfolio investments, override the rollup name
         rollup_name = nil
         rollup_entry_type = fund_formula.name
       when "Percentage"
-        AccountEntryAllocation::ComputeCustomPercentage.wtf?(ctx)
+        AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
       end
 
       # After the formula method sets up bulk_insert_records, do a bulk insert
@@ -49,7 +49,7 @@ module AccountEntryAllocation
         rollup_name: rollup_name,
         rollup_entry_type: rollup_entry_type
       )
-      AccountEntryAllocation::BulkInsertData.wtf?(sub_ctx)
+      AccountEntryAllocation::BulkInsertData.call(sub_ctx)
 
       true
     end

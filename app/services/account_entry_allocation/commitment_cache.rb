@@ -33,9 +33,7 @@ module AccountEntryAllocation
         # Portfolio fields
         cached_commitment_fields["units"] = capital_commitment.fund_units.where(issue_date: ..@end_date).sum(:quantity)
 
-        date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
-        start_of_financial_year = (date + 3.months)
-        cached_commitment_fields["start_of_financial_year"] = start_of_financial_year
+        cached_commitment_fields["start_of_financial_year"] = capital_commitment.start_of_financial_year_date(end_date)
 
         @cached_generated_fields[capital_commitment.id] = cached_commitment_fields
       end

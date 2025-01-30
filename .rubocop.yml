@@ -220,6 +220,8 @@ Metrics/ParameterLists:
     - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
     - 'app/services/account_entry_allocation/engine.rb'
     - 'app/services/account_entry_allocation/create_account_entry.rb'
+    - 'app/services/account_entry_allocation/allocate_master_fund_account_entries.rb'
+    - 'app/services/account_entry_allocation/run_formulas.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'

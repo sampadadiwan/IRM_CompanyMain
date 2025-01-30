@@ -60,7 +60,7 @@ module AccountEntryAllocation
       }
       Rails.logger.debug { "Engine: ctx id = #{ctx.object_id}" }
       # Now call the RunFormulas operation (which in turn calls sub-operations).
-      AccountEntryAllocation::RunFormulas.wtf?(ctx)
+      AccountEntryAllocation::RunFormulas.call(ctx)
 
       # Return the final context or the result object for further inspection.
     end

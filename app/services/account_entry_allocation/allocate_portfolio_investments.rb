@@ -22,6 +22,8 @@ module AccountEntryAllocation
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments.each do |portfolio_investment|
+          # result = RubyProf.profile do
+
           ae = AccountEntry.new(
             name: portfolio_investment.to_s,
             entry_type: fund_formula.name,
@@ -35,13 +37,20 @@ module AccountEntryAllocation
 
           begin
             create_instance_variables(ctx)
-            AccountEntryAllocation::CreateAccountEntry.wtf?(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: portfolio_investment, bdg: binding))
+            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: portfolio_investment, bdg: binding))
           rescue StandardError => e
             raise "Error in #{fund_formula.name} for #{capital_commitment} #{portfolio_investment}: #{e.message}"
           end
-        end
 
-        notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
+          # end
+
+          # printer = RubyProf::CallStackPrinter.new(result)
+          # File.open("tmp/ruby_prof_callstack_#{Time.zone.now}.html", "w") do |file|
+          #   printer.print(file)
+          # end
+
+          notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
+        end
       end
 
       true

@@ -12,6 +12,9 @@ class AddInstrumentIndexToValuations < ActiveRecord::Migration[7.2]
 
     add_index :exchange_rates, [:entity_id, :from, :to, :as_of], order: { as_of: :desc }, name: "idx_exchange_rates_entity_from_to_as_of"
 
+    add_index :valuations, [:owner_id, :owner_type, :deleted_at], name: "idx_valuations_full_optimized"
+
+
 
   end
 end

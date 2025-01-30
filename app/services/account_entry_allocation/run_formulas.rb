@@ -7,11 +7,8 @@ module AccountEntryAllocation
     step :generate_fund_ratios
     step :generate_soa
 
-    
     def run_formulas(ctx, **)
       if ctx[:run_allocations]
-
-        fund.account_entries.generated.where(reporting_date: start_date..end_date).delete_all    
 
         fund                 = ctx[:fund]
         rule_for             = ctx[:rule_for]
@@ -22,6 +19,8 @@ module AccountEntryAllocation
         end_date             = ctx[:end_date]
         run_start_time       = Time.zone.now
         ctx[:bulk_insert_records] = []
+
+        fund.account_entries.generated.where(reporting_date: start_date..end_date).delete_all
 
         # Get the enabled formulas
         formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc)
@@ -37,7 +36,7 @@ module AccountEntryAllocation
           # Call sub-operation to run the formula
           # We re-use the same ctx for sub-ops, but add the current fund_formula:
           sub_ctx = ctx.merge(fund_formula: fund_formula)
-          result = AccountEntryAllocation::RunFormula.wtf?(sub_ctx)
+          result = AccountEntryAllocation::RunFormula.call(sub_ctx)
           if result.failure? && result[:error].present?
             # If there's an error, log/raise as needed
             # The sub-operation might raise an error, or we can handle it here

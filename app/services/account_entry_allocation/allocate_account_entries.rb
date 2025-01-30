@@ -35,7 +35,7 @@ module AccountEntryAllocation
           Rails.logger.debug { "allocate_account_entries: Allocating #{fund_account_entry}" }
 
           sub_ctx = ctx.merge(fund_account_entry: fund_account_entry)
-          AccountEntryAllocation::AllocateEntry.wtf?(sub_ctx)
+          AccountEntryAllocation::AllocateEntry.call(sub_ctx)
         end
       else
         Rails.logger.warn "No account entries found to allocate for #{fund_formula.name} in #{fund.name}"

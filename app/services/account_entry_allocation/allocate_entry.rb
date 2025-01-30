@@ -27,7 +27,7 @@ module AccountEntryAllocation
 
         begin
           create_instance_variables(ctx)
-          AccountEntryAllocation::CreateAccountEntry.wtf?(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: fund_account_entry, bdg: binding))
+          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: fund_account_entry, bdg: binding))
         rescue StandardError => e
           raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
         end
