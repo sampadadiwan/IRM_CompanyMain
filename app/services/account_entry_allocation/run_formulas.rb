@@ -3,17 +3,15 @@ module AccountEntryAllocation
   # 1. RunFormulas Operation
   ############################################################
   class RunFormulas < AllocationBaseOperation
-    step :cleaup_prev_allocations
     step :run_formulas
     step :generate_fund_ratios
     step :generate_soa
 
-    def cleaup_prev_allocations(_ctx, fund:, start_date:, end_date:, **)
-      fund.account_entries.generated.where(reporting_date: start_date..end_date).delete_all
-    end
-
+    
     def run_formulas(ctx, **)
       if ctx[:run_allocations]
+
+        fund.account_entries.generated.where(reporting_date: start_date..end_date).delete_all    
 
         fund                 = ctx[:fund]
         rule_for             = ctx[:rule_for]
