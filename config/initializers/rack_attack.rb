@@ -79,8 +79,9 @@ module Rack
 
       if throttle_request
         Rails.logger.info "Throttling IP #{req.ip} after #{bad_request_count} 404s"
-
-        # Store a throttle flag for 10 minutes
+        Rails.logger.debug { "rack::attack:throttled:#{req.ip} #{Rails.cache.read("rack::attack:throttled:#{req.ip}")}" }
+  
+        # Store a throttle flag for 5 minutes
         Rails.cache.write("rack::attack:throttled:#{req.ip}", true, expires_in: 5.minutes)
       end
 
@@ -98,8 +99,10 @@ module Rack
 
       if block_request
         Rails.logger.info "Blocking IP #{req.ip} after #{bad_request_count} 404s"
-        # Store a block flag for 10 minutes
-        Rails.cache.write("rack::attack:blocked:#{req.ip}", true, expires_in: 10.minutes)
+        Rails.logger.debug { "rack::attack:blocked:#{req.ip} #{Rails.cache.read("rack::attack:blocked:#{req.ip}")}" }
+  
+        # Store a block flag for 5 minutes
+        Rails.cache.write("rack::attack:blocked:#{req.ip}", true, expires_in: 5.minutes)
       end
 
       # Return true if IP is in the blocked list
