@@ -14,6 +14,8 @@ class Log404s
 
       # Ensure Redis or Rails.cache is used correctly
       Rails.cache.increment(key, 1) # Increment the counter
+      Rails.logger.debug "Log404s: Incrementing 404 counter for IP #{ip}: current count = #{Rails.cache.read(key)}"
+
       Rails.cache.write(key, 1, expires_in: 1.minutes) unless Rails.cache.exist?(key)
     end
 

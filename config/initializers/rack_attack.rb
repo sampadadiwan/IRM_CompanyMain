@@ -17,6 +17,12 @@ module Rack
 
     Rack::Attack.enabled = false if Rails.env.test?
 
+    # If a request has the Rails session cookie, we assume it’s a normal user.
+    safelist('logged_in_users') do |req|
+      # The cookie key is usually something like "_your_app_session"
+      req.cookies[Rails.application.config.session_options[:key]].present?
+    end
+
     ### Throttle Spammy Clients ###
 
     # If any single client IP is making tons of requests, then they're
@@ -78,7 +84,7 @@ module Rack
       throttle_request = bad_request_count > 5
 
       if throttle_request
-        Rails.logger.info "Throttling IP #{req.ip} after #{bad_request_count} 404s"
+        Rails.logger.info "rack::attack: Throttling IP #{req.ip} after #{bad_request_count} 404s"
         Rails.logger.debug { "rack::attack:throttled:#{req.ip} #{Rails.cache.read("rack::attack:throttled:#{req.ip}")}" }
   
         # Store a throttle flag for 5 minutes
@@ -98,7 +104,7 @@ module Rack
       block_request = bad_request_count > 10
 
       if block_request
-        Rails.logger.info "Blocking IP #{req.ip} after #{bad_request_count} 404s"
+        Rails.logger.info "rack::attack:Blocking IP #{req.ip} after #{bad_request_count} 404s"
         Rails.logger.debug { "rack::attack:blocked:#{req.ip} #{Rails.cache.read("rack::attack:blocked:#{req.ip}")}" }
   
         # Store a block flag for 5 minutes

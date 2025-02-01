@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_30_124714) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_01_041005) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -75,6 +75,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_30_124714) do
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["name", "fund_id", "capital_commitment_id", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "index_accounts_on_unique_fields", unique: true
     t.index ["name"], name: "index_account_entries_on_name"
     t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
