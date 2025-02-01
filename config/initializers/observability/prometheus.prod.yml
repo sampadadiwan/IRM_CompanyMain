@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s  # How frequently to scrape targets (default is every 15s)
+
+scrape_configs:
+  # this is the port for the prometheus exporter
+  - job_name: 'rails_app'
+    static_configs:
+      # These IPs will need to change based on the deployment - for now manually
+      - targets: ['10.0.1.56:9394', '10.0.2.137:9394']
+  - job_name: node
+    static_configs:
+      # These IPs will need to change based on the deployment - for now manually
+      - targets: ['10.0.1.56:9100', '10.0.2.137:9100']
