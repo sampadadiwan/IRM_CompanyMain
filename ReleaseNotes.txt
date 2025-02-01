@@ -1,3 +1,21 @@
+V8.0.72
+#####################################
+f822d1687 (HEAD -> main, tag: V8.0.72, origin/main, origin/HEAD) Added prometheus.prod.yml
+8272b7fb5 Better rack_attack protection, while considering logged in users
+
+V8.0.71
+#####################################
+1b1ec1d25 (tag: V8.0.71) Better logging of rack_attack block and throttle
+3354275b8 Add fund units type column in index page (#709)
+6c239b83e (tag: V8.0.70) Fixed entry_type for allocate_master_account_entry
+41b4ffabd Fixed entry_type for allocate_master_account_entry
+32298eff7 Synced test schema
+dc4c2bf9b PAtch fix for migration errors
+235263652 Rubocop fixes
+6f9e3cee3 Added additional indexes to DB to speed up Allocations
+710b9ad38 Added ruby-prof gem
+17a38f8f2 Now delete account entries only if allocation is done
+
 V8.0.68
 #####################################
 2550e9b7c Pi expenses (#707)

@@ -18,3 +18,13 @@
   -p 9100:9100 \
   --restart=always \
   prom/node-exporter`
+
+
+
+  ########### PROD #########
+  1. The observability ami is in aws
+  2. The server is usually up and is marked as observability
+  3. The security group disables access from outside, so need to enable the security groups access to the 3000 port to access Graphana
+  4. Prometheus scrapes the Rails and Linux exporters (see promethus.prod.yml)
+  5. There are RAils and Node dashboards in Graphana
+  6. Graphana is configured to send out emails using SMTP (AWS), but alerts are not yet setup
