@@ -11,7 +11,7 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
-  create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.string "access_to_email", limit: 30
@@ -36,7 +36,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "account_entries", force: :cascade do |t|
     t.bigint "capital_commitment_id"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -81,7 +81,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
-  create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "action_mailbox_inbound_emails", force: :cascade do |t|
     t.integer "status", default: 0, null: false
     t.string "message_id", null: false
     t.string "message_checksum", null: false
@@ -90,7 +90,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
   end
 
-  create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
     t.string "record_type", null: false
@@ -100,7 +100,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
   end
 
-  create_table "active_admin_comments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "active_admin_comments", force: :cascade do |t|
     t.string "namespace"
     t.text "body"
     t.string "resource_type"
@@ -114,7 +114,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource"
   end
 
-  create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
     t.bigint "record_id", null: false
@@ -124,7 +124,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
-  create_table "active_storage_blobs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "active_storage_blobs", force: :cascade do |t|
     t.string "key", null: false
     t.string "filename", null: false
     t.string "content_type"
@@ -136,13 +136,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
-  create_table "active_storage_variant_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "active_storage_variant_records", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
-  create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "admin_users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
@@ -154,7 +154,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
-  create_table "aggregate_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "aggregate_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "shareholder"
     t.bigint "investor_id", null: false
@@ -175,7 +175,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
   end
 
-  create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "aggregate_portfolio_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "portfolio_company_id", null: false
@@ -213,7 +213,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
   end
 
-  create_table "ai_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ai_checks", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "ai_rule_id"
     t.string "parent_type", null: false
@@ -232,7 +232,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
   end
 
-  create_table "ai_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ai_rules", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "for_class", limit: 20
     t.text "rule"
@@ -246,7 +246,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
   end
 
-  create_table "allocation_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "allocation_runs", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "user_id", null: false
@@ -267,7 +267,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
   end
 
-  create_table "allocations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "allocations", force: :cascade do |t|
     t.bigint "offer_id", null: false
     t.bigint "interest_id", null: false
     t.bigint "secondary_sale_id", null: false
@@ -293,7 +293,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["secondary_sale_id"], name: "index_allocations_on_secondary_sale_id"
   end
 
-  create_table "aml_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "aml_reports", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
     t.bigint "investor_kyc_id", null: false
@@ -309,7 +309,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_kyc_id"], name: "index_aml_reports_on_investor_kyc_id"
   end
 
-  create_table "approval_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "approval_responses", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "response_entity_id", null: false
     t.bigint "response_user_id"
@@ -336,7 +336,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
 
-  create_table "approvals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "approvals", force: :cascade do |t|
     t.string "title"
     t.bigint "entity_id", null: false
     t.integer "approved_count", default: 0
@@ -363,7 +363,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_approvals_on_owner"
   end
 
-  create_table "audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "audits", force: :cascade do |t|
     t.integer "auditable_id"
     t.string "auditable_type"
     t.integer "associated_id"
@@ -385,7 +385,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
-  create_table "blazer_audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "blazer_audits", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "query_id"
     t.text "statement"
@@ -395,7 +395,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_blazer_audits_on_user_id"
   end
 
-  create_table "blazer_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "blazer_checks", force: :cascade do |t|
     t.bigint "creator_id"
     t.bigint "query_id"
     t.string "state"
@@ -411,7 +411,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["query_id"], name: "index_blazer_checks_on_query_id"
   end
 
-  create_table "blazer_dashboard_queries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "blazer_dashboard_queries", force: :cascade do |t|
     t.bigint "dashboard_id"
     t.bigint "query_id"
     t.integer "position"
@@ -421,7 +421,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["query_id"], name: "index_blazer_dashboard_queries_on_query_id"
   end
 
-  create_table "blazer_dashboards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "blazer_dashboards", force: :cascade do |t|
     t.bigint "creator_id"
     t.string "name"
     t.datetime "created_at", null: false
@@ -429,7 +429,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["creator_id"], name: "index_blazer_dashboards_on_creator_id"
   end
 
-  create_table "blazer_queries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "blazer_queries", force: :cascade do |t|
     t.bigint "creator_id"
     t.string "name"
     t.text "description"
@@ -441,7 +441,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
-  create_table "call_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "call_fees", force: :cascade do |t|
     t.string "name", limit: 50
     t.date "start_date"
     t.date "end_date"
@@ -458,7 +458,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_call_fees_on_fund_id"
   end
 
-  create_table "capital_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_calls", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name"
@@ -499,7 +499,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_capital_calls_on_fund_id"
   end
 
-  create_table "capital_commitments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_commitments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
     t.bigint "fund_id", null: false
@@ -569,7 +569,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["slug"], name: "index_capital_commitments_on_slug", unique: true
   end
 
-  create_table "capital_distribution_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_distribution_payments", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "capital_distribution_id", null: false
@@ -611,7 +611,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_id"], name: "index_capital_distribution_payments_on_investor_id"
   end
 
-  create_table "capital_distributions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_distributions", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -652,7 +652,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_capital_distributions_on_fund_id"
   end
 
-  create_table "capital_remittance_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_remittance_payments", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "capital_remittance_id", null: false
     t.bigint "entity_id", null: false
@@ -677,7 +677,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["payment_date"], name: "index_capital_remittance_payments_on_payment_date"
   end
 
-  create_table "capital_remittances", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "capital_remittances", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "capital_call_id", null: false
@@ -729,7 +729,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["remittance_date"], name: "index_capital_remittances_on_remittance_date"
   end
 
-  create_table "ci_profiles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ci_profiles", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id"
     t.string "title"
@@ -753,7 +753,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_ci_profiles_on_fund_id"
   end
 
-  create_table "ci_track_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ci_track_records", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "name", limit: 50
     t.decimal "value", precision: 20, scale: 4
@@ -770,7 +770,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_ci_track_records_on_owner"
   end
 
-  create_table "ci_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ci_widgets", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "title"
     t.text "details"
@@ -789,7 +789,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_ci_widgets_on_owner"
   end
 
-  create_table "commitment_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "commitment_adjustments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "capital_commitment_id", null: false
@@ -814,14 +814,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
-  create_table "custom_grid_views", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "custom_grid_views", force: :cascade do |t|
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "custom_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "custom_notifications", force: :cascade do |t|
     t.string "subject"
     t.text "body"
     t.string "whatsapp"
@@ -848,7 +848,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end
 
-  create_table "dashboard_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "dashboard_widgets", force: :cascade do |t|
     t.string "dashboard_name", limit: 30
     t.bigint "entity_id", null: false
     t.string "owner_type"
@@ -868,7 +868,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
 
-  create_table "deal_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "deal_activities", force: :cascade do |t|
     t.bigint "deal_id", null: false
     t.bigint "deal_investor_id"
     t.date "by_date"
@@ -894,7 +894,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_deal_activities_on_entity_id"
   end
 
-  create_table "deal_docs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "deal_docs", force: :cascade do |t|
     t.string "name"
     t.bigint "deal_id", null: false
     t.bigint "deal_investor_id"
@@ -915,7 +915,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_deal_docs_on_user_id"
   end
 
-  create_table "deal_investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "deal_investors", force: :cascade do |t|
     t.bigint "deal_id", null: false
     t.bigint "investor_id", null: false
     t.string "status", limit: 20
@@ -960,7 +960,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end
 
-  create_table "deals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "deals", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "name"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -992,7 +992,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["slug"], name: "index_deals_on_slug", unique: true
   end
 
-  create_table "devise_api_tokens", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "devise_api_tokens", force: :cascade do |t|
     t.string "resource_owner_type", null: false
     t.bigint "resource_owner_id", null: false
     t.string "access_token", null: false
@@ -1008,7 +1008,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
   end
 
-  create_table "distribution_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "distribution_fees", force: :cascade do |t|
     t.string "name", limit: 50
     t.date "start_date"
     t.date "end_date"
@@ -1025,7 +1025,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_distribution_fees_on_fund_id"
   end
 
-  create_table "doc_questions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "doc_questions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "tags", limit: 100
     t.text "question"
@@ -1041,7 +1041,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_doc_questions_on_owner"
   end
 
-  create_table "documents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "documents", force: :cascade do |t|
     t.string "name"
     t.string "visible_to", default: "--- []\n"
     t.string "text", default: "--- []\n"
@@ -1094,7 +1094,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
-  create_table "e_signatures", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "e_signatures", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "user_id"
     t.string "label", limit: 30
@@ -1115,7 +1115,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
-  create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "entities", force: :cascade do |t|
     t.string "name"
     t.string "url"
     t.string "category"
@@ -1163,7 +1163,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
 
-  create_table "entity_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "entity_settings", force: :cascade do |t|
     t.boolean "pan_verification"
     t.boolean "bank_verification"
     t.boolean "trial"
@@ -1218,7 +1218,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
-  create_table "esign_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "esign_logs", force: :cascade do |t|
     t.bigint "document_id"
     t.bigint "entity_id", null: false
     t.json "request_data"
@@ -1231,7 +1231,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_esign_logs_on_entity_id"
   end
 
-  create_table "events", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "events", force: :cascade do |t|
     t.string "title", null: false
     t.text "description"
     t.datetime "start_time", null: false
@@ -1248,14 +1248,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
-  create_table "exception_tracks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "exception_tracks", force: :cascade do |t|
     t.string "title"
     t.text "body", size: :medium
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
   end
 
-  create_table "excercises", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "excercises", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "holding_id", null: false
     t.bigint "user_id", null: false
@@ -1284,7 +1284,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_excercises_on_user_id"
   end
 
-  create_table "exchange_rates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "exchange_rates", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "from", limit: 5
     t.string "to", limit: 5
@@ -1303,7 +1303,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["import_upload_id"], name: "index_exchange_rates_on_import_upload_id"
   end
 
-  create_table "expression_of_interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "expression_of_interests", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "user_id", null: false
     t.bigint "eoi_entity_id", null: false
@@ -1334,7 +1334,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
   end
 
-  create_table "favorites", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "favorites", force: :cascade do |t|
     t.string "favoritable_type", null: false
     t.bigint "favoritable_id", null: false
     t.string "favoritor_type", null: false
@@ -1352,7 +1352,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["scope"], name: "index_favorites_on_scope"
   end
 
-  create_table "fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fees", force: :cascade do |t|
     t.string "advisor_name", limit: 30
     t.decimal "amount_cents", precision: 10, scale: 2, default: "0.0"
     t.string "amount_label", limit: 10
@@ -1367,7 +1367,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
   end
 
-  create_table "folders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "folders", force: :cascade do |t|
     t.string "name"
     t.string "full_path"
     t.integer "level"
@@ -1390,7 +1390,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
   end
 
-  create_table "form_custom_fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "form_custom_fields", force: :cascade do |t|
     t.string "name", limit: 100
     t.string "field_type", limit: 20
     t.boolean "required"
@@ -1415,7 +1415,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
 
-  create_table "form_types", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "form_types", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1424,7 +1424,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
   end
 
-  create_table "friendly_id_slugs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "friendly_id_slugs", force: :cascade do |t|
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
@@ -1435,7 +1435,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
-  create_table "fund_formulas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_formulas", force: :cascade do |t|
     t.bigint "fund_id"
     t.bigint "entity_id"
     t.string "name", limit: 125
@@ -1462,7 +1462,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
 
-  create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_ratios", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "valuation_id"
@@ -1488,7 +1488,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
-  create_table "fund_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_reports", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "entity_id", null: false
     t.string "name", limit: 50
@@ -1502,7 +1502,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
-  create_table "fund_sebi_infos", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_sebi_infos", force: :cascade do |t|
     t.string "investee_company_name"
     t.string "pan"
     t.string "type_of_investee_company"
@@ -1567,7 +1567,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_fund_sebi_infos_on_fund_id"
   end
 
-  create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_unit_settings", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 25
@@ -1587,7 +1587,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
   end
 
-  create_table "fund_units", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_units", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
@@ -1614,7 +1614,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_fund_units_on_owner"
   end
 
-  create_table "funding_rounds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "funding_rounds", force: :cascade do |t|
     t.string "name"
     t.decimal "total_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "currency", limit: 5
@@ -1638,7 +1638,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_funding_rounds_on_entity_id"
   end
 
-  create_table "funds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "funds", force: :cascade do |t|
     t.string "name"
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "details"
@@ -1709,7 +1709,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
-  create_table "grid_view_preferences", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "grid_view_preferences", force: :cascade do |t|
     t.bigint "custom_grid_view_id"
     t.string "name"
     t.string "key"
@@ -1730,7 +1730,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
-  create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "holding_actions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "holding_id", null: false
     t.bigint "user_id"
@@ -1744,7 +1744,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_holding_actions_on_user_id"
   end
 
-  create_table "holding_audit_trails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "holding_audit_trails", force: :cascade do |t|
     t.string "action", limit: 100
     t.string "parent_id", limit: 50
     t.string "owner", limit: 30
@@ -1761,7 +1761,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["ref_type", "ref_id"], name: "index_holding_audit_trails_on_ref"
   end
 
-  create_table "holdings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "holdings", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "entity_id", null: false
     t.integer "quantity", default: 0
@@ -1819,7 +1819,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_holdings_on_user_id"
   end
 
-  create_table "import_uploads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "import_uploads", force: :cascade do |t|
     t.string "name"
     t.bigint "entity_id", null: false
     t.string "owner_type", null: false
@@ -1841,7 +1841,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_import_uploads_on_user_id"
   end
 
-  create_table "incoming_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "incoming_emails", force: :cascade do |t|
     t.string "from"
     t.string "to"
     t.string "subject"
@@ -1857,7 +1857,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_incoming_emails_on_owner"
   end
 
-  create_table "interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "interests", force: :cascade do |t|
     t.integer "entity_id"
     t.integer "quantity"
     t.decimal "price", precision: 10
@@ -1923,7 +1923,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
 
-  create_table "investment_instruments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investment_instruments", force: :cascade do |t|
     t.string "name"
     t.string "category", limit: 15
     t.string "sub_category", limit: 100
@@ -1944,7 +1944,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_investment_instruments_on_portfolio_company_id"
   end
 
-  create_table "investment_opportunities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investment_opportunities", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "company_name", limit: 100
     t.decimal "fund_raise_amount_cents", precision: 15, scale: 2, default: "0.0"
@@ -1974,7 +1974,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_investment_opportunities_on_portfolio_company_id"
   end
 
-  create_table "investment_snapshots", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investment_snapshots", force: :cascade do |t|
     t.string "investment_type", limit: 100
     t.bigint "investor_id", null: false
     t.string "investor_type", limit: 100
@@ -2011,7 +2011,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_id"], name: "index_investment_snapshots_on_investor_id"
   end
 
-  create_table "investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investments", force: :cascade do |t|
     t.string "investment_type", limit: 100
     t.integer "investor_id"
     t.string "investor_type", limit: 100
@@ -2050,7 +2050,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_id"], name: "index_investments_on_investor"
   end
 
-  create_table "investor_accesses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_accesses", force: :cascade do |t|
     t.integer "investor_id"
     t.integer "user_id"
     t.string "email"
@@ -2079,7 +2079,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_investor_accesses_on_user_id"
   end
 
-  create_table "investor_advisors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_advisors", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "user_id", null: false
     t.string "email"
@@ -2097,7 +2097,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_investor_advisors_on_user_id"
   end
 
-  create_table "investor_kpi_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_kpi_mappings", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
     t.string "reported_kpi_name", limit: 50
@@ -2113,7 +2113,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
   end
 
-  create_table "investor_kyc_sebi_datas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_kyc_sebi_datas", force: :cascade do |t|
     t.string "investor_category"
     t.string "investor_sub_category"
     t.bigint "investor_kyc_id", null: false
@@ -2124,7 +2124,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_kyc_id"], name: "index_investor_kyc_sebi_datas_on_investor_kyc_id"
   end
 
-  create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_kycs", force: :cascade do |t|
     t.bigint "investor_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -2188,7 +2188,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
   end
 
-  create_table "investor_notice_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_notice_entries", force: :cascade do |t|
     t.bigint "investor_notice_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
@@ -2202,7 +2202,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_notice_id"], name: "index_investor_notice_entries_on_investor_notice_id"
   end
 
-  create_table "investor_notice_items", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_notice_items", force: :cascade do |t|
     t.bigint "investor_notice_id", null: false
     t.bigint "entity_id", null: false
     t.string "title"
@@ -2215,7 +2215,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_notice_id"], name: "index_investor_notice_items_on_investor_notice_id"
   end
 
-  create_table "investor_notices", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investor_notices", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type"
     t.bigint "owner_id"
@@ -2234,7 +2234,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_investor_notices_on_owner"
   end
 
-  create_table "investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "investors", force: :cascade do |t|
     t.integer "investor_entity_id", null: false
     t.integer "entity_id", null: false
     t.string "category", limit: 100
@@ -2269,7 +2269,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["tag_list"], name: "index_investors_on_tag_list", type: :fulltext
   end
 
-  create_table "kanban_boards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kanban_boards", force: :cascade do |t|
     t.string "name"
     t.integer "owner_id"
     t.string "owner_type"
@@ -2281,7 +2281,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_id", "owner_type"], name: "index_kanban_boards_on_owner_id_and_owner_type"
   end
 
-  create_table "kanban_cards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kanban_cards", force: :cascade do |t|
     t.integer "data_source_id"
     t.string "data_source_type"
     t.datetime "deleted_at"
@@ -2301,7 +2301,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["sequence"], name: "index_kanban_cards_on_sequence"
   end
 
-  create_table "kanban_columns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kanban_columns", force: :cascade do |t|
     t.string "name"
     t.integer "sequence"
     t.datetime "deleted_at"
@@ -2313,7 +2313,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["kanban_board_id"], name: "index_kanban_columns_on_kanban_board_id"
   end
 
-  create_table "key_biz_metrics", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "key_biz_metrics", force: :cascade do |t|
     t.string "name"
     t.string "metric_type"
     t.decimal "value", precision: 20, scale: 2, default: "0.0"
@@ -2325,7 +2325,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "kpi_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kpi_reports", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.date "as_of"
@@ -2350,7 +2350,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_kpi_reports_on_user_id"
   end
 
-  create_table "kpis", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kpis", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.string "name", limit: 50
@@ -2372,7 +2372,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_kpis_on_portfolio_company_id"
   end
 
-  create_table "kyc_data", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "kyc_data", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_kyc_id"
     t.string "source"
@@ -2383,7 +2383,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
 
-  create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "messages", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -2397,7 +2397,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
-  create_table "notes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "notes", force: :cascade do |t|
     t.text "details"
     t.integer "entity_id"
     t.integer "user_id"
@@ -2412,7 +2412,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_notes_on_user_id"
   end
 
-  create_table "noticed_events", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "noticed_events", force: :cascade do |t|
     t.string "type"
     t.string "record_type"
     t.bigint "record_id"
@@ -2425,7 +2425,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
   end
 
-  create_table "noticed_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "noticed_notifications", force: :cascade do |t|
     t.string "type"
     t.bigint "event_id", null: false
     t.string "recipient_type", null: false
@@ -2443,7 +2443,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
   end
 
-  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "notifications", force: :cascade do |t|
     t.string "recipient_type", null: false
     t.bigint "recipient_id", null: false
     t.string "type", null: false
@@ -2461,7 +2461,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
-  create_table "nudges", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "nudges", force: :cascade do |t|
     t.text "to"
     t.text "subject"
     t.text "msg_body"
@@ -2478,7 +2478,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
-  create_table "offers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "offers", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "secondary_sale_id", null: false
@@ -2552,7 +2552,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_offers_on_user_id"
   end
 
-  create_table "option_pools", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "option_pools", force: :cascade do |t|
     t.string "name"
     t.date "start_date"
     t.bigint "number_of_options", default: 0
@@ -2591,7 +2591,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"
   end
 
-  create_table "payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "payments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
     t.string "plan", limit: 30
@@ -2606,7 +2606,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 
-  create_table "permissions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "permissions", force: :cascade do |t|
     t.bigint "user_id"
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2623,7 +2623,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
-  create_table "portfolio_attributions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "portfolio_attributions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "sold_pi_id", null: false
@@ -2641,7 +2641,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["sold_pi_id"], name: "index_portfolio_attributions_on_sold_pi_id"
   end
 
-  create_table "portfolio_cashflows", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "portfolio_cashflows", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "portfolio_company_id", null: false
@@ -2668,7 +2668,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
   end
 
-  create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "portfolio_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "form_type_id"
@@ -2726,7 +2726,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
   end
 
-  create_table "portfolio_scenarios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "portfolio_scenarios", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 100
@@ -2739,7 +2739,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_portfolio_scenarios_on_user_id"
   end
 
-  create_table "quick_link_steps", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "quick_link_steps", force: :cascade do |t|
     t.string "name"
     t.text "link"
     t.text "description"
@@ -2750,7 +2750,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["quick_link_id"], name: "index_quick_link_steps_on_quick_link_id"
   end
 
-  create_table "quick_links", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "quick_links", force: :cascade do |t|
     t.string "name"
     t.text "description"
     t.string "tags"
@@ -2760,7 +2760,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["entity_id"], name: "index_quick_links_on_entity_id"
   end
 
-  create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "reminders", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2774,7 +2774,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_reminders_on_owner"
   end
 
-  create_table "reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "reports", force: :cascade do |t|
     t.bigint "entity_id"
     t.bigint "user_id", null: false
     t.string "name"
@@ -2790,7 +2790,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
 
-  create_table "rm_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "rm_mappings", force: :cascade do |t|
     t.bigint "rm_id", null: false
     t.bigint "investor_id", null: false
     t.bigint "entity_id", null: false
@@ -2805,7 +2805,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["rm_id"], name: "index_rm_mappings_on_rm_id"
   end
 
-  create_table "roles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "roles", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
     t.bigint "resource_id"
@@ -2818,7 +2818,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
   end
 
-  create_table "scenario_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "scenario_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "portfolio_scenario_id", null: false
@@ -2841,7 +2841,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_scenario_investments_on_user_id"
   end
 
-  create_table "secondary_sales", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "secondary_sales", force: :cascade do |t|
     t.string "name"
     t.bigint "entity_id", null: false
     t.date "start_date"
@@ -2904,7 +2904,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
   end
 
-  create_table "share_transfers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "share_transfers", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "from_investor_id"
     t.bigint "from_investment_id"
@@ -2934,7 +2934,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
   end
 
-  create_table "solid_cache_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "solid_cache_entries", force: :cascade do |t|
     t.binary "key", limit: 1024, null: false
     t.binary "value", size: :long, null: false
     t.datetime "created_at", null: false
@@ -2945,7 +2945,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
-  create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "stamp_papers", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.text "notes"
     t.string "tags"
@@ -2971,7 +2971,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
   end
 
-  create_table "stock_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "stock_adjustments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "portfolio_company_id", null: false
     t.bigint "user_id", null: false
@@ -2988,7 +2988,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
 
-  create_table "stock_conversions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "stock_conversions", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "from_portfolio_investment_id", null: false
     t.bigint "fund_id", null: false
@@ -3013,7 +3013,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["to_portfolio_investment_id"], name: "index_stock_conversions_on_to_portfolio_investment_id"
   end
 
-  create_table "support_client_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "support_client_mappings", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.date "end_date"
@@ -3026,7 +3026,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
-  create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "taggings", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
     t.bigint "taggable_id"
@@ -3049,7 +3049,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["tenant"], name: "index_taggings_on_tenant"
   end
 
-  create_table "tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "tags", force: :cascade do |t|
     t.string "name", collation: "utf8mb3_bin"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -3057,7 +3057,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
-  create_table "tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "tasks", force: :cascade do |t|
     t.text "details"
     t.bigint "entity_id", null: false
     t.bigint "for_entity_id"
@@ -3080,7 +3080,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
-  create_table "ticker_feeds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "ticker_feeds", force: :cascade do |t|
     t.string "ticker", limit: 10
     t.decimal "price_cents", precision: 20, scale: 2
     t.string "name", limit: 100
@@ -3093,7 +3093,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_alerts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "user_alerts", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "message"
     t.bigint "entity_id", null: false
@@ -3104,7 +3104,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_user_alerts_on_user_id"
   end
 
-  create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "first_name"
     t.string "last_name"
     t.datetime "created_at", null: false
@@ -3157,7 +3157,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
-  create_table "users_roles", id: false, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "users_roles", id: false, force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "role_id"
     t.index ["role_id"], name: "index_users_roles_on_role_id"
@@ -3165,7 +3165,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
-  create_table "valuations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "valuations", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.date "valuation_date"
     t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
@@ -3205,7 +3205,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
-  create_table "vesting_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "vesting_schedules", force: :cascade do |t|
     t.integer "months_from_grant"
     t.integer "vesting_percent"
     t.bigint "option_pool_id", null: false
@@ -3216,7 +3216,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["option_pool_id"], name: "index_vesting_schedules_on_option_pool_id"
   end
 
-  create_table "video_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "video_kycs", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "investor_kyc_id", null: false
     t.bigint "entity_id", null: false
@@ -3227,7 +3227,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_video_kycs_on_user_id"
   end
 
-  create_table "viewed_bies", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "viewed_bies", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.bigint "user_id"
@@ -3240,7 +3240,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
-  create_table "whatsapp_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "whatsapp_logs", force: :cascade do |t|
     t.bigint "notification_id", null: false
     t.json "params"
     t.json "response"

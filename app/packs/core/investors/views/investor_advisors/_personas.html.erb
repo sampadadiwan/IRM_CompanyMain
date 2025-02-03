@@ -1,5 +1,5 @@
 <% 
-  investor_advisors = InvestorAdvisor.where(user_id: current_user.id).map{ |ia| [ia.entity.name, ia.id] }
+  investor_advisors = InvestorAdvisor.joins(:entity).where(user_id: current_user.id).where("entities.active = ?", true).map{ |ia| [ia.entity.name, ia.id] }
 %>
 
 <%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
