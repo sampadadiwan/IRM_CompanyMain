@@ -49,7 +49,7 @@ class InterestDashboard < Administrate::BaseDashboard
     entity
     price
     quantity
-    short_listed
+    short_listed_status
     escrow_deposited
   ].freeze
 
@@ -64,7 +64,7 @@ class InterestDashboard < Administrate::BaseDashboard
     quantity
     offer_quantity
     price
-    short_listed
+    short_listed_status
     escrow_deposited
     buyer_entity_name
     PAN
@@ -89,7 +89,7 @@ class InterestDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     quantity
     price
-    short_listed
+    short_listed_status
     escrow_deposited
 
     buyer_entity_name
