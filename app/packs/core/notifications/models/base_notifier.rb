@@ -1,4 +1,6 @@
 class BaseNotifier < Noticed::Event
+  # belongs_to :entity
+
   if Rails.env.test?
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp" do |config|
       config.if = -> { false }

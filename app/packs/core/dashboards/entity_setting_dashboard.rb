@@ -33,7 +33,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     whatsapp_templates: JsonField,
     whatsapp_token: Field::String,
     whatsapp_endpoint: Field::String,
-
+    notification_retention_months: Field::Number,
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     call_basis: Field::String,
@@ -88,6 +88,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     from_email
     reply_to
     cc
+    notification_retention_months
     email_delay_seconds
     pan_verification
     bank_verification
@@ -128,6 +129,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox_emails
     from_email
     cc
+    notification_retention_months
     reply_to
     email_delay_seconds
     bank_verification

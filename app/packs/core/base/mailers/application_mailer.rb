@@ -13,8 +13,13 @@ class ApplicationMailer < ActionMailer::Base
       db_mail_body = mail
     end
 
+    # Save the email sent, subject and email details
     # rubocop:disable Rails/SkipsModelValidations
-    @notification&.update_columns(email: { email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body } }, email_sent: true)
+    @notification&.update_columns(
+      email: { email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body } },
+      email_sent: true,
+      subject: message.subject.truncate(254)
+    )
     # rubocop:enable Rails/SkipsModelValidations
   end
 

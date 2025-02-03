@@ -107,7 +107,8 @@ class Entity < ApplicationRecord
   has_many :ai_checks, dependent: :destroy
 
   # Noticed gem
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_many :noticed_events, class_name: "Noticed::Event", dependent: :destroy
+  has_many :notifications, class_name: "Noticed::Notification", through: :noticed_events
   has_many :employees, class_name: "User", dependent: :destroy
 
   include FileUploader::Attachment(:logo)

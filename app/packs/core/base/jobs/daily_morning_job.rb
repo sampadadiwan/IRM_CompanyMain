@@ -9,8 +9,13 @@ class DailyMorningJob < ApplicationJob
 
       Rails.logger.debug "Delete old notifications"
       # We may have to increase the limit of 2 months to 1 year for certain clients who pay us more.
-      Noticed::Notification.where(created_at: ..(Time.zone.today - 2.months)).find_each(&:destroy)
-      Noticed::Event.where(created_at: ..(Time.zone.today - 2.months)).find_each(&:destroy)
+      Entity.joins(:noticed_events, :entity_setting).find_each do |entity|
+        # Find the retention period for this entity, defaults to 2 months
+        retention = entity.entity_setting.notification_retention_months.months
+        Rails.logger.debug { "Deleting notifications for #{entity.name} older than #{retention} months" }
+        entity.notifications.where(created_at: ..(Time.zone.today - retention)).delete_all
+        entity.noticed_events.where(created_at: ..(Time.zone.today - retention)).delete_all
+      end
 
       Rails.logger.debug "Update SecondarySale: Make expired sales inactive"
       SecondarySale.where(active: true, end_date: ..Time.zone.today).update(active: false)

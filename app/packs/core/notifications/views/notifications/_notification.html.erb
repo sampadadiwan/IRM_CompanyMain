@@ -6,7 +6,7 @@
     <%= notification.recipient.email %>
   </td>
   <td>
-    <%= link_to notification.message.html_safe, notification_path(id: notification.id) if notification.message %>
+    <%= link_to notification.subject.html_safe, notification_path(id: notification.id) if notification.subject %>
   </td>
   <td>
     <%= l notification.created_at %>
