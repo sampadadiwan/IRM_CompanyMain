@@ -1,6 +1,7 @@
 <%
   @entity ||= nil
   title ||= "Documents"
+  documents = documents.order(id: :desc) if documents && documents.arel.orders.blank?
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4" id="docs_index">
   <% if params[:folder_id].present? %>

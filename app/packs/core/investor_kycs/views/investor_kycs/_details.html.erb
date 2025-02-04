@@ -26,7 +26,7 @@
 
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
-          <% documents = current_user.entity_id == @investor_kyc.entity_id ? @investor_kyc.documents.includes(:folder) : @investor_kyc.docs_for_investor %>
+          <% documents = current_user.entity_id == @investor_kyc.entity_id ? @investor_kyc.documents : @investor_kyc.docs_for_investor %>
           <% msg = nil %>
           <%= render "/documents/index", documents: documents,
               owner: @investor_kyc, entity: @investor_kyc.entity, msg: msg %>

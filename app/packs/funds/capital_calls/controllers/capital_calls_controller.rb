@@ -3,7 +3,8 @@ class CapitalCallsController < ApplicationController
 
   # GET /capital_calls or /capital_calls.json
   def index
-    @capital_calls = policy_scope(CapitalCall).includes(:fund).order(:call_date)
+    @capital_calls = policy_scope(CapitalCall).includes(:fund)
+    @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
     @capital_calls = @capital_calls.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 

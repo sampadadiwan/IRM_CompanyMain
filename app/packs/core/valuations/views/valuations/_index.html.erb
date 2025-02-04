@@ -1,3 +1,4 @@
+<% valuations = valuations.order(valuation_date: :desc) if valuations && valuations.arel.orders.blank? %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Valuations</h1>
     <%
@@ -5,29 +6,29 @@
       owner_type = params[:owner_type] || local_assigns[:owner_type]
     %>
     <span>
-    <%= link_to "New Valuation", 
-        new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type), 
+    <%= link_to "New Valuation",
+        new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type),
         {class: "btn btn-outline-primary"}  %>
 
-    <%= link_to "Import Valuations", 
-                  new_import_upload_path("import_upload[owner_id]": owner_id, 
-                  "import_upload[owner_type]": owner_type, 
-                  "import_upload[import_type]": "Valuation", 
-                  "sample_upload": "VALUATION_SAMPLE"), 
+    <%= link_to "Import Valuations",
+                  new_import_upload_path("import_upload[owner_id]": owner_id,
+                  "import_upload[owner_type]": owner_type,
+                  "import_upload[import_type]": "Valuation",
+                  "sample_upload": "VALUATION_SAMPLE"),
                   { class: "btn btn-outline-primary"}   %>
 
     </span>
   </div>
-  
+
   <div class="table-responsive" data-controller="datatable">
-  
+
     <table id="valuations" class="table table-bordered dataTable jqDataTable">
       <thead>
         <tr>
           <th>
             Instrument
           </th>
-          
+
           <th>
             Valuation Date
           </th>
@@ -46,5 +47,5 @@
       <% end %>
       </tbody>
     </table>
-  
+
   </div>

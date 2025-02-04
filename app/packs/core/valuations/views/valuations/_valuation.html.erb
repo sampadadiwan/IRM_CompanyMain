@@ -2,10 +2,10 @@
   <td>
     <%= link_to valuation.investment_instrument %>
   </td>
-  <td>
+  <td data-order="<%= valuation.valuation_date.strftime('%Y-%m-%d') %>">
     <%= l valuation.valuation_date %>
   </td>
-  <td>
+  <td data-order="<%= valuation.per_share_value_cents %>">
     <%= money_to_currency valuation.per_share_value, params %>
   </td>
   <td>
