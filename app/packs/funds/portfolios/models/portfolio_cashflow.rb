@@ -19,7 +19,7 @@ class PortfolioCashflow < ApplicationRecord
   scope :actual, -> { where(tag: "Actual") }
   scope :not_actual, -> { where.not(tag: "Actual") }
 
-  def initalize(*)
+  def initialize(*)
     super
     self.tag = "Actual" if tag.blank?
   end
