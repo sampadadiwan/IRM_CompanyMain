@@ -12,7 +12,7 @@ class FundXl
 
       wb.add_worksheet(name: "CapitalCommitment") do |sheet|
         # Create the header row
-        sheet.add_row(["Fund", "Investor", "Investing Entity", "Type", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Investing Entity", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers)
+        sheet.add_row(["Fund", "Investor", "Investing Entity", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Investing Entity", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers)
 
         # Create entries for each item
         fund.capital_commitments.includes(:investor_kyc).find_each do |cc|
@@ -20,7 +20,7 @@ class FundXl
           custom_field_values = get_custom_values(cc, form_type, custom_field_names)
           kyc_custom_field_values = get_custom_values(kyc, kyc_form_type, kyc_custom_field_names)
 
-          sheet.add_row [cc.fund.name, cc.investor_name, cc.investor_kyc&.full_name, cc.commitment_type, cc.folio_id&.to_s, cc.commitment_date, cc.unit_type, cc.percentage, cc.folio_currency, cc.folio_committed_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.distribution_amount, cc.fund_close, cc.virtual_bank_account] + custom_field_values + [kyc&.full_name, kyc&.PAN, kyc&.address, kyc&.bank_account_number, kyc&.ifsc_code] + kyc_custom_field_values
+          sheet.add_row [cc.fund.name, cc.investor_name, cc.investor_kyc&.full_name, cc.folio_id&.to_s, cc.commitment_date, cc.unit_type, cc.percentage, cc.folio_currency, cc.folio_committed_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.distribution_amount, cc.fund_close, cc.virtual_bank_account] + custom_field_values + [kyc&.full_name, kyc&.PAN, kyc&.address, kyc&.bank_account_number, kyc&.ifsc_code] + kyc_custom_field_values
         end
       end
 

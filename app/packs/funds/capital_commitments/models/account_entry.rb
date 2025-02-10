@@ -8,12 +8,12 @@ class AccountEntry < ApplicationRecord
   include RansackerAmounts.new(fields: %w[amount])
 
   STANDARD_COLUMN_NAMES = ["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Amount",
-                           "Type", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[fund_name investor_name folio_id reporting_date period entry_type name amount commitment_type dt_actions].freeze
+                           " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[fund_name investor_name folio_id reporting_date period entry_type name amount dt_actions].freeze
 
   INVESTOR_COLUMN_NAMES = ["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Amount",
-                           "Type", " "].freeze
-  INVESTOR_COLUMN_FIELDS = %w[fund_name investor_name folio_id reporting_date period entry_type name amount commitment_type dt_actions].freeze
+                           " "].freeze
+  INVESTOR_COLUMN_FIELDS = %w[fund_name investor_name folio_id reporting_date period entry_type name amount dt_actions].freeze
 
   belongs_to :capital_commitment, optional: true
   belongs_to :entity
@@ -24,10 +24,6 @@ class AccountEntry < ApplicationRecord
 
   # Account entries come in 2 flavours, they are either accounting entries or reporting entries.
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
-
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest", All: "All" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   # Used in has_scope of controller
   # Define a scope to filter records by a starting reporting date
@@ -108,7 +104,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[capital_commitment_id amount commitment_type cumulative entry_type folio_id generated name period reporting_date].sort
+    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -125,4 +121,11 @@ class AccountEntry < ApplicationRecord
     entries_to_index.each(&:run_chewy_callbacks)
     Rails.logger.debug { "Indexing completed. #{entries_to_index.count} account entries indexed for reporting date #{reporting_date}" }
   end
+
+  # rubocop:disable Rails/SkipsModelValidations
+  def self.bulk_update_tracking_currency_numbers(fund, reporting_date)
+    exchange_rate = get_exchange_rate(fund.currency, fund.tracking_currency, reporting_date)
+    fund.account_entries.where(reporting_date: reporting_date).update_all(tracking_amount_cents: Arel.sql("amount_cents * #{exchange_rate.rate}"))
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 end

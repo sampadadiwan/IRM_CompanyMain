@@ -2,7 +2,6 @@ class AggregatePortfolioInvestmentsDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "AggregatePortfolioInvestment.id" },
-      commitment_type: { source: "AggregatePortfolioInvestment.commitment_type" },
       fund_name: { source: "Fund.name" },
       portfolio_company_name: { source: "AggregatePortfolioInvestment.portfolio_company_name" },
       investment_instrument: { source: "InvestmentInstrument.name" },
@@ -19,7 +18,6 @@ class AggregatePortfolioInvestmentsDatatable < ApplicationDatatable
     records.map do |record|
       {
         id: record.id,
-        commitment_type: record.commitment_type,
         fund_name: record.decorate.fund_name,
         portfolio_company_name: record.decorate.company_link,
         investment_instrument: record.decorate.investment_instrument,

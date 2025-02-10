@@ -27,11 +27,6 @@
         </div>
 
         <div class="form-group">
-          <%= form.label :commitment_type %>
-          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
-        </div>
-
-        <div class="form-group">
           <%= form.label :commitment_date %>
           <%= form.date_field :commitment_date, class: 'form-control' %>
         </div>

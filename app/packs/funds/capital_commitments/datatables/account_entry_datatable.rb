@@ -11,7 +11,6 @@ class AccountEntryDatatable < ApplicationDatatable
       amount: { source: "AccountEntry.amount_cents", searchable: false },
       entry_type: { source: "AccountEntry.entry_type" },
       name: { source: "AccountEntry.name" },
-      commitment_type: { source: "AccountEntry.commitment_type" },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
@@ -29,7 +28,6 @@ class AccountEntryDatatable < ApplicationDatatable
         amount: record.decorate.amount,
         entry_type: record.decorate.entry_type,
         name: record.name,
-        commitment_type: record.commitment_type,
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "account_entry_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }

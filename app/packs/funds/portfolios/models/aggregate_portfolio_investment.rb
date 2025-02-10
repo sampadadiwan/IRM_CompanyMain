@@ -20,15 +20,10 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   monetize :unrealized_gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
 
-  STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
-
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
+  STANDARD_COLUMN_NAMES = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
 
   validates :portfolio_company_name, length: { maximum: 100 }
-  validates :commitment_type, length: { maximum: 10 }
   validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMNS = {
@@ -145,7 +140,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   include RansackerAmounts.new(fields: %w[avg_cost bought_amount sold_amount fmv cost_of_remaining cost_of_sold net_bought_amount transfer_amount unrealized_gain])
   def self.ransackable_attributes(_auth_object = nil)
-    %w[avg_cost bought_amount bought_quantity commitment_type cost_of_remaining cost_of_sold fmv net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
+    %w[avg_cost bought_amount bought_quantity cost_of_remaining cost_of_sold fmv net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

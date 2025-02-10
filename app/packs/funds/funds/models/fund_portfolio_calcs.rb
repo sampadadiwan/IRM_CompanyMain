@@ -212,7 +212,7 @@ class FundPortfolioCalcs
 
     if @api_irr_map.empty?
 
-      @fund.aggregate_portfolio_investments.pool.each do |api|
+      @fund.aggregate_portfolio_investments.each do |api|
         api.portfolio_company_id
 
         portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
@@ -235,7 +235,7 @@ class FundPortfolioCalcs
           cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
         end
 
-        # Get the portfolio income cash flows, but only for pool and for this investment_type
+        # Get the portfolio income cash flows
         portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
         portfolio_cashflows.each do |pcf|
           cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
@@ -265,7 +265,7 @@ class FundPortfolioCalcs
   def api_cost_to_value
     @api_cost_map ||= {}
 
-    @fund.aggregate_portfolio_investments.pool.each do |api|
+    @fund.aggregate_portfolio_investments.each do |api|
       portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
 
       bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:cost_of_remaining_cents)
@@ -281,7 +281,7 @@ class FundPortfolioCalcs
   def fmv_on_date(aggregate_portfolio_investment = nil, scenarios: nil)
     total_fmv_on_end_date_cents = 0
 
-    apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments.pool
+    apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments
 
     Rails.logger.debug apis
 

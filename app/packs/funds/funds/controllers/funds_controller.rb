@@ -223,7 +223,7 @@ class FundsController < ApplicationController
     params.require(:fund).permit(:name, :category, :committed_amount, :details,
                                  :collected_amount, :commitment_doc_list, :master_fund_id,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
-                                 :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :show_portfolios, :last_close_date,
+                                 :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :show_portfolios, :last_close_date, :tracking_currency,
                                  :esign_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

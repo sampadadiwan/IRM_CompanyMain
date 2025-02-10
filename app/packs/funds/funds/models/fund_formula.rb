@@ -18,7 +18,6 @@ class FundFormula < ApplicationRecord
   validates :entry_type, length: { maximum: 50 }
   validates :name, length: { maximum: 125 }
   validates :rule_type, length: { maximum: 30 }
-  validates :commitment_type, length: { maximum: 10 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
 
@@ -50,13 +49,7 @@ class FundFormula < ApplicationRecord
   def commitments(end_date, sample)
     cc = fund.capital_commitments.where(commitment_date: ..end_date)
     logger.debug "Sampling 1 commitment" if sample
-    case commitment_type
-    when "Pool"
-      cc = sample ? cc.pool.limit(3) : cc.pool
-    when "CoInvest"
-      cc = sample ? cc.co_invest.limit(3) : cc.co_invest
-    end
-    cc
+    sample ? cc.limit(3) : cc
   end
 
   def template_field_name

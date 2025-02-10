@@ -10,7 +10,7 @@ api_fund_ratios = FundRatio.latest.where(entity_id: first_api.entity_id, owner_t
 
 wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "For", "Bought Quantity", "Bought Amount", "Sold Quantity", "Sold Amount", "Current Quantity", "FMV", "Cost", "Avg Cost / Share", "FIFO Cost", "IRR", "Value To Cost", "IRR Date"] + custom_headers + custom_calc_headers + ["Portfolio Company"] + inv_custom_headers + ["Instrument", "Category", "Sub Category", "Sector"] + inv_inst_custom_headers)
+  sheet.add_row(["Fund", "Bought Quantity", "Bought Amount", "Sold Quantity", "Sold Amount", "Current Quantity", "FMV", "Cost", "Avg Cost / Share", "FIFO Cost", "IRR", "Value To Cost", "IRR Date"] + custom_headers + custom_calc_headers + ["Portfolio Company"] + inv_custom_headers + ["Instrument", "Category", "Sub Category", "Sector"] + inv_inst_custom_headers)
 
   # Create entries for each item
   @aggregate_portfolio_investments.each do |api|
@@ -27,7 +27,7 @@ wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
     value_to_cost = api_fund_ratios.detect { |fr| fr.owner_id == api.id && fr.name == "Value To Cost" }
 
     # Add row to XL
-    sheet.add_row [api.fund.name, api.commitment_type, api.bought_quantity, api.bought_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.quantity, api.fmv, api.cost_of_remaining.to_d, api.avg_cost.to_d, api.cost_of_sold.to_d, irr&.display_value, value_to_cost&.display_value, irr&.end_date] +
+    sheet.add_row [api.fund.name, api.bought_quantity, api.bought_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.quantity, api.fmv, api.cost_of_remaining.to_d, api.avg_cost.to_d, api.cost_of_sold.to_d, irr&.display_value, value_to_cost&.display_value, irr&.end_date] +
                   custom_field_values + custom_calc_values +
                   [api.portfolio_company_name] + inv_custom_field_values +
                   [api.investment_instrument&.name, api.investment_instrument&.category, api.investment_instrument&.sub_category, api.investment_instrument&.sector] + inv_inst_custom_field_values

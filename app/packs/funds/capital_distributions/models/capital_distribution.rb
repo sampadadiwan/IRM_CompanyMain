@@ -14,9 +14,6 @@ class CapitalDistribution < ApplicationRecord
   belongs_to :entity
   belongs_to :approved_by_user, class_name: "User", optional: true
 
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
   # This is only for co_invest
   belongs_to :capital_commitment, optional: true
 
@@ -39,9 +36,7 @@ class CapitalDistribution < ApplicationRecord
   validates :title, presence: true
   validates :title, length: { maximum: 255 }
 
-  validates :commitment_type, length: { maximum: 10 }
   validates :distribution_date, presence: true
-  validates :capital_commitment, presence: true, if: proc { |cd| cd.CoInvest? }
 
   before_save :compute_gross_amount
   def compute_gross_amount
@@ -73,23 +68,17 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def distribution_percentage(capital_commitment)
-    if self.Pool?
-      # This is for the pool
-      case distribution_on
-      when "Commitment Percentage"
-        # Commitment Percentage
-        capital_commitment.percentage
-      when "Investable Capital Percentage"
-        # Investable Capital Percentage
-        icp_entries = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..distribution_date)
-        per = icp_entries.order(reporting_date: :asc).last
-        per.present? ? per.amount_cents / 100.0 : capital_commitment.percentage
-      else
-        raise "Unknown distribution_on for CD #{id}"
-      end
-    elsif self.CoInvest?
-      # For CoInvest we will make 100% of the distributed amount as payment to the specific co_invest
-      100
+    case distribution_on
+    when "Commitment Percentage"
+      # Commitment Percentage
+      capital_commitment.percentage
+    when "Investable Capital Percentage"
+      # Investable Capital Percentage
+      icp_entries = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..distribution_date)
+      per = icp_entries.order(reporting_date: :asc).last
+      per.present? ? per.amount_cents / 100.0 : capital_commitment.percentage
+    else
+      raise "Unknown distribution_on for CD #{id}"
     end
   end
 
@@ -102,7 +91,7 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved carry commitment_type completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount income reinvestment title updated_at]
+    %w[approved carry completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount income reinvestment title updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

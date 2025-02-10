@@ -9,7 +9,7 @@ Scenario Outline: Import capital commitments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
-  Then There should be "9" capital commitments created
+  Then There should be "8" capital commitments created
   And the imported data must have the form_type updated
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
@@ -75,7 +75,7 @@ Scenario Outline: Import capital remittance payments
   Then I should see the "Import in progress"
   Then There should be "3" capital calls created
   And Given I upload "capital_remittance_payments_multi_currency.xlsx" file for the remittances of the capital call
-  Then There should be "6" remittance payments created
+  Then There should be "5" remittance payments created
   And the capital remittance payments must have the data in the sheet
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers

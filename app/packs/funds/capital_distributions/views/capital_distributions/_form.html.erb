@@ -26,21 +26,9 @@
 
         <% disabled = capital_distribution.id.present? %>
 
-        <div class="form-group" data-controller="hide-co-invest">
-          <%= form.label :commitment_type %>
-          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, disabled:, class: "form-control commitment_type", data: {action: "change->hide-co-invest#onChange"} %>
-        </div>
-
-        <div class="form-group co-invest">
-          <%= form.label :folio_id %>
-          <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: "form-control", disabled: %>
-          <small class="text-muted">Select the Folio for the CoInvestment</small>
-        </div>
-
         <div class="form-group pool" data-controller="capital-distribution">
           <%= form.label :distribution_on %>
           <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, { class: "form-control", disabled:, data: { action: "change->capital-distribution#distribution_on_changed" } } %>
-          <small class="text-muted">Select the Folio for the CoInvestment</small>
         </div>
           
         <div class="form-group" id="capital_distributions_income">

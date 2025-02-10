@@ -25,6 +25,7 @@ class CapitalDistributionPayment < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
+  monetize :tracking_net_payable_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   # Note that cost_of_investment_cents is Face value for redemption
   monetize :folio_amount_cents, :net_of_account_entries_cents, :net_payable_cents, :gross_payable_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, with_currency: ->(i) { i.fund.currency }
@@ -43,26 +44,30 @@ class CapitalDistributionPayment < ApplicationRecord
                   }
 
   counter_culture :fund,
-                  column_name: proc { |r| r.completed && r.capital_commitment.Pool? ? 'distribution_amount_cents' : nil },
+                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
                   delta_column: 'net_payable_cents',
                   column_names: lambda {
                     {
-                      CapitalDistributionPayment.completed.pool => :distribution_amount_cents
+                      CapitalDistributionPayment.completed => :distribution_amount_cents
                     }
                   }
 
   counter_culture :fund,
-                  column_name: proc { |r| r.completed && r.capital_commitment.CoInvest? ? 'co_invest_distribution_amount_cents' : nil },
-                  delta_column: 'net_payable_cents',
+                  column_name: proc { |r| r.completed ? 'tracking_distribution_amount_cents' : nil },
+                  delta_column: 'tracking_net_payable_cents',
                   column_names: lambda {
                     {
-                      CapitalDistributionPayment.completed.co_invest => :co_invest_distribution_amount_cents
+                      CapitalDistributionPayment.completed => :tracking_distribution_amount_cents
                     }
                   }
 
   counter_culture :capital_commitment,
                   column_name: 'distribution_amount_cents',
                   delta_column: 'net_payable_cents'
+
+  counter_culture :capital_commitment,
+                  column_name: 'tracking_distribution_amount_cents',
+                  delta_column: 'tracking_net_payable_cents'
 
   counter_culture %i[capital_commitment investor_kyc],
                   column_name: 'distribution_amount_cents',
@@ -73,8 +78,6 @@ class CapitalDistributionPayment < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
-  scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
-  scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
 
   before_validation :ensure_commitment
   def ensure_commitment
@@ -130,5 +133,9 @@ class CapitalDistributionPayment < ApplicationRecord
     else
       0
     end
+  end
+
+  def tracking_exchange_rate_date
+    payment_date
   end
 end

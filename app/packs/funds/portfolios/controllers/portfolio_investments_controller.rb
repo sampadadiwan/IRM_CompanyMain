@@ -120,6 +120,6 @@ class PortfolioInvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
-                                                 :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                                 :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

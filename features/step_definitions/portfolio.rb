@@ -151,10 +151,6 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.investment_instrument.name.should == user_data["Instrument"]
     pi.investment_instrument.investment_domicile.should == user_data["Investment Domicile"]
     pi.notes.should == user_data["Notes"]
-    pi.commitment_type.should == user_data["Type"]
-    if pi.commitment_type == "CoInvest"
-      pi.capital_commitment_id.should == @fund.capital_commitments.where(folio_id: user_data["Folio No"]).first.id
-    end
     pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
     pi.properties["custom_field_1"].should == user_data["Custom Field 1"]
     pi.import_upload_id.should == ImportUpload.last.id
@@ -382,7 +378,6 @@ Then('the to portfolio investments must be created') do
   @to_portfolio_investment.portfolio_company_name.should == @from_portfolio_investment.portfolio_company_name
   @to_portfolio_investment.investment_date.should == @from_portfolio_investment.investment_date
   @to_portfolio_investment.quantity.should == @stock_conversion.to_quantity
-  @to_portfolio_investment.commitment_type.should == @from_portfolio_investment.commitment_type
   @to_portfolio_investment.folio_id.should == @from_portfolio_investment.folio_id
   @to_portfolio_investment.capital_commitment_id.should == @from_portfolio_investment.capital_commitment_id
   @to_portfolio_investment.investment_instrument_id.should == @stock_conversion.to_instrument_id

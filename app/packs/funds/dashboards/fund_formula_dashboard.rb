@@ -9,7 +9,6 @@ class FundFormulaDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     id: Field::Number,
-    commitment_type: Field::String,
     deleted_at: Field::DateTime,
     description: Field::Text,
     enabled: Field::Boolean,
@@ -40,14 +39,12 @@ class FundFormulaDashboard < Administrate::BaseDashboard
     formula
     rule_type
     rule_for
-    commitment_type
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-    commitment_type
     deleted_at
     description
     enabled
@@ -69,7 +66,6 @@ class FundFormulaDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-    commitment_type
     deleted_at
     description
     enabled

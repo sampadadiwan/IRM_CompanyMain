@@ -1,3 +1,13 @@
+V8.0.73
+#####################################
+a923616e5 Added check for active in persona
+305a5d066 Added check for active entity in user active for authentication
+c6a8a2be5 Uncommented out migration updates
+d361cde56 Notification retention (#713)
+3d319be51 Updated sebi report single page excel files to be empty (#710)
+440599dd8 Update interest dashboard to use short_listed_status (#711)
+a4c4b89d4 Better observability documentation
+
 V8.0.72
 #####################################
 f822d1687 (HEAD -> main, tag: V8.0.72, origin/main, origin/HEAD) Added prometheus.prod.yml

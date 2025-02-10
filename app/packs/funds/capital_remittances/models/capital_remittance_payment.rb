@@ -16,8 +16,14 @@ class CapitalRemittancePayment < ApplicationRecord
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_remittance.capital_commitment.folio_currency }
+  monetize :tracking_amount_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
   before_save :set_amount, if: :folio_amount_cents_changed?
+
+  counter_culture :capital_remittance,
+                  column_name: 'tracking_collected_amount_cents',
+                  delta_column: 'tracking_amount_cents',
+                  execute_after_commit: true
 
   counter_culture :capital_remittance,
                   column_name: 'collected_amount_cents',
@@ -75,5 +81,10 @@ class CapitalRemittancePayment < ApplicationRecord
 
   def to_s
     "#{capital_remittance.investor_name} - #{amount}"
+  end
+
+  # This is the date used to find the exchange rate for the tracking currency
+  def tracking_exchange_rate_date
+    payment_date
   end
 end

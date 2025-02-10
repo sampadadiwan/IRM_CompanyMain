@@ -11,8 +11,6 @@ class AttributionService
       # It's a sell
       all_investments = @portfolio_investment.aggregate_portfolio_investment.portfolio_investments
       buys = all_investments.allocatable_buys(@portfolio_investment.portfolio_company_id, @portfolio_investment.investment_instrument_id)
-      buys = buys.where(capital_commitment_id:) if @portfolio_investment.CoInvest?
-      buys = buys.pool if @portfolio_investment.Pool?
 
       # We need to do the attributions in a transaction
       ActiveRecord::Base.transaction do

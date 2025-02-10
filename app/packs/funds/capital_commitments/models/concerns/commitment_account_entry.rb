@@ -23,7 +23,7 @@ module CommitmentAccountEntry
 
   # In some cases name is nil - Ex Cumulative for portfolio FMV or costs @see AccountEntryAllocationEngine.allocate_portfolio_investments()
   #
-  def rollup_account_entries(name, entry_type, start_date, end_date, save_now: false, commitment_type: nil)
+  def rollup_account_entries(name, entry_type, start_date, end_date, save_now: false)
     Rails.logger.debug { "rollup_account_entries(#{name}, #{entry_type}, #{start_date}, #{end_date})" }
 
     # Remove the prev computed cumulative rollups
@@ -39,7 +39,7 @@ module CommitmentAccountEntry
     # Create a new Cumulative entry
     new_name = name || entry_type
     ae = account_entries.new(name: new_name, entry_type:, amount_cents: cum_amount_cents, entity_id:, fund_id:, investor_id:, folio_id:, reporting_date: end_date, period: "As of #{end_date}",
-                             cumulative: true, generated: true, commitment_type:)
+                             cumulative: true, generated: true)
 
     if save_now
       ae.save!

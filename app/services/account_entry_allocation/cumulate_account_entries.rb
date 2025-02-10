@@ -22,8 +22,7 @@ module AccountEntryAllocation
           fund_formula.name,
           fund_formula.entry_type,
           start_date,
-          end_date,
-          commitment_type: fund_formula.commitment_type
+          end_date
         )
 
         # Since this is a rollup, we set the rule_for to reporting

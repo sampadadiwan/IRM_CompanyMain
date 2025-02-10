@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "Call Basis", "Unit Price/Premium", "Send Call Notice", "Send Payment Notification"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Call Basis", "Unit Price/Premium", "Send Call Notice", "Send Payment Notification"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -26,7 +26,11 @@ class ImportCapitalCall < ImportUtil
         generate_remittances_verified = user_data["Remittances Verified"]&.downcase == "yes"
         send_call_notice_flag = user_data["Send Call Notice"]&.downcase == "yes"
         send_payment_notification_flag = user_data["Send Payment Notification"]&.downcase == "yes"
-        fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].split(",") : ["All"]
+        fund_closes = if user_data["Fund Closes"]
+                        user_data["Fund Closes"].split(",").map(&:strip)
+                      else
+                        ["All"]
+                      end
         percentage_called = user_data["Percentage Called"] || 0
 
         if fund_closes.include?("All")
@@ -43,7 +47,7 @@ class ImportCapitalCall < ImportUtil
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"], call_date: user_data["Call Date"],
-                                       import_upload_id: import_upload.id, fund_closes:, commitment_type: user_data["Type"],
+                                       import_upload_id: import_upload.id, fund_closes:,
                                        send_call_notice_flag:, close_percentages:,
                                        manual_generation: true, call_basis: user_data["Call Basis"],
                                        send_payment_notification_flag:, generate_remittances:, generate_remittances_verified:)

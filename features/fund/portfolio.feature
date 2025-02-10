@@ -82,18 +82,6 @@ Scenario Outline: Import portfolio investments
   And the portfolio investments must have the data in the sheet
   And the aggregate portfolio investments must have cost of sold computed
 
-@import
-Scenario Outline: Import portfolio investments failed
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-  Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
-  And Given I upload an investors file for the fund
-  And Given I upload the portfolio companies
-  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import in progress"
-  And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import in progress"
-  Then There should be "1" portfolio investments created
 
 @import
 Scenario Outline: Import portfolio valuations

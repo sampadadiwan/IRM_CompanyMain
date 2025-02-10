@@ -1,10 +1,6 @@
 class PortfolioInvestmentDecorator < ApplicationDecorator
   include ActiveSupport::NumberHelper
 
-  def for
-    portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment)
-  end
-
   delegate :category, to: :investment_instrument, prefix: true
 
   def portfolio_company_name

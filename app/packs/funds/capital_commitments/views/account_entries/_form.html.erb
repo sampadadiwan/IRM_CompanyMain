@@ -50,11 +50,6 @@
         <%= form.text_field :name, class: "form-control"  %>
       </div>
 
-      <div class="form-group">
-        <%= form.label :commitment_type %>
-        <%= form.select :commitment_type, ["All", "Pool"], {}, class: "form-control"  %>
-      </div>
-
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :amount %> <span class="formatted_currency"></span>
         <%= form.text_field :amount, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>

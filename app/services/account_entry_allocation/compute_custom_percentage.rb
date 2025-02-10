@@ -61,8 +61,7 @@ module AccountEntryAllocation
           generated: true,
           amount_cents: percentage,
           cumulative: false,
-          fund_formula: fund_formula,
-          commitment_type: fund_formula.commitment_type
+          fund_formula: fund_formula
         )
 
         ae.validate!

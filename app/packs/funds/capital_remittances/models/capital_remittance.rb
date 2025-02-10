@@ -39,8 +39,9 @@ class CapitalRemittance < ApplicationRecord
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
   scope :verified, -> { where(verified: true) }
-  scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
-  scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
+
+  monetize :tracking_collected_amount_cents, :tracking_call_amount_cents,
+           with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
   monetize :call_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, with_currency: ->(i) { i.fund.currency }
   monetize :folio_call_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
@@ -155,6 +156,10 @@ class CapitalRemittance < ApplicationRecord
                   end
   end
 
+  def net_call_amount
+    call_amount + other_fee
+  end
+
   def due_amount
     call_amount + other_fee - collected_amount
   end
@@ -191,5 +196,9 @@ class CapitalRemittance < ApplicationRecord
 
   def has_arrears?
     arrear_amount_cents != 0
+  end
+
+  def tracking_exchange_rate_date
+    remittance_date
   end
 end

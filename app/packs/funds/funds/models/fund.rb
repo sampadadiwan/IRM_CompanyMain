@@ -64,9 +64,11 @@ class Fund < ApplicationRecord
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
+  monetize :tracking_call_amount_cents, :tracking_collected_amount_cents, :tracking_distribution_amount_cents, with_currency: ->(f) { f.tracking_currency.presence || f.currency }
+
   monetize :call_amount_cents, :committed_amount_cents, :target_committed_amount_cents,
-           :collected_amount_cents, :distribution_amount_cents,
-           :co_invest_call_amount_cents, :co_invest_committed_amount_cents, :co_invest_collected_amount_cents, :co_invest_distribution_amount_cents, :total_units_premium_cents, with_currency: ->(i) { i.currency }
+           :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
+           with_currency: ->(f) { f.currency }
 
   validates :name, :currency, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
@@ -74,9 +76,13 @@ class Fund < ApplicationRecord
 
   validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
-  # validates :registration_number, length: { maximum: 20 }
   validates :category, length: { maximum: 15 }
-  # validates :sub_category, length: { maximum: 40 }
+
+  before_create :set_defaults
+
+  def set_defaults
+    self.tracking_currency ||= currency
+  end
 
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)

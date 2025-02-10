@@ -23,6 +23,8 @@ class CapitalCallJob < ApplicationJob
     # Some calls are for specific fund closes - so only generate remittances for the commitments in that close
     capital_commitments = @capital_call.applicable_to
 
+    Rails.logger.debug { "######## applicable_to record count = #{capital_commitments.count}" }
+
     capital_commitments.each_with_index do |capital_commitment, _idx|
       # Check if we alread have a CapitalRemittance for this commitment
       Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor_name} for #{@capital_call.name}" }

@@ -39,6 +39,18 @@
           <%= fund.currency %>
         </td>
       </tr>
+
+
+      <% if fund.tracking_currency.present? %>
+      <tr>
+        <td>
+          Tracking Currency
+        </td>
+        <td>
+          <%= fund.tracking_currency %>
+        </td>
+      </tr>
+      <% end %>
       
       <tr>
         <td>

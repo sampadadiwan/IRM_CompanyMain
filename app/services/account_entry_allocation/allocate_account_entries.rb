@@ -14,7 +14,6 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_account_entries #{fund_formula.name}" }
 
       account_entries = fund.fund_account_entries.where(reporting_date: start_date..end_date)
-                            .where(commitment_type: fund_formula.commitment_type)
 
       account_entries = if name_or_entry_type == "name"
                           account_entries.where(name: fund_formula.name)

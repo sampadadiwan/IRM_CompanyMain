@@ -16,7 +16,7 @@ class CapitalDistributionJob < ApplicationJob
 
   def generate_payments
     fund = @capital_distribution.fund
-    capital_commitments = @capital_distribution.Pool? ? fund.capital_commitments.pool : [@capital_distribution.capital_commitment]
+    capital_commitments = fund.capital_commitments
 
     # Need to distriute the capital based on the percentage holding of the fund by the investor
     capital_commitments.each do |cc|

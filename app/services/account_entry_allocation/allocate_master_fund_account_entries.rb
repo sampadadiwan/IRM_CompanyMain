@@ -96,7 +96,6 @@ module AccountEntryAllocation
         name: fund_formula.name,
         reporting_date: end_date,
         cumulative: false,
-        commitment_type: fund_formula.commitment_type,
         rule_for: fund_formula.rule_for,
         fund_id: master_fund.id,
         entity_id: fund_formula.entity_id
@@ -116,8 +115,7 @@ module AccountEntryAllocation
       # Aggregate the account entries in the feeder fund to be allocated to the commitments
       feeder_account_entries = fund.account_entries.fund_entries.where(
         reporting_date: start_date..end_date,
-        name: fund_formula.name,
-        commitment_type: fund_formula.commitment_type
+        name: fund_formula.name
       )
       feeder_amount_cents = feeder_account_entries.sum(:amount_cents)
 
@@ -125,7 +123,6 @@ module AccountEntryAllocation
         name: fund_formula.name,
         reporting_date: end_date,
         cumulative: false,
-        commitment_type: fund_formula.commitment_type,
         rule_for: fund_formula.rule_for,
         fund_id: fund_formula.fund_id,
         entity_id: fund_formula.entity_id

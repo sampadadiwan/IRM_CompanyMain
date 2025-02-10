@@ -3,8 +3,8 @@
 <div data-controller="datatable">
   <%
     title = "Onboarding Report: #{link_to(@fund.name, @fund)}"
-    column_names = ["Type", "Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Documents", "Onboarding Complete", " "].join(",")
-    field_list = ["commitment_type", "folio_id", "investor_name", "full_name", "unit_type", "committed_amount", "document_names", "onboarding_completed", "dt_actions"].join(",")
+    column_names = ["Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Documents", "Onboarding Complete", " "].join(",")
+    field_list = ["folio_id", "investor_name", "full_name", "unit_type", "committed_amount", "document_names", "onboarding_completed", "dt_actions"].join(",")
   %>
   
   <turbo-frame id="<%= "capital_commitments_frame" %>" 

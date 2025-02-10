@@ -188,26 +188,6 @@
         </tr>
       <% end %>
 
-      <tr>
-        <td>
-          For
-        </td>
-        <td>
-          <%= @portfolio_investment.commitment_type %>
-        </td>
-      </tr>
-
-      <% if @portfolio_investment.CoInvest? %>
-      <tr>
-        <td>
-          Folio
-        </td>
-        <td>
-          <%= link_to @portfolio_investment.capital_commitment %>
-        </td>
-      </tr>
-      <% end %>
-
       
       <tr>
         <td>

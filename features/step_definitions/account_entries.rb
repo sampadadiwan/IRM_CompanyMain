@@ -10,7 +10,6 @@ Given("there are Fund Formulas are added to the fund") do
 														enabled: true,
 														entry_type: "Accounting",
 														roll_up: false,
-														commitment_type: "All",
 														rule_for: "Accounting",
 													)
 	fund_formula.save!

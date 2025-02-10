@@ -99,6 +99,6 @@ class CapitalDistributionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
-    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :cost_of_investment, :reinvestment, :income, :distribution_date, :title, :completed, :commitment_type, :capital_commitment_id, :distribution_on, :generate_payments, :completed, :notes, distribution_fees_attributes: %i[id name start_date end_date notes fee_type _destroy], unit_prices: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :cost_of_investment, :reinvestment, :income, :distribution_date, :title, :completed, :capital_commitment_id, :distribution_on, :generate_payments, :completed, :notes, distribution_fees_attributes: %i[id name start_date end_date notes fee_type _destroy], unit_prices: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

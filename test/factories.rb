@@ -228,7 +228,6 @@ FactoryBot.define do
     formula { "1+1" }
     rule_type { "GenerateAccountEntry" }
     entry_type { "Test" }
-    commitment_type { "All" }
     rule_for { "accounting" }
   end
 
@@ -432,7 +431,6 @@ FactoryBot.define do
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{Time.now.to_f}" }
-    commitment_type {"Pool"}
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
     }
@@ -462,20 +460,18 @@ FactoryBot.define do
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types
     }
-    commitment_type { "Pool" }
   end
 
   factory :capital_commitment do
     fund { Fund.all.sample }
-    unit_type { ["Series A", "Series B", "Series C"][rand(3)] }
+    unit_type { fund.unit_types.split(",").sample }
     entity { fund.entity }
-    investor { fund.investors.sample }
+    investor { entity.investors.sample }
     folio_committed_amount_cents { 10000000 * rand(10..30) }
     folio_id {rand(100**4)}
     folio_currency { fund.currency }
     fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
-    commitment_type { "Pool" }
     commitment_date { Date.today - rand(24).months }
   end
 

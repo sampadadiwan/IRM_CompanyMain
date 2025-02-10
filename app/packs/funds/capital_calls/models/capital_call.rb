@@ -11,10 +11,6 @@ class CapitalCall < ApplicationRecord
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
   CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
 
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
-
   belongs_to :entity
   belongs_to :fund, touch: true
 
@@ -35,18 +31,17 @@ class CapitalCall < ApplicationRecord
 
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-  validates :name, :due_date, :call_date, :percentage_called, :commitment_type, presence: true
+  validates :name, :due_date, :call_date, :percentage_called, presence: true
   validates :fund_closes, presence: true, unless: -> { call_basis == 'Upload' }
   # validates percentage_called is less than or equal to 100
   validates :percentage_called, numericality: { less_than_or_equal_to: 100 }
-  validates :commitment_type, length: { maximum: 10 }
   validates :name, :fund_closes, length: { maximum: 255 }
 
   monetize :call_amount_cents, :amount_to_be_called_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   # This is a list of commitments for which this call is applicable
   def applicable_to
-    commitments = Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
+    commitments = fund.capital_commitments
 
     # The call is applicable only to those commitments which have a fund_close specified in the call
     if fund_closes.nil? || fund_closes.include?("All")

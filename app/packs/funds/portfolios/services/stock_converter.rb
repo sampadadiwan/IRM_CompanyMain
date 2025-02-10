@@ -41,7 +41,6 @@ class StockConverter < Trailblazer::Operation
                                                       portfolio_company_name: from_portfolio_investment.portfolio_company_name,
                                                       investment_date: from_portfolio_investment.investment_date,
                                                       quantity: stock_conversion.to_quantity,
-                                                      commitment_type: from_portfolio_investment.commitment_type,
                                                       folio_id: from_portfolio_investment.folio_id,
                                                       capital_commitment_id: from_portfolio_investment.capital_commitment_id,
                                                       investment_instrument_id: stock_conversion.to_instrument_id,

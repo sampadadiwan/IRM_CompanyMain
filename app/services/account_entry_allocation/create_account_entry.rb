@@ -50,7 +50,6 @@ module AccountEntryAllocation
 
       account_entry.parent          = parent
       account_entry.generated       = true
-      account_entry.commitment_type = fund_formula.commitment_type
       account_entry.fund_formula    = fund_formula
 
       account_entry.amount_cents    = safe_eval(formula, bdg)

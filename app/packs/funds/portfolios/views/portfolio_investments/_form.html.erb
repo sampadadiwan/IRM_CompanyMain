@@ -63,17 +63,6 @@
       <small class="text-muted">A negative quantity indicates a sell transaction.</small>
     </div>
 
-    <div class="form-group" data-controller="hide-co-invest">
-      <%= form.label :commitment_type %>
-      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
-    </div>
-
-    <div class="form-group co-invest">
-      <%= form.label :folio_id %>
-      <%= form.select :capital_commitment_id, portfolio_investment.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
-      <small class="text-muted">Select the Folio for the CoInvestment</small>
-    </div>
-
     <% end %>
     
     <%= custom_form_fields(portfolio_investment, form) %>

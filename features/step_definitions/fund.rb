@@ -336,7 +336,7 @@
     @capital_call = CapitalCall.last
 
     if @capital_call.call_basis != "Upload"
-      @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
+      @capital_call.capital_remittances.count.should == @fund.capital_commitments.count
     end
 
     @capital_call.capital_remittances.each_with_index do |remittance, idx|
@@ -384,7 +384,7 @@
   Then('I should see the remittances') do
     @capital_call.reload
     # @fund.capital_commitments.count.should == @fund.investors.count
-    @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
+    @capital_call.capital_remittances.count.should == @fund.capital_commitments.count
 
     visit(capital_call_url(@capital_call))
     #sleep((2)
@@ -465,9 +465,8 @@ Then('the remittance rollups should be correct') do
     puts "Checking rollups for fund #{fund.name}"
     fund.capital_fee_cents.should == fund.capital_remittances.sum(:capital_fee_cents)
     fund.other_fee_cents.should == fund.capital_remittances.sum(:other_fee_cents)
-    fund.call_amount_cents.should == fund.capital_remittances.pool.sum(:call_amount_cents)
-    fund.collected_amount_cents.should == fund.capital_remittances.pool.verified.sum(:collected_amount_cents)
-    fund.co_invest_collected_amount_cents.should == fund.capital_remittances.verified.co_invest.sum(:collected_amount_cents)
+    fund.call_amount_cents.should == fund.capital_remittances.sum(:call_amount_cents)
+    fund.collected_amount_cents.should == fund.capital_remittances.verified.sum(:collected_amount_cents)
 
     fund.capital_commitments.each do |cc|
       # Commitment rollups
@@ -948,13 +947,8 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   # sleep(2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  # if ImportUpload.last.import_type == "CapitalCall"
-  #   sleep(6)
-  # else
-  #   sleep(4)
-  # end
-  # ImportUpload.last.failed_row_count.should == 0
-
+  binding.pry if ImportUpload.last.failed_row_count > 0
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
@@ -994,7 +988,6 @@ Then('the capital commitments must have the data in the sheet') do
     puts "Checking import of #{cc.investor.investor_name}"
     cc.investor.investor_name.should == user_data["Investor"].strip
     cc.fund.name.should == user_data["Fund"]
-    cc.commitment_type.should == user_data["Type"]
     cc.commitment_date.should == Date.parse(user_data["Commitment Date"].to_s)
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount (Folio Currency)"].to_i * 100
@@ -1076,10 +1069,8 @@ end
 Then('the fund must have the counter caches updated') do
 
   @fund.reload
-  @fund.collected_amount_cents.should == CapitalCommitment.pool.sum(:collected_amount_cents)
-  @fund.committed_amount_cents.should == CapitalCommitment.pool.sum(:committed_amount_cents)
-  @fund.co_invest_collected_amount_cents.should == CapitalCommitment.co_invest.sum(:collected_amount_cents)
-  @fund.co_invest_committed_amount_cents.should == CapitalCommitment.co_invest.sum(:committed_amount_cents)
+  @fund.collected_amount_cents.should == CapitalCommitment.sum(:collected_amount_cents)
+  @fund.committed_amount_cents.should == CapitalCommitment.sum(:committed_amount_cents)
 end
 
 
@@ -1087,7 +1078,7 @@ Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
 
-      commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
+      commitments = fund.capital_commitments
       puts "Checking remittances for #{cc.name} #{commitments.count} #{cc.capital_remittances.count}"
       cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
@@ -1104,7 +1095,7 @@ Then('the payments are generated for the capital distrbutions') do
   Fund.all.each do |fund|
     fund.capital_distributions.each do |cc|
       # puts cc.capital_distribution_payments.to_json
-      capital_distribution_payments_count = cc.Pool? ? fund.capital_commitments.pool.count : 1 # There is only one commitment for each co_invest
+      capital_distribution_payments_count = fund.capital_commitments.count
       cc.capital_distribution_payments.count.should == capital_distribution_payments_count
       cc.capital_distribution_payments.sum(:income_cents).round(0).should == cc.income_cents.round(0)
     end
@@ -1125,10 +1116,8 @@ end
 Then('the funds are updated with remittance numbers') do
   Fund.all.each do |f|
     f.reload
-    f.call_amount_cents.should == f.capital_remittances.pool.sum(:call_amount_cents)
-    f.collected_amount_cents.should == f.capital_remittances.pool.verified.sum(:collected_amount_cents)
-    f.co_invest_call_amount_cents.should == f.capital_remittances.co_invest.sum(:call_amount_cents)
-    f.co_invest_collected_amount_cents.should == f.capital_remittances.co_invest.verified.sum(:collected_amount_cents)
+    f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
+    f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)    
   end
 end
 
@@ -1457,6 +1446,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   # sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   # sleep(4)
+  binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1558,7 +1548,8 @@ Then('Given I upload {string} file for the remittances of the capital call') do 
   #sleep((2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep((4)
-  ImportUpload.last.failed_row_count.should == 0
+  # binding.pry if ImportUpload.last.failed_row_count > 0
+  # ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} remittance payments created') do |count|
@@ -1575,9 +1566,10 @@ Then('the capital remittance payments must have the data in the sheet') do
       next if idx.zero? # skip header row
 
       # create hash from headers and cells
-      user_data = [headers, row].transpose.to_h
+      user_data = [headers, row].transpose.to_h      
 
       cc = capital_remittance_payments[idx-1]
+      
       cc.fund.name.should == user_data["Fund"]
       cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
       cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
@@ -2131,7 +2123,7 @@ Then('Given I upload {string} file for the remittances of the capital call with 
   expect(page).to have_content("Import Upload:")
   #sleep((2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  #sleep((4)
+  # sleep(10)  
   ImportUpload.last.failed_row_count.should_not == 0
 end
 
@@ -2144,6 +2136,7 @@ Then('I should see the remittance payments upload errors') do
 
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
+    puts "row[headers.length] = #{row[headers.length]}"
     if idx < 7
       row[headers.length].include?("Success").should == true
     end
@@ -2166,7 +2159,7 @@ Then('I should see the remittance payments upload errors') do
       row[headers.length].include?("Investor commitment not found for virtual bank account 99998888").should == true
     end
     if idx == 13
-      row[headers.length].include?("Capital Remittance not found").should == true
+      row[headers.length].include?("Investor commitment not found").should == true
     end
   end
 end

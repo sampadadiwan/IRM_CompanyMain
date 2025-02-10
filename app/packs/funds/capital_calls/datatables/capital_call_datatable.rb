@@ -3,7 +3,6 @@ class CapitalCallDatatable < ApplicationDatatable
     @view_columns ||= {
       id: { source: "CapitalCall.id", searchable: false },
       name: { source: "CapitalCall.name", searchable: true, orderable: true },
-      commitment_type: { source: "CapitalCall.commitment_type", searchable: true, orderable: true },
       fund_name: { source: "Fund.name", searchable: true, orderable: true },
       call_amount: { source: "CapitalCall.call_amount_cents", searchable: false },
       due_date: { source: "CapitalCall.due_date", searchable: false, orderable: true },
@@ -20,7 +19,6 @@ class CapitalCallDatatable < ApplicationDatatable
       {
         id: record.id,
         name: record.decorate.name_link,
-        commitment_type: record.commitment_type,
         fund_name: record.decorate.fund_link,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         collected_amount: record.decorate.percentage_raised,

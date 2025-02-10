@@ -17,7 +17,7 @@ class CapitalCommitment < ApplicationRecord
 
   STANDARD_COLUMN_NAMES = ["Type", "Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Percentage",
                            "Called", "Collected", "Distributed", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[commitment_type folio_id investor_name full_name unit_type committed_amount
+  STANDARD_COLUMN_FIELDS = %w[folio_id investor_name full_name unit_type committed_amount
                               percentage call_amount collected_amount distribution_amount dt_actions].freeze
 
   INVESTOR_COLUMN_NAMES = ["Folio", "Investing Entity", "Unit Type", "Committed", "Called",
@@ -44,11 +44,6 @@ class CapitalCommitment < ApplicationRecord
   ).freeze
 
   INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor", "Fund Close").freeze
-
-  COMMITMENT_TYPES = %w[Pool CoInvest].freeze
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   update_index('capital_commitment') { self if index_record? }
 
@@ -82,8 +77,11 @@ class CapitalCommitment < ApplicationRecord
 
   counter_culture :fund
 
+  monetize :tracking_distribution_amount_cents, :tracking_collected_amount_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+
   monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents, :folio_collected_amount_cents,
-           :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency }
+           :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency.presence || i.fund.currency }
+
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :other_fee_cents,
            :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
@@ -92,11 +90,10 @@ class CapitalCommitment < ApplicationRecord
   validates :folio_committed_amount_cents, numericality: { greater_than_or_equal_to: 0 }
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
-  validates :folio_id, :fund_close, :commitment_type, presence: true
+  validates :folio_id, :fund_close, presence: true
   validates :commitment_date, presence: true, if: proc { |c| c.new_record? }
   validates_uniqueness_of :folio_id, scope: :fund_id
 
-  validates :commitment_type, length: { maximum: 10 }
   validates :unit_type, length: { maximum: 25 }
   validates :folio_currency, length: { maximum: 5 }
   validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
@@ -110,15 +107,9 @@ class CapitalCommitment < ApplicationRecord
   memoize :get_account_entry, :cumulative_account_entry, :on_date, :quarterly, :since_inception
 
   counter_culture :fund,
-                  column_name: proc { |r| r.Pool? ? 'committed_amount_cents' : 'co_invest_committed_amount_cents' },
+                  column_name: 'committed_amount_cents',
                   delta_column: 'committed_amount_cents',
-                  column_names: lambda {
-                    {
-                      pool => 'committed_amount_cents',
-                      co_invest => 'co_invest_committed_amount_cents'
-                    }
-                  }
-
+                  execute_after_commit: true
   # Add the counters for the investor kyc.
   counter_culture :investor_kyc,
                   column_name: 'committed_amount_cents',
@@ -206,18 +197,11 @@ class CapitalCommitment < ApplicationRecord
 
   after_destroy :compute_percentage
   def compute_percentage
-    total_committed_amount_cents = fund.capital_commitments.pool.sum(:committed_amount_cents)
+    total_committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
     if total_committed_amount_cents.zero?
-      fund.capital_commitments.pool.update_all(percentage: 0)
+      fund.capital_commitments.update_all(percentage: 0)
     else
-      fund.capital_commitments.pool.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
-    end
-
-    total_committed_amount_cents = fund.capital_commitments.co_invest.sum(:committed_amount_cents)
-    if total_committed_amount_cents.zero?
-      fund.capital_commitments.co_invest.update_all(percentage: 0)
-    else
-      fund.capital_commitments.co_invest.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
+      fund.capital_commitments.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
     end
   end
 
@@ -304,7 +288,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at folio_id commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency].sort
+    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

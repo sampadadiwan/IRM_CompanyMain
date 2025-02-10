@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -58,13 +58,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.boolean "generated", default: false
     t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
     t.bigint "exchange_rate_id"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.bigint "fund_formula_id"
     t.string "rule_for", limit: 10, default: "Accounting"
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
     t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
@@ -192,7 +192,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.string "investment_type"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.string "investment_domicile", limit: 10
     t.datetime "deleted_at"
     t.bigint "investment_instrument_id"
@@ -480,7 +479,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.bigint "document_folder_id"
     t.text "unit_prices"
     t.string "fund_closes"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.string "call_basis", limit: 40
@@ -541,7 +539,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.boolean "is_feeder_fund", default: false
     t.date "commitment_date"
     t.datetime "generated_deleted", default: "1900-01-01 00:00:00"
@@ -554,6 +551,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.string "slug"
     t.boolean "compliant", default: false
     t.bigint "feeder_fund_id"
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
@@ -600,6 +599,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -635,7 +635,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.bigint "capital_commitment_id"
     t.integer "distribution_on", default: 0
     t.json "json_fields"
@@ -669,6 +668,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
     t.boolean "payment_notification_sent", default: false
+    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["deleted_at"], name: "index_capital_remittance_payments_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
@@ -717,6 +717,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "compliant", default: false
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -1448,7 +1450,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
-    t.string "commitment_type", limit: 10, default: "All"
     t.string "rule_for", limit: 10, default: "Accounting"
     t.datetime "deleted_at"
     t.integer "import_upload_id"
@@ -1696,6 +1697,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.date "last_close_date"
     t.string "slug"
     t.bigint "master_fund_id"
+    t.string "tracking_currency", limit: 3
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2688,7 +2694,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_02_015343) do
     t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "commitment_type", limit: 10, default: "Pool"
     t.string "folio_id", limit: 20
     t.bigint "capital_commitment_id"
     t.string "category", limit: 10

@@ -1,4 +1,4 @@
-json.extract! capital_commitment, :id, :entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :call_amount, :distribution_amount, :folio_id, :investor_name, :unit_type, :notes, :created_at, :updated_at, :folio_currency, :commitment_type
+json.extract! capital_commitment, :id, :entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :call_amount, :distribution_amount, :folio_id, :investor_name, :unit_type, :notes, :created_at, :updated_at, :folio_currency
 
 json.url capital_commitment_url(capital_commitment, format: :json)
 

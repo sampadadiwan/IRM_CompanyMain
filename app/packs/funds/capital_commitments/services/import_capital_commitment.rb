@@ -15,7 +15,7 @@ class ImportCapitalCommitment < ImportUtil
     raise "Investor not found" unless investor
 
     update_only = user_data["Update Only"]
-    folio_id, _, _, _, folio_currency, = get_params(user_data)
+    folio_id, _, _, folio_currency, = get_params(user_data)
     capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
 
     if update_only == "Yes"
@@ -41,8 +41,8 @@ class ImportCapitalCommitment < ImportUtil
   end
 
   def save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
-    _, unit_type, commitment_type, commitment_date, _, onboarding_completed = get_params(user_data)
-    capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_type:, commitment_date:,
+    _, unit_type, commitment_date, _, onboarding_completed = get_params(user_data)
+    capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_date:,
                                          onboarding_completed:, imported: true, investor:,
                                          investor_name: investor.investor_name, unit_type:,
                                          import_upload_id: import_upload.id, notes: user_data["Notes"],
@@ -83,12 +83,11 @@ class ImportCapitalCommitment < ImportUtil
   def get_params(user_data)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
-    commitment_type = user_data["Type"].presence
     commitment_date = user_data["Commitment Date"].presence
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
 
-    [folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed]
+    [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed]
   end
 
   def post_process(ctx, import_upload:, **)

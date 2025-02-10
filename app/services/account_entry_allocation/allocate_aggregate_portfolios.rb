@@ -19,7 +19,7 @@ module AccountEntryAllocation
       fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
         # This is used to generate instance variables from the cached computed values
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
-        apis = capital_commitment.Pool? ? fund.aggregate_portfolio_investments.pool : []
+        apis = fund.aggregate_portfolio_investments
 
         apis.each do |orig_api|
           ae = AccountEntry.new(

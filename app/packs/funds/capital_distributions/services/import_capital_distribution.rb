@@ -1,5 +1,5 @@
 class ImportCapitalDistribution < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Type", "Title", "Income", "Date", "Generate Payments", "Payments Paid", "Reinvestment", "Folio No", "Distribution Basis", "Face Value For Redemption"].freeze
+  STANDARD_HEADERS = ["Fund", "Title", "Income", "Date", "Generate Payments", "Payments Paid", "Reinvestment", "Folio No", "Distribution Basis", "Face Value For Redemption"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -24,14 +24,8 @@ class ImportCapitalDistribution < ImportUtil
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
                                                        fund:, distribution_date: user_data["Date"],
                                                        manual_generation: true,
-
-                                                       commitment_type: user_data["Type"],
                                                        generate_payments:, generate_payments_paid:)
 
-        if capital_distribution.CoInvest?
-          # If this is a co_invest, then we need to set the commitment
-          capital_distribution.capital_commitment = capital_distribution.fund.capital_commitments.where(folio_id: user_data["Folio No"]).first
-        end
         capital_distribution.import_upload_id = import_upload.id
         capital_distribution.income = user_data["Income"]
         capital_distribution.cost_of_investment = user_data["Face Value For Redemption"]

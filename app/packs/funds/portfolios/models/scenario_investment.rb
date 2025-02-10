@@ -18,7 +18,7 @@ class ScenarioInvestment < ApplicationRecord
   scope :sells, -> { where("scenario_investments.quantity < 0") }
 
   def to_portfolio_investment
-    pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, investment_instrument_id:, created_at: transaction_date, commitment_type: "Pool")
+    pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, investment_instrument_id:, created_at: transaction_date)
     pi.compute_fmv
     pi.readonly!
     pi

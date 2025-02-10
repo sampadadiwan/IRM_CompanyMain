@@ -48,11 +48,6 @@
         <% end %>
 
         <div class="form-group">
-          <%= form.label :commitment_type, "For" %>
-          <%= form.select :commitment_type, ["All", "Pool", "CoInvest"], {}, class: "form-control" %>
-        </div>
-
-        <div class="form-group">
           <%= form.label :entry_type %>
           <%= form.text_field :entry_type, class: "form-control", maxlength: 50  %>
           <small class="text-muted">Only for GenerateAccountEntry & CumulateAccountEntry, type of account entry to generate/cumulate</small>

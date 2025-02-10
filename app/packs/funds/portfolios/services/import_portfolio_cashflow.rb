@@ -1,18 +1,18 @@
 class ImportPortfolioCashflow < ImportUtil
   STANDARD_HEADERS = ["Fund", "Portfolio Company",	"Payment Date",	"Amount", "Tag", "Instrument",
-                      "Instrument", "Notes", "Type", "Folio No"].freeze
+                      "Instrument", "Notes", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name = inputs(user_data, import_upload)
+    fund_id, portfolio_company, payment_date, amount_cents, tag, instrument_name = inputs(user_data, import_upload)
 
     investment_instrument = portfolio_company.investment_instruments.where(name: instrument_name).first
     raise "Investment Instrument not found" if investment_instrument.nil?
 
-    aggregate_pi = import_upload.entity.aggregate_portfolio_investments.where(fund_id:, portfolio_company_id: portfolio_company.id, investment_instrument:, commitment_type:).first
+    aggregate_pi = import_upload.entity.aggregate_portfolio_investments.where(fund_id:, portfolio_company_id: portfolio_company.id, investment_instrument:).first
     raise "Aggregate Portfolio Investment not found" if aggregate_pi.nil?
 
     portfolio_cashflow = PortfolioCashflow.find_or_initialize_by(entity_id: import_upload.entity_id, fund_id:,
@@ -50,8 +50,6 @@ class ImportPortfolioCashflow < ImportUtil
 
     fund_id = fund.id
 
-    commitment_type = user_data["Type"]
-
-    [fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name]
+    [fund_id, portfolio_company, payment_date, amount_cents, tag, instrument_name]
   end
 end

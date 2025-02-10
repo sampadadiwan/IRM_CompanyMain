@@ -1,5 +1,5 @@
 class ImportAccountEntry < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Type", "Rule For"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Rule For"].freeze
   attr_accessor :account_entries
 
   def standard_headers
@@ -37,7 +37,6 @@ class ImportAccountEntry < ImportUtil
       if account_entry.new_record? && account_entry.valid?
         account_entry.notes = user_data["Notes"]
         account_entry.import_upload_id = import_upload.id
-        account_entry.commitment_type = user_data["Type"]
         setup_custom_fields(user_data, account_entry, custom_field_headers)
 
         account_entry.save!

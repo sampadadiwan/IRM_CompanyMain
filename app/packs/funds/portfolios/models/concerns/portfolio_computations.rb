@@ -11,17 +11,17 @@ module PortfolioComputations
     end
 
     def self.avg_cost_cents(model, end_date)
-      total_amount_cents = model.portfolio_investments.pool.buys.where(investment_date: ..end_date).sum(:amount_cents)
-      total_buy_quantity = model.portfolio_investments.pool.buys.where(investment_date: ..end_date).sum(:quantity)
+      total_amount_cents = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:amount_cents)
+      total_buy_quantity = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:quantity)
       total_buy_quantity.positive? ? total_amount_cents / total_buy_quantity : 0
     end
 
     def self.cost_of_sold_cents_for(model, end_date)
-      model.portfolio_investments.pool.sells.where(investment_date: ..end_date).sum(:cost_of_sold_cents)
+      model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:cost_of_sold_cents)
     end
 
     def self.total_investment_sold_cents(model, end_date)
-      model.portfolio_investments.pool.sells.where(investment_date: ..end_date).sum(:amount_cents)
+      model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:amount_cents)
     end
   end
 
@@ -121,8 +121,6 @@ module PortfolioComputations
     if sell? && new_record?
 
       buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, investment_instrument_id)
-      buys = buys.where(capital_commitment_id:) if self.CoInvest?
-      buys = buys.pool if self.Pool?
 
       total_net_quantity = buys.sum(:net_quantity)
 

@@ -66,11 +66,6 @@ class PortfolioInvestment < ApplicationRecord
 
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 
-  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
-  scope :pool, -> { where(commitment_type: 'Pool') }
-  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
-
-  validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
   validate :sell_quantity_allowed
   validates :portfolio_company_name, length: { maximum: 100 }
   # validates :quantity, numericality: { other_than: 0 }, on: :create
@@ -118,7 +113,7 @@ class PortfolioInvestment < ApplicationRecord
 
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
-      self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, commitment_type:, investment_instrument_id:)
+      self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_instrument_id:)
 
       aggregate_portfolio_investment.form_type = entity.form_types.where(name: "AggregatePortfolioInvestment").last
       ret_val = aggregate_portfolio_investment.save
@@ -206,7 +201,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[amount commitment_type cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at]
+    %w[amount cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
