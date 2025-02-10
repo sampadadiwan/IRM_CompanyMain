@@ -16,6 +16,54 @@ MoneyRails.configure do |config|
     end
   end
 
+  config.register_currency = {
+    priority: 1,
+    iso_code: "AUD",
+    name: "Australian dollar subunit of 2 digits",
+    symbol: "AU$",
+    symbol_first: true,
+    subunit: "cent",
+    subunit_to_unit: 100,
+    thousands_separator: ",",
+    decimal_mark: "."
+  }
+
+  config.register_currency = {
+    priority: 1,
+    iso_code: "SGD",
+    name: "Singaporian dollar subunit of 2 digits",
+    symbol: "S$",
+    symbol_first: true,
+    subunit: "cent",
+    subunit_to_unit: 100,
+    thousands_separator: ",",
+    decimal_mark: "."
+  }
+
+  config.register_currency = {
+    priority: 1,
+    iso_code: "HKD",
+    name: "Hongkong dollar subunit of 2 digits",
+    symbol: "HK$",
+    symbol_first: true,
+    subunit: "cent",
+    subunit_to_unit: 100,
+    thousands_separator: ",",
+    decimal_mark: "."
+  }
+
+  config.register_currency = {
+    priority: 1,
+    iso_code: "CAD",
+    name: "Canadian dollar subunit of 2 digits",
+    symbol: "CA$",
+    symbol_first: true,
+    subunit: "cent",
+    subunit_to_unit: 100,
+    thousands_separator: ",",
+    decimal_mark: "."
+  }
+
   # Add exchange rates to current money bank object.
   # (The conversion rate refers to one direction only)
   #
