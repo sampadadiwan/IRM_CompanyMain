@@ -12,8 +12,10 @@ class FundRatioCalcs
     Rails.logger.debug { "Adding capital_remittance_payments for #{entity_type}: #{entity} on #{@end_date}" }
     entity.capital_remittance_payments.includes(:capital_remittance).where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
       if use_tracking_currency
+        # Add remittance payment in tracking currency if amount is not zero
         cf << XirrTransaction.new(-1 * cr.tracking_amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}") if cr.tracking_amount_cents != 0
       elsif cr.amount_cents != 0
+        # Add remittance payment in original currency if amount is not zero
         cf << XirrTransaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}")
       end
     end
@@ -22,10 +24,14 @@ class FundRatioCalcs
     Rails.logger.debug { "Adding capital_distribution_payments for #{entity_type}: #{entity} on #{@end_date}" }
     entity.capital_distribution_payments.includes(:investor).where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
       if use_tracking_currency
+        # Add gross distribution payment in tracking currency if amount is not zero
         cf << XirrTransaction.new(cdp.tracking_gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}") if cdp.tracking_gross_payable_cents != 0
+        # Add reinvestment from distribution in tracking currency if amount is not zero
         cf << XirrTransaction.new(-1 * cdp.tracking_reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}") if cdp.tracking_reinvestment_with_fees_cents != 0
       else
+        # Add gross distribution payment in original currency if amount is not zero
         cf << XirrTransaction.new(cdp.gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}") if cdp.gross_payable_cents != 0
+        # Add reinvestment from distribution in original currency if amount is not zero
         cf << XirrTransaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}") if cdp.reinvestment_with_fees_cents != 0
       end
     end
@@ -45,6 +51,7 @@ class FundRatioCalcs
       tracking_exchange_rate = entity.get_exchange_rate(fund.currency, fund.tracking_currency, @end_date)
       raise "No exchange rate found for #{fund.currency} to #{fund.tracking_currency} on #{@end_date}" unless tracking_exchange_rate
 
+      # Adjust financial metrics to tracking currency
       fmv *= tracking_exchange_rate.rate
       cih *= tracking_exchange_rate.rate
       nca *= tracking_exchange_rate.rate
@@ -52,6 +59,7 @@ class FundRatioCalcs
       ac *= tracking_exchange_rate.rate
     end
 
+    # Add financial metrics to cash flow if they are not zero
     cf << XirrTransaction.new(fmv, date: @end_date, notes: "FMV") if fmv != 0
     cf << XirrTransaction.new(cih, date: @end_date, notes: "Cash in Hand") if cih != 0
     cf << XirrTransaction.new(nca, date: @end_date, notes: "Net Current Assets") if nca != 0
@@ -61,9 +69,11 @@ class FundRatioCalcs
     Rails.logger.debug { "#{entity_type}.xirr cf: #{cf}" }
     cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
 
+    # Calculate XIRR using the cash flow
     lxirr = XirrApi.new.xirr(cf, "xirr_#{entity_type}_#{entity.id}_#{@end_date}") || 0
     Rails.logger.debug { "#{entity_type}.xirr irr: #{lxirr}" }
 
+    # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)
   end
   # rubocop:enable Metrics/CyclomaticComplexity
