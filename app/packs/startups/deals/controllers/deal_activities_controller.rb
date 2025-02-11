@@ -67,7 +67,7 @@ class DealActivitiesController < ApplicationController
     @current_user = current_user
     respond_to do |format|
       if @deal_activity.save
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
+        @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
         format.html do
           redirect_to deal_activity_url(@deal_activity), notice: "Deal activity was successfully created."
         end
@@ -90,7 +90,7 @@ class DealActivitiesController < ApplicationController
 
     respond_to do |format|
       if @deal_activity.update(deal_activity_params)
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
+        @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
         format.html do
           redirect_url = params[:back_to].presence || deal_activity_url(@deal_activity)
           redirect_to redirect_url, notice: "Deal activity was successfully updated."
@@ -108,7 +108,7 @@ class DealActivitiesController < ApplicationController
       @deal_activity.set_list_position(params[:sequence].to_i + 1)
       @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
       params[:template] = true
-      ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
+      @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
     end
     respond_to do |format|
       format.turbo_stream do
@@ -167,7 +167,7 @@ class DealActivitiesController < ApplicationController
   def destroy
     deal = @deal_activity.deal
     @deal_activity.destroy
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, deal.broadcast_data)
+    deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
 
     redirect_path = if @deal_activity.deal_investor_id.blank?
                       deal_activities_path(deal_id: @deal_activity.deal_id, template: true)

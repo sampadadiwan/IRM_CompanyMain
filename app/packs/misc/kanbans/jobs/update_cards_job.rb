@@ -4,6 +4,6 @@ class UpdateCardsJob < ApplicationJob
     kanban_board.update_cards(card_view_attrs)
 
     # broadcast to all users
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_board.broadcast_data)
+    kanban_board.broadcast_board_event
   end
 end

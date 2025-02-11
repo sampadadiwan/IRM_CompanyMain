@@ -16,7 +16,7 @@ class RestoreColumn < Trailblazer::Operation
     # rubocop : enable Rails/SkipsModelValidations
   end
 
-  def broadcast_changes(_ctx, **)
-    true
+  def broadcast_changes(_ctx, kanban_column:, **)
+    kanban_column.kanban_board.broadcast_board_event
   end
 end

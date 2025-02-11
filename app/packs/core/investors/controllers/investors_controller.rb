@@ -86,7 +86,7 @@ class InvestorsController < ApplicationController
       if @investor.save
         redirect_url = params[:back_to].presence || investor_url(@investor)
         format.turbo_stream do
-          @frame = params[:turbo_frame] || "new_deal_investor"
+          @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
           partial = params[:back_to].presence || "investors/board_form"
           UserAlert.new(user_id: current_user.id, message: "Investor was successfully created!", level: "success").broadcast
           render turbo_stream: [
@@ -101,7 +101,7 @@ class InvestorsController < ApplicationController
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @investor.errors, status: :unprocessable_entity }
         format.turbo_stream do
-          @frame = params[:turbo_frame] || "new_deal_investor"
+          @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
           @alert = "Investor could not be created!"
           @alert += " #{@investor.errors.full_messages.join(', ')}"
           render turbo_stream: [

@@ -1,46 +1,48 @@
 <%= turbo_frame_tag "board_#{kanban_board.id}" do %>
-  <% @searched_kanban_cards = @kanban_cards || nil %>
+  <% @searched_kanban_cards ||= @kanban_cards || nil %>
   <% filter_state = "collapse" %>
   <% filtered_results = @filtered_results || false %>
-  <% params[:filter] = true  %>
-  <% @q ||= @q %>
+  <% params[:filter] = true %>
+  <% @q ||=  KanbanCard.ransack %>
   <div class="kanban-filter">
     <%= render "/layouts/filter", associations: [], state: filter_state, hidden_fields: {boards: true, turbo:true, board_id: kanban_board.id} %>
   </div>
   <div class="action-btn layout-top-spacing mb-4 d-flex align-items-center justify-content-between flex-wrap gap-6">
-    <h1 class="h3 mb-0 text-gray-800">
-    <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
-    </h1>
-    <div class="d-flex align-items-center justify-content-end">
-      <% if filtered_results %>
-        <form id="clear-filter-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
-          <button type="submit" class="btn btn-primary filter-button">
-            <i class="ti ti-filter"></i> Clear Filter
-          </button>
+    <%= turbo_stream_from kanban_board %>
+        <div id="<%= dom_id kanban_board %>" class="flex-grow-1">
+          <%= render "boards/kanban_show", kanban_board: kanban_board %>
+        </div>
+
+      <div class="d-flex align-items-center justify-content-end">
+        <% if filtered_results %>
+          <form id="clear-filter-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
+            <button type="submit" class="btn btn-primary filter-button">
+              <i class="ti ti-filter"></i> Clear Filter
+            </button>
+            <input type="hidden" name="kanban_board" value="<%= kanban_board.id %>">
+            <input type="hidden" name="query" value=""> <!-- Empty query parameter -->
+          </form>
+        <% end %>
+
+        <%= render "/boards/header_actions", owner: kanban_board.owner %>
+
+        <form id="kanban-search-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
+          <div class="search-box me-3">
+            <input id="kanban-search-input" name="query" type="text" class="form-control" placeholder="Search...">
+          </div>
           <input type="hidden" name="kanban_board" value="<%= kanban_board.id %>">
-          <input type="hidden" name="query" value=""> <!-- Empty query parameter -->
         </form>
-      <% end %>
+        <div class="dropdown">
+          <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <i class="ti ti-dots-vertical text-dark"></i>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
+            <%= link_to 'Edit', edit_polymorphic_path(kanban_board.owner, turbo_frame_id: "board#{kanban_board.id}_edit", turbo: true), class: 'dropdown-item' %>
+            <a class="dropdown-item archived-columns" href="javascript:void(0);">Archived Columns</a>
+          </div>
 
-      <%= render "/boards/header_actions", owner: kanban_board.owner %>
-
-      <form id="kanban-search-form" action="<%= url_for(controller: 'kanban_cards', action: 'search') %>" method="get">
-        <div class="search-box me-3">
-          <input id="kanban-search-input" name="query" type="text" class="form-control" placeholder="Search...">
         </div>
-        <input type="hidden" name="kanban_board" value="<%= kanban_board.id %>">
-      </form>
-      <div class="dropdown">
-        <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-          <i class="ti ti-dots-vertical text-dark"></i>
-        </a>
-        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
-          <%= link_to 'Edit', edit_polymorphic_path(kanban_board.owner, turbo_frame_id: "board#{kanban_board.id}_edit", turbo: true), class: 'dropdown-item' %>
-          <a class="dropdown-item archived-columns" href="javascript:void(0);">Archived Columns</a>
-        </div>
-
       </div>
-    </div>
   </div>
 
   <%= turbo_frame_tag "board#{kanban_board.id}_edit" do%>
@@ -68,17 +70,18 @@
               <div class="task-list-section" id="<%= kanban_board.id %>">
                 <% kanban_board.kanban_columns.each do |kanban_column| %>
                   <% if @searched_kanban_cards.nil? %>
-                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column, kanban_cards: kanban_column.kanban_cards %>
+                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column  %>
                   <% else %>
-                    <% filtered_cards = kanban_column.kanban_cards & @searched_kanban_cards %>
-                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column, kanban_cards: filtered_cards %>
+                    <% filtered_cards = kanban_column.kanban_cards.where(id: @searched_kanban_cards.pluck(:id))
+                    %>
+                    <%= render "kanban_columns/kanban_column", kanban_column: kanban_column, searched_kanban_cards: filtered_cards %>
                   <% end %>
                 <% end %>
                 <% if policy(KanbanColumn.new(entity_id: current_user.entity_id)).create? %>
-                  <button type="button add-column-button" aria-haspopup="true" aria-expanded="false" data-testid="add-new-column-button" aria-labelledby=":r13:" data-size="small" class="square-button column-add">
+                  <button type="button add-column-button" aria-haspopup="true" aria-expanded="false" data-testid="add-new-column-button" aria-labelledby=":r13:" data-size="small" class="btn btn-outline-primary square-button column-add">
                     <span data-component="buttonContent">
                       <span data-component="leadingVisual">
-                        <i class="ti ti-plus"></i>
+                        <h5>+ Add Column</h5>
                       </span>
                     </span>
                   </button>
@@ -123,7 +126,7 @@
 <% modal_id = "modal_add_kanban_column#{kanban_board.id}" %>
 <%= turbo_frame_tag "add_column_modal" do %>
   <%= render EditModalComponent.new(title: "Add Column", modal_id: modal_id) do %>
-    <%= link_to new_kanban_column_path("kanban_column[kanban_board_id]": kanban_board.id, "kanban_column[entity_id]": kanban_board.entity_id, turbo: true),
+    <%= link_to new_kanban_column_path("kanban_column[kanban_board_id]": kanban_board.id, "kanban_column[entity_id]": kanban_board.entity_id, format: :turbo_stream, turbo: true),
                 class: "modal_add_kanban_column_load_data_link_#{kanban_board.id}",
                 data: { turbo_frame: "new_kanban_column#{kanban_board.id}", turbo: true } do %>
       <span>Loading...</span>
@@ -147,4 +150,11 @@
     <% end %>
   <% end %>
 <% end %>
+<% end %>
+
+<%= render OffcanvasComponent.new(title: "", offcanvas_id: "card_offcanvas_id") do %>
+    <%# Dynamically determine the show path helper %>
+
+    <%= turbo_frame_tag "card_offcanvas_turbo_frame", loading: :lazy, src: "" do %>
+    <% end %>
 <% end %>

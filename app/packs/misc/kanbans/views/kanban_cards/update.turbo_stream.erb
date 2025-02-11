@@ -1,1 +1,1 @@
-<%= turbo_stream.replace(@frame, partial: "kanban_cards/offcanvas_show", locals: { kanban_card: @kanban_card, current_user: @current_user, update_allowed: policy(@kanban_card).update? }) %>
+<%= turbo_stream.replace(@frame, partial: "kanban_cards/offcanvas_show", locals: { kanban_card: @kanban_card, current_user: @current_user, update_allowed: policy(@kanban_card).update?, turbo_tag: @frame }) %>

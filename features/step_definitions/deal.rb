@@ -18,11 +18,10 @@ When('I create a new deal {string}') do |arg1|
   fill_in('deal_amount', with: @deal.amount)
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
-  sleep(0.5)
+  sleep(3)
 
   kanban_board = KanbanBoard.first
   kanban_columns = kanban_board.kanban_columns.pluck(:name)
-  sleep(3)
   kanban_columns.each { |column| expect(page.text).to(include(column)) }
 end
 
@@ -41,11 +40,12 @@ When('I edit the deal {string}') do |arg1|
 end
 
 When('I click on the Add Item and select any Investor and save') do
+  # sleep(0.25)
   first('button', text: "Add Item").click
-  ##sleep(0.25)
+  # sleep(1)
   select_investor_and_save(2, 'First Investment')
-  expect(page).to have_content("First Investment")
   select_investor_and_save(3, 'Second Investment')
+  expect(page).to have_content("First Investment")
   expect(page).to have_content("Second Investment")
 end
 
@@ -58,6 +58,7 @@ When('I click on a Kanban Card and edit the form') do
   fill_in('Tags', with: "Random, Tag")
   click_button('Save')
   sleep(1)
+  first(".offcanvas-close").click
   expect(all(".kanban-card").first.text).to include("Random")
   expect(all(".kanban-card").first.text).to include("Tag")
 end
@@ -66,7 +67,7 @@ When("I click on a Kanban Card's tags") do
   KanbanCardIndex.import!
   expect(all(".kanban-card").count).to(eq(2))
   click_link("Random")
-  sleep(1)
+  sleep(2)
   expect(all(".kanban-card").count).to(eq(1))
 end
 
@@ -412,7 +413,7 @@ When('I click on the action dropdown and dont select any Investor and save') do
 end
 
 Then('i click on the details button') do
-  within("#kanban_card_show_#{@deal_investor.kanban_card.id}") do
+  within("#card_offcanvas_turbo_frame") do
     @new_window = window_opened_by { click_on("Details") }
   end
 end

@@ -5,7 +5,7 @@ class AccessRightsController < ApplicationController
 
   # GET /access_rights or /access_rights.json
   def index
-    @access_rights = policy_scope(AccessRight).includes(:owner, :investor, :user)
+    @access_rights = policy_scope(AccessRight).includes(:investor, :user)
 
     @access_rights = @access_rights.deals.where(owner_id: params[:deal_id]) if params[:deal_id].present?
 

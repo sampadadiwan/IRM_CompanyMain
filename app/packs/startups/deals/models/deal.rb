@@ -64,14 +64,6 @@ class Deal < ApplicationRecord
     %w[deal_activities deal_investors investors]
   end
 
-  def broadcast_data
-    {
-      item: "kanban",
-      item_id: id,
-      event: "updated"
-    }
-  end
-
   def activity_names
     DealActivity.templates(self).collect(&:title)
   end

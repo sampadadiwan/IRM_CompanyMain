@@ -138,7 +138,6 @@ class DealsController < ApplicationController
       if UpdateDeal.wtf?(deal: @deal).success?
         @success = true
         format.turbo_stream do
-          ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal.broadcast_data)
           UserAlert.new(user_id: current_user.id, message: "Deal was successfully updated! Please refresh!", level: "success").broadcast
           render :update
         end

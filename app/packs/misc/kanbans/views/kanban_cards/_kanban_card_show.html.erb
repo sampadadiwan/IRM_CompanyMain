@@ -1,0 +1,38 @@
+<div class="card-body kanban_card">
+  <div class="task-header">
+    <div>
+      <h3 class="item-head fw-semibold small-heading" data-item-title="Investor Name"><%= kanban_card.title %></h3>
+    </div>
+  </div>
+  <div class="task-content">
+        <% kanban_card.info_field.split(',').each do |info| %>
+          <p class="mb-0" data-item-text= <%= info %>>
+              <%= info.strip %>
+          </p>
+        <% end %>
+  </div>
+  <div class="task-body">
+    <div class="task-bottom">
+      <div class="tb-section-1">
+      <span class="hstack fs-2">
+        <i class="ti ti-money fs-5"></i>
+        <% unless kanban_card.tags.nil? || kanban_card.tags.empty? %>
+          <% kanban_card.tags.split(',').each do |tag| %>
+            <%= link_to tag.strip, search_kanban_cards_path(query: tag.strip, kanban_board: kanban_card.kanban_board_id, format: :turbo_stream), method: :get, remote: true, class: "badge bg-secondary text-light fs-1 card-tag", style: "cursor: pointer;" %>
+          <% end %>
+        <% end %>
+      </span>
+      </div>
+      <div class="tb-section-2">
+        <%  if Rails.env.test? %>
+          <div class="move-to-up-column">
+            <button class="btn btn-outline-primary btn-sm">^</button>
+          </div>
+          <div class="move-to-next-column">
+            <button class="btn btn-outline-primary btn-sm">>></button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

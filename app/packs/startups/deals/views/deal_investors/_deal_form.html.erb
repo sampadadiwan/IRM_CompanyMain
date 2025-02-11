@@ -1,4 +1,5 @@
-<%= turbo_frame_tag "new_deal_investor" do %>
+<%turbo_tag ||= "new_deal_investor"%>
+<%= turbo_frame_tag turbo_tag do %>
 <% doc_owner_tag||="" %>
 <div class="wizard_container dynamic_form centered" data-controller="wizard">
     <div class="col-md-6 card shadow mb-4 justify-content-md-center">
@@ -29,6 +30,7 @@
             <%= form.text_field :deal_id, class: "form-control", hidden: true  %>
             <%= form.text_field :deal_activity_id, class: "form-control", hidden: true  %>
             <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+            <%= form.text_field :turbo_frame, value: turbo_tag ,class: "form-control", hidden: true  %>
             </div>
 
             <div class="form-group">
@@ -38,8 +40,8 @@
                 <% if InvestorPolicy.new(current_user, new_investor).new? %>
                     <small class="text-muted">
                     Create <%= link_to new_investor_path("investor[entity_id]": new_investor.entity_id,
-                        "back_to": "deal_investors/blank", turbo: true, object: deal_investor),
-                        data: { turbo_frame: "new_deal_investor", turbo: true } do %>
+                        "back_to": "deal_investors/blank", turbo: true, turbo_frame: turbo_tag, object: deal_investor),
+                        data: { turbo_frame: turbo_tag, turbo: true } do %>
                         <span>New Stakeholder</span>
                     <% end %>
                     </small>

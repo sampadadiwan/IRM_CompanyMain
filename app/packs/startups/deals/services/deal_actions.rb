@@ -15,4 +15,9 @@ class DealActions < Trailblazer::Operation
     deal.deal_documents_folder
     deal.save
   end
+
+  def broadcast_update(_ctx, deal:, **)
+    deal.kanban_board.broadcast_board_event if deal.kanban_board.present?
+    true
+  end
 end

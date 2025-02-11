@@ -1,5 +1,5 @@
 <%= render FormCard.new(title: "Document : #{document.name.presence || 'New'}") do %>
-    <%= form_with(model: document, validate: true) do |form| %>
+    <%= form_with(model: document, validate: true, format: :html) do |form| %>
       <% if document.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(document.errors.count, "error") %> prohibited this document from being saved:</h2>

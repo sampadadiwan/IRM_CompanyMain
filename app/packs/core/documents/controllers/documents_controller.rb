@@ -248,7 +248,7 @@ class DocumentsController < ApplicationController
     elsif params[:redirect_to].present?
       redirect_to params[:redirect_to], notice: "Document was successfully saved."
     elsif @document.owner
-      redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully saved."
+      redirect_to polymorphic_url(@document.owner, tab: "docs-tab", format: :html), notice: "Document was successfully saved."
     else
       redirect_to document_url(@document), notice: "Document was successfully saved."
     end

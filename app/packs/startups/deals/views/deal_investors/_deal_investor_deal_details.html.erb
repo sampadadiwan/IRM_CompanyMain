@@ -1,0 +1,45 @@
+<div class="associated_entity" data-controller="offcanvastabs">
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" href="#docs-tab"
+       data-action="click->offcanvastabs#switchTab"
+       data-offcanvastabs-target="navLink">Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab"
+       data-action="click->offcanvastabs#switchTab"
+       data-offcanvastabs-target="navLink">Tasks</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#notes-tab"
+       data-action="click->offcanvastabs#switchTab"
+       data-offcanvastabs-target="navLink">Notes</a>
+  </nav>
+
+  <div class="tab-content">
+    <div id="docs-tab" class="tab-pane fade show active" data-offcanvastabs-target="tabPane">
+      <div id="docs" class="associated_entity">
+        <%= turbo_frame_tag "documents_tree_frame",
+                            src: folder_documents_path(entity_id: deal_investor.entity_id, folder_id: deal_investor.document_folder.id),
+                            target: "_top", loading: :lazy do %>
+        <% end %>
+      </div>
+    </div>
+
+
+    <div id="tasks-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="tasks" class="associated_entity">
+        <%= turbo_frame_tag "tasks_frame",
+                            src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, entity_id: deal_investor.entity_id),
+                            target: "_top", loading: :lazy do %>
+        <% end %>
+      </div>
+    </div>
+
+    <div id="notes-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="notes" class="associated_entity">
+        <%= turbo_frame_tag "notes_frame",
+                            src: notes_path(investor_id: deal_investor.investor_id, entity_id: deal_investor.entity_id),
+                            target: "_top", loading: :lazy do %>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</div>
+

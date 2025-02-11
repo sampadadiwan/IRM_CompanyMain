@@ -60,7 +60,7 @@
 
             <%= link_to "New Document", new_document_path(
                         document: doc_attributes,
-                        "document[folder_id]": folder_id),
+                        "document[folder_id]": folder_id, format: :html, turbo: false),
                         {class: "dropdown-item" }  if policy(document).create? %>
 
 

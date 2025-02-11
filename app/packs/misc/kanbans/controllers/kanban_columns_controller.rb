@@ -18,10 +18,12 @@ class KanbanColumnsController < ApplicationController
     @kanban_column.entity_id ||= current_user.entity_id
     authorize @kanban_column
 
-    if params[:turbo]
-      render turbo_stream: [
-        turbo_stream.replace("new_kanban_column#{@kanban_column.kanban_board_id}", partial: "kanban_columns/form", locals: { kanban_column: @kanban_column })
-      ]
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace("new_kanban_column#{@kanban_column.kanban_board_id}", partial: "kanban_columns/form", locals: { kanban_column: @kanban_column })
+        ]
+      end
     end
   end
 
@@ -34,7 +36,6 @@ class KanbanColumnsController < ApplicationController
 
     respond_to do |format|
       if @kanban_column.save
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_column.kanban_board.broadcast_data)
         UserAlert.new(user_id: current_user.id, message: "Column was successfully created!", level: "success").broadcast
         format.turbo_stream { render :create }
 
@@ -63,7 +64,6 @@ class KanbanColumnsController < ApplicationController
   def update
     if @kanban_column.update(kanban_column_params)
       respond_to do |format|
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_column.kanban_board.broadcast_data)
         UserAlert.new(user_id: current_user.id, message: "Column was successfully updated!", level: "success").broadcast
         format.turbo_stream { render :create }
         format.json { render json: @kanban_column, status: :ok }
@@ -78,7 +78,7 @@ class KanbanColumnsController < ApplicationController
   def delete_column
     result = ArchiveKanbanColumn.wtf?(params:, kanban_column: @kanban_column)
     if result.success?
-      ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_column.kanban_board.broadcast_data)
+      UserAlert.new(user_id: current_user.id, message: "Column #{@kanban_column.name} Deleted", level: "success").broadcast
     else
       errors = "Column could not be deleted! #{result['errors']}"
       UserAlert.new(user_id: current_user.id, message: errors, level: "error").broadcast
@@ -91,7 +91,6 @@ class KanbanColumnsController < ApplicationController
     authorize @kanban_column
     result = RestoreColumn.wtf?(params:, kanban_column: @kanban_column)
     if result.success?
-      ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_column.kanban_board.broadcast_data)
       UserAlert.new(user_id: current_user.id, message: "Column was successfully restored!", level: "success").broadcast
     else
       errors = "Column could not be restored! #{result['errors']}"

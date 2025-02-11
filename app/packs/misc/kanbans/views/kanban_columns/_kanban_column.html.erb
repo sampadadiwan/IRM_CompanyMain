@@ -1,8 +1,12 @@
+<% searched_kanban_cards ||= nil %>
 <% card_class ||= KanbanCardManager::PARENT_MAPPING.key(kanban_column.kanban_board.owner_type) %>
 <div id="<%=kanban_column.id%>" class="task-list-container" data-action="sorting" draggable="true">
-  <div class="connect-sorting connect-sorting-todo" data-kanban-column-id=<%= kanban_column.id %>>
+  <div class="connect-sorting connect-sorting-todo" data-kanban-column-id="<%= kanban_column.id %>">
     <div class="task-container-header">
-      <h3 class="item-head fw-semibold small-heading" data-item-title="<%= kanban_column.name%>"><%= kanban_column.name%></h3>
+      <%= turbo_stream_from kanban_column %>
+      <div id="<%= dom_id kanban_column %>">
+        <%= render "kanban_columns/kanban_column_show", kanban_column: kanban_column %>
+      </div>
       <div class="dropdown">
         <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
           <i class="ti ti-dots-vertical text-dark"></i>
@@ -14,41 +18,57 @@
       </div>
     </div>
     <div class="connect-sorting-content ui-sortable" data-sortable="true">
-			<% kanban_cards.each do |kanban_card| %>
-        <% if policy(kanban_card.data_source).show?%>
-          <%= render "kanban_cards/kanban_card", kanban_card: kanban_card, kanban_column_id: kanban_column.id %>
-        <% end %>
-			<% end %>
-    </div>
-    <button type="button" title="Add item" class="add-item-button">
-    <span class="button-content">
-      <% new_object = card_class.constantize.new(entity_id: kanban_column.entity_id, "#{KanbanCardManager::PARENT_MAPPING[card_class]&.underscore}_id": kanban_column.kanban_board.owner_id ) %>
-      <% new_path_helper = "new_#{card_class.underscore}_path" %>
-      <% new_frame_tag = "board#{kanban_column.kanban_board_id}_new_kanban_card" %>
-
-      <% new_path = send(new_path_helper,
-                  "#{card_class.underscore}[#{KanbanCardManager::PARENT_MAPPING[card_class]&.underscore}_id]": kanban_column.kanban_board.owner_id,
-                  "#{card_class.underscore}[entity_id]": current_user.entity_id,
-                  "#{card_class.underscore}[kanban_column_id]": kanban_column.id,
-                  turbo_frame: new_frame_tag, turbo: true) %>
-
-      <% if policy(new_object).create? %>
-      <%= link_to "+ Add Item", new_path,
-                  data: { turbo_frame: new_frame_tag, turbo: true, method: :get } %>
+      <% kanban_cards = kanban_column.kanban_cards %>
+      <% if searched_kanban_cards.present? %>
+        <% kanban_cards = kanban_cards.where(id: searched_kanban_cards.pluck(:id)) %>
       <% end %>
-      </span>
-    </button>
+      <% kanban_cards.includes(:data_source).sequenced.each do |kanban_card| %>
+
+        <% if kanban_card.data_source.present? %>
+          <% if policy(kanban_card.data_source).show? %>
+            <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
+          <% end %>
+        <% else %>
+          <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
+        <% end %>
+      <% end %>
+    </div>
+    <% new_object = card_class.constantize.new(
+      entity_id: kanban_column.entity_id,
+      "#{KanbanCardManager::PARENT_MAPPING[card_class]&.underscore}_id": kanban_column.kanban_board.owner_id
+    ) %>
+
+    <% new_path_helper = "new_#{card_class.underscore}_path" %>
+    <% new_frame_tag = "board#{kanban_column.kanban_board_id}_new_kanban_card" %>
+
+    <% new_path = send(
+      new_path_helper,
+      "#{card_class.underscore}[#{KanbanCardManager::PARENT_MAPPING[card_class]&.underscore}_id]": kanban_column.kanban_board.owner_id,
+      "#{card_class.underscore}[entity_id]": current_user.entity_id,
+      "#{card_class.underscore}[kanban_column_id]": kanban_column.id,
+      format: :turbo_stream,
+      turbo_frame: new_frame_tag)
+    %>
+
+    <% if policy(new_object).create? %>
+      <%= turbo_frame_tag "button_turbo_frame" do %>
+        <button type="button" class="btn btn-outline-primary" title="Add item" data-turbo-frame="<%= new_frame_tag %>">
+          <%= link_to new_path, method: :get, data: { turbo_frame: new_frame_tag }, class: "text-decoration-none d-flex align-items-center gap-1" do %>
+            <i class="ti ti-plus"></i> Add Item
+          <% end %>
+        </button>
+      <% end %>
+    <% end %>
+
+
 	</div>
 </div>
 <% modal_id = "modal_kanban_column#{kanban_column.id}" %>
+<% edit_turbo_tag = "kanban_column_edit_#{kanban_column.id}"%>
 <%= render EditModalComponent.new(title: "Edit Column", modal_id: modal_id) do %>
-    <%= link_to edit_kanban_column_path( id: kanban_column.id, turbo: true ),
+
+    <%= turbo_frame_tag edit_turbo_tag, loading: :lazy, src: edit_kanban_column_path( id: kanban_column.id, turbo: true, format: :turbo_stream),
                               class: "modal_kanban_column_load_data_link_#{kanban_column.id}",
-                              data: { turbo_frame: "kanban_column_edit_#{kanban_column.id}", turbo: true} do %>
-
-    <span>Loading...</span>
-    <% end %>
-
-    <%= turbo_frame_tag "kanban_column_edit_#{kanban_column.id}" do %>
+                              data: { turbo_frame: edit_turbo_tag, turbo: true} do %>
     <% end %>
 <% end %>

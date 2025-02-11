@@ -26,16 +26,11 @@
     <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
             <div class="card-header">
-                <div class="side-by-side-container">
-                    <div class="side-by-side-view">
-                        <span class="m-0 font-weight-bold text-primary">Documents</span>
-                    </div>
-                    <div class="side-by-side-view">
-                        <div class="align-items-center justify-content-end  float-right">
-                            <%= link_to "Index", documents_path(entity_id:params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-primary d-none d-sm-inline"  %>
-                            <%= link_to "All Documents", documents_path(entity_id:params[:entity_id]), class: "btn btn-outline-primary  d-none d-sm-inline"  %>
-                            
-                        </div>
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
+                    <span class="m-0 font-weight-bold text-primary">Documents</span>
+                    <div class="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
+                        <%= link_to "Index", documents_path(entity_id: params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-primary" %>
+                        <%= link_to "All Documents", documents_path(entity_id: params[:entity_id]), class: "btn btn-outline-primary" %>
                     </div>
                 </div>
             </div>

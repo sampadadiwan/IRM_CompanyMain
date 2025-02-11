@@ -22,8 +22,8 @@ class UpdateSequences < Trailblazer::Operation
     true
   end
 
-  def broadcast_changes(ctx, **)
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, ctx[:deal].broadcast_data)
+  def broadcast_changes(_ctx, deal_activity:, **)
+    deal_activity.deal.kanban_board.broadcast_board_event if deal_activity.deal.kanban_board.present?
     true
   end
 end

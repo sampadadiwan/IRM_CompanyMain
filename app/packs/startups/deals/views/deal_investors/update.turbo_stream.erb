@@ -1,5 +1,0 @@
-<% if @result.success? %>
-    <%= turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form_success", locals: { deal_investor: @deal_investor, current_user: @current_user }) %>
-<% else %>
-    <%= turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, current_user: @current_user }) %>
-<% end %>

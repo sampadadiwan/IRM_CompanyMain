@@ -1,186 +1,157 @@
-<%turbo_tag ||= "deal_investor_show_#{deal_investor.id}"%>
+<% turbo_tag ||= "deal_investor_show_#{deal_investor.id}"%>
 <%= turbo_frame_tag turbo_tag do %>
-<div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
-<table class="table table-bordered dataTable ">
-<%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>
-<% belongs_to_entity ||= false %>
-<% update_allowed ||= false %>
-  <tr>
-    <td>
-      Deal
-    </td>
-    <td>
-      <%= belongs_to_entity ?
-        link_to(deal_investor.deal_name, deal_investor.deal, :target => "_blank") :
-        deal_investor.deal_name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Investor
-    </td>
-    <td>
-      <%= belongs_to_entity ?
-          link_to(deal_investor.investor_name, deal_investor.investor, :target => "_blank") :
-          deal_investor.investor_name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Status
-    </td>
-    <td>
-      <%= deal_investor.status %>
-    </td>
-  </tr>
 
-  <tr>
-    <td>
-      Tier
-    </td>
-    <td>
-      <%= deal_investor.tier %>
-    </td>
-  </tr>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary"><%= deal_investor.investor_name %></h6>
+  </div>
+  <div class="card-body show_details">
 
-  <tr>
-    <td>
-      Deal Lead
-    </td>
-    <td>
-      <%= deal_investor.deal_lead %>
-    </td>
-  </tr>
+    <table class="table table-bordered dataTable ">
+    <%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>
+    <% belongs_to_entity ||= false %>
+    <% update_allowed ||= false %>
+      <tr>
+        <td>
+          Deal
+        </td>
+        <td>
+          <%= belongs_to_entity ?
+            link_to(deal_investor.deal_name, deal_investor.deal, :target => "_blank") :
+            deal_investor.deal_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Investor
+        </td>
+        <td>
+          <%= belongs_to_entity ?
+              link_to(deal_investor.investor_name, deal_investor.investor, :target => "_blank") :
+              deal_investor.investor_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Status
+        </td>
+        <td>
+          <%= deal_investor.status %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Source
-    </td>
-    <td>
-      <%= deal_investor.source %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Tier
+        </td>
+        <td>
+          <%= deal_investor.tier %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Tags
-    </td>
-    <td>
-      <%= deal_investor.tags %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Deal Lead
+        </td>
+        <td>
+          <%= deal_investor.deal_lead %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Pre Money Valuation
-    </td>
-    <td>
-      <%= money_to_currency deal_investor.pre_money_valuation, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Primary Amount
-    </td>
-    <td>
-      <%= money_to_currency deal_investor.primary_amount, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Secondary Investment
-    </td>
-    <td>
-      <%= money_to_currency deal_investor.secondary_investment, params %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Source
+        </td>
+        <td>
+          <%= deal_investor.source %>
+        </td>
+      </tr>
 
-  <% if deal_investor.entity.is_fund? %>
+      <tr>
+        <td>
+          Tags
+        </td>
+        <td>
+          <%= deal_investor.tags %>
+        </td>
+      </tr>
 
-    <tr>
-      <td>
-        Fee
-      </td>
-      <td>
-        <%= money_to_currency deal_investor.fee, params %>
-      </td>
+      <tr>
+        <td>
+          Pre Money Valuation
+        </td>
+        <td>
+          <%= money_to_currency deal_investor.pre_money_valuation, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Primary Amount
+        </td>
+        <td>
+          <%= money_to_currency deal_investor.primary_amount, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Secondary Investment
+        </td>
+        <td>
+          <%= money_to_currency deal_investor.secondary_investment, params %>
+        </td>
+      </tr>
+
+      <% if deal_investor.entity.is_fund? %>
+
+        <tr>
+          <td>
+            Fee
+          </td>
+          <td>
+            <%= money_to_currency deal_investor.fee, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Total
+            (Primary + Secondary + Fee)
+          </td>
+          <td>
+            <%= money_to_currency deal_investor.total, params %>
+          </td>
+        </tr>
+
+      <% end %>
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= link_to(deal_investor.entity_name, deal_investor.entity, :target => "_blank") %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Remarks
+        </td>
+        <td>
+          <%= deal_investor.notes %>
+        </td>
     </tr>
 
-    <tr>
-      <td>
-        Total
-        (Primary + Secondary + Fee)
-      </td>
-      <td>
-        <%= money_to_currency deal_investor.total, params %>
-      </td>
-    </tr>
+    <%= display_custom_fields(deal_investor) %>
 
-  <% end %>
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= link_to(deal_investor.entity_name, deal_investor.entity, :target => "_blank") %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-       Remarks
-    </td>
-    <td>
-       <%= deal_investor.notes %>
-    </td>
- </tr>
-
-<%= display_custom_fields(deal_investor) %>
-
-</table>
-
+    </table>
+  </div>
+</div>
 <div class="d-inline-flex">
   <%= link_to "Details", deal_investor_path(deal_investor), class: "btn btn-outline-primary", target: "_blank" %>
-  <%= link_to "Edit", edit_deal_investor_path(deal_investor, turbo_frame: turbo_tag), class: "btn btn-outline-secondary", data: { turbo_stream: true } if update_allowed %>
+  <%= link_to "Edit", edit_deal_investor_path(deal_investor, turbo_frame: turbo_tag, format: :turbo_stream), class: "btn btn-outline-secondary", data: { turbo_frame: turbo_tag } if update_allowed %>
   <%= form_with(model: deal_investor, url: deal_investor_path(deal_investor), method: :delete) do |form| %>
-    <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
+    <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup", "bs-dismiss":"offcanvas" } %>
   <% end %>
 </div>
-<div class="associated_entity" data-controller="tabs tabdetails">
-    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
-      <a class="nav-link active" data-bs-toggle="pill" href="#docs-tab" data-action="click->tabdetails#loadData">Documents</a>
-      <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab" data-action="click->tabdetails#loadData">Tasks</a>
-      <a class="nav-link" data-bs-toggle="pill" href="#notes-tab" data-action="click->tabdetails#loadData">Notes</a>
-    </nav>
-
-    <div class="tab-content">
-      <div id="docs-tab" class="tab-pane fade show active">
-        <div id="docs" class="associated_entity">
-          <%= turbo_frame_tag "documents_tree_frame",
-                              src: folder_documents_path(entity_id: deal_investor.entity_id, folder_id: deal_investor.document_folder.id),
-                              target: "_top", loading: :lazy do %>
-          <% end %>
-        </div>
-      </div>
-
-      <div id="tasks-tab" class="tab-pane fade">
-        <div id="tasks" class="associated_entity">
-          <%= turbo_frame_tag "tasks_frame",
-                              src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, entity_id: deal_investor.entity_id),
-                              target: "_top", loading: :lazy do %>
-          <% end %>
-        </div>
-      </div>
-    </div>
-
-    <div id="notes-tab" class="tab-pane fade">
-        <div id="notes" class="associated_entity">
-          <%= turbo_frame_tag "notes_frame",
-                              src: notes_path(investor_id: deal_investor.investor_id, entity_id: deal_investor.entity_id), target: "_top", loading: :lazy do %>
-          <% end %>
-        </div>
-      </div>
-    </div>
-
-  </div>
+  <%= render "deal_investor_deal_details", deal_investor: deal_investor %>
 <% end %>

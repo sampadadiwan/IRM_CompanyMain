@@ -74,7 +74,7 @@ module DealsHelper
   end
 
   def get_grouped_access_rights(access_rights)
-    access_rights.group_by do |ar|
+    access_rights.includes(:granted_by).group_by do |ar|
       if ar.access_to_investor_id.present?
         [:access_to_investor_id, ar.access_to_investor_id]
       elsif ar.access_to_category.present?

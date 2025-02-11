@@ -8,7 +8,7 @@
 
     <div class="d-flex align-items-center search-form-input">
       <% current_input = params.dig("search", "value").presence || nil %>
-      <%= text_field_tag "search[value]", current_input, id: "search_input", class: "form-control", data: { target: "search.searchInput", action: "keydown->search#debouncedSearchInput", toggle: "tooltip", title: "Type to search" }, placeholder: "Search..." %>
+      <%= text_field_tag "search[value]", current_input, id: "search_input", class: "form-control", data: { "search-target": "searchInput", action: "keydown->search#debouncedSearchInput", toggle: "tooltip", title: "Type to search" }, placeholder: "Search..." %>
 
       <div id="search_spinner" class="spinner-border spinner-border-sm text-primary search_spinner ms-2" role="status">
         <span class="sr-only">Loading...</span>

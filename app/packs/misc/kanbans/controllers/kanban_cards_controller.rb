@@ -24,13 +24,11 @@ class KanbanCardsController < ApplicationController
 
   def create
     @kanban_card = KanbanCard.create!(kanban_card_params)
-    @kanban_card.update(data_source_type: "KanbanCard", data_source_id: @kanban_card.id)
     kanban_board = @kanban_card.kanban_board
     authorize @kanban_card
     authorize kanban_board
     respond_to do |format|
       if @kanban_card.persisted?
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_board.broadcast_data)
         format.html { redirect_to kanban_board_url(kanban_board), notice: "Card is successfully created." }
         format.json { render :show, status: :created }
         format.turbo_stream do
@@ -79,7 +77,6 @@ class KanbanCardsController < ApplicationController
       if @kanban_card.update(kanban_card_params)
         format.html { redirect_to @kanban_card, notice: 'Card was successfully updated.' }
         format.json { render :show, status: :ok, location: @kanban_card }
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @kanban_card.kanban_board.broadcast_data)
       else
         format.html { render :edit }
         format.json { render json: @kanban_card.errors, status: :unprocessable_entity }
@@ -121,19 +118,18 @@ class KanbanCardsController < ApplicationController
   def search
     @entity = current_user.entity
     @q = DealInvestor.ransack(params[:q])
-    kanban_card_ids = KanbanCardIndex.filter(term: { entity_id: @entity.id })
-                                     .query(query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
-                                                            query: "*#{params[:query]}*", default_operator: 'and' }).objects.compact.pluck(:id)
-    @kanban_cards = KanbanCard.where(id: kanban_card_ids)
-    if params[:query].blank?
-      @filtered_results = false
-      @kanban_cards = nil
-    else
+    @filtered_results = false
+    @searched_kanban_cards = nil
+    if params[:query].present?
       @filtered_results = true
+      kanban_card_ids = KanbanCardIndex.filter(term: { entity_id: @entity.id })
+                                       .query(query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
+                                                              query: "*#{params[:query]}*", default_operator: 'and' }).objects.compact.pluck(:id)
+      @searched_kanban_cards = KanbanCard.where(id: kanban_card_ids)
     end
     kanban_board = KanbanBoard.find(params[:kanban_board])
     render turbo_stream: [
-      turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_cards: @kanban_cards, kanban_board:, filtered_results: @filtered_results })
+      turbo_stream.replace("board_#{kanban_board.id}", partial: "/boards/kanban", locals: { kanban_board:, filtered_results: @filtered_results, kanban_cards: @searched_kanban_cards })
     ]
   end
 

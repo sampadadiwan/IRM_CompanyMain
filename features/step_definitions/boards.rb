@@ -29,7 +29,7 @@ end
 
 When('I add an item to the board') do
 	first('button', text: "Add Item").click()
-  #sleep(0.25)
+  # sleep(0.25)
 	fill_in "kanban_card[title]", with: "Test Card"
 	fill_in "kanban_card[notes]", with: "Test Note"
 	fill_in "kanban_card[info_field]", with: "Test Card"
@@ -38,7 +38,7 @@ When('I add an item to the board') do
 	all('.connect-sorting').first.find('#dropdownMenuLink-1').click()
 	sleep(0.1)
 	click_on('Archive All')
-	sleep(0.5)
+	sleep(1)
 	expect(KanbanBoard.last.kanban_cards.only_deleted.count).to(eq(1))
 	expect(KanbanBoard.last.kanban_columns.only_deleted.count).to(eq(1))
 	all('#dropdownMenuLink-1').first.click()

@@ -13,7 +13,7 @@ class GenerateDealActivitiesJob < ApplicationJob
         @deal_investor = DealInvestor.find(id)
         @deal_investor.create_activities
         @deal_investor.deal.broadcast_message("Deal steps were created, please refresh your page.")
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
+        @deal_investor.deal.kanban_board.broadcast_board_event if @deal_investor.deal.kanban_board.present?
       end
     end
   end

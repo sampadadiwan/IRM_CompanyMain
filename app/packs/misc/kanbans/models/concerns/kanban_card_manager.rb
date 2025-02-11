@@ -55,15 +55,13 @@ module KanbanCardManager
       kanban_card.notes = kanban_card_attrs["notes"]
       kanban_card.save!
     else
-      kanban_card = KanbanCard.create!(kanban_card_attrs)
+      KanbanCard.create!(kanban_card_attrs)
     end
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_card.kanban_board.broadcast_data) if previous_changes.keys.intersect?(self.class::CARD_VIEW_ATTRS.values)
   end
 
   def destroy_kanban_card
     kanban_card = KanbanCard.find_by(data_source_type: self.class.name, data_source_id: id)
     kanban_card.destroy
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, kanban_card.kanban_board.broadcast_data)
   end
 
   def deal_investor_data

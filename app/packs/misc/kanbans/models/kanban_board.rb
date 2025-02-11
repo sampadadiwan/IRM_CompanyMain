@@ -7,7 +7,8 @@ class KanbanBoard < ApplicationRecord
   has_many :kanban_columns, -> { order(:sequence) }, dependent: :destroy
   has_many :kanban_cards, through: :kanban_columns
 
-  after_create :create_columns
+  after_create :post_create_ops
+  after_save_commit :broadcast_board_event, if: -> { saved_change_to_name? }
 
   OWNER_TYPES = {
     Blank: "blank",
@@ -21,19 +22,15 @@ class KanbanBoard < ApplicationRecord
   }.freeze
 
   def self_owned?
-    owner_id == id
+    owner == self
   end
 
   def self.ransackable_associations(_auth_object = nil)
     %w[kanban_columns kanban_cards]
   end
 
-  def broadcast_data
-    {
-      item: "boards",
-      item_id: id,
-      event: "updated"
-    }
+  def broadcast_board_event
+    broadcast_update partial: "/boards/kanban_show"
   end
 
   def update_cards(card_view_attrs)
@@ -53,6 +50,11 @@ class KanbanBoard < ApplicationRecord
       card.update_columns(info_field:)
       # rubocop:enable Rails/SkipsModelValidations
     end
+  end
+
+  def post_create_ops
+    self.owner = self if owner_id.nil?
+    create_columns
   end
 
   def create_columns

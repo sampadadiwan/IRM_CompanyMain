@@ -28,7 +28,7 @@ class PerformActivityAction < Trailblazer::Operation
 
   def broadcast_changes(ctx, deal_activity:, **)
     ctx[:errors] = deal_activity.errors.full_messages
-    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, deal_activity.deal.broadcast_data)
+    deal_activity.deal.kanban_board.broadcast_board_event if deal_activity.deal.kanban_board.present?
     true
   end
 end

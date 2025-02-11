@@ -60,11 +60,14 @@ class DealInvestorsController < ApplicationController
   def show
     authorize @deal_investor
 
-    if params[:turbo]
-      frame = params[:turbo_frame] || "deal_investor_show_#{params[:id]}"
-      render turbo_stream: [
-        turbo_stream.replace(frame, partial: "deal_investors/deal_show", locals: { deal_investor: @deal_investor, update_allowed: policy(@deal_investor).update?, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, turbo_tag: frame })
-      ]
+    respond_to do |format|
+      format.turbo_stream do
+        frame = params[:turbo_frame] || "deal_investor_show_#{params[:id]}"
+        render turbo_stream: [
+          turbo_stream.replace(frame, partial: "deal_investors/deal_show", locals: { deal_investor: @deal_investor, update_allowed: policy(@deal_investor).update?, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, turbo_tag: frame })
+        ]
+      end
+      format.html
     end
   end
 
@@ -75,19 +78,13 @@ class DealInvestorsController < ApplicationController
     setup_custom_fields(@deal_investor)
 
     frame = params[:turbo_frame] || "new_deal_investor"
-    if params[:turbo]
-      render turbo_stream: [
-        turbo_stream.append(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor })
-      ]
-    else
-      respond_to do |format|
-        format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.append(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor })
-          ]
-        end
-        format.html
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor, turbo_tag: frame })
+        ]
       end
+      format.html
     end
   end
 
@@ -124,11 +121,10 @@ class DealInvestorsController < ApplicationController
     setup_doc_user(@deal_investor)
 
     @current_user = current_user
-    @frame = params[:turbo_frame] || "new_deal_investor"
+    @frame = params[:turbo_frame] || params[:deal_investor][:turbo_frame] || "new_deal_investor"
 
     respond_to do |format|
       if DealInvestorCreate.wtf?(deal_investor: @deal_investor).success?
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal investor was successfully created." }
         format.json { render :show, status: :created, location: @deal_investor }
         format.turbo_stream do
@@ -153,19 +149,27 @@ class DealInvestorsController < ApplicationController
     setup_doc_user(@deal_investor)
     @deal_investor.assign_attributes(deal_investor_params)
     @current_user = current_user
-    @frame = params[:turbo_frame] || "deal_investor_form_offcanvas#{@deal_investor.id}"
+    @frame = params[:deal_investor][:turbo_frame] || "deal_investor_form_offcanvas#{@deal_investor.id}"
     @result = DealInvestorUpdate.wtf?(deal_investor: @deal_investor)
     respond_to do |format|
       if @result.success?
-        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         @message = "Deal investor was successfully updated."
         @deal_investor.deal.broadcast_message(@message)
-        format.turbo_stream { render :update }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(@frame, partial: "deal_investors/deal_show", locals: {
+                                                      deal_investor: @deal_investor,
+                                                      update_allowed: policy(@deal_investor).update?,
+                                                      turbo_tag: @frame,
+                                                      belongs_to_entity: current_user.entity_id == @deal_investor.entity_id
+                                                    })
+        end
         format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal investor was successfully updated." }
         format.json { render :show, status: :ok, location: @deal_investor }
       else
         @deal_investor.deal.broadcast_message("Failed to update Deal Investor #{@deal_investor&.investor_name}")
-        format.turbo_stream { render :update }
+        format.turbo_stream do
+          turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, current_user: @current_user, turbo_tag: @frame })
+        end
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @deal_investor.errors, status: :unprocessable_entity }
       end
@@ -180,8 +184,10 @@ class DealInvestorsController < ApplicationController
     respond_to do |format|
       @message = "Deal investor was successfully destroyed."
       @status = "success"
-      format.turbo_stream { render :delete }
-      format.html { redirect_to deal_investors_url, notice: "Deal investor was successfully destroyed." }
+      format.turbo_stream do
+        UserAlert.new(user_id: current_user.id, message: @message, level: "info").broadcast
+      end
+      format.html { redirect_to deal_investors_url, notice: @message }
       format.json { head :no_content }
     end
   end

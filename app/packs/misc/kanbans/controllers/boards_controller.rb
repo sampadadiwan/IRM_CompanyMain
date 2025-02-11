@@ -61,7 +61,6 @@ class BoardsController < ApplicationController
     respond_to do |format|
       if @kanban_board.persisted?
         format.html { redirect_to board_url(@kanban_board), notice: "Board was successfully created." }
-        # ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
         format.json { render :show, status: :created, location: @kanban_board }
         # format.turbo_stream { render :create }
       else
@@ -76,7 +75,14 @@ class BoardsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    if params[:turbo]
+      frame = params[:turbo_frame_id] || "board#{@kanban_board.id}_edit"
+      render turbo_stream: [
+        turbo_stream.replace(frame, partial: "boards/form", locals: { kanban_board: @kanban_board, turbo_frame_id: frame, turbo: true })
+      ]
+    end
+  end
 
   def update
     respond_to do |format|
