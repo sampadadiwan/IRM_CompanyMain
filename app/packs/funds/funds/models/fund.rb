@@ -7,6 +7,7 @@ class Fund < ApplicationRecord
   include WithCustomField
   include Trackable.new
   include WithApprovals
+  include WithExchangeRate
   include WithFriendlyId
   include WithIncomingEmail
 

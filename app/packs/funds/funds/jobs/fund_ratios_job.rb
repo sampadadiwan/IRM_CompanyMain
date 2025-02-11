@@ -44,6 +44,11 @@ class FundRatiosJob < ApplicationJob
     xirr, cash_flows = calc.xirr(return_cash_flows: false)
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, cash_flows:, display_value: "#{xirr} %")
 
+    if fund.has_tracking_currency?
+      tracking_xirr, cash_flows = calc.xirr(return_cash_flows: false, use_tracking_currency: true)
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR (#{fund.tracking_currency})", value: tracking_xirr, cash_flows:, display_value: "#{tracking_xirr} %")
+    end
+
     # FundRatio.create!(owner: , entity_id: fund.entity_id, fund:, name: "Moic", value: calc.moic, display_value: calc.moic.to_s)
 
     value = calc.rvpi

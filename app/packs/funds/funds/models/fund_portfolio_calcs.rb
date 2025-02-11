@@ -1,7 +1,8 @@
-class FundPortfolioCalcs
+class FundPortfolioCalcs < FundRatioCalcs
   def initialize(fund, end_date)
     @fund = fund
     @end_date = end_date
+    super()    
   end
 
   def total_investment_costs_cents
@@ -113,7 +114,10 @@ class FundPortfolioCalcs
         end
       end
 
+      cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
+
       lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
+      # lxirr ? (lxirr * 100).round(2) : 0
       (lxirr * 100).round(2)
     end
   end
@@ -315,39 +319,8 @@ class FundPortfolioCalcs
   # net_irr: true/false - if true, then the IRR is calculated net of Estimated Carry
   # return_cash_flows: true/false - if true, then the cash flows used in computation are returned
   # adjustment_cash: amount to be added to the cash flows, used specifically for scenarios. see PortfolioScenarioJob
-  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil)
-    cf = XirrCashflow.new
-
-    @fund.capital_remittance_payments.includes(:capital_remittance).where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
-      cf << XirrTransaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id} ")
-    end
-
-    @fund.capital_distribution_payments.includes(:investor).where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
-      # Include the gross payable, but this contains the reinvestment amount
-      cf << XirrTransaction.new(cdp.gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}")
-      # Reduce by the reinvestment amount
-      cf << XirrTransaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}")
-    end
-
-    cf << XirrTransaction.new(fmv_on_date(scenarios:), date: @end_date, notes: "FMV") if fmv_on_date != 0
-    cf << XirrTransaction.new(cash_in_hand_cents, date: @end_date, notes: "Cash in Hand") if cash_in_hand_cents != 0
-    cf << XirrTransaction.new(net_current_assets_cents, date: @end_date, notes: "Net Current Assets") if net_current_assets_cents != 0
-
-    cf << XirrTransaction.new(estimated_carry_cents * -1, date: @end_date, notes: "Estimated carry") if net_irr
-    cf << XirrTransaction.new(adjustment_cash, date: @end_date, notes: "Adjustment Cash") if adjustment_cash != 0
-
-    Rails.logger.debug { "fund.xirr cf: #{cf}" }
-    cf.each do |cash_flow|
-      Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}"
-    end
-
-    lxirr = XirrApi.new.xirr(cf, "xirr_#{@fund.id}_#{@end_date}") || 0
-    Rails.logger.debug { "fund.xirr irr: #{lxirr}" }
-    if return_cash_flows
-      [(lxirr * 100).round(2), cf]
-    else
-      [(lxirr * 100).round(2), nil]
-    end
+  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
+    super(entity: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
   end
 
   def sample_xirr(count)

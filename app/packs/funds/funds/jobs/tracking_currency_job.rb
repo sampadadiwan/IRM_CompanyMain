@@ -26,6 +26,9 @@ class TrackingCurrencyJob < ApplicationJob
     end
   end
 
+  # rubocop:disable Metrics/BlockLength
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Rails/SkipsModelValidations
   def update_fund(fund, user_id)
     Audited.audit_class.as_user("TrackingCurrencyJob") do
       if fund.tracking_currency.present?
@@ -54,6 +57,8 @@ class TrackingCurrencyJob < ApplicationJob
         send_notification("Updating tracking currency for distribution payments", user_id)
         fund.capital_distribution_payments.where(tracking_net_payable_cents: 0).find_each do |cdp|
           cdp.tracking_net_payable_cents = cdp.net_payable_cents * cdp.tracking_exchange_rate.rate
+          cdp.tracking_gross_payable_cents = cdp.gross_payable_cents * cdp.tracking_exchange_rate.rate
+          cdp.tracking_reinvestment_with_fees_cents = cdp.reinvestment_with_fees_cents * cdp.tracking_exchange_rate.rate
           cdp.save
         end
 
@@ -84,8 +89,11 @@ class TrackingCurrencyJob < ApplicationJob
       else
         msg = "#{fund.name} tracking currency not present, skipping conversion to tracking currency"
         send_notification(msg, user_id, :info)
-        Rails.logger.debug {}
+        Rails.logger.debug { msg }
       end
     end
   end
+  # rubocop:enable Metrics/BlockLength
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Rails/SkipsModelValidations
 end

@@ -1,7 +1,8 @@
-class CapitalCommitmentCalcs
+class CapitalCommitmentCalcs < FundRatioCalcs
   def initialize(capital_commitment, end_date)
     @capital_commitment = capital_commitment
     @end_date = end_date
+    super()    
   end
 
   def fmv_cents
@@ -70,40 +71,7 @@ class CapitalCommitmentCalcs
     end
   end
 
-  def xirr(net_irr: false, return_cash_flows: false)
-    cf = XirrCashflow.new
-
-    Rails.logger.debug { "Computing XIRR for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-
-    Rails.logger.debug { "Adding capital_remittance_payments for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    @capital_commitment.capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
-      cf << XirrTransaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}") if cr.amount_cents != 0
-    end
-
-    Rails.logger.debug { "Adding capital_distribution_payments for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    @capital_commitment.capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
-      cf << XirrTransaction.new(cdp.net_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}") if cdp.net_payable_cents != 0
-    end
-
-    Rails.logger.debug { "Adding fmv for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    cf << XirrTransaction.new(fmv_on_date, date: @end_date, notes: "FMV") if fmv_on_date != 0
-    Rails.logger.debug { "Adding cash_in_hand for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    cf << XirrTransaction.new(cash_in_hand_cents, date: @end_date, notes: "Cash in Hand") if cash_in_hand_cents != 0
-    Rails.logger.debug { "Adding net_current_assets for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    cf << XirrTransaction.new(net_current_assets_cents, date: @end_date, notes: "Net Current Assets") if net_current_assets_cents != 0
-    Rails.logger.debug { "Adding estimated_carry for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    cf << XirrTransaction.new(estimated_carry_cents * -1, date: @end_date, notes: "Estimated Carry") if net_irr && estimated_carry_cents != 0
-
-    Rails.logger.debug { "capital_commitment.xirr cf: #{cf}" }
-    # Rails.logger.debug { "capital_commitment.xirr irr: #{cf.xirr}" }
-
-    Rails.logger.debug { "Computing XIRR for Capital Commitment: #{@capital_commitment} on #{@end_date}" }
-    lxirr = XirrApi.new.xirr(cf, "xirr_captial_commitment_#{@capital_commitment.id}_#{@end_date}") || 0
-    Rails.logger.debug { "cc.xirr irr: #{lxirr}" }
-    if return_cash_flows
-      [(lxirr * 100).round(2), cf]
-    else
-      (lxirr * 100).round(2)
-    end
+  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
+    super(entity: @capital_commitment, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
   end
 end
