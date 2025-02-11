@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports]
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports generate_tracking_numbers]
 
   # GET /funds or /funds.json
   def index
@@ -207,6 +207,11 @@ class FundsController < ApplicationController
     end
 
     redirect_back(fallback_location: fund_path(@fund), notice: "Formulas copied successfully.")
+  end
+
+  def generate_tracking_numbers
+    TrackingCurrencyJob.perform_later(fund_id: @fund.id, user_id: current_user.id)
+    redirect_to fund_path(@fund), notice: "Tracking currency update started, please check back in a few mins."
   end
 
   private

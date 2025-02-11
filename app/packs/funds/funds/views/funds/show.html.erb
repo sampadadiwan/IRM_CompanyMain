@@ -208,6 +208,10 @@ commands = [
                         <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
                       </li>
 
+                      <li>
+                        <%= button_to "Generate Tracking Numbers" , generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item" , form_class: "deleteButton"  %>
+                      </li>
+
                   </ul>
                 </li>
               </div>

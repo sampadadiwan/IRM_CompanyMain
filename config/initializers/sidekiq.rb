@@ -12,11 +12,19 @@ Sidekiq.configure_server do |config|
   end
 
   unless Rails.env.local?
+    # Used to update the tracking currency for all funds
+    Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')
+    # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
+    # Update the overdue status of remittances
     Sidekiq::Cron::Job.create(name: 'CapitalRemittanceStatusJob', cron: 'every day at 01:30', class: 'CapitalRemittanceStatusJob')
+    # Check the health of the replication
     Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
+    # Backup the DB snapshot to S3
     Sidekiq::Cron::Job.create(name: 'BackupDbJob', cron: 'every 1 hour', class: 'BackupDbJob')
+    # Check the S3 bucket for the backup
     Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob')
+    # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')

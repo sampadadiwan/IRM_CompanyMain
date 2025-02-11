@@ -31,6 +31,11 @@ class DailyMorningJob < ApplicationJob
 
       Rails.logger.debug "Disable SupportClientMappings after end_date"
       SupportClientMapping.disable_expired
+
+      Rails.logger.debug "Update Tracking Currency Values"
+      Fund.where("tracking_currency <> currency").find_each do |fund|
+        TrackingCurrencyJob.perform_now(fund.id)
+      end
     rescue StandardError => e
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message

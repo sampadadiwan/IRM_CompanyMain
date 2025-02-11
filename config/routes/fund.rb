@@ -102,6 +102,7 @@ resources :funds do
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
   get 'dashboard', on: :member
+  post 'generate_tracking_numbers', on: :member
 end
 
 resources :expression_of_interests do

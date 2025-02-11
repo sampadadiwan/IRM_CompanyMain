@@ -63,6 +63,10 @@ class FundPolicy < FundBasePolicy
     end
   end
 
+  def generate_tracking_numbers?
+    record.has_tracking_currency? && update?
+  end
+
   def generate_fund_ratios?
     update?
   end
