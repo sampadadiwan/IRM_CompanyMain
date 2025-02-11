@@ -37,6 +37,26 @@
     </td>
   </tr>
 
+  <% if @commitment_adjustment.fund.has_tracking_currency? %>
+    <tr>
+      <td>
+        Tracking Currency
+      </td>
+      <td>
+        <%= @commitment_adjustment.fund.tracking_currency %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Tracking Amount
+      </td>
+      <td>
+        <%= money_to_currency @commitment_adjustment.tracking_amount, params %>
+      </td>
+    </tr>
+  <% end %>
+
   <% if @commitment_adjustment.amount_cents != @commitment_adjustment.folio_amount_cents %>
   <tr>
     <td>

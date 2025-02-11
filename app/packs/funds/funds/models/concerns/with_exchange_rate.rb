@@ -34,11 +34,11 @@ module WithExchangeRate
   # The date of the exchange_rate is defined by tracking_exchange_rate_date
   # Any model using the tracking currency should provide the date used to find the exchange rate
   def tracking_exchange_rate_date
-    raise "Undefined tracking exchange rate date"
+    raise "#{self.class.name} #{self.id} Undefined tracking exchange rate date"
   end
 
   # The TrackingExchangeRate is the exchange_rate between the fund currency and the tracking_currency
-  def tracking_exchange_rate
+  def tracking_exchange_rate(caller_label: "")
     f = if instance_of?(Fund)
           self
         else
@@ -46,7 +46,10 @@ module WithExchangeRate
         end
 
     if f.tracking_currency.present? && f.tracking_currency != f.currency
-      get_exchange_rate(f.currency, f.tracking_currency, tracking_exchange_rate_date)
+      er = get_exchange_rate(f.currency, f.tracking_currency, tracking_exchange_rate_date)
+      raise "Tracking Exchange rate from #{f.currency} to #{f.tracking_currency} for #{caller_label} not found for date #{tracking_exchange_rate_date}" unless er
+
+      er
     else
       raise "Undefined tracking currency in fund #{f.name}"
     end

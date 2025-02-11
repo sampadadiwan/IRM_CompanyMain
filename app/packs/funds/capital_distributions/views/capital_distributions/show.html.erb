@@ -8,17 +8,10 @@
       <td><%= @capital_distribution.title %></td>
     </tr>
 
-    <% if @capital_distribution.capital_commitment %>
-      <tr>
-        <td>Folio</td>
-        <td><%= link_to @capital_distribution.capital_commitment %></td>
-      </tr>
-    <% else %>
-      <tr>
-        <td>Distribution On</td>
-        <td><%= @capital_distribution.distribution_on %></td>
-      </tr>
-    <% end %>
+    <tr>
+      <td>Distribution On</td>
+      <td><%= @capital_distribution.distribution_on %></td>
+    </tr>
 
     <tr>
       <td>Generate Payments</td>

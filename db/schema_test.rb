@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_11_054319) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -553,6 +553,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
     t.bigint "feeder_fund_id"
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_orig_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
+    
     t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
@@ -808,6 +812,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
     t.bigint "owner_id"
     t.string "adjustment_type", limit: 20, default: "Top Up", null: false
     t.datetime "deleted_at"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
+    
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_commitment_adjustments_on_deleted_at"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
@@ -1671,10 +1677,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
     t.string "unit_types"
     t.string "units_allocation_engine", limit: 50
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "editable_formulas", default: false
     t.string "registration_number", limit: 20
     t.string "category", limit: 15
@@ -1700,8 +1702,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
     t.string "tracking_currency", limit: 3
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2301,7 +2304,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_10_144903) do
     t.text "notes"
     t.string "tags"
     t.integer "sequence"
-    t.index ["data_source_type", "data_source_id"], name: "index_kanban_cards_on_data_source_type_and_data_source_id"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"

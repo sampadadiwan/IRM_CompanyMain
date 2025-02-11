@@ -252,6 +252,28 @@
       </td>
     </tr>
 
+
+    <% if capital_commitment.fund.has_tracking_currency? %>
+      <tr class="">
+        <td>
+          Tracking Currency
+        </td>
+        <td>
+          <%= capital_commitment.fund.tracking_currency %>
+        </td>
+      </tr>
+
+      <tr class="">
+        <td>
+          Tracking Committed Amount
+        </td>
+        <td>
+          <%= money_to_currency capital_commitment.tracking_committed_amount, params %>
+        </td>
+      </tr>
+      
+    <% end %>
+
     <tr class="">
       <td>
         Onboarding Complete

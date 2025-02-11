@@ -3,7 +3,7 @@ class CommitmentAdjustmentsController < ApplicationController
 
   # GET /commitment_adjustments or /commitment_adjustments.json
   def index
-    @commitment_adjustments = policy_scope(CommitmentAdjustment)
+    @commitment_adjustments = policy_scope(CommitmentAdjustment).includes(:fund)
     @commitment_adjustments = @commitment_adjustments.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @commitment_adjustments = @commitment_adjustments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
   end

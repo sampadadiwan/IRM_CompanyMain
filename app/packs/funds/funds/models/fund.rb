@@ -55,6 +55,7 @@ class Fund < ApplicationRecord
   has_many :capital_distributions, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
+  has_many :commitment_adjustments, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :investor_kycs, through: :capital_commitments
 
@@ -64,7 +65,9 @@ class Fund < ApplicationRecord
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
-  monetize :tracking_call_amount_cents, :tracking_collected_amount_cents, :tracking_distribution_amount_cents, with_currency: ->(f) { f.tracking_currency.presence || f.currency }
+  monetize  :tracking_committed_amount_cents, :tracking_call_amount_cents,
+            :tracking_collected_amount_cents, :tracking_distribution_amount_cents,
+            with_currency: ->(f) { f.tracking_currency.presence || f.currency }
 
   monetize :call_amount_cents, :committed_amount_cents, :target_committed_amount_cents,
            :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,

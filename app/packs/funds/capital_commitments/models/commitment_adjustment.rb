@@ -21,9 +21,19 @@ class CommitmentAdjustment < ApplicationRecord
   validates :adjustment_type, length: { maximum: 20 }
   validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }
 
+  monetize :tracking_amount_cents, with_currency: ->(i) { i.fund.tracking_currency }
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
   monetize :amount_cents, :pre_adjustment_cents, :post_adjustment_cents, with_currency: ->(i) { i.fund.currency }
 
+  # Roll up tracking adjustment amount to capital commitment for "Top Up" and "Exchange Rate" types
+  counter_culture :capital_commitment, column_name: proc { |r| r.update_committed_amounts? ? 'tracking_adjustment_amount_cents' : nil },
+                                       delta_column: 'tracking_amount_cents',
+                                       column_names: {
+                                         ["commitment_adjustments.adjustment_type in (?)", ADJUST_COMMITMENT_TYPES] => 'tracking_adjustment_amount_cents'
+                                       },
+                                       execute_after_commit: true
+
+  # Roll up adjustment amount to capital commitment for "Top Up" and "Exchange Rate" types
   counter_culture :capital_commitment, column_name: proc { |r| r.update_committed_amounts? ? 'adjustment_amount_cents' : nil },
                                        delta_column: 'amount_cents',
                                        column_names: {
@@ -31,6 +41,7 @@ class CommitmentAdjustment < ApplicationRecord
                                        },
                                        execute_after_commit: true
 
+  # Roll up adjustment folio amount to capital commitment for "Top Up" and "Exchange Rate" types
   counter_culture :capital_commitment, column_name: proc { |r| r.update_committed_amounts? ? 'adjustment_folio_amount_cents' : nil },
                                        delta_column: 'folio_amount_cents',
                                        column_names: {
@@ -38,6 +49,7 @@ class CommitmentAdjustment < ApplicationRecord
                                        },
                                        execute_after_commit: true
 
+  # Roll up arrear amount to capital commitment for "Arrear" type
   counter_culture :capital_commitment, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_amount_cents' : nil },
                                        delta_column: 'amount_cents',
                                        column_names: {
@@ -45,6 +57,7 @@ class CommitmentAdjustment < ApplicationRecord
                                        },
                                        execute_after_commit: true
 
+  # Roll up arrear folio amount to capital commitment for "Arrear" type
   counter_culture :capital_commitment, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_folio_amount_cents' : nil },
                                        delta_column: 'folio_amount_cents',
                                        column_names: {
@@ -52,6 +65,7 @@ class CommitmentAdjustment < ApplicationRecord
                                        },
                                        execute_after_commit: true
 
+  # Roll up arrear amount to owner for "Arrear" type
   counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_amount_cents' : nil },
                           delta_column: 'amount_cents',
                           column_names: {
@@ -59,6 +73,7 @@ class CommitmentAdjustment < ApplicationRecord
                           },
                           execute_after_commit: true
 
+  # Roll up arrear folio amount to owner for "Arrear" type
   counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_folio_amount_cents' : nil },
                           delta_column: 'folio_amount_cents',
                           column_names: {
@@ -106,5 +121,9 @@ class CommitmentAdjustment < ApplicationRecord
 
   def validate_as_of
     errors.add(:as_of, "must be on or after the commitment date") if as_of < capital_commitment.commitment_date
+  end
+
+  def tracking_exchange_rate_date
+    as_of
   end
 end

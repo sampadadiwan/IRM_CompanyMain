@@ -56,6 +56,7 @@ class AccountEntry < ApplicationRecord
   # This stores the calculation explanation for the account entry
   serialize :explanation, type: Array
 
+  monetize :tracking_amount_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
 
@@ -128,4 +129,8 @@ class AccountEntry < ApplicationRecord
     fund.account_entries.where(reporting_date: reporting_date).update_all(tracking_amount_cents: Arel.sql("amount_cents * #{exchange_rate.rate}"))
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  def tracking_exchange_rate_date
+    reporting_date
+  end
 end

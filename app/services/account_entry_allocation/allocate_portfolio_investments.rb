@@ -16,9 +16,9 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_portfolios_investment(#{fund_formula.name})" }
 
-      portfolio_investments = fund.portfolio_investments.pool.where(investment_date: ..end_date)
+      portfolio_investments = fund.portfolio_investments.where(investment_date: ..end_date)
 
-      fund_formula.commitments(end_date, sample).pool.each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments.each do |portfolio_investment|

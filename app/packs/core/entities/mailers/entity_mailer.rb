@@ -30,4 +30,10 @@ class EntityMailer < ApplicationMailer
     support_email = ENV.fetch('SUPPORT_EMAIL', nil)
     @cc.present? ? @cc += ",#{support_email}" : @cc = support_email
   end
+
+  def notify_errors
+    @error_msg = params[:error_msg]
+    mail(to: ENV.fetch('SUPPORT_EMAIL', nil),
+         subject: "Errors")
+  end
 end

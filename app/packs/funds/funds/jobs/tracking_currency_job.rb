@@ -3,6 +3,8 @@ class TrackingCurrencyJob < ApplicationJob
 
   def perform(fund_id: nil, user_id: nil)
     Chewy.strategy(:sidekiq) do
+      @error_msg = {}
+
       funds = if fund_id.nil?
                 # This is run daily, to compute for all funds that have tracking currency
                 Fund.where("tracking_currency <> currency")
@@ -13,7 +15,14 @@ class TrackingCurrencyJob < ApplicationJob
 
       funds.each do |fund|
         update_fund(fund, user_id)
+      rescue StandardError => e
+        Rails.logger.debug e.backtrace
+        send_notification("Error updating tracking currency for fund #{fund.name}: #{e.message}", user_id, :danger)
+        @error_msg[:from] = "TrackingCurrencyJob"
+        @error_msg[fund.name] = e.message
       end
+
+      EntityMailer.with(error_msg: @error_msg).notify_errors.deliver_now if @error_msg.present?
     end
   end
 
@@ -46,6 +55,28 @@ class TrackingCurrencyJob < ApplicationJob
         fund.capital_distribution_payments.where(tracking_net_payable_cents: 0).find_each do |cdp|
           cdp.tracking_net_payable_cents = cdp.net_payable_cents * cdp.tracking_exchange_rate.rate
           cdp.save
+        end
+
+        # Convert CommitmentAdjustment
+        send_notification("Updating tracking currency for commitment adjustments", user_id)
+        fund.commitment_adjustments.where(tracking_amount_cents: 0).find_each do |ca|
+          ca.tracking_amount_cents = ca.amount_cents * ca.tracking_exchange_rate.rate
+          ca.save
+        end
+
+        # Convert CapitalCommitment
+        send_notification("Updating tracking currency for capital commitments", user_id)
+        fund.capital_commitments.where(tracking_orig_committed_amount_cents: 0).find_each do |cc|
+          # This is only those commitments whose tracking_orig_committed_amount_cents has not been converted
+          cc.tracking_orig_committed_amount_cents = cc.orig_committed_amount_cents * cc.tracking_exchange_rate.rate
+          cc.save
+        end
+
+        # This job runs early morning at 1 am, so find those commitments that were updated yesterday
+        fund.capital_commitments.where(updated_at: (Time.zone.today - 1.day)..).find_each do |cc|
+          tracking_committed_amount_cents = cc.tracking_orig_committed_amount_cents + cc.tracking_adjustment_amount_cents
+          # Dont update the last updated_at
+          cc.update_columns(tracking_committed_amount_cents:)
         end
 
         msg = "Tracking currency updated for fund #{fund.name}"

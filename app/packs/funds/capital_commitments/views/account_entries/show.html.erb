@@ -113,6 +113,25 @@
       </td>
     </tr>
 
+    <% if @account_entry.fund.has_tracking_currency? %>
+      <tr>
+        <td>
+          Tracking Currency
+        </td>
+        <td>
+          <%= @account_entry.fund.tracking_currency %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Amount in Tracking Currency
+        </td>
+        <td>
+          <%= money_to_currency @account_entry.tracking_amount, params %>
+        </td>
+      </tr>
+    <% end %>
+
     <%= display_custom_fields(@account_entry, collapsed: false) if current_user %>
 
     <tr>

@@ -34,7 +34,7 @@ class KycDocGenerator
       generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name:)
 
       # Use a regular expression to check if this is an SOA template
-      is_soa_template = (doc_template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag.downcase =~ /\b#{Regexp.escape('soa')}\b/)
+      is_soa_template = (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('soa')}\b/)
 
       if is_soa_template
         # Now in certain cases the doc is generated for a KYC and in certain cases for a commitment

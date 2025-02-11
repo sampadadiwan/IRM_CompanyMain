@@ -77,10 +77,13 @@ class CapitalCommitment < ApplicationRecord
 
   counter_culture :fund
 
-  monetize :tracking_distribution_amount_cents, :tracking_collected_amount_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+  monetize :tracking_committed_amount_cents, :tracking_orig_committed_amount_cents,
+           :tracking_distribution_amount_cents, :tracking_collected_amount_cents,
+           with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
-  monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents, :folio_collected_amount_cents,
-           :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency.presence || i.fund.currency }
+  monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents,
+           :folio_collected_amount_cents, :adjustment_folio_amount_cents,
+           with_currency: ->(i) { i.folio_currency.presence || i.fund.currency }
 
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :other_fee_cents,
@@ -319,5 +322,9 @@ class CapitalCommitment < ApplicationRecord
       # Get the committed amount before the date
       orig_committed_amount_cents + adjustment_amount_cents_before_date
     end
+  end
+
+  def tracking_exchange_rate_date
+    commitment_date
   end
 end
