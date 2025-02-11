@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_11_054319) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -604,6 +604,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_054319) do
     t.decimal "gross_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gross_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -3260,18 +3262,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_054319) do
     t.index ["notification_id"], name: "index_whatsapp_logs_on_notification_id"
   end
 
-  add_foreign_key "access_rights", "entities"
-  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
-  add_foreign_key "access_rights", "users"
-  add_foreign_key "access_rights", "users", column: "granted_by_id"
-  add_foreign_key "account_entries", "capital_commitments"
-  add_foreign_key "account_entries", "entities"
-  add_foreign_key "account_entries", "exchange_rates"
-  add_foreign_key "account_entries", "form_types"
-  add_foreign_key "account_entries", "fund_formulas"
-  add_foreign_key "account_entries", "funds"
-  add_foreign_key "account_entries", "investors"
-  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
