@@ -39,19 +39,7 @@
           <%= fund.currency %>
         </td>
       </tr>
-
-
-      <% if fund.tracking_currency.present? %>
-      <tr>
-        <td>
-          Tracking Currency
-        </td>
-        <td>
-          <%= fund.tracking_currency %>
-        </td>
-      </tr>
-      <% end %>
-      
+            
       <tr>
         <td>
           Tag List
@@ -164,49 +152,46 @@
             <%= money_to_currency fund.distribution_amount, params %>
           </td>
         </tr>
-        
 
-        <% if fund.co_invest_committed_amount_cents > 0 %>
+        <% if fund.has_tracking_currency? %>
 
           <tr>
             <td>
-              Co Invest Committed Amount
+              Tracking Currency
             </td>
             <td>
-              <%= money_to_currency fund.co_invest_committed_amount, params %>
+              <%= fund.tracking_currency %>
             </td>
           </tr>
           
           <tr>
             <td>
-              Co Invest Call Amount
+              Tracking Call Amount
             </td>
             <td>
-              <%= money_to_currency fund.co_invest_call_amount, params %>
+              <%= money_to_currency fund.tracking_call_amount, params %>
             </td>
           </tr>
 
           <tr>
             <td>
-              Co Invest Collected Amount
+              Tracking Collected Amount
             </td>
             <td>
-              <%= money_to_currency fund.co_invest_collected_amount, params %>
+              <%= money_to_currency fund.tracking_collected_amount, params %>
             </td>
           </tr>
 
           <tr>
             <td>
-              Co Invest Payments Distributed
+              Tracking Payments Distributed
             </td>
             <td>
-              <%= money_to_currency fund.co_invest_distribution_amount, params %>
+              <%= money_to_currency fund.tracking_distribution_amount, params %>
             </td>
           </tr>
-          
-          
+
         <% end %>
-
 
         <% if fund.unit_types.present? %>
 

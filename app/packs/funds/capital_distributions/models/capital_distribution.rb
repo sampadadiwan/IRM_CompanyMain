@@ -14,9 +14,6 @@ class CapitalDistribution < ApplicationRecord
   belongs_to :entity
   belongs_to :approved_by_user, class_name: "User", optional: true
 
-  # This is only for co_invest
-  belongs_to :capital_commitment, optional: true
-
   has_many :distribution_fees, inverse_of: :capital_distribution, dependent: :destroy
   accepts_nested_attributes_for :distribution_fees, allow_destroy: true
 

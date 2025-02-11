@@ -200,6 +200,38 @@
           <% end %>
 
         <% end %>
+
+        <% if capital_remittance.fund.has_tracking_currency? %>
+          
+          <tr>
+            <td>
+              Tracking Currency
+            </td>
+            <td>
+              <%= capital_remittance.fund.tracking_currency %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Call Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.tracking_call_amount, params %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Collected Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.tracking_collected_amount, params %>
+            </td>
+          </tr>
+
+          
+        <% end %>
                 
         
         <% if current_user && !current_user.curr_role_investor? %>

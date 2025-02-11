@@ -46,7 +46,7 @@ class CapitalRemittanceDatatable < ApplicationDatatable
 
   def get_raw_records
     # insert query here
-    capital_remittances
+    capital_remittances.includes(:fund, :entity, :capital_remittance)
   end
 
   def search_for

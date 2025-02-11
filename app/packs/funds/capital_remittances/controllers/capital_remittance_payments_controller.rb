@@ -3,7 +3,7 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # GET /capital_remittance_payments or /capital_remittance_payments.json
   def index
-    @capital_remittance_payments = policy_scope(CapitalRemittancePayment).includes(:entity, capital_remittance: :capital_commitment)
+    @capital_remittance_payments = policy_scope(CapitalRemittancePayment).includes(:entity, capital_remittance: :fund)
     @capital_remittance_payments = @capital_remittance_payments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 

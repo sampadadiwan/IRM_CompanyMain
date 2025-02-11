@@ -190,6 +190,26 @@
 
         <% end %>
 
+        <% if capital_distribution_payment.fund.has_tracking_currency? %>
+          <tr>
+            <td>
+              Tracking Currency
+            </td>
+            <td>
+              <%= capital_distribution_payment.fund.tracking_currency %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Tracking Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_distribution_payment.tracking_net_payable, params %>
+            </td>
+          </tr>
+        <% end %>
+
         <% if capital_distribution_payment.entity.permissions.enable_units? && !current_user&.curr_role_investor? %>
         <tr>
           <td>

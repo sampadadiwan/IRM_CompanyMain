@@ -84,6 +84,10 @@ class Fund < ApplicationRecord
     self.tracking_currency ||= currency
   end
 
+  def has_tracking_currency?
+    self.tracking_currency != currency
+  end
+
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
   end

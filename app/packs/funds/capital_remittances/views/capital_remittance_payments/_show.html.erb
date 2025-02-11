@@ -38,6 +38,28 @@
           <%= money_to_currency capital_remittance_payment.amount, params %>
         </td>
       </tr>
+      
+      <% if capital_remittance_payment.fund.has_tracking_currency? %>
+          
+          <tr>
+            <td>
+              Tracking Currency
+            </td>
+            <td>
+              <%= capital_remittance_payment.fund.tracking_currency %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance_payment.tracking_amount, params %>
+            </td>
+          </tr>
+
+      <% end %>
       <tr>
         <td>
           Payment Date
