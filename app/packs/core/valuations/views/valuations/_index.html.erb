@@ -1,4 +1,6 @@
-<% valuations = valuations.order(valuation_date: :desc) if valuations && valuations.arel.orders.blank? %>
+<% # sometimes we render the partial directly instead of going through the controller
+  # the controller does sorting but when the partial is rendered we sort the valuations here
+valuations = valuations.order(valuation_date: :desc) if valuations && valuations.arel.orders.blank? %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Valuations</h1>
     <%

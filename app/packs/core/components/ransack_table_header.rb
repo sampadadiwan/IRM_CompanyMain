@@ -13,6 +13,7 @@ class RansackTableHeader < ViewComponent::Base
     @turbo_frame = turbo_frame
     @report_id = report_id
     @referrer = referrer
+    # fetch columns uses @referrer in the cache key, it should have a value assigned before use
     @columns = fetch_columns(@entity, default_columns_map)
   end
 
