@@ -4,7 +4,7 @@ class AiRule < ApplicationRecord
   enum rule_type: { 'compliance' => "Compliance", 'investor_relations' => "Investor Relations", 'investment_analyst' => "Investment Analyst" }
   enum schedule: { 'end_of_day' => "End of Day", 'end_of_month' => "End of Month", 'end_of_quarter' => "End of Quarter", 'end_of_year' => "End of Year" }
 
-  FOR_CLASSES = %w[AggregatePortfolioInvestment PortfolioInvestment InvestorKyc CapitalCommitment CapitalRemittance CapitalDistribution Fund].sort
+  FOR_CLASSES = %w[AggregatePortfolioInvestment PortfolioInvestment IndividualKyc NonIndividualKyc CapitalCommitment CapitalRemittance CapitalDistribution Fund].sort
 
   scope :for_class, ->(klass) { where(for_class: klass) }
   scope :enabled, -> { where(enabled: true) }

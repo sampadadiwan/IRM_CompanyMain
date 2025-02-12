@@ -1,4 +1,4 @@
-<% investments = Investment.generate_cap_table(funding_round, portfolio_company_id) %>
+<% investments = Investment.generate_cap_table(funding_rounds, portfolio_company_id) %>
 <div class="table-responsive" data-controller="datatable">
 
   <table id="funding_round_<%= funding_round.underscore.downcase %>" class="table table-bordered dataTable jqDataTable">

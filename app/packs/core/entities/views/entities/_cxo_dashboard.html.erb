@@ -10,10 +10,6 @@
 
 <%= render "entities/cxo_dashboard_stats" %>
 
-<% cache_if(current_user != nil, cache_key("investment_charts", include_theme: true)) do %>
-    <%= render "investments/charts", entity: current_user.entity %>
-<% end %>
-
 <%#= render "entities/dashboard/notes" %>
 <%= render "entities/dashboard/investors" %>
 

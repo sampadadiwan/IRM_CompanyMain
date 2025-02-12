@@ -11,8 +11,6 @@
     <% else %>   
         <% if current_user.curr_role && current_user.curr_role.to_sym == :investor %>
             <%= render "vc_dashboard" %>
-        <% elsif current_user.curr_role == "holding" %>
-            <%= render "holding_dashboard" %>
         <% elsif current_user.entity_type == "Company" %>
             <%= render "cxo_dashboard" %>        
         <% elsif current_user.entity.is_fund? %>

@@ -1,5 +1,5 @@
 class ImportCapitalCommitment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS

@@ -39,9 +39,9 @@ class Investment < ApplicationRecord
     ["portfolio_company"]
   end
 
-  def self.generate_cap_table(funding_round, portfolio_company_id)
+  def self.generate_cap_table(funding_rounds, portfolio_company_id)
     # Get all investments for the funding round
-    investments = where(funding_round: funding_round, portfolio_company_id: portfolio_company_id)
+    investments = where(funding_round: funding_rounds, portfolio_company_id: portfolio_company_id)
 
     # Separate equity and convertible investments
     equity_investments = investments.where(investment_type: "Equity")

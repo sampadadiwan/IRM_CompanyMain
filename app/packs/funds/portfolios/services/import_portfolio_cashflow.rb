@@ -1,6 +1,6 @@
 class ImportPortfolioCashflow < ImportUtil
   STANDARD_HEADERS = ["Fund", "Portfolio Company",	"Payment Date",	"Amount", "Tag", "Instrument",
-                      "Instrument", "Notes", "Folio No"].freeze
+                      "Instrument", "Notes"].freeze
 
   def standard_headers
     STANDARD_HEADERS
