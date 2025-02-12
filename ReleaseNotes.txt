@@ -1,3 +1,16 @@
+V8.0.77
+#####################################
+b32ae2339 (tag: V8.0.77) Update remittances excel to not have data in the hidden column
+0288b83be (tag: V8.0.76) Added check to see that the docs and valuations can be ordered in the partial
+f1a53cac9 (tag: V8.0.75) Fix kyc doc gen downcase issue
+
+V8.0.74
+#####################################
+89ff78c3c Portfolio Cashflows tag now assigned to actual if blank (#717)
+6c799e136 Added specific symbols for sgd, aud, cad and hkd (#716)
+a8d832c2a Update sample excel files (#715)
+2a8536473 Tables fixes (#714)
+
 V8.0.73
 #####################################
 a923616e5 Added check for active in persona

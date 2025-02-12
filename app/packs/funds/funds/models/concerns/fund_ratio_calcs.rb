@@ -10,29 +10,29 @@ class FundRatioCalcs
 
     # Capital Remittance Payments
     Rails.logger.debug { "Adding capital_remittance_payments for #{entity_type}: #{entity} on #{@end_date}" }
-    entity.capital_remittance_payments.includes(:capital_remittance).where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
+    entity.capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
       if use_tracking_currency
         # Add remittance payment in tracking currency if amount is not zero
-        cf << XirrTransaction.new(-1 * cr.tracking_amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}") if cr.tracking_amount_cents != 0
+        cf << XirrTransaction.new(-1 * cr.tracking_amount_cents, date: cr.payment_date, notes: "Remittance #{cr.id}") if cr.tracking_amount_cents != 0
       elsif cr.amount_cents != 0
         # Add remittance payment in original currency if amount is not zero
-        cf << XirrTransaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}")
+        cf << XirrTransaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "Remittance #{cr.id}")
       end
     end
 
     # Capital Distribution Payments
     Rails.logger.debug { "Adding capital_distribution_payments for #{entity_type}: #{entity} on #{@end_date}" }
-    entity.capital_distribution_payments.includes(:investor).where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
+    entity.capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
       if use_tracking_currency
         # Add gross distribution payment in tracking currency if amount is not zero
-        cf << XirrTransaction.new(cdp.tracking_gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}") if cdp.tracking_gross_payable_cents != 0
+        cf << XirrTransaction.new(cdp.tracking_gross_payable_cents, date: cdp.payment_date, notes: "Gross Payable from Distribution #{cdp.id}") if cdp.tracking_gross_payable_cents != 0
         # Add reinvestment from distribution in tracking currency if amount is not zero
-        cf << XirrTransaction.new(-1 * cdp.tracking_reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}") if cdp.tracking_reinvestment_with_fees_cents != 0
+        cf << XirrTransaction.new(-1 * cdp.tracking_reinvestment_with_fees_cents, date: cdp.payment_date, notes: "Reinvestment from Distribution #{cdp.id}") if cdp.tracking_reinvestment_with_fees_cents != 0
       else
         # Add gross distribution payment in original currency if amount is not zero
-        cf << XirrTransaction.new(cdp.gross_payable_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Gross Distribution #{cdp.id}") if cdp.gross_payable_cents != 0
+        cf << XirrTransaction.new(cdp.gross_payable_cents, date: cdp.payment_date, notes: "Gross Payable from Distribution #{cdp.id}") if cdp.gross_payable_cents != 0
         # Add reinvestment from distribution in original currency if amount is not zero
-        cf << XirrTransaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Reinvestment from Distribution #{cdp.id}") if cdp.reinvestment_with_fees_cents != 0
+        cf << XirrTransaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "Reinvestment from Distribution #{cdp.id}") if cdp.reinvestment_with_fees_cents != 0
       end
     end
 
