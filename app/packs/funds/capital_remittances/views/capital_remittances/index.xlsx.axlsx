@@ -4,13 +4,33 @@ wb = xlsx_package.workbook
 form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittance")
 
 wb.add_worksheet(name: "CapitalRemittance") do |sheet|
+  headers = ["Fund", "Investor", "Folio ID", "Investing Entity", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Collected Amount", "Status", "Verified", "Payment Date", "Remittance Date"] + custom_headers
+
+  has_tracking_currency = false
+  if params[:fund_id].present? || params[:capital_call_id].present?
+    fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
+    fund ||= CapitalCall.find(params[:capital_call_id]).fund if params[:capital_call_id].present?
+    if fund.has_tracking_currency?
+      headers += ["Tracking Collected Amount", "Tracking Call Amount"]
+      has_tracking_currency = true
+    end
+  end
+
   # Create the header row
-  sheet.add_row(["Fund", "Investor", "Folio ID", "Investing Entity", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Collected Amount", "Status", "Verified", "Payment Date", "Remittance Date"] + custom_headers)
+  sheet.add_row(headers)
 
   # Create entries for each item
   @capital_remittances.each do |cc|
     verified = cc.verified ? "Yes" : "No"
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.fund.name, cc.investor_name, cc.folio_id, cc.investor_kyc&.full_name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.capital_fee, cc.other_fee, cc.collected_amount, cc.status, verified, cc.payment_date, cc.remittance_date] + custom_field_values
+
+    values = [cc.fund.name, cc.investor_name, cc.folio_id, cc.investor_kyc&.full_name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.capital_fee, cc.other_fee, cc.collected_amount, cc.status, verified, cc.payment_date, cc.remittance_date] + custom_field_values
+
+    if has_tracking_currency
+      values << cc.tracking_collected_amount.to_d
+      values << cc.tracking_call_amount.to_d
+    end
+
+    sheet.add_row values
   end
 end

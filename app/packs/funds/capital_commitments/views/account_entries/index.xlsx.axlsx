@@ -5,13 +5,30 @@ form_type, custom_field_names, custom_headers = get_form_type("AccountEntry")
 
 wb.add_worksheet(name: "AccountEntries") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Folio Currency", "Folio Amount", "Fund Currency", "Amount", "Cumulative", "Explanation", "Rule For", "Notes"] + custom_headers)
+  headers = ["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Folio Currency", "Folio Amount", "Fund Currency", "Amount", "Cumulative", "Explanation", "Rule For", "Notes"] + custom_headers
+
+  has_tracking_currency = false
+  if params[:fund_id].present?
+    fund = Fund.find(params[:fund_id])
+    if fund.has_tracking_currency?
+      headers << "Tracking Amount"
+      has_tracking_currency = true
+    end
+  end
+
+  sheet.add_row(headers)
 
   # Create entries for each item
   @account_entries.each do |ae|
     cumulative = ae.cumulative ? "Yes" : "No"
-    amount = ae.name.include?("Percentage") ? ae.amount_cents : ae.amount
+    amount = ae.name.include?("Percentage") ? ae.amount_cents : ae.amount.to_d
     custom_field_values = get_custom_values(ae, form_type, custom_field_names)
-    sheet.add_row [ae.fund.name, ae.capital_commitment&.investor_name, ae.capital_commitment&.folio_id, ae.reporting_date, ae.period, ae.entry_type, ae.name, ae.capital_commitment&.folio_currency, ae.folio_amount, ae.fund.currency, amount, cumulative, ae.explanation.join("\r"), ae.rule_for&.capitalize, ae.notes] + custom_field_values, style: wrap
+
+    values = [ae.fund.name, ae.capital_commitment&.investor_name, ae.capital_commitment&.folio_id, ae.reporting_date, ae.period, ae.entry_type, ae.name, ae.capital_commitment&.folio_currency, ae.folio_amount.to_d, ae.fund.currency, amount, cumulative, ae.explanation.join("\r"), ae.rule_for&.capitalize, ae.notes] + custom_field_values
+
+    # Add the tracking currency values only if required
+    values << ae.tracking_amount.to_d if has_tracking_currency
+
+    sheet.add_row values, style: wrap
   end
 end

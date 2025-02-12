@@ -2,7 +2,7 @@ class FundPortfolioCalcs < FundRatioCalcs
   def initialize(fund, end_date)
     @fund = fund
     @end_date = end_date
-    super()    
+    super()
   end
 
   def total_investment_costs_cents

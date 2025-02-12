@@ -35,7 +35,11 @@ class TrackingCurrencyJob < ApplicationJob
         # Convert account entry
         send_notification("Updating tracking currency for account entries", user_id)
         fund.account_entries.where(tracking_amount_cents: 0).find_each do |ae|
-          ae.tracking_amount_cents = ae.amount_cents * ae.tracking_exchange_rate.rate
+          ae.tracking_amount_cents = if ae.name.include?("Percentage")
+                                       ae.amount_cents
+                                     else
+                                       ae.amount_cents * ae.tracking_exchange_rate.rate
+                                     end
           ae.save
         end
 

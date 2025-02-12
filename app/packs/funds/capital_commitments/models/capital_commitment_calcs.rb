@@ -2,7 +2,7 @@ class CapitalCommitmentCalcs < FundRatioCalcs
   def initialize(capital_commitment, end_date)
     @capital_commitment = capital_commitment
     @end_date = end_date
-    super()    
+    super()
   end
 
   def fmv_cents
