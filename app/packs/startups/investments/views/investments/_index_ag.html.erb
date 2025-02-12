@@ -1,0 +1,19 @@
+<div class="table-responsive">
+    <%
+      form_type = @current_user.entity.form_types.includes(:grid_view_preferences)
+                        .find_by(name: "Investment")
+      custom_grid_columns = form_type&.ag_grids_columns.presence || Investment.ag_grids_default_columns
+    %>
+
+    <div class="investments_ag_grid" data-controller="ag" 
+      data-ag-grid-div-name-value="investments_ag_grid"
+      data-ag-lazy-load-data-value=<%= false %>
+      data-custom-columns='<%= custom_grid_columns.to_json %>'
+      data-group-by-column='<%= params[:group_by_column] %>'
+      data-ag-table-name-value="#investments_table" >
+
+      <div id="investments_table" class="<%= get_ag_theme %>" data-source="<%= investments_path(params: params.to_unsafe_h, format: :json) %>">
+      </div>
+
+    </div>
+</div>

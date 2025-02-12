@@ -1,9 +1,0 @@
-
-
-<%= render "/layouts/steps", steps: ["Invite Employees", "Add / Upload Holdings", "Setup Access Rights"].freeze if current_user.has_cached_role?(:employee) %>
-
-<%= turbo_frame_tag "holdings_frame", target: "_top" do %>
-    <%= render "/layouts/filter", associations: [:investor, :user] %>
-    <%= render "/holdings/index", holdings: @holdings, secondary_sale: @secondary_sale, import_upload: true, only_options: params[:only_options] %>
-    <%= paginate @holdings %>
-<% end %>

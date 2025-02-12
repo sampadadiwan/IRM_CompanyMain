@@ -48,10 +48,12 @@
       custom_grid_columns = form_type&.ag_grids_columns.presence || PortfolioInvestment.ag_grids_default_columns
     %>
 
-    <div class="portfolio_investment_ag_grid" data-controller="portfolio-investment-ag" data-portfolio-investment-ag-lazy-load-data-value=<%= false %>
+    <div class="portfolio_investment_ag_grid" data-controller="ag" 
+      data-ag-grid-div-name-value="portfolio_investment_ag_grid"
+      data-ag-lazy-load-data-value=<%= false %>
       data-custom-columns='<%= custom_grid_columns.to_json %>'
       data-group-by-column='<%= params[:group_by_column] %>'
-      data-portfolio-investment-ag-table-name-value="#portfolio_investments_table" data-portfolio-investment-ag-custom-fields-value="" >
+      data-ag-table-name-value="#portfolio_investments_table" data-ag-custom-fields-value="" >
 
       <div id="portfolio_investments_table" class="<%= get_ag_theme %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
       </div>

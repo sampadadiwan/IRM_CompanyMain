@@ -1,152 +1,97 @@
 class Investment < ApplicationRecord
-  audited
-  include Trackable.new
-  include InvestmentScopes
-  include InvestmentCounters
-  # Make all models searchable
-  update_index('investment') { self if index_record? }
+  CATEGORIES = %w[Founder Self Other Employee].sort.freeze
+  TYPES = %w[Equity Convertible].freeze
 
-  # "Equity,Preferred,Debt,Options"
-  INSTRUMENT_TYPES = ENV["INSTRUMENT_TYPES"].split(",")
+  belongs_to :portfolio_company, class_name: "Investor"
+  belongs_to :entity
 
-  # "Lead Investor,Co-Investor,Founder,Individual,Employee"
-  INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",")
+  monetize :price_cents, :amount_cents, with_model_currency: :currency
 
-  belongs_to :investor
-  delegate :investor_entity_id, to: :investor
-  delegate :investor_name, to: :investor
+  validates :category, presence: true, inclusion: { in: CATEGORIES }
+  validates :investment_type, presence: true, inclusion: { in: TYPES }
+  validates :funding_round, :currency, :investment_date, presence: true
 
-  belongs_to :funding_round
-  delegate :name, to: :funding_round, prefix: :funding_round
-
-  belongs_to :aggregate_investment, optional: true
-
-  belongs_to :entity, touch: true
-  delegate :name, to: :entity, prefix: :investee
-
-  has_many :holdings, dependent: :destroy
-  validates :investment_date, :quantity, :investment_instrument, :price, presence: true
-  validates :investment_type, :investor_type, :investment_instrument, :category, length: { maximum: 100 }
-  validates :status, length: { maximum: 20 }
-  validates :currency, length: { maximum: 10 }
-  validates :units, length: { maximum: 15 }
-  validates :spv, :anti_dilution, length: { maximum: 50 }
-  validates :liq_pref_type, length: { maximum: 25 }
-
-  validate :validate_option_pool, if: -> { investment_instrument == 'Options' }
-
-  # Handled by money-rails gem
-  monetize :amount_cents, :price_cents, with_model_currency: :currency
-
-  def self.INVESTOR_CATEGORIES(entity = nil)
-    entity && entity.investor_categories.present? ? entity.investor_categories.split(",").map(&:strip) : INVESTOR_CATEGORIES
-  end
-
-  def self.INSTRUMENT_TYPES(entity = nil)
-    entity && entity.instrument_types.present? ? entity.instrument_types.split(",").map(&:strip) : INSTRUMENT_TYPES
-  end
-
-  def validate_option_pool
-    errors.add(:funding_round, "Funding round #{funding_round.name} not associated with Option Pool") if funding_round.option_pool.nil?
-  end
+  STANDARD_COLUMNS = { "Portfolio Company" => "portfolio_company_name",
+                       "Category" => "category",
+                       "Investor Name" => "investor_name",
+                       "Investment Type" => "investment_type",
+                       "Funding Round" => "funding_round",
+                       "Currency" => "currency",
+                       "Price" => "price",
+                       "Investment Date" => "investment_date",
+                       "Amount" => "amount",
+                       "Quantity" => "quantity" }.freeze
 
   def to_s
-    investor.investor_name
+    id.present? ? "#{category} - #{investment_type}" : "New Investment"
   end
 
-  before_save :update_defaults
-
-  def update_defaults
-    if investor.is_holdings_entity
-      # This is because each holding has a quantity, price and a value
-      # The quantity and value is added to the investment
-      # So we compute the avg price
-      self.price = amount / quantity if quantity.positive?
-    else
-      self.amount = quantity * price
-    end
-    self.currency = entity.currency
-    self.investment_type = funding_round.name
-    self.investment_instrument = investment_instrument.strip
-    self.employee_holdings = true if investment_type == "Employee Holdings"
-
-    # pull this from the funding round if not set.
-    self.anti_dilution ||= funding_round.anti_dilution
-    self.liq_pref_type ||= funding_round.liq_pref_type
-    self.preferred_conversion ||= 1
-    self.preferred_converted_qty = quantity * self.preferred_conversion
+  before_save :compute_amount
+  def compute_amount
+    self.amount_cents = price_cents * quantity
   end
 
-  def self.for_investor_all(current_user)
-    Investment
-      # Ensure the access rights for Investment
-      .joins(:investor)
-      # .merge(AccessRight.access_filter(current_user))
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("investors.investor_entity_id=?", current_user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(current_user))
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[category currency funding_round investment_date investment_type investor_name quantity]
   end
 
-  def self.for_investor(current_user, entity)
-    investments = entity.investments
-                        # Ensure the access rights for Investment
-                        .joins(entity: %i[investors access_rights])
-                        .merge(AccessRight.access_filter(current_user))
-                        # Ensure that the user is an investor and tis investor has been given access rights
-                        .where("entities.id=?", entity.id)
-                        .where("investors.investor_entity_id=?", current_user.entity_id)
-                        # Ensure this user has investor access
-                        .joins(entity: :investor_accesses)
-                        .merge(InvestorAccess.approved_for_user(current_user))
+  def self.ransackable_associations(_auth_object = nil)
+    ["portfolio_company"]
+  end
 
-    # return investments if investments.blank?
+  def self.generate_cap_table(funding_round, portfolio_company_id)
+    # Get all investments for the funding round
+    investments = where(funding_round: funding_round, portfolio_company_id: portfolio_company_id)
 
-    # Is this user from an investor
-    investor = Investor.for(current_user, entity).first
+    # Separate equity and convertible investments
+    equity_investments = investments.where(investment_type: "Equity")
+    convertible_investments = investments.where(investment_type: "Convertible")
 
-    # Get the investor access for this user and this entity
-    access_right = AccessRight.investments.investor_access(investor, current_user).last
-    return Investment.none if access_right.nil?
+    # Compute current holdings (excluding convertibles)
+    current_holdings = equity_investments.group(:investor_name).sum(:quantity)
 
-    Rails.logger.debug access_right.to_json
+    # Compute total convertibles for each investor
+    convertibles = convertible_investments.group(:investor_name).sum(:quantity)
 
-    case access_right.metadata
-    when AccessRight::ALL
-      # Do nothing - we got all the investments
-      logger.debug "Access to investor #{current_user.email} to ALL Entity #{entity.id} investments"
-    when AccessRight::SELF
-      # Got all the investments for this investor
-      logger.debug "Access to investor #{current_user.email} to SELF Entity #{entity.id} investments"
-      investments = investments.where(investor_id: investor.id)
+    # Merge both hashes to get all unique investors
+    all_investors = (current_holdings.keys + convertibles.keys).uniq
+
+    # Compute total outstanding shares for percentage calculations
+    total_equity = current_holdings.values.sum
+    total_fully_diluted = total_equity + convertibles.values.sum
+
+    # **Handle case where only convertibles exist**
+    total_equity = total_fully_diluted if total_equity.zero?
+
+    return [] if total_fully_diluted.zero?
+
+    # Generate the cap table
+    cap_table = all_investors.map do |investor_name|
+      equity_quantity = current_holdings[investor_name] || 0
+      convertible_quantity = convertibles[investor_name] || 0
+      diluted_quantity = equity_quantity + convertible_quantity
+
+      percentage = total_equity.positive? ? (equity_quantity.to_f / total_equity * 100).round(1) : 0.0
+      fully_diluted_percentage = (diluted_quantity.to_f / total_fully_diluted * 100).round(1)
+
+      {
+        investor_name: investor_name,
+        quantity: equity_quantity,
+        percentage: "#{percentage}%",
+        fully_diluted: diluted_quantity,
+        fully_diluted_percentage: "#{fully_diluted_percentage}%"
+      }
     end
 
-    investments
-  end
+    # Append total row
+    cap_table << {
+      investor_name: "Total",
+      quantity: total_equity,
+      percentage: "100.0%",
+      fully_diluted: total_fully_diluted,
+      fully_diluted_percentage: "100.0%"
+    }
 
-  def self.write_xl(entity_id)
-    investments = Investment.where(entity_id:).includes(:funding_round, :investor)
-    open_book = Spreadsheet.open('scenarios.xls')
-    new_row_index = 37
-
-    header = ["Category", "Funding Round", "Investor", "Instrument", "Investment Date", "Quantity", "Percentage",
-              "Fully Diluted", "Price", "Amount", "Liquidation Pref", "Liq Pref Type", "Anti Dilution"]
-    open_book.worksheet(0).row(new_row_index).concat header
-
-    investments.each do |inv|
-      new_row_index += 1
-      open_book.worksheet(0).row(new_row_index).push inv.category, inv.funding_round.name,
-                                                     inv.investor.investor_name,
-                                                     inv.investment_instrument, inv.investment_date, inv.quantity, inv.percentage_holding,
-                                                     inv.diluted_percentage, inv.price.to_s.to_f,
-                                                     inv.amount.to_s.to_f, inv.liquidation_preference, inv.liq_pref_type, inv.anti_dilution
-
-      Rails.logger.debug { "Wrote row #{new_row_index}" }
-    end
-
-    open_book.write('test_new.xls')
-
-    nil
+    cap_table
   end
 end

@@ -1,21 +1,35 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Investments</h1>
+  <%= link_to "New Investment", new_investment_path, {class: "btn btn-outline-primary"}  %>
+</div>
 
-<% history ||= nil %>
-<%= turbo_frame_tag "investments_frame", target: "_top" do %>
+<%= render "/layouts/filter", associations: [:portfolio_company] %>
 
-<% if params[:charts].present? %>
-    <div class="associated_entity">
-        <%= render "investments/cap_table_charts", entity: @entity, investments: @investments %>
-    </div>
-<% elsif history.present? %>
-    <div class="associated_entity">
-        <%= render "investments/versions", entity: @entity, versions: @versions, title: "History" %>
-    </div>
+<% if params[:ag].present? %>
+  <%= render "/investments/index_ag" %>
 <% else %>
-    <div data-controller="investments">
-        <%= render "investments/index", investments: @investments.not_debt, entity: @entity, title: "Equity" %>
-        <div class="divider"></div>
-        <%= render "investments/index", investments: @investments.debt, entity: @entity, title: "Debt" %>
-    </div>
+  <%= render "/investments/index" %>
 <% end %>
 
+<% if params[:portfolio_company_id].present? %>
+
+  <% 
+    portfolio_company_id = params[:portfolio_company_id]
+    funding_rounds = @investments.select(:funding_round, :investment_date).
+                                  order(investment_date: :asc).pluck(:funding_round).uniq
+  %>
+  <div class="associated_entity">
+    <div class="row">
+    <% funding_rounds.each do |funding_round| %>
+      <div class="col">
+        <h1 class="h4 mb-0 text-gray-800">Funding Round: <%= funding_round %></h1>
+        <%= render "/investments/funding_round", funding_round:, portfolio_company_id: %>
+      </div>
+    <% end %>
+    </div>
+  </div>
+  
 <% end %>
+
+
+

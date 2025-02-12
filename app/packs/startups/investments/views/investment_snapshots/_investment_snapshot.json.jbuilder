@@ -1,2 +1,0 @@
-json.extract! investment_snapshot, :id, :investment_type, :investor_id, :investor_type, :entity_id, :status, :investment_instrument, :quantity, :initial_value, :current_value, :category, :deleted_at, :percentage_holding, :employee_holdings, :diluted_quantity, :diluted_percentage, :currency, :units, :amount_cents, :price_cents, :funding_round_id, :liquidation_preference, :spv, :investment_date, :liq_pref_type, :anti_dilution, :as_of, :tag, :investment_id, :created_at, :updated_at
-json.url investment_snapshot_url(investment_snapshot, format: :json)

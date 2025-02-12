@@ -1,66 +1,48 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
-  <span>
-  <% if title == "Equity" && params[:investor_id].blank? %>
-    <%= render "investments/currency_form" %>
+<div class="table-responsive" data-controller="datatable">
 
-    <% if current_user.entity_id == entity.id %>
-    
-      <%= link_to "Aggregated View", aggregate_investments_path, {class: "btn btn-outline-primary"} %>
 
-      <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id,
-                                                      "investment[investment_instrument]": title), 
-        {class: "btn btn-outline-primary"} %>
+  <table id="investments" class="table table-bordered dataTable">
 
-      <%= link_to "Funding Rounds", funding_rounds_path, {class: "btn btn-outline-primary"} %>
-      <%= link_to investments_path(format: :xlsx), {class: "btn btn-outline-success"} do %>
-        <i class="fa-lg fa-regular fa-file-excel"></i> Download
-      <% end %>
-
-      <%= link_to investments_path(charts: true), {class: "btn btn-outline-success"} do %>
-        <i class="fas fa-chart-line"></i> Graphs
-      <% end %>
-
-    <% else %>
-      <%= link_to "Aggregate View", investor_investments_aggregate_investments_path(entity_id: entity.id), 
-                  {class: "btn btn-outline-primary"} %>
+    <thead>
+      <tr>
+        <th>
+          <%= sort_link @q, :portfolio_company_investor_name, "Portfolio Company" %>
+        </th>
+        <th>          
+          <%= sort_link @q, :category, "Category" %>
+        </th>
+        <th>
+          <%= sort_link @q, :investor_name, "Investor Name" %>
+        </th>
+        <th>
+          <%= sort_link @q, :investment_type, "Investment Type" %>
+        </th>
+        <th>
+          <%= sort_link @q, :funding_round, "Funding Round" %>
+        </th>
+        <th>
+          <%= sort_link @q, :quantity, "Quantity" %>
+        </th>
+        <th>
+          <%= sort_link @q, :price_cents, "Price" %>
+        </th>
+        <th>
+          <%= sort_link @q, :amount_cents, "Amount" %>
+        </th>
+        <th>
+          <%= sort_link @q, :investment_date, "Investment Date" %>
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @investments.each do |investment| %>
+      <%= render investment %>
     <% end %>
+    </tbody>
+  </table>
 
-  <% end %>
-  
-  </span>
+  <%= paginate @investments %>
+
 </div>
-
-<% cookies[:currency_units] = params[:units] if params[:units].present? %>
-<% cache_if((current_user.entity_id == entity.id), [@entity, title, cookies[:currency_units]]) do %>
-  <div class="table-responsive">
-
-    <table id='<%= "investments-#{title}" %>' class="table table-bordered dataTable jqDataTable">
-
-      <%= render "investments/index_header", title: title, entity: entity %>
-
-      <tbody>
-        <% investments.each do |investment| %>
-          <%= render investment, title: title %>
-        <% end %>
-      </tbody>
-
-    </table>
-
-  </div>
-
-
-  <% if title == "Equity" %>
-
-    <div class="text-center">
-      <small class="text-muted">
-        This is where you see your individual investments. 
-        To see investments aggregated by investor click on the 'Aggregated View' button.
-
-        To see the holdings for Employees and Founders, click on the drill down + sign in the first column
-      </small>
-    </div>
-
-  <% end %>
-
-<% end %>

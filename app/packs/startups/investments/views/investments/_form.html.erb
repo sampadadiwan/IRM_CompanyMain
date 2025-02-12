@@ -1,133 +1,70 @@
-
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Investment</h6>
-  </div>
-  <div class="card-body" data-controller="newinvestment">
-
-<%= form_with(model: investment) do |form| %>
-  <% if investment.errors.any? %>
-    <div class="alert alert-danger">
-      <span><%= pluralize(investment.errors.count, "error") %> prohibited this investment from being saved:</span>
-
-      <ul>
-        <% investment.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div class="form-group">
-    <%= form.label :investor %>
-    <%= form.select :investor_id, 
-      current_user.entity.investors.not_holding.not_trust.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
-      {include_blank: true}, class: "form-control select2 required", data: { action: "change->newinvestment#setCategory" }  %>
-  </div>
-
-  <% if current_user.has_cached_role?(:super) %>
-  <div class="form-group">
-    <%= form.label :entity_id %>
-    <%= form.select :entity_id, Entity.startups.order(:name).map{|c| [c.name, c.id]}, {include_blank: true}, {class: "form-control"} %>
-  </div>
-  <% end %>
-
-
-  <div class="form-group">
-    <%= form.label :category %>
-    <%= form.select :category, Investment.INVESTOR_CATEGORIES(current_user.entity) , 
-      {include_blank: true}, {class: "form-control  required"} %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :funding_round %>
-    <%= form.select :funding_round_id, current_user.entity.funding_rounds.open.collect {|u| [u.name, u.id]}, 
-      {include_blank: true}, {class: "form-control required"} %>
-    <small class="text-muted">Create a <%= link_to "New Funding Round", new_funding_round_path %></small>
-  
-  </div>
-
-  <div class="investment_row_container" data-controller="investmentrow">
-  <div class="card investment_row" id="investment_row" >
-    <div class="card-body row" >
-      <div class="form-group col-md-2">
-        <%= form.label :investment_instrument, "Instrument" %>
-        <%= form.select :investment_instrument, Investment.INSTRUMENT_TYPES(current_user.entity) , 
-          {include_blank: true}, 
-          {"data-action": "change->investmentrow#onChange", 
-            class: "form-control required", name: "investment[investment_instrument][]"} %>
+<%= render FormCard.new(title: "Investments : #{investment.presence || 'New'}") do %>
+  <%= form_with(model: investment, validate: true) do |form| %>
+    <% if investment.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(investment.errors.count, "error") %> prohibited this investment from being saved:</h2>
+        <ul>
+          <% investment.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
       </div>
+    <% end %>
 
-      <div class="form-group col-md-2">
-        <%= form.label :quantity %>
-        <% if investment.category == "Employee" %>  
-          <%= form.number_field :quantity, class: "form-control", disabled: true  %>
-        <% else %>
-          <%= form.number_field :quantity, class: "form-control required", name: "investment[quantity][]"  %>
-        <% end %>
-      </div>
-
-      <div class="form-group col-md-1">
-        <%= form.label :price %>
-        <%= form.number_field :price, class: "form-control required", name: "investment[price][]"  %>
-      </div>
-
-
-      <div class="form-group col-md-2">
-        <%= form.label :liquidation_preference, "Liquidation Pref" %>
-        <%= form.number_field :liquidation_preference, step: :any, class: "form-control", name: "investment[liquidation_preference][]"  %>
-      </div>
-
-      <div class="form-group col-md-2">
-        <%= form.label :spv, "Investor SPV" %>
-        <%= form.text_field :spv, class: "form-control", name: "investment[spv][]"  %>
-      </div>
-
-      <div class="form-group col-md-2">
-        <%= form.label :investment_date %>
-        <%= form.date_field :investment_date, class: "form-control", name: "investment[investment_date][]"  %>
-      </div>
-
-      <div class="form-group col-md-1 preferred_conversion_group">
-        <%= form.label :preferred_conversion, "Conversion" %>
-        <%= form.text_field :preferred_conversion, class: "form-control", name: "investment[preferred_conversion][]"  %>
-      </div>
-      
-
-      <div class="form-group col-md-1">
-        <label>&nbsp;</label>
-        <span class="">
-          <button class="btn-outline-sm btn-outline-danger rmbtn delete-form-row"  data-bs-toggle="tooltip" title="Delete Row"
-                  data-action="click->newinvestment#rmInvestmentRow">
-                  <i class="fas fa-minus-circle"></i>              
-                  
-          </button>
-        </span>
-      </div>
+    <div class="form-group">
+      <%= form.label :portfolio_company_id, "Portfolio Company" %>
+        <%= form.select :portfolio_company_id, 
+            investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control" %>
     </div>
 
-  </div>
-  </div>
-  
-  <div class="text-right">
-    <small class="text-muted"> 
-      <button class="btn-outline-sm btn-outline-primary" id="addInvestment" data-action="click->newinvestment#addInvestmentRow">
-        <i class="fas fa-plus-circle"></i>        
-        Add
-      </button>
-    </small>
-  </div>
+    <% currencies = investment.entity.exchange_rates.pluck(:from)  %>
+    <div class="form-group">
+      <%= form.label :currency %>
+      <%= form.select :currency, currencies.uniq, {}, class: "form-control"  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.rich_text_area :notes, class: "form-control trix-content"  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :category %>
+      <%= form.select :category, Investment::CATEGORIES, {include_blank: true}, class: "form-control"  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->newinvestment#checkRequiredFilled"}} %>
-  </div>
-<% end %>
+    <div class="form-group">
+      <%= form.label :investor_name %>
+      <%= form.text_field :investor_name, class: "form-control"  %>
+    </div>
 
-  </div>
-</div>
+    <div class="form-group">
+      <%= form.label :investment_type %>
+      <%= form.select :investment_type, Investment::TYPES, {include_blank: true}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :funding_round %>
+      <%= form.text_field :funding_round, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :quantity %>
+      <%= form.text_field :quantity, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :price %>
+      <%= form.text_field :price, class: "form-control"  %>
+    </div>
     
+    <div class="form-group">
+      <%= form.label :investment_date %>
+      <%= form.date_field :investment_date, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 V8.0.77
 #####################################
 b32ae2339 (tag: V8.0.77) Update remittances excel to not have data in the hidden column
@@ -11,6 +13,7 @@ V8.0.74
 a8d832c2a Update sample excel files (#715)
 2a8536473 Tables fixes (#714)
 
+>>>>>>> main
 V8.0.73
 #####################################
 a923616e5 Added check for active in persona

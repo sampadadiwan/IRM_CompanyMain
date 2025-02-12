@@ -1,146 +1,56 @@
 class InvestmentsController < ApplicationController
-  include InvestmentConcern
+  before_action :set_investment, only: %i[show edit update destroy]
 
-  before_action :set_investment, only: %w[show update destroy edit history]
-  after_action :verify_authorized, except: %i[index search investor_investments recompute_percentage]
-
-  # GET /investments or /investments.json
+  # GET /investments
   def index
-    @entity = current_user.entity
-
-    @investments = policy_scope(Investment).includes(:investor, :funding_round)
-    authorize(Investment)
-    @investments = @investments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
-    @investments = @investments.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
-    @investments = @investments.where(investment_instrument: Investment::EQUITY_LIKE) if params[:equity_like].present?
-
-    @investments = @investments.order(id: :asc)
-
-    respond_to do |format|
-      format.xlsx do
-        response.headers[
-          'Content-Disposition'
-        ] = "attachment; filename=investments.xlsx"
-      end
-      format.html { render :index }
-      format.json { render :index }
-    end
+    @q = Investment.ransack(params[:q])
+    @investments = policy_scope(@q.result).includes(:portfolio_company)
+    @investments = @investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+    @investments = @investments.where(investment_type: params[:investment_type]) if params[:investment_type].present?
+    @investments = @investments.where(investor_name: params[:investor_name]) if params[:investor_name].present?
+    @investments = @investments.where(category: params[:category]) if params[:category].present?
+    @investments = @investments.where(funding_round: params[:funding_round]) if params[:funding_round].present?
+    @investments = @investments.page(params[:page]) if params[:ag].blank?
   end
 
-  def investor_investments
-    if params[:entity_id].present?
-      @entity = Entity.find(params[:entity_id])
-      @investments = Investment.for_investor(current_user, @entity)
-    end
-
-    @investments = @investments.order(initial_value: :desc)
-                               .includes(:entity, investor: :investor_entity).distinct
-
-    render "index"
-  end
-
-  def history
-    @entity = @investment.entity
-    @versions = @investment.versions
-    render "index", locals: { history: true }
-  end
-
-  def search
-    @entity = current_user.entity
-
-    query = params[:query]
-    if query.present?
-      @investments = if current_user.has_role?(:super)
-
-                       InvestmentIndex.query(query_string: { fields: InvestmentIndex::SEARCH_FIELDS,
-                                                             query:, default_operator: 'and' }).objects
-
-                     else
-                       InvestmentIndex.filter(term: { entity_id: current_user.entity_id })
-                                      .query(query_string: { fields: InvestmentIndex::SEARCH_FIELDS,
-                                                             query:, default_operator: 'and' }).objects
-                     end
-
-    end
-
-    render "search"
-  end
-
-  # GET /investments/1 or /investments/1.json
-  def show
-    if params[:version_id].present?
-      @version = @investment.versions.where(id: params[:version_id]).first
-      @investment = @version.reify
-    end
-    respond_to do |format|
-      format.html
-    end
-  end
+  # GET /investments/1
+  def show; end
 
   # GET /investments/new
   def new
-    @investment = Investment.new(investment_params)
-    @investment.price = @investment.funding_round.price if @investment.funding_round
+    @investment = Investment.new
+    @investment.entity_id = current_user.entity_id
     authorize @investment
   end
 
   # GET /investments/1/edit
   def edit; end
 
-  # POST /investments or /investments.json
+  # POST /investments
   def create
-    investments = new_multi_investments(params, investment_params)
-
-    saved_count = 0
-    Investment.transaction do
-      investments.each do |inv|
-        saved_count += 1 if SaveInvestment.call(investment: inv).success?
-      end
-    end
-
-    respond_to do |format|
-      if investments.length.positive? && saved_count == investments.length
-        format.html { redirect_to investments_path, notice: "Investment was successfully created." }
-        format.json { render :show, status: :created, location: @investment }
-      else
-        format.html { render :new, status: :unprocessable_entity, notice: "Some investments were not created. Please try again." }
-        format.json { render json: @investment.errors, status: :unprocessable_entity }
-      end
+    @investment = Investment.new(investment_params)
+    @investment.entity_id = current_user.entity_id
+    authorize @investment
+    if @investment.save
+      redirect_to @investment, notice: "Investment was successfully created."
+    else
+      render :new, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /investments/1 or /investments/1.json
+  # PATCH/PUT /investments/1
   def update
-    @investment.assign_attributes(investment_params)
-
-    respond_to do |format|
-      if SaveInvestment.call(investment: @investment).success?
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @investment.errors, status: :unprocessable_entity }
-      else
-        format.html { redirect_to investment_url(@investment), notice: "Investment was successfully updated." }
-        format.json { render :show, status: :ok, location: @investment }
-      end
+    if @investment.update(investment_params)
+      redirect_to @investment, notice: "Investment was successfully updated.", status: :see_other
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /investments/1 or /investments/1.json
+  # DELETE /investments/1
   def destroy
-    @investment.destroy
-
-    respond_to do |format|
-      format.html { redirect_to investments_url, notice: "Investment was successfully deleted." }
-      format.json { head :no_content }
-    end
-  end
-
-  def recompute_percentage
-    InvestmentPercentageHoldingJob.perform_later(current_user.entity_id)
-    respond_to do |format|
-      format.html do
-        redirect_back fallback_location: aggregate_investments_path, notice: "Percentage calculations kicked off."
-      end
-    end
+    @investment.destroy!
+    redirect_to investments_url, notice: "Investment was successfully destroyed.", status: :see_other
   end
 
   private
@@ -153,10 +63,6 @@ class InvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_params
-    params.require(:investment).permit(:funding_round_id, :investor_id, :price, :notes,
-                                       :entity_id, :investor_type, :investment_instrument, :quantity,
-                                       :category, :initial_value, :current_value, :spv,
-                                       :status, :liquidation_preference, :investment_date,
-                                       :liq_pref_type, :anti_dilution, :preferred_conversion)
+    params.require(:investment).permit(:portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :price, :investment_date, :notes, :currency)
   end
 end

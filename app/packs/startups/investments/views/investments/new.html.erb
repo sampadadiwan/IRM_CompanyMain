@@ -1,2 +1,3 @@
-
-<%= render "form", investment: @investment %>
+<%= render NewCard.new do %>
+    <%= render "form", investment: @investment %>
+<% end %>

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investments
   resources :viewed_bies
 
   resources :dashboard_widgets do

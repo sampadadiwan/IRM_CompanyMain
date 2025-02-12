@@ -1,12 +1,13 @@
-json.extract! investment, :id, :investment_type, :investor_entity_id, :entity_id,
-              :investor_type, :investment_instrument, :initial_value, :percentage_holding,
-              :diluted_percentage, :price_cents, :amount_cents,
-              :current_value, :created_at, :updated_at
+json.extract! investment, :id, :portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :investment_date, :notes, :created_at, :updated_at, :currency
+
 json.url investment_url(investment, format: :json)
-json.category investment.investor.category
-json.investor_name investment.investor.investor_name
-json.funding_round investment.funding_round.name
-json.price money_to_currency investment.price, params, true
-json.amount money_to_currency investment.price, params
-json.quantity custom_format_number investment.quantity, params
-json.investment_date investment.investment_date.strftime("%d/%m/%Y")
+json.portfolio_company_name investment.portfolio_company.investor_name
+json.price investment.price.to_f
+json.amount investment.amount.to_f
+
+json.dt_actions begin
+  links = []
+  links << link_to('Show', investment_path(investment), class: "btn btn-outline-primary")
+  links << link_to('Edit', edit_investment_path(investment), class: "btn btn-outline-success") if policy(investment).update?
+  safe_join(links, '')
+end

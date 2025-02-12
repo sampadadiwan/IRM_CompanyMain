@@ -27,9 +27,7 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
 
     values = [cc.fund.name, cc.investor_name, cc.capital_distribution.title, cc.capital_commitment.folio_currency, cc.folio_amount, fvfr, fvfr_with_fees, cc.reinvestment, cc.reinvestment_with_fees, cc.income, cc.income_with_fees, cc.percentage, cc.units_quantity, cc.gross_payable, cc.net_payable, cc.gross_of_account_entries, cc.net_of_account_entries, cc.payment_date, cc.completed, cc.folio_id, cc.investor_kyc&.bank_account_number, cc.investor_kyc&.ifsc_code, cc.investor_kyc&.full_name, cc.investor_kyc&.PAN] + custom_field_values
 
-    if has_tracking_currency
-      values << cc.tracking_net_payable.to_d
-    end
+    values << cc.tracking_net_payable.to_d if has_tracking_currency
 
     sheet.add_row values
   end

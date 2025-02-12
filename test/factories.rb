@@ -1,4 +1,18 @@
 FactoryBot.define do
+  factory :investment do
+    entity { Entity.funds.sample}
+    portfolio_company { entity.investors.portfolio_companies.sample }
+    category { Investment::CATEGORIES.sample }
+    investor_name { Faker::Company.name }
+    investment_type { Investment::TYPES.sample }
+    funding_round { ["A", "B", "C"].sample }
+    quantity { rand(1..10) * 100 }
+    price_cents { rand(1..10) * 1000000 }
+    investment_date { Time.zone.today - rand(130).days }
+    notes { Faker::Company.catch_phrase }
+    currency { entity.currency }
+  end
+
   factory :ticker_feed do
     ticker { "MyString" }
     price_cents { "9.99" }
@@ -564,56 +578,11 @@ FactoryBot.define do
     report { File.new("public/img/undraw_profile.svg", "r") }
   end
 
-  factory :excercise do
-    entity { nil }
-    holding { nil }
-    user { nil }
-    option_pool { nil }
-    quantity { 1 }
-    price { "9.99" }
-    amount { "9.99" }
-    tax { "9.99" }
-    approved { false }
-  end
-
-
-  factory :option_pool do
-    name { "Pool #{rand(10)}" }
-    start_date { Date.today - rand(2).years - rand(12).months }
-    number_of_options { 100000 * rand(1..5) }
-    excercise_price_cents { 1000 * rand(1..10) }
-    excercise_period_months { 12 * rand(5..10) }
-    approved {true}
-  end
-
-  factory :aggregate_investment do
-    entity { nil }
-    funding_round { nil }
-    shareholder { Faker::Company.name }
-    investor { nil }
-    equity { 1 }
-    preferred { 1 }
-    options { 1 }
-    percentage { 1.5 }
-    full_diluted_percentage { 1.5 }
-  end
-
   factory :scenario do
     name { Faker::Company.name }
     entity { nil }
   end
 
-  factory :funding_round do
-    name { "Series A,Series B,Series C,Series D,Series E,Series F".split(",")[rand(6)] + " - " + rand(5).to_s }
-    total_amount_cents { rand(5..10) * 1000000 }
-    pre_money_valuation_cents { rand(5..10) * 1000000 }
-    entity { Entity.all.sample }
-    currency { entity.currency }
-    closed_on {Date.today - rand(12).months}
-    price { rand(3..10) * 1000 }
-    liq_pref_type { ["Non-participating", "Participating", ""][rand(3)] }
-    anti_dilution { ["Weighted average - Broad based", "Weighted average - Narrow based", "Full anti dilution", ""][rand(4)] }
-  end
 
   factory :payment do
     entity { Entity.all.sample }
@@ -664,17 +633,6 @@ FactoryBot.define do
     support_email {"support@nowhere.com"}
   end
 
-  factory :holding do
-    user { User.all.sample }
-    employee_id {(0...8).map { (65 + rand(26)).chr }.join}
-    entity { Entity.all.sample }
-    orig_grant_quantity { rand(10) * 10000 }
-    price_cents { rand(3..10) * 10000 }
-    holding_type { "Employee" }
-    value_cents { quantity * price_cents }
-    grant_date { Date.today - rand(24).months }
-    approved {true}
-  end
 
 
   factory :document do
@@ -764,19 +722,6 @@ FactoryBot.define do
     primary_email { investor_entity.primary_email }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city.truncate(20)}
-  end
-
-  factory :investment do
-    # entity_id { Entity.startups.sample.id }
-    # investor { Investor.where(entity_id: entity_id).all.sample }
-    investment_instrument { Investment::INSTRUMENT_TYPES[rand(Investment::INSTRUMENT_TYPES.length)] }
-    category { ["Lead Investor", "Co-Investor"][rand(2)] }
-    quantity { (rand(3..10) * 10000) }
-    price { rand(3..10) * 1000 }
-    spv { "SPV-#{rand(1-10)}" }
-    liquidation_preference { rand(1.0..2.0).round(1) }
-    current_value {}
-    investment_date { Date.today - rand(6).years - rand(12). months}
   end
 
   factory :user do

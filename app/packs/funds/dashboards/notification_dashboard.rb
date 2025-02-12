@@ -12,7 +12,6 @@ class NotificationDashboard < Administrate::BaseDashboard
     recipient: Field::BelongsTo,
     params: JsonField,
     entity: Field::BelongsTo,
-    whatsapp_logs: Field::HasMany,
     type: Field::Text,
     read_at: Field::DateTime,
     created_at: Field::DateTime,

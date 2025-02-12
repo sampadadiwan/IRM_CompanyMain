@@ -1,0 +1,47 @@
+<% investments = Investment.generate_cap_table(funding_round, portfolio_company_id) %>
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="funding_round_<%= funding_round.underscore.downcase %>" class="table table-bordered dataTable jqDataTable">
+
+    <thead>
+      <tr>
+        <th>
+          Investor
+        </th>
+        <th>
+          Quantity
+        </th>
+        <th>
+          %
+        </th>
+        <th>
+          Fully Diluted
+        </th>
+        <th>
+          %
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+        <% investments.each do |investment| %>
+            <tr>
+                <td>
+                <%= investment[:investor_name] %>
+                </td>
+                <td>
+                <%= investment[:quantity] %>
+                </td>
+                <td>
+                <%= investment[:percentage] %>
+                </td>
+                <td>
+                <%= investment[:fully_diluted] %>
+                </td>
+                <td>
+                <%= investment[:fully_diluted_percentage] %>
+                </td>
+            </tr>
+        <% end %>
+    </tbody>
+  </table>
+</div>

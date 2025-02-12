@@ -3,10 +3,8 @@ class InvestmentPolicy < ApplicationPolicy
     def resolve
       if user.entity_type == "Group Company"
         scope.where(entity_id: user.entity.child_ids)
-      elsif user.curr_role == "employee"
-        scope.where(entity_id: user.entity_id)
       else
-        scope.for_investor_all(user)
+        scope.where(entity_id: user.entity_id)
       end
     end
   end
@@ -16,21 +14,11 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if belongs_to_entity?(user, record) && user.enable_investments
-      true
-    else
-      user.enable_investments &&
-        Investment.for_investor(user, record.entity)
-                  .where("investments.id=?", record.id).first.present?
-    end
-  end
-
-  def history?
-    show?
+    permissioned_employee? && user.enable_investments
   end
 
   def create?
-    belongs_to_entity?(user, record) && user.enable_investments
+    user.enable_investments
   end
 
   def new?
@@ -38,22 +26,14 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?(:update)
   end
 
   def edit?
-    create? && !record.employee_holdings
-  end
-
-  def transfer?
-    edit?
-  end
-
-  def convert?
-    edit? && record.investment_instrument == "Preferred"
+    create?
   end
 
   def destroy?
-    create?
+    permissioned_employee?(:destroy)
   end
 end

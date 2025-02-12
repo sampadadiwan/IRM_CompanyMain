@@ -29,6 +29,10 @@ class InvestorPolicy < ApplicationPolicy
     user.entity_id == record.investor_entity_id || permissioned_employee?(:investor_read)
   end
 
+  def cap_table?
+    show? && user.enable_investments && record.category == "Portfolio Company"
+  end
+
   def dashboard?
     show?
   end
