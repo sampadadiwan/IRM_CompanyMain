@@ -31,7 +31,7 @@ class TrackingCurrencyJob < ApplicationJob
   # rubocop:disable Rails/SkipsModelValidations
   def update_fund(fund, user_id)
     Audited.audit_class.as_user("TrackingCurrencyJob") do
-      if fund.tracking_currency.present?
+      if fund.has_tracking_currency?
         # Convert account entry
         send_notification("Updating tracking currency for account entries", user_id)
         fund.account_entries.where(tracking_amount_cents: 0).find_each do |ae|

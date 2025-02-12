@@ -82,12 +82,7 @@ class Fund < ApplicationRecord
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }
 
-  before_create :set_defaults
-
-  def set_defaults
-    self.tracking_currency ||= currency
-  end
-
+  
   def has_tracking_currency?
     self.tracking_currency != currency
   end

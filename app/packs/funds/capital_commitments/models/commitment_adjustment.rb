@@ -21,7 +21,7 @@ class CommitmentAdjustment < ApplicationRecord
   validates :adjustment_type, length: { maximum: 20 }
   validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }
 
-  monetize :tracking_amount_cents, with_currency: ->(i) { i.fund.tracking_currency }
+  monetize :tracking_amount_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
   monetize :amount_cents, :pre_adjustment_cents, :post_adjustment_cents, with_currency: ->(i) { i.fund.currency }
 
