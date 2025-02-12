@@ -11,10 +11,6 @@
     if current_user.has_cached_role?(:investor) 
       personas << ["My Investments",:investor] 
     end
-
-    if current_user.has_cached_role?(:holding) 
-      personas << ["My Holdings", :holding] 
-    end
     
   %>
   <div class="form-group" data-controller="persona">

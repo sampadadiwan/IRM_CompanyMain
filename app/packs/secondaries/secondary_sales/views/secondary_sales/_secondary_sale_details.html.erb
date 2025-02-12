@@ -1,7 +1,6 @@
 <div class="associated_entity" data-controller="tabs">
 
   <%
-    holdings_active = false
     offers_active = false
     interests_active = false
     access_right_active = false
@@ -36,14 +35,8 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
       
     <% elsif policy(secondary_sale).seller? %>
-      <% if secondary_sale.show_holdings %>
-        <% holdings_active = true; document_tag="Seller" %>
-        <input hidden=true value="#holdings-tab" id="clickOnLoad" />        
-        <a class="nav-link <%= holdings_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#holdings-tab" data-action="click->tabdetails#loadData">My Holdings</a>
-      <% else %>
-        <% offers_active = true; document_tag="Seller" %>
-        <input hidden=true value="#offerings-tab" id="clickOnLoad" />
-      <% end %>
+      <% offers_active = true; document_tag="Seller" %>
+      <input hidden=true value="#offerings-tab" id="clickOnLoad" />
       <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab" 
           data-action="click->tabdetails#loadData">My Offers</a>      
 
@@ -96,15 +89,6 @@
 
     <% if policy(secondary_sale).seller? || policy(secondary_sale).owner? %>
 
-      <div id="holdings-tab" class="tab-pane fade <%= holdings_active ? 'in show active' : '' %>">
-        <div id="holdings" class="associated_entity">
-          <%= turbo_frame_tag "holdings_frame", target: "_top" do %>
-            <%= link_to holdings_path(secondary_sale_id: secondary_sale.id), class: "load_data_link", data: { turbo_frame: 'holdings_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-          <% end %>
-        </div>     
-      </div>
 
       <div id="offerings-tab" class="tab-pane fade <%= offers_active ? 'in show active' : '' %>">
         <div id="offerings" class="associated_entity">

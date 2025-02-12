@@ -31,10 +31,6 @@ Scenario Outline: Import Allocations
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   Given there is a sale "name=Summer Sale;price_type=Variable Price;min_price=100;max_price=200"
-  Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
-  And Given I upload a holdings file
-  Then I should see the "Import in progress"
-  And when the holdings are approved
   And Given I upload a offer file "offers_no_holdings.xlsx"
   Then I should see the "Import in progress"
   And I upload an allocation file "allocations.xlsx"
