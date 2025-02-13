@@ -33,7 +33,8 @@ module InvestmentStatisticsHelper
   end
 
   # 1. Column Chart for Amount by Funding Round
-  def investment_amount_by_funding_round(investments)
+  def investment_amount_by_funding_round(investments, category: nil)
+    investments = investments.where(category: category) if category.present?
     grouped_data = investments.group(:funding_round)
                               .sum("amount_cents/100") # Compute total amount
 
