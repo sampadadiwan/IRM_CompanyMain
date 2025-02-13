@@ -290,24 +290,41 @@ class FundPortfolioCalcs < FundRatioCalcs
     Rails.logger.debug apis
 
     apis.each do |api|
-      # We hold in our portfolio only the buys and specifically thier net_quantity. Hence use only that for fmv
-      portfolio_investments = api.portfolio_investments.buys.where(investment_date: ..@end_date)
-      next if portfolio_investments.blank?
+      # Buys before the end_date
+      buy_portfolio_investments = api.portfolio_investments.buys.where(investment_date: ..@end_date)
+      next if buy_portfolio_investments.blank?
 
-      net_quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.net_quantity }
-      Rails.logger.debug { "#{api.portfolio_company.investor_name}: net_quantity = #{net_quantity}" }
-      portfolio_company_id = api.portfolio_company_id
+      buy_quantity = buy_portfolio_investments.sum(:quantity)
 
-      valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: api.investment_instrument, valuation_date: ..@end_date).order(valuation_date: :asc).last
+      # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
+      # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.
+      from_conversion_quantity = @fund.stock_conversions.where(from_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: ..@end_date).sum(:from_quantity)
+      # If any of the buys is a conversion from another PI, but the conversion is yet to happen ie after the end_date, then we need to subtract the quantity from the buy_quantity because the conversion has not yet happened.
+      to_conversion_quantity = @fund.stock_conversions.where(to_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: @end_date..).sum(:to_quantity)
+
+      conversion_quantity = to_conversion_quantity + from_conversion_quantity
+
+      # Sells before the end date
+      sell_portfolio_investments = api.portfolio_investments.sells.where(investment_date: ..@end_date)
+      sell_quantity = sell_portfolio_investments.sum(:quantity)
+
+      net_quantity = buy_quantity + sell_quantity - conversion_quantity
+
+      # Get the valuation for this portfolio_company before the end_date
+      valuation = Valuation.where(owner_id: api.portfolio_company_id, owner_type: "Investor", investment_instrument: api.investment_instrument, valuation_date: ..@end_date).order(valuation_date: :asc).last
 
       # We cannot proceed without a valid valuation
-      raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation
+      raise "No valuation found for #{Investor.find(api.portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation
+
+      Rails.logger.debug { "Net Quantity: #{net_quantity}, Buy Quantity: #{buy_quantity}, Sell Quantity: #{sell_quantity}, Conversion Quantity: #{conversion_quantity}, API: #{api.id}, valuation: #{valuation.per_share_value_in(@fund.currency, @end_date)}" }
 
       # Get the fmv for this portfolio_company on the @end_date
       fmv_on_end_date_cents = net_quantity * valuation.per_share_value_in(@fund.currency, @end_date)
+
       # Applied only if there is a scenario
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
 
+      Rails.logger.debug { "FMV on End Date: #{fmv_on_end_date_cents}, API: #{api.id}" }
       # Aggregate the fmv across the fun
       total_fmv_on_end_date_cents += fmv_on_end_date_cents
     end

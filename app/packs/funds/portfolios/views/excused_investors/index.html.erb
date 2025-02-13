@@ -1,0 +1,41 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Excused Investors</h1>
+  <%= link_to "New Excused Investor", new_excused_investor_path(capital_commitment_id: params[:capital_commitment_id]), {class: "btn btn-outline-primary"} if params[:capital_commitment_id].present? %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="excused_investors" class="table table-bordered dataTable">
+
+    <thead>
+      <tr>
+        <th>
+          Folio
+        </th>
+        <th>
+          Portfolio Company
+        </th>
+        <th>
+          Aggregate Portfolio Investment
+        </th>
+        <th>
+          Portfolio Investment
+        </th>
+        <th>
+          Notes
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+    <% @excused_investors.each do |excused_investor| %>
+      <%= render excused_investor %>
+    <% end %>
+    </tbody>
+  </table>
+
+  <%= paginate @excused_investors %>
+
+</div>

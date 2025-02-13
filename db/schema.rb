@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1259,6 +1259,24 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["entity_id", "from", "to", "as_of"], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
     t.index ["import_upload_id"], name: "index_exchange_rates_on_import_upload_id"
+  end
+
+  create_table "excused_investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.bigint "portfolio_company_id"
+    t.bigint "aggregate_portfolio_investment_id"
+    t.bigint "portfolio_investment_id"
+    t.string "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["aggregate_portfolio_investment_id"], name: "index_excused_investors_on_aggregate_portfolio_investment_id"
+    t.index ["capital_commitment_id"], name: "index_excused_investors_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_excused_investors_on_entity_id"
+    t.index ["fund_id"], name: "index_excused_investors_on_fund_id"
+    t.index ["portfolio_company_id"], name: "index_excused_investors_on_portfolio_company_id"
+    t.index ["portfolio_investment_id"], name: "index_excused_investors_on_portfolio_investment_id"
   end
 
   create_table "expression_of_interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3121,6 +3139,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
+  add_foreign_key "excused_investors", "aggregate_portfolio_investments"
+  add_foreign_key "excused_investors", "capital_commitments"
+  add_foreign_key "excused_investors", "entities"
+  add_foreign_key "excused_investors", "funds"
+  add_foreign_key "excused_investors", "investors", column: "portfolio_company_id"
+  add_foreign_key "excused_investors", "portfolio_investments"
   add_foreign_key "expression_of_interests", "entities"
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"

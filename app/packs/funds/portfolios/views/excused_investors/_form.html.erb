@@ -1,0 +1,38 @@
+<%= render FormCard.new(title: "Excused Investors : #{excused_investor.presence || 'New'}") do %>
+  <%= form_with(model: excused_investor, validate: true) do |form| %>
+    <% if excused_investor.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(excused_investor.errors.count, "error") %> prohibited this excused_investor from being saved:</h2>
+        <ul>
+          <% excused_investor.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <%= form.hidden_field :entity_id, class: "form-control"  %>
+    <%= form.hidden_field :fund_id, class: "form-control"  %>
+    <%= form.hidden_field :capital_commitment_id, class: "form-control"  %>
+
+    <div class="form-group">
+      <%= form.label :portfolio_company_id %>
+      <%= form.select :portfolio_company_id, excused_investor.entity.investors.portfolio_companies.order(:investor_name).map{|pc| [pc.investor_name, pc.id]},  {include_blank: true}, class: "form-control select2"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :aggregate_portfolio_investment_id %>
+      <%= form.select :aggregate_portfolio_investment_id, excused_investor.fund.aggregate_portfolio_investments.map{|api| [api.to_s, api.id]},  {include_blank: true}, class: "form-control select2"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :portfolio_investment_id %>
+      <%= form.select :portfolio_investment_id, excused_investor.fund.portfolio_investments.map{|pi| [pi.to_s, pi.id]},  {include_blank: true}, class: "form-control select2"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_field :notes, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+
+  <% end %>
+<% end %>

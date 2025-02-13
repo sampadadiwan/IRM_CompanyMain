@@ -1,0 +1,58 @@
+<%= render FormCard.new(title: "#{@excused_investor}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @excused_investor.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Folio
+      </td>
+      <td>
+        <%= link_to @excused_investor.capital_commitment %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Portfolio Company
+      </td>
+      <td>
+        <%= @excused_investor.portfolio_company %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Aggregate Portfolio Investment
+      </td>
+      <td>
+        <%= @excused_investor.aggregate_portfolio_investment %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Portfolio Investment
+      </td>
+      <td>
+        <%= @excused_investor.portfolio_investment %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @excused_investor.notes %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@excused_investor).update? %>
+      <%= link_to "Edit", edit_excused_investor_path(@excused_investor), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @excused_investor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :excused_investor do
+    entity { nil }
+    fund { nil }
+    folio_id { "MyString" }
+    portfolio_company { nil }
+    aggregate_portfolio_investment { nil }
+    portfolio_investment { nil }
+    notes { "MyString" }
+  end
+
   factory :investment do
     entity { Entity.funds.sample}
     portfolio_company { entity.investors.portfolio_companies.sample }

@@ -226,6 +226,8 @@ commands = [
               <%= link_to "Fund Units", fund_units_path(fund_id: @fund.id, cols: :all), {class: "dropdown-item" } %>
 
               <%= link_to "View Stakeholders", investors_path(owner_id: @fund.id, owner_type: "Fund"), {class: "dropdown-item" }  if current_user.enable_investors %>
+
+              <%= link_to "Excused Investors", excused_investors_path(fund_id: @fund.id), {class: "dropdown-item" } %>
             <% end %>
 
 

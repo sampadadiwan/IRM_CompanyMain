@@ -79,6 +79,7 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # PATCH/PUT /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def update
+    @capital_distribution_payment.assign_attributes(capital_distribution_payment_params)
     result = CapitalDistributionPaymentUpdate.wtf?(capital_distribution_payment: @capital_distribution_payment)
     respond_to do |format|
       if result.success?

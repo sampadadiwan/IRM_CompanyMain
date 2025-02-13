@@ -46,9 +46,13 @@ class TrackingCurrencyJob < ApplicationJob
         # Convert remittance payments
         send_notification("Updating tracking currency for remittance payments", user_id)
         fund.capital_remittance_payments.where(tracking_amount_cents: 0).find_each do |crp|
-          crp.tracking_amount_cents = crp.amount_cents * crp.tracking_exchange_rate.rate
-          crp.save
+          # We dont save, but only use update_columns, to avoid the capital_remittance getting unverified
+          # When a payment changes it auto unverifies the remittance, we need to avoid this.
+          tracking_amount_cents = crp.amount_cents * crp.tracking_exchange_rate.rate
+          crp.update_columns(tracking_amount_cents: tracking_amount_cents)
         end
+        # Rollup the remittance payments
+        fund.capital_remittance_payments.counter_culture_fix_counts
 
         # Convert remittances
         send_notification("Updating tracking currency for remittances", user_id)
