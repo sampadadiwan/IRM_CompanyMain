@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -152,27 +152,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_admin_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
-  end
-
-  create_table "aggregate_investments", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.string "shareholder"
-    t.bigint "investor_id", null: false
-    t.integer "equity", default: 0
-    t.integer "preferred", default: 0
-    t.integer "options", default: 0
-    t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
-    t.decimal "full_diluted_percentage", precision: 5, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "funding_round_id"
-    t.integer "units", default: 0
-    t.integer "preferred_converted_qty", default: 0
-    t.datetime "deleted_at"
-    t.index ["deleted_at"], name: "index_aggregate_investments_on_deleted_at"
-    t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
-    t.index ["funding_round_id"], name: "index_aggregate_investments_on_funding_round_id"
-    t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
   end
 
   create_table "aggregate_portfolio_investments", force: :cascade do |t|
@@ -1265,35 +1244,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.datetime "updated_at", precision: nil, null: false
   end
 
-  create_table "excercises", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.bigint "holding_id", null: false
-    t.bigint "user_id", null: false
-    t.bigint "option_pool_id", null: false
-    t.integer "quantity", default: 0
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "tax_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "approved", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.decimal "tax_rate", precision: 5, scale: 2, default: "0.0"
-    t.date "approved_on"
-    t.text "payment_proof_data"
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.boolean "cashless"
-    t.integer "shares_to_sell"
-    t.integer "shares_to_allot"
-    t.json "json_fields"
-    t.index ["deleted_at"], name: "index_excercises_on_deleted_at"
-    t.index ["document_folder_id"], name: "index_excercises_on_document_folder_id"
-    t.index ["entity_id"], name: "index_excercises_on_entity_id"
-    t.index ["holding_id"], name: "index_excercises_on_holding_id"
-    t.index ["option_pool_id"], name: "index_excercises_on_option_pool_id"
-    t.index ["user_id"], name: "index_excercises_on_user_id"
-  end
-
   create_table "exchange_rates", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "from", limit: 5
@@ -1311,6 +1261,24 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["entity_id", "from", "to", "as_of"], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
     t.index ["import_upload_id"], name: "index_exchange_rates_on_import_upload_id"
+  end
+
+  create_table "excused_investors", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.bigint "portfolio_company_id"
+    t.bigint "aggregate_portfolio_investment_id"
+    t.bigint "portfolio_investment_id"
+    t.string "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["aggregate_portfolio_investment_id"], name: "index_excused_investors_on_aggregate_portfolio_investment_id"
+    t.index ["capital_commitment_id"], name: "index_excused_investors_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_excused_investors_on_entity_id"
+    t.index ["fund_id"], name: "index_excused_investors_on_fund_id"
+    t.index ["portfolio_company_id"], name: "index_excused_investors_on_portfolio_company_id"
+    t.index ["portfolio_investment_id"], name: "index_excused_investors_on_portfolio_investment_id"
   end
 
   create_table "expression_of_interests", force: :cascade do |t|
@@ -1772,64 +1740,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["ref_type", "ref_id"], name: "index_holding_audit_trails_on_ref"
   end
 
-  create_table "holdings", force: :cascade do |t|
-    t.bigint "user_id"
-    t.bigint "entity_id", null: false
-    t.integer "quantity", default: 0
-    t.decimal "value_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "investment_instrument", limit: 100
-    t.bigint "investor_id", null: false
-    t.string "holding_type", limit: 15, null: false
-    t.bigint "investment_id"
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "funding_round_id", null: false
-    t.bigint "option_pool_id"
-    t.integer "excercised_quantity", default: 0
-    t.date "grant_date"
-    t.integer "vested_quantity", default: 0
-    t.boolean "lapsed", default: false
-    t.string "employee_id", limit: 20
-    t.bigint "import_upload_id"
-    t.boolean "fully_vested", default: false
-    t.integer "lapsed_quantity", default: 0
-    t.integer "orig_grant_quantity", default: 0
-    t.integer "sold_quantity", default: 0
-    t.bigint "created_from_excercise_id"
-    t.boolean "cancelled", default: false
-    t.boolean "approved", default: false
-    t.bigint "approved_by_user_id"
-    t.boolean "emp_ack", default: false
-    t.date "emp_ack_date"
-    t.integer "uncancelled_quantity", default: 0
-    t.integer "cancelled_quantity", default: 0
-    t.integer "gross_avail_to_excercise_quantity", default: 0
-    t.integer "unexcercised_cancelled_quantity", default: 0
-    t.integer "net_avail_to_excercise_quantity", default: 0
-    t.integer "gross_unvested_quantity", default: 0
-    t.integer "unvested_cancelled_quantity", default: 0
-    t.integer "net_unvested_quantity", default: 0
-    t.boolean "manual_vesting", default: false
-    t.bigint "form_type_id"
-    t.string "department", limit: 25
-    t.string "option_type", limit: 12
-    t.boolean "option_dilutes", default: true
-    t.integer "preferred_conversion", default: 1
-    t.text "grant_letter_data"
-    t.datetime "deleted_at"
-    t.json "json_fields"
-    t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
-    t.index ["deleted_at"], name: "index_holdings_on_deleted_at"
-    t.index ["entity_id"], name: "index_holdings_on_entity_id"
-    t.index ["form_type_id"], name: "index_holdings_on_form_type_id"
-    t.index ["funding_round_id"], name: "index_holdings_on_funding_round_id"
-    t.index ["investment_id"], name: "index_holdings_on_investment_id"
-    t.index ["investor_id"], name: "index_holdings_on_investor_id"
-    t.index ["option_pool_id"], name: "index_holdings_on_option_pool_id"
-    t.index ["user_id"], name: "index_holdings_on_user_id"
-  end
-
   create_table "import_uploads", force: :cascade do |t|
     t.string "name"
     t.bigint "entity_id", null: false
@@ -1985,80 +1895,23 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["portfolio_company_id"], name: "index_investment_opportunities_on_portfolio_company_id"
   end
 
-  create_table "investment_snapshots", force: :cascade do |t|
-    t.string "investment_type", limit: 100
-    t.bigint "investor_id", null: false
-    t.string "investor_type", limit: 100
-    t.bigint "entity_id", null: false
-    t.string "status", limit: 20
-    t.string "investment_instrument", limit: 100
-    t.integer "quantity", default: 0
-    t.decimal "initial_value", precision: 20, scale: 2, default: "0.0"
-    t.decimal "current_value", precision: 20, scale: 2, default: "0.0"
-    t.string "category", limit: 100
-    t.datetime "deleted_at"
-    t.decimal "percentage_holding", precision: 5, scale: 2, default: "0.0"
-    t.boolean "employee_holdings", default: false
-    t.integer "diluted_quantity", default: 0
-    t.decimal "diluted_percentage", precision: 5, scale: 2, default: "0.0"
-    t.string "currency", limit: 10
-    t.string "units", limit: 15
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "funding_round_id", null: false
-    t.decimal "liquidation_preference", precision: 10, scale: 2
-    t.string "spv", limit: 50
-    t.date "investment_date"
-    t.string "liq_pref_type", limit: 25
-    t.string "anti_dilution", limit: 50
-    t.date "as_of"
-    t.string "tag", limit: 20
-    t.bigint "investment_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_investment_snapshots_on_entity_id"
-    t.index ["funding_round_id"], name: "index_investment_snapshots_on_funding_round_id"
-    t.index ["investment_id"], name: "index_investment_snapshots_on_investment_id"
-    t.index ["investor_id"], name: "index_investment_snapshots_on_investor_id"
-  end
-
   create_table "investments", force: :cascade do |t|
-    t.string "investment_type", limit: 100
-    t.integer "investor_id"
-    t.string "investor_type", limit: 100
-    t.integer "entity_id"
-    t.string "status", limit: 20
-    t.string "investment_instrument", limit: 100
-    t.integer "quantity", default: 0
-    t.decimal "initial_value", precision: 20, scale: 2, default: "0.0"
-    t.decimal "current_value", precision: 20, scale: 2, default: "0.0"
+    t.bigint "portfolio_company_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "category", limit: 10
+    t.string "currency", limit: 3
+    t.string "investor_name"
+    t.string "investment_type", limit: 15
+    t.string "funding_round", limit: 40
+    t.decimal "quantity", precision: 10
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "investment_date"
+    t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "category", limit: 100
-    t.datetime "deleted_at"
-    t.decimal "percentage_holding", precision: 5, scale: 2, default: "0.0"
-    t.boolean "employee_holdings", default: false
-    t.integer "diluted_quantity", default: 0
-    t.decimal "diluted_percentage", precision: 5, scale: 2, default: "0.0"
-    t.string "currency", limit: 10
-    t.string "units", limit: 15
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "price_cents", precision: 20, scale: 2
-    t.bigint "funding_round_id"
-    t.decimal "liquidation_preference", precision: 10, scale: 2
-    t.bigint "aggregate_investment_id"
-    t.string "spv", limit: 50
-    t.date "investment_date"
-    t.string "liq_pref_type", limit: 25
-    t.string "anti_dilution", limit: 50
-    t.integer "preferred_conversion"
-    t.integer "preferred_converted_qty", default: 0
-    t.text "notes"
-    t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
-    t.index ["deleted_at"], name: "index_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
-    t.index ["funding_round_id"], name: "index_investments_on_funding_round_id"
-    t.index ["investor_id"], name: "index_investments_on_investor"
+    t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
   end
 
   create_table "investor_accesses", force: :cascade do |t|
@@ -2563,45 +2416,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["user_id"], name: "index_offers_on_user_id"
   end
 
-  create_table "option_pools", force: :cascade do |t|
-    t.string "name"
-    t.date "start_date"
-    t.bigint "number_of_options", default: 0
-    t.decimal "excercise_price_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "excercise_period_months", default: 0
-    t.bigint "entity_id", null: false
-    t.bigint "funding_round_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "allocated_quantity", default: 0
-    t.bigint "excercised_quantity", default: 0
-    t.bigint "vested_quantity", default: 0
-    t.bigint "lapsed_quantity", default: 0
-    t.boolean "approved", default: false
-    t.bigint "cancelled_quantity", default: 0
-    t.bigint "gross_avail_to_excercise_quantity", default: 0
-    t.bigint "unexcercised_cancelled_quantity", default: 0
-    t.bigint "net_avail_to_excercise_quantity", default: 0
-    t.bigint "gross_unvested_quantity", default: 0
-    t.bigint "unvested_cancelled_quantity", default: 0
-    t.bigint "net_unvested_quantity", default: 0
-    t.boolean "manual_vesting", default: false
-    t.text "properties"
-    t.bigint "form_type_id"
-    t.text "certificate_signature_data"
-    t.text "grant_letter_data"
-    t.datetime "deleted_at"
-    t.bigint "document_folder_id"
-    t.text "formula"
-    t.json "json_fields"
-    t.bigint "import_upload_id"
-    t.index ["deleted_at"], name: "index_option_pools_on_deleted_at"
-    t.index ["document_folder_id"], name: "index_option_pools_on_document_folder_id"
-    t.index ["entity_id"], name: "index_option_pools_on_entity_id"
-    t.index ["form_type_id"], name: "index_option_pools_on_form_type_id"
-    t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"
-  end
-
   create_table "payments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
@@ -2914,36 +2728,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
   end
 
-  create_table "share_transfers", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.bigint "from_investor_id"
-    t.bigint "from_investment_id"
-    t.bigint "to_investor_id"
-    t.bigint "to_investment_id"
-    t.integer "quantity"
-    t.decimal "price", precision: 20, scale: 2, default: "0.0"
-    t.date "transfer_date"
-    t.bigint "transfered_by_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "transfer_type", limit: 10
-    t.integer "to_quantity", default: 0
-    t.bigint "from_holding_id"
-    t.bigint "to_holding_id"
-    t.bigint "to_user_id"
-    t.bigint "from_user_id"
-    t.index ["entity_id"], name: "index_share_transfers_on_entity_id"
-    t.index ["from_holding_id"], name: "index_share_transfers_on_from_holding_id"
-    t.index ["from_investment_id"], name: "index_share_transfers_on_from_investment_id"
-    t.index ["from_investor_id"], name: "index_share_transfers_on_from_investor_id"
-    t.index ["from_user_id"], name: "index_share_transfers_on_from_user_id"
-    t.index ["to_holding_id"], name: "index_share_transfers_on_to_holding_id"
-    t.index ["to_investment_id"], name: "index_share_transfers_on_to_investment_id"
-    t.index ["to_investor_id"], name: "index_share_transfers_on_to_investor_id"
-    t.index ["to_user_id"], name: "index_share_transfers_on_to_user_id"
-    t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
-  end
-
   create_table "solid_cache_entries", force: :cascade do |t|
     t.binary "key", limit: 1024, null: false
     t.binary "value", null: false
@@ -3215,17 +2999,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
-  create_table "vesting_schedules", force: :cascade do |t|
-    t.integer "months_from_grant"
-    t.integer "vesting_percent"
-    t.bigint "option_pool_id", null: false
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_vesting_schedules_on_entity_id"
-    t.index ["option_pool_id"], name: "index_vesting_schedules_on_option_pool_id"
-  end
-
   create_table "video_kycs", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "investor_kyc_id", null: false
@@ -3250,22 +3023,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
-  create_table "whatsapp_logs", force: :cascade do |t|
-    t.bigint "notification_id", null: false
-    t.json "params"
-    t.json "response"
-    t.json "entity_name"
-    t.boolean "name_matched"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "entity_id"
-    t.index ["notification_id"], name: "index_whatsapp_logs_on_notification_id"
-  end
-
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "aggregate_investments", "entities"
-  add_foreign_key "aggregate_investments", "funding_rounds"
-  add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "aggregate_portfolio_investments", "form_types"
@@ -3381,14 +3139,15 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
   add_foreign_key "events", "users"
-  add_foreign_key "excercises", "entities"
-  add_foreign_key "excercises", "folders", column: "document_folder_id"
-  add_foreign_key "excercises", "holdings"
-  add_foreign_key "excercises", "option_pools"
-  add_foreign_key "excercises", "users"
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
+  add_foreign_key "excused_investors", "aggregate_portfolio_investments"
+  add_foreign_key "excused_investors", "capital_commitments"
+  add_foreign_key "excused_investors", "entities"
+  add_foreign_key "excused_investors", "funds"
+  add_foreign_key "excused_investors", "investors", column: "portfolio_company_id"
+  add_foreign_key "excused_investors", "portfolio_investments"
   add_foreign_key "expression_of_interests", "entities"
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"
@@ -3422,7 +3181,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"
   add_foreign_key "funds", "folders", column: "document_folder_id"
-  add_foreign_key "funds", "funding_rounds"
   add_foreign_key "funds", "funds", column: "master_fund_id"
   add_foreign_key "funds", "import_uploads"
   add_foreign_key "funds", "users", column: "fund_signatory_id"
@@ -3433,13 +3191,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"
   add_foreign_key "holding_audit_trails", "entities"
-  add_foreign_key "holdings", "entities"
-  add_foreign_key "holdings", "excercises", column: "created_from_excercise_id"
-  add_foreign_key "holdings", "form_types"
-  add_foreign_key "holdings", "investments"
-  add_foreign_key "holdings", "investors"
-  add_foreign_key "holdings", "option_pools"
-  add_foreign_key "holdings", "users"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
   add_foreign_key "incoming_emails", "entities"
@@ -3460,12 +3211,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
   add_foreign_key "investment_opportunities", "investors", column: "portfolio_company_id"
-  add_foreign_key "investment_snapshots", "entities"
-  add_foreign_key "investment_snapshots", "funding_rounds"
-  add_foreign_key "investment_snapshots", "investments"
-  add_foreign_key "investment_snapshots", "investors"
-  add_foreign_key "investments", "aggregate_investments"
-  add_foreign_key "investments", "funding_rounds"
+  add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
   add_foreign_key "investor_advisors", "users"
@@ -3521,10 +3267,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
   add_foreign_key "offers", "users", column: "final_agreement_user_id"
-  add_foreign_key "option_pools", "entities"
-  add_foreign_key "option_pools", "folders", column: "document_folder_id"
-  add_foreign_key "option_pools", "form_types"
-  add_foreign_key "option_pools", "funding_rounds"
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"
   add_foreign_key "permissions", "entities"
@@ -3575,16 +3317,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "secondary_sales", "form_types", column: "interest_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "offer_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "secondary_sale_form_type_id"
-  add_foreign_key "share_transfers", "entities"
-  add_foreign_key "share_transfers", "holdings", column: "from_holding_id"
-  add_foreign_key "share_transfers", "holdings", column: "to_holding_id"
-  add_foreign_key "share_transfers", "investments", column: "from_investment_id"
-  add_foreign_key "share_transfers", "investments", column: "to_investment_id"
-  add_foreign_key "share_transfers", "investors", column: "from_investor_id"
-  add_foreign_key "share_transfers", "investors", column: "to_investor_id"
-  add_foreign_key "share_transfers", "users", column: "from_user_id"
-  add_foreign_key "share_transfers", "users", column: "to_user_id"
-  add_foreign_key "share_transfers", "users", column: "transfered_by_id"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"
@@ -3608,12 +3340,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_11_132202) do
   add_foreign_key "valuations", "entities"
   add_foreign_key "valuations", "form_types"
   add_foreign_key "valuations", "investment_instruments"
-  add_foreign_key "vesting_schedules", "entities"
-  add_foreign_key "vesting_schedules", "option_pools"
   add_foreign_key "video_kycs", "entities"
   add_foreign_key "video_kycs", "investor_kycs"
   add_foreign_key "video_kycs", "users"
   add_foreign_key "viewed_bies", "entities"
   add_foreign_key "viewed_bies", "users"
-  add_foreign_key "whatsapp_logs", "notifications"
 end
