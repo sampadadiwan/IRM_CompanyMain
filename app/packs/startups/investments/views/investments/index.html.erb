@@ -13,6 +13,8 @@
 
 <% if params[:portfolio_company_id].present? %>
 
+  
+
   <% 
     portfolio_company_id = params[:portfolio_company_id]
     all_funding_rounds = @investments.select(:funding_round, :investment_date).
@@ -21,15 +23,21 @@
     funding_rounds = []                                  
   %>
   <div class="associated_entity">
+
+    <%= render "/investments/charts", investments: @investments %>
+
+    <%= render ToggleCard.new(title: "Cap Table by Funding Round", css_class: "show_cap_table", state: "") do %>
     <div class="row">
-    <% all_funding_rounds.each do |funding_round| %>
-      <% funding_rounds << funding_round %>
-      <div class="col">
-        <h1 class="h4 mb-0 text-gray-800">Funding Round: <%= funding_round %></h1>
-        <%= render "/investments/funding_round", funding_round:, funding_rounds:, portfolio_company_id: %>
-      </div>
-    <% end %>
+      <% all_funding_rounds.each do |funding_round| %>
+        <% funding_rounds << funding_round %>
+        <div class="col">
+          <h1 class="h4 mb-0 text-gray-800">Funding Round: <%= funding_round %></h1>
+          <%= render "/investments/funding_round", funding_round:, funding_rounds:, portfolio_company_id: %>
+        </div>
+      <% end %>
     </div>
+    <% end %>
+
   </div>
   
 <% end %>

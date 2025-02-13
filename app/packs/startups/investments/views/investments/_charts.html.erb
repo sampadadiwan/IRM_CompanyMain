@@ -1,0 +1,50 @@
+<%= render ToggleCard.new(title: "Charts", css_class: "show_investment_charts", state: "") do %>
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Amount By Funding Round</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <div id=""><%= investment_amount_by_funding_round(investments) %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Diluted Share Holdings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <div id=""><%= fully_diluted_holdings(investments) %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Amount By Investor</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <div id=""><%= investment_amount_by_investor(investments) %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<% end %>
