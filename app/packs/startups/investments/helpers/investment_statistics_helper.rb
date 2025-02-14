@@ -35,10 +35,24 @@ module InvestmentStatisticsHelper
   # 1. Column Chart for Amount by Funding Round
   def investment_amount_by_funding_round(investments, category: nil)
     investments = investments.where(category: category) if category.present?
-    grouped_data = investments.group(:funding_round)
-                              .sum("amount_cents/100") # Compute total amount
-
-    column_chart grouped_data, library: {
+  
+    # Get the earliest investment date for each funding round
+    funding_round_dates = investments.reorder(nil)
+                                     .group(:funding_round)
+                                     .minimum(:investment_date) # Get earliest investment date per round
+  
+    # Compute the total amount per funding round
+    funding_round_amounts = investments.reorder(nil)
+                                       .group(:funding_round)
+                                       .sum("amount_cents/100")
+  
+    # Sort funding rounds by their earliest investment date
+    ordered_funding_rounds = funding_round_dates.sort_by { |_round, date| date }.map(&:first)
+  
+    # Ensure the funding round amounts are displayed in chronological order
+    sorted_data = ordered_funding_rounds.map { |round| [round, funding_round_amounts[round] || 0] }
+  
+    column_chart sorted_data, library: {
       plotOptions: {
         column: {
           dataLabels: {
@@ -50,14 +64,15 @@ module InvestmentStatisticsHelper
       **chart_theme_color
     }, prefix: "$"
   end
+  
 
   # 2. Pie Chart for Fully Diluted Holding Across Investors
   def fully_diluted_holdings(investments)
     # Calculate total equity holdings
-    equity_holdings = investments.where(investment_type: "Equity").group(:investor_name).sum(:quantity)
+    equity_holdings = investments.reorder(nil).where(investment_type: "Equity").group(:investor_name).sum(:quantity)
 
     # Calculate total convertible investments
-    convertibles = investments.where(investment_type: "Convertible").group(:investor_name).sum(:quantity)
+    convertibles = investments.reorder(nil).where(investment_type: "Convertible").group(:investor_name).sum(:quantity)
 
     # Merge holdings (ensure all investors appear)
     all_investors = (equity_holdings.keys + convertibles.keys).uniq
@@ -73,10 +88,13 @@ module InvestmentStatisticsHelper
 
   # 3. Column Chart for Amount Per Investor
   def investment_amount_by_investor(investments)
-    grouped_data = investments.group(:investor_name)
+    grouped_data = investments.reorder(nil).group(:investor_name)
                               .sum("amount_cents/100") # Compute total amount
-
-    column_chart grouped_data, library: {
+  
+    # Sort the data alphabetically by investor name
+    sorted_data = grouped_data.sort_by { |investor_name, _amount| investor_name }
+  
+    column_chart sorted_data, library: {
       plotOptions: {
         column: {
           dataLabels: {
@@ -88,4 +106,5 @@ module InvestmentStatisticsHelper
       **chart_theme_color
     }, prefix: "$"
   end
+  
 end
