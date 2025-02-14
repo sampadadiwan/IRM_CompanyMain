@@ -85,8 +85,15 @@ module PortfolioComputations
   # This method is memoized to avoid multiple calls to the database
   def net_quantity_on(date)
     sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
-    transfer_quantity_on = stock_conversions.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
-    quantity + sold_quantity_on - transfer_quantity_on
+    
+    # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
+    # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.    
+    from_conversion_quantity = self.fund.stock_conversions.where(from_portfolio_investment_id: id, conversion_date: ..date).sum(:from_quantity)
+    # If any of the buys is a conversion from another PI, but the conversion is yet to happen ie after the end_date, then we need to subtract the quantity from the buy_quantity because the conversion has not yet happened.    
+    to_conversion_quantity = self.fund.stock_conversions.where(to_portfolio_investment_id: id, conversion_date: date..).sum(:to_quantity)
+
+    conversion_quantity = to_conversion_quantity + from_conversion_quantity
+    quantity + sold_quantity_on - conversion_quantity
   end
 
   def price_per_share_cents

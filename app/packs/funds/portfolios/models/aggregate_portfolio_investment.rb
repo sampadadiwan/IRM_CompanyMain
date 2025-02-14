@@ -146,4 +146,41 @@ class AggregatePortfolioInvestment < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[fund investment_instrument portfolio_company]
   end
+
+
+  def fmv_on_date(end_date)
+
+    # Buys before the end_date
+    buy_portfolio_investments = self.portfolio_investments.buys.where(investment_date: ..end_date)
+    return 0 if buy_portfolio_investments.blank?
+
+    buy_quantity = buy_portfolio_investments.sum(:quantity)
+
+    # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
+    # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.
+    from_conversion_quantity = self.fund.stock_conversions.where(from_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
+    # If any of the buys is a conversion from another PI, but the conversion is yet to happen ie after the end_date, then we need to subtract the quantity from the buy_quantity because the conversion has not yet happened.
+    to_conversion_quantity = self.fund.stock_conversions.where(to_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: end_date..).sum(:to_quantity)
+
+    conversion_quantity = to_conversion_quantity + from_conversion_quantity
+
+    # Sells before the end date
+    sell_portfolio_investments = self.portfolio_investments.sells.where(investment_date: ..end_date)
+    sell_quantity = sell_portfolio_investments.sum(:quantity)
+
+    net_quantity = buy_quantity + sell_quantity - conversion_quantity
+
+    # Get the valuation for this portfolio_company before the end_date
+    valuation = Valuation.where(owner_id: self.portfolio_company_id, owner_type: "Investor", investment_instrument: self.investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
+
+    # We cannot proceed without a valid valuation
+    raise "No valuation found for #{Investor.find(self.portfolio_company_id).investor_name} prior to date #{end_date}" unless valuation
+
+    Rails.logger.debug { "Net Quantity: #{net_quantity}, Buy Quantity: #{buy_quantity}, Sell Quantity: #{sell_quantity}, Conversion Quantity: #{conversion_quantity}, API: #{self.id}, valuation: #{valuation.per_share_value_in(self.fund.currency, end_date)}" }
+
+    # Get the fmv for this portfolio_company on the end_date
+    fmv_on_end_date_cents = net_quantity * valuation.per_share_value_in(self.fund.currency, end_date)
+
+    fmv_on_end_date_cents
+  end
 end
