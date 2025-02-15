@@ -17,19 +17,19 @@
           </a>
         </div>
 
-        <% 
+        <%
         #grouped_routes = Administrate::Namespace.new(namespace).resources_with_index_route.sort.group_by{|r| r[0]}
 
         grouped_routes = {"Approvals"=>["access_rights", "approval_responses", "approvals"],
                           "Funds"=>["funds", "fund_formulas", "capital_calls", "capital_commitments", "capital_distribution_payments", "capital_distributions", "capital_remittance_payments", "capital_remittances"],
                           "Deals"=>["deal_activities", "deal_investors", "deals"],
                           "Misc"=>["users", "documents", "investor_accesses", "investors", "e_signatures", "entities", "folders", "quick_links", "reports"],
-                          "Startups"=>["holdings", "interests", "investments", "excercises", "offers", "option_pools", "secondary_sales", "valuations", "funding_rounds"]}
+                          "Startups"=>["interests", "investments", "offers", "secondary_sales", "valuations"]}
 
-        
+
         grouped_routes.each do |letter, resources| %>
 
-          <li class="sidebar-item"> 
+          <li class="sidebar-item">
             <a class="sidebar-link has-arrow" href="javascript:void(0)">
                 <span><i class="ti ti-checklist"></i></span>
                 <span class="hide-menu"><%= letter.titleize %></span>
