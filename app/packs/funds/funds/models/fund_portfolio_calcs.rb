@@ -6,7 +6,12 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   def total_investment_costs_cents
-    @total_investment_costs_cents ||= PortfolioInvestment.total_investment_costs_cents(@fund, @end_date)
+    ticc = 0
+    @fund.aggregate_portfolio_investments.each do |api|
+      api_as_of = api.as_of(@end_date)
+      ticc += api_as_of.cost_of_remaining_cents
+    end
+    ticc
   end
 
   def fmv_cents
@@ -68,10 +73,6 @@ class FundPortfolioCalcs < FundRatioCalcs
     dpi + rvpi
   end
 
-  def fund_utilization
-    committed_cents.positive? ? (total_investment_costs_cents / committed_cents) : 0
-  end
-
   def portfolio_value_to_cost
     total_investment_costs_cents.positive? ? fmv_cents / total_investment_costs_cents : 0
   end
@@ -86,7 +87,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       cf = XirrCashflow.new
 
       # Get the buy cash flows
-      @fund.portfolio_investments.buys.where(investment_date: ..@end_date).find_each do |buy|
+      buy_pis = @fund.portfolio_investments.buys.before(@end_date)
+      buy_pis.find_each do |buy|
         cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
       end
 
@@ -133,7 +135,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id| # rubocop:disable Metrics/BlockLength
         portfolio_company = Investor.find(portfolio_company_id)
         # Get all the portfolio investments for this portfolio company before the end date
-        portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
+        portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:).before(@end_date)
+
         cf = XirrCashflow.new
 
         # Get the buy cash flows
@@ -193,18 +196,22 @@ class FundPortfolioCalcs < FundRatioCalcs
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
       portfolio_company = Investor.find(portfolio_company_id)
-      portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
-      # Get the bought
-      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:cost_of_remaining_cents)
+      @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
 
-      # Calc the total fmv for the portfolio_company
+      # Get the bought
+      bought_amount_cents = 0
       total_fmv = 0
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
-        total_fmv += fmv_on_date(api)
+        api_as_of = api.as_of(@end_date)
+        total_fmv += api_as_of.fmv
+        bought_amount_cents += api_as_of.bought_amount_cents
+        Rails.logger.debug { "API: #{api.id}, FMV Cents: #{api_as_of.fmv}, Bought Amount Cents: #{api_as_of.bought_amount}" }
       end
 
+      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV Cents: #{total_fmv}, Bought Amount Cents: #{bought_amount_cents}" }
+
       # Store the value to cost ratio
-      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount } if bought_amount.positive?
+      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount_cents } if bought_amount_cents.positive?
     end
 
     @portfolio_company_cost_map
@@ -219,7 +226,10 @@ class FundPortfolioCalcs < FundRatioCalcs
       @fund.aggregate_portfolio_investments.each do |api|
         api.portfolio_company_id
 
-        portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+        portfolio_investments = api.portfolio_investments.before(@end_date)
+        # If there are no portfolio investments for this API, then skip
+        next if portfolio_investments.blank?
+
         cf = XirrCashflow.new
 
         # Get the buy cash flows
@@ -270,11 +280,11 @@ class FundPortfolioCalcs < FundRatioCalcs
     @api_cost_map ||= {}
 
     @fund.aggregate_portfolio_investments.each do |api|
-      portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+      api.portfolio_investments.where(investment_date: ..@end_date)
 
-      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:cost_of_remaining_cents)
-
-      fmv = fmv_on_date(api)
+      api_as_of = api.as_of(@end_date)
+      bought_amount = api_as_of.bought_amount
+      fmv = api_as_of.fmv
 
       @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / bought_amount) } if bought_amount.positive?
     end

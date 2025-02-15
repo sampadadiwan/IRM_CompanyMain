@@ -46,7 +46,7 @@ class StockConverter < Trailblazer::Operation
                                                       investment_instrument_id: stock_conversion.to_instrument_id,
                                                       exchange_rate_id: from_portfolio_investment.exchange_rate_id,
                                                       json_fields: from_portfolio_investment.json_fields,
-                                                      notes: stock_conversion.notes)
+                                                      notes: stock_conversion.notes, conversion_date: stock_conversion.conversion_date)
 
     from_currency = from_portfolio_investment.investment_instrument.currency
     to_currency = to_portfolio_investment.investment_instrument.currency

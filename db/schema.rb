@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_14_140257) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -63,7 +63,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
@@ -92,7 +92,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
 
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
-    t.text "body"
+    t.text "body", size: :long
     t.string "record_type", null: false
     t.bigint "record_id", null: false
     t.datetime "created_at", null: false
@@ -467,7 +467,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.boolean "send_call_notice_flag", default: true
     t.boolean "send_payment_notification_flag", default: true
     t.string "fee_formula_ids"
-    t.text "close_percentages"
+    t.json "close_percentages"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -573,6 +573,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.bigint "exchange_rate_id"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
@@ -652,6 +654,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
     t.boolean "payment_notification_sent", default: false
+    t.bigint "investor_id"
     t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["deleted_at"], name: "index_capital_remittance_payments_on_deleted_at"
@@ -806,6 +809,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.string "owner_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["owner_id", "owner_type"], name: "index_custom_grid_views_on_owner_id_and_owner_type"
   end
 
   create_table "custom_notifications", force: :cascade do |t|
@@ -849,7 +853,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "display_name", default: false
-    t.boolean "display_tag", default: true
+    t.boolean "display_tag", default: false
     t.string "name", limit: 20, default: "Default"
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
@@ -970,8 +974,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.json "card_view_attrs"
     t.string "tags", limit: 100
     t.string "slug"
+    t.bigint "deal_documents_folder_id"
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
+    t.index ["deal_documents_folder_id"], name: "index_deals_on_deal_documents_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deals_on_document_folder_id"
     t.index ["entity_id"], name: "index_deals_on_entity_id"
@@ -1039,13 +1045,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.bigint "folder_id", null: false
     t.integer "impressions_count", default: 0
     t.bigint "form_type_id"
-    t.boolean "download", default: false
-    t.boolean "printing", default: false
+    t.boolean "download"
+    t.boolean "printing"
     t.text "file_data"
     t.string "owner_type"
     t.bigint "owner_id"
     t.string "owner_tag", limit: 40
-    t.boolean "orignal", default: false
+    t.boolean "orignal"
     t.bigint "user_id", null: false
     t.boolean "signature_enabled", default: false, null: false
     t.bigint "signed_by_id"
@@ -1231,7 +1237,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_events_on_owner"
-    t.index ["owner_type", "owner_id"], name: "index_events_on_owner_type_and_owner_id"
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
@@ -1582,6 +1587,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.string "transfer", limit: 8
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.boolean "gp_units", default: false
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
@@ -1645,6 +1651,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.string "unit_types"
     t.string "units_allocation_engine", limit: 50
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "editable_formulas", default: false
     t.string "registration_number", limit: 20
     t.string "category", limit: 15
@@ -1670,6 +1680,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.string "tracking_currency", limit: 3
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
@@ -1695,15 +1706,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.datetime "updated_at", null: false
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
-    t.bigint "entity_id"
+    t.bigint "entity_id", null: false
     t.string "data_type"
     t.string "label"
     t.boolean "derived_field"
+    t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
-    t.index ["owner_id", "owner_type"], name: "index_grid_view_preferences_on_owner_id_and_owner_type"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
-    t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
   create_table "holding_actions", force: :cascade do |t|
@@ -1884,12 +1894,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.boolean "shareable", default: false
-    t.bigint "portfolio_company_id"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
     t.index ["funding_round_id"], name: "index_investment_opportunities_on_funding_round_id"
-    t.index ["portfolio_company_id"], name: "index_investment_opportunities_on_portfolio_company_id"
   end
 
   create_table "investments", force: :cascade do |t|
@@ -1907,6 +1915,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "import_upload_id"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
   end
@@ -2036,6 +2045,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.string "agreement_unit_type", limit: 20
     t.string "slug"
+    t.text "pan_card_data"
     t.json "doc_question_answers"
     t.boolean "all_docs_valid", default: false
     t.boolean "compliant", default: false
@@ -2533,8 +2543,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.boolean "compliant", default: false
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "conversion_date"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
+    t.index ["conversion_date"], name: "index_portfolio_investments_on_conversion_date"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
@@ -3020,6 +3032,18 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
+  add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
+  add_foreign_key "access_rights", "users"
+  add_foreign_key "access_rights", "users", column: "granted_by_id"
+  add_foreign_key "account_entries", "capital_commitments"
+  add_foreign_key "account_entries", "entities"
+  add_foreign_key "account_entries", "exchange_rates"
+  add_foreign_key "account_entries", "form_types"
+  add_foreign_key "account_entries", "fund_formulas"
+  add_foreign_key "account_entries", "funds"
+  add_foreign_key "account_entries", "investors"
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
@@ -3120,6 +3144,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   add_foreign_key "deals", "deals", column: "clone_from_id"
   add_foreign_key "deals", "entities"
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
+  add_foreign_key "deals", "folders", column: "deal_documents_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
   add_foreign_key "doc_questions", "entities"
@@ -3135,7 +3160,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   add_foreign_key "esign_logs", "documents"
   add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
-  add_foreign_key "events", "users"
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
@@ -3183,7 +3207,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "grid_view_preferences", "custom_grid_views"
-  add_foreign_key "grid_view_preferences", "entities"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"
@@ -3195,6 +3218,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   add_foreign_key "interests", "folders", column: "document_folder_id"
   add_foreign_key "interests", "form_types"
   add_foreign_key "interests", "funding_rounds"
+  add_foreign_key "interests", "import_uploads"
   add_foreign_key "interests", "investors"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
@@ -3206,7 +3230,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_13_064143) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
-  add_foreign_key "investment_opportunities", "investors", column: "portfolio_company_id"
   add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"

@@ -97,6 +97,9 @@ class PortfolioInvestment < ApplicationRecord
     where("portfolio_company_id=? and investment_instrument_id = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, investment_instrument_id).order(investment_date: :asc)
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
+  scope :conversions, -> { where.not(conversion_date: nil) }
+  # This is a very important scope, used in all as_of computations. It allows us to ignore conversions that have happened after the date, but whose investment_date is before the date
+  scope :before, ->(date) { where(investment_date: ...date).where("conversion_date is NULL OR conversion_date < ?", date) }
 
   # This is used to improve the performance of the portfolio computations, in allocations
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on

@@ -43,7 +43,7 @@ class InformationOnInvestmentsJob
       data[index]["Whether it is managed or sponsored by AIF's manager or sponsor or their associates"]["Value"] = inv_instrument.custom_fields.is_managed_or_sponsored_by_aif
       data[index]["Sector"]["Value"] = inv_instrument.custom_fields.sector
 
-      api_as_of_date = api.as_of(nil, end_date)
+      api_as_of_date = api.as_of(end_date)
       # pis = api.portfolio_investments.where("investment_date <= ?", end_date)
       # bought_amount = pis.buys.sum(&:amount)
       # cost_of_sold = pis.sells.sum(&:cost_of_sold)
@@ -93,7 +93,7 @@ class InformationOnInvestmentsJob
         is_managed_or_sponsored_by_aif = inv_instrument.custom_fields.is_managed_or_sponsored_by_aif
         sector = inv_instrument.custom_fields.sector
 
-        api_as_of_date = api.as_of(nil, end_date)
+        api_as_of_date = api.as_of(end_date)
         amount_invested = api_as_of_date.cost_of_remaining.to_d
 
         amount_invested_in_offshore = Money.new(0).amount.to_d

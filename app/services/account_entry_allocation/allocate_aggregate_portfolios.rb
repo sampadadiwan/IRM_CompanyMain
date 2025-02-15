@@ -34,10 +34,8 @@ module AccountEntryAllocation
           )
 
           # We create a "parent" reference
-          api = orig_api.as_of(nil, end_date) # aggregator object?
+          api = orig_api.as_of(end_date) # aggregator object?
           Rails.logger.debug { "api: #{api}" }
-          api_period = orig_api.as_of(start_date, end_date)
-          Rails.logger.debug { "api_period: #{api_period}" }
 
           begin
             create_instance_variables(ctx)

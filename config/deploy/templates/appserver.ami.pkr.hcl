@@ -113,6 +113,8 @@ build {
       "sudo apt install --yes unzip",
       "sudo apt install --yes imagemagick"
       "sudo apt install --yes poppler-utils"
+      "sudo apt install --yes ffmpeg"
+      
     ]
   }
 }

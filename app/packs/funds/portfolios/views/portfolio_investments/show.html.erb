@@ -48,7 +48,17 @@
           <%= l @portfolio_investment.investment_date if @portfolio_investment.investment_date %>
         </td>
       </tr>
-      
+
+      <% if @portfolio_investment.conversion_date %>
+      <tr>
+        <td>
+          Conversion Date
+        </td>
+        <td>
+          <%= l @portfolio_investment.conversion_date  %>
+        </td>
+      </tr>
+      <% end %>
       
 
       <% if @portfolio_investment.base_amount_cents != @portfolio_investment.amount_cents %>

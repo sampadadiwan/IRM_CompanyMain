@@ -1,33 +1,29 @@
 class ImageService
   def self.pdf_to_image(document, file, folder_path, image_path)
-    magick = MiniMagick::Image.open(file.path)
-    image_paths = []
-    # Iterate through each page in the document
-    magick.pages.each_with_index do |image, index|
-      # Apply desired transformations
-      image.format "png"
-      image.flatten
-      image.background "white"
-      # Set the density (resolution) for all pages
-      image.density 900
+    output_prefix = "#{folder_path}/#{document.id}"
 
-      # Define a unique path for each output image
-      output_path = "#{folder_path}/#{document.id}_#{index + 1}.png"
-      image_paths << output_path
-      # Write the transformed image to the output path
-      image.write(output_path)
+    # Ensure the directory exists
+    FileUtils.mkdir_p(folder_path)
 
-      Rails.logger.debug { "Saved page #{index + 1} to #{output_path}" }
+    # Convert PDF to PNG
+    `pdftoppm -png -r 300 #{file.path} #{output_prefix}`
+
+    # Get list of images
+    image_paths = Dir.glob("#{output_prefix}-*.png")
+    Rails.logger.debug { "Generated images: #{image_paths.inspect}" }
+
+    # If only one image exists, just copy it
+    if image_paths.size == 1
+      Rails.logger.warn { "Only one image found, copying it instead of stacking." }
+      FileUtils.cp(image_paths.first, image_path)
+      return image_path
     end
 
-    # Use 'append' with vertical stacking to generate the combined image
-    MiniMagick::Tool::Convert.new do |convert|
-      image_paths.each do |img|
-        convert << img
-      end
-      convert.append # Append vertically
-      convert << image_path
-    end
+    # Use ImageMagick to combine images vertically
+    `convert #{image_paths.join(' ')} -append #{image_path}`
+
+    Rails.logger.debug { "Saved combined image to #{image_path}" }
+
     image_path
   end
 

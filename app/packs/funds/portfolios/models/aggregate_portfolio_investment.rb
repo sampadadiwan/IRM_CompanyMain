@@ -61,30 +61,37 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # This is used extensively in the AccountEntryAllocationEngine
   # The AccountEntryAllocationEngine needs the date as of end_date,
   # so this creates an AggregatePortfolioInvestment with data as of the end_date
-  def as_of(start_date, end_date)
+  def as_of(end_date)
     api = dup
-    pis = portfolio_investments.where(investment_date: ..end_date)
-    pis = pis.where(investment_date: start_date..) if start_date
+    # Get the PIs as of the end_date
+    pis_before_end_date = portfolio_investments.before(end_date)
 
-    api.portfolio_investments = pis
-    api.quantity = pis.sum(:quantity)
-    api.bought_quantity = pis.buys.sum(:quantity)
-    api.bought_amount_cents = pis.buys.sum(:amount_cents)
-    api.net_bought_amount_cents = pis.buys.sum(:net_bought_amount_cents)
+    api.portfolio_investments = pis_before_end_date
+    api.quantity = pis_before_end_date.sum(:quantity)
 
-    api.sold_quantity = pis.sells.sum(:quantity)
-    api.sold_amount_cents = pis.sells.sum(:amount_cents)
-    api.unrealized_gain_cents = pis.sum(:unrealized_gain_cents)
+    api.bought_quantity = pis_before_end_date.buys.sum(:quantity)
+    api.bought_amount_cents = pis_before_end_date.buys.sum(:amount_cents)
 
-    api.transfer_quantity = pis.sum(:transfer_quantity)
+    api.sold_quantity = pis_before_end_date.sells.sum(:quantity)
+    api.sold_amount_cents = pis_before_end_date.sells.sum(:amount_cents)
 
-    api.cost_of_sold_cents = pis.sells.sum(:cost_of_sold_cents)
-    api.cost_of_remaining_cents = pis.sum(:cost_of_remaining_cents)
-    api.compute_avg_cost
+    net_quantity = net_quantity_on(end_date)
+    api.avg_cost_cents = api.bought_amount_cents / api.bought_quantity if api.bought_quantity.positive?
 
-    # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date
-    valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, investment_instrument_id:).order(valuation_date: :asc).last
-    api.fmv_cents = valuation ? api.quantity * valuation.per_share_value_in(fund.currency, end_date) : 0
+    api.fmv_cents = fmv_on_date(end_date)
+
+    api.unrealized_gain_cents = net_quantity * (api.fmv_cents - api.avg_cost_cents)
+
+    # Get the StockConversions where the from_portfolio_investment_id is in pis_before_end_date
+    transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis_before_end_date.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
+    api.transfer_quantity = transfer_quantity
+
+    api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
+    api.cost_of_remaining_cents = net_quantity * api.avg_cost_cents
+
+    net_bought_quantity = net_quantity_on(end_date, only_buys: true)
+    api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
+
     api.freeze
   end
 
@@ -147,40 +154,48 @@ class AggregatePortfolioInvestment < ApplicationRecord
     %w[fund investment_instrument portfolio_company]
   end
 
+  def avg_cost_on(date); end
 
-  def fmv_on_date(end_date)
-
+  def net_quantity_on(end_date, only_buys: false)
     # Buys before the end_date
-    buy_portfolio_investments = self.portfolio_investments.buys.where(investment_date: ..end_date)
+    buy_portfolio_investments = portfolio_investments.buys.before(end_date)
     return 0 if buy_portfolio_investments.blank?
 
     buy_quantity = buy_portfolio_investments.sum(:quantity)
 
     # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
     # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.
-    from_conversion_quantity = self.fund.stock_conversions.where(from_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
-    # If any of the buys is a conversion from another PI, but the conversion is yet to happen ie after the end_date, then we need to subtract the quantity from the buy_quantity because the conversion has not yet happened.
-    to_conversion_quantity = self.fund.stock_conversions.where(to_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: end_date..).sum(:to_quantity)
+    from_conversion_quantity = fund.stock_conversions.where(from_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
 
-    conversion_quantity = to_conversion_quantity + from_conversion_quantity
+    conversion_quantity = from_conversion_quantity
 
     # Sells before the end date
-    sell_portfolio_investments = self.portfolio_investments.sells.where(investment_date: ..end_date)
+    sell_portfolio_investments = portfolio_investments.sells.where(investment_date: ..end_date)
     sell_quantity = sell_portfolio_investments.sum(:quantity)
+    net_quantity = if only_buys
+                     # This is net bought quantity
+                     buy_quantity - conversion_quantity
+                   else
+                     # This is net quantity
+                     buy_quantity + sell_quantity - conversion_quantity
+                   end
 
-    net_quantity = buy_quantity + sell_quantity - conversion_quantity
+    Rails.logger.debug { "Net Quantity: #{net_quantity}, Buy Quantity: #{buy_quantity}, Sell Quantity: #{sell_quantity}, Conversion Quantity: #{conversion_quantity}, API: #{id}" }
+
+    net_quantity
+  end
+
+  def fmv_on_date(end_date)
+    net_quantity = net_quantity_on(end_date)
+    return 0 if net_quantity.zero?
 
     # Get the valuation for this portfolio_company before the end_date
-    valuation = Valuation.where(owner_id: self.portfolio_company_id, owner_type: "Investor", investment_instrument: self.investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
+    valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
 
     # We cannot proceed without a valid valuation
-    raise "No valuation found for #{Investor.find(self.portfolio_company_id).investor_name} prior to date #{end_date}" unless valuation
-
-    Rails.logger.debug { "Net Quantity: #{net_quantity}, Buy Quantity: #{buy_quantity}, Sell Quantity: #{sell_quantity}, Conversion Quantity: #{conversion_quantity}, API: #{self.id}, valuation: #{valuation.per_share_value_in(self.fund.currency, end_date)}" }
+    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{end_date}" unless valuation
 
     # Get the fmv for this portfolio_company on the end_date
-    fmv_on_end_date_cents = net_quantity * valuation.per_share_value_in(self.fund.currency, end_date)
-
-    fmv_on_end_date_cents
+    net_quantity * valuation.per_share_value_in(fund.currency, end_date)
   end
 end

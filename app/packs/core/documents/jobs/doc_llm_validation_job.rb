@@ -14,7 +14,12 @@ class DocLlmValidationJob < ApplicationJob
       docs.each do |document|
         model.validate_document(document)
         model.reload
-        send_notification("Document #{document.name} validation completed for #{model}", user_id, "info")
+        send_notification("Document #{document.name} validation completed for #{model}", user_id, "success")
+      end
+      if docs.present?
+        send_notification("Document validation completed for #{model}.", user_id, "success")
+      else
+        send_notification("No documents to validate for #{model}.", user_id, "danger")
       end
     end
   end

@@ -67,10 +67,6 @@ class FundRatiosJob < ApplicationJob
   end
 
   def calc_only_fund(calc, fund, capital_commitment, end_date, owner)
-    value = calc.fund_utilization
-    display_value = value ? "#{value.round(2) * 100}%" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Fund Utilization", value:, display_value:)
-
     value = calc.portfolio_value_to_cost
     display_value = value ? "#{value.round(2)}x" : nil
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Portfolio Value to Cost", value:, display_value:)
