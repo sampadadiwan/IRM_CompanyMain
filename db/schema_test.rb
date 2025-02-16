@@ -1716,36 +1716,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_14_140257) do
     t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
-  create_table "holding_actions", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.bigint "holding_id", null: false
-    t.bigint "user_id"
-    t.integer "quantity"
-    t.string "action", limit: 20
-    t.text "notes"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_holding_actions_on_entity_id"
-    t.index ["holding_id"], name: "index_holding_actions_on_holding_id"
-    t.index ["user_id"], name: "index_holding_actions_on_user_id"
-  end
+ 
 
-  create_table "holding_audit_trails", force: :cascade do |t|
-    t.string "action", limit: 100
-    t.string "parent_id", limit: 50
-    t.string "owner", limit: 30
-    t.bigint "quantity"
-    t.integer "operation"
-    t.boolean "completed", default: false
-    t.string "ref_type", null: false
-    t.bigint "ref_id", null: false
-    t.text "comments"
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_holding_audit_trails_on_entity_id"
-    t.index ["ref_type", "ref_id"], name: "index_holding_audit_trails_on_ref"
-  end
+  
 
   create_table "import_uploads", force: :cascade do |t|
     t.string "name"
@@ -3210,10 +3183,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_14_140257) do
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "grid_view_preferences", "custom_grid_views"
   add_foreign_key "grid_view_preferences", "entities"
-  add_foreign_key "holding_actions", "entities"
-  add_foreign_key "holding_actions", "holdings"
-  add_foreign_key "holding_actions", "users"
-  add_foreign_key "holding_audit_trails", "entities"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
   add_foreign_key "incoming_emails", "entities"
@@ -3285,7 +3254,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_14_140257) do
   add_foreign_key "offers", "entities"
   add_foreign_key "offers", "folders", column: "document_folder_id"
   add_foreign_key "offers", "form_types"
-  add_foreign_key "offers", "holdings"
   add_foreign_key "offers", "interests"
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
