@@ -199,19 +199,19 @@ class FundPortfolioCalcs < FundRatioCalcs
       @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
 
       # Get the bought
-      bought_amount_cents = 0
+      bought_amount = 0
       total_fmv = 0
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         api_as_of = api.as_of(@end_date)
         total_fmv += api_as_of.fmv
-        bought_amount_cents += api_as_of.bought_amount_cents
+        bought_amount += api_as_of.bought_amount
         Rails.logger.debug { "API: #{api.id}, FMV Cents: #{api_as_of.fmv}, Bought Amount Cents: #{api_as_of.bought_amount}" }
       end
 
-      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV Cents: #{total_fmv}, Bought Amount Cents: #{bought_amount_cents}" }
+      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV Cents: #{total_fmv}, Bought Amount Cents: #{bought_amount}" }
 
       # Store the value to cost ratio
-      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount_cents } if bought_amount_cents.positive?
+      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount } if bought_amount.positive?
     end
 
     @portfolio_company_cost_map
