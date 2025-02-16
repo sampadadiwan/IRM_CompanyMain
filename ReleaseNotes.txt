@@ -1,5 +1,30 @@
-<<<<<<< HEAD
-=======
+V9.0.0
+#####################################
+b81bcf5db (HEAD -> main, tag: V9.0.0, origin/main, origin/HEAD) Investment upload (#733)
+c835cf250 Remove deleted models from admin sidebar (#732)
+6cedeba74 Remove investment step from deal spec (#731)
+8bef00c48 Migrated fmv_on_date to api from FundPortfolioCalc
+cf8a2d315 Better sorting of funding rounds for charts
+6e5a77be6 Removed investment menus
+16b616dc0 Excused investors (#730)
+c3bfc436c Added better charts for cap table
+d823abd65 Fixed some secondaries tests
+99d88585d Removed Type from imports
+df4efa39d Cap table 2 (#729)
+33d975dd3 Tracking currency (#727)
+dc6748609 Fixed default tracking currency
+5b06878a3 Removed unwanted queries from xirr
+69d0eed91 Better inline comments for XIRR calcs
+2168aaa8c Sync test schema
+77d2e698d Fix sebi and crisil report spec (#725)
+61bb7152b Tracking currency (#724)
+90f081a87 Added check to see that the docs and valuations can be ordered in the… (#722)
+b4801c16a Deals updates 1 (#708)
+f18949f5c Added comments (#721)
+6c0ce3e09 Now tracking currency computation can be triggered via UI
+3345c9401 Now shows tracking values in show pages
+476404122 Tracking currency (#720)
+
 V8.0.77
 #####################################
 b32ae2339 (tag: V8.0.77) Update remittances excel to not have data in the hidden column
@@ -13,7 +38,6 @@ V8.0.74
 a8d832c2a Update sample excel files (#715)
 2a8536473 Tables fixes (#714)
 
->>>>>>> main
 V8.0.73
 #####################################
 a923616e5 Added check for active in persona
