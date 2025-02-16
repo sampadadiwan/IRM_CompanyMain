@@ -3,7 +3,14 @@
       <% if attribute.start_with?("custom_fields.") %>
         <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
       <% else %>
-        <%= @model.send(attribute) %>
+        <% value = @model.send(attribute) %>
+        <% if  value.is_a?(Date) %>
+          <%= l(value) %>
+        <% elsif value.is_a?(Money) %>
+          <%= money_to_currency value, params %>
+        <% else %>
+          <%= value %>
+        <% end %>
       <% end %>
     </td>
 <% end %>

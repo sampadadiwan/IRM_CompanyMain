@@ -1,4 +1,4 @@
-json.extract! portfolio_investment, :id, :entity_id, :fund_id, :portfolio_company_name, :investment_date, :notes
+json.extract! portfolio_investment, :id, :entity_id, :fund_id, :portfolio_company_name, :notes
 json.url portfolio_investment_url(portfolio_investment, format: :json)
 
 json.quantity portfolio_investment.quantity.to_f
@@ -11,6 +11,7 @@ json.investment_instrument_name portfolio_investment.investment_instrument.name
 
 # Send the custom_fields
 json.custom_fields portfolio_investment.json_fields
+json.investment_date l(portfolio_investment.investment_date)
 
 # Explicitly render the HTML partial as a string
 json.dt_actions ApplicationController.render(
