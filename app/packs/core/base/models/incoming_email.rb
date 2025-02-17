@@ -31,22 +31,27 @@ class IncomingEmail < ApplicationRecord
   # see WithIncomingEmail#incoming_email_address
   before_validation :set_owner, if: -> { entity.nil? }
   def set_owner
-    match_data = to.match(/(?<owner_type>[\w_]+)\.(?<owner_id>\d+)@(?<subdomain>[\w-]+)\.(?<domain>[\w.-]+)/)
-    return nil unless match_data
+    begin
+      match_data = to.match(/(?<owner_type>[\w_]+)\.(?<owner_id>\d+)@(?<subdomain>[\w-]+)\.(?<domain>[\w.-]+)/)
+      return nil unless match_data
 
-    # Check if the email is sent to the investor presentations email
-    fund_entity = Entity.joins(:entity_setting).where(entity_settings: { investor_presentations_email: to }).first
+      # Check if the email is sent to the investor presentations email
+      fund_entity = Entity.joins(:entity_setting).where(entity_settings: { investor_presentations_email: to }).first
 
-    if match_data[:owner_type].present? && match_data[:owner_id].present?
-      # This email is sent by a user, to a specific owner model
-      self.owner ||= match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
-      self.entity_id ||= owner.entity_id
-    elsif fund_entity.present?
-      # This email is sent by a potential portfolio company, with the investor presentation to the fund.
-      self.owner ||= fund_entity
-      self.entity_id ||= fund_entity.id
-    else
-      errors.add(:to, "Invalid email address, does not belong to any owner.")
+      if match_data[:owner_type].present? && match_data[:owner_id].present?
+        # This email is sent by a user, to a specific owner model
+        self.owner ||= match_data[:owner_type].camelize.constantize.find(match_data[:owner_id])
+        self.entity_id ||= owner.entity_id
+      elsif fund_entity.present?
+        # This email is sent by a potential portfolio company, with the investor presentation to the fund.
+        self.owner ||= fund_entity
+        self.entity_id ||= fund_entity.id
+      else
+        errors.add(:to, "Invalid email address, does not belong to any owner.")
+      end
+    rescue => e
+      log.error "Error setting owner for incoming email: #{e.message}"
+      log.error e.backtrace.join("\n")
     end
   end
 

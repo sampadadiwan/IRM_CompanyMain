@@ -84,7 +84,8 @@ module PortfolioComputations
 
   # This method is memoized to avoid multiple calls to the database
   def net_quantity_on(date)
-    sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).before(date).sum(:quantity)
+
+    sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).merge(PortfolioInvestment.before(date)).sum(:quantity)
 
     # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
     # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.

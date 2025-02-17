@@ -1,7 +1,6 @@
 class DailyMorningJob < ApplicationJob
   def perform
     Chewy.strategy(:atomic) do
-      VestedJob.perform_now
       Rails.logger.debug "Entity.recompute_all"
       Entity.recompute_all
 
