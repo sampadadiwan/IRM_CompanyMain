@@ -77,7 +77,7 @@ class SecondarySalesController < ApplicationController
     success = 0
     @interests = @secondary_sale.interests.pending
     @interests.each do |interest|
-      result = InterestShortList.wtf?(interest:, current_user:, short_listed_status: Interest::STATUS_SHORT_LISTED)
+      result = InterestShortList.call(interest:, current_user:, short_listed_status: Interest::STATUS_SHORT_LISTED)
       if result.success?
         success += 1
       else

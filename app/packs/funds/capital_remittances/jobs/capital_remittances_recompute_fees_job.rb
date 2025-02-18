@@ -7,7 +7,7 @@ class CapitalRemittancesRecomputeFeesJob < BulkActionJob
     processed_count = 0
     Chewy.strategy(:sidekiq) do
       @capital_call.capital_remittances.each do |capital_remittance|
-        CapitalRemittanceUpdate.wtf?(capital_remittance:)
+        CapitalRemittanceUpdate.call(capital_remittance:)
         processed_count += 1
       rescue StandardError => e
         msg = "Error recomputing fees for capital remittance #{capital_remittance.id}: #{e.message}"

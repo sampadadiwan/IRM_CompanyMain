@@ -113,7 +113,7 @@ class DocumentsController < ApplicationController
 
   def resend_for_esign
     if @document.resend_for_esign?
-      result = ResendDocumentForEsign.wtf?(document: @document, user_id: current_user.id)
+      result = ResendDocumentForEsign.call(document: @document, user_id: current_user.id)
       if result.success?
         redirect_to [@document, { tab: "signatures-tab" }], notice: "Document - #{@document.name} was queued for eSignature."
       else

@@ -89,7 +89,7 @@ class InterestsController < ApplicationController
     setup_doc_user(@interest)
 
     respond_to do |format|
-      if InterestUpdate.wtf?(interest: @interest).success?
+      if InterestUpdate.call(interest: @interest).success?
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
         format.json { render :show, status: :ok, location: @interest }
       else

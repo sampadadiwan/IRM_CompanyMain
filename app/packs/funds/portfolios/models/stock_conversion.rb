@@ -32,7 +32,7 @@ class StockConversion < ApplicationRecord
       sc.from_portfolio_investment.save
 
       sc.from_portfolio_investment.transfer_quantity += sc.from_quantity
-      PortfolioInvestmentUpdate.wtf?(portfolio_investment: sc.from_portfolio_investment)
+      PortfolioInvestmentUpdate.call(portfolio_investment: sc.from_portfolio_investment)
     end
   end
 end

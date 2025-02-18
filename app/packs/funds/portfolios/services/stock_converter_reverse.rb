@@ -14,7 +14,7 @@ class StockConverterReverse < Trailblazer::Operation
     PortfolioInvestment.transaction do
       stock_conversion.to_portfolio_investment&.destroy
       stock_conversion.destroy
-      from_saved = PortfolioInvestmentUpdate.wtf?(portfolio_investment: stock_conversion.from_portfolio_investment).success?
+      from_saved = PortfolioInvestmentUpdate.call(portfolio_investment: stock_conversion.from_portfolio_investment).success?
     end
     from_saved
   end

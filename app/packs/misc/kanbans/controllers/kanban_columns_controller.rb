@@ -3,7 +3,7 @@ class KanbanColumnsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: %i[update_sequence update delete_column]
 
   def update_sequence
-    result = UpdateSequence.wtf?(params:, kanban_column: @kanban_column)
+    result = UpdateSequence.call(params:, kanban_column: @kanban_column)
     if result.success?
       render json: {
         message: "Column has been successfully moved"
@@ -76,7 +76,7 @@ class KanbanColumnsController < ApplicationController
   end
 
   def delete_column
-    result = ArchiveKanbanColumn.wtf?(params:, kanban_column: @kanban_column)
+    result = ArchiveKanbanColumn.call(params:, kanban_column: @kanban_column)
     if result.success?
       UserAlert.new(user_id: current_user.id, message: "Column #{@kanban_column.name} Deleted", level: "success").broadcast
     else
@@ -89,7 +89,7 @@ class KanbanColumnsController < ApplicationController
   def restore_column
     @kanban_column = KanbanColumn.only_deleted.find(params[:id])
     authorize @kanban_column
-    result = RestoreColumn.wtf?(params:, kanban_column: @kanban_column)
+    result = RestoreColumn.call(params:, kanban_column: @kanban_column)
     if result.success?
       UserAlert.new(user_id: current_user.id, message: "Column was successfully restored!", level: "success").broadcast
     else

@@ -56,7 +56,7 @@ class ImportOffer < ImportUtil
   def approve_offer(offer, import_upload)
     # Approve the offer if required
     if OfferPolicy.new(import_upload.user, offer).approve?
-      result = OfferApprove.wtf?(offer:, current_user: import_upload.user)
+      result = OfferApprove.call(offer:, current_user: import_upload.user)
       raise "Error approving offer #{offer.errors.full_messages}" unless result.success?
 
       result.success?

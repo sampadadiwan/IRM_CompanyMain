@@ -35,7 +35,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
       capital_distribution_payment.setup_distribution_fees
 
-      result = CapitalDistributionPaymentCreate.wtf?(capital_distribution_payment: capital_distribution_payment)
+      result = CapitalDistributionPaymentCreate.call(capital_distribution_payment: capital_distribution_payment)
       raise result[:errors] unless result.success?
 
       result.success?

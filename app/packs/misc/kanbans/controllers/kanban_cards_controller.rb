@@ -94,7 +94,7 @@ class KanbanCardsController < ApplicationController
   end
 
   def move_kanban_card
-    result = MoveKanbanCard.wtf?(params:, kanban_card: @kanban_card)
+    result = MoveKanbanCard.call(params:, kanban_card: @kanban_card)
     if result.success?
       render json: {
         message: "Card has been successfully moved"
@@ -105,7 +105,7 @@ class KanbanCardsController < ApplicationController
   end
 
   def update_sequence
-    result = UpdateCardSequence.wtf?(params:, kanban_card: @kanban_card)
+    result = UpdateCardSequence.call(params:, kanban_card: @kanban_card)
     if result.success?
       render json: {
         message: "Card has been successfully moved"

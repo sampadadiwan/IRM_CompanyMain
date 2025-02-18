@@ -7,7 +7,7 @@ module WithDocQuestions
   end
 
   def validate_document(document)
-    DocLlmValidator.wtf?(model: self, document:)
+    DocLlmValidator.call(model: self, document:)
   end
 
   def validate_all_documents

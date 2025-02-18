@@ -43,7 +43,6 @@ When('I click on the Add Item and select any Investor and save') do
   # sleep(0.25)
   first('button', text: "Add Item").click
   # sleep(1)
-  binding.pry
   select_investor_and_save(1, 'First Investment')
   select_investor_and_save(3, 'Second Investment')
   expect(page).to have_content("First Investment")

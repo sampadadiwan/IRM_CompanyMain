@@ -49,7 +49,7 @@ class ImportPortfolioInvestment < ImportUtil
       portfolio_investment.portfolio_company = portfolio_company
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
 
-      result = PortfolioInvestmentCreate.wtf?(portfolio_investment:)
+      result = PortfolioInvestmentCreate.call(portfolio_investment:)
 
       raise result[:errors] unless result.success?
 

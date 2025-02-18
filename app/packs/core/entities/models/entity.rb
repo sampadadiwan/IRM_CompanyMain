@@ -126,7 +126,7 @@ class Entity < ApplicationRecord
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
   def run_post_process
-    result = SetupCompany.wtf?(entity: self)
+    result = SetupCompany.call(entity: self)
     if result.success?
       # Ensure users entity_type is saved
       employees.each do |user|

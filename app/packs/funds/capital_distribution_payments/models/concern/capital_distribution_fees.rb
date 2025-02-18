@@ -73,7 +73,7 @@ module CapitalDistributionFees
 
     # Set the net_payable_cents to the sum of income_cents, net_ae_cents and cost_of_investment_cents
     # The net_ae_cents contains the amounts added to the income_with_fees_cents and cost_of_investment_with_fees_cents
-    self.net_payable_cents = income_cents + net_ae_cents + cost_of_investment_cents
+    self.net_payable_cents = income_cents + net_ae_cents + cost_of_investment_cents - reinvestment_with_fees_cents
     self.gross_payable_cents = income_cents + gross_ae_cents + cost_of_investment_cents
   end
 end

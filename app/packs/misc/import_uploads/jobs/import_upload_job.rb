@@ -8,7 +8,7 @@ class ImportUploadJob < ApplicationJob
       begin
         # Download the S3 file to tmp
         import_upload.import_file.download do |file|
-          "Import#{import_upload.import_type}Service".constantize.wtf?(import_file: file, import_upload:)
+          "Import#{import_upload.import_type}Service".constantize.call(import_file: file, import_upload:)
         end
       rescue ActiveRecord::Deadlocked => e
         raise e

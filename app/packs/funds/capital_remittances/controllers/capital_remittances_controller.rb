@@ -126,7 +126,7 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def verify
-    result = CapitalRemittanceVerify.wtf?(capital_remittance: @capital_remittance)
+    result = CapitalRemittanceVerify.call(capital_remittance: @capital_remittance)
     notice = result.success? ? "Successfully verified." : "Failed to verify. #{@capital_remittance.errors}"
     respond_to do |format|
       format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }
