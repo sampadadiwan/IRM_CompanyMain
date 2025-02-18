@@ -36,10 +36,8 @@ class User < ApplicationRecord
     "qa" => "974"
   }.freeze
 
-  has_many :holdings, dependent: :destroy
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
-  has_many :excercises, dependent: :destroy
   has_many :investor_accesses, dependent: :destroy
 
   # Noticed gem
@@ -126,10 +124,6 @@ class User < ApplicationRecord
       Rails.logger.debug "Setting up company user"
       add_role :employee
       self.curr_role = :employee
-    elsif entity.entity_type == "Holding"
-      Rails.logger.debug "Setting up holding user"
-      add_role :holding
-      self.curr_role = :holding
     elsif ["Investor Advisor"].include?(entity.entity_type)
       Rails.logger.debug "Setting up investor advisor user"
       add_role :employee
@@ -169,8 +163,6 @@ class User < ApplicationRecord
       # Set the users entity
       self.entity_id = ia.investor.investor_entity_id
     end
-    # Add this role so we can identify which users have holdings
-    add_role :holding if entity && (entity.entity_type == "Holding")
     add_role :investor if entity && (entity.entity_type == "Investor")
     save
   end

@@ -1,17 +1,3 @@
-  Given('Im logged in as an employee investor') do
-    @investor_entity = Entity.where(is_holdings_entity: true).first
-    @employee_investor = @investor_entity.employees.first
-    puts "\n####employee_investor####\n"
-    puts @employee_investor.to_json
-
-    @user = @employee_investor
-    steps %(
-        And I am at the login page
-        When I fill and submit the login page
-    )
-
-  end
-
   Given('Im logged in as an investor') do
 
     @user = @investor_user
@@ -19,71 +5,6 @@
         And I am at the login page
         When I fill and submit the login page
     )
-
-  end
-
-  Given('there is a holding {string} for each employee investor') do |args|
-    @investor_entity.employees.each do |emp|
-        holding = FactoryBot.build(:holding, user: emp, entity: @entity,
-                                    funding_round: @funding_round, investor_id: @entity.investors.first.id)
-        key_values(holding, args)
-        CreateHolding.wtf?(holding: holding).success?.should == true
-        ApproveHolding.wtf?(holding: holding).success?.should == true
-        puts "\n#########Holding##########\n"
-        puts holding.to_json
-    end
-  end
-
-  Given('there is a holding {string} for each investor') do |args|
-    @sale.seller_investors.each do |inv|
-      emp = inv.investor_entity.employees.first
-      holding = FactoryBot.build(:holding, user: emp, entity: @entity, holding_type: "Investor",
-                                  funding_round: @funding_round, investor_id: inv.id)
-      key_values(holding, args)
-      CreateHolding.wtf?(holding: holding).success?.should == true
-      ApproveHolding.wtf?(holding: holding)
-      puts "\n#########Holding##########\n"
-      puts holding.to_json
-    end
-  end
-
-
-  Given('there is an option holding {string} for each employee investor') do |args|
-    @investor_entity.employees.each do |emp|
-        holding = FactoryBot.build(:holding, user: emp, entity: @entity, option_pool: @option_pool,
-                                    funding_round: @option_pool.funding_round, investor_id: @entity.investors.first.id)
-        key_values(holding, args)
-        CreateHolding.wtf?(holding:holding).success?.should == true
-
-        puts "\n#########Option Holding##########\n"
-        puts holding.to_json
-
-        if holding.approved
-          ApproveHolding.wtf?(holding: holding).success?.should == true
-        end
-    end
-
-  end
-  Then('I should see only my holdings') do
-    @employee_investor.holdings.all.each do |h|
-        within("tr#holding_#{h.id}") do
-            expect(page).to have_content(h.holding_type)
-            expect(page).to have_content(h.user.full_name)
-            # expect(page).to have_content(h.user.email)
-            # expect(page).to have_content(h.entity.name)
-            expect(page).to have_content(h.investment_instrument)
-            expect(page).to have_content(h.quantity)
-
-            expect(page).to have_content("Offer")
-        end
-    end
-
-    @investor_entity.employees.where("id <> ?", @employee_investor.id).each do |other_emp|
-        other_emp.holdings.all.each do |h|
-            expect(page).to have_no_content(h.user.full_name)
-            # expect(page).to have_no_content(h.user.email)
-        end
-    end
 
   end
 
@@ -124,17 +45,6 @@
     expect(page).to have_content("successfull")
     # sleep(1)
 
-  end
-
-  Then('when I place an offer {string}') do |arg|
-    @offer = FactoryBot.build(:offer)
-    key_values(@offer, arg)
-    within "table#holdings" do
-      click_on("Offer")
-    end
-    steps %(
-      Then when I submit the offer
-    )
   end
 
   Then('when I place an offer {string} from the offers tab') do |arg|
@@ -206,28 +116,9 @@
 
 
 
-Given('there is an {string} offer {string} for each employee investor') do | approved_arg, args|
-
-  approved = approved_arg == "approved"
-  Holding.all.each do |h|
-    offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
-                secondary_sale_id: @sale.id, investor_id: h.investor_id, approved: approved)
-    key_values(offer, args)
-    offer.save!
-
-    offer.approved = approved
-    offer.save
-
-    puts "\n####Offer####\n"
-    puts offer.to_json
-  end
-
-  @sale.reload
-end
-
 Given('there is an {string} offer {string} for each investor') do |approved_arg, args|
   approved = approved_arg == "approved"
-  Investor.not_holding.not_trust.each do |h|
+  Investor.all.each do |h|
     offer = FactoryBot.build(:offer, user_id:h.investor_entity.employees.sample.id, entity_id: @sale.entity_id, secondary_sale_id: @sale.id, investor_id: h.id, approved: approved)
     key_values(offer, args)
     offer.save!

@@ -88,8 +88,7 @@ Given('there is an existing investor entity {string} with employee {string}') do
   @employee_investor.save
   puts "\n####Employee Investor####\n"
   puts @employee_investor.to_json
-  @holdings_investor = @employee_investor
-
+  
   @investor_entity.reload
 end
 
@@ -291,7 +290,7 @@ Given('the investors have approved investor access') do
 end
 
 Then('There should be {string} investors created') do |count|
-  @entity.investors.not_holding.not_trust.count.should == count.to_i
+  @entity.investors.count.should == count.to_i
 end
 
 Then('the investors must have the data in the sheet') do
@@ -299,7 +298,7 @@ Then('the investors must have the data in the sheet') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
-  investors = @entity.investors.not_holding.not_trust.order(id: :asc).to_a
+  investors = @entity.investors.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
@@ -335,7 +334,7 @@ end
 Then('the investors must be added to the fund') do
   @fund.reload
   # puts @fund.investors.to_json
-  investors = @entity.investors.not_holding.not_trust.to_set
+  investors = @entity.investors.to_set
   fund_investors = @fund.investors.to_set
   investors.length.should == fund_investors.length
 
@@ -621,6 +620,12 @@ Then('I select one and see the edit page and save') do
   expect(page).to have_content("Investor kyc was successfully saved")
 end
 
+Given('there are {string} investors') do |count|
+  (0..count.to_i-1).each do
+    e = FactoryBot.create(:entity, entity_type: "Investor")
+    FactoryBot.create(:investor, entity: e)
+  end
+end
 
 Then('when I upload the document for the kyc') do
   within("#docs_index") do

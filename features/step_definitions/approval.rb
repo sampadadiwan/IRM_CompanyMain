@@ -89,7 +89,7 @@
   end
 
   Given('the investors are added to the approval') do
-    @user.entity.investors.not_holding.not_trust.each do |inv|
+    @user.entity.investors.each do |inv|
         ar = AccessRight.create!( owner: @approval, access_type: "Approval",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 

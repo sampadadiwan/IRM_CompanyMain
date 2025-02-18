@@ -4,7 +4,7 @@ module UserEnabled
   included do
     # Add new flags to the end of this list
     # validates :permissions, presence: true
-    flag :permissions, %i[enable_documents enable_deals enable_investments enable_holdings
+    flag :permissions, %i[enable_documents enable_deals enable_investments enable_unused
                           enable_secondary_sale enable_funds enable_inv_opportunities enable_options
                           enable_captable enable_investors enable_kpis enable_kycs enable_approvals enable_reports enable_kanban enable_import_uploads enable_investor_advisors enable_form_types enable_user_llm_chat enable_compliance]
 
@@ -40,8 +40,8 @@ module UserEnabled
     get_permissions.enable_investments? && entity&.permissions&.enable_investments?
   end
 
-  def enable_holdings
-    get_permissions.enable_holdings? && entity&.permissions&.enable_holdings?
+  def enable_unused
+    get_permissions.enable_unused? && entity&.permissions&.enable_unused?
   end
 
   def enable_secondary_sale

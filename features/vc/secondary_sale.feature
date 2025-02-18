@@ -50,11 +50,9 @@ Scenario Outline: View sale - make offer
   Given params "<params>" are set for the sale
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
   Given my firm is an investor in the company
-  Given there are "2" investments "investment_instrument=Equity" in the company
   And the investor has "Seller" access rights to the sale
   And I should see the sale details on the details page
-  And I should see my holdings in the holdings tab
-  And when I make an offer for my holdings
+  Then when I place an offer "quantity=100;price=1000" from the offers tab
   Then I should see the offer
   And the sale offer amount must not be updated
   And when the offer is approved

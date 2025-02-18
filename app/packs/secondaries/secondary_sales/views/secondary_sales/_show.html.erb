@@ -132,26 +132,9 @@
               Total Offered
             </td>
             <td>
+                            
+              <%= custom_format_number secondary_sale.display_quantity, params %>
               
-              <% if secondary_sale.sale_type == "Tranche" %>
-                <table class="table-bordered">
-                  <tr>
-                    <th>Funding Round</th><th>Quantity</th>
-                  </tr>
-                  <% secondary_sale.offers_by_funding_round.each do |fr, qty| %>
-                      <tr>
-                        <td><%= fr %></td> <td><%= qty %></td>
-                      </tr>
-                  <% end %>
-                  <tr>
-                    <td><b>Total</b></td> 
-                    <td><b><%= custom_format_number secondary_sale.total_offered_quantity, params %></b></td>
-                  </tr>
-                </table>
-              <% else %>
-                <%= custom_format_number secondary_sale.display_quantity, params %>
-              <% end %>
-
 
               <div>
                 <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>

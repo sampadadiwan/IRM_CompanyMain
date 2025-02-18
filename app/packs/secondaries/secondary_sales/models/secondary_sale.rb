@@ -62,7 +62,6 @@ class SecondarySale < ApplicationRecord
     self.show_quantity ||= "Actual"
     self.manage_offers = true if id.nil?
     self.manage_interests = true if id.nil?
-    self.show_holdings = false if id.nil?
   end
 
   def active?
@@ -113,10 +112,6 @@ class SecondarySale < ApplicationRecord
 
   def seller_investors
     investors_granted_access("Seller")
-  end
-
-  def offers_by_funding_round
-    offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h
   end
 
   def display_quantity

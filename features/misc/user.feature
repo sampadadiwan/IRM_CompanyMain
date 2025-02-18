@@ -18,8 +18,7 @@ Scenario Outline: Create new user
     |employee   	                |entity_type=Company        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |investor  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |investor  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-    |holding         	          |entity_type=Holding        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-
+    
 # Scenario Outline: Update a user
 #   Given Im logged in as a user "" for an entity "entity_type=Company"
 #   And the user has role "company_admin"

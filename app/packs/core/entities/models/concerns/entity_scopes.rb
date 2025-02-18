@@ -3,7 +3,6 @@ module EntityScopes
 
   included do
     default_scope { order(name: :asc) }
-    scope :holdings, -> { where(entity_type: "Holding") }
     scope :vcs, -> { where(entity_type: "Investor") }
     scope :startups, -> { where(entity_type: "Company") }
     scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }

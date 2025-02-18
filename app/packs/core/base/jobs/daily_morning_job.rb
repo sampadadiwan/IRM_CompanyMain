@@ -1,9 +1,6 @@
 class DailyMorningJob < ApplicationJob
   def perform
     Chewy.strategy(:atomic) do
-      Rails.logger.debug "Entity.recompute_all"
-      Entity.recompute_all
-
       # DocumentEsignUpdateJob.perform_now
 
       Rails.logger.debug "Delete old notifications"

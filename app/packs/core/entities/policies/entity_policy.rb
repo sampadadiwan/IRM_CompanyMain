@@ -62,15 +62,11 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    ((user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)) || support?
+    ((user.entity_id == record.id) && user.has_cached_role?(:company_admin)) || support?
   end
 
   def edit?
     update?
-  end
-
-  def approve_all_holdings?
-    update? && user.has_cached_role?(:approver)
   end
 
   def destroy?

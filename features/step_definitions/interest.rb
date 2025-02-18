@@ -17,10 +17,6 @@
     expect(page).to have_no_content("Private Files")
   end
   
-  Then('I should not see the holdings') do
-    expect(page).to have_no_content("Holdings")
-  end
-  
   Then('when I create an interest {string}') do |args|
     @interest = Interest.new
     key_values(@interest, args)

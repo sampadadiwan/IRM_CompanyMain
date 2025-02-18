@@ -28,18 +28,12 @@ module EntityMerge
         end
       end
 
-      defunct_entity.option_pools.update_all(entity_id: retained_entity.id)
-      defunct_entity.excercises.update_all(entity_id: retained_entity.id)
-
       # TODO: This is not correct, we need to merge the Trust and Employee entities
       # Entity.where(parent_entity_id: defunct_entity.id).update_all(parent_entity_id: retained_entity.id)
 
-      defunct_entity.funding_rounds.update_all(entity_id: retained_entity.id)
       defunct_entity.valuations.update_all(entity_id: retained_entity.id)
-      defunct_entity.holdings.update_all(entity_id: retained_entity.id)
 
       defunct_entity.investments.update_all(entity_id: retained_entity.id)
-      defunct_entity.aggregate_investments.update_all(entity_id: retained_entity.id)
 
       defunct_entity.exchange_rates.update_all(entity_id: retained_entity.id)
       defunct_entity.fees.update_all(entity_id: retained_entity.id)

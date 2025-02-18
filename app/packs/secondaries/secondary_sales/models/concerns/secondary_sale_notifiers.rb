@@ -5,9 +5,8 @@ module SecondarySaleNotifiers
   NOTIFICATIONS = %w[notify_open_for_offers notify_closing_offers notify_open_for_interests notify_closing_interests notify_allocation notify_spa_sellers notify_spa_buyers adhoc_notification].freeze
 
   def notify_open_for_interests
-    # Get all emails of investors & holding company employees
-    all_users = investor_users("Buyer").uniq +
-                employee_users("Buyer").uniq
+    # Get all emails of investors
+    all_users = investor_users("Buyer").uniq
 
     all_users.uniq.each do |user|
       SecondarySaleNotifier.with(record: self, entity_id:, email: user.email, email_method: :notify_open_for_interests, msg: "Secondary Sale: #{name} by #{entity.name}, open for interests").deliver_later(user)
@@ -15,9 +14,8 @@ module SecondarySaleNotifiers
   end
 
   def notify_closing_interests
-    # Get all emails of investors & holding company employees
-    all_users = investor_users("Buyer").uniq +
-                employee_users("Buyer").uniq
+    # Get all emails of investors
+    all_users = investor_users("Buyer").uniq
 
     all_users.uniq.each do |user|
       SecondarySaleNotifier.with(record: self, entity_id:, email: user.email, email_method: :notify_closing_interests, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your interest").deliver_later(user)
@@ -25,9 +23,8 @@ module SecondarySaleNotifiers
   end
 
   def notify_open_for_offers
-    # Get all emails of investors & holding company employees
-    all_users = investor_users("Seller").uniq +
-                employee_users("Seller").uniq
+    # Get all emails of investors
+    all_users = investor_users("Seller").uniq
 
     all_users.uniq.each do |user|
       SecondarySaleNotifier.with(record: self, entity_id:, email: user.email, email_method: :notify_open_for_offers, msg: "Secondary Sale: #{name} by #{entity.name}, open for offers").deliver_later(user)
@@ -35,9 +32,8 @@ module SecondarySaleNotifiers
   end
 
   def notify_closing_offers
-    # Get all emails of investors & holding company employees
-    all_users = investor_users("Seller").uniq +
-                employee_users("Seller").uniq
+    # Get all emails of investors
+    all_users = investor_users("Seller").uniq
 
     all_users.uniq.each do |user|
       SecondarySaleNotifier.with(record: self, entity_id:, email: user.email, email_method: :notify_closing_offers, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your offer").deliver_later(user)
@@ -83,9 +79,9 @@ module SecondarySaleNotifiers
 
     case custom_notification.to
     when "All Sellers"
-      # Get all emails of investors & holding company employees
+      # Get all emails of investors
       offers.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
+        email_users = offer.investor.notification_users
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end
@@ -93,7 +89,7 @@ module SecondarySaleNotifiers
 
     when "Verified Sellers"
       offers.verified.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
+        email_users = offer.investor.notification_users
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end
@@ -101,7 +97,7 @@ module SecondarySaleNotifiers
 
     when "Approved Sellers"
       offers.approved.each do |offer|
-        email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users
+        email_users = offer.investor.notification_users
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end

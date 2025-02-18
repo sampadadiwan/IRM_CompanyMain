@@ -194,7 +194,6 @@
                <%= "Funds," if @entity.permissions.enable_funds? %>
                <%= "Investment Opportunities," if @entity.permissions.enable_inv_opportunities? %>
                <%= "Investments," if @entity.permissions.enable_investments? %>
-               <%= "Holdings," if @entity.permissions.enable_holdings? %>
                <%= "Secondary Sale," if @entity.permissions.enable_secondary_sale? %>
                <%= "KPIs," if @entity.permissions.enable_kpis? %>
                <%= "KYCs," if @entity.permissions.enable_kycs? %>
@@ -203,7 +202,6 @@
                <%= "Units," if @entity.permissions.enable_units? %>
                <%= "Account Entries," if @entity.permissions.enable_account_entries? %>
                <%= "Stakeholders," if @entity.permissions.enable_investors? %>
-               <%= "Option Pools," if @entity.permissions.enable_options? %>
                <%= "Cap Table," if @entity.permissions.enable_captable? %>
                <%= "SEBI Fields" if @entity.permissions.enable_sebi_fields? %>
             </td>

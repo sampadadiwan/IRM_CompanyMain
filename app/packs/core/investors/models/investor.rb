@@ -41,7 +41,6 @@ class Investor < ApplicationRecord
 
   has_many :deal_investors, dependent: :destroy
   has_many :deals, through: :deal_investors
-  has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
   has_many :aggregate_portfolio_investments, dependent: :destroy, foreign_key: :portfolio_company_id
   has_many :portfolio_investments, dependent: :destroy, foreign_key: :portfolio_company_id
@@ -60,8 +59,6 @@ class Investor < ApplicationRecord
 
   has_many :expression_of_interests, dependent: :destroy
 
-  has_many :investments, dependent: :destroy
-  has_many :aggregate_investments, dependent: :destroy
   has_many :investor_notice_entries, dependent: :destroy
 
   has_many :offers, dependent: :destroy
@@ -74,15 +71,15 @@ class Investor < ApplicationRecord
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
   normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
   alias_attribute :name, :investor_name
-  # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupCompany where a Founder Investor is created for startups.
-  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }, if: proc { |i| !i.is_holdings_entity }
+  # Ensure unique investor_entity_id per entity_id
+  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
 
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
   validates :pan, length: { maximum: 40 }
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
-  validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity && !e.is_trust }
+  validates :primary_email, presence: true, if: proc { |e| e.new_record? }
 
   validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
   validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
@@ -106,11 +103,7 @@ class Investor < ApplicationRecord
   scope :not_rms, -> { where.not(category: "RM") }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
-  scope :not_holding, -> { where(is_holdings_entity: false) }
-  scope :not_trust, -> { where(is_trust: false) }
-  scope :is_trust, -> { where(is_trust: true) }
-  scope :holding, -> { where(is_holdings_entity: true) }
-  scope :not_interacted, ->(no_of_days) { where(is_holdings_entity: false).where(last_interaction_date: ...(Time.zone.today - no_of_days.days)) }
+  scope :not_interacted, ->(no_of_days) { where(last_interaction_date: ...(Time.zone.today - no_of_days.days)) }
 
   scope :with_access_rights, lambda { |entity_id, metadata|
     joins(entity: :access_rights).where(entity_id:).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata)
@@ -150,25 +143,23 @@ class Investor < ApplicationRecord
   before_validation :update_name, if: :new_record?
 
   def update_name
-    unless is_holdings_entity || is_trust
-      self.last_interaction_date ||= Time.zone.today - 10.years
+    self.last_interaction_date ||= Time.zone.today - 10.years
 
-      # Ensure we have an investor entity
-      e = primary_email ? Entity.where(primary_email: primary_email.strip).first : nil
-      e ||= pan.present? ? Entity.where(pan: pan.strip).first : nil
+    # Ensure we have an investor entity
+    e = primary_email ? Entity.where(primary_email: primary_email.strip).first : nil
+    e ||= pan.present? ? Entity.where(pan: pan.strip).first : nil
 
-      # We dont have this entity in our DB, lets create one.
-      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
+    # We dont have this entity in our DB, lets create one.
+    e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
 
-      errors.add(:investor_name, "is not valid. #{e.errors.full_messages}") unless e.valid?
-      setup_permissions(e)
-      e.save
+    errors.add(:investor_name, "is not valid. #{e.errors.full_messages}") unless e.valid?
+    setup_permissions(e)
+    e.save
 
-      self.investor_entity = e
+    self.investor_entity = e
 
-      self.investor_name = investor_entity.name if investor_name.blank?
-      self.pan ||= investor_entity.pan
-    end
+    self.investor_name = investor_entity.name if investor_name.blank?
+    self.pan ||= investor_entity.pan
   end
 
   def setup_permissions(investor_entity)
@@ -176,9 +167,7 @@ class Investor < ApplicationRecord
     # Ex. an Investment Fund creates and investor, who should have funds enabled
     investor_entity.permissions.set(:enable_documents) if entity.permissions.enable_documents?
     investor_entity.permissions.set(:enable_investments) if entity.permissions.enable_investments?
-    investor_entity.permissions.set(:enable_holdings) if entity.permissions.enable_holdings?
     investor_entity.permissions.set(:enable_secondary_sale) if entity.permissions.enable_secondary_sale?
-    investor_entity.permissions.set(:enable_options) if entity.permissions.enable_options?
     investor_entity.permissions.set(:enable_captable) if entity.permissions.enable_captable?
 
     investor_entity.permissions.set(:enable_funds) if entity.permissions.enable_funds?

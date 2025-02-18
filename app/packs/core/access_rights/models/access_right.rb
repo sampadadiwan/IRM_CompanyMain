@@ -123,19 +123,15 @@ class AccessRight < ApplicationRecord
 
     if access_to_investor_id.present?
       # Get all the investor -> investor access that are approved, and get the email addresses
-      emails = investor.investor_accesses.approved.collect(&:email) unless investor.is_holdings_entity
+      emails = investor.investor_accesses.approved.collect(&:email)
     elsif access_to_category.present?
       # Get all the investors with this category -> investor access that are approved, and get the email addresses
-      Investor.where(entity_id:, category: access_to_category, is_holdings_entity: false).find_each do |investor|
+      Investor.where(entity_id:, category: access_to_category).find_each do |investor|
         emails += investor.investor_accesses.approved.collect(&:email)
       end
     end
 
     emails
-  end
-
-  def employee_users(metadata)
-    User.joins(entity: :investees).where("investors.is_holdings_entity=? and investors.entity_id=?", true, entity_id).merge(Investor.with_access_rights(self, metadata))
   end
 
   before_save :strip_fields
@@ -200,7 +196,7 @@ class AccessRight < ApplicationRecord
     elsif access_to_investor_id.present?
       investor.notification_users(owner)
     elsif access_to_category.present?
-      User.joins(investor_accesses: :investor).where(entity_id:, 'investors.category': access_to_category).where("investor_accesses.approved = ? OR investors.is_holdings_entity = ?", true, true)
+      User.joins(investor_accesses: :investor).where(entity_id:, 'investors.category': access_to_category).where(investor_accesses: { approved: true })
     else
       []
     end

@@ -171,7 +171,7 @@
   end
 
   Given('the investors are added to the fund') do
-    @user.entity.investors.not_holding.not_trust.each do |inv|
+    @user.entity.investors.each do |inv|
         ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 

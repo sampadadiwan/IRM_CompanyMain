@@ -51,11 +51,11 @@ Scenario Outline: Access Document as Investor with access
 
   Examples:
   	|should	    |entity               |document   | access_right                                                         | investor_access |
-  	|true  	    |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=4;metadata=All          | approved=1 |
+  	|true  	    |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=1;metadata=All          | approved=1 |
     |true  	    |entity_type=Company  |name=Test | access_type=Document;access_to_category=Lead Investor;metadata=All | approved=1 |
-	  |false      |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=1;metadata=All          | approved=1 |
+	  |false      |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=1;metadata=All          | approved=0 |
     |false      |entity_type=Company  |name=Test | access_type=Document;access_to_category=Co-Investor;metadata=All   | approved=1 |
-	  |false      |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=4;metadata=All          | approved=0 |
+	  |false      |entity_type=Company  |name=Test | access_type=Document;access_to_investor_id=1;metadata=All          | approved=0 |
     |false      |entity_type=Company  |name=Test | access_type=Document;access_to_category=Lead Investor;metadata=All | approved=0 |
 
 
@@ -131,5 +131,5 @@ Scenario Outline: Cascade Delete Access Rights to Investor
   Then I should see the "Access Denied"
   Examples:
   |user	      |entity               |folder |subfolder |document |email | access_right |
-  |  	        |entity_type=Company  |name=topmost|name=subfolder|name=testdoc|good1@email.com|access_type=Folder;access_to_investor_id=4;cascade=true|
+  |  	        |entity_type=Company  |name=topmost|name=subfolder|name=testdoc|good1@email.com|access_type=Folder;access_to_investor_id=1;cascade=true|
   |  	        |entity_type=Company  |name=topmost|name=subfolder|name=testdoc|good2@email.com|access_type=Folder;access_to_category=LP;cascade=true|

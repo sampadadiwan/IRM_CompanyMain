@@ -43,7 +43,8 @@ When('I click on the Add Item and select any Investor and save') do
   # sleep(0.25)
   first('button', text: "Add Item").click
   # sleep(1)
-  select_investor_and_save(2, 'First Investment')
+  binding.pry
+  select_investor_and_save(1, 'First Investment')
   select_investor_and_save(3, 'Second Investment')
   expect(page).to have_content("First Investment")
   expect(page).to have_content("Second Investment")
@@ -306,7 +307,7 @@ Given('I have access to all deals') do
 end
 
 Given('the investors are added to the deal') do
-  @user.entity.investors.not_holding.not_trust.each do |inv|
+  @user.entity.investors.each do |inv|
     ar = AccessRight.create(owner: @deal, access_type: "Deal",
                             access_to_investor_id: inv.id, entity: @user.entity)
 

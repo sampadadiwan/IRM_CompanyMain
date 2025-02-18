@@ -86,16 +86,7 @@
         <%= render "/layouts/sidebars/investments_menus" %>
     <% end %>
 
-    <% if current_user.enable_options %>
-        <!-- Nav Item - Pages Collapse Menu -->
-        <li class="sidebar-item">                
-            <a class="sidebar-link" href="/option_pools">
-                <span><i class="ti ti-trophy"></i></span>
-                <span class="hide-menu">Option Pools</span>
-            </a>
-        </li>
-    <% end %>
-
+    
     <!-- Divider -->
     <hr class="sidebar-divider">
     <% if current_user.enable_deals %>
