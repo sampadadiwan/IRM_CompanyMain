@@ -1,19 +1,30 @@
 class CapitalCommitmentTemplateDecorator < TemplateDecorator
   include CurrencyHelper
+  attr_reader :gp_commitments, :lp_commitments
 
-  def initialize(object, end_date)
+  def initialize(object)
     super
-    @end_date = end_date
+    @end_date = Time.zone.now.end_of_day
     @currency = object.fund.currency
   end
 
   def init_lp_gp_commitments
-    return if defined?(@gp_commitments) && defined?(@lp_commitments)
+    if @gp_commitments.nil? || @lp_commitments.nil?
+      gp_records = []
+      lp_records = []
 
-    base_scope = object.fund.capital_commitments.includes(:fund, :fund_unit_setting).where(committment_date: ..@end_date)
+      object.fund.capital_commitments.where(commitment_date: ..@end_date).find_each do |comm|
+        if comm.fund_unit_setting&.gp_units
+          gp_records << comm.id
+        else
+          lp_records << comm.id
+        end
+      end
 
-    @gp_commitments = base_scope.joins(:fund_unit_setting).where(fund_unit_settings: { gp_units: true })
-    @lp_commitments = base_scope.joins(:fund_unit_setting).where(fund_unit_settings: { gp_units: false })
+      # Convert arrays into ActiveRecord-like collections
+      @gp_commitments = object.fund.capital_commitments.where(id: gp_records)
+      @lp_commitments = object.fund.capital_commitments.where(id: lp_records)
+    end
   end
 
   def money_sum(scope, column)
