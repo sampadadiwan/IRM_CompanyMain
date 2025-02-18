@@ -1,4 +1,4 @@
-class CapitalCommitmentTemplateDecorator < TemplateDecorator
+class CapitalCommitmentCallNoticeTemplateDecorator < TemplateDecorator
   include CurrencyHelper
   attr_reader :gp_commitments, :lp_commitments
 

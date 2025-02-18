@@ -48,7 +48,7 @@ class CapitalRemittanceDocGenerator
     context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
     context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
 
-    context.store :capital_commitment, CapitalCommitmentTemplateDecorator.decorate(capital_remittance.capital_commitment)
+    context.store :capital_commitment, CapitalCommitmentCallNoticeTemplateDecorator.decorate(capital_remittance.capital_commitment)
     context.store :fund_unit_setting, TemplateDecorator.decorate(capital_remittance.capital_commitment.fund_unit_setting)
 
     # add_amounts(capital_remittance, context)
