@@ -105,7 +105,7 @@
     <div class="form-group">
       <%= form.label :investor_categories %>
       <%= form.text_field :investor_categories, class: "form-control",
-        placeholder: "Comma separated list of investor categories e.x #{Investment::INVESTOR_CATEGORIES.join(",")}"  %>
+        placeholder: "Comma separated list of investor categories e.x #{Investor.INVESTOR_CATEGORIES(entity).join(",")}"  %>
       <small class="text-muted">Leave this blank to use defaults.</small>
     </div>
 

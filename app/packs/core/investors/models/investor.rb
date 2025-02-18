@@ -134,7 +134,7 @@ class Investor < ApplicationRecord
   def self.INVESTOR_CATEGORIES(entity = nil)
     cats = entity && entity.investor_categories.present? ? entity.investor_categories.split(",").map(&:strip) : INVESTOR_CATEGORIES
     cats += %w[Prospective]
-    cats += ["Portfolio Company"] if ["Investment Fund", "Angel Fund"].include?(entity.entity_type)
+    cats += ["Portfolio Company"] if ["Investment Fund", "Angel Fund"].include?(entity.entity_type) && entity
     cats
   end
 
