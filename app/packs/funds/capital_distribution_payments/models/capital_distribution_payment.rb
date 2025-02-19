@@ -27,8 +27,8 @@ class CapitalDistributionPayment < ApplicationRecord
 
   monetize :tracking_net_payable_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   # Note that cost_of_investment_cents is Face value for redemption
-  monetize :folio_amount_cents, :net_of_account_entries_cents, :net_payable_cents, :gross_payable_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
-  monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_amount_cents, :net_of_account_entries_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
+  monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :net_payable_cents, :gross_payable_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id
@@ -41,6 +41,13 @@ class CapitalDistributionPayment < ApplicationRecord
                   delta_column: 'net_payable_cents',
                   column_names: {
                     ["capital_distribution_payments.completed = ?", true] => 'distribution_amount_cents'
+                  }
+
+  counter_culture :capital_distribution,
+                  column_name: proc { |r| r.completed ? 'gross_amount_cents' : nil },
+                  delta_column: 'gross_payable_cents',
+                  column_names: {
+                    ["capital_distribution_payments.completed = ?", true] => 'gross_amount_cents'
                   }
 
   counter_culture :fund,

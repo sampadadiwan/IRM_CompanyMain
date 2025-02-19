@@ -1,12 +1,9 @@
 Feature: Interest
   Can create and view an interest as a secondary buyer
 
-
-
 Scenario Outline: Create new interest for indicative sale
   Given there is a user "<user>" for an entity "<entity>"
   And the user has role "company_admin"
-  Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor;pan=1234567"
   Given my firm is an investor in the company
@@ -14,7 +11,6 @@ Scenario Outline: Create new interest for indicative sale
   And I am at the sales details page
   Then I should see only relevant sales details
   Then I should not see the private files
-  Then I should not see the holdings
   Then when I create an interest "quantity=100;price=150"
   Then I should see the interest details
   And I am at the sales details page

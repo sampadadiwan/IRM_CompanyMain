@@ -16,7 +16,7 @@ class EsignJob < ApplicationJob
     if result[0]
       send_notification("Document - #{doc.name} sent for eSigning", user_id, :info)
     else
-      send_notification((result[1]).to_s, user_id, :danger)
+      send_notification(result[1].to_s, user_id, :danger)
     end
   end
 

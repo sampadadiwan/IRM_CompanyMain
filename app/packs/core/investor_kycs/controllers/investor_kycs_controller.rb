@@ -107,7 +107,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
@@ -149,7 +149,7 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     respond_to do |format|
       investor_user = current_user.curr_role_investor?
-      if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)
@@ -176,7 +176,7 @@ class InvestorKycsController < ApplicationController
       @investor_kyc.remove_images
     end
     respond_to do |format|
-      if InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user: false).success?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false).success?
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -190,7 +190,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.assign_attributes(investor_kyc_params)
     @investor_kyc.documents.each(&:validate)
     respond_to do |format|
-      if InvestorKycUpdate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
@@ -206,7 +206,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
 
     respond_to do |format|
-      if InvestorKycUpdate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else

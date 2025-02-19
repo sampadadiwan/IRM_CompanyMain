@@ -90,7 +90,7 @@ class CapitalCommitmentsController < ApplicationController
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
         # Transfer fund units using the TB
-        result = FundUnitTransferService.wtf?(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:, transfer_date:)
+        result = FundUnitTransferService.call(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:, transfer_date:)
         if result.success?
           # Redirect to the fund units tab
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"

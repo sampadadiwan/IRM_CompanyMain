@@ -61,10 +61,10 @@ class StockConverter < Trailblazer::Operation
     to_saved = false
 
     PortfolioInvestment.transaction do
-      from_saved = PortfolioInvestmentUpdate.wtf?(portfolio_investment: from_portfolio_investment).success?
+      from_saved = PortfolioInvestmentUpdate.call(portfolio_investment: from_portfolio_investment).success?
       from_portfolio_investment.aggregate_portfolio_investment.reload.save
 
-      to_saved = PortfolioInvestmentCreate.wtf?(portfolio_investment: to_portfolio_investment).success?
+      to_saved = PortfolioInvestmentCreate.call(portfolio_investment: to_portfolio_investment).success?
       if to_saved
         stock_conversion.to_portfolio_investment = to_portfolio_investment
         stock_conversion.save

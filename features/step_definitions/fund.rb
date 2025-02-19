@@ -171,7 +171,7 @@
   end
 
   Given('the investors are added to the fund') do
-    @user.entity.investors.not_holding.not_trust.each do |inv|
+    @user.entity.investors.each do |inv|
         ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
@@ -947,7 +947,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   # sleep(2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  binding.pry if ImportUpload.last.failed_row_count > 0
+  # binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1446,7 +1446,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   # sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   # sleep(4)
-  binding.pry if ImportUpload.last.failed_row_count > 0
+  # binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -1846,7 +1846,7 @@ Then('the capital distribution payments must have the data in the sheet {string}
     cdp.income_with_fees.to_d.should == cdp.income.to_d
     cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
 
-    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents
+    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents - cdp.reinvestment_with_fees_cents
     cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
   end
 end

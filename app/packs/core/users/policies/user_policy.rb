@@ -1,11 +1,7 @@
 class UserPolicy < ApplicationPolicy
   class Scope < BaseScope
     def resolve
-      if user.curr_role.to_sym == :holding
-        scope.where(id: user.id)
-      else
-        scope.where(entity_id: user.entity_id)
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 
@@ -22,7 +18,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def whatsapp_webhook?
-    chat?
+    true
   end
 
   def show?

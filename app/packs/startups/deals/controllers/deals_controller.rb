@@ -117,7 +117,7 @@ class DealsController < ApplicationController
     @deal.entity_id = current_user.entity_id
     authorize @deal
 
-    results = CreateDeal.wtf?(deal: @deal)
+    results = CreateDeal.call(deal: @deal)
     respond_to do |format|
       if results.success?
         format.html { redirect_to deal_url(@deal, kanban: true), notice: "Deal was successfully created." }
@@ -135,7 +135,7 @@ class DealsController < ApplicationController
     params[:deal].delete(:turbo_frame_id)
     @deal.assign_attributes(deal_params)
     respond_to do |format|
-      if UpdateDeal.wtf?(deal: @deal).success?
+      if UpdateDeal.call(deal: @deal).success?
         @success = true
         format.turbo_stream do
           UserAlert.new(user_id: current_user.id, message: "Deal was successfully updated! Please refresh!", level: "success").broadcast

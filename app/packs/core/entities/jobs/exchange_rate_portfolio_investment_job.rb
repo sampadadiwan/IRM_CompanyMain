@@ -12,7 +12,7 @@ class ExchangeRatePortfolioInvestmentJob < ApplicationJob
 
       # Update the portfolio_investments - this will recompute the FMV based on latest exchange rate
       portfolio_investments.each do |portfolio_investment|
-        PortfolioInvestmentUpdate.wtf?(portfolio_investment:)
+        PortfolioInvestmentUpdate.call(portfolio_investment:)
       end
 
       Rails.logger.debug { "Updated #{count} portfolio_investments due to exchange_rate change" }

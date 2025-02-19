@@ -8,13 +8,10 @@ class ElasticImporterJob < ApplicationJob
     AccessRightIndex.import
     DealInvestorIndex.import
     DocumentIndex.import
-    HoldingIndex.import
     InvestorIndex.import
     InvestorAccessIndex.import
     NoteIndex.import
     SecondarySaleIndex.import
-    HoldingAuditTrailIndex.import
-    ExcerciseIndex.import
     OfferIndex.import
     TaskIndex.import
     InvestmentOpportunityIndex.import
@@ -35,13 +32,10 @@ class ElasticImporterJob < ApplicationJob
     AccessRightIndex.reset!
     DealInvestorIndex.reset!
     DocumentIndex.reset!
-    HoldingIndex.reset!
     InvestorIndex.reset!
     InvestorAccessIndex.reset!
     NoteIndex.reset!
     SecondarySaleIndex.reset!
-    HoldingAuditTrailIndex.reset!
-    ExcerciseIndex.reset!
     OfferIndex.reset!
     TaskIndex.reset!
     InvestmentOpportunityIndex.reset!
@@ -62,13 +56,10 @@ class ElasticImporterJob < ApplicationJob
     AccessRightIndex.create
     DealInvestorIndex.create
     DocumentIndex.create
-    HoldingIndex.create
     InvestorIndex.create
     InvestorAccessIndex.create
     NoteIndex.create
     SecondarySaleIndex.create
-    HoldingAuditTrailIndex.create
-    ExcerciseIndex.create
     OfferIndex.create
     TaskIndex.create
     InvestmentOpportunityIndex.create

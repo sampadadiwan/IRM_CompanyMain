@@ -17,10 +17,6 @@
     expect(page).to have_no_content("Private Files")
   end
   
-  Then('I should not see the holdings') do
-    expect(page).to have_no_content("Holdings")
-  end
-  
   Then('when I create an interest {string}') do |args|
     @interest = Interest.new
     key_values(@interest, args)
@@ -156,8 +152,11 @@ Given('given I upload an interests file {string}') do |file_name|
   @import_offer_file_name = file_name
   @existing_user_count = User.count
   visit(secondary_sale_path(@sale))
-  click_on("Interests")
-  click_on("Upload Interests")
+  sleep(2)
+  # click_on("Interests")
+  within("#interest_buttons") do
+    click_on("Upload Interests")
+  end
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   sleep(2)

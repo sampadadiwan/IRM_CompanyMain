@@ -11,7 +11,6 @@ class InvestorIndex < Chewy::Index
   field :tag_list
   field :properties, value: ->(i) { i.properties.to_json if i.properties }
   field :entity_id
-  field :is_holdings_entity
   field :investor_access_count
   field :unapproved_investor_access_count
 end

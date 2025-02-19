@@ -11,7 +11,6 @@ class OfferDashboard < Administrate::BaseDashboard
     user: Field::BelongsTo,
     entity: Field::BelongsTo,
     secondary_sale: Field::BelongsTo,
-    holding: Field::BelongsTo,
     granter: Field::BelongsTo,
     documents: Field::HasMany,
 
@@ -66,7 +65,6 @@ class OfferDashboard < Administrate::BaseDashboard
     user
     entity
     secondary_sale
-    holding
     granter
     id
     quantity
@@ -105,7 +103,6 @@ class OfferDashboard < Administrate::BaseDashboard
     user
     entity
     secondary_sale
-    holding
     granter
     quantity
     percentage

@@ -33,7 +33,7 @@ Examples:
 
 
 
-Scenario Outline: Approve holdings as a company
+Scenario Outline: Approve offers as a company
   Given Im logged in as a user "" for an entity "<entity>"
   And the user has role "approver,company_admin"
   Given there is an existing investor "investor_name=Seller" with "1" users
@@ -52,7 +52,7 @@ Examples:
 
 
 @import
-Scenario Outline: Import offer to sale without holdings
+Scenario Outline: Import offer to sale
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
@@ -67,10 +67,10 @@ Scenario Outline: Import offer to sale without holdings
 
 Scenario Outline: Offer PAN verification
   Given there is a user "" for an entity "entity_type=Company"
-  Given there are "2" employee investors
-  Given Im logged in as an employee investor
   Given there is a sale "<sale>"
-  Given I have "Seller" access to the sale
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor;pan=1234567"
+  Given my firm is an investor in the company
+  And the investor has "Seller" access rights to the sale    
   And I am at the sales details page
   Then when I place an offer "<offer>" from the offers tab
   Then I should see the offer details

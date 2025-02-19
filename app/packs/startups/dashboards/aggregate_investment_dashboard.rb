@@ -15,7 +15,6 @@ class AggregateInvestmentDashboard < Administrate::BaseDashboard
     entity: Field::BelongsTo,
     equity: Field::Number,
     full_diluted_percentage: Field::String.with_options(searchable: false),
-    funding_round: Field::BelongsTo,
     investments: Field::HasMany,
     investor: Field::BelongsTo,
     options: Field::Number,
@@ -50,7 +49,6 @@ class AggregateInvestmentDashboard < Administrate::BaseDashboard
     entity
     equity
     full_diluted_percentage
-    funding_round
     investments
     investor
     options
@@ -73,7 +71,6 @@ class AggregateInvestmentDashboard < Administrate::BaseDashboard
     entity
     equity
     full_diluted_percentage
-    funding_round
     investments
     investor
     options

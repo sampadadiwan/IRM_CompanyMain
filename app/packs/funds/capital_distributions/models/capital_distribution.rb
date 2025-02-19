@@ -35,16 +35,6 @@ class CapitalDistribution < ApplicationRecord
 
   validates :distribution_date, presence: true
 
-  before_save :compute_gross_amount
-  def compute_gross_amount
-    self.gross_amount_cents = if capital_distribution_payments.present?
-                                # If the payments have been computed, they they will contain the total amount which includes income_with_fees_cents and cost_of_investment_with_fees_cents.
-                                capital_distribution_payments.sum(:gross_payable_cents) + reinvestment_cents
-                              else
-                                income_cents + cost_of_investment_cents + reinvestment_cents
-                              end
-  end
-
   after_create_commit :generate_distribution_payments, unless: :destroyed?
 
   def generate_distribution_payments

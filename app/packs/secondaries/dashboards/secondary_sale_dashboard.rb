@@ -30,7 +30,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price: ObfuscatedField,
     max_price: ObfuscatedField,
     active: Field::BooleanEmoji,
-    show_holdings: Field::BooleanEmoji,
     no_offer_emails: Field::BooleanEmoji,
     no_interest_emails: Field::BooleanEmoji,
     manage_offers: Field::BooleanEmoji,
@@ -90,7 +89,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     manage_offers
     no_interest_emails
     manage_interests
-    show_holdings
     created_at
     updated_at
     total_offered_quantity
@@ -129,7 +127,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     manage_offers
     no_interest_emails
     manage_interests
-    show_holdings
 
     secondary_sale_form_type_id
     offer_form_type_id

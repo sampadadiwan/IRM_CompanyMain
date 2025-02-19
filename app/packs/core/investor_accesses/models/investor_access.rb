@@ -29,13 +29,7 @@ class InvestorAccess < ApplicationRecord
                              }
 
   scope :approved_for_user, lambda { |user|
-    if user.entity && user.entity.is_holdings_entity
-      # Employees / Founders done need individual approvals.
-      # But the holding company still needs to be added as an investor and give access rights
-      where("1=1")
-    else
-      where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)
-    end
+    where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)
   }
 
   scope :approved, lambda {

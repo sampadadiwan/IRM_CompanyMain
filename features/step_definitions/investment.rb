@@ -10,7 +10,7 @@ Given('I create an investment {string}') do |arg1|
                       investment_type: @funding_round.name, funding_round: @funding_round)
   @investment.currency = @entity.currency
   key_values(@investment, arg1)
-  @investment.investor ||= Investor.not_holding.sample
+  @investment.investor ||= Investor.sample
 
   puts @investment.investor.to_json
 
@@ -143,172 +143,6 @@ Given('investor has access right {string} in the investment') do |arg1|
 end
 
 
-Then('a holding should be created for the investor') do
-  sleep(1)
-  @holding = @investment.holdings.last
-  puts "\n####Holding####\n"
-  puts @holding.to_json
-
-  @holding.quantity.should == @investment.quantity
-  @holding.investment_instrument.should == @investment.investment_instrument
-  @holding.entity_id.should == @investment.entity_id
-  @holding.investor_id.should == @investment.investor_id
-  @holding.user_id.should == nil
-  @holding.holding_type.should == "Investor"
-
-  @investment.holdings.count.should == 1
-end
-
-
-
-Given('there are {string} employee investors') do |arg|
-  @holdings_investor = @entity.investors.where(is_holdings_entity: true).first
-  @investor_entity = @holdings_investor.investor_entity
-  puts @investor_entity.to_json
-
-  (0..arg.to_i-1).each do
-    user = FactoryBot.create(:user, entity: @investor_entity, phone: "9449025878")
-    puts "\n####Employee Investors####\n"
-    puts user.to_json
-    ia = InvestorAccess.create!(investor:@holdings_investor, user: user, email: user.email,
-        first_name: user.first_name, last_name: user.last_name,
-        approved: true, entity_id: @holdings_investor.entity_id)
-
-    puts "\n####Employee Investors Investor Access####\n"
-    puts ia.to_json
-  end
-end
-
-Given('Given I create a holding for each employee with quantity {string}') do |arg|
-  @holding_orig_grant_quantity = arg.to_i
-  @entity.investor_accesses.each do |emp|
-    visit(investor_url(@holdings_investor))
-
-    if page.has_link?("Employee Users")
-      page.click_link("Employee Users")
-    end
-    if page.has_link?("Stakeholder Users")
-      page.click_link("Stakeholder Users")
-    end
-
-    find("#investor_access_#{emp.id}").click_link("Add Holding")
-    fill_in('holding_orig_grant_quantity', with: @holding_orig_grant_quantity)
-    fill_in('holding_price', with: 1000*emp.user_id)
-    select("Equity", from: "holding_investment_instrument")
-    select(@funding_round.name, from: "holding_funding_round_id")
-    # select("Employee", from: "holding_holding_type")
-
-    click_on("Save")
-    sleep(1)
-  end
-end
-
-
-Given('Given there are holdings for each employee {string}') do |args|
-  @holdings_investor.investor_entity.employees.each do |user|
-    h = Holding.new(user_id: user.id, entity_id: @holdings_investor.entity_id,
-              investor: @holdings_investor, price_cents: 10000,
-              funding_round: @funding_round, grant_date: Time.zone.today,
-              holding_type: "Employee")
-
-    key_values(h, args)
-    h.save
-
-    puts "\n####Employee Holding####\n"
-    puts h.to_json
-  end
-end
-
-
-Then('There should be a corresponding holdings created for each employee') do
-
-  puts Holding.all.to_json
-
-  @investor_entity.employees.each do |emp|
-    emp.holdings.count.should == 1
-    holding = emp.holdings.first
-    holding.orig_grant_quantity.should == @holding_orig_grant_quantity
-    holding.quantity.should == @holding_orig_grant_quantity
-    holding.price_cents.should == 1000 * 100 * emp.id
-    holding.value_cents.should == @holding_orig_grant_quantity * 1000 * 100 * emp.id
-    holding.holding_type.should == "Employee"
-    holding.entity_id.should == @entity.id
-    holding.investment_instrument.should == "Equity"
-  end
-end
-
-Then('There should be a corresponding investment created') do
-  @holding_investment = Investment.last
-  @holding_investment.entity_id.should == @entity.id
-  @holding_investment.investor_entity_id.should == @investor_entity.id
-  @holding_investment.investment_instrument.should == "Equity"
-  @holding_investment.quantity.should == Holding.all.sum(:quantity)
-  @holding_investment.category.should == "Employee"
-  @holding_investment.investment_type.should == @funding_round.name
-  @holding_investment.funding_round.id.should == @funding_round.id
-end
-
-Then('when the holdings are approved') do
-  Holding.all.each do |h|
-    ApproveHolding.wtf?(holding: h) #if h.holding_type != "Investor"
-  end
-end
-
-
-Then('Investments is updated with the holdings') do
-  Holding.not_investors.each do |h|
-
-
-    holdings =  h.investment.investment_instrument == "Options" ? h.investment.holdings.not_phantom_options : h.investment.holdings
-
-    # ap h.investment
-    # ap holdings
-
-    h.investment.quantity.should ==  holdings.sum(:quantity)
-    h.investment.amount_cents.should ==  holdings.sum(:value_cents)
-    h.investment.price_cents.should == holdings.sum(:value_cents) / holdings.sum(:quantity)
-  end
-end
-
-Given('there is a FundingRound {string}') do |args|
-  @funding_round = FactoryBot.build(:funding_round, entity: @entity)
-  key_values(@funding_round, args)
-  @funding_round.save
-end
-
-
-Then('the funding round must be updated with the investment') do
-  sleep(2) #Allow job to run
-  @funding_round ||= FundingRound.last
-  puts @funding_round.reload.to_json
-  @funding_round.amount_raised_cents.should == @funding_round.investments.all.sum(:amount_cents)
-  @funding_round.equity.should == @funding_round.investments.equity.sum(:quantity)
-  @funding_round.preferred.should == @funding_round.investments.preferred.sum(:quantity)
-  @funding_round.options.should == @funding_round.investments.options.sum(:quantity)
-end
-
-
-Given('the funding rounds must be updated with the right investment') do
-  FundingRound.all.each do |funding_round|
-    puts funding_round.to_json
-    funding_round.amount_raised_cents.should == funding_round.investments.sum(:amount_cents)
-    funding_round.equity.should == funding_round.investments.equity.sum(:quantity)
-    funding_round.preferred.should == funding_round.investments.preferred.sum(:quantity)
-    funding_round.options.should == funding_round.investments.options.sum(:quantity)
-  end
-end
-
-
-Then('the entity must be updated with the investment') do
-  puts @entity.reload.to_json
-  @entity.equity.should == Investment.equity.sum(:quantity)
-  @entity.preferred.should == Investment.preferred.sum(:quantity)
-  @entity.options.should == Investment.options.sum(:quantity)
-  @entity.total_investments.should == Investment.sum(:amount_cents)
-  @entity.investments_count.should == Investment.count
-end
-
-
 Given('there is are {string} investors') do |count|
   (1..count.to_i).each do |i|
     vc = FactoryBot.create(:entity, entity_type: "Investor")
@@ -318,7 +152,7 @@ end
 
 Given('there are {string} investments {string}') do |count, args|
   (1..count.to_i).each do
-    i = FactoryBot.build(:investment, entity: @entity, investor: Investor.not_holding.sample,
+    i = FactoryBot.build(:investment, entity: @entity, investor: Investor.sample,
       funding_round: @funding_round)
     key_values(i, args)
 
@@ -332,62 +166,6 @@ Given('there are {string} investments {string}') do |count, args|
     puts i.to_json
   end
 end
-
-
-Given('the aggregate investments must be created') do
-  AggregateInvestment.all.each do |agg|
-    puts "\n####AggregateInvestment####\n"
-    puts agg.to_json
-
-    agg.entity_id.should == @entity.id
-    investments = Investment.where(investor_id: agg.investor_id,
-                                   entity_id: agg.entity_id)
-    agg.equity.should == investments.equity.sum(:quantity)
-    agg.preferred.should == investments.preferred.sum(:quantity)
-    agg.preferred_converted_qty.should == investments.preferred.sum(:preferred_converted_qty)
-    agg.options.should == investments.options.sum(:quantity)
-
-
-  end
-end
-
-Given('the percentage must be computed correctly') do
-  InvestmentPercentageHoldingJob.new.perform(Investment.first.id)
-  Investment.sum(:percentage_holding).should be_within(0.1).of(100)
-  Investment.sum(:diluted_percentage).should be_within(0.1).of(100)
-  AggregateInvestment.sum(:percentage).should be_within(0.1).of(100)
-  AggregateInvestment.sum(:full_diluted_percentage).should be_within(0.1).of(100)
-end
-
-
-
-Then('when I see the aggregated investments') do
-  sleep(1)
-  visit(aggregate_investments_path)
-end
-
-Then('I must see one {string} aggregated investment for the investor') do |args|
-  AggregateInvestment.where(investor_id: @investor.id).count.should == args.to_i
-end
-
-Then('I must see the aggregated investment with {string}') do |args|
-  @aggregate_investment = AggregateInvestment.last
-  kv = {}
-  hash_key_values(kv, args)
-  puts kv
-  within("#aggregate_investment_#{@aggregate_investment.id}") do
-    within(".equity") do
-      expect(page).to have_content(kv["Equity"])
-    end
-    within(".preferred") do
-      expect(page).to have_content(kv["Preferred"])
-    end
-    within(".options") do
-      expect(page).to have_content(kv["Options"])
-    end
-  end
-end
-
 
 
 ############################################################################
@@ -501,45 +279,3 @@ Then('I should be able to see only my investments for each entity') do
   end
 end
 
-
-
-Given('Given I upload a holdings file') do
-
-  puts "##############\n"
-  puts @user.entity.investors.holding.first.to_json
-
-  @existing_user_count = User.count
-  visit("/holdings")
-  click_on("Uploads")
-  click_on("Upload Holdings")
-  fill_in('import_upload_name', with: "Test Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/holdings.xlsx'), make_visible: true)
-  sleep(1)
-  click_on("Save")
-  sleep(4)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-  # sleep(5)
-
-  ImportUpload.last.failed_row_count.should == 0
-end
-
-Then('There should be {string} holdings created') do |count|
-  # (Holding.not_investors.count).should == count.to_i
-
-  Holding.employees.all.sum(:quantity).should == 1400
-  Holding.founders.all.sum(:quantity).should == 300
-
-  Holding.not_investors.all.each do |h|
-    h.investor.category.should == h.holding_type
-    h.user.entity_id.should == h.investor.investor_entity_id
-  end
-
-end
-
-Then('There should be {string} users created for the holdings') do |count|
-  (User.count - @existing_user_count).should == count.to_i
-end
-
-Then('There should be {string} Investments created for the holdings') do |count|
-  Investment.joins(:investor).where("investors.is_holdings_entity=?", true).count.should == count.to_i
-end

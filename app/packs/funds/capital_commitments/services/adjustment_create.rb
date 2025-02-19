@@ -33,7 +33,7 @@ class AdjustmentCreate < AdjustmentAction
   end
 
   def update_commitment(_ctx, commitment_adjustment:, **)
-    CapitalCommitmentUpdate.wtf?(capital_commitment: commitment_adjustment.capital_commitment.reload).success?
+    CapitalCommitmentUpdate.call(capital_commitment: commitment_adjustment.capital_commitment.reload).success?
   end
 
   def handle_commitment_errors(ctx, commitment_adjustment:, **)

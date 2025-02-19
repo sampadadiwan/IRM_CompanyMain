@@ -14,6 +14,6 @@ wb.add_worksheet(name: "KpiReports") do |sheet|
     investor_name = o.investor.investor_name
     interest = o.interest
 
-    sheet.add_row([o.id, o.user.full_name, o.user.email, investor_name, o.holding.funding_round.name, o.quantity, o.percentage, o.allocation_quantity, o.allocation_percentage, o.final_price, money_to_currency(o.allocation_amount, params), o.approved, o.full_name, o.address, o.PAN, o.pan_verified, o.bank_account_number, o.ifsc_code, o.bank_verified, o.final_agreement, interest&.buyer_entity_name, o.created_at, o.updated_at] + custom_field_values)
+    sheet.add_row([o.id, o.user.full_name, o.user.email, investor_name, o.quantity, o.percentage, o.allocation_quantity, o.allocation_percentage, o.final_price, money_to_currency(o.allocation_amount, params), o.approved, o.full_name, o.address, o.PAN, o.pan_verified, o.bank_account_number, o.ifsc_code, o.bank_verified, o.final_agreement, interest&.buyer_entity_name, o.created_at, o.updated_at] + custom_field_values)
   end
 end

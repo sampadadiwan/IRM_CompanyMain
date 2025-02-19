@@ -76,7 +76,7 @@ class OffersController < ApplicationController
   end
 
   def approve
-    result = OfferApprove.wtf?(offer: @offer, current_user:)
+    result = OfferApprove.call(offer: @offer, current_user:)
     label = result[:label]
     notice = result.success? ? "Offer was successfully #{label}." : "Error: #{result[:errors]}"
     respond_to do |format|

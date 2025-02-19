@@ -12,7 +12,7 @@ class Entity < ApplicationRecord
   validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true, allow_nil: true
   validates_uniqueness_of :pan, allow_blank: true, allow_nil: true
 
-  validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity }
+  validates :primary_email, presence: true, if: proc { |e| e.new_record? }
 
   validates_uniqueness_of :name, scope: :primary_email
 
@@ -36,8 +36,6 @@ class Entity < ApplicationRecord
   has_many :kpis, dependent: :destroy
   has_many :investor_kpi_mappings, dependent: :destroy
 
-  has_many :option_pools, dependent: :destroy
-  has_many :excercises, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
   has_many :deal_activities, dependent: :destroy
@@ -46,13 +44,11 @@ class Entity < ApplicationRecord
   has_many :interests_shown, class_name: "Interest", foreign_key: "interest_entity_id", dependent: :destroy
   has_many :offers, dependent: :destroy
 
-  has_many :funding_rounds, dependent: :destroy
   has_many :valuations, dependent: :destroy
   has_many :investor_notices, dependent: :destroy
 
   has_many :documents, dependent: :destroy
   has_many :doc_questions, dependent: :destroy
-  has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :form_types, dependent: :destroy
@@ -79,7 +75,6 @@ class Entity < ApplicationRecord
   has_many :investor_kycs, dependent: :destroy
   has_many :access_rights, dependent: :destroy
   has_many :investments, dependent: :destroy
-  has_many :aggregate_investments, dependent: :destroy
 
   has_many :funds, dependent: :destroy, inverse_of: :entity
   has_many :account_entries, dependent: :destroy
@@ -131,7 +126,7 @@ class Entity < ApplicationRecord
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
   def run_post_process
-    result = SetupCompany.wtf?(entity: self)
+    result = SetupCompany.call(entity: self)
     if result.success?
       # Ensure users entity_type is saved
       employees.each do |user|
@@ -166,26 +161,6 @@ class Entity < ApplicationRecord
 
   def trust_investor
     investors.is_trust.first
-  end
-
-  def recompute_investment_percentages(force: false)
-    count = Entity.where(id:, percentage_in_progress: false).update_all(percentage_in_progress: true)
-    if count.positive? || force
-      if Rails.env.test?
-        InvestmentPercentageHoldingJob.perform_later(id)
-      else
-        InvestmentPercentageHoldingJob.set(wait: 1.minute).perform_later(id)
-      end
-    end
-  rescue ActiveRecord::StaleObjectError => e
-    Rails.logger.info "StaleObjectError: #{e.message}"
-  end
-
-  def self.recompute_all
-    Entity.startups.each do |entity|
-      entity.recompute_investment_percentages(force: true)
-    end
-    nil
   end
 
   def root_folder

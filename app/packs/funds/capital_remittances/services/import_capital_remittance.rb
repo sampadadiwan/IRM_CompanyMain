@@ -39,7 +39,7 @@ class ImportCapitalRemittance < ImportUtil
       setup_custom_fields(user_data, capital_remittance, custom_field_headers)
 
       # Attempt to create the capital remittance and handle any errors
-      result = CapitalRemittanceCreate.wtf?(capital_remittance: capital_remittance)
+      result = CapitalRemittanceCreate.call(capital_remittance: capital_remittance)
       raise result[:errors] unless result.success?
 
       result.success?

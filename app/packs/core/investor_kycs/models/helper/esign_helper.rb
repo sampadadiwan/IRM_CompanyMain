@@ -11,7 +11,7 @@ class EsignHelper
   end
 
   def sign
-    result = "#{@provider.strip.capitalize}Esigning".constantize.wtf?(helper: @helper, doc: @doc, user_id: @user_id)
+    result = "#{@provider.strip.capitalize}Esigning".constantize.call(helper: @helper, doc: @doc, user_id: @user_id)
     if result.success?
       [true, nil]
     else

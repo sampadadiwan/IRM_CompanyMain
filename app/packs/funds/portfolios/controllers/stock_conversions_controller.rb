@@ -34,7 +34,7 @@ class StockConversionsController < ApplicationController
   def create
     @stock_conversion = StockConversion.new(stock_conversion_params)
     authorize @stock_conversion
-    result = StockConverter.wtf?(stock_conversion: @stock_conversion)
+    result = StockConverter.call(stock_conversion: @stock_conversion)
     respond_to do |format|
       if result.success?
         format.html { redirect_to stock_conversion_url(@stock_conversion), notice: "Stock conversion was successfully created." }
@@ -70,7 +70,7 @@ class StockConversionsController < ApplicationController
   end
 
   def reverse
-    if StockConverterReverse.wtf?(stock_conversion: @stock_conversion).success?
+    if StockConverterReverse.call(stock_conversion: @stock_conversion).success?
       redirect_to stock_conversions_url, notice: "Stock conversion was successfully reversed."
     else
       redirect_to stock_conversions_url, alert: "Stock conversion could not be reversed."

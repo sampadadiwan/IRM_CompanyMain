@@ -14,7 +14,7 @@ class CrisilReportJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       fund_ids = fund_id.present? ? [fund_id] : Entity.find(entity_id).fund_ids
       fund_ids.each do |fid|
-        GenerateCrisilReport.wtf?(fund_id: fid, report_name:, start_date:, end_date:, user_id:, excel:, single:)
+        GenerateCrisilReport.call(fund_id: fid, report_name:, start_date:, end_date:, user_id:, excel:, single:)
       end
     end
   end

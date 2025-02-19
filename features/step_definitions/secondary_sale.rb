@@ -113,20 +113,6 @@
     visit secondary_sale_path(@sale)
   end
 
-  Then('I should see the holdings') do
-    Holding.all.each do |h|
-        within("tr#holding_#{h.id}") do
-            expect(page).to have_content(h.holding_type)
-            expect(page).to have_content(h.user.full_name)
-            # expect(page).to have_content(h.user.email)
-            # expect(page).to have_content(h.entity.name)
-            expect(page).to have_content(h.investment_instrument)
-            expect(page).to have_content(h.quantity)
-        end
-    end
-  end
-
-
 
 Given('I have {string} access to the sale') do |metadata|
 
@@ -178,20 +164,9 @@ Given('employee investor should have {string} access to the sale {string}') do |
 end
 
 
-Given('employee investor has {string} access rights to the sale') do |metadata|
-  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: metadata,
-    entity: @entity, access_to_investor_id: @holdings_investor.id)
-
-
-  puts "\n####AccessRight####\n"
-  puts ar.to_json
-
-end
-
-
 Given('existing investors have {string} access rights to the sale') do |metadata|
 
-  @entity.investors.not_holding.not_trust.each do |inv|
+  @entity.investors.each do |inv|
     if @sale.access_rights.where(access_to_investor_id: inv.id).empty?
       @access_right = AccessRight.create!(owner: @sale, access_type: "SecondarySale", metadata: metadata,
         entity: @entity, access_to_investor_id: inv.id)
@@ -268,55 +243,12 @@ Given('there are {string} investments {string} in the company') do |count, args|
   end
 end
 
-
-Given('I should see my holdings in the holdings tab') do
-  Investment.all.each do |inv|
-    inv.holdings.each do |h|
-      within("#holding_#{h.id}") do
-        expect(page).to have_content(h.funding_round.name)
-        expect(page).to have_content(h.holding_type)
-        expect(page).to have_content(@investor.investor_name)
-        expect(page).to have_content(h.investment_instrument)
-        expect(page).to have_content(custom_format_number(h.quantity))
-        expect(page).to have_content(custom_format_number(h.price))
-        # expect(page).to have_content(money_to_currency(h.value))
-        expect(page).to have_content("Offer")
-
-      end
-    end
-  end
-end
-
-
-Given('when I make an offer for my holdings') do
-  h = Holding.first
-  puts "\n####Offer for Holding####\n"
-  puts h.to_json
-
-  within("#holding_#{h.id}") do
-    click_on("Offer")
-  end
-  #sleep(1)
-
-  @new_offer = FactoryBot.build(:offer, holding_id: h.id, user_id:h.user_id, entity_id: h.entity_id,
-    secondary_sale_id: @sale.id, investor_id: h.investor_id)
-  @new_offer.quantity = rand(0..100)
-  @offer = @new_offer
-
-  steps %(
-    Then when I submit the offer
-  )
-end
-
 Then('I should see the offer') do
-  h = Holding.first
-
   @offer = Offer.last
 
   @offer.user_id.should == @user.id
   @offer.secondary_sale_id.should == @sale.id
   @offer.entity_id.should == @company.id
-  # @offer.quantity.should == @sale.percent_allowed * @offer.total_holdings_quantity / 100.0
   expect(page).to have_content(@user.full_name)
   expect(page).to have_content(@company.name)
   expect(page).to have_content(@sale.name)
@@ -342,20 +274,9 @@ Then('when the offer is approved') do
 end
 
 
-Given('there are approved offers for the sale') do
-  steps %(
-    Given there are "3" exisiting investments "" from another firm in startups
-  )
-  Holding.all.each do |h|
-    offer = FactoryBot.create(:offer, holding: h, entity: h.entity, secondary_sale: @sale,
-                          user: h.entity.employees.sample, investor: h.investor,
-                          quantity: h.quantity * @sale.percent_allowed / 100, approved: true)
-  end
-end
-
 
 Given('there are offers {string} for the sale') do |args|
-  Investor.not_holding.not_trust.all.each do |inv|
+  Investor.all.each do |inv|
     offer = FactoryBot.build(:offer,investor: inv, entity: inv.entity, secondary_sale: @sale,
                           user: inv.investor_entity.employees.sample)
 
@@ -364,25 +285,6 @@ Given('there are offers {string} for the sale') do |args|
     approved = offer.approved
     OfferCreate.wtf?(offer: offer, current_user: @user).success?
     OfferApprove.wtf?(offer: offer, current_user: @user) if approved
-    puts "\n####Offer Created####\n"
-    puts offer.to_json
-  end
-end
-
-
-Given('there are {string} offers for the sale') do |approved_flag|
-  steps %(
-    Given there are "3" exisiting investments "" from another firm in startups
-  )
-  approved = approved_flag == "approved"
-  Holding.all.each do |h|
-    offer = Offer.new(holding_id: h.id, entity: h.entity, secondary_sale: @sale,
-                          user: h.entity.employees.sample, investor: h.investor, user_id: h.user_id,
-                          quantity: h.quantity * @sale.percent_allowed / 100, approved: approved)
-
-    OfferCreate.wtf?(offer: offer, current_user: @user).success?.should == true
-    OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true if approved
-
     puts "\n####Offer Created####\n"
     puts offer.to_json
   end
@@ -508,26 +410,13 @@ Then('when the cap table is updated from the sale') do
 end
 
 Then('there are {string} investor investments in the cap table') do |count|
-  investor_ids = Investor.not_holding.all.collect(&:id)
+  investor_ids = Investor.all.collect(&:id)
   Investment.where(investor_id: investor_ids).count.should == count.to_i
 end
 
 Then('the investor investments quantity should be the interest quantity') do
-  investor_ids = Investor.not_holding.all.collect(&:id)
+  investor_ids = Investor.all.collect(&:id)
   Investment.where(investor_id: investor_ids).sum(:quantity).should == Interest.short_listed.escrow_deposited.sum(:quantity)
-end
-
-
-Then('the employee holdings must be reduced by the sold amount') do
-  @holding_quantity = 0
-  @sale.offers.approved.verified.each do |offer|
-    offer.holding.quantity.should == offer.holding.orig_grant_quantity - offer.allocation_quantity
-    @holding_quantity = @holding_quantity + offer.holding.quantity
-  end
-end
-
-Then('the employee investments must be reduced by the sold amount') do
-  Investment.where(employee_holdings: true).sum(:quantity).should == @holding_quantity
 end
 
 Then('the offers completetion page must be visible') do
@@ -665,8 +554,7 @@ end
 Then('each seller must receive email with subject {string}') do |eval_subject|
   subject = eval("\"" + eval_subject + "\"")
 
-  all_emails = @sale.investor_users("Seller").collect(&:email).flatten +
-                 @sale.employee_users("Seller").collect(&:email).flatten
+  all_emails = @sale.investor_users("Seller").collect(&:email).flatten 
 
   puts "All emails #{all_emails.uniq}"
 
@@ -676,19 +564,13 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
     open_email(email)
     expect(current_email.subject).to eq subject
   end
-
-  @sale.employee_users("Seller").collect(&:email).each do |email|
-    puts "Checking employee email #{email} with subject #{subject}"
-    open_email(email)
-    expect(current_email.subject).to eq subject
-  end
+  
 end
 
 Then('each buyer must receive email with subject {string}') do |eval_subject|
   subject = eval("\"" + eval_subject + "\"")
 
-  all_emails = @sale.investor_users("Buyer").collect(&:email).flatten +
-                 @sale.employee_users("Buyer").collect(&:email).flatten
+  all_emails = @sale.investor_users("Buyer").collect(&:email).flatten 
 
   puts "All emails #{all_emails.uniq}"
 
@@ -698,11 +580,6 @@ Then('each buyer must receive email with subject {string}') do |eval_subject|
     expect(current_email.subject).to eq subject
   end
 
-  @sale.employee_users("Buyer").collect(&:email).each do |email|
-    puts "Checking employee email #{email} with subject #{subject}"
-    open_email(email)
-    expect(current_email.subject).to eq subject
-  end
 end
 
 
@@ -754,7 +631,7 @@ Then('the seller must receive email with subject {string}') do |subject|
 end
 
 Given('the investors are added to the sale') do
-  @user.entity.investors.not_holding.not_trust.each do |inv|
+  @user.entity.investors.each do |inv|
     ar = AccessRight.create!( owner: @sale, access_type: "SecondarySale",
                              access_to_investor_id: inv.id, entity: @user.entity)
 

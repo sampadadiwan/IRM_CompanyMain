@@ -3,7 +3,6 @@ class ImportUpload < ApplicationRecord
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
               "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",
               "FUNDS_SAMPLE" => "/sample_uploads/funds.xlsx",
-              "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
               "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx",
               "INTERESTS_SAMPLE" => "/sample_uploads/interests.xlsx",
               "CAPITAL_CALL_SAMPLE" => "/sample_uploads/capital_calls.xlsx",
@@ -21,7 +20,6 @@ class ImportUpload < ApplicationRecord
               "INVESTOR_KYCS_DOCS_SAMPLE" => "/sample_uploads/import_kyc_docs.zip",
               "DOCS_SAMPLE" => "/sample_uploads/documents_upload.zip",
               "OFFERS_DOCS_SAMPLE" => "/sample_uploads/offer_docs.zip",
-              "OPTIONS_CUSTOM_DATA_SAMPLE" => "/sample_uploads/options_custom_data.xlsx",
               "FUND_UNIT_SETTING_SAMPLE" => "/sample_uploads/fund_unit_setting.xlsx",
               "FUND_UNIT_SAMPLE" => "/sample_uploads/fund_units.xlsx",
               "FUND_FORMULA_SAMPLE" => "/sample_uploads/fund_formulas.xlsx",
@@ -31,7 +29,7 @@ class ImportUpload < ApplicationRecord
               "ALLOCATION" => "/sample_uploads/allocations.xlsx",
               "Fund_RATIO_SAMPLE" => "/sample_uploads/fund_ratios.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs Fund ExchangeRate Allocation FundRatio].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 

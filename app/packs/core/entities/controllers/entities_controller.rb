@@ -18,7 +18,7 @@ class EntitiesController < ApplicationController
   end
 
   def add_sebi_fields
-    result = AddSebiFields.wtf?(entity: @entity)
+    result = AddSebiFields.call(entity: @entity)
     respond_to do |format|
       if result.success?
         format.html { redirect_to @entity, notice: "SEBI Fields were successfully added." }
@@ -29,7 +29,7 @@ class EntitiesController < ApplicationController
   end
 
   def remove_sebi_fields
-    result = RemoveSebiFields.wtf?(entity: @entity)
+    result = RemoveSebiFields.call(entity: @entity)
     respond_to do |format|
       if result.success?
         format.html { redirect_to @entity, notice: "SEBI Fields were successfully removed." }

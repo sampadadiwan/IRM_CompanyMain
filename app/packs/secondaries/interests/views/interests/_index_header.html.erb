@@ -10,7 +10,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Interests</h1>
     
-    <span>
+    <span id="interest_buttons">
 
         <% if @secondary_sale %>
             <% if policy(@secondary_sale).update? || policy(@secondary_sale).import_interests? %>

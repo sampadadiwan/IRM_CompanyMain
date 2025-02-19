@@ -52,7 +52,7 @@ Then('it should create Capital Distribution') do
   total_amount_cents +=  AccountEntry.where(fund_id: @fund.id).where.not(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
   # total_amount_cents -=  AccountEntry.where(fund_id: @fund.id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
 
-  expect(distribution.gross_amount_cents).to(eq(total_amount_cents))    
+  expect(distribution.gross_amount_cents).to(eq(distribution.capital_distribution_payments.completed.sum(:gross_payable_cents)))  
 end
 
 Then('the data should be correctly displayed for each Capital Distribution Payment') do
@@ -65,7 +65,7 @@ Then('the data should be correctly displayed for each Capital Distribution Payme
     cdp.cost_of_investment_with_fees_cents.should == cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["FV For Redemption"]).sum(:amount_cents)
     cdp.reinvestment_with_fees_cents.should == cdp.reinvestment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Reinvestment"]).sum(:amount_cents)
 
-    cdp.net_payable_cents.should == cdp.income_with_fees_cents + cdp.cost_of_investment_with_fees_cents
+    cdp.net_payable_cents.should == cdp.income_with_fees_cents + cdp.cost_of_investment_with_fees_cents - cdp.reinvestment_with_fees_cents
     cdp.gross_payable_cents.should == cdp.income_cents + cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income", "FV For Redemption"]).sum(:amount_cents)
 
     expect(page).to have_content(money_to_currency cdp.net_payable, {})

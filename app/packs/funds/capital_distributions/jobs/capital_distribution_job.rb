@@ -41,7 +41,7 @@ class CapitalDistributionJob < ApplicationJob
                                                  completed: @capital_distribution.generate_payments_paid)
 
         CapitalDistributionPayment.skip_counter_culture_updates do
-          result = CapitalDistributionPaymentCreate.wtf?(capital_distribution_payment: payment)
+          result = CapitalDistributionPaymentCreate.call(capital_distribution_payment: payment)
           if result.success?
             @payments << payment
             Rails.logger.debug { "Created Payment of #{payment.net_payable} for #{cc.investor_name} id #{payment.id}" }

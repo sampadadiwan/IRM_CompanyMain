@@ -140,7 +140,7 @@ class DealActivitiesController < ApplicationController
   end
 
   def perform_activity_action
-    result = PerformActivityAction.wtf?(params:,
+    result = PerformActivityAction.call(params:,
                                         deal_activity: @deal_activity)
     if result.success?
       render json: {
