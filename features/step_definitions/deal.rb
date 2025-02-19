@@ -43,6 +43,14 @@ When('I click on the Add Item and select any Investor and save') do
   # sleep(0.25)
   first('button', text: "Add Item").click
   # sleep(1)
+  inv_entities = FactoryBot.create_list(:entity, 3, entity_type: "Investor")
+
+  inv_entities.each do |inv_entity|
+    @another_entity = inv_entity
+    steps %(
+      And another entity is an investor "category=Lead Investor" in entity
+      )
+    end
   select_investor_and_save(1, 'First Investment')
   select_investor_and_save(3, 'Second Investment')
   expect(page).to have_content("First Investment")
@@ -401,6 +409,14 @@ Then('I should see the error "{string}"') do |string|
 end
 
 When('I click on the action dropdown and select the same Investor and save') do
+  inv_entities = FactoryBot.create_list(:entity, 3, entity_type: "Investor")
+
+  inv_entities.each do |inv_entity|
+    @another_entity = inv_entity
+    steps %(
+      And another entity is an investor "category=Lead Investor" in entity
+      )
+    end
   select_investor_and_save(2, 'First Investment')
   select_investor_and_save(2, 'New Investment')
 end
