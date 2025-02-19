@@ -18,7 +18,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def whatsapp_webhook?
-    chat?
+    true
   end
 
   def show?
