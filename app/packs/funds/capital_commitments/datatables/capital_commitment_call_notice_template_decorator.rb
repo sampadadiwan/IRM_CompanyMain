@@ -306,4 +306,116 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def total_dist_investor_percent
     percentage(total_dist_investor, total_dist_fund)
   end
+
+  ### SECTION C AGGREGATE REINVESTMENT ###
+
+  def init_prior_distribution_payments
+    if @prior_dist_payments_lp.nil? || @prior_dist_payments_gp.nil?
+      prior_dist_payments_lp_ids = []
+      prior_dist_payments_gp_ids = []
+
+      init_lp_gp_commitments
+      @lp_commitments.each do |comm|
+        ids = comm.capital_distribution_payments.where(payment_date: ..@end_date).pluck(:id)
+        prior_dist_payments_lp_ids += ids
+      end
+
+      @gp_commitments.each do |comm|
+        ids = comm.capital_distribution_payments.where(payment_date: ..@end_date).pluck(:id)
+        prior_dist_payments_gp_ids += ids
+      end
+
+      @prior_dist_payments_lp = object.capital_distribution_payments.where(id: prior_dist_payments_lp_ids)
+      @prior_dist_payments_gp = object.capital_distribution_payments.where(id: prior_dist_payments_gp_ids)
+    end
+  end
+
+  def init_current_distribution_payments
+    if @current_dist_payments_lp.nil? || @current_dist_payments_gp.nil?
+      current_dist_payments_lp_ids = []
+      current_dist_payments_gp_ids = []
+
+      init_lp_gp_commitments
+      @lp_commitments.each do |comm|
+        ids = comm.capital_distribution_payments.where(payment_date: @end_date).pluck(:id)
+        current_dist_payments_lp_ids += ids
+      end
+
+      @gp_commitments.each do |comm|
+        ids = comm.capital_distribution_payments.where(payment_date: @end_date).pluck(:id)
+        current_dist_payments_gp_ids += ids
+      end
+
+      @current_dist_payments_lp = object.capital_distribution_payments.where(id: current_dist_payments_lp_ids)
+      @current_dist_payments_gp = object.capital_distribution_payments.where(id: current_dist_payments_gp_ids)
+    end
+  end
+
+  def agg_reinvest_prior_current_notice_lp
+    init_prior_distribution_payments
+
+    @agg_reinvest_prior_current_notice_lp ||= money_sum(@prior_dist_payments_lp, :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_prior_current_notice_gp
+    init_prior_distribution_payments
+
+    @agg_reinvest_prior_current_notice_gp ||= money_sum(@prior_dist_payments_gp, :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_prior_current_notice_total
+    agg_reinvest_prior_current_notice_lp + agg_reinvest_prior_current_notice_gp
+  end
+
+  def agg_reinvest_prior_current_notice_investor
+    @agg_reinvest_prior_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: ..@end_date), :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_prior_current_notice_investor_percent
+    percentage(agg_reinvest_prior_current_notice_investor, agg_reinvest_prior_current_notice_total)
+  end
+
+  def agg_reinvest_current_notice_lp
+    init_current_distribution_payments
+
+    @agg_reinvest_current_notice_lp ||= money_sum(@current_dist_payments_lp, :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_current_notice_gp
+    init_current_distribution_payments
+
+    @agg_reinvest_current_notice_gp ||= money_sum(@current_dist_payments_gp, :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_current_notice_total
+    agg_reinvest_current_notice_lp + agg_reinvest_current_notice_gp
+  end
+
+  def agg_reinvest_current_notice_investor
+    @agg_reinvest_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @end_date), :reinvestment_with_fees_cents)
+  end
+
+  def agg_reinvest_current_notice_investor_percent
+    percentage(agg_reinvest_current_notice_investor, agg_reinvest_current_notice_total)
+  end
+
+  def agg_reinvest_incl_current_notice_lp
+    agg_reinvest_prior_current_notice_lp + agg_reinvest_current_notice_lp
+  end
+
+  def agg_reinvest_incl_current_notice_gp
+    agg_reinvest_prior_current_notice_gp + agg_reinvest_current_notice_gp
+  end
+
+  def agg_reinvest_incl_current_notice_total
+    agg_reinvest_prior_current_notice_total + agg_reinvest_current_notice_total
+  end
+
+  def agg_reinvest_incl_current_notice_investor
+    agg_reinvest_prior_current_notice_investor + agg_reinvest_current_notice_investor
+  end
+
+  def agg_reinvest_incl_current_notice_investor_percent
+    percentage(agg_reinvest_incl_current_notice_investor, agg_reinvest_incl_current_notice_total)
+  end
 end

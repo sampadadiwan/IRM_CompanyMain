@@ -41,7 +41,7 @@ class CapitalRemittanceDocGenerator
 
     context.store :entity, capital_remittance.entity
     context.store :fund, TemplateDecorator.decorate(capital_remittance.fund)
-    context.store :capital_remittance, TemplateDecorator.decorate(capital_remittance)
+    context.store :capital_remittance, CapitalRemittanceTemplateDecorator.decorate(capital_remittance)
     context.store :investor_kyc, TemplateDecorator.decorate(capital_remittance.capital_commitment.investor_kyc)
     context.store :capital_call, TemplateDecorator.decorate(capital_remittance.capital_call)
 
