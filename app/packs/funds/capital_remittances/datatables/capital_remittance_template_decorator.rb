@@ -98,8 +98,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
         end
       end
 
-      @current_lp_remittances = object.fund.capital_remittances.where(id: prior_lp_remittances_ids)
-      @current_gp_remittances = object.fund.capital_remittances.where(id: prior_gp_remittances_ids)
+      @current_lp_remittances = object.fund.capital_remittances.where(id: current_lp_remittances_ids)
+      @current_gp_remittances = object.fund.capital_remittances.where(id: current_gp_remittances_ids)
     end
   end
 
@@ -377,8 +377,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
         end
       end
 
-      @current_calls_lp_remittances = object.fund.capital_remittances.where(id: prior_lp_remittances_ids)
-      @current_calls_gp_remittances = object.fund.capital_remittances.where(id: prior_gp_remittances_ids)
+      @current_calls_lp_remittances = object.fund.capital_remittances.where(id: current_calls_lp_remittances_ids)
+      @current_calls_gp_remittances = object.fund.capital_remittances.where(id: current_calls_gp_remittances_ids)
     end
   end
 
