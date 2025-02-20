@@ -68,8 +68,16 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     @cash_prior_notice_total ||= cash_prior_notice_lp + cash_prior_notice_gp
   end
 
+  def init_prior_remittances_investor
+    init_prior_remittances
+    @prior_remittances_investor = @prior_lp_remittances.where(capital_commitment_id: object.capital_commitment_id).or(@prior_gp_remittances.where(capital_commitment_id: object.capital_commitment_id)) if @prior_remittances_investor.nil?
+  end
+
+
   def cash_prior_notice_investor
-    @cash_prior_notice_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :computed_amount_cents)
+    return @cash_prior_notice_investor if @cash_prior_notice_investor
+    init_prior_remittances_investor
+    @cash_prior_notice_investor ||= money_sum(prior_remittances_investor, :collected_amount_cents)
   end
 
   def cash_prior_notice_investor_percent
@@ -110,7 +118,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def cash_current_notice_investor
-    @cash_current_notice_investor ||= money_sum(object.capital_remittances.where(remittance_date: @end_date), :computed_amount_cents)
+    @cash_current_notice_investor ||= object.computed_amount_cents
   end
 
   def cash_current_notice_investor_percent
@@ -152,7 +160,9 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def fees_prior_notice_investor
-    @fees_prior_notice_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :capital_fee_cents) + money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :other_fee_cents)
+    return @fees_prior_notice_investor if @fees_prior_notice_investor
+    init_prior_remittances
+    @fees_prior_notice_investor ||= money_sum(prior_remittances_investor, :capital_fee_cents) + money_sum(prior_remittances_investor, :other_fee_cents)
   end
 
   def fees_prior_notice_investor_percent
@@ -173,7 +183,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def fees_current_notice_investor
-    @fees_current_notice_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :capital_fee_cents) + money_sum(object.capital_remittances.where(remittance_date: @end_date), :other_fee_cents)
+    @fees_current_notice_investor ||= object.captital_fee + object.other_fee
   end
 
   def fees_current_notice_investor_percent
@@ -214,11 +224,6 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     agg_drawdown_prior_notice_lp + agg_drawdown_prior_notice_gp
   end
 
-  def init_prior_remittances_investor
-    init_prior_remittances
-    @prior_remittances_investor = @prior_lp_remittances.where(capital_commitment_id: object.capital_commitment_id).or(@prior_gp_remittances.where(capital_commitment_id: object.capital_commitment_id)) if @prior_remittances_investor.nil?
-  end
-
   def agg_drawdown_prior_notice_investor
     init_prior_remittances_investor
     @agg_drawdown_prior_notice_investor ||= money_sum(@prior_remittances_investor, :call_amount_cents)
@@ -248,7 +253,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def agg_drawdown_current_notice_investor
-    init_current_remittances
+    init_current_remittances_investor
     @agg_drawdown_current_notice_investor ||= money_sum(@current_remittances_investor, :call_amount_cents)
   end
 

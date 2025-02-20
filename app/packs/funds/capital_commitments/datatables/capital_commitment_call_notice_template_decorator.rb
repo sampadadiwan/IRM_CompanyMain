@@ -351,6 +351,81 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     end
   end
 
+  # discuss how to get all dist before current dist
+  def agg_dist_prior_notice_lp
+    init_prior_distribution_payments
+
+    @agg_dist_prior_notice_lp ||= money_sum(@prior_dist_payments_lp, :gross_payable_cents)
+  end
+
+  def agg_dist_prior_notice_gp
+    init_prior_distribution_payments
+
+    @agg_dist_prior_notice_gp ||= money_sum(@prior_dist_payments_gp, :gross_payable_cents)
+  end
+
+  def agg_dist_prior_notice_total
+    agg_dist_prior_notice_lp + agg_dist_prior_notice_gp
+  end
+
+  def agg_dist_prior_notice_investor
+    return @agg_dist_prior_notice_investor if @agg_dist_prior_notice_investor
+    init_prior_distribution_payments
+
+    dist_prior_notice_investor_lp = @agg_dist_prior_notice_lp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_gp = @agg_dist_prior_notice_gp.where(folio_id: object.folio_id)
+
+    @agg_dist_prior_notice_investor = money_sum(dist_prior_notice_investor_lp, :gross_payable_cents) + money_sum(dist_prior_notice_investor_gp, :gross_payable_cents)
+  end
+
+  def agg_dist_prior_notice_investor_percent
+    percentage(agg_dist_prior_notice_investor, agg_dist_prior_notice_total)
+  end
+
+  def agg_dist_current_notice_lp
+    init_current_distribution_payments
+
+    @agg_dist_current_notice_lp ||= money_sum(@current_dist_payments_lp, :gross_payable_cents)
+  end
+
+  def agg_dist_current_notice_gp
+    init_current_distribution_payments
+
+    @agg_dist_current_notice_gp ||= money_sum(@current_dist_payments_gp, :gross_payable_cents)
+  end
+
+  def agg_dist_current_notice_total
+    agg_dist_current_notice_lp + agg_dist_current_notice_gp
+  end
+
+  def agg_dist_current_notice_investor
+    @agg_dist_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @end_date), :gross_payable_cents)
+  end
+
+  def agg_dist_current_notice_investor_percent
+    percentage(agg_dist_current_notice_investor, agg_dist_current_notice_total)
+  end
+
+  def agg_dist_incl_current_notice_lp
+    agg_dist_prior_notice_lp + agg_dist_current_notice_lp
+  end
+
+  def agg_dist_incl_current_notice_gp
+    agg_dist_prior_notice_gp + agg_dist_current_notice_gp
+  end
+
+  def agg_dist_incl_current_notice_total
+    agg_dist_prior_notice_total + agg_dist_current_notice_total
+  end
+
+  def agg_dist_incl_current_notice_investor
+    agg_dist_prior_notice_investor + agg_dist_current_notice_investor
+  end
+
+  def agg_dist_incl_current_notice_investor_percent
+    percentage(agg_dist_incl_current_notice_investor, agg_dist_incl_current_notice_total)
+  end
+
   def agg_reinvest_prior_current_notice_lp
     init_prior_distribution_payments
 
@@ -368,7 +443,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def agg_reinvest_prior_current_notice_investor
-    @agg_reinvest_prior_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: ..@end_date), :reinvestment_with_fees_cents)
+    return @agg_reinvest_prior_current_notice_investor if @agg_reinvest_prior_current_notice_investor
+    init_prior_distribution_payments
+
+    dist_prior_notice_investor_lp = @agg_dist_prior_notice_lp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_gp = @agg_dist_prior_notice_gp.where(folio_id: object.folio_id)
+
+    @agg_reinvest_prior_current_notice_investor = money_sum(dist_prior_notice_investor_lp, :reinvestment_with_fees_cents) + money_sum(dist_prior_notice_investor_gp, :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_prior_current_notice_investor_percent
