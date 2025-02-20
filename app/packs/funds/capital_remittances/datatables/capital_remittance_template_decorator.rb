@@ -77,7 +77,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   def cash_prior_notice_investor
     return @cash_prior_notice_investor if @cash_prior_notice_investor
     init_prior_remittances_investor
-    @cash_prior_notice_investor ||= money_sum(prior_remittances_investor, :collected_amount_cents)
+    @cash_prior_notice_investor ||= money_sum(@prior_remittances_investor, :collected_amount_cents)
   end
 
   def cash_prior_notice_investor_percent
@@ -162,7 +162,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   def fees_prior_notice_investor
     return @fees_prior_notice_investor if @fees_prior_notice_investor
     init_prior_remittances
-    @fees_prior_notice_investor ||= money_sum(prior_remittances_investor, :capital_fee_cents) + money_sum(prior_remittances_investor, :other_fee_cents)
+    @fees_prior_notice_investor ||= money_sum(@prior_remittances_investor, :capital_fee_cents) + money_sum(@prior_remittances_investor, :other_fee_cents)
   end
 
   def fees_prior_notice_investor_percent
