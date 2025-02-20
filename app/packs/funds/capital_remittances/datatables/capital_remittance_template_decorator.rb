@@ -118,7 +118,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def cash_current_notice_investor
-    @cash_current_notice_investor ||= object.computed_amount_cents
+    @cash_current_notice_investor ||= object.computed_amount
   end
 
   def cash_current_notice_investor_percent
