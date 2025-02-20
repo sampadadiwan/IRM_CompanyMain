@@ -372,8 +372,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     return @agg_dist_prior_notice_investor if @agg_dist_prior_notice_investor
     init_prior_distribution_payments
 
-    dist_prior_notice_investor_lp = @agg_dist_prior_notice_lp.where(folio_id: object.folio_id)
-    dist_prior_notice_investor_gp = @agg_dist_prior_notice_gp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_lp = @prior_dist_payments_lp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_gp = @prior_dist_payments_gp.where(folio_id: object.folio_id)
 
     @agg_dist_prior_notice_investor = money_sum(dist_prior_notice_investor_lp, :gross_payable_cents) + money_sum(dist_prior_notice_investor_gp, :gross_payable_cents)
   end
@@ -446,8 +446,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     return @agg_reinvest_prior_current_notice_investor if @agg_reinvest_prior_current_notice_investor
     init_prior_distribution_payments
 
-    dist_prior_notice_investor_lp = @agg_dist_prior_notice_lp.where(folio_id: object.folio_id)
-    dist_prior_notice_investor_gp = @agg_dist_prior_notice_gp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_lp = @prior_dist_payments_lp.where(folio_id: object.folio_id)
+    dist_prior_notice_investor_gp = @prior_dist_payments_gp.where(folio_id: object.folio_id)
 
     @agg_reinvest_prior_current_notice_investor = money_sum(dist_prior_notice_investor_lp, :reinvestment_with_fees_cents) + money_sum(dist_prior_notice_investor_gp, :reinvestment_with_fees_cents)
   end
