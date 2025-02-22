@@ -21,7 +21,8 @@ class InvestorsController < ApplicationController
   end
 
   def dashboard
-    @dashboard_name = params[:dashboard_name] || "Investor Dashboard"
+    @dashboard_name = params[:dashboard_name]
+    @dashboard_name ||= @investor.category == "Portfolio Company" ? "Portfolio Company Dashboard" : "Investor Dashboard"
     @name = params[:name] || "Default"
   end
 

@@ -13,6 +13,9 @@
       form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} if policy(@investor).destroy? %>
 
   <%= link_to "CapTable" , investments_path(portfolio_company_id: @investor.id), {class: "btn btn-outline-primary" } if policy(@investor).cap_table? %>
+
+  <%= link_to "Dashboard" , dashboard_investor_path(id: @investor.id), {class: "btn btn-outline-primary" } %>
+
 </div>
 
 
