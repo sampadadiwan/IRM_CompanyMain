@@ -1,13 +1,19 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, ratio_names: nil, owner: nil, months: 12)
+  def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 12)
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
     # Initialize an empty hash to store processed data for each ratio
     from_date = Time.zone.today - months.months
     # Fetch all fund_ratios in one query
-    fund_ratios = fund.fund_ratios
-                      .where(name: ratio_names, end_date: from_date..)
-                      .order(:name, :end_date)
+    fund_ratios = if fund.present?
+                    fund.fund_ratios
+                  else
+                    FundRatio.all
+                  end
+
+    fund_ratios = fund_ratios.where(owner_id: owner_id, owner_type: owner_type) if owner_id.present? && owner_type.present?
+    fund_ratios = fund_ratios.where(name: ratio_names, end_date: from_date..)
+                             .order(:name, :end_date)
 
     # Apply owner filter if provided
     fund_ratios = fund_ratios.where(owner: owner) if owner.present?
