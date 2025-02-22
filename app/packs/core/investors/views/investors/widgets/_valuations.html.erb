@@ -8,7 +8,7 @@
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
     <div class="card-body">            
-        <%= turbo_frame_tag "valuations_frame", target: "_top", src: "#{uri.to_s}" do %>            
+        <%= turbo_frame_tag "valuations_charts_frame", target: "_top", src: "#{uri.to_s}" do %>            
         <%end%>
         <p class="mb-0"><%= name || "Valuations" %></p>
     </div>

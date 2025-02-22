@@ -11,6 +11,6 @@
     <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %>            
     <%end%>
     <!-- This block becomes the `content` inside the component -->
-    <%= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", **widget.metadata_args) %>
+    <%#= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", **widget.metadata_args) %>
   
 <% end %>
