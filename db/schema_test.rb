@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_17_144527) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_19_050454) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2532,6 +2532,27 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_17_144527) do
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
+  end
+
+  create_table "portfolio_report_sections", force: :cascade do |t|
+    t.bigint "portfolio_report_id", null: false
+    t.string "name", limit: 50
+    t.text "data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["portfolio_report_id"], name: "index_portfolio_report_sections_on_portfolio_report_id"
+  end
+
+  create_table "portfolio_reports", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "name"
+    t.string "tags", limit: 100
+    t.boolean "include_kpi", default: false
+    t.boolean "include_portfolio_investments", default: false
+    t.json "sections"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_portfolio_reports_on_entity_id"
   end
 
   create_table "portfolio_scenarios", force: :cascade do |t|

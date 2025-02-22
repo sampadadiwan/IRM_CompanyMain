@@ -1,3 +1,9 @@
+V9.0.3
+#####################################
+af4d38f2a Fixed CDP tests
+c03ab8ab3 Updated Gems (#736)
+1eb664921 Holding cleanup (#735)
+
 V9.0.1
 #####################################
 b33bb3dc7 Removed unwanted holdings audit tables
