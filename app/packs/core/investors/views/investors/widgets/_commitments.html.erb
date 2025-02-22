@@ -4,7 +4,6 @@
   args ||= {}
   uri_params ||= {}
   uri = URI("/capital_commitments?investor_id=#{@investor.id}")
-  #uri.query = URI.encode_www_form(uri_params) if uri_params.present?
 %>
 <div class="<%= widget_size %> d-flex align-items-stretch">
   <div class="card w-100">

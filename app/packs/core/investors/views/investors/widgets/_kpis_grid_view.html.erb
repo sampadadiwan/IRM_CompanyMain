@@ -1,0 +1,13 @@
+<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true)) %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do 
+%>
+    <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: "#{uri.to_s}" do %>             
+    <%end%>
+  
+<% end %>
