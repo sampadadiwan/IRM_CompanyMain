@@ -2,9 +2,10 @@
 
 <%= turbo_frame_tag "valuations_frame", target: "_top" do %>
   <%= render "/valuations/index", valuations: @valuations %>
+
+  <div class="associated_entity">
+    <%= render "/valuations/charts", entity: current_user.entity, owner_id: params[:owner_id], owner_type: params[:owner_type] %>
+  </div>
 <% end %>
 
 
-<div class="associated_entity">
-  <%= render "/valuations/charts", entity: current_user.entity %>
-</div>

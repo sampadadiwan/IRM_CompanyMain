@@ -28,11 +28,13 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   INVESTOR_WIDGETS = [
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Valuations", path: "investors/widgets/valuations", size: "XL"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "KYCs", path: "investors/widgets/kycs", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium")
+
   ].freeze
 
   PORTFOLIO_WIDGETS = [

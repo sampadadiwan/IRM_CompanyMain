@@ -14,7 +14,7 @@ class ValuationsController < ApplicationController
     end
 
     @valuations = @valuations.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @valuations = @valuations.includes(:entity)
+    @valuations = @valuations.includes(:entity, :investment_instrument)
   end
 
   # GET /valuations/1 or /valuations/1.json
