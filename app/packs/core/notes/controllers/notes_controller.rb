@@ -47,9 +47,7 @@ class NotesController < ApplicationController
   # GET /notes/new
   def new
     @note = Note.new(note_params)
-    if note_params[:owner_type] == "Investor"
-      @note.investor_id = note_params[:owner_id]
-    end
+    @note.investor_id = note_params[:owner_id] if note_params[:owner_type] == "Investor"
     @note.entity_id ||= @note.investor.entity_id
     @note.user_id ||= current_user.id
     @note.on = Time.zone.today
