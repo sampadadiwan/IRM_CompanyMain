@@ -25,9 +25,9 @@
             <div class="dropdown-divider"></div>
 
             <%= button_to "Generate AML Reports",
-            generate_aml_reports_investor_kycs_path(q: params[:q].to_unsafe_h),
+            bulk_actions_investor_kycs_path("bulk_action": "GenerateAMLReports", q: params.to_unsafe_h[:q], all: true),
             class: "dropdown-item", form_class: "w-100",
-            data: {msg: "This will generate AML Reports for all filtered KYCs. Proceed?", action: "click->confirm#popup", method: :post, turbo: false}  %>
+            data: {msg: "This will generate AML Reports for all filtered KYCs. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.entity_setting.aml_enabled %>
 
             <% msg = "This will send a reminder to each KYC in the search results (including results on other pages). Proceed?" %>
             <%= button_to "Send Reminder",

@@ -16,6 +16,8 @@ class InvestorKycsBulkActionJob < BulkActionJob
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "sendreminder"
       send_reminder(investor_kyc, user_id)
+    when "generateamlreports"
+      generate_aml_report(investor_kyc, user_id)
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)
@@ -28,6 +30,12 @@ class InvestorKycsBulkActionJob < BulkActionJob
 
   def get_class
     InvestorKyc
+  end
+
+  def generate_aml_report(investor_kyc, user_id)
+    raise "Investing Entity is blank for Investor Kyc ID #{investor_kyc.id}" if investor_kyc.full_name.blank?
+
+    AmlReportJob.perform_later(investor_kyc.id, user_id)
   end
 
   def send_reminder(investor_kyc, user_id)

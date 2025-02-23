@@ -196,13 +196,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def generate_aml_report(user_id)
-    if id.present? && full_name.present?
-      if Rails.env.test?
-        AmlReportJob.perform_now(id, user_id)
-      elsif id.present? && full_name.present?
-        AmlReportJob.perform_later(id, user_id)
-      end
-    end
+    AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
   end
 
   def full_name_has_changed?

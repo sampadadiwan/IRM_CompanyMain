@@ -52,7 +52,6 @@ resources :investor_kycs do
   patch 'generate_docs', on: :member # Actually generate the docs
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
-  post 'generate_aml_reports', on: :collection
   post 'bulk_actions', on: :collection
   post 'validate_docs_with_ai', on: :member
 end
