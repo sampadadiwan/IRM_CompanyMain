@@ -24,11 +24,11 @@ class FoldersController < ApplicationController
   def generate_report
     if request.post?
       report_template_name = params[:report_template_name]
-      if report_type.present?
+      if report_template_name.present?
         FolderLlmReportJob.perform_later(@folder.id, current_user.id, report_template_name:)
         redirect_to @folder.owner, notice: "Report generation has been started. You will be notified when it is ready."
       else
-        redirect_to request.referer, alert: "Report type is required"
+        redirect_to request.referer, alert: "Report Template is required"
       end
     else
       render "generate_report"

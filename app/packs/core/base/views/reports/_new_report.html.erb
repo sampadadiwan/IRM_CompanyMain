@@ -5,18 +5,18 @@
         </div>
     </div>
     <div class="col">
-    <%= form_with(model: nil) do |form| %>
-        <div class="row">
-            <%= form.select :url, Report.reports_for, {include_blank: "New Report"}, class: "form-control", "data-action": "change->reports#onChange" %>
-        </div>
-    <% end %>
+        <%= form_tag(reports_path, method: :get, data: { action: "change->reports#onChange" }) do %>
+            <div class="row">
+                <%= select_tag :url, options_for_select(Report.reports_for, include_blank: "New Report"), class: "form-control" %>
+            </div>
+        <% end %>
     </div>
 
     <div class="col">
-    <%= form_with(model: nil, url: reports_path(card: true)) do |form| %>
+        <%= form_tag(reports_path(card: true), method: :get, data: { action: "change->reports#filter" }) do %>
         <div class="row">
-            <%= form.select :category, Report.reports_for.keys, {include_blank: "Filter", selected: params[:category]}, class: "form-control", "data-action": "change->reports#filter" %>
+            <%= select_tag :category, options_for_select([["Filter", ""]] + Report.reports_for.keys.map { |key| [key, key] }, params[:category]), class: "form-control" %>
         </div>
-    <% end %>
+        <% end %>
     </div>
 </div>

@@ -25,7 +25,7 @@
       </tr>
     </thead>
     <tbody>
-      <% kanban_boards&.each do |kanban_board| %>
+      <% kanban_boards.includes(:owner)&.each do |kanban_board| %>
         <%= render "boards/kanban_board", kanban_board: kanban_board %>
       <% end %>
     </tbody>

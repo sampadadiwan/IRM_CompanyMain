@@ -1,35 +1,36 @@
-<% 
+<%
   template_folder = current_user.entity.folders.where(name: "#{@folder.owner.class.name} Templates").first
   template_names = template_folder ? template_folder.documents.pluck(:name) : [] %>
 <%= render NewCard.new do %>
 
   <%= render FormCard.new(title: "Generate Reports for #{@folder}") do %>
 
-    <%= form_with(model: nil, url: generate_report_folder_path(@folder), method: :post) do |form| %>
-            
-      <%= form.hidden_field :folder_id, value: @folder.id %>
+    <%= form_tag generate_report_folder_path(@folder), method: :post do %>
+
+      <%= hidden_field_tag :folder_id, @folder.id %>
 
       <div class="form-group">
-        <%= form.label :report_type %>
-        <%= form.select :report_type, ["AggregatePortfolioInvestment"], {}, class: "form-control", name: "report_type"  %>
+        <%= label_tag :report_type, "Report Type" %>
+        <%= select_tag :report_type, options_for_select(["AggregatePortfolioInvestment"]), class: "form-control", name: "report_type" %>
         <small class="form-text text-muted">Select the reports to generate.</small>
       </div>
 
       <div class="form-group">
-       <%= form.label :report_template_name %>
-       <%= form.select :report_template_name, template_names, {}, class: "form-control", name: "report_template_name"  %>
-       <small class="form-text text-muted">Select the template to use for the report.</small>
+        <%= label_tag :report_template_name, "Report Template Name" %>
+        <%= select_tag :report_template_name, options_for_select(template_names), class: "form-control", name: "report_template_name" %>
+        <small class="form-text text-muted">Select the template to use for the report.</small>
       </div>
 
       <div class="form-group">
-        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+        <%= submit_tag "Generate Report Now", class: "btn btn-outline-primary" %>
       </div>
 
-      <div class=" alert alert-info text-muted">
+      <div class="alert alert-info text-muted">
         Generate report for the folder <%= @folder.name %>. Note that the data will be sent to an external LLM for generation
       </div>
+
     <% end %>
 
   <% end %>
-  
+
 <% end %>

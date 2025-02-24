@@ -1,6 +1,6 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    
+
 </div>
 <table class="table table-bordered dataTable">
 
@@ -29,7 +29,7 @@
     </span>
   </div>
 
-  
+
 
   <table id="foreign_remittances_table" class="table table-bordered dataTable jqDataTable">
       <thead>
@@ -44,7 +44,7 @@
           <th>Collected Amount</th>
       </thead>
       <tbody>
-          <% @fund.capital_remittances.joins(capital_commitment: :investor_kyc).where("investor_kycs.residency=?", :foreign).where(payment_date: start_date..).where(payment_date: ..end_date).each do |cr| %>
+          <% @fund.capital_remittances.joins(capital_commitment: :investor_kyc).where("investor_kycs.residency=?", :foreign).where(payment_date: start_date..).where(payment_date: ..end_date).includes(:capital_call, capital_commitment: :investor_kyc).each do |cr| %>
             <tr>
               <td><%=cr.capital_call.name%></td>
               <td><%=cr.investor_name%></td>

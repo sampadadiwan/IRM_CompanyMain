@@ -3,37 +3,42 @@
   end_date ||= Time.zone.today.end_of_quarter
 %>
 
-
 <%= render NewCard.new do %>
 
 <%= render FormCard.new(title: "Generate Documents for KYCs based on filters below. Count: #{@investor_kycs.count}") do %>
 
-<%= form_with(model: nil, url: generate_all_docs_investor_kycs_path(entity_id: params[:entity_id], q: params[:q].to_unsafe_h), html: {method: :post, "data-turbo": false}, "data-turbo": false) do |form| %>
+  <%= form_tag generate_all_docs_investor_kycs_path(entity_id: params[:entity_id], q: params[:q].to_unsafe_h), method: :post, data: { turbo: false } do %>
 
-  <div class="form-group">
-    <%= form.label :start_date %>
-    <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
-  </div>
+    <div class="form-group">
+      <%= label_tag :start_date, "Start Date" %>
+      <%= date_field_tag :start_date, start_date, class: "form-control", name: "start_date" %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :end_date %>
-    <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
-  </div>
+    <div class="form-group">
+      <%= label_tag :end_date, "End Date" %>
+      <%= date_field_tag :end_date, end_date, class: "form-control", name: "end_date" %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :template_name, "Template" %>
-    <% template_folder = current_user.entity.folders.where(name: "KYC Templates").first %>
-    <%= form.select :template_name, current_user.entity.documents.where(folder_id: template_folder&.id).template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2",
-    name: "document_template_ids[]", multiple: "multiple" %>
-    <small class="text-muted">Select the template to be used for document generation from KYC Templates Folder. </small>
-  </div>
+    <div class="form-group">
+      <%= label_tag :template_name, "Template" %>
+      <% template_folder = current_user.entity.folders.where(name: "KYC Templates").first %>
+      <%= select_tag "document_template_ids[]",
+            options_from_collection_for_select(
+              current_user.entity.documents.where(folder_id: template_folder&.id).template,
+              :id,
+              :name
+            ),
+            class: "form-control select2", multiple: true %>
+      <small class="text-muted">Select the template to be used for document generation from KYC Templates Folder.</small>
+    </div>
 
-  <div class="form-group">
-    <%= form.submit "Generate Now", {class: "btn btn-outline-primary", "data-turbo": false}%>
-    <br>
-    <small class="text-muted">All generated documents will be attached to the KYC.</small>
-  </div>
-<% end %>
+    <div class="form-group">
+      <%= submit_tag "Generate Now", class: "btn btn-outline-primary", data: { turbo: false } %>
+      <br>
+      <small class="text-muted">All generated documents will be attached to the KYC.</small>
+    </div>
+
+  <% end %>
 
 <% end %>
 
