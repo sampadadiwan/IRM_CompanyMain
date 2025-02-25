@@ -72,6 +72,12 @@
 
     <thead>
       <tr>
+        <% if params[:show_funds].present? %>
+          <input type="hidden" id="fund_ratios_show_funds" value="true">
+          <th>
+            Fund
+          </th>
+        <% end %>
         <th>
           For
         </th>

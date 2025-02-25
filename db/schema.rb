@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_17_144527) do
+ActiveRecord::Schema[7.2].define(version: 2025_02_23_001130) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2527,6 +2527,27 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_17_144527) do
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
   end
 
+  create_table "portfolio_report_sections", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "portfolio_report_id", null: false
+    t.string "name", limit: 50
+    t.text "data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["portfolio_report_id"], name: "index_portfolio_report_sections_on_portfolio_report_id"
+  end
+
+  create_table "portfolio_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "name"
+    t.string "tags", limit: 100
+    t.boolean "include_kpi", default: false
+    t.boolean "include_portfolio_investments", default: false
+    t.json "sections"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_portfolio_reports_on_entity_id"
+  end
+
   create_table "portfolio_scenarios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -3272,6 +3293,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_17_144527) do
   add_foreign_key "portfolio_investments", "funds"
   add_foreign_key "portfolio_investments", "investment_instruments"
   add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_report_sections", "portfolio_reports"
+  add_foreign_key "portfolio_reports", "entities"
   add_foreign_key "portfolio_scenarios", "entities"
   add_foreign_key "portfolio_scenarios", "funds"
   add_foreign_key "portfolio_scenarios", "users"

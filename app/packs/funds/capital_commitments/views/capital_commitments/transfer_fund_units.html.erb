@@ -1,54 +1,59 @@
 <%= render NewCard.new do %>
   <%= render FormCard.new(title: "Transfer Fund Units") do %>
-    <%= form_with(model: nil, url: transfer_fund_units_capital_commitment_path(@capital_commitment), method: :post) do |form| %>
-        <% if @capital_commitment.errors.any? %>
-            <div class="alert alert-danger">
-            <h2><%= pluralize(capital_commitment.errors.count, "error") %> prohibited this capital_commitment from being saved:</h2>
+    <%= form_tag transfer_fund_units_capital_commitment_path(@capital_commitment), method: :post do %>
 
-            <ul>
-                <% @capital_commitment.errors.each do |error| %>
-                <li><%= error.full_message %></li>
-                <% end %>
-            </ul>
-            </div>
-        <% end %>
-
-        <%= form.text_field :entity_id, class: "form-control", hidden: true, value: @capital_commitment.entity_id  %>
-        <%= form.text_field :fund_id, class: "form-control", hidden: true, value: @capital_commitment.fund_id  %>
-
-        <div class="form-group">
-          <%= form.label :folio_id, "From Folio" %>
-          <%= form.text_field :folio_id, class: 'form-control', disabled: true, value: @capital_commitment %>
+      <% if @capital_commitment.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(@capital_commitment.errors.count, "error") %> prohibited this capital commitment from being saved:</h2>
+          <ul>
+            <% @capital_commitment.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
         </div>
+      <% end %>
 
-        <div class="form-group">
-          <%= form.label :quantity %>
-          <%= form.number_field :quantity, class: 'form-control', step: :any, name: :quantity, value: params[:quantity], required: true %>
-        </div>
+      <%= hidden_field_tag :entity_id, @capital_commitment.entity_id %>
+      <%= hidden_field_tag :fund_id, @capital_commitment.fund_id %>
 
-        <div class="form-group">
-          <%= form.label :transfer_date %>
-          <%= form.date_field :transfer_date, class: 'form-control', name: :transfer_date, value: params[:transfer_date], required: true %>
-        </div>
+      <div class="form-group">
+        <%= label_tag :folio_id, "From Folio" %>
+        <%= text_field_tag :folio_id, @capital_commitment, class: 'form-control', disabled: true %>
+      </div>
 
-        <div class="form-group">
-          <%= form.label :price %>
-          <%= form.number_field :price, class: 'form-control', step: :any, name: :price, value: params[:price], required: true %>
-        </div>
+      <div class="form-group">
+        <%= label_tag :quantity, "Quantity" %>
+        <%= number_field_tag :quantity, params[:quantity], class: 'form-control', step: :any, required: true %>
+      </div>
 
-        <div class="form-group">
-          <%= form.label :premium %>
-          <%= form.number_field :premium, class: 'form-control', step: :any, name: :premium, value: params[:premium], required: true %>
-        </div>
+      <div class="form-group">
+        <%= label_tag :transfer_date, "Transfer Date" %>
+        <%= date_field_tag :transfer_date, params[:transfer_date], class: 'form-control', required: true %>
+      </div>
 
-        <div class="form-group">
-          <%= form.label :folio_id, "To Folio" %>
-          <%= form.select :folio_id, @capital_commitment.fund.capital_commitments.map{|c| [c, c.folio_id]}, {selected: params[:to_folio_id]}, class: 'form-control select2', name: :to_folio_id, required: true %>
-        </div>
+      <div class="form-group">
+        <%= label_tag :price, "Price" %>
+        <%= number_field_tag :price, params[:price], class: 'form-control', step: :any, required: true %>
+      </div>
 
-        <div class="form-group">
-            <%= form.submit "Transfer", {class: "btn btn-outline-primary"}%>
-        </div>
+      <div class="form-group">
+        <%= label_tag :premium, "Premium" %>
+        <%= number_field_tag :premium, params[:premium], class: 'form-control', step: :any, required: true %>
+      </div>
+
+      <div class="form-group">
+        <%= label_tag :to_folio_id, "To Folio" %>
+        <%= select_tag :to_folio_id,
+              options_for_select(
+                @capital_commitment.fund.capital_commitments.includes(:investor_kyc).map { |c| [c.to_s, c.folio_id] },
+                params[:to_folio_id]
+              ),
+              class: 'form-control select2', required: true %>
+      </div>
+
+      <div class="form-group">
+        <%= submit_tag "Transfer", class: "btn btn-outline-primary" %>
+      </div>
 
     <% end %>
   <% end %>

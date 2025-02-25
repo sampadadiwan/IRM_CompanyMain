@@ -1,4 +1,19 @@
 FactoryBot.define do
+  factory :portfolio_report_section do
+    portfolio_report { nil }
+    name { "MyString" }
+    data { "MyText" }
+  end
+
+  factory :portfolio_report do
+    entity { nil }
+    name { "MyString" }
+    tags { "MyString" }
+    include_kpi { false }
+    include_portfolio_investments { false }
+    extraction_questions { "" }
+  end
+
   factory :excused_investor do
     entity { nil }
     fund { nil }

@@ -1,0 +1,21 @@
+
+<tr id="<%= dom_id portfolio_report %>">
+  <td>
+    <%= portfolio_report.entity_id %>
+  </td>
+  <td>
+    <%= portfolio_report.name %>
+  </td>
+  <td>
+    <%= portfolio_report.tags %>
+  </td>
+  <td>
+    <%= display_boolean portfolio_report.include_kpi %>
+  </td>
+  <td>
+    <%= display_boolean portfolio_report.include_portfolio_investments %>
+  </td>
+  <td>
+    <%= link_to "Show", portfolio_report , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

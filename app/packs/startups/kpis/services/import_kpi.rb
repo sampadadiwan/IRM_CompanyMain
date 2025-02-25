@@ -20,6 +20,8 @@ class ImportKpi < ImportUtil
     if user_data['Portfolio Company'].present?
       portfolio_company = import_upload.entity.investors.where(name: user_data['Portfolio Company'], category: "Portfolio Company").first
       raise "Portfolio Company #{user_data['Portfolio Company']} not found" if portfolio_company.blank?
+    elsif import_upload.owner_type == "KpiReport"
+      portfolio_company = import_upload.owner.portfolio_company  
     elsif import_upload.owner_type == "Investor"
       portfolio_company = import_upload.owner
     end

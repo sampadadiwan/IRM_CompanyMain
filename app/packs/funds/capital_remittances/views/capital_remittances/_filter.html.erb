@@ -1,25 +1,27 @@
-<%= form_with(model: nil, method: :get, url: "/capital_remittances", id: "remittance_filter",  data: {turbo_frame: "capital_remittances_frame"} ) do |form| %>
+<%= form_tag "/capital_remittances", method: :get, id: "remittance_filter", data: { turbo_frame: "capital_remittances_frame" } do %>
 
-  <input name="capital_call_id" value="<%= capital_call_id%>" hidden="hidden">
+  <%= hidden_field_tag :capital_call_id, capital_call_id %>
 
   <div class="form-group" data-controller="remittance">
     <% status = params[:status].presence %>
-    <%= form.select :status, ["Paid", "Pending", "Overdue", "Overpaid"], {selected: status, include_blank: "Payment Status"},
-        { id: "status", class: "form-control",
-        data: { action: "change->remittances#filterData" } } %>
-
+    <%= select_tag :status,
+      options_for_select(["Paid", "Pending", "Overdue", "Overpaid"], status),
+      id: "status",
+      class: "form-control",
+      prompt: "Payment Status",
+      data: { action: "change->remittances#filterData" } %>
   </div>
 
   <div class="form-group" data-controller="remittance">
     <% verified = params[:verified].presence %>
-    <%= form.select :verified, [["Yes", true], ["No", false]], {selected: verified, include_blank: "Verified"},
-        { id: "verified", class: "form-control",
-        data: { action: "change->remittances#filterData" } } %>
-
+    <%= select_tag :verified,
+      options_for_select([["Yes", true], ["No", false]], verified),
+      id: "verified",
+      class: "form-control",
+      prompt: "Verified",
+      data: { action: "change->remittances#filterData" } %>
   </div>
 
-
-  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
-
+  <%= submit_tag "Submit", hidden: true, id: "submit" %>
 
 <% end %>

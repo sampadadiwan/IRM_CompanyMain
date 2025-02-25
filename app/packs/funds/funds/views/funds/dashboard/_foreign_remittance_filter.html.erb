@@ -1,19 +1,17 @@
-<%= form_with(model: nil, method: :get, url: "/funds/#{fund.id}/report", id: "remittance_filter") do |form| %>
-    
-  <input name="report" value="dashboard/foreign_remittances" hidden="hidden">
+<%= form_tag("/funds/#{fund.id}/report", method: :get, id: "remittance_filter") do %>
 
-  From:
-  <div class="form-group">    
-    <%= form.date_field :start_date, class: "form-control", value: "#{start_date}", name: "start_date"%>        
-  </div>
-  To:
+  <%= hidden_field_tag :report, "dashboard/foreign_remittances" %>
+
   <div class="form-group">
-    <%= form.date_field :start_date, class: "form-control", value: "#{end_date}", name: "end_date" %>        
-        
+    <label for="start_date">From:</label>
+    <%= date_field_tag :start_date, start_date, class: "form-control" %>
   </div>
 
-  
-  <%= form.submit "Filter", class: "btn btn-outline-primary", id: "submit"%>
+  <div class="form-group">
+    <label for="end_date">To:</label>
+    <%= date_field_tag :end_date, end_date, class: "form-control" %>
+  </div>
 
+  <%= submit_tag "Filter", class: "btn btn-outline-primary", id: "submit" %>
 
 <% end %>

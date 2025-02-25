@@ -15,7 +15,7 @@ Scenario Outline: Dont Generate AML report and Bulk Generate Aml Report
   Then aml report is not generated for the investor kyc
   Given I bulk generate aml reports for investor kycs
   Then Aml report should be generated for the kycs that have full name
-  Then we get the email with error "Investor KYC 1 does not have full name"
+  Then we get the email with error "Investing Entity is blank for Investor Kyc ID 1"
 
 Scenario Outline: Dont Generate Aml Report on Kyc Update
   Given Im logged in as a user "first_name=Testuser1" for an entity "name=Urban12;entity_type=Investment Fund"

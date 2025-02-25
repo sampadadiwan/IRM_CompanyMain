@@ -1,18 +1,19 @@
 <% possible_owner_types ||= [] %>
-<% include_blank ||= "All" %>
+<% prompt ||= "All" %>
 <% unless possible_owner_types.blank? %>
-    <%= form_with(model: nil, method: :get, action: "", id: "owner_type_form") do |form| %>
+  <%= form_tag("", method: :get, id: "owner_type_form") do %>
 
     <div class="form-group" data-controller="owner">
-        <% selected = params[:owner_type].presence || (cookies && cookies[:owner_type]) %>
-        <%= form.select :owner_type, possible_owner_types , {selected: selected, include_blank: include_blank },
-            { id: "owner_type", class: "form-control",
-            data: { action: "change->owner#setOwnerType", toggle: "tooltip", title: "Choose Board Type" } } %>
+      <% selected = params[:owner_type].presence || (cookies && cookies[:owner_type]) %>
+      <%= select_tag :owner_type,
+          options_for_select(possible_owner_types, selected),
+          id: "owner_type",
+          class: "form-control",
+          prompt: prompt,
+          data: { action: "change->owner#setOwnerType", toggle: "tooltip", title: "Choose Board Type" } %>
     </div>
 
+    <%= submit_tag "Submit", hidden: true, id: "submit" %>
 
-    <%= form.submit "Submit", {hidden: true, id: "submit"}%>
-
-
-    <% end %>
+  <% end %>
 <% end %>

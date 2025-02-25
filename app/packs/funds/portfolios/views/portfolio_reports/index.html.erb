@@ -1,0 +1,39 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Portfolio Reports</h1>
+  <%= link_to "New Portfolio Report", new_portfolio_report_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="portfolio_reports" class="table table-bordered dataTable">
+
+    <thead>
+      <tr>
+        <th>
+          Entity
+        </th>
+        <th>
+          Name
+        </th>
+        <th>
+          Tags
+        </th>
+        <th>
+          Include Kpi
+        </th>
+        <th>
+          Include Portfolio Investments
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+    <% @portfolio_reports.each do |portfolio_report| %>
+      <%= render portfolio_report %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>

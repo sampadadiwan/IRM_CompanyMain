@@ -1,7 +1,8 @@
+<% investor_id = params[:investor_id] || params[:owner_id] %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <% header = defined?(title) ? title : "Notes" %>
   <h1 class="h3 mb-0 text-gray-800"><%= header %></h1>
-  <%= link_to "New Note", new_note_path("note[investor_id]": params[:investor_id], "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+  <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
 </div>
 
 <%=render SearchComponent.new(data_source: notes_path(params: params.to_unsafe_h), turbo_frame: "notes_frame") %>

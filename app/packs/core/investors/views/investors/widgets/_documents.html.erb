@@ -1,0 +1,17 @@
+<% uri = URI(folder_documents_path(entity_id: @investor.entity_id, folder_id: @investor.document_folder.id)) %>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do 
+%>
+
+    <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: "#{uri.to_s}" do %>
+    <% end %>
+
+<% end %>
+
+

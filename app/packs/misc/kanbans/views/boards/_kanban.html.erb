@@ -68,7 +68,7 @@
           >
             <div class="simplebar-content" style="padding: 0px;">
               <div class="task-list-section" id="<%= kanban_board.id %>">
-                <% kanban_board.kanban_columns.each do |kanban_column| %>
+                <% kanban_board.kanban_columns.includes(:kanban_cards).each do |kanban_column| %>
                   <% if @searched_kanban_cards.nil? %>
                     <%= render "kanban_columns/kanban_column", kanban_column: kanban_column  %>
                   <% else %>

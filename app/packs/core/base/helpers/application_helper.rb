@@ -70,22 +70,28 @@ module ApplicationHelper
     { "c" => { idx.to_s => { "a" => { idx.to_s => { "name" => name } }, "p" => predicate, "v" => { idx.to_s => { "value" => value } } } } }
   end
 
-  def ransack_query_params_multiple(name_predicate_value_arr)
+  def ransack_query_params_multiple(name_predicate_value_arr, sort_by: nil, sort_direction: "asc")
     params = { "c" => {} }
-
+  
     name_predicate_value_arr.each do |npv|
       name, predicate, value = npv
       unique_id = SecureRandom.hex(10)
-
+  
       params["c"][unique_id] = {
         "a" => { "0" => { "name" => name } },
         "p" => predicate,
         "v" => { "0" => { "value" => value } }
       }
     end
-
+  
+    # Add sorting if specified
+    if sort_by.present?
+      params["s"] = "#{sort_by} #{sort_direction}"
+    end
+  
     params
   end
+  
 
   def deep_locate(params, key, value)
     result = params.to_unsafe_h.extend(Hashie::Extensions::DeepLocate).deep_locate ->(k, v, _object) { k == key && v.include?(value) }

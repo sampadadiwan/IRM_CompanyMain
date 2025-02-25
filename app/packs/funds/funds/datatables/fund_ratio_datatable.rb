@@ -2,6 +2,7 @@ class FundRatioDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "FundRatio.id", searchable: false },
+      fund_name: { source: "Fund.name", searchable: true, orderable: true },
       owner_name: { source: "", searchable: false, orderable: false },
       owner_type: { source: "FundRatio.owner_type", searchable: true, orderable: true },
       name: { source: "FundRatio.name", searchable: true, orderable: true },
@@ -15,6 +16,7 @@ class FundRatioDatatable < ApplicationDatatable
     records.map do |record|
       {
         id: record.id,
+        fund_name: record.decorate.fund_name,
         owner_name: record.decorate.owner_name,
         owner_type: record.owner_type,
         name: record.name,

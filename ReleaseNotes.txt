@@ -1,3 +1,26 @@
+V9.0.5
+#####################################
+11b87bbeb Used Bulk actions Job for generating AML report, removed its specific… (#676)
+d9d597751 Better kpi imports from KpiReport as the source
+72755cf30 Added MOIC computation for portfolio company
+78abbb250 Changed Kpi report root folder to be below Investor
+402d960be Added better New Note btn for PC dashboard
+3aa7bef40 Added show_funds to fund ratios for PC dashboard
+7f1da929d Added better Portfolio Company Dashboard
+07238e094 Better label for PC KPIs
+618671bf2 Added documents widget to investor dashboard
+deeae2930 Added portfolio company fund ratios to dashboard
+7f71d89f6 Added valuations dashboard widget
+d92d07df4 Ai reports (#740)
+9aa3cac0b Always reply ok to whatsapp webhook (#738)
+e177019e5 Fixed board specs by adding investors (#737)
+
+V9.0.3
+#####################################
+af4d38f2a Fixed CDP tests
+c03ab8ab3 Updated Gems (#736)
+1eb664921 Holding cleanup (#735)
+
 V9.0.1
 #####################################
 b33bb3dc7 Removed unwanted holdings audit tables

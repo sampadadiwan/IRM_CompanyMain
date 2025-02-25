@@ -191,30 +191,40 @@ class FundPortfolioCalcs < FundRatioCalcs
   # rubocop:enable Metrics/MethodLength
   # rubocop:enable Metrics/BlockLength
 
-  def portfolio_company_cost_to_value
-    @portfolio_company_cost_map ||= {}
+  def portfolio_company_metrics
+    @portfolio_company_metrics_map ||= {}
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
       portfolio_company = Investor.find(portfolio_company_id)
-      @fund.portfolio_investments.where(portfolio_company_id:, investment_date: ..@end_date)
 
-      # Get the bought
       bought_amount = 0
       total_fmv = 0
+      total_sold = 0
+
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         api_as_of = api.as_of(@end_date)
         total_fmv += api_as_of.fmv
         bought_amount += api_as_of.bought_amount
-        Rails.logger.debug { "API: #{api.id}, FMV Cents: #{api_as_of.fmv}, Bought Amount Cents: #{api_as_of.bought_amount}" }
+        total_sold += api_as_of.sold_amount
+
+        Rails.logger.debug { "API: #{api.id}, FMV: #{api_as_of.fmv}, Bought: #{api_as_of.bought_amount}, Sold: #{api_as_of.sold_amount}" }
       end
 
-      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV Cents: #{total_fmv}, Bought Amount Cents: #{bought_amount}" }
+      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV: #{total_fmv}, Total Sold: #{total_sold}, Bought Amount: #{bought_amount}" }
 
-      # Store the value to cost ratio
-      @portfolio_company_cost_map[portfolio_company_id] = { name: portfolio_company.investor_name, value_to_cost: total_fmv / bought_amount } if bought_amount.positive?
+      next unless bought_amount.positive?
+
+      value_to_cost = total_fmv / bought_amount.to_f
+      moic = (total_fmv + total_sold) / bought_amount.to_f
+
+      @portfolio_company_metrics_map[portfolio_company_id] = {
+        name: portfolio_company.investor_name,
+        value_to_cost: value_to_cost,
+        moic: moic
+      }
     end
 
-    @portfolio_company_cost_map
+    @portfolio_company_metrics_map
   end
 
   # Compute the XIRR for each API

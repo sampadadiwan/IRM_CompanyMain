@@ -66,10 +66,6 @@ class InvestorKycPolicy < ApplicationPolicy
     toggle_verified? && user.entity.entity_setting.aml_enabled
   end
 
-  def generate_aml_reports?
-    user.entity.entity_setting.aml_enabled && index?
-  end
-
   def assign_kyc_data?
     permissioned_employee?(:investor_kyc_update)
   end

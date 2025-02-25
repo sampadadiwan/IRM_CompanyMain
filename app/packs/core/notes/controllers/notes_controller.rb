@@ -21,6 +21,7 @@ class NotesController < ApplicationController
 
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
     @notes = @notes.where(investor_id: params[:owner_id]) if params[:owner_id].present? && params[:owner_type] == "Investor"
+    @notes = @notes.where(investor_id: params[:investor_id]) if params[:investor_id]
 
     @notes = NoteSearch.perform(@notes, current_user, params)
     @notes = @notes.with_all_rich_text.includes(:user, :investor).page params[:page]
@@ -46,6 +47,7 @@ class NotesController < ApplicationController
   # GET /notes/new
   def new
     @note = Note.new(note_params)
+    @note.investor_id = note_params[:owner_id] if note_params[:owner_type] == "Investor"
     @note.entity_id ||= @note.investor.entity_id
     @note.user_id ||= current_user.id
     @note.on = Time.zone.today

@@ -2,7 +2,7 @@ class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder send_notification validate_docs_with_ai]
-  after_action :verify_authorized, except: %i[index search generate_all_docs generate_aml_reports edit_my_kyc]
+  after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   has_scope :uncalled, type: :boolean
   has_scope :unverified, type: :boolean
@@ -251,17 +251,6 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     @investor_kyc.generate_aml_report(current_user.id)
     redirect_to investor_kyc_url(@investor_kyc), notice: "AML report generation initiated."
-  end
-
-  def generate_aml_reports
-    # Get the kycs for the query
-    @investor_kycs = fetch_rows
-    if Rails.env.test?
-      AmlReportJob.perform_now(nil, current_user.id, @investor_kycs.pluck(:id))
-    else
-      AmlReportJob.perform_later(nil, current_user.id, @investor_kycs.pluck(:id))
-    end
-    redirect_to investor_kycs_url(q: params[:q].to_unsafe_h), notice: "Enqueued AML report generation for #{@investor_kycs.count} KYCs"
   end
 
   # DELETE /investor_kycs/1 or /investor_kycs/1.json

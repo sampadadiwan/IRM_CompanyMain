@@ -3,6 +3,10 @@ class FundRatioDecorator < ApplicationDecorator
     h.link_to object.owner if object.owner
   end
 
+  def fund_name
+    h.link_to object.fund.name, h.fund_path(object.fund)
+  end
+
   def dt_actions
     links = []
     links << h.link_to('Show', h.fund_ratio_path(object), class: "btn btn-outline-primary")

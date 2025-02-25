@@ -19,8 +19,15 @@ class ImportUploadJob < ApplicationJob
       end
 
       import_upload.save
-
-      send_notification("Import of #{import_upload.name} is complete", import_upload.user_id)
+      if import_upload.failed_row_count.positive?
+        msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count} errors" 
+        level = "danger"       
+      else
+        msg = "Import of #{import_upload.name} is complete"
+        level = "success"
+      end
+      Rails.logger.error msg
+      send_notification(msg, import_upload.user_id, level)
     end
   end
 end

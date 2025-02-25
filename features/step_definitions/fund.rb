@@ -1057,7 +1057,7 @@ Then('the capital distributions must have the data in the sheet') do
     cc.income_cents.should == user_data["Income"].to_i * 100
     cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
     cc.distribution_date.should == user_data["Date"]
-    cc.gross_amount_cents.round(0).should == (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents).round(0)
+    cc.gross_amount_cents.round(0).should == (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents - cc.reinvestment_cents).round(0)
     cc.import_upload_id.should == ImportUpload.last.id
   end
 end

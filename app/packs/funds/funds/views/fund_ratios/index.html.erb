@@ -1,2 +1,5 @@
 <%= render "/layouts/filter", associations: [] %>
-<%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>
+
+<%= turbo_frame_tag "fund_ratios_frame", target: "_top" do %>
+    <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>
+<% end %>

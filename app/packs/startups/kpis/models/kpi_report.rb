@@ -68,7 +68,11 @@ class KpiReport < ApplicationRecord
   end
 
   def folder_path
-    "/KPIs/#{name.delete('/')}"
+    if portfolio_company.present?
+      "#{portfolio_company.folder_path}/KPIs/#{name.delete('/')}"
+    else
+      "/KPIs/#{name.delete('/')}"
+    end
   end
 
   def access_rights_changed(access_right)

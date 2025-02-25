@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :portfolio_reports
   resources :excused_investors
   resources :investments
   resources :viewed_bies
