@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("FundUnitSetting")
 
 wb.add_worksheet(name: "FundUnitSetting") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Class/Series", "Management Fee %", "Setup Fee %", "Carry %", "ISIN", "Notes"] + custom_headers)
+  sheet.add_row(["Fund", "Class/Series", "Management Fee %", "Setup Fee %", "Carry %", "Gp Units", "ISIN", "Notes"] + custom_headers)
 
   # Create entries for each item
   @fund_unit_settings.each do |fu|
     custom_field_values = get_custom_values(fu, form_type, custom_field_names)
-    sheet.add_row [fu.fund.name, fu.name, fu.management_fee, fu.setup_fee, fu.carry, fu.isin, fu.notes] + custom_field_values
+    sheet.add_row [fu.fund.name, fu.name, fu.management_fee, fu.setup_fee, fu.carry, fu.gp_units, fu.isin, fu.notes] + custom_field_values
   end
 end
