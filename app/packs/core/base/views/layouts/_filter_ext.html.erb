@@ -1,16 +1,16 @@
 <!-- This partial is used in /layouts/filter, to include funds if required. -->
 
-<% 
+<%
 
-    fund_related_conts = %w[capital_commitments capital_remittances capital_distributions account_entries fund_units portfolio_investments aggregate_portfolio_investments fund_ratios].freeze 
+    fund_related_conts = %w[capital_commitments capital_remittances capital_distributions account_entries fund_units portfolio_investments aggregate_portfolio_investments fund_ratios capital_remittance_payments capital_distribution_payments].freeze
 
     secondary_related_conts = %w[offer interests allocations].freeze
 
-    search_wo_fund = params[:q].present? && params[:fund_id].blank? # The fund drop down is deleted 
+    search_wo_fund = params[:q].present? && params[:fund_id].blank? # The fund drop down is deleted
 %>
 
 
-<% if fund_related_conts.include?(params[:controller]) %>                          
+<% if fund_related_conts.include?(params[:controller]) %>
 
 <div class="row form-group">
     <input class="form-control col" type="text" value="Fund Name" disabled>
@@ -26,7 +26,7 @@
 <% end %>
 
 
-<% if secondary_related_conts.include?(params[:controller]) %>                          
+<% if secondary_related_conts.include?(params[:controller]) %>
 
 <div class="row form-group">
     <input class="form-control col" type="text" value="Sale Name" disabled>

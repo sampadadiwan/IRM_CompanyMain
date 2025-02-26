@@ -3,7 +3,9 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
-    @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:entity, :fund, :capital_distribution, :capital_commitment, :investor_kyc)
+    @q = CapitalDistributionPayment.ransack(params[:q])
+
+    @capital_distribution_payments = policy_scope(@q.result).includes(:entity, :fund, :capital_distribution, :capital_commitment, :investor_kyc)
 
     @capital_distribution_payments = @capital_distribution_payments.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
@@ -15,7 +17,10 @@ class CapitalDistributionPaymentsController < ApplicationController
 
     @capital_distribution_payments = @capital_distribution_payments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    @capital_distribution_payments = @capital_distribution_payments.page(params[:page]) if params[:all].blank?
+    if params[:all].blank?
+      per_page = params[:per_page]&.to_i || 10
+      @capital_distribution_payments = @capital_distribution_payments.page(params[:page]).per(per_page)
+    end
 
     respond_to do |format|
       format.html

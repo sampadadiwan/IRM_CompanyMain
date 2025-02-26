@@ -3,11 +3,26 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithExchangeRate
   include Trackable.new
   include CapitalDistributionFees
+  include RansackerAmounts.new(fields: %w[income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable])
 
   include WithFolder
 
   STANDARD_COLUMN_NAMES = ["Stakeholder", "Folio No", "Gross Payable", "Net Payable", "Payment Date", "Completed", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name folio_id gross_payable net_payable payment_date completed dt_actions].freeze
+
+  STANDARD_COLUMNS = { "Stakeholder" => "investor_name",
+                       "Folio No" => "folio_id",
+                       "Gross Payable" => "gross_payable",
+                       "Net Payable" => "net_payable",
+                       "Payment Date" => "payment_date",
+                       "Completed" => "completed" }.freeze
+
+  INVESTOR_STANDARD_COLUMNS = { "Distribution Name" => "distribution_name",
+                                "Folio No" => "folio_id",
+                                "Gross Payable" => "gross_payable",
+                                "Net Payable" => "net_payable",
+                                "Payment Date" => "payment_date",
+                                "Completed" => "completed" }.freeze
 
   INVESTOR_COLUMN_NAMES = ["Distribution Name"] + STANDARD_COLUMN_NAMES - ["Stakeholder"]
   INVESTOR_COLUMN_FIELDS = ["distribution_name"] + STANDARD_COLUMN_FIELDS - %w[investor_name]
@@ -144,5 +159,13 @@ class CapitalDistributionPayment < ApplicationRecord
 
   def tracking_exchange_rate_date
     payment_date
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at updated_at folio_id payment_date investor_name completed income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable units_quantity percentage].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund capital_distribution investor capital_commitment]
   end
 end

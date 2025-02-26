@@ -12,12 +12,14 @@ class Report < ApplicationRecord
     { 'Account Entries': "/account_entries?filter=true",
       Commitments: "/capital_commitments?filter=true",
       Remittances: "/capital_remittances?filter=true",
+      'Remittance Payments': "/capital_remittance_payments?filter=true",
       Kpis: "/kpis?filter=true",
       'Fund Units': "/fund_units?filter=true",
       KYCs: "/investor_kycs?filter=true",
       'Portfolio Investments': "/portfolio_investments?filter=true",
       'Aggregate Portfolio Investments': "/aggregate_portfolio_investments?filter=true",
-      Distributions: "/capital_distributions?filter=true" }
+      Distributions: "/capital_distributions?filter=true",
+      'Distribution Payments': "/capital_distribution_payments?filter=true" }
   end
 
   def add_report_id_to_url

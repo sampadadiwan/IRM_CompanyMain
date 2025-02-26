@@ -2,6 +2,7 @@ class CommitmentAdjustment < ApplicationRecord
   include WithExchangeRate
   include ForInvestor
   include Trackable.new(associated_with: :owner)
+  include RansackerAmounts.new(fields: %w[amount])
 
   ADJUSTMENT_TYPES = ["Top Up", "Arrear", "Exchange Rate"].freeze
   ADJUST_COMMITMENT_TYPES = ["Top Up", "Exchange Rate"].freeze
@@ -125,5 +126,13 @@ class CommitmentAdjustment < ApplicationRecord
 
   def tracking_exchange_rate_date
     as_of
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[amount as_of adjustment_type created_at updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[capital_commitment fund]
   end
 end

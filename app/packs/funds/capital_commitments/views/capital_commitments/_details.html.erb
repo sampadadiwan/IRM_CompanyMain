@@ -11,7 +11,7 @@
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#distributions-tab"
           data-action="click->tabdetails#loadData">Distributions</a>
 
-    
+
     <% if capital_commitment.entity.permissions.enable_units? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
             data-action="click->tabdetails#loadData">Units</a>
@@ -27,17 +27,17 @@
     <% end %>
 
     <% if policy(capital_commitment).update? || capital_commitment.fund.show_fund_ratios %>
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"     
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
             data-action="click->tabdetails#loadData">Ratios</a>
     <% end %>
 
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
       Tasks
     </a>
     <% if capital_commitment.entity.permissions.enable_kycs? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"
               data-action="click->tabdetails#loadData">
         All KYCs
       </a>
@@ -48,7 +48,7 @@
     <div id="docs-tab" class="tab-pane fade in show active" data-controller="datatable" data-datatable-responsive-details-value=false>
       <div id="docs" class="associated_entity">
         <% documents = policy(capital_commitment).update? ? capital_commitment.documents : capital_commitment.docs_for_investor %>
-        <%= render "/documents/index", documents:, 
+        <%= render "/documents/index", documents:,
                 owner: capital_commitment, entity: capital_commitment.entity %>
       </div>
     </div>
@@ -59,15 +59,15 @@
           <div id="remittances" class="associated_entity">
             <%= render "/capital_remittances/index", capital_commitment_id: capital_commitment.id,
                 lazy_load_data: true, data_source: capital_remittances_path(capital_commitment_id: capital_commitment.id, all: true, status: "", verified: "", for_commitment: true) %>
-          </div>     
+          </div>
     </div>
     <% end %>
 
     <div id="distributions-tab" class="tab-pane fade in">
           <div id="distributions" class="associated_entity">
-            <%= render "/capital_distribution_payments/index", 
-                lazy_load_data: true, data_source: capital_distribution_payments_path(capital_commitment_id: capital_commitment.id, all: true) %>
-          </div>     
+            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_commitment_id: capital_commitment.id) do %>
+            <% end %>
+          </div>
     </div>
 
 
@@ -79,58 +79,58 @@
       </div>
     </div>
 
-    
+
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">
         <% investor = Investor.for(current_user, capital_commitment.entity).first %>
-        <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id, 
+        <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id,
                                 entity_id: capital_commitment.entity_id,
-                                owner_id: capital_commitment.id, owner_type: "CapitalCommitment"), 
-                                class: "load_data_link", 
+                                owner_id: capital_commitment.id, owner_type: "CapitalCommitment"),
+                                class: "load_data_link",
                                 data: { turbo_frame: 'task_list' } do %>
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "task_list", target: "_top" do %>
         <% end %>
-      </div>     
+      </div>
     </div>
 
 
     <div id="fund-units-tab" class="tab-pane fade">
       <div id="fund_units" class="associated_entity">
-        <%= link_to fund_units_path(capital_commitment_id: capital_commitment.id), 
-                                class: "load_data_link", 
+        <%= link_to fund_units_path(capital_commitment_id: capital_commitment.id),
+                                class: "load_data_link",
                                 data: { turbo_frame: 'fund_units_list' } do %>
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
         <% end %>
-      </div>     
+      </div>
     </div>
 
     <div id="account-entries-tab" class="tab-pane fade">
       <div id="account_entries" class="associated_entity">
-        <% 
-          params[:capital_commitment_id] = capital_commitment.id 
-          params[:fund_id] = capital_commitment.fund_id 
+        <%
+          params[:capital_commitment_id] = capital_commitment.id
+          params[:fund_id] = capital_commitment.fund_id
         %>
-        <%= render "/account_entries/index", 
+        <%= render "/account_entries/index",
                 lazy_load_data: true, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
-      </div>     
+      </div>
     </div>
 
 
 
     <div id="adjustments-tab" class="tab-pane fade">
       <div id="commitment_adjustments" class="associated_entity">
-        <%= link_to commitment_adjustments_path(capital_commitment_id: capital_commitment.id), 
-                                class: "load_data_link", 
+        <%= link_to commitment_adjustments_path(capital_commitment_id: capital_commitment.id),
+                                class: "load_data_link",
                                 data: { turbo_frame: 'commitment_adjustments_list' } do %>
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "commitment_adjustments_list", target: "_top" do %>
         <% end %>
-      </div>     
+      </div>
     </div>
 
     <div id="fund-ratios-tab" class="tab-pane fade in">

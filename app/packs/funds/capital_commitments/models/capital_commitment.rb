@@ -295,7 +295,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[fund investor investor_kyc]
+    %w[fund investor investor_kyc commitment_adjustments]
   end
 
   def cc

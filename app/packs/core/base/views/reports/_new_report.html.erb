@@ -7,7 +7,9 @@
     <div class="col">
         <%= form_tag(reports_path, method: :get, data: { action: "change->reports#onChange" }) do %>
             <div class="row">
-                <%= select_tag :url, options_for_select(Report.reports_for, include_blank: "New Report"), class: "form-control" %>
+                <%= select_tag :url, options_for_select(Report.reports_for),
+                prompt: "New Report",
+                class: "form-control" %>
             </div>
         <% end %>
     </div>
@@ -15,7 +17,9 @@
     <div class="col">
         <%= form_tag(reports_path(card: true), method: :get, data: { action: "change->reports#filter" }) do %>
         <div class="row">
-            <%= select_tag :category, options_for_select([["Filter", ""]] + Report.reports_for.keys.map { |key| [key, key] }, params[:category]), class: "form-control" %>
+            <%= select_tag :category, options_for_select(Report.reports_for.keys.map { |key| [key, key] }, params[:category]),
+            prompt: "Filter",
+            class: "form-control" %>
         </div>
         <% end %>
     </div>

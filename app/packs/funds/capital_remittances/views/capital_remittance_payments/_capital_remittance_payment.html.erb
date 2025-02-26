@@ -3,7 +3,10 @@
     <%= link_to capital_remittance_payment.fund.name, capital_remittance_payment.fund %>
   </td>
   <td>
-    <%= link_to capital_remittance_payment.capital_remittance_id, capital_remittance_payment.capital_remittance %>
+    <%= link_to capital_remittance_payment.investor.investor_name, capital_remittance_payment.investor %>
+  </td>
+  <td>
+    <%= link_to capital_remittance_payment.capital_commitment.folio_id, capital_remittance_payment.capital_commitment %>
   </td>
   <td>
     <%= money_to_currency capital_remittance_payment.amount, params %>

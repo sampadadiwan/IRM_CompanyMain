@@ -1,9 +1,9 @@
 
-<%= render "/layouts/filter", associations: [:investor_kyc, :investor], hidden_fields: {card: params[:card]}, include_template: "/capital_commitments/group_filter" %>
+<%= render "/layouts/filter", associations: [:investor_kyc, :investor, :commitment_adjustments], hidden_fields: {card: params[:card]}, include_template: "/capital_commitments/group_filter" %>
 
 <%= render ReportingComponent.new do %>
 
-    <!-- If we provide the path /capital_commitments?my_commitments=true, 
+    <!-- If we provide the path /capital_commitments?my_commitments=true,
         then we see if we can simply show the commitment -->
     <% if params[:my_commitments].present? && @capital_commitments.length == 1 %>
         <% controller.redirect_to @capital_commitments.first %>

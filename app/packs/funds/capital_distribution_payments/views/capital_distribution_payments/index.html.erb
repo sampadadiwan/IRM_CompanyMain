@@ -1,3 +1,7 @@
+<%= render "/layouts/filter", associations: [:capital_distribution, :investor, :capital_commitment] %>
 
-<%= render "/capital_distribution_payments/index", 
+
+<%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
+        <%= render "/capital_distribution_payments/index",
         capital_distribution_payments: @capital_distribution_payments, capital_distribution: nil, lazy_load_data: false %>
+<%end%>

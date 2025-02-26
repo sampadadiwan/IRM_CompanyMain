@@ -3,6 +3,7 @@ class CapitalRemittancePayment < ApplicationRecord
   include WithExchangeRate
   include ForInvestor
   include Trackable.new
+  include RansackerAmounts.new(fields: %w[amount folio_amount tracking_amount])
 
   belongs_to :fund
   belongs_to :capital_remittance
@@ -86,5 +87,13 @@ class CapitalRemittancePayment < ApplicationRecord
   # This is the date used to find the exchange rate for the tracking currency
   def tracking_exchange_rate_date
     payment_date
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at updated_at payment_date capital_remittance_id payment_notification_sent reference_no amount folio_amount tracking_amount].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund capital_remittance investor]
   end
 end
