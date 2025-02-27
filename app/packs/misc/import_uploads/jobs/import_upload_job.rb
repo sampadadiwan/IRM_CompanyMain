@@ -20,8 +20,8 @@ class ImportUploadJob < ApplicationJob
 
       import_upload.save
       if import_upload.failed_row_count.positive?
-        msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count} errors" 
-        level = "danger"       
+        msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count} errors"
+        level = "danger"
       else
         msg = "Import of #{import_upload.name} is complete"
         level = "success"

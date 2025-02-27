@@ -1,6 +1,6 @@
 class ImportPortfolioInvestment < ImportUtil
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)",
-                      "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes", "Folio No"].freeze
+                      "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -22,12 +22,13 @@ class ImportPortfolioInvestment < ImportUtil
 
     raise "Portfolio Company not found" if portfolio_company.nil?
 
-    investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, investment_domicile:, entity_id: import_upload.entity_id, currency: user_data["Currency"])
+    investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, entity_id: import_upload.entity_id, currency: user_data["Currency"])
 
     # add the sebi reporting fields in invesment instrument in json_fields (merge with any existing)
     investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::SEBI_REPORTING_FIELDS.stringify_keys.keys.map(&:titleize))&.transform_keys { |key| key.downcase.tr(' ', '_') })
 
     if investment_instrument.valid?
+      investment_instrument.investment_domicile ||= investment_domicile
       investment_instrument.save!
     else
       raise "Investment Instrument is not valid #{investment_instrument.errors.full_messages.join(',')}"
@@ -72,7 +73,6 @@ class ImportPortfolioInvestment < ImportUtil
     instrument = user_data["Instrument"]
     investment_domicile = user_data["Investment Domicile"]
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
-    user_data["Folio No"].presence
     capital_commitment = nil
 
     [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, capital_commitment]

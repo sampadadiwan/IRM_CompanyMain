@@ -41,7 +41,7 @@ class InvestmentInstrument < ApplicationRecord
   has_many :valuations, dependent: :destroy
 
   validates :name, :currency, presence: true
-  validates :name, uniqueness: { scope: :portfolio_company_id }
+  validates :name, uniqueness: { scope: %i[portfolio_company_id currency] }
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
 
