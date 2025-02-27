@@ -1,1 +1,2 @@
-<%= turbo_stream.replace("new_kanban_card", partial: "kanban_cards/blank" ) %>
+<% frame ||= "board#{@kanban_card.kanban_board_id}_new_kanban_card" %>
+<%= turbo_stream.replace(frame, partial: "kanban_cards/blank", locals: {frame: frame} ) %>

@@ -245,3 +245,17 @@ Scenario Outline: Deal preview
   Examples:
   	|user	      |entity               |deal                             |msg	|edit |
   	|  	        |entity_type=Company  |name=Series G;amount_cents=10000 |Deal was successfully created|card_view_attrs="Pre Money Valuation, Total Amount, Tier, Status, Deal Lead"|
+
+
+Scenario: Add cards to Generic Kanban Board
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    When I have Boards Permissions
+    And I am at the Boards Page
+    When I create a new board "<board>"
+    Then I should see the "<msg>"
+    And I create two new cards and save
+
+Examples:
+|user	      |entity               |deal                             |msg	|
+|  	        |entity_type=Company  |name=Amazing Board|Board was successfully created|

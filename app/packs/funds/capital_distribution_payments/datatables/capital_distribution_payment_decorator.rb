@@ -11,6 +11,10 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
     h.money_to_currency object.income
   end
 
+  def completed
+    display_boolean(object.completed)
+  end
+
   # Just an example of a complex method you can add to you decorator
   # To render it in a datatable just add a column 'dt_actions' in
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions
