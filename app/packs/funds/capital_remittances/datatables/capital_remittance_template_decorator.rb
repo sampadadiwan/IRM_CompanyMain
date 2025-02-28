@@ -445,7 +445,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def undrawn_comm_incl_current_notice_total
-    undrawn_comm_prior_notice_total + undrawn_comm_current_notice_total
+    undrawn_comm_current_notice_total
   end
 
   def undrawn_comm_incl_current_notice_investor
