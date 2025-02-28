@@ -2,9 +2,9 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   include CurrencyHelper
   attr_reader :gp_commitments, :lp_commitments
 
-  def initialize(object, end_date = nil)
+  def initialize(object)
     super
-    @end_date = end_date
+    @end_date = object.json_fields['end_date']
     @currency = object.fund.currency
   end
 
