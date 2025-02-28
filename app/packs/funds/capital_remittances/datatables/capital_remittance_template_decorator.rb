@@ -349,7 +349,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     init_prior_remittances_investor
 
     # only one of these will be present
-    investor_committment_amt = (@prior_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || (Money.new(0, @currency) + @prior_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount)) || Money.new(0, @currency)
+    investor_committment_amt = @prior_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
+    investor_committment_amt += @prior_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
 
     investor_committment_amt = object.capital_commitment.committed_amount if investor_committment_amt.zero?
 
@@ -417,7 +418,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     init_current_calls_remittances
     init_prior_remittances
 
-    investor_committment_amt = (@current_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)) + (@current_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency))
+    investor_committment_amt = @current_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
+    investor_committment_amt += @current_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
 
     investor_committment_amt = object.capital_commitment.committed_amount if investor_committment_amt.zero?
 
