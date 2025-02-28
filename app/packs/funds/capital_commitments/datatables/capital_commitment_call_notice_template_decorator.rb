@@ -4,7 +4,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
   def initialize(object)
     super
-    @end_date = object.json_fields['end_date']
+    @curr_date = object.json_fields['end_date']
+    @end_date = (object.json_fields['end_date'] - 1.day).end_of_day
     @currency = object.fund.currency
   end
 
@@ -131,14 +132,34 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     percentage(committed_reinvest_investor, committed_cash_investor)
   end
 
-  def drawdown_cash_lp
+  def init_lp_gp_remittances
+    return unless @lp_remittances.nil? || @gp_remittances.nil?
+
     init_lp_gp_commitments
-    @drawdown_cash_lp ||= money_sum(@lp_commitments, :call_amount_cents)
+    lp_remittance_ids = []
+    gp_remittance_ids = []
+
+    @lp_commitments.each do |comm|
+      lp_remittance_ids += comm.capital_remittances.where(remittance_date: ..@end_date).pluck(:id)
+    end
+
+    @gp_commitments.each do |comm|
+      gp_remittance_ids += comm.capital_remittances.where(remittance_date: ..@end_date).pluck(:id)
+    end
+
+    @lp_remittances = object.fund.capital_remittances.where(id: lp_remittance_ids)
+    @gp_remittances = object.fund.capital_remittances.where(id: gp_remittance_ids)
+  end
+
+  def drawdown_cash_lp
+    init_lp_gp_remittances
+    # go to remittances and sum call amount
+    @drawdown_cash_lp ||= money_sum(@lp_remittances, :call_amount_cents)
   end
 
   def drawdown_cash_gp
-    init_lp_gp_commitments
-    @drawdown_cash_gp ||= money_sum(@gp_commitments, :call_amount_cents)
+    init_lp_gp_remittances
+    @drawdown_cash_gp ||= money_sum(@gp_remittances, :call_amount_cents)
   end
 
   def drawdown_cash_total
@@ -146,7 +167,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def drawdown_cash_investor
-    object.call_amount
+    @drawdown_cash_investor ||= object.capital_remittances.where(remittance_date: ..@end_date).sum(:call_amount_cents)
   end
 
   def drawdown_cash_investor_percent
@@ -337,12 +358,12 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
       init_lp_gp_commitments
       @lp_commitments.each do |comm|
-        ids = comm.capital_distribution_payments.where(payment_date: @end_date).pluck(:id)
+        ids = comm.capital_distribution_payments.where(payment_date: @curr_date).pluck(:id)
         current_dist_payments_lp_ids += ids
       end
 
       @gp_commitments.each do |comm|
-        ids = comm.capital_distribution_payments.where(payment_date: @end_date).pluck(:id)
+        ids = comm.capital_distribution_payments.where(payment_date: @curr_date).pluck(:id)
         current_dist_payments_gp_ids += ids
       end
 
@@ -402,7 +423,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def agg_dist_current_notice_investor
-    @agg_dist_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @end_date), :gross_payable_cents)
+    @agg_dist_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @curr_date), :gross_payable_cents)
   end
 
   def agg_dist_current_notice_investor_percent
@@ -477,7 +498,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def agg_reinvest_current_notice_investor
-    @agg_reinvest_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @end_date), :reinvestment_with_fees_cents)
+    @agg_reinvest_current_notice_investor ||= money_sum(object.capital_distribution_payments.where(payment_date: @curr_date), :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_current_notice_investor_percent

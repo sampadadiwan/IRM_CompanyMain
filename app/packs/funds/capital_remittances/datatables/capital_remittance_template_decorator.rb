@@ -3,7 +3,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
   def initialize(object)
     super
-    @end_date = object.remittance_date
+    @curr_date = object.remittance_date
+    @end_date = (object.remittance_date - 1.day).end_of_day
     @currency = object.fund.currency
   end
 
@@ -76,7 +77,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
       current_lp_remittances_ids = []
       current_gp_remittances_ids = []
 
-      object.capital_call.capital_remittances.where(remittance_date: @end_date).find_each do |cr|
+      object.capital_call.capital_remittances.where(remittance_date: @curr_date).find_each do |cr|
         if cr.capital_commitment.fund_unit_setting&.gp_units
           current_gp_remittances_ids << cr.id
         else
