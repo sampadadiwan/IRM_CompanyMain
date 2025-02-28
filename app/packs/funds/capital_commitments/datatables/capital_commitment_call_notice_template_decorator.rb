@@ -2,9 +2,9 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   include CurrencyHelper
   attr_reader :gp_commitments, :lp_commitments
 
-  def initialize(object)
+  def initialize(object, end_date = nil)
     super
-    @end_date = Time.zone.now.end_of_day
+    @end_date = end_date
     @currency = object.fund.currency
   end
 
@@ -368,8 +368,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     agg_dist_prior_notice_lp + agg_dist_prior_notice_gp
   end
 
+  ## TODO: SUMMING UP GROSS PAYABLE IS NOT CORRECT
+
   def agg_dist_prior_notice_investor
     return @agg_dist_prior_notice_investor if @agg_dist_prior_notice_investor
+
     init_prior_distribution_payments
 
     dist_prior_notice_investor_lp = @prior_dist_payments_lp.where(folio_id: object.folio_id)
@@ -444,6 +447,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
   def agg_reinvest_prior_current_notice_investor
     return @agg_reinvest_prior_current_notice_investor if @agg_reinvest_prior_current_notice_investor
+
     init_prior_distribution_payments
 
     dist_prior_notice_investor_lp = @prior_dist_payments_lp.where(folio_id: object.folio_id)

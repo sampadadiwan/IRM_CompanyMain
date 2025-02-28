@@ -3,7 +3,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
   def initialize(object)
     super
-    @end_date = Time.zone.now.end_of_day
+    @end_date = object.remittance_date
     @currency = object.fund.currency
   end
 
@@ -59,11 +59,11 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     @prior_remittances_investor = @prior_lp_remittances.where(capital_commitment_id: object.capital_commitment_id).or(@prior_gp_remittances.where(capital_commitment_id: object.capital_commitment_id)) if @prior_remittances_investor.nil?
   end
 
-
   def cash_prior_notice_investor
     return @cash_prior_notice_investor if @cash_prior_notice_investor
+
     init_prior_remittances_investor
-    @cash_prior_notice_investor ||= money_sum(@prior_remittances_investor, :collected_amount_cents)
+    @cash_prior_notice_investor ||= money_sum(@prior_remittances_investor, :computed_amount_cents)
   end
 
   def cash_prior_notice_investor_percent
@@ -147,6 +147,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
   def fees_prior_notice_investor
     return @fees_prior_notice_investor if @fees_prior_notice_investor
+
     init_prior_remittances
     @fees_prior_notice_investor ||= money_sum(@prior_remittances_investor, :capital_fee_cents) + money_sum(@prior_remittances_investor, :other_fee_cents)
   end
@@ -197,13 +198,11 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def agg_drawdown_prior_notice_lp
-    init_current_remittances
-    @agg_drawdown_prior_notice_lp ||= money_sum(@current_lp_remittances, :call_amount_cents)
+    cash_prior_notice_lp + fees_prior_notice_lp
   end
 
   def agg_drawdown_prior_notice_gp
-    init_current_remittances
-    @agg_drawdown_prior_notice_gp ||= money_sum(@current_gp_remittances, :call_amount_cents)
+    cash_prior_notice_gp + fees_prior_notice_gp
   end
 
   def agg_drawdown_prior_notice_total
@@ -211,8 +210,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def agg_drawdown_prior_notice_investor
-    init_prior_remittances_investor
-    @agg_drawdown_prior_notice_investor ||= money_sum(@prior_remittances_investor, :call_amount_cents)
+    cash_prior_notice_investor + fees_prior_notice_investor
   end
 
   def agg_drawdown_prior_notice_investor_percent
@@ -220,13 +218,11 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def agg_drawdown_current_notice_lp
-    init_current_remittances
-    @agg_drawdown_current_notice_lp ||= money_sum(@current_lp_remittances, :call_amount_cents)
+    cash_current_notice_lp + fees_current_notice_lp
   end
 
   def agg_drawdown_current_notice_gp
-    init_current_remittances
-    @agg_drawdown_current_notice_gp ||= money_sum(@current_gp_remittances, :call_amount_cents)
+    cash_current_notice_gp + fees_current_notice_gp
   end
 
   def agg_drawdown_current_notice_total
@@ -239,8 +235,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def agg_drawdown_current_notice_investor
-    init_current_remittances_investor
-    @agg_drawdown_current_notice_investor ||= money_sum(@current_remittances_investor, :call_amount_cents)
+    cash_current_notice_investor + fees_current_notice_investor
   end
 
   def agg_drawdown_current_notice_investor_percent
@@ -316,15 +311,6 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
           end
         end
       end
-
-
-      # object.capital_commitments.where(commitment_date: @end_date).find_each do |cc|
-      #   if cc.fund_unit_setting&.gp_units
-      #     current_calls_gp_committments_ids << cc.id
-      #   else
-      #     current_calls_lp_committments_ids << cc.id
-      #   end
-      # end
 
       @current_calls_lp_committments = object.fund.capital_commitments.where(id: current_calls_lp_committments_ids).order(:commitment_date)
       @current_calls_gp_committments = object.fund.capital_commitments.where(id: current_calls_gp_committments_ids).order(:commitment_date)
