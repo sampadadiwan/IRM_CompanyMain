@@ -33,6 +33,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def percentage(part, total)
+    part = part.cents if part.respond_to?(:cents)
+    total = total.cents if total.respond_to?(:cents)
     total.zero? ? 0 : (part / total) * 100
   end
 
