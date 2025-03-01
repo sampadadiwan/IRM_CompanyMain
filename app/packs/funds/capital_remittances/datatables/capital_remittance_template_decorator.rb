@@ -404,7 +404,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     investor_committment_amt = object.committed_amount
 
-    @undrawn_comm_current_notice_investor ||= investor_committment_amt - agg_drawdown_current_notice_investor
+    @undrawn_comm_current_notice_investor ||= investor_committment_amt - agg_drawdown_incl_current_notice_investor
   end
 
   def undrawn_comm_current_notice_investor_percent
