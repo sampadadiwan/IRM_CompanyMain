@@ -377,7 +377,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_current_calls_committments_and_remittances
 
-    current_lp_committment_amt = money_sum(@current_calls_lp_remittances, :committed_amount_cents)
+    current_lp_committment_amt = money_sum(@current_calls_lp_remittances.where(capital_call_id: object.capital_call_id), :committed_amount_cents)
     current_lp_committment_amt = object.committed_amount if current_lp_committment_amt.zero?
 
     @undrawn_comm_current_notice_lp = current_lp_committment_amt - agg_drawdown_current_notice_lp
@@ -388,7 +388,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_current_calls_committments_and_remittances
 
-    current_gp_committment_amt = money_sum(@current_calls_gp_remittances, :committed_amount_cents)
+    current_gp_committment_amt = money_sum(@current_calls_gp_remittances.where(capital_call_id: object.capital_call_id), :committed_amount_cents)
     current_gp_committment_amt = object.committed_amount if current_gp_committment_amt.zero?
 
     # till_current_gp_remittances_call_amt_sum = money_sum(@prior_calls_gp_remittances, :call_amount_cents) + money_sum(@current_calls_gp_remittances, :call_amount_cents)
