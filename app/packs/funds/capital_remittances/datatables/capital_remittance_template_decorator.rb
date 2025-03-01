@@ -265,35 +265,33 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
     percentage(agg_drawdown_incl_current_notice_investor, agg_drawdown_incl_current_notice_total)
   end
 
-  def init_prior_calls_committments
-    if @prior_calls_lp_committments.nil? || @prior_calls_gp_committments.nil?
+  def init_prior_calls_committments_and_remittances
+    if @prior_calls_lp_committments.nil? || @prior_calls_gp_committments.nil? || @prior_calls_lp_remittances.nil? || @prior_calls_gp_remittances.nil?
 
       prior_calls_lp_committments_ids = []
       prior_calls_gp_committments_ids = []
 
+      prior_calls_gp_remittances_ids = []
+      prior_calls_lp_remittances_ids = []
+
       capital_calls = object.fund.capital_calls.where(call_date: ..@end_date)
       capital_calls.each do |call|
-        call.capital_remittances.includes(:capital_commitment).find_each do |cr|
-          if cr.capital_commitment.commitment_date < @end_date
-            if cr.capital_commitment.fund_unit_setting&.gp_units
-              prior_calls_gp_committments_ids << cr.capital_commitment.id
-            else
-              prior_calls_lp_committments_ids << cr.capital_commitment.id
-            end
+        call.capital_remittances.includes(:capital_commitment).where(remittance_date: ..@end_date).find_each do |cr|
+          if cr.capital_commitment.fund_unit_setting&.gp_units
+            prior_calls_gp_committments_ids << cr.capital_commitment_id
+            prior_calls_gp_remittances_ids << cr.id
+          else
+            prior_calls_lp_committments_ids << cr.capital_commitment_id
+            prior_calls_lp_remittances_ids << cr.id
           end
         end
       end
-      #   call.capital_commitments.where(commitment_date: ..@end_date).find_each do |cc|
-      #     if cc.fund_unit_setting&.gp_units
-      #       prior_calls_gp_committments_ids << cc.id
-      #     else
-      #       prior_calls_lp_committments_ids << cc.id
-      #     end
-      #   end
-      # end
 
       @prior_calls_lp_committments = object.fund.capital_commitments.where(id: prior_calls_lp_committments_ids).order(:commitment_date)
       @prior_calls_gp_committments = object.fund.capital_commitments.where(id: prior_calls_gp_committments_ids).order(:commitment_date)
+
+      @prior_calls_lp_remittances = object.fund.capital_remittances.where(id: prior_calls_lp_remittances_ids)
+      @prior_calls_gp_remittances = object.fund.capital_remittances.where(id: prior_calls_gp_remittances_ids)
     end
   end
 
@@ -306,10 +304,10 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
       current_calls_lp_remittances_ids = []
       current_calls_gp_remittances_ids = []
 
-      call = object.capital_call
+      calls = object.fund.capital_calls.where(call_date: ..@curr_date)
 
-      call.capital_remittances.includes(:capital_commitment).find_each do |cr|
-        if cr.capital_commitment.commitment_date <= @curr_date
+      calls.each do |call|
+        call.capital_remittances.includes(:capital_commitment).where(remittance_date: ..@curr_date).find_each do |cr|
           if cr.capital_commitment.fund_unit_setting&.gp_units
             current_calls_gp_committments_ids << cr.capital_commitment_id
             current_calls_gp_remittances_ids << cr.id
@@ -331,20 +329,18 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   def undrawn_comm_prior_notice_lp
     return @undrawn_comm_prior_notice_lp if @undrawn_comm_prior_notice_lp
 
-    init_prior_calls_committments
-    init_prior_remittances
-    prior_lp_committment_amt = @prior_calls_lp_committments.order(:commitment_date).last&.committed_amount || object.capital_commitment.committed_amount
-    prior_lp_remittances_call_amt_sum = money_sum(@prior_lp_remittances, :call_amount_cents)
+    init_prior_calls_committments_and_remittances
+    prior_lp_committment_amt = money_sum(@prior_calls_lp_remittances, :committed_amount_cents)
+    prior_lp_remittances_call_amt_sum = money_sum(@prior_calls_lp_remittances, :call_amount_cents)
     @undrawn_comm_prior_notice_lp = prior_lp_committment_amt - prior_lp_remittances_call_amt_sum
   end
 
   def undrawn_comm_prior_notice_gp
     return @undrawn_comm_prior_notice_gp if @undrawn_comm_prior_notice_gp
 
-    init_prior_calls_committments
-    init_prior_remittances
-    prior_gp_committment_amt = @prior_calls_gp_committments.order(:commitment_date).last&.committed_amount || object.capital_commitment.committed_amount
-    prior_gp_remittances_call_amt_sum = money_sum(@prior_gp_remittances, :call_amount_cents)
+    init_prior_calls_committments_and_remittances
+    prior_gp_committment_amt = money_sum(@prior_calls_gp_remittances, :committed_amount_cents)
+    prior_gp_remittances_call_amt_sum = money_sum(@prior_calls_gp_remittances, :call_amount_cents)
     @undrawn_comm_prior_notice_gp = prior_gp_committment_amt - prior_gp_remittances_call_amt_sum
   end
 
@@ -355,17 +351,9 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   def undrawn_comm_prior_notice_investor
     return @undrawn_comm_prior_notice_investor if @undrawn_comm_prior_notice_investor
 
-    init_prior_calls_committments
-    init_prior_remittances_investor
+    investor_committment_amt = object.committed_amount
 
-    # only one of these will be present
-    investor_committment_amt = @prior_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
-    investor_committment_amt += @prior_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
-
-    investor_committment_amt = object.capital_commitment.committed_amount if investor_committment_amt.zero?
-
-    investor_remittances_call_amt_sum = money_sum(@prior_lp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents) + money_sum(@prior_gp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents)
-    @undrawn_comm_prior_notice_investor ||= investor_committment_amt - investor_remittances_call_amt_sum
+    @undrawn_comm_prior_notice_investor ||= investor_committment_amt - agg_drawdown_prior_notice_investor
   end
 
   def undrawn_comm_prior_notice_investor_percent
@@ -377,10 +365,9 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_current_calls_committments_and_remittances
 
-    current_lp_committment_amt = @current_calls_lp_committments.order(:commitment_date).last&.committed_amount || object.capital_commitment.committed_amount
-    # take all remittances of the all calls before end date including the current call
-    till_current_lp_remittances_call_amt_sum = money_sum(@prior_lp_remittances, :call_amount_cents) + money_sum(@current_calls_lp_remittances, :call_amount_cents)
-    @undrawn_comm_current_notice_lp = current_lp_committment_amt - till_current_lp_remittances_call_amt_sum
+    current_lp_committment_amt = money_sum(@current_calls_lp_remittances, :committed_amount_cents)
+
+    @undrawn_comm_current_notice_lp = current_lp_committment_amt - agg_drawdown_current_notice_lp
   end
 
   def undrawn_comm_current_notice_gp
@@ -388,9 +375,9 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_current_calls_committments_and_remittances
 
-    current_gp_committment_amt = @current_calls_gp_committments.order(:commitment_date).last&.committed_amount || object.capital_commitment.committed_amount
+    current_gp_committment_amt = money_sum(@current_calls_gp_remittances, :committed_amount_cents)
 
-    till_current_gp_remittances_call_amt_sum = money_sum(@prior_gp_remittances, :call_amount_cents) + money_sum(@current_calls_gp_remittances, :call_amount_cents)
+    till_current_gp_remittances_call_amt_sum = money_sum(@prior_calls_gp_remittances, :call_amount_cents) + money_sum(@current_calls_gp_remittances, :call_amount_cents)
     @undrawn_comm_current_notice_gp = current_gp_committment_amt - till_current_gp_remittances_call_amt_sum
   end
 
@@ -401,21 +388,9 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   def undrawn_comm_current_notice_investor
     return @undrawn_comm_current_notice_investor if @undrawn_comm_current_notice_investor
 
-    init_current_calls_committments_and_remittances
-    init_prior_remittances
+    investor_committment_amt = object.committed_amount
 
-    investor_committment_amt = @current_calls_lp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
-    investor_committment_amt += @current_calls_gp_committments.where(id: object.capital_commitment_id).last&.committed_amount || Money.new(0, @currency)
-
-    investor_committment_amt = object.capital_commitment.committed_amount if investor_committment_amt.zero?
-
-    prior_investor_remittances_call_amt_sum = money_sum(@prior_lp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents) + money_sum(@prior_gp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents)
-
-    current_investor_remittances_call_amt_sum = money_sum(@current_calls_lp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents) + money_sum(@current_calls_gp_remittances.where(capital_commitment_id: object.capital_commitment_id), :call_amount_cents)
-
-    investor_remittances_call_amt_sum = prior_investor_remittances_call_amt_sum + current_investor_remittances_call_amt_sum
-
-    @undrawn_comm_current_notice_investor ||= investor_committment_amt - investor_remittances_call_amt_sum
+    @undrawn_comm_current_notice_investor ||= investor_committment_amt - agg_drawdown_current_notice_investor
   end
 
   def undrawn_comm_current_notice_investor_percent
