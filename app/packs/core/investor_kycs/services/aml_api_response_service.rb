@@ -66,7 +66,7 @@ class AmlApiResponseService
           # birth_year: nil,
           # birth_year_fuzziness: "2",
           # search_profile: "",
-          name_fuzziness: "1",
+          name_fuzziness: "2",
           types: %w[sanctions pep warnings adverse_media],
           # pan_number: nil,
           entity_type: "individual"
