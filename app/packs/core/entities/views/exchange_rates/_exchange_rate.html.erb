@@ -8,7 +8,7 @@
   <td>
     <%= exchange_rate.rate %>
   </td>
-  <td>
+  <td data-order="<%= exchange_rate.as_of&.strftime('%Y-%m-%d') %>">
     <%= l exchange_rate.as_of if exchange_rate.as_of %>
   </td>
   <td>
