@@ -171,7 +171,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def drawdown_cash_investor
-    @drawdown_cash_investor ||= object.capital_remittances.where(remittance_date: ..@end_date).sum(:call_amount_cents)
+    @drawdown_cash_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :call_amount_cents)
   end
 
   def drawdown_cash_investor_percent
