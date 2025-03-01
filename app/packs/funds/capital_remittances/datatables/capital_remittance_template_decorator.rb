@@ -13,6 +13,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def percentage(part, total)
+    part = part.cents.to_f if part.respond_to?(:cents)
+    total = total.cents.to_f if total.respond_to?(:cents)
     total.zero? ? 0 : (part / total) * 100
   end
 

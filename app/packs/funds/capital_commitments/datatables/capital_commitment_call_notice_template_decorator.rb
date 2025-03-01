@@ -9,12 +9,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     @currency = object.fund.currency
   end
 
-  def init_lp_gp_commitments
+  def init_lp_gp_commitments(end_date = nil)
     if @gp_commitments.nil? || @lp_commitments.nil?
+      end_date ||= @end_date
       gp_records = []
       lp_records = []
 
-      object.fund.capital_commitments.where(commitment_date: ..@end_date).find_each do |comm|
+      object.fund.capital_commitments.where(commitment_date: ..end_date).find_each do |comm|
         if comm.fund_unit_setting&.gp_units
           gp_records << comm.id
         else
@@ -33,8 +34,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def percentage(part, total)
-    part = part.cents if part.respond_to?(:cents)
-    total = total.cents if total.respond_to?(:cents)
+    part = part.cents.to_f if part.respond_to?(:cents)
+    total = total.cents.to_f if total.respond_to?(:cents)
     total.zero? ? 0 : (part / total) * 100
   end
 
@@ -134,19 +135,20 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     percentage(committed_reinvest_investor, committed_cash_investor)
   end
 
-  def init_lp_gp_remittances
+  def init_lp_gp_remittances(end_date = nil)
     return unless @lp_remittances.nil? || @gp_remittances.nil?
 
-    init_lp_gp_commitments
+    end_date ||= @end_date
+    init_lp_gp_commitments(end_date)
     lp_remittance_ids = []
     gp_remittance_ids = []
 
     @lp_commitments.each do |comm|
-      lp_remittance_ids += comm.capital_remittances.where(remittance_date: ..@end_date).pluck(:id)
+      lp_remittance_ids += comm.capital_remittances.where(remittance_date: ..end_date).pluck(:id)
     end
 
     @gp_commitments.each do |comm|
-      gp_remittance_ids += comm.capital_remittances.where(remittance_date: ..@end_date).pluck(:id)
+      gp_remittance_ids += comm.capital_remittances.where(remittance_date: ..end_date).pluck(:id)
     end
 
     @lp_remittances = object.fund.capital_remittances.where(id: lp_remittance_ids)

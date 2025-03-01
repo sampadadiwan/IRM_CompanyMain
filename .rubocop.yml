@@ -1,5 +1,4 @@
-
-require:
+plugins:
   - rubocop-performance
   - rubocop-rails
   - rubocop-rspec
@@ -32,246 +31,246 @@ Naming/PredicateName:
   Enabled: false
 Style/CombinableLoops:
   Exclude:
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
 
 AllCops:
   # DisabledByDefault: true
   SuggestExtensions: false
   NewCops: enable
   Exclude:
-    - 'vendor/**/*'
-    - 'public/**/*'
-    - 'db/**/*'
-    - 'lib/**/*'
-    - 'features/**/*'
-    - 'bin/**/*'
-    - 'test/factories.rb'
-    - 'config/deploy.rb'
+    - "vendor/**/*"
+    - "public/**/*"
+    - "db/**/*"
+    - "lib/**/*"
+    - "features/**/*"
+    - "bin/**/*"
+    - "test/factories.rb"
+    - "config/deploy.rb"
 
 Rails/FilePath:
   Exclude:
-    - 'config/application.rb'
+    - "config/application.rb"
 
 Lint/ConstantDefinitionInBlock:
   Exclude:
-    - 'config/initializers/noticed.rb'
+    - "config/initializers/noticed.rb"
 
 Lint/UselessAssignment:
   Exclude:
-    - 'app/packs/funds/capital_commitments/services/import_account_entry.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
+    - "app/packs/funds/capital_commitments/services/import_account_entry.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
 
 Rails/SkipsModelValidations:
   Exclude:
-    - 'app/packs/funds/capital_remittances/jobs/capital_remittances_counters_job.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
-    - 'app/packs/core/documents/models/e_signature.rb'
-    - 'app/packs/core/support_client_mappings/models/support_client_mapping.rb'
-    - 'app/packs/misc/import_uploads/services/import_util.rb'
-    - 'app/packs/misc/form_types/models/form_type.rb'
-    - 'app/packs/core/documents/models/concerns/with_e_signatures.rb'
-    - 'app/packs/core/documents/models/e_signature.rb'
-    - 'app/packs/misc/form_custom_fields/models/form_custom_field.rb'
-    - 'app/packs/core/entities/models/concerns/investor_entity_merge.rb'
-    - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
-    - 'app/packs/funds/portfolios/jobs/stock_adjustment_job.rb'
-    - 'app/packs/core/notifications/controllers/notifications_controller.rb'
-    - 'app/packs/misc/approvals/mailers/approval_mailer.rb'
-    - 'app/packs/misc/approvals/services/approval_reminder.rb'
-    - 'app/packs/funds/funds/models/fund.rb'
-    - 'app/packs/core/investors/models/investor.rb'
-    - 'app/packs/core/investors/models/concerns/update_investor.rb'
-    - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'
-    - 'app/packs/core/folders/models/folder.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/allocation_job.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/allocation_base.rb'
-    - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
-    - 'app/packs/startups/investments/services/interactors/create_audit_trail.rb'
-    - 'app/packs/core/entities/models/entity.rb'
-    - 'app/packs/core/entities/models/concerns/entity_merge.rb'
-    - 'app/jobs/offer_spa_job.rb'
-    - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
-    - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
-    - 'app/packs/funds/capital_commitments/services/capital_commitment_action.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
-    - 'app/packs/misc/investor_notices/jobs/investor_notice_job.rb'
-    - 'app/packs/misc/investor_notices/models/investor_notice.rb'
-    - 'app/packs/funds/funds/jobs/fund_ratios_job.rb'
-    - 'app/packs/core/folders/jobs/folder_defaults_job.rb'
-    - 'app/packs/core/base/jobs/backup_db_job.rb'
-    - 'app/services/account_entry_allocation/*'
-    
+    - "app/packs/funds/capital_remittances/jobs/capital_remittances_counters_job.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb"
+    - "app/packs/core/documents/models/e_signature.rb"
+    - "app/packs/core/support_client_mappings/models/support_client_mapping.rb"
+    - "app/packs/misc/import_uploads/services/import_util.rb"
+    - "app/packs/misc/form_types/models/form_type.rb"
+    - "app/packs/core/documents/models/concerns/with_e_signatures.rb"
+    - "app/packs/core/documents/models/e_signature.rb"
+    - "app/packs/misc/form_custom_fields/models/form_custom_field.rb"
+    - "app/packs/core/entities/models/concerns/investor_entity_merge.rb"
+    - "app/packs/secondaries/offers/models/offer_spa_generator.rb"
+    - "app/packs/funds/portfolios/jobs/stock_adjustment_job.rb"
+    - "app/packs/core/notifications/controllers/notifications_controller.rb"
+    - "app/packs/misc/approvals/mailers/approval_mailer.rb"
+    - "app/packs/misc/approvals/services/approval_reminder.rb"
+    - "app/packs/funds/funds/models/fund.rb"
+    - "app/packs/core/investors/models/investor.rb"
+    - "app/packs/core/investors/models/concerns/update_investor.rb"
+    - "app/packs/funds/capital_calls/jobs/capital_call_job.rb"
+    - "app/packs/core/folders/models/folder.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/allocation_job.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/allocation_base.rb"
+    - "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb"
+    - "app/packs/startups/investments/services/interactors/create_audit_trail.rb"
+    - "app/packs/core/entities/models/entity.rb"
+    - "app/packs/core/entities/models/concerns/entity_merge.rb"
+    - "app/jobs/offer_spa_job.rb"
+    - "app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb"
+    - "app/packs/funds/capital_commitments/models/capital_commitment.rb"
+    - "app/packs/funds/capital_commitments/services/capital_commitment_action.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb"
+    - "app/packs/misc/investor_notices/jobs/investor_notice_job.rb"
+    - "app/packs/misc/investor_notices/models/investor_notice.rb"
+    - "app/packs/funds/funds/jobs/fund_ratios_job.rb"
+    - "app/packs/core/folders/jobs/folder_defaults_job.rb"
+    - "app/packs/core/base/jobs/backup_db_job.rb"
+    - "app/services/account_entry_allocation/*"
+
 Rails/HasAndBelongsToMany:
   Exclude:
-    - 'app/models/role.rb'
+    - "app/models/role.rb"
 Naming/MethodName:
   Exclude:
-    - 'app/packs/startups/investments/models/investment.rb'
-    - 'app/packs/core/investors/models/investor.rb'
+    - "app/packs/startups/investments/models/investment.rb"
+    - "app/packs/core/investors/models/investor.rb"
 Naming/AccessorMethodName:
-  Enabled: false    
+  Enabled: false
 
 Lint/RescueException:
   Exclude:
-    - 'app/packs/core/documents/jobs/doc_gen_job.rb'
-    - 'app/packs/core/investor_kycs/jobs/investor_kycs_bulk_action_job.rb'
-    - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
-    - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
-    - 'app/packs/core/investor_kycs/jobs/kyc_doc_gen_job.rb'
-    - 'app/packs/funds/funds/jobs/fund_doc_gen_job.rb'
-    - 'app/packs/funds/capital_commitments/jobs/capital_commitment_doc_job.rb'
-    - 'app/packs/funds/capital_commitments/jobs/capital_commitment_soa_job.rb'
-    - 'app/packs/funds/capital_remittances/jobs/capital_remittance_doc_job.rb'
+    - "app/packs/core/documents/jobs/doc_gen_job.rb"
+    - "app/packs/core/investor_kycs/jobs/investor_kycs_bulk_action_job.rb"
+    - "app/packs/core/documents/jobs/documents_bulk_action_job.rb"
+    - "app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb"
+    - "app/packs/core/investor_kycs/jobs/kyc_doc_gen_job.rb"
+    - "app/packs/funds/funds/jobs/fund_doc_gen_job.rb"
+    - "app/packs/funds/capital_commitments/jobs/capital_commitment_doc_job.rb"
+    - "app/packs/funds/capital_commitments/jobs/capital_commitment_soa_job.rb"
+    - "app/packs/funds/capital_remittances/jobs/capital_remittance_doc_job.rb"
 
 Lint/DuplicateBranch:
   Exclude:
-    - 'app/packs/core/base/helpers/currency_helper.rb'
-    - 'app/packs/funds/funds/models/fund_formula.rb'
-    
+    - "app/packs/core/base/helpers/currency_helper.rb"
+    - "app/packs/funds/funds/models/fund_formula.rb"
+
 Lint/MissingSuper:
   Exclude:
-    - 'app/services/*'
+    - "app/services/*"
 
 Lint/UnusedMethodArgument:
   Exclude:
-    - 'app/packs/misc/import_uploads/services/import_util.rb'
-    
+    - "app/packs/misc/import_uploads/services/import_util.rb"
+
 Rails/OutputSafety:
   Exclude:
-    - 'app/packs/core/fields/json_field.rb'
-    - 'config/initializers/client_side_validations.rb'
-    - 'app/notifications/delivery_methods/user_alerts.rb'
-    
+    - "app/packs/core/fields/json_field.rb"
+    - "config/initializers/client_side_validations.rb"
+    - "app/notifications/delivery_methods/user_alerts.rb"
+
 Style/OptionalBooleanParameter:
   Exclude:
-    - 'app/packs/startups/investments/helpers/investments_helper.rb'
-    - 'app/packs/core/base/helpers/currency_helper.rb'
+    - "app/packs/startups/investments/helpers/investments_helper.rb"
+    - "app/packs/core/base/helpers/currency_helper.rb"
 
 Security/Eval:
   Exclude:
-    - 'app/packs/funds/capital_calls/models/call_fee.rb'
-    - 'app/packs/misc/form_custom_fields/models/concerns/with_custom_field.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
-    - 'app/packs/secondaries/offers/models/offer.rb'
-    - 'app/packs/secondaries/interests/models/interest.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
-    - 'app/packs/funds/funds/models/fund_formula.rb'
-    - 'app/packs/funds/capital_distributions/models/distribution_fee.rb'
+    - "app/packs/funds/capital_calls/models/call_fee.rb"
+    - "app/packs/misc/form_custom_fields/models/concerns/with_custom_field.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb"
+    - "app/packs/secondaries/offers/models/offer.rb"
+    - "app/packs/secondaries/interests/models/interest.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb"
+    - "app/packs/funds/funds/models/fund_formula.rb"
+    - "app/packs/funds/capital_distributions/models/distribution_fee.rb"
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 15
   Enabled: true
   Exclude:
-    - 'app/packs/funds/funds/helpers/fund_dashboard_helper.rb'
-    - 'app/packs/core/base/decorators/template_decorator.rb'
-    - 'app/packs/core/users/models/user.rb'
-    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
-    - 'app/packs/secondaries/offers/services/offer_search_service.rb'
-    - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
-    - 'app/packs/funds/capital_remittances/services/import_capital_remittance_payment.rb'
+    - "app/packs/funds/funds/helpers/fund_dashboard_helper.rb"
+    - "app/packs/core/base/decorators/template_decorator.rb"
+    - "app/packs/core/users/models/user.rb"
+    - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
+    - "app/packs/secondaries/offers/services/offer_search_service.rb"
+    - "app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb"
+    - "app/packs/funds/capital_remittances/services/import_capital_remittance_payment.rb"
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
-    - 'app/packs/core/users/models/user.rb'
-    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
-    - 'app/packs/core/tasks/controllers/tasks_controller.rb'
-    - 'app/packs/core/uploaders/file_uploader.rb'
-    - 'app/packs/secondaries/offers/services/offer_search_service.rb'
-    - 'app/packs/core/base/decorators/template_decorator.rb'
+    - "app/packs/core/users/models/user.rb"
+    - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
+    - "app/packs/core/tasks/controllers/tasks_controller.rb"
+    - "app/packs/core/uploaders/file_uploader.rb"
+    - "app/packs/secondaries/offers/services/offer_search_service.rb"
+    - "app/packs/core/base/decorators/template_decorator.rb"
 Metrics/ClassLength:
-  Description: 'Avoid classes longer than 200 lines of code.'
+  Description: "Avoid classes longer than 200 lines of code."
   Max: 220
   Enabled: true
   Exclude:
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/secondaries/offers/models/offer.rb'
-    - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
-    - 'app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb'
-    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
+    - "app/packs/secondaries/offers/models/offer.rb"
+    - "app/packs/funds/capital_commitments/models/capital_commitment.rb"
+    - "app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb"
+    - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
 Metrics/ModuleLength:
-  Description: 'Avoid modules longer than 100 lines of code.'
+  Description: "Avoid modules longer than 100 lines of code."
   Max: 200
   Enabled: true
   Exclude:
-    - 'app/packs/core/investors/models/concerns/for_investor.rb'
-    - 'app/packs/core/entity/models/concerns/entity_enabled.rb'
-    - 'app/packs/funds/portfolios/models/concerns/portfolio_computations.rb'
-    - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
-        
+    - "app/packs/core/investors/models/concerns/for_investor.rb"
+    - "app/packs/core/entity/models/concerns/entity_enabled.rb"
+    - "app/packs/funds/portfolios/models/concerns/portfolio_computations.rb"
+    - "app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb"
+
 Metrics/ParameterLists:
-  Description: 'Pass no more than four parameters into a method.'
+  Description: "Pass no more than four parameters into a method."
   Max: 6
   Enabled: true
   Exclude:
-    - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
-    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/funds/services/fund_unit_transfer_service.rb'
-    - 'app/packs/core/components/ransack_table_header.rb'
-    - 'app/packs/core/documents/helpers/document_generator_base.rb'
-    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
-    - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
-    - 'app/services/account_entry_allocation/engine.rb'
-    - 'app/services/account_entry_allocation/create_account_entry.rb'
-    - 'app/services/account_entry_allocation/allocate_master_fund_account_entries.rb'
-    - 'app/services/account_entry_allocation/run_formulas.rb'
+    - "app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb"
+    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
+    - "app/packs/funds/funds/services/fund_unit_transfer_service.rb"
+    - "app/packs/core/components/ransack_table_header.rb"
+    - "app/packs/core/documents/helpers/document_generator_base.rb"
+    - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
+    - "app/packs/funds/funds/jobs/fund_llm_report_job.rb"
+    - "app/services/account_entry_allocation/engine.rb"
+    - "app/services/account_entry_allocation/create_account_entry.rb"
+    - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
+    - "app/services/account_entry_allocation/run_formulas.rb"
 
 Metrics/MethodLength:
-  Description: 'Avoid methods longer than 5 lines of code.'
-  StyleGuide: '<https://github.com/bbatsov/ruby-style-guide#short-methods>'
+  Description: "Avoid methods longer than 5 lines of code."
+  StyleGuide: "<https://github.com/bbatsov/ruby-style-guide#short-methods>"
   Max: 35
   Enabled: true
   Exclude:
-    - 'app/packs/funds/funds/helpers/fund_dashboard_helper.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
-    - 'app/packs/core/users/models/user.rb'
-    - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
-    - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'
-    - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
-    - 'app/packs/funds/funds/services/fund_doc_generator.rb'
-    - 'app/packs/core/base/decorators/template_decorator.rb'
-    - 'app/packs/funds/capital_commitments/decorators/capital_commitment_template_decorator.rb'
-    - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
-    - 'app/packs/core/base/jobs/backup_db_job.rb'
-    - 'app/packs/core/base/jobs/s3_check_job.rb'
-    - 'app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb'
-    - 'app/packs/funds/capital_calls/services/import_capital_call.rb'
-    - 'app/packs/ai/ai_rules/services/ai_data_manager.rb'
-    - 'app/packs/ai/ai_rules/services/compliance_assistant.rb'
-    - 'app/packs/funds/funds/controllers/funds_controller.rb'
-    - 'app/packs/funds/capital_distribution_payments/models/concern/capital_distribution_fees.rb'
-    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
-    - 'app/packs/funds/funds/jobs/fund_llm_report_job.rb'
-    - 'app/services/account_entry_allocation/*'
+    - "app/packs/funds/funds/helpers/fund_dashboard_helper.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb"
+    - "app/packs/core/users/models/user.rb"
+    - "app/packs/core/documents/jobs/documents_bulk_action_job.rb"
+    - "app/packs/core/investor_kycs/services/kyc_doc_generator.rb"
+    - "app/packs/funds/capital_commitments/services/soa_generator.rb"
+    - "app/packs/funds/funds/services/fund_doc_generator.rb"
+    - "app/packs/core/base/decorators/template_decorator.rb"
+    - "app/packs/funds/capital_commitments/decorators/capital_commitment_template_decorator.rb"
+    - "app/packs/secondaries/offers/models/offer_spa_generator.rb"
+    - "app/packs/core/base/jobs/backup_db_job.rb"
+    - "app/packs/core/base/jobs/s3_check_job.rb"
+    - "app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb"
+    - "app/packs/funds/capital_calls/services/import_capital_call.rb"
+    - "app/packs/ai/ai_rules/services/ai_data_manager.rb"
+    - "app/packs/ai/ai_rules/services/compliance_assistant.rb"
+    - "app/packs/funds/funds/controllers/funds_controller.rb"
+    - "app/packs/funds/capital_distribution_payments/models/concern/capital_distribution_fees.rb"
+    - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
+    - "app/packs/funds/funds/jobs/fund_llm_report_job.rb"
+    - "app/services/account_entry_allocation/*"
 
 Metrics/BlockNesting:
   Exclude:
-    - 'app/packs/misc/approvals/models/approval_response.rb'
+    - "app/packs/misc/approvals/models/approval_response.rb"
 
 Naming/MethodParameterName:
   Exclude:
-    - 'app/packs/core/components/ransack_table_header.rb'
+    - "app/packs/core/components/ransack_table_header.rb"
 
 Metrics/BlockLength:
   CountComments: false
   Max: 30
   Exclude:
-    - 'app/packs/misc/import_uploads/jobs/import_upload_job.rb'
-    - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
-    - 'app/controllers/concerns/investment_concern.rb'
-    - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'
-    - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
-    - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
-    - '**/index.xlsx.axlsx'
-    - 'app/packs/core/folders/jobs/folder_llm_report_job.rb'
-    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
+    - "app/packs/misc/import_uploads/jobs/import_upload_job.rb"
+    - "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb"
+    - "app/controllers/concerns/investment_concern.rb"
+    - "app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb"
+    - "app/packs/secondaries/offers/models/offer_spa_generator.rb"
+    - "app/packs/secondaries/secondary_sales/jobs/spa_job.rb"
+    - "**/index.xlsx.axlsx"
+    - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
+    - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
   AllowedMethods:
     - context
     - describe
@@ -281,5 +280,5 @@ Metrics/BlockLength:
     - namespace
     - draw
     - configure
-    - group    
+    - group
     - included
