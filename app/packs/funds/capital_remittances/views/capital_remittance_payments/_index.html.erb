@@ -1,12 +1,15 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Remittance Payments</h1>
   <% capital_remittance||= nil %>
+
+  <span>
   <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-outline-primary"} if capital_remittance %>
   <%
     data_source ||= capital_remittance_payments_path(params: params.to_unsafe_h, format: :json)
     xl_link = download_xl_link(data_source)
   %>
   <%= link_to "Download", xl_link, { class: "btn btn-outline-success", data: { turbo: false } } %>
+  </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
