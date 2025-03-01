@@ -156,13 +156,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def drawdown_cash_lp
-    init_lp_gp_remittances
+    init_lp_gp_remittances(@curr_date)
     # go to remittances and sum call amount
     @drawdown_cash_lp ||= money_sum(@lp_remittances, :call_amount_cents)
   end
 
   def drawdown_cash_gp
-    init_lp_gp_remittances
+    init_lp_gp_remittances(@curr_date)
     @drawdown_cash_gp ||= money_sum(@gp_remittances, :call_amount_cents)
   end
 
@@ -171,7 +171,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def drawdown_cash_investor
-    @drawdown_cash_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@end_date), :call_amount_cents)
+    @drawdown_cash_investor ||= money_sum(object.capital_remittances.where(remittance_date: ..@curr_date), :call_amount_cents)
   end
 
   def drawdown_cash_investor_percent
