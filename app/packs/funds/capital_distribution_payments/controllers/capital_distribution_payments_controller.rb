@@ -17,7 +17,7 @@ class CapitalDistributionPaymentsController < ApplicationController
 
     @capital_distribution_payments = @capital_distribution_payments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    if params[:all].blank?
+    if params[:all].blank? && !request.format.xlsx?
       per_page = params[:per_page]&.to_i || 10
       @capital_distribution_payments = @capital_distribution_payments.page(params[:page]).per(per_page)
     end
