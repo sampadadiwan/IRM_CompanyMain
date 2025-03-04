@@ -1,6 +1,8 @@
 class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassLength
   include CurrencyHelper
 
+  attr_reader :curr_date, :end_date, :currency, :prior_lp_remittances, :prior_gp_remittances, :prior_remittances_investor, :current_lp_remittances, :current_gp_remittances, :current_remittances_investor, :capital_calls, :prior_calls_lp_committments, :prior_calls_gp_committments, :prior_calls_lp_remittances, :prior_calls_gp_remittances, :current_calls_lp_committments, :current_calls_gp_committments, :current_calls_lp_remittances, :current_calls_gp_remittances
+
   def initialize(object)
     super
     @curr_date = object.remittance_date

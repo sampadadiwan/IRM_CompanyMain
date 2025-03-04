@@ -1,6 +1,7 @@
 class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disable Metrics/ClassLength
   include CurrencyHelper
-  attr_reader :gp_commitments, :lp_commitments
+  attr_reader :curr_date, :end_date, :currency, :gp_commitments, :lp_commitments
+  attr_reader :gp_remittances, :lp_remittances, :prior_dist_payments_lp, :prior_dist_payments_gp, :current_dist_payments_lp, :current_dist_payments_gp
 
   def initialize(object)
     super
