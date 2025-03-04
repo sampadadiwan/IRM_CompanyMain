@@ -39,6 +39,10 @@ class Valuation < ApplicationRecord
     "#{entity} - #{valuation_date}"
   end
 
+  def to_extended_s
+    "#{owner} - #{investment_instrument} - #{valuation_date}"
+  end
+
   def currency
     if investment_instrument
       investment_instrument.currency

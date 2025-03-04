@@ -1,6 +1,7 @@
 class ValuationsController < ApplicationController
   before_action :set_valuation, only: %i[show edit update destroy]
   skip_after_action :verify_policy_scoped, only: :index
+  after_action :verify_authorized, except: %i[index search bulk_actions value_bridge]
 
   # GET /valuations or /valuations.json
   def index
@@ -94,6 +95,23 @@ class ValuationsController < ApplicationController
         redirect_to @valuation.owner || valuations_url, notice: "Valuation was successfully destroyed."
       end
       format.json { head :no_content }
+    end
+  end
+
+  def value_bridge
+    if params[:initial_valuation_id].present? && params[:final_valuation_id].present?
+      initial_valuation = Valuation.find(params[:initial_valuation_id])
+      authorize(initial_valuation)
+      final_valuation = Valuation.find(params[:final_valuation_id])
+      authorize(final_valuation)
+      @bridge = ValueBridgeService.new(initial_valuation, final_valuation).compute_bridge
+      render "value_bridge"
+    elsif params[:portfolio_company_id].present?
+      @portfolio_company = Investor.find(params[:portfolio_company_id])
+      authorize(@portfolio_company, :show?)
+      render "value_bridge_form"
+    else
+      redirect_to root_path, alert: "Portfolio company nor specified"
     end
   end
 

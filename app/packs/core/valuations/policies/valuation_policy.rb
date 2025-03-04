@@ -12,6 +12,10 @@ class ValuationPolicy < ApplicationPolicy
     belongs_to_entity?(user, record) && Pundit.policy(user, record.owner).update?
   end
 
+  def value_bridge?
+    show?
+  end
+
   def new?
     create?
   end

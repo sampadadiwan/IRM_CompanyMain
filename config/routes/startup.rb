@@ -9,7 +9,10 @@ end
 
 resources :share_transfers
 
-resources :valuations
+resources :valuations do
+  post 'value_bridge', on: :collection
+  get 'value_bridge', on: :collection
+end
 
 resources :deal_activities do
   get 'search', on: :collection

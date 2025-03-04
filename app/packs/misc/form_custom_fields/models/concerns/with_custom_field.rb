@@ -10,7 +10,7 @@ module WithCustomField
     belongs_to :form_type, optional: true
     has_many :form_custom_fields, through: :form_type
 
-    before_create :setup_form_type, if: -> { respond_to?(:form_type_id) && form_type.blank? }
+    before_save :setup_form_type # , if: -> { respond_to?(:form_type_id) && form_type.blank? }
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     if Rails.env.test?
@@ -40,7 +40,15 @@ module WithCustomField
 
     def setup_form_type
       # Ensure that the form type is set, if not already present
-      self.form_type ||= entity.form_types.where(name: self.class.name).first
+      self.form_type ||= entity.form_types.where(name: self.class.name).last
+      # This will calculate all the Calculation fields and save to DB
+      perform_all_calculations
+    end
+
+    def perform_all_calculations
+      custom_calculations.each do |fcf|
+        perform_custom_calculation(fcf)
+      end
     end
 
     # This is used to create the query for json fields, used in the above ransacker
@@ -80,8 +88,9 @@ module WithCustomField
     form_custom_fields.calculations
   end
 
-  def perform_custom_calculation(calc)
-    eval(calc)
+  def perform_custom_calculation(fcf)
+    json_fields[fcf.name] = eval(fcf.meta_data)
+    json_fields[fcf.name]
   end
 
   def custom_fields
@@ -143,7 +152,7 @@ class CustomCalcs
 
   def method_missing(method_name, *_args, &)
     calc = @custom_calcs.find { |cf| cf.name == method_name.to_s }
-    @model.perform_custom_calculation(calc.meta_data) if calc
+    @model.perform_custom_calculation(calc) if calc
   end
 
   def respond_to_missing? *_args

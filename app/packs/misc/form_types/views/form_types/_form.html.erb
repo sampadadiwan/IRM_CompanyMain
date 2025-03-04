@@ -52,7 +52,7 @@
       <h1>Custom Fields</h1>
       <div id='form_custom_fields'>
         <%= form.fields_for :form_custom_fields do |field| %>
-          <%= render 'form_custom_fields', :f => field  unless (field.object.field_type == "Calculation" || field.object.internal) && !current_user.support? %>
+          <%= render 'form_custom_fields', :f => field  unless ((field.object.field_type == "Calculation" || field.object.internal) && (!current_user.support? && !Rails.env.local?)) %>
         <% end %>
         <div class='links'>
         </div>
