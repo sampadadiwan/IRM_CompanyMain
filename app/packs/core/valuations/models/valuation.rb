@@ -57,7 +57,8 @@ class Valuation < ApplicationRecord
     convert_currency(currency, to_currency, per_share_value_cents, as_of)
   end
 
-  def self.add_valued_bridge_custom_fields(entity)
+  # This method is used to add custom fields to the Valuation form, to enable value bridge
+  def self.add_value_bridge_custom_fields(entity)
     fields = [
       ["net_debt", "", "NumberField"],
       ["revenue", "", "NumberField"],
