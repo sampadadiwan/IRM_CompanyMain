@@ -10,23 +10,30 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def init_lp_gp_commitments(end_date = nil)
-    if @gp_commitments.nil? || @lp_commitments.nil?
-      end_date ||= @end_date
-      gp_records = []
-      lp_records = []
-
-      object.fund.capital_commitments.where(commitment_date: ..end_date).find_each do |comm|
-        if comm.fund_unit_setting&.gp_units
-          gp_records << comm.id
-        else
-          lp_records << comm.id
-        end
-      end
-
-      # Convert arrays into ActiveRecord-like collections
-      @gp_commitments = object.fund.capital_commitments.where(id: gp_records)
-      @lp_commitments = object.fund.capital_commitments.where(id: lp_records)
+    if (@gp_commitments.nil? || @lp_commitments.nil?) && end_date.nil?
+      @lp_commitments, @gp_commitments = init_lp_gp_commitments_till_date(@end_date)
+    elsif end_date
+      init_lp_gp_commitments_till_date(end_date)
     end
+  end
+
+  def init_lp_gp_commitments_till_date(end_date)
+    end_date ||= @end_date
+    gp_records = []
+    lp_records = []
+
+    object.fund.capital_commitments.where(commitment_date: ..end_date).find_each do |comm|
+      if comm.fund_unit_setting&.gp_units
+        gp_records << comm.id
+      else
+        lp_records << comm.id
+      end
+    end
+
+    # Convert arrays into ActiveRecord-like collections
+    gp_commitments = object.fund.capital_commitments.where(id: gp_records)
+    lp_commitments = object.fund.capital_commitments.where(id: lp_records)
+    [lp_commitments, gp_commitments]
   end
 
   def money_sum(scope, column)
@@ -136,34 +143,41 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def init_lp_gp_remittances(end_date = nil)
-    return unless @lp_remittances.nil? || @gp_remittances.nil?
+    if (@gp_remittances.nil? || @lp_remittances.nil?) && end_date.nil?
+      @lp_remittances, @gp_remittances = init_lp_gp_remittances_till_date(@end_date)
+    elsif end_date
+      init_lp_gp_remittances_till_date(end_date)
+    end
+  end
 
+  def init_lp_gp_remittances_till_date(end_date)
     end_date ||= @end_date
-    init_lp_gp_commitments(end_date)
+    lp_commitments, gp_commitments = init_lp_gp_commitments(end_date)
     lp_remittance_ids = []
     gp_remittance_ids = []
 
-    @lp_commitments.each do |comm|
+    lp_commitments.each do |comm|
       lp_remittance_ids += comm.capital_remittances.where(remittance_date: ..end_date).pluck(:id)
     end
 
-    @gp_commitments.each do |comm|
+    gp_commitments.each do |comm|
       gp_remittance_ids += comm.capital_remittances.where(remittance_date: ..end_date).pluck(:id)
     end
 
-    @lp_remittances = object.fund.capital_remittances.where(id: lp_remittance_ids)
-    @gp_remittances = object.fund.capital_remittances.where(id: gp_remittance_ids)
+    lp_remittances = object.fund.capital_remittances.where(id: lp_remittance_ids)
+    gp_remittances = object.fund.capital_remittances.where(id: gp_remittance_ids)
+    [lp_remittances, gp_remittances]
   end
 
   def drawdown_cash_lp
-    init_lp_gp_remittances(@curr_date)
+    lp_remittances, = init_lp_gp_remittances(@curr_date)
     # go to remittances and sum call amount
-    @drawdown_cash_lp ||= money_sum(@lp_remittances, :call_amount_cents)
+    @drawdown_cash_lp ||= money_sum(lp_remittances, :call_amount_cents)
   end
 
   def drawdown_cash_gp
-    init_lp_gp_remittances(@curr_date)
-    @drawdown_cash_gp ||= money_sum(@gp_remittances, :call_amount_cents)
+    _, gp_remittances = init_lp_gp_remittances(@curr_date)
+    @drawdown_cash_gp ||= money_sum(gp_remittances, :call_amount_cents)
   end
 
   def drawdown_cash_total
@@ -350,8 +364,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
         prior_dist_payments_gp_ids += ids
       end
 
-      @prior_dist_payments_lp = object.capital_distribution_payments.where(id: prior_dist_payments_lp_ids)
-      @prior_dist_payments_gp = object.capital_distribution_payments.where(id: prior_dist_payments_gp_ids)
+      @prior_dist_payments_lp = object.fund.capital_distribution_payments.where(id: prior_dist_payments_lp_ids)
+      @prior_dist_payments_gp = object.fund.capital_distribution_payments.where(id: prior_dist_payments_gp_ids)
     end
   end
 
@@ -360,19 +374,19 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
       current_dist_payments_lp_ids = []
       current_dist_payments_gp_ids = []
 
-      init_lp_gp_commitments
-      @lp_commitments.each do |comm|
+      lp_commitments, gp_commitments = init_lp_gp_commitments(@curr_date)
+      lp_commitments.each do |comm|
         ids = comm.capital_distribution_payments.where(payment_date: @curr_date).pluck(:id)
         current_dist_payments_lp_ids += ids
       end
 
-      @gp_commitments.each do |comm|
+      gp_commitments.each do |comm|
         ids = comm.capital_distribution_payments.where(payment_date: @curr_date).pluck(:id)
         current_dist_payments_gp_ids += ids
       end
 
-      @current_dist_payments_lp = object.capital_distribution_payments.where(id: current_dist_payments_lp_ids)
-      @current_dist_payments_gp = object.capital_distribution_payments.where(id: current_dist_payments_gp_ids)
+      @current_dist_payments_lp = object.fund.capital_distribution_payments.where(id: current_dist_payments_lp_ids)
+      @current_dist_payments_gp = object.fund.capital_distribution_payments.where(id: current_dist_payments_gp_ids)
     end
   end
 
