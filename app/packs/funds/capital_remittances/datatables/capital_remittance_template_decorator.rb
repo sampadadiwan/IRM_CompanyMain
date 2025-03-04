@@ -331,7 +331,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_prior_calls_committments_and_remittances
     last_call_before = object.fund.capital_calls.where(call_date: ..@end_date).order(:call_date).last
-    prior_lp_committment_amt = money_sum(@prior_calls_lp_remittances.where(capital_call_id: last_call_before.id), :committed_amount_cents)
+    prior_lp_committment_amt = Money.new(0, @currency)
+    prior_lp_committment_amt = money_sum(@prior_calls_lp_remittances.where(capital_call_id: last_call_before.id), :committed_amount_cents) if last_call_before
     if prior_lp_committment_amt.zero?
       init_current_calls_committments_and_remittances
       prior_lp_committment_amt = money_sum(@current_calls_lp_remittances, :committed_amount_cents)
@@ -347,7 +348,8 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
 
     init_prior_calls_committments_and_remittances
     last_call_before = object.fund.capital_calls.where(call_date: ..@end_date).order(:call_date).last
-    prior_gp_committment_amt = money_sum(@prior_calls_gp_remittances.where(capital_call_id: last_call_before.id), :committed_amount_cents)
+    prior_gp_committment_amt = Money.new(0, @currency)
+    prior_gp_committment_amt = money_sum(@prior_calls_gp_remittances.where(capital_call_id: last_call_before.id), :committed_amount_cents) if last_call_before
     if prior_gp_committment_amt.zero?
       init_current_calls_committments_and_remittances
       prior_gp_committment_amt = money_sum(@current_calls_gp_remittances, :committed_amount_cents)

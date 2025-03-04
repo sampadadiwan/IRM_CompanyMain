@@ -427,13 +427,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def agg_dist_current_notice_lp
     init_current_distribution_payments
 
-    @agg_dist_current_notice_lp ||= money_sum(@current_dist_payments_lp, :gross_payable_cents)
+    money_sum(@current_dist_payments_lp, :gross_payable_cents)
   end
 
   def agg_dist_current_notice_gp
     init_current_distribution_payments
 
-    @agg_dist_current_notice_gp ||= money_sum(@current_dist_payments_gp, :gross_payable_cents)
+    money_sum(@current_dist_payments_gp, :gross_payable_cents)
   end
 
   def agg_dist_current_notice_total
@@ -471,13 +471,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def agg_reinvest_prior_current_notice_lp
     init_prior_distribution_payments
 
-    @agg_reinvest_prior_current_notice_lp ||= money_sum(@prior_dist_payments_lp, :reinvestment_with_fees_cents)
+    money_sum(@prior_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_prior_current_notice_gp
     init_prior_distribution_payments
 
-    @agg_reinvest_prior_current_notice_gp ||= money_sum(@prior_dist_payments_gp, :reinvestment_with_fees_cents)
+    money_sum(@prior_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_prior_current_notice_total
@@ -502,13 +502,13 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def agg_reinvest_current_notice_lp
     init_current_distribution_payments
 
-    @agg_reinvest_current_notice_lp ||= money_sum(@current_dist_payments_lp, :reinvestment_with_fees_cents)
+    money_sum(@current_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_current_notice_gp
     init_current_distribution_payments
 
-    @agg_reinvest_current_notice_gp ||= money_sum(@current_dist_payments_gp, :reinvestment_with_fees_cents)
+    money_sum(@current_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def agg_reinvest_current_notice_total
