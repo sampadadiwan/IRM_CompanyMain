@@ -99,6 +99,26 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     end
   end
 
+  def till_curr_dist_payments_gp
+    @cache[:till_curr_dist_payments_gp] ||= begin
+      till_curr_dist_payments_gp_ids = []
+      gp_commitments(@curr_date).each do |comm|
+        till_curr_dist_payments_gp_ids += comm.capital_distribution_payments.where(payment_date: ..@curr_date).pluck(:id)
+      end
+      object.fund.capital_distribution_payments.where(id: till_curr_dist_payments_gp_ids)
+    end
+  end
+
+  def till_curr_dist_payments_lp
+    @cache[:till_curr_dist_payments_lp] ||= begin
+      till_curr_dist_payments_lp_ids = []
+      lp_commitments(@curr_date).each do |comm|
+        till_curr_dist_payments_lp_ids += comm.capital_distribution_payments.where(payment_date: ..@curr_date).pluck(:id)
+      end
+      object.fund.capital_distribution_payments.where(id: till_curr_dist_payments_lp_ids)
+    end
+  end
+
   def current_dist_payments_lp
     @cache[:current_dist_payments_lp] ||= begin
       current_dist_payments_lp_ids = []
@@ -355,11 +375,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Distribution Cash ===
 
   def dist_cash_lp
-    @cache[:dist_cash_lp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents) - money_sum(current_dist_payments_lp, :reinvestment_with_fees_cents)
+    @cache[:dist_cash_lp] ||= money_sum(till_curr_dist_payments_lp, :gross_payable_cents) - money_sum(till_curr_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def dist_cash_gp
-    @cache[:dist_cash_gp] ||= money_sum(current_dist_payments_gp, :gross_payable_cents) - money_sum(current_dist_payments_gp, :reinvestment_with_fees_cents)
+    @cache[:dist_cash_gp] ||= money_sum(till_curr_dist_payments_gp, :gross_payable_cents) - money_sum(till_curr_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def dist_cash_total
