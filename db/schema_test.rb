@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_02_23_001130) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -657,10 +657,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_02_23_001130) do
     t.boolean "payment_notification_sent", default: false
     t.bigint "investor_id"
     t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.bigint "form_type_id"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["deleted_at"], name: "index_capital_remittance_payments_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_remittance_payments_on_exchange_rate_id"
+    t.index ["form_type_id"], name: "index_capital_remittance_payments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittance_payments_on_fund_id"
     t.index ["payment_date"], name: "index_capital_remittance_payments_on_payment_date"
   end

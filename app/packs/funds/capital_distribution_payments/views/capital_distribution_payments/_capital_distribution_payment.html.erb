@@ -1,24 +1,9 @@
-<tr id="<%= dom_id capital_distribution_payment %>">
-  <td>
-    <%= link_to capital_distribution_payment.investor_name, investor_path(id: capital_distribution_payment.investor_id) %>
-  </td>
-  <td>
-    <%= link_to capital_distribution_payment.investor_kyc.full_name, capital_distribution_payment.investor_kyc if capital_distribution_payment.investor_kyc %>
-  </td>
-  <td>
-    <%= capital_distribution_payment.folio_id %>
-  </td>
-  <td>
-    
-  </td>
-  <td>
-    <%= l capital_distribution_payment.payment_date if capital_distribution_payment.payment_date %>
-  </td>
-  <td>
-    <%= display_boolean capital_distribution_payment.completed %>
-  </td>
-  <td>
-    <%= link_to "Show" , capital_distribution_payment , {class: "btn btn-outline-primary" }%>
-    <%= link_to "Edit" , edit_capital_distribution_payment_path(capital_distribution_payment) , {class: "btn btn-outline-success" } if policy(capital_distribution_payment).update? %>
-  </td>
-</tr>
+<tr id="capital_distribution_payment_<%= capital_distribution_payment.id %>">
+
+    <%= render RansackTableRow.new(model: capital_distribution_payment, columns:) %>
+
+    <td>
+      <%= link_to "Show", capital_distribution_payment , {class: "btn btn-outline-primary"}%>
+    </td>
+
+  </tr>

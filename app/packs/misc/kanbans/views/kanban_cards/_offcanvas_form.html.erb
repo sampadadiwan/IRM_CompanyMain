@@ -1,4 +1,4 @@
-<% turbo_tag ||= "kanban_card_form_offcanvas#{kanban_card.id}"%>
+<% turbo_tag ||= "card_offcanvas_turbo_frame"%>
 <%= turbo_frame_tag turbo_tag do %>
   <div class="dynamic_form" data-controller="">
     <%= form_with(model: kanban_card, validate: true) do |form| %>

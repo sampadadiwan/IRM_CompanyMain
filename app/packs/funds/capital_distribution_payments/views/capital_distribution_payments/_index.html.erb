@@ -4,52 +4,58 @@
     <span>
       <% capital_distribution ||= nil %>
       <% if capital_distribution %>
-      
-        <%#= link_to "New Payment", 
-          new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), 
+
+        <%#= link_to "New Payment",
+          new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id),
           {class: "btn btn-outline-primary" }  %>
 
         <% disabled = capital_distribution.distribution_on != "Upload" ? "disabled" : nil %>
-      
-        <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": capital_distribution.id, 
-            "import_upload[owner_type]": "CapitalDistribution", 
-            "import_upload[import_type]": "CapitalDistributionPayment", 
-            "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"), 
-            { class: "btn btn-outline-primary #{disabled}"}  %> 
 
-        <%= link_to "Download" , 
-          capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, 
-          format: "xlsx", all: true), {class: "btn btn-outline-success" } %>
+        <%= link_to "Upload",
+            new_import_upload_path("import_upload[owner_id]": capital_distribution.id,
+            "import_upload[owner_type]": "CapitalDistribution",
+            "import_upload[import_type]": "CapitalDistributionPayment",
+            "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
+            { class: "btn btn-outline-primary #{disabled}"}  %>
 
       <% end %>
+      <%
+        data_source ||= capital_distribution_payments_path(params: params.to_unsafe_h, format: :json)
+        xl_link = download_xl_link(data_source)
+      %>
+      <%= link_to "Download", xl_link, { class: "btn btn-outline-success", data: { turbo: false } } %>
       <%#= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
     </span>
 
 </div>
 
-  <% 
-    lazy_load_data ||= false 
+  <%
     import_upload_id ||= params[:import_upload_id]
-  
-    data_source ||= capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) 
+  %>
 
-    col_params = {no_fund: true}
-    if current_user.curr_role == "investor"
-      col_params[:column_names] = CapitalDistributionPayment::INVESTOR_COLUMN_NAMES
-      col_params[:column_fields] = CapitalDistributionPayment::INVESTOR_COLUMN_FIELDS
-    end
-    column_names, field_list = get_columns(CapitalDistributionPayment, params: col_params)   
-  %>    
-  
 
-  <div class="table-responsive" data-controller="distribution-payments" data-distribution-payments-lazy-load-data-value=<%= lazy_load_data %> data-distribution-payments-table-name-value="#capital_distribution_payments"
-  data-distribution-payments-field-list-value=<%=field_list%>>
+ <% distribution_payments_frame = "distribution_payments_frame" %>
+  <%=render SearchComponent.new(data_source: capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: distribution_payments_frame) %>
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->distribution-payments#loadData"><span>Load Data</span></a>
+  <div class="table-responsive">
+    <table id="capital_distribution_payments" class="table table-bordered dataTable action_table hover">
+        <%
+          default_columns_map = if current_user.curr_role == "investor"
+            CapitalDistributionPayment::INVESTOR_STANDARD_COLUMNS
+          else
+            CapitalDistributionPayment::STANDARD_COLUMNS
+          end
+        %>
+        <% ransack_table_header = RansackTableHeader.new(CapitalDistributionPayment, q: @q, default_columns_map:, current_user: current_user, records: capital_distribution_payments, report_id: params["report_id"], turbo_frame: distribution_payments_frame, referrer: request.referrer) %>
+        <%= render ransack_table_header %>
+      <tbody>
+        <% capital_distribution_payments.each do |capital_distribution_payment| %>
+          <%= render "capital_distribution_payments/capital_distribution_payment",  capital_distribution_payment: capital_distribution_payment.decorate, columns: ransack_table_header.columns%>
+        <% end %>
+      </tbody>
+    </table>
+    <% if capital_distribution_payments.present? %>
+      <%= page_entries_info capital_distribution_payments, entry_name: 'item' %>
+      <%= paginate capital_distribution_payments, data: {turbo_frame: distribution_payments_frame} %>
     <% end %>
-    
-    <%= render CustomTable.new(data_source:, id: "capital_distribution_payments", column_names:) %>
-
-  </div>
+</div>

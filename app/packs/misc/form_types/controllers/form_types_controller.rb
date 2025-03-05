@@ -60,7 +60,7 @@ class FormTypesController < ApplicationController
   def update
     allowed = true
     begin
-      unless current_user.support?
+      unless current_user.support? || Rails.env.local?
         # We dont allow non support users to update calculations
         params["form_type"]["form_custom_fields_attributes"].each_value do |fcf|
           if fcf["field_type"] == "Calculation"

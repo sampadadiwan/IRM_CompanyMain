@@ -1,4 +1,5 @@
-<%= turbo_frame_tag "new_kanban_card" do %>
+<% turbo_tag ||= "new_kanban_card"%>
+<%= turbo_frame_tag turbo_tag do %>
 <div class="dynamic_form centered" data-controller="wizard">
     <div class="col-md-6 card shadow mb-4 justify-content-md-center">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -12,6 +13,7 @@
 					<%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 					<%= form.hidden_field :data_source_id, value: kanban_card.data_source_id %>
 					<%= form.hidden_field :data_source_type, value: kanban_card.data_source_type %>
+					<%= form.text_field :turbo_frame, value: turbo_tag ,class: "form-control", hidden: true  %>
 					<div class="form-group">
 					<%= form.label :title %>
 					<%= form.text_field :title, class: "form-control" %>

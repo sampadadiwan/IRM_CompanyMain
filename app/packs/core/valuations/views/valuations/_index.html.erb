@@ -12,6 +12,11 @@
         new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type),
         {class: "btn btn-outline-primary"}  %>
 
+
+    <%= link_to "Value Bridge",
+        value_bridge_valuations_path("portfolio_company_id": owner_id),
+        {class: "btn btn-outline-primary"} if owner_type == "Investor" %>
+
     <%= link_to "Import Valuations",
                   new_import_upload_path("import_upload[owner_id]": owner_id,
                   "import_upload[owner_type]": owner_type,

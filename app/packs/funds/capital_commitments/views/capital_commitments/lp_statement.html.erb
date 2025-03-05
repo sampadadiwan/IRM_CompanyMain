@@ -1,6 +1,6 @@
 
 <table class="table table-bordered dataTable">
-  
+
   <tr class="btn-outline-success">
     <td colspan="2">
       <h1><%= @capital_commitment.investor_name.titleize %></h1>
@@ -83,18 +83,18 @@
       Collected Amount
     </td>
     <td>
-      <%= money_to_currency @capital_commitment.collected_amount, params %>      
+      <%= money_to_currency @capital_commitment.collected_amount, params %>
     </td>
   </tr>
 
 
   <tr>
     <td>
-      Call Amount Receivable (Called - Collected) 
+      Call Amount Receivable (Called - Collected)
     </td>
     <td>
       <% receivable = @capital_commitment.call_amount - @capital_commitment.collected_amount %>
-      <%= money_to_currency (receivable), params %>      
+      <%= money_to_currency (receivable), params %>
     </td>
   </tr>
 
@@ -103,7 +103,7 @@
       Distributed Amount
     </td>
     <td>
-      <%= money_to_currency @capital_commitment.distribution_amount, params %>      
+      <%= money_to_currency @capital_commitment.distribution_amount, params %>
     </td>
   </tr>
 
@@ -122,12 +122,11 @@
     <td colspan="2" class="bg-primary"></td>
   </tr>
 
-  
+
   <tr>
     <td colspan="2">
-
-        <%= render "/capital_distribution_payments/index", capital_commitment: @capital_commitment,
-                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_commitment_id: @capital_commitment.id, all: true) %>
+        <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_commitment_id: @capital_commitment.id) do %>
+        <% end %>
     </td>
   </tr>
 
@@ -135,10 +134,10 @@
     <td colspan="2" class="bg-primary"></td>
   </tr>
 
-  
+
   <tr>
     <td colspan="2">
-        <%= render "/account_entries/index", 
+        <%= render "/account_entries/index",
                 lazy_load_data: false, data_source: account_entries_path(capital_commitment_id: @capital_commitment.id, all: true, format: :json) %>
     </td>
   </tr>

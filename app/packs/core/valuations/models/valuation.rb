@@ -39,6 +39,10 @@ class Valuation < ApplicationRecord
     "#{entity} - #{valuation_date}"
   end
 
+  def to_extended_s
+    "#{owner} - #{investment_instrument} - #{valuation_date}"
+  end
+
   def currency
     if investment_instrument
       investment_instrument.currency
@@ -51,5 +55,27 @@ class Valuation < ApplicationRecord
 
   def per_share_value_in(to_currency, as_of)
     convert_currency(currency, to_currency, per_share_value_cents, as_of)
+  end
+
+  # This method is used to add custom fields to the Valuation form, to enable value bridge
+  def self.add_value_bridge_custom_fields(entity)
+    fields = [
+      ["net_debt", "", "NumberField"],
+      ["revenue", "", "NumberField"],
+      ["ebitda_margin", "", "NumberField"],
+      ["ebitda", "json_fields[\"revenue\"].to_f *  json_fields[\"ebitda_margin\"].to_f / 100", "Calculation"],
+      ["valuation_multiple", "", "NumberField"],
+      ["enterprise_value", "json_fields[\"ebitda\"].to_f * json_fields[\"valuation_multiple\"].to_f", "Calculation"],
+      ["equity_value", "json_fields[\"enterprise_value\"].to_f  - json_fields[\"net_debt\"].to_f", "Calculation"],
+      ["debt_ratio", "(json_fields[\"net_debt\"].to_f  / json_fields[\"enterprise_value\"].to_f).round(2)", "Calculation"],
+      ["equity_ratio", "( json_fields[\"equity_value\"].to_f  / json_fields[\"enterprise_value\"].to_f).round(2)", "Calculation"]
+    ]
+
+    ft = entity.form_types.where(name: "Valuation").first
+    ft ||= entity.form_types.create(name: "Valuation", entity: entity)
+
+    fields.each do |field|
+      ft.form_custom_fields.create(name: field[0], meta_data: field[1], field_type: field[2])
+    end
   end
 end

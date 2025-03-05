@@ -1,0 +1,34 @@
+wb = xlsx_package.workbook
+@capital_remittance_payments = @capital_remittance_payments.includes(:fund, capital_remittance: :capital_commitment)
+
+form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittancePayment")
+
+wb.add_worksheet(name: "CapitalRemittancePayment") do |sheet|
+  headers = ["Fund", "Stakeholder", "Folio", "Amount", "Folio Amount", "Folio Currency", "Payment Date", "Payment Notification Sent", "Notes", "Reference No"] + custom_headers
+
+  has_tracking_currency = false
+  if params[:fund_id].present? || params[:capital_remittance_id].present?
+    fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
+    fund ||= CapitalRemittance.find(params[:capital_remittance_id]).fund if params[:capital_remittance_id].present?
+    if fund.has_tracking_currency?
+      headers += ["Tracking Amount"]
+      has_tracking_currency = true
+    end
+  end
+
+  # Create the header row
+  sheet.add_row(headers)
+
+  # Create entries for each item
+  @capital_remittance_payments.each do |cc|
+    cc.payment_notification_sent ? "Yes" : "No"
+    custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+    commitment = cc.capital_commitment
+
+    values = [cc.fund.name, cc.investor&.investor_name, commitment.folio_id, cc.amount, cc.folio_amount, commitment.folio_currency.to_s, cc.payment_date, cc.payment_notification_sent, cc.notes, cc.reference_no] + custom_field_values
+
+    values << cc.tracking_amount.to_d if has_tracking_currency
+
+    sheet.add_row values
+  end
+end

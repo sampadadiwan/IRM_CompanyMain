@@ -248,7 +248,7 @@
     inv = Investor.last
     @capital_commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(@capital_commitment, args)
-    result = CapitalCommitmentCreate.wtf?(capital_commitment: @capital_commitment)    
+    result = CapitalCommitmentCreate.wtf?(capital_commitment: @capital_commitment)
     result.success?.should == true
     puts "\n####CapitalCommitment####\n"
     puts @capital_commitment.to_json
@@ -358,7 +358,7 @@
           remittance.investor.investor_name.should == user_data["Investor"].strip
           remittance.fund.name.should == user_data["Fund"]
           remittance.capital_call.name.should == user_data["Capital Call"]
-          
+
           remittance.folio_call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees, Folio Currency)"].to_f * 100
           remittance.folio_capital_fee_cents.should == user_data["Capital Fees (Folio Currency)"].to_f * 100
           remittance.folio_other_fee_cents.should == user_data["Other Fees (Folio Currency)"].to_f * 100
@@ -1117,7 +1117,7 @@ Then('the funds are updated with remittance numbers') do
   Fund.all.each do |f|
     f.reload
     f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
-    f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)    
+    f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)
   end
 end
 
@@ -1566,20 +1566,20 @@ Then('the capital remittance payments must have the data in the sheet') do
       next if idx.zero? # skip header row
 
       # create hash from headers and cells
-      user_data = [headers, row].transpose.to_h      
+      user_data = [headers, row].transpose.to_h
 
       cc = capital_remittance_payments[idx-1]
-      
+
       cc.fund.name.should == user_data["Fund"]
       cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
       cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
       cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_i * 100
-      
+
       capital_commitment = cc.capital_remittance.capital_commitment
       capital_commitment.folio_currency.should == user_data["Currency"]
 
       if user_data["Amount (Fund Currency)"].present?
-        cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_i * 100 
+        cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_i * 100
       else
         amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, cc.payment_date).rate) : cc.amount_cents
         cc.amount_cents.should == amount
@@ -1590,7 +1590,7 @@ Then('the capital remittance payments must have the data in the sheet') do
       cc.payment_date.should == user_data["Payment Date"]
       cc.import_upload_id.should == ImportUpload.last.id
 
-      
+
       # sleep(30)
     end
 end
@@ -1702,6 +1702,7 @@ Then('There should be {string} fund unit settings created with data in {string}'
     fus.name.should == row_data["Class/Series"]
     fus.management_fee.should == row_data["Management Fee %"]
     fus.setup_fee.should == row_data["Setup Fee %"]
+    fus.gp_units.should == row_data["Gp Units"].strip.casecmp?("Yes")
     fus.carry.should == row_data["Carry %"]
     fus.isin.should == row_data["Isin"]
 
@@ -2123,7 +2124,7 @@ Then('Given I upload {string} file for the remittances of the capital call with 
   expect(page).to have_content("Import Upload:")
   #sleep((2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  # sleep(10)  
+  # sleep(10)
   ImportUpload.last.failed_row_count.should_not == 0
 end
 

@@ -1,5 +1,5 @@
 class ImportFundUnitSetting < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Class/Series", "Management Fee %",	"Setup Fee %",	"Carry %", "Update Only", "Isin"].freeze
+  STANDARD_HEADERS = ["Fund", "Class/Series", "Management Fee %",	"Setup Fee %",	"Carry %", "Gp Units", "Update Only", "Isin"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -39,11 +39,13 @@ class ImportFundUnitSetting < ImportUtil
   end
 
   def save_fus(fund_unit_setting, fund, row_data, custom_field_headers, import_upload)
+    gp_units = row_data['Gp Units'].to_s.strip.casecmp?("Yes")
     fund_unit_setting.assign_attributes(fund:, import_upload_id: import_upload.id,
                                         name: row_data["Class/Series"],
                                         management_fee: row_data["Management Fee %"].to_s,
                                         setup_fee: row_data["Setup Fee %"]&.to_s,
                                         carry: row_data["Carry %"].to_s,
+                                        gp_units: gp_units,
                                         isin: row_data["Isin"])
 
     setup_custom_fields(row_data, fund_unit_setting, custom_field_headers)

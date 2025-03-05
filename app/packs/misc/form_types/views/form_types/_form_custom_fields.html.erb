@@ -22,7 +22,7 @@
     
     <% 
         field_types =  %w[TextField NumberField DateField TextArea CheckBox Radio Select DataList MultiSelect Money File Header GridColumns] 
-        field_types.concat(%w[Calculation]) if current_user.support?
+        field_types.concat(%w[Calculation]) if current_user.support? || Rails.env.local?
     %>
     <div class="form-group col-md-2">
         <%= f.label :field_type %>

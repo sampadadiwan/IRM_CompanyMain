@@ -113,7 +113,7 @@ FactoryBot.define do
     subject { Faker::Company.name }
     body { Faker::Company.catch_phrase }
     owner { nil }
-    entity { nil }    
+    entity { nil }
   end
 
   factory :stock_conversion do
@@ -201,7 +201,7 @@ FactoryBot.define do
     phone { rand(10 ** 10) }
     send_confirmation { false }
     approved { true }
-    
+
   end
 
   factory :portfolio_cashflow do
@@ -258,6 +258,7 @@ FactoryBot.define do
     name { "A,B,C,D,E,F".split(",").sample }
     management_fee { "9.99" }
     setup_fee { "9.99" }
+    gp_units { false }
   end
 
   factory :fund_formula do

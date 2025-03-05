@@ -17,7 +17,7 @@
 
 <div class="row">
     <% aggregate_portfolio_investment.documents.each do |doc| %>
-        <% if doc.tag_list.split(",").map(&:strip).include?("preview") %>
+        <% if doc.tag_list&.split(",").map(&:strip).include?("preview") %>
             <div class="col"><%= render "/aggregate_portfolio_investments/preview_document", document: doc %></div>
         <% end %>
     <% end %>

@@ -57,3 +57,17 @@ When('I move card to the top position') do
 	sleep(2)
 	expect(kanban_card.reload.sequence).to(eq(1))
 end
+
+When('I create two new cards and save') do
+  create_new_card("Card 1", "Note 1", "Info 1")
+	create_new_card("Card 2", "Note 2", "Info 2")
+end
+
+def create_new_card(title, notes, info_field)
+	first('button', text: "Add Item").click()
+  # sleep(0.25)
+	fill_in("kanban_card_title", with: title)
+	fill_in("kanban_card_notes", with: notes)
+	fill_in("kanban_card_info_field", with: info_field)
+	click_on("Save")
+end

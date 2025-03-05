@@ -33,7 +33,7 @@ module FormTypeHelper
   def get_custom_calc_values(model, form_type, custom_calcs)
     calc_values = []
     custom_calcs.each do |custom_calc|
-      val = form_type && model&.properties ? model.perform_custom_calculation(custom_calc.meta_data) : nil
+      val = form_type && model&.properties ? model.perform_custom_calculation(custom_calc) : nil
       calc_values << val
     end
     calc_values

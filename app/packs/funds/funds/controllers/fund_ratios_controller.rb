@@ -4,7 +4,7 @@ class FundRatiosController < ApplicationController
   # GET /fund_ratios or /fund_ratios.json
   def index
     @q = FundRatio.ransack(params[:q])
-    
+
     @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
 
     if params[:fund_id].present?

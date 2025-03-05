@@ -6,7 +6,7 @@
           data-action="click->tabdetails#loadData">Commitments</a>
 
       <% if fund.entity_id == current_user.entity_id %>
-        
+
         <% unless false && fund.cat3? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">Calls</a>
@@ -140,34 +140,34 @@
 
         <div id="capital-distribution-payments-tab" class="tab-pane fade in">
           <div id="capital-distribution-payments" class="associated_entity">
-            <%= render "/capital_distribution_payments/index", fund: fund,
-                lazy_load_data: true, data_source: capital_distribution_payments_path(fund_id: fund.id, all: true) %>
+            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(fund_id: fund.id) do %>
+            <% end %>
           </div>
         </div>
 
         <% end %>
 
         <!-- For the portfolio and fund ratios, use the master_fund if its present as in the feeder fund we want to see the master_fund portfolio and ratios p-->
-        <% 
-          fund_id = fund.master_fund.present? ?  fund.master_fund_id : fund.id 
-          fund_or_master = fund.master_fund.present? ? fund.master_fund : fund          
+        <%
+          fund_id = fund.master_fund.present? ?  fund.master_fund_id : fund.id
+          fund_or_master = fund.master_fund.present? ? fund.master_fund : fund
         %>
 
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <div id="portfolio-investments-tab" class="tab-pane fade">
             <div id="portfolio_investments" class="associated_entity">
               <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund_or_master, dashboard_name: "Portfolio Dashboard") do %>
-                
+
                 <%= render "/layouts/loading" %>
-                
-              <% end %>              
+
+              <% end %>
             </div>
           </div>
         <% end %>
 
 
         <div id="fund-ratios-tab" class="tab-pane fade in">
-          <div id="fund-ratios" class="associated_entity">            
+          <div id="fund-ratios" class="associated_entity">
             <%= render "/fund_ratios/index", fund: fund,
                 lazy_load_data: true, data_source: fund_ratios_path(fund_id:, all: true, fund_ratios_only: true, owner_type: "Fund", format: :json) %>
           </div>

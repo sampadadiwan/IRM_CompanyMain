@@ -16,9 +16,10 @@ class KanbanCardsController < ApplicationController
   def new
     @kanban_card = KanbanCard.new(kanban_card_params)
     authorize @kanban_card
-    frame = "board#{@kanban_card.kanban_board_id}_new_kanban_card"
+
+    @frame = params[:turbo_frame] || "board#{@kanban_card.kanban_board_id}_new_kanban_card"
     render turbo_stream: [
-      turbo_stream.append(frame, partial: "kanban_cards/form", locals: { kanban_card: @kanban_card })
+      turbo_stream.append(@frame, partial: "kanban_cards/form", locals: { kanban_card: @kanban_card, turbo_tag: @frame })
     ]
   end
 
@@ -27,13 +28,15 @@ class KanbanCardsController < ApplicationController
     kanban_board = @kanban_card.kanban_board
     authorize @kanban_card
     authorize kanban_board
+
+    @frame = params[:turbo_frame] || params[:kanban_card][:turbo_frame] || "board#{@kanban_card.kanban_board_id}_new_kanban_card"
     respond_to do |format|
       if @kanban_card.persisted?
         format.html { redirect_to kanban_board_url(kanban_board), notice: "Card is successfully created." }
         format.json { render :show, status: :created }
         format.turbo_stream do
           UserAlert.new(user_id: current_user.id, message: "Card is successfully created.", level: "success").broadcast
-          render :create
+          render :create, locals: { frame: @frame }
         end
       else
         @alert = "Card could not be created!"
@@ -49,7 +52,7 @@ class KanbanCardsController < ApplicationController
 
   def show
     if params[:turbo]
-      frame = params[:turbo_frame] || "kanban_card_show_offcanvas#{@kanban_card.id}"
+      frame = params[:turbo_frame] || "card_offcanvas_turbo_frame"
       render turbo_stream: [
         turbo_stream.replace(frame, partial: "kanban_cards/offcanvas_show", locals: { kanban_card: @kanban_card, update_allowed: policy(@kanban_card).update?, turbo_tag: frame })
       ]
@@ -60,7 +63,7 @@ class KanbanCardsController < ApplicationController
     @kanban_column = @kanban_card&.kanban_column
     respond_to do |format|
       format.turbo_stream do
-        frame = params[:turbo_frame] || "kanban_card_form_offcanvas#{@kanban_card.id}"
+        frame = params[:turbo_frame] || "card_offcanvas_turbo_frame"
         render turbo_stream: [
           turbo_stream.replace(frame, partial: "kanban_cards/offcanvas_form", locals: { kanban_card: @kanban_card, update_allowed: policy(@kanban_card).update?, turbo_tag: frame })
         ]
@@ -69,7 +72,7 @@ class KanbanCardsController < ApplicationController
   end
 
   def update
-    @frame = params[:turbo_frame] || params["kanban_card"]["turbo_frame"] || "kanban_card_form_offcanvas#{@kanban_card.id}"
+    @frame = params[:turbo_frame] || params["kanban_card"]["turbo_frame"] || "card_offcanvas_turbo_frame"
     @current_user = current_user
 
     respond_to do |format|

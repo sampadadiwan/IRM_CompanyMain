@@ -41,7 +41,6 @@ end
 
 When('I click on the Add Item and select any Investor and save') do
   # sleep(0.25)
-  first('button', text: "Add Item").click
   # sleep(1)
   inv_entities = FactoryBot.create_list(:entity, 2, entity_type: "Investor")
 
@@ -51,6 +50,7 @@ When('I click on the Add Item and select any Investor and save') do
       And another entity is an investor "category=Lead Investor" in entity
       )
     end
+
   select_investor_and_save(1, 'First Investment')
   select_investor_and_save(2, 'Second Investment')
   expect(page).to have_content("First Investment")

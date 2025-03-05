@@ -1,40 +1,39 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
-  
+
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#payments-tab" data-action="click->tabdetails#loadData">Payments</a>
-      
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
         Tasks
       </a>
 
     </nav>
-  
+
     <div class="tab-content" data-controller="datatable">
-  
+
         <div id="payments-tab" class="tab-pane fade in show active">
           <div id="payments" class="associated_entity">
-            <%= render "/capital_distribution_payments/index", capital_distribution: capital_distribution,
-                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, all: true, format: :json) %>
-          </div>     
+            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id) do %>
+            <% end %>
+          </div>
         </div>
 
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, capital_distribution.entity).first %>
-            <%= link_to tasks_path( for_entity_id: nil, 
+            <%= link_to tasks_path( for_entity_id: nil,
                                     entity_id: capital_distribution.entity_id,
-                                    owner_id: capital_distribution.id, owner_type: "CapitalDistribution"), 
-                                    class: "load_data_link", 
+                                    owner_id: capital_distribution.id, owner_type: "CapitalDistribution"),
+                                    class: "load_data_link",
                                     data: { turbo_frame: 'task_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
-          </div>     
+          </div>
         </div>
-  
+
     </div>
-  
+
   </div>
-  
