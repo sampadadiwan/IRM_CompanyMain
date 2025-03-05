@@ -359,7 +359,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def dist_cash_gp
-    @cache[:dist_cash_gp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents) - money_sum(current_dist_payments_lp, :reinvestment_with_fees_cents)
+    @cache[:dist_cash_gp] ||= money_sum(current_dist_payments_gp, :gross_payable_cents) - money_sum(current_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def dist_cash_total
@@ -439,8 +439,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     @cache[:agg_dist_prior_notice_investor] ||= begin
       dist_prior_notice_investor_lp = prior_dist_payments_lp.where(folio_id: object.folio_id)
       dist_prior_notice_investor_gp = prior_dist_payments_gp.where(folio_id: object.folio_id)
-      money_sum(dist_prior_notice_investor_lp, :gross_payable_cents) +
-        money_sum(dist_prior_notice_investor_gp, :gross_payable_cents)
+      money_sum(dist_prior_notice_investor_lp, :gross_payable_cents) + money_sum(dist_prior_notice_investor_gp, :gross_payable_cents) - money_sum(dist_prior_notice_investor_lp, :reinvestment_with_fees_cents) - money_sum(dist_prior_notice_investor_gp, :reinvestment_with_fees_cents)
     end
   end
 
