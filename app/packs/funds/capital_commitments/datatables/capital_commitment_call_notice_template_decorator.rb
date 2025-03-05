@@ -26,7 +26,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
   # Get LP and GP commitments with caching
   def lp_commitments(end_date = nil)
-    end_date ||= @end_date
+    end_date ||= @curr_date
     key = "lp_commitments_#{end_date}"
 
     @cache[key] ||= begin
@@ -39,7 +39,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   end
 
   def gp_commitments(end_date = nil)
-    end_date ||= @end_date
+    end_date ||= @curr_date
     key = "gp_commitments_#{end_date}"
 
     @cache[key] ||= begin
@@ -124,8 +124,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def committed_reinvest_lp_cents
     @cache[:committed_reinvest_lp_cents] ||= begin
       cents = 0
-      lp_commitments.each do |comm|
-        comm.capital_distribution_payments.where(payment_date: ..@end_date).find_each do |dist|
+      lp_commitments(@curr_date).each do |comm|
+        comm.capital_distribution_payments.where(payment_date: ..@curr_date).find_each do |dist|
           cents += dist.reinvestment_with_fees_cents
         end
       end
@@ -136,8 +136,8 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   def committed_reinvest_gp_cents
     @cache[:committed_reinvest_gp_cents] ||= begin
       cents = 0
-      gp_commitments.each do |comm|
-        comm.capital_distribution_payments.where(payment_date: ..@end_date).find_each do |dist|
+      gp_commitments(@curr_date).each do |comm|
+        comm.capital_distribution_payments.where(payment_date: ..@curr_date).find_each do |dist|
           cents += dist.reinvestment_with_fees_cents
         end
       end
@@ -148,11 +148,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Business Logic Methods ===
 
   def committed_cash_lp
-    @cache[:committed_cash_lp] ||= money_sum(lp_commitments, :committed_amount_cents)
+    @cache[:committed_cash_lp] ||= money_sum(lp_commitments(@curr_date), :committed_amount_cents)
   end
 
   def committed_cash_gp
-    @cache[:committed_cash_gp] ||= money_sum(gp_commitments, :committed_amount_cents)
+    @cache[:committed_cash_gp] ||= money_sum(gp_commitments(@curr_date), :committed_amount_cents)
   end
 
   def committed_cash_total
@@ -181,7 +181,7 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
   def committed_reinvest_investor
     @cache[:committed_reinvest_investor] ||= money_sum(
-      object.capital_distribution_payments.where(payment_date: ..@end_date),
+      object.capital_distribution_payments.where(payment_date: ..@curr_date),
       :reinvestment_with_fees_cents
     )
   end
@@ -233,11 +233,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Drawdowns ===
 
   def drawdown_cash_lp
-    @cache[:drawdown_cash_lp] ||= money_sum(lp_remittances, :call_amount_cents)
+    @cache[:drawdown_cash_lp] ||= money_sum(lp_remittances(@curr_date), :call_amount_cents)
   end
 
   def drawdown_cash_gp
-    @cache[:drawdown_cash_gp] ||= money_sum(gp_remittances, :call_amount_cents)
+    @cache[:drawdown_cash_gp] ||= money_sum(gp_remittances(@curr_date), :call_amount_cents)
   end
 
   def drawdown_cash_total
@@ -355,11 +355,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Distribution Cash ===
 
   def dist_cash_lp
-    @cache[:dist_cash_lp] ||= money_sum(prior_dist_payments_lp, :gross_payable_cents)
+    @cache[:dist_cash_lp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents) - money_sum(current_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def dist_cash_gp
-    @cache[:dist_cash_gp] ||= money_sum(prior_dist_payments_gp, :gross_payable_cents)
+    @cache[:dist_cash_gp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents) - money_sum(current_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def dist_cash_total
@@ -368,9 +368,9 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
 
   def dist_cash_investor
     @cache[:dist_cash_investor] ||= money_sum(
-      object.capital_distribution_payments.where(payment_date: ..@end_date),
+      object.capital_distribution_payments.where(payment_date: ..@curr_date),
       :gross_payable_cents
-    )
+    ) - money_sum(object.capital_distribution_payments.where(payment_date: ..@curr_date), :reinvestment_with_fees_cents)
   end
 
   def dist_cash_investor_percent
@@ -424,11 +424,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Aggregate Prior Distribution ===
 
   def agg_dist_prior_notice_lp
-    dist_cash_lp
+    @cache[:agg_dist_prior_notice_lp] ||= money_sum(prior_dist_payments_lp, :gross_payable_cents) - money_sum(prior_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def agg_dist_prior_notice_gp
-    dist_cash_gp
+    @cache[:agg_dist_prior_notice_gp] ||= money_sum(prior_dist_payments_gp, :gross_payable_cents) - money_sum(prior_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def agg_dist_prior_notice_total
@@ -451,11 +451,11 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
   # === Aggregate Current Distribution ===
 
   def agg_dist_current_notice_lp
-    @cache[:agg_dist_current_notice_lp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents)
+    @cache[:agg_dist_current_notice_lp] ||= money_sum(current_dist_payments_lp, :gross_payable_cents) - money_sum(current_dist_payments_lp, :reinvestment_with_fees_cents)
   end
 
   def agg_dist_current_notice_gp
-    @cache[:agg_dist_current_notice_gp] ||= money_sum(current_dist_payments_gp, :gross_payable_cents)
+    @cache[:agg_dist_current_notice_gp] ||= money_sum(current_dist_payments_gp, :gross_payable_cents) - money_sum(current_dist_payments_gp, :reinvestment_with_fees_cents)
   end
 
   def agg_dist_current_notice_total
@@ -466,6 +466,9 @@ class CapitalCommitmentCallNoticeTemplateDecorator < CapitalCommitmentTemplateDe
     @cache[:agg_dist_current_notice_investor] ||= money_sum(
       object.capital_distribution_payments.where(payment_date: @curr_date),
       :gross_payable_cents
+    ) - money_sum(
+      object.capital_distribution_payments.where(payment_date: @curr_date),
+      :reinvestment_with_fees_cents
     )
   end
 

@@ -95,7 +95,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
       lp_remittance_ids = []
       gp_remittance_ids = []
 
-      capital_calls.includes(capital_remittances: :capital_commitment).each do |call|
+      capital_calls.includes(capital_remittances: :capital_commitment).find_each do |call|
         call.capital_remittances.each do |cr|
           if cr.remittance_date <= @end_date
             if cr.capital_commitment.fund_unit_setting&.gp_units
@@ -141,7 +141,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
       lp_remittance_ids = []
       gp_remittance_ids = []
 
-      current_capital_calls.includes(capital_remittances: :capital_commitment).each do |call|
+      current_capital_calls.includes(capital_remittances: :capital_commitment).find_each do |call|
         call.capital_remittances.each do |cr|
           if cr.remittance_date <= @curr_date
             if cr.capital_commitment.fund_unit_setting&.gp_units
