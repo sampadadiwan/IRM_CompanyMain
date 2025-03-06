@@ -245,13 +245,11 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   # === Fees Calculations ===
 
   def fees_prior_notice_lp
-    @cache[:fees_prior_notice_lp] ||= money_sum(prior_lp_remittances, :capital_fee_cents) +
-                                      money_sum(prior_lp_remittances, :other_fee_cents)
+    @cache[:fees_prior_notice_lp] ||= money_sum(prior_lp_remittances, :capital_fee_cents)
   end
 
   def fees_prior_notice_gp
-    @cache[:fees_prior_notice_gp] ||= money_sum(prior_gp_remittances, :capital_fee_cents) +
-                                      money_sum(prior_gp_remittances, :other_fee_cents)
+    @cache[:fees_prior_notice_gp] ||= money_sum(prior_gp_remittances, :capital_fee_cents)
   end
 
   def fees_prior_notice_total
@@ -259,8 +257,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def fees_prior_notice_investor
-    @cache[:fees_prior_notice_investor] ||= money_sum(prior_remittances_investor, :capital_fee_cents) +
-                                            money_sum(prior_remittances_investor, :other_fee_cents)
+    @cache[:fees_prior_notice_investor] ||= money_sum(prior_remittances_investor, :capital_fee_cents)
   end
 
   def fees_prior_notice_investor_percent
@@ -268,13 +265,11 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def fees_current_notice_lp
-    @cache[:fees_current_notice_lp] ||= money_sum(current_lp_remittances, :capital_fee_cents) +
-                                        money_sum(current_lp_remittances, :other_fee_cents)
+    @cache[:fees_current_notice_lp] ||= money_sum(current_lp_remittances, :capital_fee_cents)
   end
 
   def fees_current_notice_gp
-    @cache[:fees_current_notice_gp] ||= money_sum(current_gp_remittances, :capital_fee_cents) +
-                                        money_sum(current_gp_remittances, :other_fee_cents)
+    @cache[:fees_current_notice_gp] ||= money_sum(current_gp_remittances, :capital_fee_cents)
   end
 
   def fees_current_notice_total
@@ -282,7 +277,7 @@ class CapitalRemittanceTemplateDecorator < TemplateDecorator # rubocop:disable M
   end
 
   def fees_current_notice_investor
-    @cache[:fees_current_notice_investor] ||= object.capital_fee + object.other_fee
+    @cache[:fees_current_notice_investor] ||= object.capital_fee
   end
 
   def fees_current_notice_investor_percent
