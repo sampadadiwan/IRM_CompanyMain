@@ -11,6 +11,8 @@ class CustomNotification < ApplicationRecord
   validates :whatsapp, :subject, length: { maximum: 255 }
   validates :for_type, :email_method, length: { maximum: 100 }
 
+  # validates :email_method, uniqueness: { scope: %i[owner_id owner_type], message: ->(object, _data) { "#{object.email_method} already exists for #{object.owner}" } }
+
   # We need to ensure that the whatsapp message does not have special characters, otherwise they are escaped by WA and look bad in the actual message
   validate :check_whatsapp
   SPECIAL = "&^#`~".freeze

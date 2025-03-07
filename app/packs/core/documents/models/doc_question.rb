@@ -22,8 +22,10 @@ class DocQuestion < ApplicationRecord
   validate :name_or_tags_present
 
   def name_or_tags_present
-    errors.add(:document_name, "Name or Tags must be present") if document_name.blank?
-    errors.add(:tags, "Name or Tags must be present") if tags.blank?
+    if document_name.blank? && tags.blank?
+      errors.add(:document_name, "Name or Tags must be present") if document_name.blank?
+      errors.add(:tags, "Name or Tags must be present") if tags.blank?
+    end
   end
 
   def to_s

@@ -18,19 +18,17 @@ class PortfolioReportJob < LlmReportJob
     end
 
     portfolio_companies.each do |portfolio_company|
-
       begin
-      # generate_section_extracts(portfolio_company, portfolio_report, start_date, end_date)
-      portfolio_report_extract = generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id)
+        # generate_section_extracts(portfolio_company, portfolio_report, start_date, end_date)
+        portfolio_report_extract = generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id)
 
-      next if portfolio_report_extract.blank?
+        next if portfolio_report_extract.blank?
       rescue StandardError => e
         msg = "Error generating report for #{portfolio_company.name} for report #{portfolio_report}: #{e.message}"
         Rails.logger.error { msg }
         send_notification(msg, user_id)
         raise e
       end
-
 
       template_ids = portfolio_report.documents.pluck(:id)
       # Now generate the actual report using the templates

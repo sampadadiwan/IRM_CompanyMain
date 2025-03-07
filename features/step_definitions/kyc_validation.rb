@@ -18,7 +18,6 @@
       doc_question = DocQuestion.new
       doc_question.entity_id = @investor_kyc.entity_id
       doc_question.owner = @investor_kyc.entity
-      
       doc_question.tags = row[1]
       doc_question.question = row[2]
       doc_question.for_class = row[3]
