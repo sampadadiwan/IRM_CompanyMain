@@ -62,4 +62,34 @@ module KpisHelper
       kpi&.name
     end
   end
+
+  include ActionView::Helpers::NumberHelper
+
+  def grid_view_array(portfolio_company, end_date)
+    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: ..end_date).order(as_of: :asc)
+    investor_kpi_mappings = portfolio_company.investor_kpi_mappings
+
+    # Generate headers as OpenStruct with index keys
+    header_data = { "val_0" => 'KPI' }
+    kpi_reports.each_with_index do |kr, index|
+      header_data["val_#{index + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
+    end
+    headers = [OpenStruct.new(header_data)]
+
+    # Generate rows as OpenStructs with index keys
+    rows = investor_kpi_mappings.map do |ikm|
+      row_data = { "val_0" => ikm.standard_kpi_name } # First column is the KPI name
+
+      kpi_reports.each_with_index do |kr, index|
+        kpi_hash = kr.kpis.index_by { |kpi| kpi.name.downcase }
+        kpi = kpi_hash[ikm.reported_kpi_name.downcase]
+
+        row_data["val_#{index + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
+      end
+
+      OpenStruct.new(row_data)
+    end
+
+    headers + rows
+  end
 end

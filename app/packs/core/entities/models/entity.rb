@@ -94,6 +94,7 @@ class Entity < ApplicationRecord
   has_many :investment_opportunities, dependent: :destroy
   has_many :expression_of_interests, dependent: :destroy
   has_many :portfolio_investments
+  has_many :portfolio_reports, dependent: :destroy
   has_many :investment_instruments
   has_many :portfolio_cashflows
   has_many :aggregate_portfolio_investments

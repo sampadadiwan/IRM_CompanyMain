@@ -1,0 +1,16 @@
+<table class="table table-bordered dataTable">
+  <thead>
+    <tr>
+      <th>Portfolio Company</th>
+      <th>Start Date</th>
+      <th>End Date</th>
+      <th>Section</th>
+      <th>Extracted Data</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% portfolio_report_extracts.includes(:portfolio_company, :portfolio_report_section).each do |portfolio_extract| %>
+      <%= render "portfolio_reports/portfolio_extract", portfolio_extract: %>
+    <% end %>
+  </tbody>
+</table>

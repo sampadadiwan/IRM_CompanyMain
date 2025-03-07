@@ -1,0 +1,51 @@
+<% 
+  
+  template_names = @investor.entity.documents.where(owner_type: "PortfolioReport").map{|d| ["#{d.name} - #{d.owner}", d.id]}
+  start_date ||= params[:start_date] || (Date.today - 3.months).beginning_of_month
+  end_date ||= params[:end_date] || Date.today.end_of_month
+%>
+<%= render NewCard.new do %>
+
+  <%= render FormCard.new(title: "Generate Reports for #{@investor}") do %>
+
+    <div class=" alert alert-danger text-center text-danger">
+        Note that the data will be sent to an external LLM for report generation
+    </div>
+
+    <%= form_with(model: nil, url: generate_reports_investor_path(@investor), method: :post) do |form| %>
+            
+      <div class="form-group">
+        <%= form.label :portfolio_report_id %>
+        <%= form.select :portfolio_report_id, @investor.entity.portfolio_reports.map{|pr| [pr.name, pr.id]}, {}, class: "form-control", name: "portfolio_report_id"  %>
+        <small class="form-text text-muted">Select the reports to generate. <%= link_to "Click Here", portfolio_reports_path, target: "_blank", rel: "noopener" %> to setup a report</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :report_template_id %>
+        <%= form.select :report_template_id, template_names, {}, class: "form-control", name: "report_template_id"  %>
+        <small class="form-text text-muted">Select the template to use for the report. (Templates must be uploaded under the selected 'Portfolio Report')</small>
+      </div>
+
+
+      <div class="form-group">
+        <%= form.label :start_date %>
+        <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
+        <small class="form-text text-muted">Select the start date.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :end_date %>
+        <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date  %>
+        <small class="form-text text-muted">Select the end date.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+      </div>
+
+      
+    <% end %>
+
+  <% end %>
+  
+<% end %>

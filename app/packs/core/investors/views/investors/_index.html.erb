@@ -38,6 +38,8 @@
                 { class: "dropdown-item"} if policy(investor).upload? %>
 
 
+            <%= link_to "Portfolio Reports Setup" , portfolio_reports_path,
+            {class: "dropdown-item" } %>
 
             <%= link_to "Add Stakeholder Notice" ,
                 new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id,

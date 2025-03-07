@@ -39,7 +39,7 @@ class Investment < ApplicationRecord
     ["portfolio_company"]
   end
 
-  def self.generate_cap_table(funding_rounds, portfolio_company_id)
+  def self.generate_cap_table(funding_rounds, portfolio_company_id, group_by_field: :investor_name)
     # Get all investments for the funding round
     investments = where(funding_round: funding_rounds, portfolio_company_id: portfolio_company_id)
 
@@ -48,10 +48,10 @@ class Investment < ApplicationRecord
     convertible_investments = investments.where(investment_type: "Convertible")
 
     # Compute current holdings (excluding convertibles)
-    current_holdings = equity_investments.group(:investor_name).sum(:quantity)
+    current_holdings = equity_investments.group(group_by_field).sum(:quantity)
 
     # Compute total convertibles for each investor
-    convertibles = convertible_investments.group(:investor_name).sum(:quantity)
+    convertibles = convertible_investments.group(group_by_field).sum(:quantity)
 
     # Merge both hashes to get all unique investors
     all_investors = (current_holdings.keys + convertibles.keys).uniq
@@ -66,16 +66,16 @@ class Investment < ApplicationRecord
     return [] if total_fully_diluted.zero?
 
     # Generate the cap table
-    cap_table = all_investors.map do |investor_name|
-      equity_quantity = current_holdings[investor_name] || 0
-      convertible_quantity = convertibles[investor_name] || 0
+    cap_table = all_investors.map do |grouping_field|
+      equity_quantity = current_holdings[grouping_field] || 0
+      convertible_quantity = convertibles[grouping_field] || 0
       diluted_quantity = equity_quantity + convertible_quantity
 
       percentage = total_equity.positive? ? (equity_quantity.to_f / total_equity * 100).round(1) : 0.0
       fully_diluted_percentage = (diluted_quantity.to_f / total_fully_diluted * 100).round(1)
 
       {
-        investor_name: investor_name,
+        grouping_field: grouping_field,
         quantity: equity_quantity,
         percentage: "#{percentage}%",
         fully_diluted: diluted_quantity,
@@ -85,7 +85,7 @@ class Investment < ApplicationRecord
 
     # Append total row
     cap_table << {
-      investor_name: "Total",
+      grouping_field: "Total",
       quantity: total_equity,
       percentage: "100.0%",
       fully_diluted: total_fully_diluted,

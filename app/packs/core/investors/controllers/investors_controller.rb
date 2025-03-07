@@ -1,5 +1,5 @@
 class InvestorsController < ApplicationController
-  before_action :set_investor, only: %w[show update destroy edit dashboard]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports]
   after_action :verify_authorized, except: [:merge]
 
   # GET /investors or /investors.json
@@ -17,6 +17,18 @@ class InvestorsController < ApplicationController
       format.turbo_stream
       format.xlsx
       format.json { render json: InvestorDatatable.new(params, investors: @investors) }
+    end
+  end
+
+  def generate_reports
+    if request.post?
+      # Generate the report if this is a post request
+      PortfolioReportJob.perform_later(params[:portfolio_report_id], params[:start_date], params[:end_date], current_user.id, portfolio_company_id: @investor.id)
+
+      redirect_to investor_path(@investor, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
+    else
+      # Show the form to generate the report
+      render "generate_reports"
     end
   end
 

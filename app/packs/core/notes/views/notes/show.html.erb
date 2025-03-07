@@ -17,6 +17,14 @@
         On: <%= l @note.on if @note.on%>
       </td>
     </tr>
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= @note.tags %>
+      </td>
+    </tr>
     <% if @note.reminder %>
       <tr>
         <td>

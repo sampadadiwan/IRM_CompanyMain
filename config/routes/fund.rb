@@ -99,8 +99,6 @@ resources :funds do
   get 'export', on: :member
   get 'check_access_rights', on: :member
   delete 'delete_all', on: :member
-  get 'generate_reports', on: :member
-  post 'generate_reports', on: :member
   get 'dashboard', on: :member
   post 'generate_tracking_numbers', on: :member
 end

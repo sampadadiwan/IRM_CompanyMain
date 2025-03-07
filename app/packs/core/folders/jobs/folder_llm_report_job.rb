@@ -1,6 +1,6 @@
 # This job is used to generate a report for a folder. It will take all the pdf files in the folder and generate a report using the template.html file in the folder.
 # It calls out to a python service which is in the xirr package. The service will generate a report and save it in the folder_path. The job will then check the folder_path for the output_report.html file and download it and save it as a document in the folder.
-class FolderLlmReportJob < ApplicationJob
+class FolderLlmReportJob < LlmReportJob
   queue_as :low
 
   def template_to_output_file_name(output_file_name_prefix, template_name)
@@ -12,7 +12,7 @@ class FolderLlmReportJob < ApplicationJob
     output_file_name.gsub(".html", "").gsub("html", "").humanize.titleize
   end
 
-  def perform(folder_id, user_id, report_template_name: "Report Template", kpis: nil, apis: nil, output_folder_id: nil, output_file_name_prefix: nil)
+  def perform(folder_id, user_id, report_template_name: "Report Template", kpis: nil, apis: nil, notes: nil, output_folder_id: nil, output_file_name_prefix: nil)
     Chewy.strategy(:sidekiq) do
       folder = Folder.find(folder_id)
       output_folder = output_folder_id.present? ? Folder.find(output_folder_id) : folder
@@ -41,6 +41,7 @@ class FolderLlmReportJob < ApplicationJob
         additional_data = {}
         additional_data[:kpis] = JSON.parse(kpis) if kpis.present?
         additional_data[:portfolio_investments] = JSON.parse(apis) if apis.present?
+        additional_data[:notes] = JSON.parse(notes) if notes.present?
 
         response = generate_report(doc_urls, template_url, output_file_name, additional_data:)
         if response.code == 200
@@ -85,40 +86,6 @@ class FolderLlmReportJob < ApplicationJob
     end
 
     [doc_urls, template_url]
-  end
-
-  def generate_report(doc_urls, template_url, output_file_name, additional_data: nil)
-    # This is part of the xirr_py package
-    # https://github.com/ausangshukla/xirr_py
-    response = HTTParty.post(
-      "http://localhost:8000/generate-report/",
-      headers: {
-        'Content-Type' => 'application/json'
-      },
-      body: {
-        openai_api_key: Rails.application.credentials["OPENAI_API_KEY"],
-        anthropic_api_key: Rails.application.credentials["ANTHROPIC_API_KEY"],
-        file_urls: doc_urls,
-        template_html_url: template_url,
-        additional_data: additional_data&.to_json,
-        output_file_name:
-      }.to_json
-    )
-
-    Rails.logger.debug response
-    response
-  end
-
-  def check_for_output_report(folder_path, output_file_name)
-    tries = 0
-    # Now sleep for 2 mins and check the folder_path for the output_report.html file, and do this in a loop
-    while tries < 8
-      tries += 1
-      msg = "Checking #{tries} for #{output_file_name} file in #{folder_path}"
-      Rails.logger.debug msg
-      sleep(30)
-      break if File.exist?("#{folder_path}/#{output_file_name}")
-    end
   end
 
   # rubocop:disable Rails/SkipsModelValidations

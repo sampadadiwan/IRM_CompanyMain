@@ -38,17 +38,20 @@
         Sections
       </td>
       <td>
-        <% @portfolio_report.portfolio_report_sections.each_with_index do |prs, idx| %>
+        
           <div class="nested-fields">
-            <div class="field">
-              <label>Section <%= idx + 1%>: </label>
-              <%= prs.name %>
-            </div>
-            <div class="field">
-              <%= prs.data %>
-            </div>
+            <table class="table dataTable">
+              <% @portfolio_report.portfolio_report_sections.each_with_index do |prs, idx| %>
+                <tr>
+                  <td>Section <%= idx + 1%></td>
+                  <td> <%= prs.name %> </td>
+                  <td> <%= prs.tags %> </td>            
+                  <td> <%= prs.data %> </td>
+                </tr>
+              <% end %>
+            </table>
           </div>
-        <% end %>
+        
       </td>
     </tr>
   </table>
@@ -59,3 +62,7 @@
     <% end %>
   </div>
 <% end %>
+
+<div class="associated_entity">
+  <%= render "/portfolio_reports/details", portfolio_report: @portfolio_report %>
+</div
