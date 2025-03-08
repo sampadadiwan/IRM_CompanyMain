@@ -1366,6 +1366,16 @@ Given('there is a custom notification {string} in place for the KYC') do |args|
   @custom_notification.save!
 end
 
+Then('the first notification has latest {string} and enable {string}') do |latest, enabled|
+  CustomNotification.first.latest.to_s.should == latest
+  CustomNotification.first.enabled.to_s.should == enabled
+end
+
+Then('the second notification has latest {string} and enable {string}') do |latest, enabled|
+  CustomNotification.last.latest.to_s.should == latest
+  CustomNotification.last.enabled.to_s.should == enabled
+end
+
 
 Then('the investor entity should have {string} permissions') do |args|
   @investor.reload

@@ -46,34 +46,8 @@ class PortfolioReportJob < LlmReportJob
     msg = "Generating extract for #{portfolio_company.name} for report #{portfolio_report}"
     Rails.logger.debug { msg }
     send_notification(msg, user_id)
-    # Convert the section's comma separated tags to an array for matching
-    report_tags = portfolio_report.tags.split(',').map(&:strip)
 
-    # Get the KPI reports for the portfolio company in the date range
-    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: start_date..end_date)
-    # Get the documents for the KPI reports, which are not generated
-    documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
-    # Get the notes for the KPI reports
-    notes = portfolio_company.notes.where(created_at: start_date..end_date)
-
-    # Filter the records that contain any matching tag
-    if report_tags.present?
-      filtered_documents = documents.select do |doc|
-        doc.tag_list.present? && doc.tag_list.split(',').map(&:strip).intersect?(report_tags)
-      end
-      filtered_notes = notes.select do |note|
-        note.tags.present? && note.tags.split(',').map(&:strip).intersect?(report_tags)
-      end
-    else
-      filtered_documents = documents
-      filtered_notes = notes
-    end
-
-    # We only allow for PDF documents for now
-    filtered_documents = filtered_documents.select(&:pdf?)
-
-    Rails.logger.debug { "Filtered Documents: #{filtered_documents.count}, #{filtered_documents.map(&:id)}" }
-    Rails.logger.debug { "Filtered Notes: #{filtered_notes.count}, #{filtered_notes.map(&:id)}" }
+    filtered_documents, filtered_notes = get_docs_notes(portfolio_company, portfolio_report, start_date, end_date)
 
     if filtered_documents.empty?
       Rails.logger.debug { "No documents found for #{portfolio_company.name} for report #{portfolio_report}" }
@@ -113,5 +87,38 @@ class PortfolioReportJob < LlmReportJob
       portfolio_report_extract
 
     end
+  end
+
+  def get_docs_notes(portfolio_company, portfolio_report, start_date, end_date)
+    # Convert the section's comma separated tags to an array for matching
+    report_tags = portfolio_report.tags.split(',').map(&:strip)
+
+    # Get the KPI reports for the portfolio company in the date range
+    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: start_date..end_date)
+    # Get the documents for the KPI reports, which are not generated
+    documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
+    # Get the notes for the KPI reports
+    notes = portfolio_company.notes.where(created_at: start_date..end_date)
+
+    # Filter the records that contain any matching tag
+    if report_tags.present?
+      filtered_documents = documents.select do |doc|
+        doc.tag_list.present? && doc.tag_list.split(',').map(&:strip).intersect?(report_tags)
+      end
+      filtered_notes = notes.select do |note|
+        note.tags.present? && note.tags.split(',').map(&:strip).intersect?(report_tags)
+      end
+    else
+      filtered_documents = documents
+      filtered_notes = notes
+    end
+
+    # We only allow for PDF documents for now
+    filtered_documents = filtered_documents.select(&:pdf?)
+
+    Rails.logger.debug { "Filtered Documents: #{filtered_documents.count}, #{filtered_documents.map(&:id)}" }
+    Rails.logger.debug { "Filtered Notes: #{filtered_notes.count}, #{filtered_notes.map(&:id)}" }
+
+    [filtered_documents, filtered_notes]
   end
 end
