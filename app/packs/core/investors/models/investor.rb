@@ -16,6 +16,9 @@ class Investor < ApplicationRecord
 
   belongs_to :investor_entity, class_name: "Entity"
   has_many :kpi_reports, through: :investor_entity
+  # These are uploaded by the fund for its own portfolio_companies
+  has_many :portfolio_kpi_reports, class_name: "KpiReport", foreign_key: :portfolio_company_id
+  has_many :portfolio_kpis, class_name: "Kpi", through: :portfolio_kpi_reports, source: :kpis
 
   belongs_to :entity, touch: true
   counter_culture :entity
@@ -47,6 +50,8 @@ class Investor < ApplicationRecord
   has_many :investment_instruments, dependent: :destroy, foreign_key: :portfolio_company_id
   has_many :portfolio_cashflows, dependent: :destroy, foreign_key: :portfolio_company_id
   has_many :stock_adjustments, dependent: :destroy, foreign_key: :portfolio_company_id
+
+  has_many :investments, dependent: :destroy, foreign_key: :portfolio_company_id
 
   has_many :investor_kycs, dependent: :destroy
   has_many :investor_kyc_sebi_datas, through: :investor_kycs

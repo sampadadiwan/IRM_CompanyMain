@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -263,9 +263,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
     t.decimal "price", precision: 20, scale: 2, default: "0.0"
     t.timestamp "deleted_at"
     t.bigint "import_upload_id"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_allocations_on_deleted_at"
     t.index ["document_folder_id"], name: "index_allocations_on_document_folder_id"
     t.index ["entity_id"], name: "index_allocations_on_entity_id"
+    t.index ["form_type_id"], name: "index_allocations_on_form_type_id"
     t.index ["interest_id"], name: "index_allocations_on_interest_id"
     t.index ["offer_id"], name: "index_allocations_on_offer_id"
     t.index ["secondary_sale_id"], name: "index_allocations_on_secondary_sale_id"
@@ -835,6 +837,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
     t.boolean "is_erb", default: false
     t.string "to", limit: 40
     t.string "attachment_names"
+    t.boolean "latest", default: true
     t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
@@ -2533,13 +2536,15 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
   create_table "portfolio_report_extracts", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "portfolio_report_id", null: false
-    t.bigint "portfolio_report_section_id", null: false
+    t.bigint "portfolio_report_section_id"
     t.bigint "portfolio_company_id", null: false
     t.date "start_date"
     t.date "end_date"
     t.json "data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_portfolio_report_extracts_on_deleted_at"
     t.index ["entity_id"], name: "index_portfolio_report_extracts_on_entity_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_report_extracts_on_portfolio_company_id"
     t.index ["portfolio_report_id"], name: "index_portfolio_report_extracts_on_portfolio_report_id"
@@ -2565,6 +2570,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
     t.json "sections"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
+    t.index ["document_folder_id"], name: "index_portfolio_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_reports_on_entity_id"
   end
 
@@ -2838,6 +2845,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
+  create_table "sync_records", force: :cascade do |t|
+    t.string "syncable_type", null: false
+    t.bigint "syncable_id", null: false
+    t.string "openwebui_id"
+    t.datetime "synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["openwebui_id"], name: "index_sync_records_on_openwebui_id"
+    t.index ["syncable_type", "syncable_id"], name: "index_sync_records_on_syncable"
+  end
+
   create_table "taggings", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -2961,6 +2979,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
     t.bigint "form_type_id"
     t.text "access_rights_cache"
     t.integer "access_rights_cached_permissions"
+    t.string "session_token"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -3068,6 +3087,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
   add_foreign_key "allocation_runs", "users"
   add_foreign_key "allocations", "entities"
   add_foreign_key "allocations", "folders", column: "document_folder_id"
+  add_foreign_key "allocations", "form_types"
   add_foreign_key "allocations", "interests"
   add_foreign_key "allocations", "offers"
   add_foreign_key "allocations", "secondary_sales"
@@ -3320,6 +3340,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_04_161717) do
   add_foreign_key "portfolio_report_extracts", "portfolio_reports"
   add_foreign_key "portfolio_report_sections", "portfolio_reports"
   add_foreign_key "portfolio_reports", "entities"
+  add_foreign_key "portfolio_reports", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_scenarios", "entities"
   add_foreign_key "portfolio_scenarios", "funds"
   add_foreign_key "portfolio_scenarios", "users"

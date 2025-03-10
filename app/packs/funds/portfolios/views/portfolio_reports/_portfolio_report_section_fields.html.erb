@@ -5,12 +5,22 @@
   <div class="field">
     <%= f.label :name, "Section Name" %>
     <%= f.text_field :name, class: "form-control" %>
+    <span class="text-muted">Name of the section</span>
   </div>
 
   <div class="field">
     <%= f.label :data, "Section Data" %>
     <%= f.text_area :data, class: "form-control" %>
+    <span class="text-muted">Instructions to the LLM for extracting info for this section from documents and notes</span>
   </div>
 
-  <%= link_to_remove_association "Remove Section", f, class: "btn btn-danger" %>
+  <div class="field">
+    <%= f.label :tags %>
+    <%= f.text_field :tags, class: "form-control" %>
+    <span class="text-muted">Comma separated list of tags</span>
+  </div>
+
+  <div class="field text-center">
+    <%= link_to_remove_association "Remove Section", f, class: "btn btn-danger" %>
+  </div>
 </div>

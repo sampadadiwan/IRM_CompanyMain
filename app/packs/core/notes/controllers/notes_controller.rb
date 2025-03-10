@@ -25,7 +25,6 @@ class NotesController < ApplicationController
 
     @notes = NoteSearch.perform(@notes, current_user, params)
     @notes = @notes.with_all_rich_text.includes(:user, :investor).page params[:page]
-    @notes = @notes.per((params[:per_page] || 10).to_i)
   end
 
   def search
@@ -126,6 +125,6 @@ class NotesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def note_params
-    params.require(:note).permit(:details, :entity_id, :user_id, :investor_id, :on, reminder_attributes: %i[due_date email])
+    params.require(:note).permit(:tags, :details, :entity_id, :user_id, :investor_id, :on, reminder_attributes: %i[due_date email])
   end
 end

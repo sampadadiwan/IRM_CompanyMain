@@ -58,6 +58,20 @@ Scenario Outline: KYC Notifications - investor_user
     |true         | PAN=ABCD9870;send_kyc_form_to_user=true | true         | subject=KYC New 1;email_method=notify_kyc_required | subject=KYC Updated 1;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true| true          | subject=KYC New 2;email_method=notify_kyc_required | subject=KYC Updated 2;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
 
+Scenario Outline: Custom Notifications - update latest
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given there is a custom notification "<custom_notification_update>" in place for the KYC 
+  Then the first notification has latest "true" and enable "true"
+  Given there is a custom notification "<custom_notification_update>" in place for the KYC 
+  Then the first notification has latest "false" and enable "true"
+  Then the second notification has latest "true" and enable "true"
+Examples:
+    |kyc_form_sent| kyc                                     | custom_notification_update|
+    |true         | PAN=ABCD9870;send_kyc_form_to_user=true | subject=KYC Updated 1;email_method=notify_kyc_updated |
+    |true         | PAN=ABCD9876;send_kyc_form_to_user=true | subject=KYC Updated 2;email_method=notify_kyc_updated | 
+
 
 Scenario Outline: Capital call with custom notification
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 

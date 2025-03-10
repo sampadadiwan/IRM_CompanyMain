@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_reports generate_tracking_numbers]
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers]
 
   # GET /funds or /funds.json
   def index
@@ -22,24 +22,6 @@ class FundsController < ApplicationController
       redirect_to fund_path(@fund), notice: "Report generation started, please check back in a few mins. Your report will be generated in the 'Fund Reports' folder."
     else
       render "/funds/#{params[:report]}"
-    end
-  end
-
-  def generate_reports
-    if request.post?
-      # Generate the report if this is a post request
-      FundLlmReportJob.perform_later(
-        @fund.id, current_user.id, params[:report_type],
-        report_template_name: params[:report_template_name],
-        include_kpis: params[:include_kpis],
-        include_apis: params[:include_apis],
-        start_date: params[:start_date], end_date: params[:end_date]
-      )
-
-      redirect_to fund_path(@fund, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
-    else
-      # Show the form to generate the report
-      render "generate_reports"
     end
   end
 

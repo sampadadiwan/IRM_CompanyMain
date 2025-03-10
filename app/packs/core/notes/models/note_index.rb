@@ -5,6 +5,7 @@ class NoteIndex < Chewy::Index
   field :investor_name
   field :investor_id
   field :details, value: ->(note) { note.details.body.to_html }
+  field :tags
   field :entity_id
   field :entity_name, value: ->(note) { note.entity.name if note.entity }
   field :user_id

@@ -5,11 +5,28 @@ class CustomNotification < ApplicationRecord
   belongs_to :owner, polymorphic: true, touch: true
 
   scope :enabled, -> { where(enabled: true) }
+  scope :not_enabled, -> { where(enabled: false) }
+  scope :latest, -> { where(latest: true) }
+  scope :not_latest, -> { where(latest: false) }
   scope :adhoc_notifications, -> { where(email_method: "adhoc_notification") }
 
   validates :subject, :body, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }
   validates :for_type, :email_method, length: { maximum: 100 }
+
+  # validates :email_method, uniqueness: { scope: %i[owner_id owner_type], message: ->(object, _data) { "#{object.email_method} already exists for #{object.owner}" } }
+  after_create_commit :reset_latest
+  # rubocop:disable Rails/SkipsModelValidations
+  def reset_latest
+    # Update latest flag for all records with the same email_method, entity_id, owner_id, owner_type except the current record itself to false
+    self.class.where(
+      email_method: email_method,
+      entity_id: entity_id,
+      owner_id: owner_id,
+      owner_type: owner_type
+    ).where.not(id: id).update_all(latest: false)
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 
   # We need to ensure that the whatsapp message does not have special characters, otherwise they are escaped by WA and look bad in the actual message
   validate :check_whatsapp
@@ -53,5 +70,13 @@ class CustomNotification < ApplicationRecord
 
   def folder_path
     "#{owner.folder_path}/Notifications/#{id_or_random_int}"
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[created_at email_method enabled latest is_erb owner_id owner_type subject whatsapp].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
   end
 end

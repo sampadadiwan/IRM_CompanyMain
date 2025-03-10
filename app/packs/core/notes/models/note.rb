@@ -4,6 +4,7 @@ class Note < ApplicationRecord
 
   # encrypts :details
   validates :details, presence: true
+  validates :tags, length: { maximum: 100 }
 
   has_rich_text :details
   belongs_to :entity
@@ -26,7 +27,7 @@ class Note < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[details created_at on]
+    %w[tags details created_at on]
   end
 
   def self.ransackable_associations(_auth_object = nil)

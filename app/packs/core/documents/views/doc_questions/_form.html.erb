@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "Question : #{doc_question.tags.presence || 'New'}") do %>
 
-  <%= form_with(model: doc_question) do |form| %>
+  <%= form_with(model: doc_question, validate: true) do |form| %>
     <% if doc_question.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(doc_question.errors.count, "error") %> prohibited this doc_question from being saved:</h2>
@@ -25,13 +25,13 @@
     <div class="form-group">
       <%= form.label :document_name %>
       <%= form.text_field :document_name, class: "form-control"  %>
-      <span class="text-muted">The name of the document to which these questions apply</span>
+      <span class="text-muted">The name of the document to which these questions apply. Leave blank for tag match only</span>
     </div>
 
     <div class="form-group">
       <%= form.label :tags %>
       <%= form.text_field :tags, class: "form-control"  %>
-      <span class="text-muted">Comma separated tags</span>
+      <span class="text-muted">Comma separated tags, which match the document to be used. Leave blank for name match only</span>
     </div>
 
     <div class="form-group">

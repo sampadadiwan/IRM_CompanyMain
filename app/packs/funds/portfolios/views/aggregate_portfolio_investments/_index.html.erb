@@ -12,9 +12,6 @@
           "portfolio_investment[fund_id]": fund.id),
           {class: "btn btn-outline-primary"}  %>
 
-      <%= link_to "Generate Portfolio Reports",
-          generate_reports_fund_path(fund, report_type: "AggregatePortfolioInvestment"), { class: "btn btn-outline-success"} %>
-
       <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: fund.id), { class: "btn btn-outline-success"}  %>
 
       <%= link_to "Conversions", stock_conversions_path(fund_id: fund.id), { class: "btn btn-outline-success"} %>

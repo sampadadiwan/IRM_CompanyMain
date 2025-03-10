@@ -29,7 +29,7 @@
 
       <%= render "layouts/single_upload", form: form, field_label: "Upload Logo", 
                               for_model: "investment_opportunity", field_name: "logo", 
-                              model: investment_opportunity %>
+                              model: investment_opportunity, allowed_types: ["image/jpeg", "image/png", "image/gif", "image/bmp"] %>
 
       <small class="text-muted"> Upload Logo. </small>
     </div>

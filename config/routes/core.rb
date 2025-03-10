@@ -108,6 +108,8 @@ resources :investors do
   get 'merge', on: :collection
   post 'merge', on: :collection
   get 'dashboard', on: :member
+  get 'generate_reports', on: :member
+  post 'generate_reports', on: :member
 end
 
 resources :investor_notice_entries

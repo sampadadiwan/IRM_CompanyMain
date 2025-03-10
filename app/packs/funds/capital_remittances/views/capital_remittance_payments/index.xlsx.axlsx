@@ -21,11 +21,11 @@ wb.add_worksheet(name: "CapitalRemittancePayment") do |sheet|
 
   # Create entries for each item
   @capital_remittance_payments.each do |cc|
-    cc.payment_notification_sent ? "Yes" : "No"
+    payment_notification_sent = cc.payment_notification_sent ? "Yes" : "No"
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
     commitment = cc.capital_commitment
 
-    values = [cc.fund.name, cc.investor&.investor_name, commitment.folio_id, cc.amount, cc.folio_amount, commitment.folio_currency.to_s, cc.payment_date, cc.payment_notification_sent, cc.notes, cc.reference_no] + custom_field_values
+    values = [cc.fund.name, cc.investor&.investor_name, commitment.folio_id, cc.amount, cc.folio_amount, commitment.folio_currency.to_s, cc.payment_date, payment_notification_sent, cc.notes, cc.reference_no] + custom_field_values
 
     values << cc.tracking_amount.to_d if has_tracking_currency
 

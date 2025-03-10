@@ -7,16 +7,26 @@ class DocQuestion < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true
 
-  validates :question, :qtype, :document_name, :for_class, presence: true
+  validates :question, :qtype, :for_class, presence: true
   validates :qtype, inclusion: { in: qtypes.keys }
   validates :for_class, length: { maximum: 25 }
   validates :document_name, :question, :response_hint, length: { maximum: 255 }
   validates :qtype, length: { maximum: 10 }
+  validates :tags, length: { maximum: 100 }
 
   scope :validations, -> { where(qtype: qtypes[:validation]) }
   scope :extractions, -> { where(qtype: qtypes[:extraction]) }
   scope :generals, -> { where(qtype: qtypes[:general]) }
   scope :for_class, ->(for_class) { where(for_class:) }
+
+  validate :name_or_tags_present
+
+  def name_or_tags_present
+    if document_name.blank? && tags.blank?
+      errors.add(:document_name, "Name or Tags must be present") if document_name.blank?
+      errors.add(:tags, "Name or Tags must be present") if tags.blank?
+    end
+  end
 
   def to_s
     question

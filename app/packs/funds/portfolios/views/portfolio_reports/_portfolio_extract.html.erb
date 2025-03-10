@@ -1,0 +1,7 @@
+<tr>
+    <td><%= link_to portfolio_extract.portfolio_company %></td>
+    <td><%= l portfolio_extract.start_date %></td>
+    <td><%= l portfolio_extract.end_date %></td>
+    <td><%= portfolio_extract.portfolio_report_section&.name %></td>
+    <td><%= Json2table.get_html_table(JSON.parse(portfolio_extract.data), JsonTable::TABLE_OPTIONS).html_safe if portfolio_extract.data %></td>    
+</tr>

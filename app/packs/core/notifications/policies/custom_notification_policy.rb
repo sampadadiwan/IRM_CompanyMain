@@ -27,7 +27,8 @@ class CustomNotificationPolicy < ApplicationPolicy
 
   def update?
     # Templates can be edited only by support, for security reasons
-    record.is_erb ? support? : create?
+    (record.is_erb ? support? : create?) &&
+      (record.latest || record.owner_type == "Document")
   end
 
   def edit?

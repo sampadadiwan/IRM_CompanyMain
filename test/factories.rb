@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :portfolio_report_extract do
+    entity { nil }
+    portfolio_report { nil }
+    portfolio_report_seaction { nil }
+    portfolio_company { nil }
+    start_date { "2025-03-03" }
+    end_date { "2025-03-03" }
+    data { "" }
+  end
+
   factory :portfolio_report_section do
     portfolio_report { nil }
     name { "MyString" }

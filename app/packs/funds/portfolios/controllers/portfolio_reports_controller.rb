@@ -57,6 +57,6 @@ class PortfolioReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_report_params
-    params.require(:portfolio_report).permit(:entity_id, :name, :tags, :include_kpi, :include_portfolio_investments, portfolio_report_sections_attributes: %i[id name data _destroy])
+    params.require(:portfolio_report).permit(:entity_id, :name, :tags, :include_kpi, :include_portfolio_investments, portfolio_report_sections_attributes: %i[id name data tags _destroy])
   end
 end

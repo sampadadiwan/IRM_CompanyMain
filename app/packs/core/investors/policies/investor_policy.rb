@@ -37,6 +37,10 @@ class InvestorPolicy < ApplicationPolicy
     show?
   end
 
+  def generate_reports?
+    update?
+  end
+
   def create?(emp_perm = :investor_create)
     permissioned_employee?(emp_perm)
   end

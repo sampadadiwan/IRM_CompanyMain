@@ -66,6 +66,7 @@ class Document < ApplicationRecord
     model.documents.includes(:folder).where(owner_tag: "Generated", approved: true).or(model.documents.where.not(owner_tag: "Generated")).or(model.documents.where(owner_tag: nil))
   }
   scope :generated, -> { where(owner_tag: "Generated") }
+  scope :not_generated, -> { where(from_template_id: nil) }
 
   def to_s
     name
