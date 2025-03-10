@@ -55,4 +55,10 @@ Rails.application.routes.draw do
   root "entities#dashboard"
 
   post 'incoming_emails/sendgrid', to: 'incoming_emails#sendgrid'
+
+
+  if Rails.env.test?
+    # This will just return a 200 OK to any GET on /ws/socket.io
+    get '/ws/socket.io', to: proc { [200, {}, ['']] }
+  end
 end
