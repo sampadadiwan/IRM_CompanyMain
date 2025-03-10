@@ -284,4 +284,9 @@ class User < ApplicationRecord
     User.where(enable_support: true).update_all(enable_support: false)
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  before_save :generate_session_token
+  def generate_session_token
+    self.session_token ||= SecureRandom.hex(64)
+  end
 end

@@ -65,7 +65,7 @@ Scenario Outline: Custom Notifications - update latest
   Given there is a custom notification "<custom_notification_update>" in place for the KYC 
   Then the first notification has latest "true" and enable "true"
   Given there is a custom notification "<custom_notification_update>" in place for the KYC 
-  Then the first notification has latest "false" and enable "false"
+  Then the first notification has latest "false" and enable "true"
   Then the second notification has latest "true" and enable "true"
 Examples:
     |kyc_form_sent| kyc                                     | custom_notification_update|

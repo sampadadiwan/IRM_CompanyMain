@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -267,6 +267,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
     t.index ["deleted_at"], name: "index_allocations_on_deleted_at"
     t.index ["document_folder_id"], name: "index_allocations_on_document_folder_id"
     t.index ["entity_id"], name: "index_allocations_on_entity_id"
+    t.index ["form_type_id"], name: "index_allocations_on_form_type_id"
     t.index ["interest_id"], name: "index_allocations_on_interest_id"
     t.index ["offer_id"], name: "index_allocations_on_offer_id"
     t.index ["secondary_sale_id"], name: "index_allocations_on_secondary_sale_id"
@@ -2460,7 +2461,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
     t.bigint "import_upload_id"
     t.string "tag", limit: 100, default: ""
     t.string "instrument"
-    t.bigint "investment_instrument_id"
+    t.bigint "investment_instrument_id", null: false
     t.bigint "form_type_id"
     t.json "json_fields"
     t.bigint "document_folder_id"
@@ -2845,6 +2846,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
+  create_table "sync_records", force: :cascade do |t|
+    t.string "syncable_type", null: false
+    t.bigint "syncable_id", null: false
+    t.string "openwebui_id"
+    t.datetime "synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["openwebui_id"], name: "index_sync_records_on_openwebui_id"
+    t.index ["syncable_type", "syncable_id"], name: "index_sync_records_on_syncable"
+  end
+
   create_table "taggings", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -2968,6 +2980,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
     t.bigint "form_type_id"
     t.text "access_rights_cache"
     t.integer "access_rights_cached_permissions"
+    t.string "session_token"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -3075,6 +3088,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_07_165609) do
   add_foreign_key "allocation_runs", "users"
   add_foreign_key "allocations", "entities"
   add_foreign_key "allocations", "folders", column: "document_folder_id"
+  add_foreign_key "allocations", "form_types"
   add_foreign_key "allocations", "interests"
   add_foreign_key "allocations", "offers"
   add_foreign_key "allocations", "secondary_sales"
