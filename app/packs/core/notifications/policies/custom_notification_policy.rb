@@ -28,7 +28,7 @@ class CustomNotificationPolicy < ApplicationPolicy
   def update?
     # Templates can be edited only by support, for security reasons
     (record.is_erb ? support? : create?) &&
-      (record.latest || record.owner_type == "Document")
+      (record.latest || record.email_method == "send_document") # Only the latest notification can be edited, but if it's a send_document, even the older ones can be edited, as users use multiple send_document notifications for different documents
   end
 
   def edit?
