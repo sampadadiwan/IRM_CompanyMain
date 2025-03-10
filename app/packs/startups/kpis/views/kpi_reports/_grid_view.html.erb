@@ -143,7 +143,7 @@
                             <li>
                              <small>
                                 <%= idx + 1 %>. 
-                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
+                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: 'attachment; filename="downloaded.pdf"'), target: "_blank" %>,
                              </small>
                             </li>
                             <% end %>
