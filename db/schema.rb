@@ -283,6 +283,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.datetime "updated_at", null: false
     t.json "request_data"
     t.bigint "document_folder_id"
+    t.string "custom_name"
+    t.string "request_id"
+    t.datetime "birth_date"
+    t.string "PAN"
     t.index ["document_folder_id"], name: "index_aml_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
     t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
@@ -2023,6 +2027,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.json "doc_question_answers"
     t.boolean "all_docs_valid", default: false
     t.boolean "compliant", default: false
+    t.string "aml_status"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
