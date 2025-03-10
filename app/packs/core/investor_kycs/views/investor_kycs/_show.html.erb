@@ -90,7 +90,7 @@
         <%= pan_label %>
       </td>
       <td>
-        <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url( response_content_disposition: 'attachment; filename="downloaded.pdf"'), target: "_blank") : investor_kyc.PAN   %>
+        <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url(), target: "_blank") : investor_kyc.PAN   %>
 
         <% if investor_kyc.pan_card.present? %>
           <% if investor_kyc.pan_card.mime_type.include?("image") %>

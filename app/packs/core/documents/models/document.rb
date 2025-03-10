@@ -203,6 +203,15 @@ class Document < ApplicationRecord
     file.metadata['filename'].split(".")[-1] if file.metadata
   end
 
+  def extension
+    extension = File.extname(file.original_filename) # => ".jpg", ".png", etc.
+    extension[1..] # => "jpg", "png", etc.
+  end
+
+  def name_with_extension
+    "#{name}.#{extension}"
+  end
+
   def duplicate(required_attributes = nil)
     doc = required_attributes ? Document.new(attributes.slice(*required_attributes)) : dup
     doc.file_data = nil
