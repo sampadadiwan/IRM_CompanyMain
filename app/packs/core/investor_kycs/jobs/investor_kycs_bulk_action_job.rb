@@ -35,7 +35,7 @@ class InvestorKycsBulkActionJob < BulkActionJob
   def generate_aml_report(investor_kyc, user_id)
     raise "Investing Entity is blank for Investor Kyc ID #{investor_kyc.id}" if investor_kyc.full_name.blank?
 
-    AmlReportJob.perform_later(investor_kyc.id, user_id)
+    GenerateAmlReportJob.perform_later(investor_kyc.id, user_id)
   end
 
   def send_reminder(investor_kyc, user_id)

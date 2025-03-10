@@ -3,7 +3,17 @@ class AmlApiResponseService
   GET_TASK_URL = "https://eve.idfy.com/v3/tasks?request_id=".freeze
 
   def get_response(aml_report_object)
-    body = get_request_body(aml_report_object.investor_kyc.full_name, aml_report_object.investor_kyc.PAN, aml_report_object.investor_kyc.birth_date)
+    name = aml_report_object.investor_kyc.full_name
+    pan = aml_report_object.investor_kyc.PAN
+    dob = aml_report_object.investor_kyc.birth_date
+
+    if aml_report_object.custom_name.present?
+      name = aml_report_object.custom_name
+      pan = aml_report_object.PAN
+      dob = aml_report_object.birth_date
+    end
+
+    body = get_request_body(name, pan, dob)
     aml_response = get_async_response(body)
     initial_response = JSON.parse(aml_response.read_body)
 
@@ -11,19 +21,12 @@ class AmlApiResponseService
     aml_report_object.request_data[Time.zone.now.to_s] = body
     aml_report_object.response_data ||= {}
     aml_report_object.response_data[Time.zone.now.to_s] = initial_response
+    aml_report_object.request_id = initial_response["request_id"]
     aml_report_object.save!
   end
 
   def get_report(aml_report_object)
-    request_id = nil
-    if aml_report_object.response_data.present?
-      last_response = aml_report_object.response_data[aml_report_object.response_data.keys.last]
-      if last_response.instance_of?(Hash)
-        request_id = last_response["request_id"]
-      elsif last_response.instance_of?(Array)
-        request_id = last_response.first["request_id"]
-      end
-    end
+    request_id = aml_report_object.request_id
     report_response = get_report_response(request_id)
     json_res = JSON.parse(report_response.read_body)
     aml_report_object.response_data[Time.zone.now.to_s] = json_res

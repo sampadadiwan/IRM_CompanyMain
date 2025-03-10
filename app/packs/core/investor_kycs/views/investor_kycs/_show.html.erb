@@ -289,7 +289,24 @@
     </tr>
 
 
-
+    <% if investor_kyc.entity.entity_setting.aml_enabled? %>
+    <tr>
+      <td>
+        AML Status
+      </td>
+      <td>
+        <% if investor_kyc.aml_status == "no_match" %>
+              <span class="badge bg-success" type="button">
+                  <%= investor_kyc.aml_status.titleize %>
+              </span>
+          <% elsif investor_kyc.aml_status == "potential_match"%>
+              <span class="badge bg-warning" type="button">
+                  <%= investor_kyc.aml_status.titleize %>
+              </span>
+          <% end %>
+      </td>
+    </tr>
+    <% end %>
 
 
     <% if params[:debug].present? %>

@@ -1,6 +1,16 @@
 class AmlReportPolicy < ApplicationPolicy
+  class Scope < Scope
+    def resolve
+      if user.has_cached_role?(:employee)
+        scope.where(entity_id: user.entity_id)
+      else
+        scope.none
+      end
+    end
+  end
+
   def index?
-    false
+    (user.entity.entity_setting.aml_enabled? && user.has_cached_role?(:employee)) || support?
   end
 
   def show?
