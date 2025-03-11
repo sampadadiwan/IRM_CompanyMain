@@ -34,7 +34,7 @@
                            Download
                         </td>
                         <td>
-                           <%= link_to @document.file.url(response_content_disposition: "attachment; filename=#{@document.name_with_extension}"), class: "btn btn-outline-success", target: "_blank" do %>
+                           <%= link_to @document.file.url(), class: "btn btn-outline-success", target: "_blank" do %>
                               <%= @document.name.capitalize.titleize %>
                               <i class="fas fa-download fa-xl"></i>
                            <% end %>

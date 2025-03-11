@@ -22,7 +22,7 @@
 
 
 <div class="card rounded-3 card-hover">
-    <% url = document.orignal ? document.file.url(response_content_disposition: "attachment; filename=#{document.name_with_extension}") : document_path(document) %>
+    <% url = document.orignal ? document.file.url() : document_path(document) %>
     <a href="<%=url%>" class="stretched-link"></a>
     <div class="card-body">
         <div class="d-flex align-items-center">
