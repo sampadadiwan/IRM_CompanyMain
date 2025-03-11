@@ -114,6 +114,9 @@
           <% elsif params[:ai_checks].present? && params[:id].present? %>
             <!-- Audit Trail of the record with id -->
             <%= render "/ai_checks/show_checks" %>
+          <% elsif params[:ow_sync].present? && params[:id].present? %>
+            <!-- Audit Trail of the record synced with OpenWebUI -->
+            <%= render "/ow/sync_records" %>
           <% else %>
             <!-- Page Content -->
             <%= yield %>

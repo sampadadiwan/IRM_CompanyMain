@@ -61,4 +61,6 @@ Rails.application.routes.draw do
     # This will just return a 200 OK to any GET on /ws/socket.io
     get '/ws/socket.io', to: proc { [200, {}, ['']] }
   end
+
+  get 'ai', to: 'ow#index'
 end

@@ -10,8 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
-  create_table "access_rights", force: :cascade do |t|
+ActiveRecord::Schema[7.2].define(version: 2025_03_09_044329) do
+  create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.string "access_to_email", limit: 30
@@ -2850,7 +2850,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
   end
 
-  create_table "sync_records", force: :cascade do |t|
+  create_table "sync_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "syncable_type", null: false
     t.bigint "syncable_id", null: false
     t.string "openwebui_id"
@@ -2861,7 +2861,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.index ["syncable_type", "syncable_id"], name: "index_sync_records_on_syncable"
   end
 
-  create_table "taggings", force: :cascade do |t|
+  create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
     t.bigint "taggable_id"

@@ -209,7 +209,7 @@ class Document < ApplicationRecord
   end
 
   def name_with_extension
-    "#{name.gsub(/[\/\\,:*?"<>|#]/, ' ').strip}.#{extension}"
+    "#{name.gsub(%r{[/\\,:*?"<>|#]}, ' ').strip}.#{extension}"
   end
 
   def duplicate(required_attributes = nil)
