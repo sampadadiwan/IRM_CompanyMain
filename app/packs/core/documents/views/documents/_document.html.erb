@@ -2,7 +2,7 @@
   <td>
       <%= link_to document.name, document_path(document.id) %>
       <% if document.orignal && policy(document).not_generated_or_approved %>
-          <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
+          <%= link_to document.file_url(response_content_disposition: "attachment; filename=#{document.name_with_extension}"), class: "document_download_icon", target: "_blank" do %>
             <i class="fas fa-download"></i>
           <% end %>
       <% end %>
