@@ -1,9 +1,9 @@
 <% 
-  
   template_names = @investor.entity.documents.where(owner_type: "PortfolioReport").map{|d| ["#{d.name} - #{d.owner}", d.id]}
   start_date ||= params[:start_date] || (Date.today - 3.months).beginning_of_month
   end_date ||= params[:end_date] || Date.today.end_of_month
 %>
+
 <%= render NewCard.new do %>
 
   <%= render FormCard.new(title: "Generate Reports for #{@investor}") do %>
@@ -12,6 +12,7 @@
         Note that the data will be sent to an external LLM for report generation
     </div>
 
+    <div data-controller="generatereports">
     <%= form_with(model: nil, url: generate_reports_investor_path(@investor), method: :post) do |form| %>
             
       <div class="form-group">
@@ -26,7 +27,6 @@
         <small class="form-text text-muted">Select the template to use for the report. (Templates must be uploaded under the selected 'Portfolio Report')</small>
       </div>
 
-
       <div class="form-group">
         <%= form.label :start_date %>
         <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
@@ -39,12 +39,36 @@
         <small class="form-text text-muted">Select the end date.</small>
       </div>
 
-      <div class="form-group">
-        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+      <!-- Period & As Of Section -->
+      <div id="period-container" data-generatereports-target="periodContainer">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <%= form.label :period %>
+              <%= form.select :period, ["Monthly", "Quarterly", "Yearly"], {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
+              <small class="form-text text-muted">Select the KPI Report Period.</small>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="form-group">
+              <%= form.label :as_of %>
+              <%= form.date_field :as_of, class: "form-control", name: "kpi_report[as_of][]", value: Date.today  %>
+              <small class="form-text text-muted">Select the date of the KPI report.</small>
+            </div>
+          </div>        
+        </div>
       </div>
 
       
+      
+
+      <div class="form-group">
+        <button type="button" class="btn btn-outline-secondary" data-action="click->generatereports#addPeriod">+ Add Period</button>
+        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+      </div>
+
     <% end %>
+    </div>
 
   <% end %>
   

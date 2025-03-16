@@ -15,7 +15,7 @@ module WithCustomField
 
     # Ensure that the form type is set, if not already present
     before_save :setup_form_type # , if: -> { respond_to?(:form_type_id) && form_type.blank? }
-    
+
     # This is done so that if there are any custom_fields which are calculations, then they are run and computed
     after_initialize :perform_all_calculations, if: -> { form_custom_fields && form_custom_fields.calculations.present? }
 
@@ -52,7 +52,7 @@ module WithCustomField
 
     # This is used to perform all the custom calculations
     def perform_all_calculations
-      puts "#{self.class.name}: perform_all_calculations called"
+      Rails.logger.debug { "#{self.class.name}: perform_all_calculations called" }
       custom_calculations.each do |fcf|
         perform_custom_calculation(fcf)
       end
