@@ -27,7 +27,7 @@ class InvestorsController < ApplicationController
         kpi_report = params[:kpi_report]
         # This come as a set of arrays of periods and dates, we convert it to a hash
         kpi_reports_map = kpi_report["period"].each_with_index.map do |period, index|
-          { period: period, as_of: kpi_report["as_of"][index] }
+          { period: period, as_of: kpi_report["as_of"][index], add_docs: kpi_report["add_docs"][index] }
         end
       end
       # Generate the report if this is a post request

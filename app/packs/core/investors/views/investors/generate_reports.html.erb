@@ -42,18 +42,27 @@
       <!-- Period & As Of Section -->
       <div id="period-container" data-generatereports-target="periodContainer">
         <div class="row">
-          <div class="col-md-4">
+          
+          <div class="col-md-3">
             <div class="form-group">
               <%= form.label :period %>
-              <%= form.select :period, ["Monthly", "Quarterly", "Yearly"], {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
+              <%= form.select :period, ["Month", "Quarter", "Semi Annual", "Annual"], {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
               <small class="form-text text-muted">Select the KPI Report Period.</small>
             </div>
           </div>
-          <div class="col-md-5">
+
+          <div class="col-md-4">
             <div class="form-group">
               <%= form.label :as_of %>
               <%= form.date_field :as_of, class: "form-control", name: "kpi_report[as_of][]", value: Date.today  %>
               <small class="form-text text-muted">Select the date of the KPI report.</small>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group">
+              <%= form.label :add_docs %>
+              <%= form.check_box :add_docs, class: "form-check-input mt-2", name: "kpi_report[add_docs][]", value: true  %>
             </div>
           </div>        
         </div>

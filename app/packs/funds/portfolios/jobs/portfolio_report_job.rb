@@ -92,23 +92,37 @@ class PortfolioReportJob < LlmReportJob
 
     # Get the KPI reports for the portfolio company in the date range
     if kpi_reports_map.blank?
+
       kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: start_date..end_date)
+      # Get the documents for the KPI reports, which are not generated & only for the kpi_reports
+      documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
+
     else
-      # Sometimes we get a map of KPI reports to filter on which has the period and as_of date
-      kpi_reports = portfolio_company.portfolio_kpi_reports
+
       # Filter the KPI reports based on the map
       kpi_reports_or_clause = KpiReport.none
+      kpi_reports_add_docs_or_clause = KpiReport.none
+
       kpi_reports_map.each do |entry|
+        # We need to add the KPI reports for these periods
         kpi_reports_or_clause = kpi_reports_or_clause.or(
+          KpiReport.where(period: entry[:period], as_of: entry[:as_of])
+        )
+        # We need to add the documents for these KPI report
+        next if entry[:add_docs].blank?
+
+        kpi_reports_add_docs_or_clause = kpi_reports_add_docs_or_clause.or(
           KpiReport.where(period: entry[:period], as_of: entry[:as_of])
         )
       end
 
-      kpi_reports = kpi_reports.merge(kpi_reports_or_clause)
+      portfolio_company.portfolio_kpi_reports.merge(kpi_reports_or_clause)
+      kpi_reports_add_docs = portfolio_company.portfolio_kpi_reports.merge(kpi_reports_add_docs_or_clause)
+      # Get the documents for the KPI reports, which are not generated & only for the kpi_reports_add_docs
+      documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports_add_docs.pluck(:id)).not_generated
+
     end
 
-    # Get the documents for the KPI reports, which are not generated
-    documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
     # Get the notes for the KPI reports
     notes = portfolio_company.notes.where(created_at: start_date..end_date)
 
