@@ -71,7 +71,7 @@ class DocumentPolicy < ApplicationPolicy
     res = update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed? && !record.esign_voided?
     if record.entity.entity_setting.esign_provider == "Docusign" && !Rails.env.test?
       # hit the docusign api every 15 minutes
-      eligible_for_update = record.last_status_updated_at.nil? ? true : record.last_status_updated_at < 900.seconds.ago
+      eligible_for_update = record.last_status_updated_at.nil? || record.last_status_updated_at < 900.seconds.ago
       res && eligible_for_update
     else
       res

@@ -1,11 +1,15 @@
 class DocQuestion < ApplicationRecord
-  enum qtype: { validation: "Validation", extraction: "Extraction", general: "General" }
   FOR_CLASSES = %w[InvestorKyc Offer Interest Investor].sort.freeze
 
   attr_accessor :interpolated_question
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true
+  enum :qtype, {
+    validation: "Validation",
+    extraction: "Extraction",
+    general: "General"
+  }
 
   validates :question, :qtype, :for_class, presence: true
   validates :qtype, inclusion: { in: qtypes.keys }
@@ -17,7 +21,8 @@ class DocQuestion < ApplicationRecord
   scope :validations, -> { where(qtype: qtypes[:validation]) }
   scope :extractions, -> { where(qtype: qtypes[:extraction]) }
   scope :generals, -> { where(qtype: qtypes[:general]) }
-  scope :for_class, ->(for_class) { where(for_class:) }
+  scope :with_for_class, ->(klass) { where(for_class: klass) }
+
 
   validate :name_or_tags_present
 

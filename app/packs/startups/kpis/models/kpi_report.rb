@@ -177,4 +177,12 @@ class KpiReport < ApplicationRecord
       raise ArgumentError, "Invalid format #{input_string}. Expected format: 'Q1 YYYY' or 'CY-YYYY'"
     end
   end
+
+  def label
+    if tag_list.present?
+      "#{period}-#{as_of.strftime('%m-%y')}-#{tag_list}"
+    else
+      "#{period}-#{as_of.strftime('%m-%y')}"
+    end
+  end
 end

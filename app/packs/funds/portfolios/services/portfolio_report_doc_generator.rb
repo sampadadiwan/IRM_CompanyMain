@@ -20,7 +20,7 @@ class PortfolioReportDocGenerator
     folder ||= portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: portfolio_company.entity_id)
 
     # Upload the generated document
-    upload(template, portfolio_company, start_date, end_date, folder, generated_document_name)
+    upload(template, portfolio_company, start_date, end_date, folder, generated_document_name, file_extension: 'docx')
   ensure
     cleanup
   end
@@ -59,7 +59,7 @@ class PortfolioReportDocGenerator
     context.store :current_date, current_date
 
     file_name = generated_file_name(portfolio_company)
-    convert(template, context, file_name)
+    convert(template, context, file_name, to_pdf: false)
   end
 
   def cap_table(portfolio_company, end_date)
@@ -78,27 +78,22 @@ class PortfolioReportDocGenerator
     kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: ..end_date).order(as_of: :asc)
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
 
-    # Generate headers as OpenStruct with index keys
-    header_data = { "value_0" => 'KPI' }
-    kpi_reports.each_with_index do |kr, index|
-      header_data["value_#{index + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
-    end
-    headers = [OpenStruct.new(header_data)]
-
     # Generate rows as OpenStructs with index keys
     rows = investor_kpi_mappings.map do |ikm|
-      row_data = { "value_0" => ikm.standard_kpi_name } # First column is the KPI name
+      row_data = { "header" => ikm.standard_kpi_name } # First column is the KPI name
 
-      kpi_reports.each_with_index do |kr, index|
+      kpi_reports.each_with_index do |kr, _index|
         kpi_hash = kr.kpis.index_by { |kpi| kpi.name.downcase }
         kpi = kpi_hash[ikm.reported_kpi_name.downcase]
 
-        row_data["value_#{index + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
+        row_data[kr.label] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
       OpenStruct.new(row_data)
     end
 
-    headers + rows
+    grid = rows
+    Rails.logger.debug grid
+    grid
   end
 end

@@ -135,6 +135,15 @@
             <% end %>
 
             <tr>
+                <td>Period</td>
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
+                        <td>
+                            <%= kpi_report.period %>
+                        </td>                    
+                <% end %>
+            </tr>
+
+            <tr>
                 <td>Documents</td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>

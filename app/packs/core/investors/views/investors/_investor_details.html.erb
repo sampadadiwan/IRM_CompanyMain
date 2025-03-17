@@ -117,7 +117,7 @@
 
         <div id="kpis-tab" class="tab-pane fade">
           <div id="kpis" class="associated_entity">
-            <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: investor.investor_entity_id, grid_view: true), loading: :lazy do %>
+            <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: current_user.entity_id, grid_view: true), loading: :lazy do %>
             <% end %>
           </div>
         </div>

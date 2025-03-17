@@ -29,14 +29,10 @@ class PortfolioReportJob < LlmReportJob
         raise e
       end
 
-      template_ids = portfolio_report.documents.pluck(:id)
       # Now generate the actual report using the templates
       PortfolioReportDocGenJob.perform_later(
         portfolio_report_extract.id,
-        portfolio_report_extract.portfolio_company_id,
-        template_ids,
-        start_date, end_date, user_id,
-        entity_id: portfolio_report.entity_id
+        start_date, end_date, user_id
       )
     end
   end
@@ -90,33 +86,31 @@ class PortfolioReportJob < LlmReportJob
     # Convert the section's comma separated tags to an array for matching
     report_tags = portfolio_report.tags.split(',').map(&:strip)
 
-    # Get the KPI reports for the portfolio company in the date range
+    # kpi_reports_map is an array of hashes with the following structure
+    # [
+    #   { period: "monthly", as_of: "2021-01-01", add_docs: true },
+    #   { period: "monthly", as_of: "2021-02-01", add_docs: true },
+    # ]
+    # We need to filter the documents based on the KPI reports matching the kpi_reports_map
     if kpi_reports_map.blank?
-
-      kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: start_date..end_date)
-      # Get the documents for the KPI reports, which are not generated & only for the kpi_reports
-      documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
-
+      send_notification("No KPI reports provided for documents to include", user_id, "danger")
+      return [[], []]
     else
 
       # Filter the KPI reports based on the map
-      kpi_reports_or_clause = KpiReport.none
       kpi_reports_add_docs_or_clause = KpiReport.none
 
       kpi_reports_map.each do |entry|
-        # We need to add the KPI reports for these periods
-        kpi_reports_or_clause = kpi_reports_or_clause.or(
-          KpiReport.where(period: entry[:period], as_of: entry[:as_of])
-        )
         # We need to add the documents for these KPI report
         next if entry[:add_docs].blank?
 
+        as_of = Date.parse(entry[:as_of])
         kpi_reports_add_docs_or_clause = kpi_reports_add_docs_or_clause.or(
-          KpiReport.where(period: entry[:period], as_of: entry[:as_of])
+          KpiReport.where(period: entry[:period], as_of: as_of.all_month)
         )
       end
 
-      portfolio_company.portfolio_kpi_reports.merge(kpi_reports_or_clause)
+      # Get the KPI reports for the portfolio company, which match the kpi_reports_map
       kpi_reports_add_docs = portfolio_company.portfolio_kpi_reports.merge(kpi_reports_add_docs_or_clause)
       # Get the documents for the KPI reports, which are not generated & only for the kpi_reports_add_docs
       documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports_add_docs.pluck(:id)).not_generated

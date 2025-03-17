@@ -69,6 +69,7 @@ module CapHive
     config.cache_store = :solid_cache_store
 
     config.time_zone = 'New Delhi'
+    config.active_support.to_time_preserves_timezone = :zone
     config.active_record.default_timezone = :local
 
     config.secret_key_base = Rails.application.credentials[:SECRET_KEY_BASE]

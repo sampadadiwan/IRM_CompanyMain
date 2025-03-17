@@ -47,19 +47,20 @@ class PortfolioReportDocGenJob < DocGenJob
     "#{template.name} #{start_date} to #{end_date} - #{model}"
   end
 
-  # rubocop:disable Metrics/ParameterLists
-  def perform(portfolio_report_extract_id, portfolio_company_id, document_template_ids, start_date, end_date,
-              user_id, entity_id: nil, options: {})
+  def perform(portfolio_report_extract_id, start_date, end_date,
+              user_id, document_template_ids: nil, options: {})
     # This is the report we want to generate
     @portfolio_report_extract_id = portfolio_report_extract_id
+    portfolio_report_extract = PortfolioReportExtract.find(@portfolio_report_extract_id)
 
     # These are either all or specific document templates that we want to generate, which are under the portfolio_report
     @document_template_ids = document_template_ids
+    @document_template_ids ||= portfolio_report_extract.portfolio_report.documents.pluck(:id)
 
     # This is the portfolio company for which we want to generate the report, nil if we want to generate for all
-    @portfolio_company_id = portfolio_company_id
+    @portfolio_company_id = portfolio_report_extract.portfolio_company_id
 
-    @entity_id = entity_id
+    @entity_id = portfolio_report_extract.entity_id
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
@@ -70,5 +71,4 @@ class PortfolioReportDocGenJob < DocGenJob
       generate(@start_date, @end_date, @user_id, options:) if valid_inputs
     end
   end
-  # rubocop:enable Metrics/ParameterLists
 end

@@ -13,7 +13,7 @@
     </div>
 
     <div data-controller="generatereports">
-    <%= form_with(model: nil, url: generate_reports_investor_path(@investor), method: :post) do |form| %>
+    <%= form_with(model: @investor, url: generate_reports_investor_path(@investor), method: :post) do |form| %>
             
       <div class="form-group">
         <%= form.label :portfolio_report_id %>

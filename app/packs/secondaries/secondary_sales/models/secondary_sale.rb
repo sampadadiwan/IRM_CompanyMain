@@ -65,7 +65,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def active?
-    start_date <= Time.zone.today && end_date >= Time.zone.today
+    Time.zone.today.between?(start_date, end_date)
   end
 
   def clearing_price
