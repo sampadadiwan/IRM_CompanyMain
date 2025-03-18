@@ -184,12 +184,12 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
   # === Total Drawdowns ===
 
   def total_drawdown_lp
-    drawdown_cash_lp + fund_dist_payments_lp.sum(:amt_reinvestment_with_fees_cents)
+    drawdown_cash_lp + fund_dist_payments_lp.sum(:reinvestment_with_fees_cents)
   end
   memoize :total_drawdown_lp
 
   def total_drawdown_gp
-    drawdown_cash_gp + fund_dist_payments_gp.sum(:amt_reinvestment_with_fees_cents)
+    drawdown_cash_gp + fund_dist_payments_gp.sum(:reinvestment_with_fees_cents)
   end
   memoize :total_drawdown_gp
 
@@ -249,19 +249,19 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
 
   # === Undrawn Percentages ===
 
-  def percentage_unpaid_comm_lp
+  def percent_unpaid_comm_lp
     percentage(undrawn_comm_lp, committed_cash_lp)
   end
 
-  def percentage_unpaid_comm_gp
+  def percent_unpaid_comm_gp
     percentage(undrawn_comm_gp, committed_cash_gp)
   end
 
-  def percentage_unpaid_comm_total
+  def percent_unpaid_comm_total
     percentage(undrawn_comm_total, committed_cash_total)
   end
 
-  def percentage_unpaid_comm_investor
+  def percent_unpaid_comm_investor
     percentage(undrawn_comm_investor, committed_cash_investor)
   end
 
@@ -364,13 +364,13 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
 
   # === Drawdown Fees Including Current notice ===
 
-  def drawdown_fees_incl_current_notice_investor
+  def drawdown_fees_incl_curr_notice_investor
     fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id, remittance_date: @remittance_date).sum(:capital_fee_cents)
   end
-  memoize :drawdown_fees_incl_current_notice_investor
+  memoize :drawdown_fees_incl_curr_notice_investor
 
-  def drawdown_fees_incl_current_notice_investor_percent
-    percentage(drawdown_fees_incl_current_notice_investor, fund_as_of.capital_remittances.sum(:capital_fee_cents))
+  def drawdown_fees_incl_curr_notice_investor_percent
+    percentage(drawdown_fees_incl_curr_notice_investor, fund_as_of.capital_remittances.sum(:capital_fee_cents))
   end
 
   # === Aggregate Drawdown Prior to Current Notice ===
@@ -385,19 +385,19 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
 
   # === Aggregate Drawdown Current Notice ===
 
-  def agg_drawdown_current_notice_investor_percent
+  def agg_drawdown_curr_notice_investor_percent
     percentage(@capital_remittance.call_amount, money_sum(fund_as_of.capital_remittances.where(remittance_date: @remittance_date).where(capital_call_id: @capital_remittance.capital_call_id), :call_amount_cents))
   end
 
   # === Aggregate Drawdown INCL Current Notice ===
 
-  def agg_drawdown_incl_current_notice_investor
+  def agg_drawdown_incl_curr_notice_investor
     fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id).sum(:call_amount_cents)
   end
-  memoize :agg_drawdown_incl_current_notice_investor
+  memoize :agg_drawdown_incl_curr_notice_investor
 
-  def agg_drawdown_incl_current_notice_inevstor_percent
-    percentage(agg_drawdown_current_notice_investor, fund_as_of.capital_remittances.sum(:call_amount_cents))
+  def agg_drawdown_incl_curr_notice_investor_percent
+    percentage(agg_drawdown_incl_curr_notice_investor, fund_as_of.capital_remittances.sum(:call_amount_cents))
   end
 
   # === Aggregate Prior Distribution ===
@@ -413,59 +413,60 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
 
   # === Aggregate Current Distribution ===
 
-  def agg_dist_current_notice_investor
+  def agg_dist_curr_notice_investor
     dist_payments.where(payment_date: @remittance_date).sum("gross_payable_cents - reinvestment_with_fees_cents")
   end
-  memoize :agg_dist_current_notice_investor
+  memoize :agg_dist_curr_notice_investor
 
-  def agg_dist_current_notice_investor_percent
-    percentage(agg_dist_current_notice_investor, fund_as_of.capital_distribution_payments.where(payment_date: @remittance_date).sum("gross_payable_cents - reinvestment_with_fees_cents"))
+  def agg_dist_curr_notice_investor_percent
+    percentage(agg_dist_curr_notice_investor, fund_as_of.capital_distribution_payments.where(payment_date: @remittance_date).sum("gross_payable_cents - reinvestment_with_fees_cents"))
   end
 
   # === Aggregate Total Distribution ===
 
-  def agg_dist_incl_current_notice_investor
+  def agg_dist_incl_curr_notice_investor
     dist_payments.sum("gross_payable_cents - reinvestment_with_fees_cents")
   end
-  memoize :agg_dist_incl_current_notice_investor
+  memoize :agg_dist_incl_curr_notice_investor
 
-  def agg_dist_incl_current_notice_investor_percent
-    percentage(agg_dist_incl_current_notice_investor, fund_dist_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"))
+  def agg_dist_incl_curr_notice_investor_percent
+    percentage(agg_dist_incl_curr_notice_investor, fund_dist_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"))
   end
 
   # === Aggregate PRIOR Reinvestment ===
 
-  def agg_reinvest_prior_current_notice_investor
+  # remove curr from these methods
+  def agg_reinvest_prior_curr_notice_investor
     dist_payments.where(payment_date: ..(@remittance_date - 1.day).end_of_day).sum("reinvestment_with_fees_cents")
   end
-  memoize :agg_reinvest_prior_current_notice_investor
+  memoize :agg_reinvest_prior_curr_notice_investor
 
-  def agg_reinvest_prior_current_notice_investor_percent
-    percentage(agg_reinvest_prior_current_notice_investor, fund_dist_payments.where(payment_date: ..(@remittance_date - 1.day).end_of_day).sum("reinvestment_with_fees_cents"))
+  def agg_reinvest_prior_curr_notice_investor_percent
+    percentage(agg_reinvest_prior_curr_notice_investor, fund_dist_payments.where(payment_date: ..(@remittance_date - 1.day).end_of_day).sum("reinvestment_with_fees_cents"))
   end
 
   # === Aggregate Current Reinvestment ===
 
-  def agg_reinvest_current_notice_investor
+  def agg_reinvest_curr_notice_investor
     dist_payments.where(payment_date: @remittance_date).sum("reinvestment_with_fees_cents")
   end
-  memoize :agg_reinvest_current_notice_investor
+  memoize :agg_reinvest_curr_notice_investor
 
   # this is taking perentage of current commitments dist payments that are on the remittance date to all dist payments of the fund on the current date
   # is this correct?
-  def agg_reinvest_current_notice_investor_percent
-    percentage(agg_reinvest_current_notice_investor, fund_dist_payments.where(payment_date: @remittance_date).sum("reinvestment_with_fees_cents"))
+  def agg_reinvest_curr_notice_investor_percent
+    percentage(agg_reinvest_curr_notice_investor, fund_dist_payments.where(payment_date: @remittance_date).sum("reinvestment_with_fees_cents"))
   end
 
   # === Aggregate INCL Current Reinvestment ===
 
-  def agg_reinvest_incl_current_notice_investor
+  def agg_reinvest_incl_curr_notice_investor
     dist_payments.sum("reinvestment_with_fees_cents")
   end
-  memoize :agg_reinvest_incl_current_notice_investor
+  memoize :agg_reinvest_incl_curr_notice_investor
 
-  def agg_reinvest_incl_current_notice_investor_percent
-    percentage(agg_reinvest_incl_current_notice_investor, fund_dist_payments.sum("reinvestment_with_fees_cents"))
+  def agg_reinvest_incl_curr_notice_investor_percent
+    percentage(agg_reinvest_incl_curr_notice_investor, fund_dist_payments.sum("reinvestment_with_fees_cents"))
   end
 
   # WIP
@@ -541,52 +542,52 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
 
   # === Undrawn Commitments CURRENT Calculations ===
 
-  def undrawn_comm_current_notice_lp
+  def undrawn_comm_curr_notice_lp
     current_lp_committment_amt = money_sum(@capital_remittance.capital_call.capital_remittances, :committed_amount_cents)
     current_lp_committment_amt = @capital_remittance.committed_amount if current_lp_committment_amt.zero?
     current_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: @remittance_date), :call_amount_cents)
   end
-  memoize :undrawn_comm_current_notice_lp
+  memoize :undrawn_comm_curr_notice_lp
 
-  def undrawn_comm_current_notice_gp
+  def undrawn_comm_curr_notice_gp
     current_gp_committment_amt = money_sum(@capital_remittance.capital_call.capital_remittances, :committed_amount_cents)
     current_gp_committment_amt = @capital_remittance.committed_amount if current_gp_committment_amt.zero?
     current_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: @remittance_date), :call_amount_cents)
   end
-  memoize :undrawn_comm_current_notice_gp
+  memoize :undrawn_comm_curr_notice_gp
 
-  def undrawn_comm_current_notice_total
-    undrawn_comm_current_notice_lp + undrawn_comm_current_notice_gp
+  def undrawn_comm_curr_notice_total
+    undrawn_comm_curr_notice_lp + undrawn_comm_curr_notice_gp
   end
-  memoize :undrawn_comm_current_notice_total
+  memoize :undrawn_comm_curr_notice_total
 
-  def undrawn_comm_current_notice_investor
-    @capital_remittance.committed_amount - agg_drawdown_incl_current_notice_investor
+  def undrawn_comm_curr_notice_investor
+    @capital_remittance.committed_amount - agg_drawdown_incl_curr_notice_investor
   end
 
-  def undrawn_comm_current_notice_investor_percent
-    percentage(undrawn_comm_current_notice_investor, undrawn_comm_current_notice_total)
+  def undrawn_comm_curr_notice_investor_percent
+    percentage(undrawn_comm_curr_notice_investor, undrawn_comm_curr_notice_total)
   end
 
   # === Undrawn Commitments INCL Current Calculations ===
 
-  def undrawn_comm_incl_current_notice_lp
-    undrawn_comm_current_notice_lp
+  def undrawn_comm_incl_curr_notice_lp
+    undrawn_comm_curr_notice_lp
   end
 
-  def undrawn_comm_incl_current_notice_gp
-    undrawn_comm_current_notice_gp
+  def undrawn_comm_incl_curr_notice_gp
+    undrawn_comm_curr_notice_gp
   end
 
-  def undrawn_comm_incl_current_notice_total
-    undrawn_comm_current_notice_total
+  def undrawn_comm_incl_curr_notice_total
+    undrawn_comm_curr_notice_total
   end
 
-  def undrawn_comm_incl_current_notice_investor
-    undrawn_comm_current_notice_investor
+  def undrawn_comm_incl_curr_notice_investor
+    undrawn_comm_curr_notice_investor
   end
 
-  def undrawn_comm_incl_current_notice_investor_percent
-    percentage(undrawn_comm_incl_current_notice_investor, undrawn_comm_incl_current_notice_total)
+  def undrawn_comm_incl_curr_notice_investor_percent
+    percentage(undrawn_comm_incl_curr_notice_investor, undrawn_comm_incl_current_notice_total)
   end
 end

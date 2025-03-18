@@ -53,6 +53,8 @@ class CapitalRemittanceDocGenerator
     capital_commitment = capital_remittance.capital_commitment
     capital_commitment.json_fields["remittance_date"] = capital_remittance.remittance_date
     context.store :capital_commitment, TemplateDecorator.decorate(capital_commitment)
+    context.store :comm_remittances, TemplateDecorator.decorate(capital_commitment.capital_remittances)
+    context.store :comm_dist_payments, TemplateDecorator.decorate(capital_commitment.capital_distribution_payments)
     context.store :fund_unit_setting, TemplateDecorator.decorate(capital_remittance.capital_commitment.fund_unit_setting)
 
     context.store :fund_as_of_commitments, TemplateDecorator.decorate(fund_as_of.capital_commitments)
