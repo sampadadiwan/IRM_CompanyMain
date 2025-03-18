@@ -34,24 +34,56 @@ class CapitalRemittanceDocGenerator
 
   def generate(capital_remittance, fund_doc_template_path)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
+    fund_as_of = FundAsOf.new(capital_remittance.fund, capital_remittance.remittance_date)
 
     context = {}
 
     context.store :date, Time.zone.today.strftime("%d %B %Y")
 
     context.store :entity, capital_remittance.entity
-    context.store :fund, TemplateDecorator.decorate(capital_remittance.fund)
-    context.store :capital_remittance, CapitalRemittanceTemplateDecorator.decorate(capital_remittance)
+    fund.json_fields["capital_remittance"] = capital_remittance
+    context.store :fund, FundTemplateDecorator.decorate(fund_as_of)
+    context.store :capital_remittance, TemplateDecorator.decorate(capital_remittance)
     context.store :investor_kyc, TemplateDecorator.decorate(capital_remittance.capital_commitment.investor_kyc)
     context.store :capital_call, TemplateDecorator.decorate(capital_remittance.capital_call)
 
     context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
     context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
 
-    commitment = capital_remittance.capital_commitment
-    commitment.json_fields["end_date"] = capital_remittance.remittance_date
-    context.store :capital_commitment, CapitalCommitmentCallNoticeTemplateDecorator.decorate(commitment)
+    capital_commitment = capital_remittance.capital_commitment
+    capital_commitment.json_fields["remittance_date"] = capital_remittance.remittance_date
+    context.store :capital_commitment, TemplateDecorator.decorate(capital_commitment)
     context.store :fund_unit_setting, TemplateDecorator.decorate(capital_remittance.capital_commitment.fund_unit_setting)
+
+    context.store :fund_as_of_commitments, TemplateDecorator.decorate(fund_as_of.capital_commitments)
+    context.store :fund_as_of_commitments_lp, TemplateDecorator.decorate(fund_as_of.capital_commitments.lp)
+    context.store :fund_as_of_commitments_gp, TemplateDecorator.decorate(fund_as_of.capital_commitments.gp)
+
+    context.store :fund_as_of_remittances, TemplateDecorator.decorate(fund_as_of.capital_remittances)
+    context.store :fund_as_of_remittances_lp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.lp.pluck(:id)))
+    context.store :fund_as_of_remittances_gp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.gp.pluck(:id)))
+
+    prior_calls = fund.capital_calls.where(call_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)
+
+    context.store :fund_as_of_prior_remittances, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)).where(capital_call_id: prior_calls.pluck(:id))
+    context.store :fund_as_of_prior_remittances_lp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.lp.pluck(:id)).where(remittance_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)).where(capital_call_id: prior_calls.pluck(:id))
+    context.store :fund_as_of_prior_remittances_gp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.gp.pluck(:id)).where(remittance_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)).where(capital_call_id: prior_calls.pluck(:id))
+
+    context.store :fund_as_of_curr_remittances, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: capital_remittance.remittance_date)).where(capital_call_id: capital_remittance.capital_call_id)
+    context.store :fund_as_of_curr_remittances_lp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.lp.pluck(:id)).where(remittance_date: capital_remittance.remittance_date)).where(capital_call_id: capital_remittance.capital_call_id)
+    context.store :fund_as_of_curr_remittances_gp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.gp.pluck(:id)).where(remittance_date: capital_remittance.remittance_date)).where(capital_call_id: capital_remittance.capital_call_id)
+
+    context.store :fund_as_of_prior_dist_payments, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: ..(capital_remittance.remittance_date - 1.day).end_of_day))
+    context.store :fund_as_of_prior_dist_payments_lp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.lp.pluck(:id)).where(payment_date: ..(capital_remittance.remittance_date - 1.day).end_of_day))
+    context.store :fund_as_of_prior_dist_payments_gp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.gp.pluck(:id)).where(payment_date: ..(capital_remittance.remittance_date - 1.day).end_of_day))
+
+    context.store :fund_as_of_dist_payments, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments)
+    context.store :fund_as_of_dist_payments_lp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.lp.pluck(:id)))
+    context.store :fund_as_of_dist_payments_gp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.gp.pluck(:id)))
+
+    context.store :fund_as_of_curr_dist_payments, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: capital_remittance.remittance_date))
+    context.store :fund_as_of_curr_dist_payments_lp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.lp.pluck(:id)).where(payment_date: capital_remittance.remittance_date))
+    context.store :fund_as_of_curr_dist_payments_gp, TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: capital_commitments.gp.pluck(:id)).where(payment_date: capital_remittance.remittance_date))
 
     # add_amounts(capital_remittance, context)
 

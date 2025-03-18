@@ -14,6 +14,10 @@ class TemplateDecorator < ApplicationDecorator
       collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize)
       return TemplateDecorator.decorate_collection(collection)
 
+    # elsif method_name.to_s.starts_with?("money_fund_curr_")
+    #   attr_name = method_name.to_s.gsub("money_fund_curr_", "")
+    #   return money_to_currency(Money.new(send(attr_name), object.fund.currency))
+
     elsif method_name.to_s.starts_with?("money_")
       attr_name = method_name.to_s.gsub("money_", "")
       return money_to_currency(send(attr_name))
@@ -25,6 +29,33 @@ class TemplateDecorator < ApplicationDecorator
     elsif method_name.to_s.starts_with?("format_nd_")
       attr_name = method_name.to_s.gsub("format_nd_", "")
       return h.number_with_precision(send(attr_name).to_d, precision: 0, delimiter: ",")
+
+    # if method_name.to_s.starts_with?("sum_amt_") && method name contains and or sub
+    elsif method_name.to_s.starts_with?("sum_amt_") && method_name.match?(/_and_|_sub_/)
+      method_name = method_name.to_s.gsub("sum_amt_", "")
+
+      add_parts, sub_parts = method_name.split("_sub_").map { |part| part.split('_and_') }
+
+      Rails.logger.debug ["add #{add_parts}", "sub #{sub_parts}"]
+
+      if object.is_a?(ActiveRecord::Relation)
+        add_values = add_parts.map { |attr| sum(attr.to_sym) }
+        sub_values = sub_parts&.map { |attr| sum(attr.to_sym) } || []
+      else
+        add_values = add_parts.map { |attr| send(attr) }
+        sub_values = sub_parts&.map { |attr| send(attr) } || []
+      end
+
+      # Final calculation
+      return (add_values.sum - sub_values.sum) / 100.0
+
+    elsif method_name.to_s.starts_with?("sum_amt_")
+      attr_name = method_name.to_s.gsub("sum_amt_", "")
+      return (sum(attr_name.to_sym) / 100.0)
+
+    elsif method_name.to_s.starts_with?("sum_")
+      attr_name = method_name.to_s.gsub("sum_", "")
+      return sum(attr_name.to_sym)
 
     elsif method_name.to_s.starts_with?("format_")
       attr_name = method_name.to_s.gsub("format_", "")
