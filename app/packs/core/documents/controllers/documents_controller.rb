@@ -139,9 +139,7 @@ class DocumentsController < ApplicationController
   # allows to add a button to cancel esigning on document
   def cancel_esign
     eligible_for_update = true
-    if @document.entity.entity_setting.esign_provider == "Docusign"
-      eligible_for_update = @document.last_status_updated_at.nil? ? true : @document.last_status_updated_at < 900.seconds.ago
-    end
+    eligible_for_update = @document.last_status_updated_at.nil? || @document.last_status_updated_at < 900.seconds.ago if @document.entity.entity_setting.esign_provider == "Docusign"
     # update the esign status of the document before cancelling
     if @document.eligible_for_esign_update? && eligible_for_update
       EsignHelper.new(@document).update_esign_status

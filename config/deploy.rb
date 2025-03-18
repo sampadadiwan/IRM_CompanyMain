@@ -39,6 +39,10 @@ set :puma_workers, 4
 set :puma_daemonize, true
 set :puma_init_active_record, true
 
+set :puma_systemctl_user, :system
+set :puma_service_unit_name, "puma_IRM_#{fetch(:stage)}"
+
+
 namespace :deploy do
   desc "Uploads .env remote servers."
   task :ensure_rails_credentials do

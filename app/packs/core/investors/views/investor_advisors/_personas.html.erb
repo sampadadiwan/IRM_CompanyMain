@@ -2,7 +2,7 @@
   investor_advisors = InvestorAdvisor.joins(:entity).where(user_id: current_user.id).where("entities.active = ?", true).map{ |ia| [ia.entity.name, ia.id] }
 %>
 
-<%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
+<%= form_with(model: current_user, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
   <div class="form-group" data-controller="persona">
     <% selected = params[:investor_advisor_id].present? ? params[:investor_advisor_id] : current_user.investor_advisor_id %>
     <%= form.select :investor_advisor, investor_advisors, {selected: selected, include_blank: 'Self'}, 

@@ -1,10 +1,12 @@
 <% 
   @portfolio_company ||= nil 
+  model ||= current_user
 %>
-<%= form_with(model: nil, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
+<%= form_with(model: model, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
     
   <input name="portfolio_company_id" value="<%= @portfolio_company&.id %>" hidden="hidden">
   <input name="grid_view" value="true" hidden="hidden">
+  <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
   <div class="form-group col-md-1">    
     <% months = params[:months].presence %>
@@ -16,13 +18,6 @@
     <% period = params[:period].presence %>
     <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control" %>        
   </div>
-
-  <% if @portfolio_company %>
-    <div class="form-group col-md-1">    
-      <% entity_id = params[:entity_id] %>
-      <%= form.select :entity_id, [[@portfolio_company.name, @portfolio_company.investor_entity_id], [current_user.entity.name, current_user.entity.id], ["All", nil]], {selected: entity_id}, class: "form-control" %>        
-    </div>
-  <% end %>
 
   <div class="form-group col-md-1">    
     <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag" %>        

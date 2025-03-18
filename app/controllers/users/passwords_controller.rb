@@ -8,7 +8,7 @@ module Users
     private
 
     def user_params
-      params.require(:user).permit(:password, :password_confirmation, :reset_password_token)
+      params.expect(user: %i[password password_confirmation reset_password_token])
     end
   end
 end

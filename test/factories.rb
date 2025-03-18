@@ -611,7 +611,7 @@ FactoryBot.define do
     valuation_date { Date.today - rand(48).months }
     valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
-    report { File.new("public/img/undraw_profile.svg", "r") }
+    report { File.new("public/img/whatsappQR.png", "r") }
   end
 
   factory :scenario do
@@ -675,7 +675,7 @@ FactoryBot.define do
     name { "Fact Sheet,Cap Table,Latest Financials,Conversion Stats,Deal Sheet".split(",").sample }
     text { Faker::Company.catch_phrase }
     entity { Entity.all.sample }
-    file { File.new("public/img/undraw_profile.svg", "r") }
+    file { File.new("public/img/whatsappQR.png", "r") }
     folder { Folder.first }
   end
 

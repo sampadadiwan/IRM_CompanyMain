@@ -1,0 +1,32 @@
+
+<% aml_report ||= nil %>
+<div class="card rounded-3 card-hover">
+    <% url = document.file.url(response_content_disposition: "attachment; filename=#{document.name_with_extension}") %>
+    <a href="<%=url%>" class="stretched-link"></a>
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+        <span class="flex-shrink-0"><i class="ti ti-download text-secondary display-6"></i></span>
+        <div class="ms-4">
+            <h4 class="card-title text-dark"><%= document.name %></h4>
+            <h6 class="card-subtitle mb-0 fs-2 fw-normal mb-1">
+                <%= document.created_at.strftime("%d/%m/%Y %H:%M:%S") %>
+            </h6>
+            <span class="fs-2 mt-1 "><%= document.text %></span>
+            <% if aml_report&.match_status.present? %>
+                <span class="fs-2 mt-1 ">
+                    <% if aml_report.match_status == "no_match" %>
+                        <span class="badge bg-success" type="button">
+                            <%= aml_report.match_status.titleize %>
+                        </span>
+                    <% elsif aml_report.match_status == "potential_match"%>
+                        <span class="badge bg-warning" type="button">
+                            <%= aml_report.match_status.titleize %>
+                        </span>
+                    <% end %>
+
+                </span>
+            <%end%>
+        </div>
+        </div>
+    </div>
+</div>

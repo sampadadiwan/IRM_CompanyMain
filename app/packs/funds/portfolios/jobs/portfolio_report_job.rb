@@ -2,7 +2,7 @@ class PortfolioReportJob < LlmReportJob
   queue_as :low
 
   # This job is called to generate a portfolio report for a given date range
-  def perform(portfolio_report_id, start_date, end_date, user_id, portfolio_company_id: nil)
+  def perform(portfolio_report_id, start_date, end_date, user_id, portfolio_company_id: nil, kpi_reports_map: nil)
     portfolio_report = PortfolioReport.find(portfolio_report_id)
 
     # Get the portfolio_companies for the entity
@@ -20,34 +20,29 @@ class PortfolioReportJob < LlmReportJob
     portfolio_companies.each do |portfolio_company|
       begin
         # generate_section_extracts(portfolio_company, portfolio_report, start_date, end_date)
-        portfolio_report_extract = generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id)
+        portfolio_report_extract = generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id, kpi_reports_map)
 
         next if portfolio_report_extract.blank?
       rescue StandardError => e
         msg = "Error generating report for #{portfolio_company.name} for report #{portfolio_report}: #{e.message}"
-        Rails.logger.error { msg }
-        send_notification(msg, user_id)
+        send_notification(msg, user_id, "danger")
         raise e
       end
 
-      template_ids = portfolio_report.documents.pluck(:id)
       # Now generate the actual report using the templates
       PortfolioReportDocGenJob.perform_later(
         portfolio_report_extract.id,
-        portfolio_report_extract.portfolio_company_id,
-        template_ids,
-        start_date, end_date, user_id,
-        entity_id: portfolio_report.entity_id
+        start_date, end_date, user_id
       )
     end
   end
 
-  def generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id)
+  def generate_report_extracts(portfolio_company, portfolio_report, start_date, end_date, user_id, kpi_reports_map)
     msg = "Generating extract for #{portfolio_company.name} for report #{portfolio_report}"
-    Rails.logger.debug { msg }
     send_notification(msg, user_id)
 
-    filtered_documents, filtered_notes = get_docs_notes(portfolio_company, portfolio_report, start_date, end_date)
+    filtered_documents, filtered_notes = get_docs_notes(portfolio_company, portfolio_report,
+                                                        start_date, end_date, kpi_reports_map)
 
     if filtered_documents.empty?
       Rails.logger.debug { "No documents found for #{portfolio_company.name} for report #{portfolio_report}" }
@@ -68,7 +63,6 @@ class PortfolioReportJob < LlmReportJob
       end
 
       msg = "Sending the extracted information to the LLM for processing"
-      Rails.logger.debug { msg }
       send_notification(msg, user_id)
 
       llm_instructions = "Format your output as json in the format #{json_output}. Do not generate nested json, just one level. Do not add any \n (newlines), \t (tabs) within an item and do not add ```json to the output."
@@ -80,7 +74,6 @@ class PortfolioReportJob < LlmReportJob
       # Save the result in the extract
       Rails.logger.debug result
       msg = "Extracted information from the documents and notes"
-      Rails.logger.debug { msg }
       send_notification(msg, user_id)
 
       portfolio_report_extract.update(data: result[:extracted_info])
@@ -89,14 +82,41 @@ class PortfolioReportJob < LlmReportJob
     end
   end
 
-  def get_docs_notes(portfolio_company, portfolio_report, start_date, end_date)
+  def get_docs_notes(portfolio_company, portfolio_report, start_date, end_date, kpi_reports_map)
     # Convert the section's comma separated tags to an array for matching
     report_tags = portfolio_report.tags.split(',').map(&:strip)
 
-    # Get the KPI reports for the portfolio company in the date range
-    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: start_date..end_date)
-    # Get the documents for the KPI reports, which are not generated
-    documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports.pluck(:id)).not_generated
+    # kpi_reports_map is an array of hashes with the following structure
+    # [
+    #   { period: "monthly", as_of: "2021-01-01", add_docs: true },
+    #   { period: "monthly", as_of: "2021-02-01", add_docs: true },
+    # ]
+    # We need to filter the documents based on the KPI reports matching the kpi_reports_map
+    if kpi_reports_map.blank?
+      send_notification("No KPI reports provided for documents to include", user_id, "danger")
+      return [[], []]
+    else
+
+      # Filter the KPI reports based on the map
+      kpi_reports_add_docs_or_clause = KpiReport.none
+
+      kpi_reports_map.each do |entry|
+        # We need to add the documents for these KPI report
+        next if entry[:add_docs].blank?
+
+        as_of = Date.parse(entry[:as_of])
+        kpi_reports_add_docs_or_clause = kpi_reports_add_docs_or_clause.or(
+          KpiReport.where(period: entry[:period], as_of: as_of.all_month)
+        )
+      end
+
+      # Get the KPI reports for the portfolio company, which match the kpi_reports_map
+      kpi_reports_add_docs = portfolio_company.portfolio_kpi_reports.merge(kpi_reports_add_docs_or_clause)
+      # Get the documents for the KPI reports, which are not generated & only for the kpi_reports_add_docs
+      documents = Document.where(owner_type: "KpiReport", owner_id: kpi_reports_add_docs.pluck(:id)).not_generated
+
+    end
+
     # Get the notes for the KPI reports
     notes = portfolio_company.notes.where(created_at: start_date..end_date)
 

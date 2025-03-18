@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_16_053504) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -283,6 +283,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.datetime "updated_at", null: false
     t.json "request_data"
     t.bigint "document_folder_id"
+    t.string "custom_name"
+    t.string "request_id"
+    t.datetime "birth_date"
+    t.string "PAN"
     t.index ["document_folder_id"], name: "index_aml_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
     t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
@@ -2024,6 +2028,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.json "doc_question_answers"
     t.boolean "all_docs_valid", default: false
     t.boolean "compliant", default: false
+    t.string "aml_status"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -2972,7 +2977,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_10_055917) do
     t.string "call_code", limit: 3, default: "91"
     t.integer "extended_permissions", default: 0
     t.boolean "enable_support"
-    t.string "advisor_entity_roles", limit: 50
+    t.string "advisor_entity_roles", limit: 100
     t.integer "failed_attempts", default: 0
     t.string "unlock_token"
     t.datetime "locked_at"

@@ -59,7 +59,7 @@ class InvestorAdvisor < ApplicationRecord
       user.add_role(role.strip)
     end
 
-    user.add_role(:investor_advisor)
+    user.add_role(:investor_advisor) if user.roles.empty?
   end
 
   after_destroy :remove_access_rights

@@ -7,10 +7,17 @@ module WithCustomField
     attribute :json_fields, :json, default: {}
     alias_attribute :properties, :json_fields
 
+    # This is used to get the form type
     belongs_to :form_type, optional: true
+
+    # This is used to get the form custom fields
     has_many :form_custom_fields, through: :form_type
 
+    # Ensure that the form type is set, if not already present
     before_save :setup_form_type # , if: -> { respond_to?(:form_type_id) && form_type.blank? }
+
+    # This is done so that if there are any custom_fields which are calculations, then they are run and computed
+    after_initialize :perform_all_calculations, if: -> { form_custom_fields && form_custom_fields.calculations.present? }
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     if Rails.env.test?
@@ -41,14 +48,16 @@ module WithCustomField
     def setup_form_type
       # Ensure that the form type is set, if not already present
       self.form_type ||= entity.form_types.where(name: self.class.name).last
-      # This will calculate all the Calculation fields and save to DB
-      perform_all_calculations
     end
 
+    # This is used to perform all the custom calculations
     def perform_all_calculations
+      Rails.logger.debug { "#{self.class.name}: perform_all_calculations called" }
       custom_calculations.each do |fcf|
         perform_custom_calculation(fcf)
       end
+      # Reset the cached custom fields, so that when custom_fields is called, it will use the latest calculations
+      @cached_custom_fields = nil
     end
 
     # This is used to create the query for json fields, used in the above ransacker
@@ -89,8 +98,9 @@ module WithCustomField
   end
 
   def perform_custom_calculation(fcf)
-    json_fields[fcf.name] = eval(fcf.meta_data)
-    json_fields[fcf.name]
+    val = eval(fcf.meta_data)
+    json_fields[fcf.name] = val
+    val
   end
 
   def custom_fields

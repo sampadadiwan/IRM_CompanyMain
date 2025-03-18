@@ -45,11 +45,7 @@ class KanbanCardPolicy < ApplicationPolicy
 
   def permissioned_employee?
     if belongs_to_entity?(user, record)
-      if user.has_cached_role?(:company_admin)
-        true
-      else
-        %w[employee].include?(user.curr_role)
-      end
+      user.has_cached_role?(:company_admin) || %w[employee].include?(user.curr_role)
     else
       false
     end

@@ -8,7 +8,7 @@ gem 'faraday-typhoeus'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'pdf-reader'
-gem "rails"
+gem 'rails', '~> 8.0.0'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -26,7 +26,7 @@ gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma"
+gem "puma", "~> 6.0"
 # gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
 gem 'sablon'
@@ -88,7 +88,6 @@ gem 'to_words'
 # Admin screens
 gem "administrate"
 gem 'administrate-field-active_storage'
-# gem 'administrate-field-belongs_to_search'
 gem 'administrate-field-boolean_emoji'
 gem 'administrate-field-shrine'
 
@@ -203,10 +202,11 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
-  gem 'capistrano', '~> 3.5'
-  gem 'capistrano-bundler', '~> 2.0'
+  gem 'capistrano'
+  gem 'capistrano-bundler'
 
-  gem "capistrano3-puma", "5.2.0"
+  gem 'capistrano3-puma'
+
   gem "capistrano-rails", require: false
   gem 'capistrano-rvm'
   gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
@@ -248,3 +248,4 @@ gem 'vega'
 gem 'wikipedia-client'
 
 gem "ferrum_pdf", "~> 0.3.0"
+gem 'ostruct'

@@ -1,3 +1,23 @@
+V9.0.7
+#####################################
+ec606afe9 Now file download has the right file name
+4b93abb17 Updated schema_test
+139877994 Added Aml reports for kyc custom field additional aml report attrs (#750)
+4bb2868fb Now IO does not allow for svg file uploads
+395cb6a31 Added changes for VAPT defect of session replay
+2b4aae2ab Backup (#754)
+85ae89d77 (V9.0.6) Added expiry of session and https cookies for VAPT
+5c3c4fd32 Backup
+2c6c23be0 Added to file download response_content_disposition: 'attachment; filename=downloaded.pdf
+d92c8dce9 Cust notifications latest (#753)
+5ab2c655c Fixed tests on main
+5d70453f1 Ai reports (#752)
+1ab546603 Added form type to CRP
+9f6556ef3 Added add_valued_bridge_custom_fields to Valuation
+318788c28 Value bridge (#748)
+409600a47 Download of CDP now includes all rows
+f7d78eed0 Update release notes
+
 V9.0.6
 #####################################
 d2a1159af Access owner tag if present for template in kyc doc gen (#719)

@@ -62,7 +62,7 @@ class InvestorKyc < ApplicationRecord
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
-  has_one :aml_report, dependent: :destroy
+  has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
 
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
@@ -196,7 +196,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def generate_aml_report(user_id)
-    AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
+    GenerateAmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
   end
 
   def full_name_has_changed?

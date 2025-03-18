@@ -22,8 +22,16 @@ class InvestorsController < ApplicationController
 
   def generate_reports
     if request.post?
+
+      if params[:kpi_report].present?
+        kpi_report = params[:kpi_report]
+        # This come as a set of arrays of periods and dates, we convert it to a hash
+        kpi_reports_map = kpi_report["period"].each_with_index.map do |period, index|
+          { period: period, as_of: kpi_report["as_of"][index], add_docs: kpi_report["add_docs"][index] }
+        end
+      end
       # Generate the report if this is a post request
-      PortfolioReportJob.perform_later(params[:portfolio_report_id], params[:start_date], params[:end_date], current_user.id, portfolio_company_id: @investor.id)
+      PortfolioReportJob.perform_later(params[:portfolio_report_id], params[:start_date], params[:end_date], current_user.id, portfolio_company_id: @investor.id, kpi_reports_map: kpi_reports_map)
 
       redirect_to investor_path(@investor, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
     else

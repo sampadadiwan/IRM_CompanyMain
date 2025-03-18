@@ -55,7 +55,7 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/helpers")
     end
 
-    ai_view_paths = %w[ai_rules]
+    ai_view_paths = %w[ai_rules ow]
 
     ai_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/views")
@@ -69,6 +69,7 @@ module CapHive
     config.cache_store = :solid_cache_store
 
     config.time_zone = 'New Delhi'
+    config.active_support.to_time_preserves_timezone = :zone
     config.active_record.default_timezone = :local
 
     config.secret_key_base = Rails.application.credentials[:SECRET_KEY_BASE]
@@ -77,7 +78,7 @@ module CapHive
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
-    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone]
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone, Money, Money::Currency, Money::Bank::VariableExchange, Money::RatesStore::Memory, Monitor]
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",

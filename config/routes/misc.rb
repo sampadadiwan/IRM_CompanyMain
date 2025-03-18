@@ -22,7 +22,7 @@ when :app
 end
 
 require 'sidekiq/web'
-require 'sidekiq/cron/web'
+# require 'sidekiq/cron/web'
 
 authenticate :user, ->(user) { user.has_cached_role?(:super) } do
   mount Sidekiq::Web => '/sidekiq'

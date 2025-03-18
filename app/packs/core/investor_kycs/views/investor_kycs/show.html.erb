@@ -33,7 +33,7 @@
 
             <%= button_to "Generate Aml Report", generate_new_aml_report_investor_kyc_path(@investor_kyc), method: :put, class: "dropdown-item" if policy(@investor_kyc).generate_new_aml_report? %>
 
-            <%= link_to "View Aml Reports", aml_report_path(@investor_kyc.aml_report), class: "dropdown-item" if @investor_kyc.aml_report && policy(@investor_kyc.aml_report).show? %>
+            <%= link_to "View Aml Reports", aml_reports_path(investor_kyc_id: @investor_kyc.id), class: "dropdown-item" if @investor_kyc.aml_reports %>
           </div>
         </div>
       </div>

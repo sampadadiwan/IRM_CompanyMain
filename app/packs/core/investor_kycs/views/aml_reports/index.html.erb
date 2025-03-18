@@ -1,0 +1,14 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h1 class="h3 mb-0 text-gray-800">Aml Reports</h1>
+</div>
+
+<div class="container-fluid px-2">
+  <% units ||= nil%>
+  <div class="row">
+    <% Document.where(owner:@aml_reports).includes(:owner,:rich_text_text).order(created_at: :desc).each do |doc| %>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+            <%= render "/aml_reports/preview_document", document: doc, aml_report: doc.owner %>
+        </div>
+    <% end %>
+  </div>
+</div>

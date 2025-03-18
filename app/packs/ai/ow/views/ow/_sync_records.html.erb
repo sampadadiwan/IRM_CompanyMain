@@ -1,0 +1,30 @@
+<% if params[:ow_sync].present? %>
+
+    <% 
+        model_class = controller_name.classify.constantize
+        model = model_class.find(params[:id])
+    %>
+
+<table class="table datatable">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Record</th>
+        <th>Synced At</th>
+        <th>OW ID</th>
+    </tr>
+    </thead>
+
+    <tbody>
+        <% SyncRecord.where(syncable: model).each do |sync_record| %>
+            <tr>
+                <td><%= sync_record.id %></td>
+                <td><%= sync_record.syncable %></td>
+                <td><%= sync_record.synced_at %></td>
+                <td><%= sync_record.openwebui_id %></td>
+            </tr>
+        <% end %>
+    </tbody>
+</table>
+
+<% end %>

@@ -56,6 +56,8 @@ class ImportInvestorAdvisor < ImportUtil
                     email: user_data["Email"], entity_id: entity.id, password:)
     user.confirm
     user.save!
+
+    user.add_role(:investor_advisor)
   end
 
   def add_to_owner(user_data, import_upload, investor_advisor, investor)

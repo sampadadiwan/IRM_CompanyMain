@@ -1,4 +1,4 @@
-<% model ||= nil %>
+<% model ||= current_user %>
 <%= form_with(model: , method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
   <% 
   

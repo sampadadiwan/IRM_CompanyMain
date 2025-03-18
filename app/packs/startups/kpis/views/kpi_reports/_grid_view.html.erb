@@ -135,6 +135,15 @@
             <% end %>
 
             <tr>
+                <td>Period</td>
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
+                        <td>
+                            <%= kpi_report.period %>
+                        </td>                    
+                <% end %>
+            </tr>
+
+            <tr>
                 <td>Documents</td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
@@ -143,7 +152,7 @@
                             <li>
                              <small>
                                 <%= idx + 1 %>. 
-                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: 'attachment; filename="downloaded.pdf"'), target: "_blank" %>,
+                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: "attachment; filename=#{doc.name_with_extension}"), target: "_blank" %>,
                              </small>
                             </li>
                             <% end %>

@@ -1287,3 +1287,9 @@ input[type=number] {
   text-align: right !important;
   display: unset !important;
 }
+
+
+iframe {
+  overflow: hidden;
+  scrollbar-width: none;
+}
