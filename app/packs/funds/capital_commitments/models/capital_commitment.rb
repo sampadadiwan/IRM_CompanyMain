@@ -50,6 +50,9 @@ class CapitalCommitment < ApplicationRecord
   scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
   scope :lp_onboarding_incomplete, -> { where(onboarding_completed: false) }
 
+  scope :gp, -> { joins(:fund_unit_setting).where(fund_unit_settings: { gp_units: true }) }
+  scope :lp, -> { joins(:fund_unit_setting).where(fund_unit_settings: { gp_units: false }) }
+
   belongs_to :entity
   belongs_to :investor
   belongs_to :investor_kyc, optional: true
@@ -69,6 +72,10 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
+  belongs_to :fund_unit_setting,
+             primary_key: :name,
+             foreign_key: :unit_type,
+             optional: true
   # Fund ratios computed per investor
   has_many :fund_ratios, dependent: :destroy
   has_many :commitment_adjustments, dependent: :destroy
@@ -254,10 +261,6 @@ class CapitalCommitment < ApplicationRecord
 
   def fund_ratio(name, end_date)
     fund_ratios.where(name:, end_date: ..end_date).last
-  end
-
-  def fund_unit_setting
-    fund.fund_unit_settings.where(name: unit_type).last
   end
 
   # The folio id is used in the folder names of commitments, remittances and distributions
