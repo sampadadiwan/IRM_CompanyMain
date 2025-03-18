@@ -257,4 +257,11 @@ class Fund < ApplicationRecord
   def commitments_in_master
     master_fund.capital_commitments.where(feeder_fund_id: id) if master_fund.present?
   end
+
+  # Get the fund state as of a specific date
+  # @param as_of_date [Date] The date to get the fund state as of
+  # @return [FundAsOf] Fund state as of the specified date
+  def as_of(as_of_date)
+    FundAsOf.new(self, as_of_date)
+  end
 end
