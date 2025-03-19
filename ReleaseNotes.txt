@@ -1,3 +1,14 @@
+V9.0.10
+#####################################
+ebb0b8efc Added check for todays date in PI report
+ed2e33379 Added ability for approver to unapprove a doc (#718)
+90bc751bc Added Generate Portfolio Investments Reports to Investors
+acbc8c28b Pi as of download (#757)
+6bf26b1fd Rails 8 (#756)
+c1218f069 Added better UI for adding docs for PortfolioReports
+c71f402f7 Added better support for selecting kpi_reports from UI
+8d2e7fd8c increased length of users.advisor_entity_roles
+
 V9.0.7
 #####################################
 ec606afe9 Now file download has the right file name
