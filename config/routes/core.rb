@@ -110,6 +110,8 @@ resources :investors do
   get 'dashboard', on: :member
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
+  get 'portfolio_investments_report', on: :member
+  post 'portfolio_investments_report', on: :member
 end
 
 resources :investor_notice_entries

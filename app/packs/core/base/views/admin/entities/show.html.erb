@@ -1,4 +1,3 @@
-
 <%#
 # Show
 
@@ -31,12 +30,12 @@ as well as a link to its edit page.
       class: "btn btn-outline-primary",
     ) if accessible_action?(page.resource, :edit) %>
 
-    <%= button_to(
+    <%= link_to(
       t("administrate.actions.destroy"),
       [namespace, page.resource],
       class: "btn btn-outline-danger",
       method: :delete,
-      data: { turbo_confirm: t("administrate.actions.confirm") }
+      data: { confirm: t("administrate.actions.confirm") }
     ) if accessible_action?(page.resource, :destroy) %>
 
     <%= link_to 'Create Support Mapping', new_support_client_mapping_path(entity_id: page.resource.id), class: "btn btn-outline-danger" if current_user.has_cached_role?(:super) %>
@@ -45,24 +44,16 @@ as well as a link to its edit page.
 
 <section class="main-content__body">
   <dl>
-    <% page.attributes.each do |title, attributes| %>
-      <fieldset class="<%= "field-unit--nested" if title.present? %>">
-        <% if title.present? %>
-          <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
-        <% end %>
+    <% page.attributes.each do |attribute| %>
+      <dt class="attribute-label" id="<%= attribute.name %>">
+      <%= t(
+        "helpers.label.#{resource_name}.#{attribute.name}",
+        default: page.resource.class.human_attribute_name(attribute.name),
+      ) %>
+      </dt>
 
-        <% attributes.each do |attribute| %>
-          <dt class="attribute-label" id="<%= attribute.name %>">
-          <%= t(
-            "helpers.label.#{resource_name}.#{attribute.name}",
-            default: page.resource.class.human_attribute_name(attribute.name),
-          ) %>
-          </dt>
-
-          <dd class="attribute-data attribute-data--<%=attribute.html_class%>"
-              ><%= render_field attribute, page: page %></dd>
-        <% end %>
-      </fieldset>
+      <dd class="attribute-data attribute-data--<%=attribute.html_class%>"
+          ><%= render_field attribute, page: page %></dd>
     <% end %>
   </dl>
 </section>

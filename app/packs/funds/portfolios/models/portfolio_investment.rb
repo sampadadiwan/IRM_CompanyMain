@@ -162,6 +162,10 @@ class PortfolioInvestment < ApplicationRecord
     self.quantity_as_of_date = aggregate_portfolio_investment.portfolio_investments.where(investment_date: ..investment_date).sum(:quantity)
   end
 
+  def as_of(end_date)
+    compute_all_numbers_on(end_date)
+  end
+
   before_create :update_name
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name

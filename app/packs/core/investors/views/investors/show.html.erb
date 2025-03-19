@@ -27,6 +27,8 @@
             <%= link_to "Documents" , folder_documents_path(folder_id: @investor.document_folder_id), {class: "dropdown-item" } %>
 
             <%= link_to "Portfolio Report" , generate_reports_investor_path(@investor), {class: "dropdown-item" } %>
+
+            <%= link_to "Portfolio Investment Report" , portfolio_investments_report_investor_path(@investor), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>

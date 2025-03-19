@@ -4,20 +4,28 @@ class Log404s
   end
 
   def call(env)
-    status, headers, response = @app.call(env)
+    begin
+      status, headers, response = @app.call(env)
+    rescue => e
+      Rails.logger.error "Log404s middleware error: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      raise # Re-raise after logging
+    end
 
     if status == 404
       ip = env['REMOTE_ADDR']
       key = "rack::attack:404:#{ip}"
-
-      # puts "404 error from IP: #{ip}, added to cache with key: #{key}"
-
-      # Ensure Redis or Rails.cache is used correctly
-      Rails.cache.increment(key, 1) # Increment the counter
-      Rails.logger.debug "Log404s: Incrementing 404 counter for IP #{ip}: current count = #{Rails.cache.read(key)}"
-
-      Rails.cache.write(key, 1, expires_in: 1.minutes) unless Rails.cache.exist?(key)
+    
+      if Rails.cache.exist?(key)
+        new_count = Rails.cache.increment(key, 1)
+      else
+        Rails.cache.write(key, 1, expires_in: 1.minute)
+        new_count = 1
+      end
+    
+      Rails.logger.debug "Log404s: 404 count for IP #{ip} is now #{new_count}"
     end
+    
 
     [status, headers, response]
   end

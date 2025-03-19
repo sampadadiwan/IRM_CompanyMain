@@ -86,7 +86,7 @@ module FundDashboardHelper
     }
   end
 
-  def fund_cashflows(fund, months: 56)
+  def fund_cashflows(fund, months: 36)
     from_date = Time.zone.today - months.months
     # Get the calls for last
     capital_calls = fund.capital_calls.where(call_date: from_date..)
@@ -96,14 +96,14 @@ module FundDashboardHelper
     acccount_entries = fund.account_entries.not_cumulative.where(entry_type: %w[Expense Fee]).where(reporting_date: from_date..)
 
     # Grouping and summing capital_calls by quarter
-    capital_calls_data = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date)}" }
+    capital_calls_data = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date)}-#{cc.due_date.strftime('%y')}" }
                                       .transform_values { |entries| entries.sum { |e| e.collected_amount_cents / 100.0 } }
 
     # Grouping and summing portfolio_investments by quarter
-    portfolio_investments_data = portfolio_investments.group_by { |pi| "Q#{quarter(pi.investment_date)}" }
+    portfolio_investments_data = portfolio_investments.group_by { |pi| "Q#{quarter(pi.investment_date)}-#{pi.investment_date.strftime('%y')}" }
                                                       .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
 
-    acccount_entries_data = acccount_entries.group_by { |ae| "Q#{quarter(ae.reporting_date)}" }
+    acccount_entries_data = acccount_entries.group_by { |ae| "Q#{quarter(ae.reporting_date)}-#{ae.reporting_date.strftime('%y')}" }
                                             .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
 
     # Combining data for stacking

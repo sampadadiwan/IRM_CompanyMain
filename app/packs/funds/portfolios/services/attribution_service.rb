@@ -18,7 +18,7 @@ class AttributionService
           Rails.logger.debug { "processing buy #{buy.to_json}" }
           attribution_quantity = [buy.net_quantity, allocatable_quantity].min
           # Create the portfolio attribution
-          PortfolioAttribution.create!(entity_id: @portfolio_investment.entity_id, fund_id: @portfolio_investment.fund_id, bought_pi: buy, sold_pi: @portfolio_investment, quantity: -attribution_quantity)
+          PortfolioAttribution.create!(entity_id: @portfolio_investment.entity_id, fund_id: @portfolio_investment.fund_id, bought_pi: buy, sold_pi: @portfolio_investment, quantity: -attribution_quantity, investment_date: @portfolio_investment.investment_date)
           # This triggers the computation of net_quantity
           buy.reload
 

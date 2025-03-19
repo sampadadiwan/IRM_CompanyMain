@@ -30,4 +30,20 @@ class ExchangeRate < ApplicationRecord
   def folder_path
     "#{entity}/Exchange Rates/#{to_s.delete('->')}"
   end
+
+  def self.latest_rates_before(end_date, entity_id)
+    rates = ExchangeRate
+            .where(as_of: ..end_date).where(entity_id: entity_id)
+            .order(:from, :to, as_of: :desc)
+
+    latest_rates = rates.group_by { |r| [r.from, r.to] }
+                        .transform_values(&:first)
+
+    # Example usage:
+    latest_rates.each do |(from, to), rate|
+      puts "#{from} to #{to} => #{rate.rate} (as_of #{rate.as_of})"
+    end
+
+    latest_rates
+  end
 end

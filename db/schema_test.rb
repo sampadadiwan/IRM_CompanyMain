@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_16_053504) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_18_033700) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2445,6 +2445,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_16_053504) do
     t.datetime "updated_at", null: false
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "deleted_at"
+    t.date "investment_date"
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
     t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"

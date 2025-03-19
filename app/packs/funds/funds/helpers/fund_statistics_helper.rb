@@ -100,7 +100,7 @@ module FundStatisticsHelper
   def fund_distributions_by_quarter(fund)
     capital_distributions = fund.capital_distributions.where("distribution_date > ?", Time.zone.today - 1.year)
     capital_distributions = capital_distributions.group_by { |cc| "Q#{quarter(cc.distribution_date)}" }
-                                                 .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.net_amount_cents / 100) }] }
+                                                 .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.gross_amount_cents / 100) }] }
 
     column_chart capital_distributions, library: {
       plotOptions: { column: {
