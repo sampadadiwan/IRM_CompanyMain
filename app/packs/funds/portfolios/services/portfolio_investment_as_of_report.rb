@@ -38,7 +38,7 @@ class PortfolioInvestmentAsOfReport
 
       # Create entries for each item
       @aggregate_portfolio_investments.each do |api|
-        api = api.as_of(@as_of) if @as_of.present?
+        api = api.as_of(@as_of) if @as_of.present? && @as_of != Date.today
 
         # Get the custom fields
         custom_field_values = get_custom_values(api, form_type, custom_field_names)
@@ -80,7 +80,7 @@ class PortfolioInvestmentAsOfReport
             gain = pi.gain
           end
 
-          pi = pi.as_of(@as_of) if @as_of.present?
+          pi = pi.as_of(@as_of) if @as_of.present? && @as_of != Date.today
 
           sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_date, pi.amount, pi.quantity, net_qty, pi.quantity_as_of_date, pi.cost, pi.cost_of_sold, pi.fmv, gain, unrealized_gain, pi.investment_instrument, pi.notes] + custom_field_values + custom_calc_values
         end
@@ -107,7 +107,7 @@ class PortfolioInvestmentAsOfReport
         avg_cost = 0
 
         apis.each do |api|
-          api = api.as_of(@as_of) if @as_of.present?
+          api = api.as_of(@as_of) if @as_of.present? && @as_of != Date.today
           bought_quantity += api.bought_quantity
           bought_amount += api.bought_amount
           sold_quantity += api.sold_quantity
