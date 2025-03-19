@@ -1,6 +1,6 @@
 class InvestorsController < ApplicationController
   before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report]
-  after_action :verify_authorized, except: [:merge]
+  after_action :verify_authorized, except: [:merge, :portfolio_investments_report_all]
 
   # GET /investors or /investors.json
   def index
@@ -22,13 +22,18 @@ class InvestorsController < ApplicationController
 
   def portfolio_investments_report
     if request.post? && params[:as_of].present?
-      portfolio_company_id = if params[:all].present?
-                               nil
-                             else
-                               @investor.id
-                             end
+      portfolio_company_id = @investor.id
       PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id, portfolio_company_id:)
       redirect_to investor_path(@investor, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
+    else
+      render "portfolio_investments_report"
+    end
+  end
+
+  def portfolio_investments_report_all
+    if request.post? && params[:as_of].present? 
+      PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id)
+      redirect_to investors_path, notice: "Report generation started, please check back in a few mins"
     else
       render "portfolio_investments_report"
     end

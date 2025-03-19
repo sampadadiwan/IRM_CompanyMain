@@ -112,6 +112,8 @@ resources :investors do
   post 'generate_reports', on: :member
   get 'portfolio_investments_report', on: :member
   post 'portfolio_investments_report', on: :member
+  get 'portfolio_investments_report_all', on: :collection
+  post 'portfolio_investments_report_all', on: :collection
 end
 
 resources :investor_notice_entries

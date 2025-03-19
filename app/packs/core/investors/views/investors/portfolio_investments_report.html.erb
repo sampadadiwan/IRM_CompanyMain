@@ -1,10 +1,18 @@
 <%= render NewCard.new do %>
-<% label = params[:all].present? ? "All" : @investor.investor_name %>
+<% 
+    model = @investor
+    if model.nil?
+        model = current_user
+        label = "All"
+        url = portfolio_investments_report_all_investors_path
+    else
+        label = "#{model}"
+        url = portfolio_investments_report_investor_path(model.id)
+    end
+%>
 <%= render FormCard.new(title: "Generate Portfolio Investments Reports : #{label}") do %>
-    <%= form_with(model: @investor, validate: true, url: portfolio_investments_report_investor_path(@investor.id), method: :post) do |form| %>
+    <%= form_with(model:, validate: true, url:, method: :post, data: {turbo: false}) do |form| %>
         
-        <%= form.hidden_field :all, value: true, name: :all, id: :all if params[:all].present? %>
-
         <div class="form-group">
             <%= form.label :as_of %>
             <%= form.date_field :as_of, class: "form-control", name: :as_of, id: :as_of  %>
