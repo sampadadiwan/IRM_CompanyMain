@@ -1,0 +1,14 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("InvestmentInstrument")
+
+wb.add_worksheet(name: "InvestmentInstrument") do |sheet|
+  # Create the header row
+  sheet.add_row(["Portfolio Company", "Name", "Currency", "Investment Domicile"] + custom_headers)
+
+  # Create entries for each item
+  @investment_instruments.each do |fu|
+    custom_field_values = get_custom_values(fu, form_type, custom_field_names)
+    sheet.add_row [fu.portfolio_company.investor_name, fu.name, fu.currency.to_s, fu.investment_domicile.to_s] + custom_field_values
+  end
+end
