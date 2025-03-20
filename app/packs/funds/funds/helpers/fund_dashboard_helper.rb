@@ -20,7 +20,7 @@ module FundDashboardHelper
     # Group by fund name and ratio name
     ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
       ratios.group_by { |v| v.end_date.strftime("%m/%Y") }
-            .map { |date, vals| [date, vals[-1].value.round(2)] } # Take last value for the month
+            .map { |date, vals| [date, vals[-1].value&.round(2)] } # Take last value for the month
             .sort_by { |date, _| Date.strptime(date, "%m/%Y") }
     end
 
