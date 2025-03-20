@@ -26,6 +26,7 @@ class ImportInvestmentInstrument < ImportUtil
     if update_only == "Yes"
       if investment_instrument.present?
         # Update only, and we have a pre-existing investment_instrument
+        raise "Currency cannot be updated" if investment_instrument.currency.to_s.downcase != currency.to_s.downcase
         saved = save_instrument(investment_instrument, portfolio_company, row_data, custom_field_headers, import_upload)
       else
         # Update only, but we dont have a pre-existing investment_instrument
