@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_18_033700) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_18_060702) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1845,6 +1845,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_18_033700) do
     t.json "json_fields"
     t.bigint "form_type_id"
     t.string "currency", limit: 5
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
     t.index ["entity_id"], name: "index_investment_instruments_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_instruments_on_form_type_id"

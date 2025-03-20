@@ -1,3 +1,12 @@
+V9.0.11
+#####################################
+b69d689b7 Instrument upload and download (#758)
+1f69d8f1d Aded better dashboard_widget selection from dropdown
+c714f7367 Fixed approve/unapprove for IA
+4c18724f5 Added portfolio_investment_as_of_report for funds
+40c7b2232 Added throttling for bad password resets for VAPT
+95af8cfe3 Deletes SupportClientMapping that are disabled and 1 week old, still present in DB
+
 V9.0.10
 #####################################
 ebb0b8efc Added check for todays date in PI report
