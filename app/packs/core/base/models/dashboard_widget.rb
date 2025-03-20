@@ -15,7 +15,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL")
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL")
 
   ].freeze
 
@@ -111,5 +112,11 @@ class DashboardWidget < ApplicationRecord
 
   def self.all_widgets
     WIDGETS.values.flatten
+  end
+
+  def self.widget_select
+    WIDGETS.transform_values do |widgets|
+      widgets.map(&:widget_name)
+    end
   end
 end

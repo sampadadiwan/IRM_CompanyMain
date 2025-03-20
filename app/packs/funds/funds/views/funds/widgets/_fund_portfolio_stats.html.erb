@@ -1,0 +1,12 @@
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  
+    <!-- This block becomes the `content` inside the component -->
+    <%= account_entries_line_chart(@fund, **widget.metadata_args) %>
+  
+<% end %>
