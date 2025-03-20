@@ -2,14 +2,14 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
   include Rails.application.routes.url_helpers
   queue_as :default
 
-  def perform(as_of, user_id, portfolio_company_id: nil)
+  def perform(as_of, user_id, portfolio_company_id: nil, fund_id: nil)  
     Chewy.strategy(:sidekiq) do
-      generate(as_of, user_id, portfolio_company_id:)
+      generate(as_of, user_id, portfolio_company_id:, fund_id:)
     end
   end
 
   # rubocop:disable Rails/OutputSafety
-  def generate(as_of, user_id, portfolio_company_id: nil)
+  def generate(as_of, user_id, portfolio_company_id: nil, fund_id: nil)
     user = User.find(user_id)
     entity = user.entity
     as_of = Date.parse(as_of)
@@ -18,6 +18,11 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
     if portfolio_company_id.present?
       portfolio_company = Investor.find(portfolio_company_id)
       aggregate_portfolio_investments = portfolio_company.aggregate_portfolio_investments
+    end
+
+    if fund_id.present?
+      fund = Fund.find(fund_id)
+      aggregate_portfolio_investments = fund.aggregate_portfolio_investments
     end
 
     send_notification("Generating Portfolio Investment Report", user_id)
@@ -30,6 +35,8 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
     # Save it as a document
     if portfolio_company_id.present?
       report_doc = portfolio_company.documents.build(name: "Portfolio Investments Report - #{portfolio_company.investor_name} - #{as_of}", user_id: user_id, entity_id: portfolio_company.entity_id, orignal: true, owner_tag: "Generated")
+    elsif fund_id.present?
+      report_doc = fund.documents.build(name: "Portfolio Investments Report - #{fund.name} - #{as_of}", user_id: user_id, entity_id: fund.entity_id, orignal: true, owner_tag: "Generated")
     else
       folder = entity.root_folder.children.where(name: "tmp").first
       folder ||= entity.root_folder.children.create!(name: "tmp", entity_id: entity.id)

@@ -32,8 +32,12 @@ class InvestorsController < ApplicationController
 
   def portfolio_investments_report_all
     if request.post? && params[:as_of].present?
-      PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id)
-      redirect_to investors_path, notice: "Report generation started, please check back in a few mins"
+      PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id, fund_id: params[:fund_id])
+      if params[:fund_id].present?
+        redirect_to fund_path(params[:fund_id], tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
+      else
+        redirect_to investors_path, notice: "Report generation started, please check back in a few mins"
+      end
     else
       render "portfolio_investments_report"
     end
