@@ -32,7 +32,7 @@
     <table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
         <thead>
             <tr>
-                <% unless params[:controller] == "investors" %>
+                <% if params[:show_investor_name].present? %>
                     <th>
                         Stakeholder
                     </th>
@@ -74,7 +74,7 @@
         </thead>
         <tbody id="investor_accesses_table_body">
             <% investor_accesses.each do |investor_access| %>
-                <%= render investor_access %>
+                <%= render "/investor_accesses/investor_access", investor_access: %>
             <% end %>
         </tbody>
     </table>

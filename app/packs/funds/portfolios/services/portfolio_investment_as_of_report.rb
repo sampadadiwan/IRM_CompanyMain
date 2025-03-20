@@ -66,9 +66,8 @@ class PortfolioInvestmentAsOfReport
 
       # Create entries for each item
       @aggregate_portfolio_investments.includes(portfolio_investments: %i[fund investment_instrument]).find_each do |api|
-
         api = api.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
-        
+
         api.portfolio_investments.each do |pi|
           custom_field_values = get_custom_values(pi, form_type, custom_field_names)
           custom_calc_values = get_custom_calc_values(pi, form_type, custom_calcs)
