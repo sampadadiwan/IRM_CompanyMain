@@ -1,9 +1,16 @@
 class BackupDbJob < ApplicationJob
-  def perform
+  def perform(action = "backup")
     Chewy.strategy(:atomic) do
-      # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
-      User.support_users.first.touch
-      backup_db
+      case action
+      when "backup"
+        # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
+        User.support_users.first.touch
+        # Backup the primary DB
+        backup_db
+      when "restore"
+        # We restore the backup to the replica. In the future we should have a separate machine for testing the backup
+        restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA])
+      end
     end
   end
 
@@ -14,7 +21,13 @@ class BackupDbJob < ApplicationJob
     s.sub(/\.?0*$/, '') + units[e]
   end
 
-  def restore_db(test_count_query: "SELECT COUNT(*) FROM users", restore_db_name: "test_db_restore", host: "localhost", port: 3306)
+  # The backup is generally 1 hr old, so we check for 90 minutes
+  BACKUP_DURATION = 90
+
+  def restore_db(test_count_query: nil, restore_db_name: "test_db_restore", host: "localhost", port: 3306)
+    # The backup is generally 1 hr old, so we check for 90 minutes
+    test_count_query ||= "SELECT COUNT(*) FROM users where updated_at > '#{Time.zone.now - BACKUP_DURATION.minutes}'"
+
     Rails.logger.debug { "Testing latest backup from S3 for IRM_#{Rails.env}" }
     client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
@@ -71,21 +84,40 @@ class BackupDbJob < ApplicationJob
     Rails.logger.debug { "Restored backup to #{restore_db_name}" }
 
     # Run a query on the restored database
+    Rails.logger.debug { "Running test query #{test_count_query}" }
     result = database.query(test_count_query)
 
+    backup_time = get_file_date_time(latest_backup.key)
     # Send an email if the query returns 0 rows
     if result.first['COUNT(*)'].zero?
-      Rails.logger.debug "Test failed: restored database has no users"
-      e = StandardError.new "Test failed: restored database has no users"
-      ExceptionNotifier.notify_exception(e)
+      msg = "Restore Backup failed: #{latest_backup.key} restored database has no users updated in the last #{BACKUP_DURATION} mins"
+      Rails.logger.debug msg
+      error_msg = { from: "BackupDbJob", status: "Failed", backup_time:, msg: msg }
       # raise e
     else
-      Rails.logger.debug { "Test passed: restored database #{restore_db_name} has users" }
+      msg = "Restore Backup passed: #{latest_backup.key} restored database #{restore_db_name} has users updated in the last #{BACKUP_DURATION} mins"
+      Rails.logger.debug msg
+      error_msg = { from: "BackupDbJob", status: "Passed", backup_time:, msg: msg }
     end
+    EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
 
     # Clean up the temporary files
     File.delete(temp_file)
     File.delete(unzipped_file)
+    database.query("DROP DATABASE IF EXISTS #{restore_db_name}")
+  end
+
+  def get_file_date_time(file_name)
+    match = file_name.match(/IRM-(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})/)
+    if match
+      date_str = match[1] # "2025-03-21"
+      time_str = match[2] # "13-10-04"
+
+      # Combine and parse to DateTime
+      datetime_str = "#{date_str} #{time_str.tr('-', ':')}" # "2025-03-21 13:10:04"
+      DateTime.parse(datetime_str)
+
+    end
   end
 
   def backup_bd_full_xtrabackup; end
@@ -104,9 +136,10 @@ class BackupDbJob < ApplicationJob
     size_kb = File.size("tmp/#{backup_filename}").to_f / 1024
 
     if size_kb < 100
-      e = StandardError.new "mysqldump created file which is too small, backup aborted"
-      ExceptionNotifier.notify_exception(e)
-      raise e
+      msg =  "mysqldump created file which is too small, backup aborted"      
+      error_msg = { from: "BackupDbJob", status: "Failed", msg: }
+      EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+      raise msg
     end
 
     `gzip -9 tmp/#{backup_filename}`
@@ -151,9 +184,11 @@ class BackupDbJob < ApplicationJob
     #   end
     # end
   rescue StandardError => e
-    Rails.logger.error { "Error backing up database: #{e.message}" }
+    msg = "Error backing up database: #{e.message}"
     Rails.logger.error { e.backtrace.join("\n") }
-    ExceptionNotifier.notify_exception(e, data: { message: "Error backing up database" })
+    error_msg = { from: "BackupDbJob", status: "Failed", msg:  }
+    EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+    raise msg
   ensure
     # remove local backup file
     Rails.logger.debug "Removing local backup file"
