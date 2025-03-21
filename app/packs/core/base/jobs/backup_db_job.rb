@@ -31,6 +31,14 @@ class BackupDbJob < ApplicationJob
     host ||= Rails.application.credentials[:DB_HOST_REPLICA]
     port ||= 3306
 
+    if  host == Rails.application.credentials[:DB_HOST] && 
+        restore_db_name == Rails.application.credentials[:DB_NAME]
+      msg = "Cannot restore the primary database to itself"
+      error_msg = { from: "BackupDbJob", status: "Failed", msg: msg }
+      EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+      raise msg
+    end
+
     Rails.logger.debug { "Testing latest backup from S3 for IRM_#{Rails.env}" }
     client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
