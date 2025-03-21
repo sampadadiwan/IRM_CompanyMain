@@ -24,9 +24,12 @@ class BackupDbJob < ApplicationJob
   # The backup is generally 1 hr old, so we check for 90 minutes
   BACKUP_DURATION = 90
 
-  def restore_db(test_count_query: nil, restore_db_name: "test_db_restore", host: "localhost", port: 3306)
+  def restore_db(test_count_query: nil, restore_db_name: "test_db_restore", host: nil, port: nil)
     # The backup is generally 1 hr old, so we check for 90 minutes
-    test_count_query ||= "SELECT COUNT(*) FROM users where updated_at > '#{Time.zone.now - BACKUP_DURATION.minutes}'"
+    time_utc = (Time.zone.now - BACKUP_DURATION.minutes).utc
+    test_count_query ||= "SELECT COUNT(*) FROM users where updated_at > '#{time_utc}'"
+    host ||= Rails.application.credentials[:DB_HOST_REPLICA]
+    port ||= 3306
 
     Rails.logger.debug { "Testing latest backup from S3 for IRM_#{Rails.env}" }
     client = Aws::S3::Client.new(
@@ -92,12 +95,12 @@ class BackupDbJob < ApplicationJob
     if result.first['COUNT(*)'].zero?
       msg = "Restore Backup failed: #{latest_backup.key} restored database has no users updated in the last #{BACKUP_DURATION} mins"
       Rails.logger.debug msg
-      error_msg = { from: "BackupDbJob", status: "Failed", backup_time:, msg: msg }
+      error_msg = { from: "BackupDbJob", status: "Failed", msg: msg }
       # raise e
     else
       msg = "Restore Backup passed: #{latest_backup.key} restored database #{restore_db_name} has users updated in the last #{BACKUP_DURATION} mins"
       Rails.logger.debug msg
-      error_msg = { from: "BackupDbJob", status: "Passed", backup_time:, msg: msg }
+      error_msg = { from: "BackupDbJob", status: "Passed", msg: msg }
     end
     EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
 
