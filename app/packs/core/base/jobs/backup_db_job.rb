@@ -133,6 +133,9 @@ class BackupDbJob < ApplicationJob
     backup_filename = "#{Rails.root.basename}-#{datestamp}.sql"
     ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
 
+    # This is for the restore_db which checks if there are any users updated in the last 90 minutes
+    User.joins(:roles).where(roles: { name: 'support' }).first.touch
+
     # process backup
     `mysqldump -u #{Rails.application.credentials[:DB_USER]} -p#{Rails.application.credentials[:DB_PASS]} -h#{Rails.application.credentials[:DB_HOST]} -i -c -q --single-transaction --lock-tables=false IRM_#{Rails.env} > tmp/#{backup_filename}`
 
