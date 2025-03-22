@@ -119,7 +119,15 @@ module FundDashboardHelper
       .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
 
     # Combining data for stacking
-    all_quarters = (capital_calls_data.keys + capital_distributions_data.keys + portfolio_investments_data.keys + acccount_entries_data.keys).uniq.sort
+    # q.split("-") splits strings like "Q4-22" into ["Q4", "22"].
+    # quarter_part.delete_prefix("Q").to_i gets the numeric quarter.
+    # We sort using [year_number, quarter_number], so it’s first by year, then by quarter.
+    all_quarters = (capital_calls_data.keys + capital_distributions_data.keys + portfolio_investments_data.keys + acccount_entries_data.keys).uniq.sort_by do |q|
+      quarter_part, year_part = q.split("-")
+      quarter_number = quarter_part.delete_prefix("Q").to_i
+      year_number = year_part.to_i
+      [year_number, quarter_number] # sort by year first, then quarter
+    end
 
     capital_calls_chart_data = all_quarters.map do |quarter|
       [quarter, capital_calls_data[quarter] || 0]
