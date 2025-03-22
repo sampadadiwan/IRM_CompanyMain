@@ -5,10 +5,10 @@ class BackupDbJob < ApplicationJob
       when "backup"
         # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
         User.support_users.first.touch
-        
+
         # Backup the primary DB
         backup_db
-        
+
         # At 2 am once only
         if Time.zone.now.hour == 2
           # Restore the backup to the replica and check if the restore was successful
@@ -38,7 +38,7 @@ class BackupDbJob < ApplicationJob
     host ||= Rails.application.credentials[:DB_HOST_REPLICA]
     port ||= 3306
 
-    if  host == Rails.application.credentials[:DB_HOST] && 
+    if  host == Rails.application.credentials[:DB_HOST] &&
         restore_db_name == Rails.application.credentials[:DB_NAME]
       msg = "Cannot restore the primary database to itself"
       error_msg = { from: "BackupDbJob", status: "Failed", msg: msg }
@@ -107,7 +107,7 @@ class BackupDbJob < ApplicationJob
 
     result = database.query(test_count_query)
 
-    backup_time = get_file_date_time(latest_backup.key)
+    get_file_date_time(latest_backup.key)
     # Send an email if the query returns 0 rows
     if result.first['COUNT(*)'].zero?
       msg = "Restore Backup failed: #{latest_backup.key} restored database has no users updated in the last #{BACKUP_DURATION} mins"
@@ -159,7 +159,7 @@ class BackupDbJob < ApplicationJob
     size_kb = File.size("tmp/#{backup_filename}").to_f / 1024
 
     if size_kb < 100
-      msg =  "mysqldump created file which is too small, backup aborted"      
+      msg = "mysqldump created file which is too small, backup aborted"
       error_msg = { from: "BackupDbJob", status: "Failed", msg: }
       EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
       raise msg
@@ -209,7 +209,7 @@ class BackupDbJob < ApplicationJob
   rescue StandardError => e
     msg = "Error backing up database: #{e.message}"
     Rails.logger.error { e.backtrace.join("\n") }
-    error_msg = { from: "BackupDbJob", status: "Failed", msg:  }
+    error_msg = { from: "BackupDbJob", status: "Failed", msg: }
     EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
     raise msg
   ensure

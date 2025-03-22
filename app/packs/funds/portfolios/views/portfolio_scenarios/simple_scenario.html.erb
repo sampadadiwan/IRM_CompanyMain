@@ -8,7 +8,7 @@
     err_msg = nil
     begin
       # If no scenario is specified the use the orig_xirr computed above
-      scenario_xirr = params["scenario"].blank? ? nil : compute_portfolio_irr(params, scenarios: params[:scenario])
+      scenario_xirr = params["scenario"].blank? ? {} : api_irr(params, scenarios: params[:scenario])
 
       # we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario
       fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params)
@@ -27,7 +27,7 @@
 
   <%= render ToggleCard.new(title: "Scenarios", css_class: "show_scenario", controller: "access") do %>
 
-    <%= form_with(model: nil) do |form| %>
+    <%= form_with(model: current_user, url: simple_scenario_portfolio_scenarios_path, method: :post) do |form| %>
 
         <%= text_field_tag :entity_id, current_user.entity_id, class: "form-control", hidden: true %>
         <%= text_field_tag :fund_id, @fund.id, class: "form-control", hidden: true  %>
@@ -78,8 +78,8 @@
         </div>
 
         <div class="form-group col text-primary">
-          <% xirr = scenario_xirr.nil? ? 0 : scenario_xirr[api.id][:xirr] %>
-          <% puts "scenario_xirr[api.id][:xirr] = #{scenario_xirr[api.id][:xirr]}" if scenario_xirr %>
+          <% xirr = scenario_xirr.nil? || scenario_xirr[api.id].nil? ? 0 : scenario_xirr[api.id][:xirr] %>
+          <% Rails.logger.debug "scenario_xirr = #{scenario_xirr} api.id = #{api.id} #{scenario_xirr[api.id]}" %>
           <%= text_field_tag :scenario_irr, xirr , class: "form-control", disabled: true %>
         </div>
 

@@ -31,7 +31,6 @@ Sidekiq.configure_server do |config|
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
     end
 
-    
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end
 end

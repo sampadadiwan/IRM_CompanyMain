@@ -59,9 +59,7 @@ class InvestmentInstrument < ApplicationRecord
   end
 
   def prevent_currency_change
-    if will_save_change_to_currency?
-      errors.add(:currency, "cannot be updated")
-    end
+    errors.add(:currency, "cannot be updated") if will_save_change_to_currency?
   end
 
   def to_s
