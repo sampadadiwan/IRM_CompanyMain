@@ -5,8 +5,15 @@ class BackupDbJob < ApplicationJob
       when "backup"
         # We touch a user, so that the backup has a timestamp. This will be used to test the restored database
         User.support_users.first.touch
+        
         # Backup the primary DB
         backup_db
+        
+        # At 2 am once only
+        if Time.zone.now.hour == 2
+          # Restore the backup to the replica and check if the restore was successful
+          restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA])
+        end
       when "restore"
         # We restore the backup to the replica. In the future we should have a separate machine for testing the backup
         restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA])
@@ -96,6 +103,8 @@ class BackupDbJob < ApplicationJob
 
     # Run a query on the restored database
     Rails.logger.debug { "Running test query #{test_count_query}" }
+    Rails.logger.debug { "Checking for support user #{User.support_users.first.updated_at.utc}" }
+
     result = database.query(test_count_query)
 
     backup_time = get_file_date_time(latest_backup.key)

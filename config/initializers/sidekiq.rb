@@ -29,9 +29,6 @@ Sidekiq.configure_server do |config|
     if Rails.env.production?
       # Check the health of the replication
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
-
-      # Check the health of the backup DB by restoring it - only once in the night
-      Sidekiq::Cron::Job.create(name: 'BackupDbJob', cron: 'every day at 02:00', class: 'BackupDbJob', args: ["restore"])
     end
 
     
