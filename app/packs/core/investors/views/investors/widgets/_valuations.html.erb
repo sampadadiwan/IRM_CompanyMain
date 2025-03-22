@@ -5,12 +5,18 @@
   uri_params ||= {}
   uri = URI("/valuations?owner_id=#{@investor.id}&owner_type=Investor")
 %>
-<div class="<%= widget_size %> d-flex align-items-stretch">
-  <div class="card w-100">
-    <div class="card-body">            
-        <%= turbo_frame_tag "valuations_charts_frame", target: "_top", src: "#{uri.to_s}" do %>            
-        <%end%>
-        <p class="mb-0"><%= name || "Valuations" %></p>
-    </div>
-  </div>
-</div>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do 
+%>
+      <%= turbo_frame_tag "valuations_charts_frame", target: "_top", src: "#{uri.to_s}" do %>            
+      <%end%>
+        
+  
+<% end %>
+

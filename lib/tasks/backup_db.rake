@@ -101,7 +101,12 @@ namespace :db do  desc "Backup database to AWS-S3"
       # Create a new database on the destination
       destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
 
-      BackupDbJob.new.restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) unless skip_restore_backup
+      unless skip_restore_backup
+        # Backup the source database
+        BackupDbJob.new.backup_db
+        # Restore the backup to the destination
+        BackupDbJob.new.restore_db(restore_db_name: destination_database, host: destination_host, port: destination_port) 
+      end
       
       # Set up replication on the destination
       change_master_query = "CHANGE MASTER TO
@@ -125,7 +130,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       destination_client.query('START REPLICA')
       puts 'Replication setup complete!'
 
-      source_client.query('SHOW REPLICA STATUS')
+      destination_client.query('SHOW REPLICA STATUS')
     rescue => e
       ExceptionNotifier.notify_exception(e)
       raise e

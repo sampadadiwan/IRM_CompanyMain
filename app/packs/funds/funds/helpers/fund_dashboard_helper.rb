@@ -90,27 +90,43 @@ module FundDashboardHelper
     from_date = Time.zone.today - months.months
     # Get the calls for last
     capital_calls = fund.capital_calls.where(call_date: from_date..)
+    capital_distributions = fund.capital_distributions.where(distribution_date: from_date..)
     # Get the PIs
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
     # Get the expenses
     acccount_entries = fund.account_entries.not_cumulative.where(entry_type: %w[Expense Fee]).where(reporting_date: from_date..)
 
     # Grouping and summing capital_calls by quarter
-    capital_calls_data = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date)}-#{cc.due_date.strftime('%y')}" }
-                                      .transform_values { |entries| entries.sum { |e| e.collected_amount_cents / 100.0 } }
+    capital_calls_data = capital_calls.group_by do |cc|
+      "Q#{quarter(cc.due_date)}-#{cc.due_date.strftime('%y')}"
+    end
+      .transform_values { |entries| entries.sum { |e| e.collected_amount_cents / 100.0 } }
+
+    capital_distributions_data = capital_distributions.group_by do |cc|
+      "Q#{quarter(cc.distribution_date)}-#{cc.distribution_date.strftime('%y')}"
+    end
+      .transform_values { |entries| entries.sum { |e| e.gross_amount_cents / 100.0 } }
 
     # Grouping and summing portfolio_investments by quarter
-    portfolio_investments_data = portfolio_investments.group_by { |pi| "Q#{quarter(pi.investment_date)}-#{pi.investment_date.strftime('%y')}" }
-                                                      .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
+    portfolio_investments_data = portfolio_investments.group_by do |pi|
+      "Q#{quarter(pi.investment_date)}-#{pi.investment_date.strftime('%y')}"
+    end
+        .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
 
-    acccount_entries_data = acccount_entries.group_by { |ae| "Q#{quarter(ae.reporting_date)}-#{ae.reporting_date.strftime('%y')}" }
-                                            .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
+    acccount_entries_data = acccount_entries.group_by do |ae|
+      "Q#{quarter(ae.reporting_date)}-#{ae.reporting_date.strftime('%y')}"
+    end
+      .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
 
     # Combining data for stacking
-    all_quarters = (capital_calls_data.keys + portfolio_investments_data.keys + acccount_entries_data.keys).uniq.sort
+    all_quarters = (capital_calls_data.keys + capital_distributions_data.keys + portfolio_investments_data.keys + acccount_entries_data.keys).uniq.sort
 
     capital_calls_chart_data = all_quarters.map do |quarter|
       [quarter, capital_calls_data[quarter] || 0]
+    end
+
+    capital_distributions_chart_data = all_quarters.map do |quarter|
+      [quarter, capital_distributions_data[quarter] || 0]
     end
 
     portfolio_investments_chart_data = all_quarters.map do |quarter|
@@ -125,6 +141,10 @@ module FundDashboardHelper
       {
         name: "Capital Calls",
         data: capital_calls_chart_data
+      },
+      {
+        name: "Capital Distributions",
+        data: capital_distributions_chart_data
       },
       {
         name: "Portfolio Investments",

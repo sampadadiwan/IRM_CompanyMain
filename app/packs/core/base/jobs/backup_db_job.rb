@@ -12,11 +12,11 @@ class BackupDbJob < ApplicationJob
         # At 2 am once only
         if Time.zone.now.hour == 2
           # Restore the backup to the replica and check if the restore was successful
-          restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA])
+          restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA], delete_after_restore: true)
         end
       when "restore"
         # We restore the backup to the replica. In the future we should have a separate machine for testing the backup
-        restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA])
+        restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA], delete_after_restore: true)
       end
     end
   end
@@ -31,7 +31,7 @@ class BackupDbJob < ApplicationJob
   # The backup is generally 1 hr old, so we check for 90 minutes
   BACKUP_DURATION = 90
 
-  def restore_db(test_count_query: nil, restore_db_name: "test_db_restore", host: nil, port: nil)
+  def restore_db(test_count_query: nil, restore_db_name: "test_db_restore", host: nil, port: nil, delete_after_restore: false)
     # The backup is generally 1 hr old, so we check for 90 minutes
     time_utc = (Time.zone.now - BACKUP_DURATION.minutes).utc
     test_count_query ||= "SELECT COUNT(*) FROM users where updated_at > '#{time_utc}'"
@@ -124,7 +124,7 @@ class BackupDbJob < ApplicationJob
     # Clean up the temporary files
     File.delete(temp_file)
     File.delete(unzipped_file)
-    database.query("DROP DATABASE IF EXISTS #{restore_db_name}")
+    database.query("DROP DATABASE IF EXISTS #{restore_db_name}") if delete_after_restore
   end
 
   def get_file_date_time(file_name)

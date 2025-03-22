@@ -6,12 +6,16 @@
   uri = URI("/investor_kycs?investor_id=#{@investor.id}")
   #uri.query = URI.encode_www_form(uri_params) if uri_params.present?
 %>
-<div class="<%= widget_size %> d-flex align-items-stretch">
-  <div class="card w-100">
-    <div class="card-body">            
-        <%= turbo_frame_tag "investor_kycs_frame", target: "_top", src: "#{uri.to_s}" do %>            
-        <%end%>
-        <p class="mb-0"><%= name || "KYCs" %></p>
-    </div>
-  </div>
-</div>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do 
+%>
+    <%= turbo_frame_tag "investor_kycs_frame", target: "_top", src: "#{uri.to_s}" do %>            
+    <%end%>
+        
+<% end %>

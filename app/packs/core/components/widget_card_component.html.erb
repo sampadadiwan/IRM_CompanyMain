@@ -1,11 +1,14 @@
 <!-- app/components/widget_card_component.html.erb -->
 <div class="<%= @widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
+    <% if @widget.display_name || @widget.display_tag %>
+    <div class="card-header">
+      <h5 class="card-title"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
+    </div>
+    <% end %>
     <div class="card-body">
       <!-- `content` is whatever the caller provides as a block -->
       <%= content %>
-      
-      <p class="mb-0"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></p>
     </div>
   </div>
 </div>
