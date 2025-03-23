@@ -41,7 +41,7 @@ class DocumentsController < ApplicationController
                      Document.none
                    end
 
-      @documents = if params[:no_folders].present?
+      @documents = if params[:no_folders].present? || params[:show_root_docs].presence
                      @documents.where(folder_id: params[:folder_id])
                    else
                      @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))

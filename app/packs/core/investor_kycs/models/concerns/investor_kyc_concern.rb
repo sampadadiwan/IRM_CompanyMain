@@ -68,6 +68,5 @@ module InvestorKycConcern
       .or(documents.where.not(owner_tag: "Generated"))
       .or(documents.where(owner_tag: nil))
       .not_template
-      .order(:name)
   end
 end

@@ -11,7 +11,7 @@
     <div class="tab-content">
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
-            <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: aml_report.entity_id, folder_id: aml_report.document_folder.id), loading: :lazy do %>
+            <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: aml_report.entity_id, folder_id: aml_report.document_folder.id, show_root_docs: true), loading: :lazy do %>
             <% end %>
         </div>
       </div>

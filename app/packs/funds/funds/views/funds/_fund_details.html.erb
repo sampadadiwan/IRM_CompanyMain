@@ -67,7 +67,7 @@
           <div id="docs" class="associated_entity">
 
               <%= link_to folder_documents_path(entity_id: fund.entity_id,
-                                        folder_id: fund.document_folder.id),
+                                        folder_id: fund.document_folder.id, show_root_docs: true),
                                         class: "load_data_link",
                                         data: { turbo_frame: 'documents_tree_frame' } do %>
                   <%= render "/layouts/loading" %>
