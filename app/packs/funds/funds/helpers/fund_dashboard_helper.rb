@@ -52,7 +52,7 @@ module FundDashboardHelper
     entries_by_type = entry_types.each_with_object({}) do |type, hash|
       account_entries = fund.account_entries
                             .not_cumulative
-                            .where(entry_type: type)
+                            .where(entry_type: type).where.not(capital_commitment_id: nil)
                             .where(reporting_date: from_date..)
 
       grouped_entries = account_entries.group_by { |entry| entry.reporting_date.strftime("%m/%Y") }
