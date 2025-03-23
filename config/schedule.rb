@@ -8,6 +8,7 @@ every 1.week, at: '02:00 am', roles: [:primary] do
   # Ensure that enable is set to false for all SupportClientMappings after end_date
   rake '"aws:create_and_copy_ami[AppServer]"'
   rake '"aws:create_and_copy_ami[DB-Redis-ES]"'
+  rake '"aws:create_and_copy_ami[Observability]"'
 end
 
 every :reboot, roles: [:app] do
