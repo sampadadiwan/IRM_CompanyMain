@@ -5,7 +5,7 @@ set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
 every 1.week, at: '02:00 am', roles: [:primary] do
-  # Ensure that enable is set to false for all SupportClientMappings after end_date
+  # Ensure AMIs are created and backed up 
   rake '"aws:create_and_copy_ami[AppServer]"'
   rake '"aws:create_and_copy_ami[DB-Redis-ES]"'
   rake '"aws:create_and_copy_ami[Observability]"'

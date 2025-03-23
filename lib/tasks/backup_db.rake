@@ -50,11 +50,12 @@ namespace :db do  desc "Backup database to AWS-S3"
   end
 
   desc 'Create a MySQL replica on a different machine'
-  task :create_replica, [:skip_restore_backup, :server_id] => :environment do |t, args|
+  task :create_replica, [:skip_restore_backup, :server_id, :destination_host] => :environment do |t, args|
     begin
       args.with_defaults(:skip_restore_backup => false)
       # Pass this in if you want a different server_id, ie when setting up multiple replicas each should have a distinct server_id
       args.with_defaults(server_id: '2')  
+      args.with_defaults(destination_host: Rails.application.credentials[:DB_HOST_REPLICA])
 
       skip_restore_backup = args[:skip_restore_backup]
       server_id = args[:server_id]
@@ -67,7 +68,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       source_port = 3306
 
       # Connection details for the destination database
-      destination_host = Rails.application.credentials[:DB_HOST_REPLICA]
+      destination_host = args[:destination_host]
       destination_user = Rails.application.credentials[:DB_USER]
       destination_password = Rails.application.credentials[:DB_PASS]
       destination_database = "IRM_#{Rails.env}"

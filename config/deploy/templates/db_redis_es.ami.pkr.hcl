@@ -1,86 +1,138 @@
+# Specify required plugins for Packer
 packer {
   required_plugins {
     amazon = {
-      version = ">= 0.0.2"
-      source  = "github.com/hashicorp/amazon"
+      version = ">= 0.0.2"                      # Minimum version of the amazon plugin required
+      source  = "github.com/hashicorp/amazon"  # Plugin source for the Amazon EBS builder
     }
   }
 }
 
-# Declare the ami_date variable
+# Variable to dynamically name the AMI with a specific date
 variable "ami_date" {
   type    = string
-  default = ""  # Optional default value (if needed)
+  default = ""  # Default value; can be overridden via CLI or env var
 }
 
-source "amazon-ebs" "ubuntu" {
-  ami_name      = "DB_Redis_ES-${var.ami_date}"
-  instance_type = "t2.micro"
-  region        = "ap-south-1"
-  source_ami    = "ami-0522ab6e1ddcc7055"
-  // skip_region_validation = "true"
+# Declare variable for MySQL root password
+variable "mysql_root_password" {
+  type = string
+}
+
+###############################################
+# AMAZON EBS SOURCE CONFIG - STAGING
+###############################################
+source "amazon-ebs" "staging" {
+  ami_name                    = "DB_Redis_ES_Staging-${var.ami_date}"
+  instance_type               = "t2.micro"
+  region                      = "ap-south-1"
+  source_ami                  = "ami-0522ab6e1ddcc7055"
   associate_public_ip_address = "true"
-  vpc_id                      = "vpc-0a5573442e8b54a08"
-  subnet_id                   = "subnet-02e6d37e5ec01bb5f"
+  vpc_id                      = "vpc-staging-id"         # Replace with your staging VPC ID
+  subnet_id                   = "subnet-staging-id"      # Replace with your staging Subnet ID
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-07fdf064150f9f0b1"
+  security_group_id           = "sg-staging-id"          # Replace with your staging SG ID
   ssh_username                = "ubuntu"
 
-   # Add tags for the AMI
   tags = {
-    "Name"         = "DB_Redis_ES"
-    "CreatedBy"    = "Packer"
+    "Name"      = "DB_Redis_ES_Staging"
+    "CreatedBy" = "Packer"
   }
 }
 
-build {
-  name = "DB_Redis_ES"
-  sources = [
-    "source.amazon-ebs.ubuntu"
+###############################################
+# AMAZON EBS SOURCE CONFIG - PRODUCTION
+###############################################
+source "amazon-ebs" "production" {
+  ami_name                    = "DB_Redis_ES_Prod-${var.ami_date}"
+  instance_type               = "t2.micro"
+  region                      = "ap-south-1"
+  source_ami                  = "ami-0522ab6e1ddcc7055"
+  associate_public_ip_address = "true"
+  vpc_id                      = "vpc-0cb0c5cad8c279582"            # Replace with your production VPC ID
+  subnet_id                   = "subnet-0cf73758b0fb6a9b5"         # Replace with your production Subnet ID
+  ssh_interface               = "public_ip"
+  security_group_id           = "sg-001a351ad10185d5b"             # Replace with your production SG ID
+  ssh_username                = "ubuntu"
+
+  tags = {
+    "Name"      = "DB_Redis_ES_Prod"
+    "CreatedBy" = "Packer"
+  }
+}
+
+###############################################
+# COMMON PROVISIONING STEPS - REUSABLE INLINE
+###############################################
+locals {
+  setup_commands = [
+    # Clean apt cache and update system
+    "sudo rm -r /var/lib/apt/lists/*",
+    "sudo apt update",
+    "sudo apt-get update",
+    "sudo apt-get upgrade --yes",
+
+    # Install Zsh
+    "sudo apt-get install --yes zsh",
+
+    # Docker installation
+    "echo INSTALLING- Docker",
+    "sudo apt install --yes apt-transport-https ca-certificates curl software-properties-common",
+    "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
+    "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+    "sudo apt update",
+    "sudo apt install --yes docker-ce",
+
+    # Install logrotate
+    "sudo apt install --yes logrotate",
+
+    # Run Docker containers on reboot
+    "(crontab -l 2>/dev/null; echo '@reboot sudo docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.11.1') | crontab -u ubuntu -",
+    "(crontab -l 2>/dev/null; echo '@reboot sudo docker run -d --rm --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest') | crontab -u ubuntu -",
+
+    # Install MySQL 8 server
+    "sudo apt-get install -y mysql-server",
+    "sudo systemctl start mysql",
+    "sudo systemctl enable mysql",
+    "sudo service mysql restart",
   ]
 
+  mysql_password_setup = [
+    "echo \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${var.mysql_root_password}';\" > /tmp/mysql-init.sql",
+    "echo \"FLUSH PRIVILEGES;\" >> /tmp/mysql-init.sql",
+    "sudo mysql < /tmp/mysql-init.sql",
+    "rm /tmp/mysql-init.sql"
+  ]
+}
+
+###############################################
+# BUILD BLOCK - STAGING
+###############################################
+build {
+  name    = "build-staging"
+  sources = ["source.amazon-ebs.staging"]
 
   provisioner "shell" {
-    inline = [
-      "sudo rm -r /var/lib/apt/lists/*",
-      "sudo apt update",
-      "sudo apt-get update",
-      "sudo apt-get upgrade --yes",
-      "sudo apt-get install --yes zsh",
-
-
-      // docker
-      "echo INSTALLING- Docker",
-      "sudo apt install --yes apt-transport-https ca-certificates curl software-properties-common",
-      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
-      "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
-      "sudo apt update",
-      "sudo apt install --yes docker-ce",
-
-      // log rotate
-      "sudo apt install --yes logrotate",
-
-      // Run the docker instances for ES and Redis from crontab
-      "(crontab -l 2>/dev/null; echo '@reboot sudo docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.11.1') | crontab -u ubuntu -",
-      "(crontab -l 2>/dev/null; echo '@reboot sudo docker run -d --rm --name redis-stack-server -p 6379:6379  redis/redis-stack-server:latest') | crontab -u ubuntu -",
-
-      // Now install mysql 8 server
-      "sudo apt-get install -y mysql-server",  # Install MySQL 8 from Ubuntu repos
-      "sudo systemctl start mysql",            # Start MySQL
-      "sudo systemctl enable mysql",           # Enable MySQL to start on boot
-
-      "sudo service mysql restart",
-      
-    ]
+    inline = local.setup_commands
   }
 
   provisioner "shell" {
-    inline = [
-      "echo \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'MyStrongPassword';\" > /tmp/mysql-init.sql",
-      "echo \"FLUSH PRIVILEGES;\" >> /tmp/mysql-init.sql",
-      "sudo mysql < /tmp/mysql-init.sql",  # Run the SQL script to reset root password
-      "rm /tmp/mysql-init.sql"             # Clean up the SQL script
-    ]
+    inline = local.mysql_password_setup
+  }
+}
+
+###############################################
+# BUILD BLOCK - PRODUCTION
+###############################################
+build {
+  name    = "build-production"
+  sources = ["source.amazon-ebs.production"]
+
+  provisioner "shell" {
+    inline = local.setup_commands
   }
 
+  provisioner "shell" {
+    inline = local.mysql_password_setup
+  }
 }
