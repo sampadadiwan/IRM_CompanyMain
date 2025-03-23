@@ -50,10 +50,14 @@ namespace :db do  desc "Backup database to AWS-S3"
   end
 
   desc 'Create a MySQL replica on a different machine'
-  task :create_replica, [:skip_restore_backup] => :environment do |t, args|
+  task :create_replica, [:skip_restore_backup, :server_id] => :environment do |t, args|
     begin
       args.with_defaults(:skip_restore_backup => false)
+      # Pass this in if you want a different server_id, ie when setting up multiple replicas each should have a distinct server_id
+      args.with_defaults(server_id: '2')  
+
       skip_restore_backup = args[:skip_restore_backup]
+      server_id = args[:server_id]
 
       # Connection details for the source database
       source_host = Rails.application.credentials[:DB_HOST]
@@ -119,7 +123,15 @@ namespace :db do  desc "Backup database to AWS-S3"
 
       puts "Setting up replication on the destination with query: #{change_master_query}"
       # This is to make the slave different from the master
-      destination_client.query('SET GLOBAL server_id = 2')
+      puts "Setting server_id to #{server_id}"
+      destination_client.query("SET GLOBAL server_id = #{server_id}")
+      log_bin_status = destination_client.query("SHOW VARIABLES LIKE 'log_bin'").first
+      # Replica should not have binary logging enabled
+      if log_bin_status['Value'] == 'ON'
+        puts "⚠️  Binary logging is ON — manual action needed to disable it."
+        puts "Add to /etc/mysql/conf.d/mysql.cnf \n [mysqld]\nskip-log-bin"
+      end
+
       # Stop and reset the replica
       destination_client.query('STOP REPLICA')
       destination_client.query('RESET REPLICA ALL')
@@ -137,7 +149,10 @@ namespace :db do  desc "Backup database to AWS-S3"
     end
   end
 
-  task :reset_replication => :environment do 
+  task :reset_replication, [:server_id] => :environment do |t, args|
+    args.with_defaults(server_id: '2')
+    server_id = args[:server_id]
+
     # Connection details for the source database
     source_host = Rails.application.credentials[:DB_HOST]
     source_user = Rails.application.credentials[:DB_USER]
@@ -169,7 +184,8 @@ namespace :db do  desc "Backup database to AWS-S3"
 
     puts "Setting up replication on the destination with query: #{change_master_query}"
     # This is to make the slave different from the master
-    destination_client.query('SET GLOBAL server_id = 2')
+    puts "Setting server_id to #{server_id}"
+    destination_client.query("SET GLOBAL server_id = #{server_id}")
     # Stop and reset the replica
     destination_client.query('STOP REPLICA')
     destination_client.query('RESET REPLICA ALL')
@@ -180,7 +196,7 @@ namespace :db do  desc "Backup database to AWS-S3"
     destination_client.query('START REPLICA')
     puts 'Replication setup complete!'
 
-    source_client.query('SHOW REPLICA STATUS')
+    destination_client.query('SHOW REPLICA STATUS')
   end
   
 end

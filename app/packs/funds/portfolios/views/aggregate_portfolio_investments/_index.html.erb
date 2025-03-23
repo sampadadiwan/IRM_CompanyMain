@@ -30,6 +30,8 @@
 
               <%#= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
+              <%= link_to "Portfolio Investment Report" , portfolio_investments_report_all_investors_path(fund_id: fund.id), {class: "dropdown-item" } %>
+
               <div class="dropdown-divider"></div>
 
               <%= link_to "Upload",
