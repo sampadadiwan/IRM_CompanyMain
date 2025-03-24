@@ -32,7 +32,7 @@ class CapitalRemittanceDocGenerator
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_remittance.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
-  def generate(capital_remittance, fund_doc_template_path)
+  def generate(capital_remittance, fund_doc_template_path) # rubocop:disable Metrics/MethodLength
     template = Sablon.template(File.expand_path(fund_doc_template_path))
     fund_as_of = FundAsOf.new(capital_remittance.fund, capital_remittance.remittance_date)
 
