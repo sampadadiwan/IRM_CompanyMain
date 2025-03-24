@@ -17,11 +17,6 @@
         </a>
         <% end %>
 
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab"
-            data-action="click->tabdetails#loadData">
-          Reminders
-        </a>
-
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewed-by-tab"
             data-action="click->tabdetails#loadData">
           Viewed By
@@ -69,7 +64,7 @@
                 <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
               </div>
             </div>
-            
+
         <% end %>
 
         <% if document.entity_id == current_user&.entity_id %>
@@ -95,25 +90,13 @@
           </div>
         </div>
 
-        <div id="reminders-tab" class="tab-pane fade">
-          <div id="reminders" class="associated_entity">
-            <%= link_to reminders_path( owner_id: document.id, owner_type: "Document", sent: false),
-                                    class: "load_data_link",
-                                    data: { turbo_frame: 'reminders_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "reminders_list", target: "_top" do %>
-            <% end %>
-          </div>
-        </div>
-
 
         <div id="qna-tab" class="tab-pane fade">
           <div id="qna" class="associated_entity markup">
             <%#= Json2table.get_html_table(document.qna, JsonTable::TABLE_OPTIONS).html_safe if document.qna %>
             <%= render_markdown(document.qna[1..-2].gsub('\\\\', '\\').gsub('\n', "\n").gsub('```markdown', '').gsub('```', '').gsub('\"', '')) if document.qna.present? %>
           </div>
-        </div>        
+        </div>
 
     </div>
 

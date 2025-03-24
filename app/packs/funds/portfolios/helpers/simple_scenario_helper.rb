@@ -1,8 +1,8 @@
 module SimpleScenarioHelper
-  def compute_portfolio_irr(params, scenarios: nil)
+  def api_irr(params, scenarios: nil)
     scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Time.zone.today
     fpc = FundPortfolioCalcs.new(@fund, scenario_date)
-    fpc.portfolio_company_irr(scenarios:)
+    fpc.api_irr(scenarios:)
     # Rails.logger.debug "############# COMPUTE PORTFOLIO IRR #############"
     # Rails.logger.debug values
   end
@@ -55,7 +55,7 @@ module SimpleScenarioHelper
     oxirr_data[fund.name] = fund_orig_xirr
 
     sxirr_data = if scenario_xirr.present?
-                   apis.to_h { |api| [api.to_s, scenario_xirr[api.id][:xirr]] }
+                   apis.to_h { |api| [api.to_s, scenario_xirr[api.id]&.dig(:xirr) || 0] }
                  else
                    apis.to_h { |api| [api.portfolio_company_name, 0] }
                  end

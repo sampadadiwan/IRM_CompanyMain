@@ -43,6 +43,7 @@ class FundPolicy < FundBasePolicy
       )
   end
 
+  # rubocop:disable Style/RedundantCondition
   def dashboard?
     if permissioned_employee?
       true
@@ -62,6 +63,7 @@ class FundPolicy < FundBasePolicy
         end
     end
   end
+  # rubocop:enable Style/RedundantCondition
 
   def generate_tracking_numbers?
     record.has_tracking_currency? && update?

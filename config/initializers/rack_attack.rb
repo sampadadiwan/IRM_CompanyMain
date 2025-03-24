@@ -23,6 +23,11 @@ module Rack
       req.cookies[Rails.application.config.session_options[:key]].present?
     end
 
+    Rack::Attack.throttled_responder = lambda do |req|
+      Rails.logger.warn "⚠️ Throttled request from #{req.ip} on rule #{req.env['rack.attack.matched']}"
+      [429, { 'Content-Type' => 'text/plain' }, ["Rate limit exceeded. Try again later.\n"]]
+    end
+
     ### Throttle Spammy Clients ###
 
     # If any single client IP is making tons of requests, then they're
@@ -50,9 +55,12 @@ module Rack
     # Throttle POST requests to /login by IP address
     #
     # Key: "rack::attack:#{Time.now.to_i/:period}:logins/ip:#{req.ip}"
-    throttle('logins/ip', limit: 5, period: 30.seconds) do |req|
-      if req.ip && req.path == '/users/sign_in' && req.get?
+    throttle('logins/ip', limit: 10, period: 30.seconds) do |req|
+      if req.ip && ['/users/sign_in', '/users/reset_password', '/users/confirmation', '/users/password', '/users/magic_link'].include?(req.path) && req.post?
         # Rails.logger.info "🔍 Throttle check: IP #{req.ip} requested login page"
+        # count_key = "rack::attack:#{(Time.now.to_i / 30)}:logins/ip:#{req.ip}"
+        # current_count = Rails.cache.read(count_key) || 0
+        # Rails.logger.info "Throttle count for IP #{req.ip}: #{current_count}"
         req.ip
       end
     end
@@ -65,8 +73,8 @@ module Rack
     # throttle logins for another user and force their login requests to be
     # denied, but that's not very common and shouldn't happen to you. (Knock
     # on wood!)
-    throttle('block_bad_sign_ins', limit: 5, period: 30.seconds) do |req|
-      if req.path == '/users/sign_in' && req.post?
+    throttle('block_bad_sign_ins', limit: 10, period: 30.seconds) do |req|
+      if ['/users/sign_in', '/users/reset_password', '/users/confirmation', '/users/password', '/users/magic_link'].include?(req.path) && req.post?
         # Normalize the email, using the same logic as your authentication process, to
         # protect against rate limit bypasses. Return the normalized email if present, nil otherwise.
         req.params['email'].to_s.downcase.gsub(/\s+/, "").presence

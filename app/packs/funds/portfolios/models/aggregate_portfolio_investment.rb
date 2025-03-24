@@ -193,7 +193,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
 
     # We cannot proceed without a valid valuation
-    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{end_date}" unless valuation
+    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
 
     # Get the fmv for this portfolio_company on the end_date
     net_quantity * valuation.per_share_value_in(fund.currency, end_date)

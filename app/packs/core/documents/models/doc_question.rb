@@ -23,7 +23,6 @@ class DocQuestion < ApplicationRecord
   scope :generals, -> { where(qtype: qtypes[:general]) }
   scope :with_for_class, ->(klass) { where(for_class: klass) }
 
-
   validate :name_or_tags_present
 
   def name_or_tags_present

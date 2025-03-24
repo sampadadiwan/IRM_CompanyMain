@@ -204,11 +204,13 @@
    <div style="display: inline-block;">
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} if policy(@document).update? %>
 
-      <%= button_to "Approve", document_path(@document, "document[approved]": true, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).approve? %>
+      <%= button_to "Approve", document_path(@document, "document[approved]": true, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).approve? %>
+
+      <%= button_to "UnApprove", document_path(@document, "document[approved]": false, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).unapprove? %>
 
       <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
-      
+
       <%unless current_user.curr_role == "investor"%>
         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Send Document

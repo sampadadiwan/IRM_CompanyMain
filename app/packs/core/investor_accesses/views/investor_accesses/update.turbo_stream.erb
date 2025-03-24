@@ -1,5 +1,5 @@
 <%= turbo_stream.replace("investor_access_#{@investor_access.id}", 
-    partial: "investor_accesses/investor_access", locals: { investor_access: @investor_access }) %>
+    partial: "investor_accesses/investor_access", locals: { investor_access: @investor_access, hide_investor_name: true }) %>
 
 <%= turbo_stream.replace('toasts', partial: "layouts/success_toast", 
     locals: { message: "Added #{@investor_access.email} to investor users" }) %>

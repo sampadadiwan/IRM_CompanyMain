@@ -1,5 +1,5 @@
 <tr id="<%= dom_id investor_access %>">
-  <% unless params[:controller] == "investors" %>
+  <% if params[:show_investor_name].present? %>
     <td>
       <%= investor_access.investor_name %>
     </td>
@@ -40,7 +40,7 @@
     
 
     <% label = investor_access.approved ?  "UnApprove" : "Approve" %>
-    <%= button_to label , approve_investor_access_path(investor_access), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(investor_access).approve? %>
+    <%= button_to label , approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name]), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(investor_access).approve? %>
 
     <div class="btn-group">
         <div class="dropup">

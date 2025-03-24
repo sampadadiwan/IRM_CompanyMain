@@ -1,7 +1,12 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Dashboard Widgets</h1>
-  <%= link_to "New Dashboard Widget", new_dashboard_widget_path, {class: "btn btn-outline-primary"}  %>
+  <span>
+    <%= link_to "New Dashboard Widget", new_dashboard_widget_path, {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Filter", dashboard_widgets_path(filter: true), {class: "btn btn-outline-success"}  %>
+  </span>
 </div>
+
+<%= render "/layouts/filter", associations: [] %>
 
 <div class="table-responsive" data-controller="datatable">
 

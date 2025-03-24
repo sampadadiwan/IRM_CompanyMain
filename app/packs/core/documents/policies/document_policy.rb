@@ -86,6 +86,10 @@ class DocumentPolicy < ApplicationPolicy
     update? && record.to_be_approved? && user.has_cached_role?(:approver)
   end
 
+  def unapprove?
+    update? && record.approved && user.has_cached_role?(:approver)
+  end
+
   def destroy?
     (permissioned_employee?(:destroy) &&
     (!record.sent_for_esign || record.esign_expired? || record.esign_failed? || record.esign_voided?)) || support?

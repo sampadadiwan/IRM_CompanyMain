@@ -28,6 +28,7 @@ class Entity < ApplicationRecord
   belongs_to :parent_entity, class_name: "Entity", optional: true
   has_many :children, class_name: "Entity", foreign_key: "parent_entity_id", dependent: :destroy
 
+  has_many :dashboard_widgets, dependent: :destroy
   has_many :support_client_mappings, dependent: :destroy
   has_one :entity_setting, dependent: :destroy
   accepts_nested_attributes_for :entity_setting, allow_destroy: true

@@ -5,6 +5,11 @@
 
 <div class="<%= widget.widget_size %> d-flex align-items-stretch">
   <div class="card w-100">
+    <% if @widget.display_name || @widget.display_tag %>
+    <div class="card-header">
+      <h5 class="card-title"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
+    </div>
+    <% end %>
     <div class="card-body">
 
       <div class="align-items-center justify-content-between mb-4">
@@ -41,10 +46,7 @@
               </tbody>
             </table>
           </div>    
-      </div>
-
-      <p class="mb-0"><%= widget.widget_name if widget.display_name %> <%= widget.tags if widget.display_tag %></p>
-
+      </div>      
     </div>
   </div>
 </div>

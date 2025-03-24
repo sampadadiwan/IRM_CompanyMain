@@ -92,6 +92,8 @@ commands = [
             <div class="dropdown-divider"></div>
 
             <%= link_to "Download CRISIL Report" , fund_report_path(fund_id: @fund.id, report: "crisil_report"), {class: "dropdown-item" } %>
+
+            <%= link_to "Portfolio Investment Report" , portfolio_investments_report_all_investors_path(fund_id: @fund.id), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>

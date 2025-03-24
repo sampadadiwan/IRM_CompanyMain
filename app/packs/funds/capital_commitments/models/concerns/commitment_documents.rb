@@ -15,7 +15,7 @@ module CommitmentDocuments
   end
 
   def docs_for_investor
-    documents.where(owner_tag: "Generated", approved: true).or(documents.where.not(owner_tag: "Generated")).or(documents.where(owner_tag: nil)).not_template.order(:name)
+    documents.where(owner_tag: "Generated", approved: true).or(documents.where.not(owner_tag: "Generated")).or(documents.where(owner_tag: nil)).not_template
   end
 
   # Retrieves the templates to be used for rendering as SOA, FRA etc.

@@ -13,7 +13,7 @@
             <span><%= page_entries_info @documents %></span>
         <% end %>
     <% else %>
-        <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity]) do %>
+        <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity, current_user]) do %>
             <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
                 <%= render "/documents/tree_view", documents: @documents, entity: @entity,
                     folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>

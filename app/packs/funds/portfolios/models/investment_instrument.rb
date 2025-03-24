@@ -44,6 +44,7 @@ class InvestmentInstrument < ApplicationRecord
   validates :name, uniqueness: { scope: %i[portfolio_company_id currency] }
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
+  validate :prevent_currency_change, on: :update
 
   before_save :update_offshore_investment
 
@@ -55,6 +56,10 @@ class InvestmentInstrument < ApplicationRecord
                                          else
                                            "Yes"
                                          end
+  end
+
+  def prevent_currency_change
+    errors.add(:currency, "cannot be updated") if will_save_change_to_currency?
   end
 
   def to_s

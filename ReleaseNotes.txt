@@ -1,3 +1,42 @@
+V9.0.13
+#####################################
+e6987bb3a Added better packer file for DB-Redis-ES
+2a867bb1d Added better support for Deleting old AMIs
+857031061 Added server_id to create_replica rake task
+1d33a3155 Documents index fix (#742)
+e7f68fc2a Fund cashflow graphs sorted by year and quarter
+97c3aaea7 Widget changes and fixes (#762)
+d23bc1646 Fixed Simple scenario bugs
+d7bfe8d1b Now restore is done after backup at 2 am
+
+V9.0.12
+#####################################
+736db1ae4 Added additional check to disallow restore to primary DB
+b657ddc7c Fixed utc time bug in restore db
+160091636 Instrument upload and download (#761)
+93a0ec390 Check db backup (#760)
+be3e8095c Fixed error with fund dashboard ratios line chart for nil data
+
+V9.0.11
+#####################################
+b69d689b7 Instrument upload and download (#758)
+1f69d8f1d Aded better dashboard_widget selection from dropdown
+c714f7367 Fixed approve/unapprove for IA
+4c18724f5 Added portfolio_investment_as_of_report for funds
+40c7b2232 Added throttling for bad password resets for VAPT
+95af8cfe3 Deletes SupportClientMapping that are disabled and 1 week old, still present in DB
+
+V9.0.10
+#####################################
+ebb0b8efc Added check for todays date in PI report
+ed2e33379 Added ability for approver to unapprove a doc (#718)
+90bc751bc Added Generate Portfolio Investments Reports to Investors
+acbc8c28b Pi as of download (#757)
+6bf26b1fd Rails 8 (#756)
+c1218f069 Added better UI for adding docs for PortfolioReports
+c71f402f7 Added better support for selecting kpi_reports from UI
+8d2e7fd8c increased length of users.advisor_entity_roles
+
 V9.0.7
 #####################################
 ec606afe9 Now file download has the right file name

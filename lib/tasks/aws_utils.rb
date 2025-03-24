@@ -107,23 +107,30 @@ module AwsUtils
     end    
   end
 
-  def cleanup_amis(name_tag, region)
+  def cleanup_amis(name_tag, region, number_to_keep=3)
+    name_tag = name_tag.strip
     puts "Cleaning up old AMIs with name: #{name_tag} in region: #{region}"
     Aws.config.update({ region: })
 
     ec2 = Aws::EC2::Client.new
 
-    amis = ec2.describe_images({
-      owners: ['self'],
-      filters: [
-        { name: "tag:Name", values: [name_tag] }
-      ]
-    }).images.sort_by { |ami| ami.creation_date }
+    all_amis = ec2.describe_images({ owners: ['self'] }).images
+    all_amis.each do |ami|
+      tag_value = ami.tags.find { |t| t.key == 'Name' }&.value
+      puts "AMI: #{ami.image_id}, Name Tag: '#{tag_value}'"  # Show exact tag value
+    end
 
-    puts "Found #{amis.length} AMIs with name: #{name_tag}. Retaining 10"
+    name_tag = name_tag.strip
 
-    # Retain the last 10 AMIs, delete the rest
-    number_to_keep = 5
+    amis = all_amis.select do |ami|
+      tag_value = ami.tags.find { |t| t.key == 'Name' }&.value
+      tag_value&.strip == name_tag
+    end.sort_by { |ami| ami.creation_date }
+
+
+    puts "Found #{amis.length} AMIs with name: #{name_tag}. Retaining #{number_to_keep} AMIs"
+
+    # Retain the last number_to_keep AMIs, delete the rest
     if amis.length > number_to_keep
       puts "Deleting #{amis.length - number_to_keep} old AMIs"
       amis_to_delete = amis[0...(amis.length - number_to_keep)]

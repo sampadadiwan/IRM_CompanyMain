@@ -509,3 +509,31 @@ Then('I can see all the preview details') do
     expect(page).to have_content(doc.name)
   end
 end
+
+
+When('I upload investment instruments file {string}') do |string|
+  visit("/import_uploads")
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Instrument Upload")
+  select("InvestmentInstrument", from: "import_upload_import_type")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{string}"), make_visible: true)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('{string} investment instruments should be created') do |count|
+  count = count.to_i
+  InvestmentInstrument.count.should == count
+end
+
+Then('I should see the investment instrument details on the import page') do
+  @import_upload = ImportUpload.last
+  visit(import_upload_path(@import_upload))
+  expect(page).to have_content("Investment Instruments")
+  InvestmentInstrument.where(import_upload_id: @import_upload.id).each do |ii|
+    expect(page).to have_content(ii.name)
+    expect(page).to have_content(ii.currency)
+    expect(page).to have_content(ii.portfolio_company.investor_name)
+  end
+end
