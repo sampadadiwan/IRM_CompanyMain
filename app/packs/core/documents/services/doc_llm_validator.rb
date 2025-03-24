@@ -64,44 +64,62 @@ class DocLlmValidator < DocLlmBase
   end
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
+  # Save the results of the checks
   def save_check_results(ctx, model:, document:, doc_question_answers:, **)
-    if ctx[:save_check_results] == false
-      true
+    return true if ctx[:save_check_results] == false
+
+    # Initialize the model's doc_question_answers if not already present
+    model.doc_question_answers ||= {}
+    # Parse and store the answers for the current document
+    model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
+
+    # Iterate through each question and its corresponding answer and explanation
+    model.doc_question_answers[document.name].each do |question, answer_and_explanation|
+      answer = answer_and_explanation["answer"]
+      # Skip if the answer is blank or a validation response
+      next if answer.blank? || VALIDATION_RESPONSES.include?(answer.to_s.downcase)
+
+      # Update the model field with the answer
+      update_model_field(model, question, answer, answer_and_explanation)
+    end
+
+    # Validate all documents and mark the model as validated
+    all_docs_valid = validate_all_docs(model)
+    model.mark_as_validated(all_docs_valid)
+  end
+
+  private
+
+  # Update the model field with the answer
+  def update_model_field(model, question, answer, answer_and_explanation)
+    if model.respond_to?(question.to_sym)
+      existing_value = model.send(question.to_sym)
+      update_field(model, question, answer, existing_value, answer_and_explanation)
     else
-      model.doc_question_answers ||= {}
-      model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
-      model.doc_question_answers[document.name].each do |question, answer_and_explanation|
-        # Need better check for extraction
-        answer = answer_and_explanation["answer"]
-        if answer.blank? || VALIDATION_RESPONSES.exclude?(answer.to_s.downcase)
-          # Save any extracted data from the document to the model custom fields
-          if model.respond_to?(question.to_sym)
-            model.send(:"#{question}=", answer) # if model.send(question.to_sym).blank?
-          else
-            model.properties[question] = answer
-          end
-        end
+      existing_value = model.properties[question]
+      update_field(model.properties, question, answer, existing_value, answer_and_explanation)
+    end
+  end
+
+  # Update the target field with the answer
+  def update_field(target, question, answer, existing_value, answer_and_explanation)
+    if existing_value.blank?
+      target.send(:"#{question}=", answer)
+      answer_and_explanation["update"] = "Updated field #{question.to_sym}"
+    else
+      answer_and_explanation["update"] = "No Update to field #{question.to_sym}, Existing value = #{existing_value}, Extracted value = #{answer}"
+    end
+  end
+
+  # Validate all documents by checking if the answers are not in the NO_LIST
+  def validate_all_docs(model)
+    model.doc_question_answers.all? do |doc_name, qna|
+      Rails.logger.debug { "Validating #{doc_name}" }
+      qna.all? do |question, response|
+        answer = response["answer"]
+        Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
+        NO_LIST.exclude?(answer.to_s.downcase)
       end
-
-      all_docs_valid = true
-
-      # Scan the answers across all documents which have been examined by the llm to see if any of them are false
-      model.doc_question_answers.each do |doc_name, qna|
-        Rails.logger.debug { "Validating #{doc_name}" }
-        qna.each do |question, response|
-          answer = response["answer"]
-          Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
-          # Need to make this more deterministic in the future
-          next unless NO_LIST.include?(answer.to_s.downcase)
-
-          # Validation has failed. Something is mismatched between the document and the model
-          Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }
-          all_docs_valid &&= false
-        end
-      end
-
-      # Tell the model that the documents have been validated
-      model.mark_as_validated(all_docs_valid)
     end
   end
 end

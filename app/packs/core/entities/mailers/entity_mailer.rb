@@ -9,13 +9,15 @@ class EntityMailer < ApplicationMailer
     setup_defaults
     add_support_to_cc
     @error_msg = params[:error_msg]
-    mail(from: @from, to: @to, cc: @cc, subject: "Errors")
+    subject = params[:subject].presence || "Errors"
+    mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
   def spa_job_errors
     add_support_to_cc
     @error_msg = params[:error_msg]
-    mail(from: @from, to: @to, cc: @cc, subject: "Errors")
+    subject = params[:subject].presence || "Errors"
+    mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
   def kpi_reminder
@@ -33,7 +35,7 @@ class EntityMailer < ApplicationMailer
 
   def notify_errors
     @error_msg = params[:error_msg]
-    mail(to: ENV.fetch('SUPPORT_EMAIL', nil),
-         subject: "Errors")
+    subject = params[:subject].presence || "Errors"
+    mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
   end
 end

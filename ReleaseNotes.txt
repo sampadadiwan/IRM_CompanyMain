@@ -1,5 +1,6 @@
 V9.0.13
 #####################################
+791ad1dbc Now aggregates only folio expenses and fees in fund dashboard
 e6987bb3a Added better packer file for DB-Redis-ES
 2a867bb1d Added better support for Deleting old AMIs
 857031061 Added server_id to create_replica rake task

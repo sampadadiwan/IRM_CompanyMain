@@ -18,6 +18,8 @@ class InvestorKycsBulkActionJob < BulkActionJob
       send_reminder(investor_kyc, user_id)
     when "generateamlreports"
       generate_aml_report(investor_kyc, user_id)
+    when "validatedocswithai"
+      validate_docs_with_ai(investor_kyc, user_id)
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)
@@ -30,6 +32,17 @@ class InvestorKycsBulkActionJob < BulkActionJob
 
   def get_class
     InvestorKyc
+  end
+
+  def validate_docs_with_ai(investor_kyc, user_id)
+    if InvestorKycPolicy.new(User.find(user_id), investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
+      error_msgs = DocLlmValidationJob.perform_now("InvestorKyc", investor_kyc.id, user_id)
+      @error_msg += error_msgs if error_msgs.present?
+    else
+      msg = investor_kyc.verified ? "Cannot modify verified KYC" : "User not authorized to validate docs with AI for #{investor_kyc}"
+      send_notification(msg, user_id, "danger")
+      @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
+    end
   end
 
   def generate_aml_report(investor_kyc, user_id)
