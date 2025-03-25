@@ -60,7 +60,7 @@ class DocLlmValidator < DocLlmBase
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
-    false
+    raise e
   end
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
@@ -75,6 +75,7 @@ class DocLlmValidator < DocLlmBase
 
     # Iterate through each question and its corresponding answer and explanation
     model.doc_question_answers[document.name].each do |question, answer_and_explanation|
+      puts "Question: #{question}, Answer: #{answer_and_explanation}"
       answer = answer_and_explanation["answer"]
       # Skip if the answer is blank or a validation response
       next if answer.blank? || VALIDATION_RESPONSES.include?(answer.to_s.downcase)
