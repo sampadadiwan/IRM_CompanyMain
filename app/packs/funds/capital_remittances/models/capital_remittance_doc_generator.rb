@@ -41,7 +41,7 @@ class CapitalRemittanceDocGenerator
     context.store :date, Time.zone.today.strftime("%d %B %Y")
 
     context.store :entity, capital_remittance.entity
-    fund.json_fields["capital_remittance"] = capital_remittance
+    fund_as_of.json_fields["capital_remittance"] = capital_remittance
     context.store :fund, FundTemplateDecorator.decorate(fund_as_of)
     context.store :capital_remittance, TemplateDecorator.decorate(capital_remittance)
     context.store :investor_kyc, TemplateDecorator.decorate(capital_remittance.capital_commitment.investor_kyc)
@@ -65,7 +65,7 @@ class CapitalRemittanceDocGenerator
     context.store :fund_as_of_remittances_lp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.lp.pluck(:id)))
     context.store :fund_as_of_remittances_gp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.gp.pluck(:id)))
 
-    prior_calls = fund.capital_calls.where(call_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)
+    prior_calls = fund_as_of.capital_calls.where(call_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)
 
     context.store :fund_as_of_prior_remittances, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)).where(capital_call_id: prior_calls.pluck(:id))
     context.store :fund_as_of_prior_remittances_lp, TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: fund_as_of.capital_commitments.lp.pluck(:id)).where(remittance_date: ..(capital_remittance.remittance_date - 1.day).end_of_day)).where(capital_call_id: prior_calls.pluck(:id))
