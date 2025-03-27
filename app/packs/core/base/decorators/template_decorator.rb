@@ -39,6 +39,8 @@ class TemplateDecorator < ApplicationDecorator
       Rails.logger.debug ["add #{add_parts}", "sub #{sub_parts}"]
 
       if object.is_a?(ActiveRecord::Relation)
+        return 0.0 if object.empty?
+
         add_values = add_parts.map { |attr| sum(attr.to_sym) }
         sub_values = sub_parts&.map { |attr| sum(attr.to_sym) } || []
       else
@@ -51,6 +53,8 @@ class TemplateDecorator < ApplicationDecorator
 
     elsif method_name.to_s.starts_with?("sum_amt_")
       attr_name = method_name.to_s.gsub("sum_amt_", "")
+      return 0.0 if object.empty?
+
       return (sum(attr_name.to_sym) / 100.0)
 
     elsif method_name.to_s.starts_with?("sum_")

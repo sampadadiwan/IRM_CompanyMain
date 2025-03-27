@@ -105,7 +105,7 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
   end
 
   def committed_reinvest_investor_percent
-    percentage(dist_payments.sum(:reinvestment_with_fees_cents), fund_dist_payments.sum(:reinvestment_with_fees_cents))
+    percentage(committed_reinvest_investor, fund_dist_payments.sum(:reinvestment_with_fees_cents))
   end
 
   # === Total Commitments ===
