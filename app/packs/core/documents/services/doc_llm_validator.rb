@@ -34,51 +34,47 @@ class DocLlmValidator < DocLlmBase
   CHECK_INSTRUCTIONS = "Return the answers to all the questions as a JSON document without any formatting or ```json enclosing tags and only if it is present in the image presented to you. In the JSON document returned, create the key as specified by the Response Format Hint and the value is a JSON with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}}".freeze
 
   def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **)
-
     new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
-  
+
     model_name = ctx[:llm_model]
     image_data = Base64.strict_encode64(File.read(ctx[:image_path]))
-  
-    messages = []
-    response = nil
-  
+
     if llm_client.class.to_s.include?("Gemini") || ctx[:llm_provider] == :gemini
       # ✅ Gemini message format
       messages = new_checks.map { |check| { role: "user", parts: [{ text: check }] } }
-  
+
       messages << {
         role: "user",
         parts: [{
           text: CHECK_INSTRUCTIONS
         }]
       }
-  
+
       messages << {
         role: "user",
         parts: [{ inline_data: { mime_type: "image/png", data: image_data } }]
       }
-  
+
       response = llm_client.chat(messages: messages, model: model_name, generation_config: { response_mime_type: 'application/json' })
       raw_response = response.raw_response
-  
+
       if raw_response && raw_response["candidates"]&.first&.dig("content", "parts")
         ctx[:doc_question_answers] = raw_response["candidates"].first["content"]["parts"].pluck("text").join("\n")
       else
         Rails.logger.error { "Unexpected Gemini response structure: #{raw_response.inspect}" }
         return false
       end
-  
+
     else
       # ✅ OpenAI message format
       messages = new_checks.map { |check| { role: "user", content: check } }
-  
+
       messages << {
         role: "user",
         content: CHECK_INSTRUCTIONS
       }
-  
+
       messages << {
         role: "user",
         content: [
@@ -91,19 +87,17 @@ class DocLlmValidator < DocLlmBase
           }
         ]
       }
-  
+
       response = llm_client.chat(model: model_name, messages: messages, generation_config: { response_mime_type: 'application/json' })
       ctx[:doc_question_answers] = response.completion
     end
-  
+
     Rails.logger.debug ctx[:doc_question_answers]
     true
-  
   rescue StandardError => e
     Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
     raise e
   end
-  
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
   # Save the results of the checks
@@ -137,19 +131,18 @@ class DocLlmValidator < DocLlmBase
   def update_model_field(model, question, answer, answer_and_explanation)
     # camelize the question
     question = question.parameterize.underscore
-    if model.respond_to?(question.to_sym)
-      existing_value = model.send(question.to_sym)
-      update_field(model, question, answer, existing_value, answer_and_explanation)
-    else
-      existing_value = model.properties[question]
-      update_field(model, question, answer, existing_value, answer_and_explanation)
-    end
+    existing_value = if model.respond_to?(question.to_sym)
+                       model.send(question.to_sym)
+                     else
+                       model.properties[question]
+                     end
+    update_field(model, question, answer, existing_value, answer_and_explanation)
   end
 
   # Update the model field with the answer
   def update_field(model, question, answer, existing_value, answer_and_explanation)
     question = question.parameterize.underscore
-    if existing_value.blank? 
+    if existing_value.blank?
       if model.respond_to?(question.to_sym)
         model.send(:"#{question}=", answer)
       else
