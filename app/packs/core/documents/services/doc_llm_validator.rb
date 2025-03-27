@@ -31,84 +31,79 @@ class DocLlmValidator < DocLlmBase
   # Run the checks with the llm
   # checks is a list of questions to ask the llm about the document
   # Example: checks = ["Is the name $full_name ?", "Is there a date of birth", "What is the PAN number?", "Is the pan number $PAN ?"]
-  def run_checks_with_llm_old(ctx, model:, doc_questions:, llm_client:, **)
-    # Replace the variables in the checks with the actual values from the kyc
-    new_checks = VariableInterpolation.replace_variables(doc_questions, model)
-    Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
-
-    messages = new_checks.map { |check| { type: "text", text: check } } + [
-      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}} " },
-      { type: "image_url",
-        image_url: {
-          url: ImageService.encode_image(ctx[:image_path])
-        } }
-    ]
-
-    # Run the checks with the llm
-    response = llm_client.chat(
-      parameters: {
-        model: "gpt-4o", # Required.
-        response_format: { type: "json_object" },
-        messages: [{ role: "user", content: messages }] # Required.
-      }
-    )
-
-    # Get the results from the response
-    ctx[:doc_question_answers] = response.dig("choices", 0, "message", "content")
-    Rails.logger.debug ctx[:doc_question_answers]
-    true
-  rescue StandardError => e
-    Rails.logger.debug e.backtrace
-    Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
-    raise e
-  end
+  CHECK_INSTRUCTIONS = "Return the answers to all the questions as a JSON document without any formatting or ```json enclosing tags and only if it is present in the image presented to you. In the JSON document returned, create the key as specified by the Response Format Hint and the value is a JSON with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}}".freeze
 
   def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **)
-    # Replace variables in the checks with actual values from the model
+
     new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
-
-    # Construct the messages array with proper structure for Gemini API
-    messages = new_checks.map do |check|
-      { role: "user", parts: [{ text: check }] }
-    end
-
-    # Add instructions and image to the messages array
-    messages << {
-      role: "user",
-      parts: [{ text: "Return the answers to all the questions as a JSON document without any formatting or ```json enclosing tags and only if it is present in the image presented to you. In the JSON document returned, create the key as specified by the Response Format Hint and the value is a JSON with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}} " }]
-    }
-    messages << {
-      role: "user",
-      parts: [{ inline_data: { mime_type: "image/png", data: Base64.strict_encode64(File.read(ctx[:image_path])) } }]
-    }
-
-    # Ensure the model parameter is set if not already provided
+  
     model_name = ctx[:llm_model]
-
-    # Configure generation parameters
-    generation_config = { response_mime_type: 'application/json' }
-
-    # Call the chat method with the correctly structured messages
-    response = llm_client.chat(messages: messages, model: model_name, generation_config: generation_config)
-
-    Rails.logger.debug response
-
-    # Access the response content directly
-    # Access the raw response and navigate to the content
-    raw_response = response.raw_response
-    if raw_response && raw_response["candidates"] && raw_response["candidates"].first["content"] && raw_response["candidates"].first["content"]["parts"]
-      ctx[:doc_question_answers] = raw_response["candidates"].first["content"]["parts"].pluck("text").join("\n")
-      Rails.logger.debug ctx[:doc_question_answers]
-      true
+    image_data = Base64.strict_encode64(File.read(ctx[:image_path]))
+  
+    messages = []
+    response = nil
+  
+    if llm_client.class.to_s.include?("Gemini") || ctx[:llm_provider] == :gemini
+      # ✅ Gemini message format
+      messages = new_checks.map { |check| { role: "user", parts: [{ text: check }] } }
+  
+      messages << {
+        role: "user",
+        parts: [{
+          text: CHECK_INSTRUCTIONS
+        }]
+      }
+  
+      messages << {
+        role: "user",
+        parts: [{ inline_data: { mime_type: "image/png", data: image_data } }]
+      }
+  
+      response = llm_client.chat(messages: messages, model: model_name, generation_config: { response_mime_type: 'application/json' })
+      raw_response = response.raw_response
+  
+      if raw_response && raw_response["candidates"]&.first&.dig("content", "parts")
+        ctx[:doc_question_answers] = raw_response["candidates"].first["content"]["parts"].pluck("text").join("\n")
+      else
+        Rails.logger.error { "Unexpected Gemini response structure: #{raw_response.inspect}" }
+        return false
+      end
+  
     else
-      Rails.logger.error { "Unexpected response structure: #{raw_response.inspect}" }
-      false
+      # ✅ OpenAI message format
+      messages = new_checks.map { |check| { role: "user", content: check } }
+  
+      messages << {
+        role: "user",
+        content: CHECK_INSTRUCTIONS
+      }
+  
+      messages << {
+        role: "user",
+        content: [
+          { type: "text", text: "Here's the image to extract data from:" },
+          {
+            type: "image_url",
+            image_url: {
+              url: "data:image/png;base64,#{image_data}"
+            }
+          }
+        ]
+      }
+  
+      response = llm_client.chat(model: model_name, messages: messages, generation_config: { response_mime_type: 'application/json' })
+      ctx[:doc_question_answers] = response.completion
     end
+  
+    Rails.logger.debug ctx[:doc_question_answers]
+    true
+  
   rescue StandardError => e
     Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
     raise e
   end
+  
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
   # Save the results of the checks
