@@ -21,7 +21,7 @@ class AmlApiResponseService
     aml_report_object.request_data[Time.zone.now.to_s] = body
     aml_report_object.response_data ||= {}
     aml_report_object.response_data[Time.zone.now.to_s] = initial_response
-    aml_report_object.request_id = initial_response["request_id"]
+    aml_report_object.request_id = initial_response.is_a?(Array) ? initial_response[0]["request_id"] : initial_response["request_id"]
     aml_report_object.save!
   end
 

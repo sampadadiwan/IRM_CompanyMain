@@ -67,13 +67,13 @@ class GenerateAmlReportJob < ApplicationJob
     name = aml_report_obj.custom_name.presence || aml_report_obj.investor_kyc.full_name
     if aml_report_obj.request_id.blank? && aml_report_obj.response_data.present?
       # reschedule job if rate limit reached
-      if aml_report_obj.response_data.values&.first&.[]('message').present? && aml_report_obj.response_data.values&.first&.[]('message').include?("Rate limit reached")
+      if aml_report_obj.response_data.values&.last&.[]('message').present? && aml_report_obj.response_data.values&.last&.[]('message').include?("Rate limit reached")
         Rails.logger.debug { "Rate limit reached for AML API for #{name} for kyc #{aml_report_obj.investor_kyc_id} - Scheduling Fetch Aml Report again" }
         GenerateAmlReportJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(aml_report_obj.investor_kyc_id, user_id, aml_report_id: aml_report_obj.id)
         return
       end
       msg = "Error Generating AML Report for #{name}"
-      msg += " - #{aml_report_obj.response_data.values.first['message']}" if aml_report_obj.response_data.values&.first&.[]('message').present?
+      msg += " - #{aml_report_obj.response_data.values.last['message']}" if aml_report_obj.response_data.values&.last&.[]('message').present?
       UserAlert.new(user_id: user_id, message: msg, level: :danger).broadcast if user_id.present?
       Rails.logger.error msg
       errs = [investing_entity: aml_report_obj.investor_kyc.full_name, aml_report_name: name, error: msg]
