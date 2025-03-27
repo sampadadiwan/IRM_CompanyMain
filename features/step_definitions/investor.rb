@@ -88,7 +88,7 @@ Given('there is an existing investor entity {string} with employee {string}') do
   @employee_investor.save
   puts "\n####Employee Investor####\n"
   puts @employee_investor.to_json
-  
+
   @investor_entity.reload
 end
 
@@ -814,6 +814,17 @@ Then('we get the email with error {string}') do |error|
   emails_sent_to(@user.email).each do |email|
     puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
     current_email = email if email.subject == "Errors"
+  end
+  expect(current_email.body).to include error
+end
+
+Then('we get the email with error {string} and subject {string}') do |error, subject|
+  sleep(1)
+  @user = User.first
+  current_email = nil
+  emails_sent_to(@user.email).each do |email|
+    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+    current_email = email if email.subject.include?(subject)
   end
   expect(current_email.body).to include error
 end
