@@ -20,88 +20,156 @@ class DocLlmValidator < DocLlmBase
   # model: The model whose data needs to be validated against the document (ex InvestorKyc, Offer etc)
   # document: The document to be used in validation (ex PAN, Tax document, Passport etc)
   def init(ctx, model:, document:, **)
-    super
+    super(ctx, provider: ENV.fetch('DOCUMENT_VALIDATION_PROVIDER', nil), llm_model: ENV.fetch('DOCUMENT_VALIDATION_MODEL', nil), temperature: 0.1, **)
     ctx[:doc_questions] ||= model.doc_questions.where(document_name: document.name)
     Rails.logger.debug { "Initialized Doc LLM Validator for #{model} with #{document.name}" }
-    Rails.logger.debug "DocLlmValidator Error: No open ai client" if ctx[:open_ai_client].blank?
+    Rails.logger.debug "DocLlmValidator Error: No llm client" if ctx[:llm_client].blank?
     Rails.logger.debug "DocLlmValidator Error: No doc questions" if ctx[:doc_questions].blank?
-    ctx[:open_ai_client].present? && ctx[:doc_questions].present?
+    ctx[:llm_client].present? && ctx[:doc_questions].present?
   end
 
   # Run the checks with the llm
   # checks is a list of questions to ask the llm about the document
   # Example: checks = ["Is the name $full_name ?", "Is there a date of birth", "What is the PAN number?", "Is the pan number $PAN ?"]
-  def run_checks_with_llm(ctx, model:, doc_questions:, open_ai_client:, **)
-    # Replace the variables in the checks with the actual values from the kyc
+  CHECK_INSTRUCTIONS = "Return the answers to all the questions as a JSON document without any formatting or ```json enclosing tags and only if it is present in the image presented to you. In the JSON document returned, create the key as specified by the Response Format Hint and the value is a JSON with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}}".freeze
+
+  def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **)
+
     new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
-
-    messages = new_checks.map { |check| { type: "text", text: check } } + [
-      { type: "text", text: "Return the answers to all the questions as a json document without any formatting or enclosing tags and only if it is present in the image presented to you. In the json document returned, create the key as specified by the Response Format Hint and the value is a json with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}} " },
-      { type: "image_url",
-        image_url: {
-          url: ImageService.encode_image(ctx[:image_path])
-        } }
-    ]
-
-    # Run the checks with the llm
-    response = open_ai_client.chat(
-      parameters: {
-        model: "gpt-4o", # Required.
-        response_format: { type: "json_object" },
-        messages: [{ role: "user", content: messages }] # Required.
+  
+    model_name = ctx[:llm_model]
+    image_data = Base64.strict_encode64(File.read(ctx[:image_path]))
+  
+    messages = []
+    response = nil
+  
+    if llm_client.class.to_s.include?("Gemini") || ctx[:llm_provider] == :gemini
+      # ✅ Gemini message format
+      messages = new_checks.map { |check| { role: "user", parts: [{ text: check }] } }
+  
+      messages << {
+        role: "user",
+        parts: [{
+          text: CHECK_INSTRUCTIONS
+        }]
       }
-    )
-
-    # Get the results from the response
-    ctx[:doc_question_answers] = response.dig("choices", 0, "message", "content")
+  
+      messages << {
+        role: "user",
+        parts: [{ inline_data: { mime_type: "image/png", data: image_data } }]
+      }
+  
+      response = llm_client.chat(messages: messages, model: model_name, generation_config: { response_mime_type: 'application/json' })
+      raw_response = response.raw_response
+  
+      if raw_response && raw_response["candidates"]&.first&.dig("content", "parts")
+        ctx[:doc_question_answers] = raw_response["candidates"].first["content"]["parts"].pluck("text").join("\n")
+      else
+        Rails.logger.error { "Unexpected Gemini response structure: #{raw_response.inspect}" }
+        return false
+      end
+  
+    else
+      # ✅ OpenAI message format
+      messages = new_checks.map { |check| { role: "user", content: check } }
+  
+      messages << {
+        role: "user",
+        content: CHECK_INSTRUCTIONS
+      }
+  
+      messages << {
+        role: "user",
+        content: [
+          { type: "text", text: "Here's the image to extract data from:" },
+          {
+            type: "image_url",
+            image_url: {
+              url: "data:image/png;base64,#{image_data}"
+            }
+          }
+        ]
+      }
+  
+      response = llm_client.chat(model: model_name, messages: messages, generation_config: { response_mime_type: 'application/json' })
+      ctx[:doc_question_answers] = response.completion
+    end
+  
     Rails.logger.debug ctx[:doc_question_answers]
     true
+  
   rescue StandardError => e
-    Rails.logger.debug e.backtrace
     Rails.logger.error { "Error in running checks with LLM: #{e.message}" }
-    false
+    raise e
   end
+  
 
   VALIDATION_RESPONSES = %w[yes no true false].freeze
+  # Save the results of the checks
   def save_check_results(ctx, model:, document:, doc_question_answers:, **)
-    if ctx[:save_check_results] == false
-      true
+    return true if ctx[:save_check_results] == false
+
+    # Initialize the model's doc_question_answers if not already present
+    model.doc_question_answers ||= {}
+    # Parse and store the answers for the current document
+    model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
+
+    # Iterate through each question and its corresponding answer and explanation
+    model.doc_question_answers[document.name].each do |question, answer_and_explanation|
+      Rails.logger.debug { "Question: #{question}, Answer: #{answer_and_explanation}" }
+      answer = answer_and_explanation["answer"]
+      # Skip if the answer is blank or a validation response
+      next if answer.blank? || VALIDATION_RESPONSES.include?(answer.to_s.downcase)
+
+      # Update the model field with the answer
+      update_model_field(model, question, answer, answer_and_explanation)
+    end
+
+    # Validate all documents and mark the model as validated
+    all_docs_valid = validate_all_docs(model)
+    model.mark_as_validated(all_docs_valid)
+  end
+
+  private
+
+  # Update the model field with the answer
+  def update_model_field(model, question, answer, answer_and_explanation)
+    # camelize the question
+    question = question.parameterize.underscore
+    if model.respond_to?(question.to_sym)
+      existing_value = model.send(question.to_sym)
+      update_field(model, question, answer, existing_value, answer_and_explanation)
     else
-      model.doc_question_answers ||= {}
-      model.doc_question_answers[document.name] = JSON.parse(doc_question_answers)
-      model.doc_question_answers[document.name].each do |question, answer_and_explanation|
-        # Need better check for extraction
-        answer = answer_and_explanation["answer"]
-        if answer.blank? || VALIDATION_RESPONSES.exclude?(answer.to_s.downcase)
-          # Save any extracted data from the document to the model custom fields
-          if model.respond_to?(question.to_sym)
-            model.send(:"#{question}=", answer) # if model.send(question.to_sym).blank?
-          else
-            model.properties[question] = answer
-          end
-        end
+      existing_value = model.properties[question]
+      update_field(model, question, answer, existing_value, answer_and_explanation)
+    end
+  end
+
+  # Update the model field with the answer
+  def update_field(model, question, answer, existing_value, answer_and_explanation)
+    question = question.parameterize.underscore
+    if existing_value.blank? 
+      if model.respond_to?(question.to_sym)
+        model.send(:"#{question}=", answer)
+      else
+        model.properties[question] = answer
       end
+      answer_and_explanation["update"] = "Updated field #{question.to_sym}"
+    else
+      answer_and_explanation["update"] = "No Update to field #{question.to_sym}, Existing value = #{existing_value}, Extracted value = #{answer}"
+    end
+  end
 
-      all_docs_valid = true
-
-      # Scan the answers across all documents which have been examined by the llm to see if any of them are false
-      model.doc_question_answers.each do |doc_name, qna|
-        Rails.logger.debug { "Validating #{doc_name}" }
-        qna.each do |question, response|
-          answer = response["answer"]
-          Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
-          # Need to make this more deterministic in the future
-          next unless NO_LIST.include?(answer.to_s.downcase)
-
-          # Validation has failed. Something is mismatched between the document and the model
-          Rails.logger.debug { "Validation failed for #{model}, #{doc_name}, #{question}" }
-          all_docs_valid &&= false
-        end
+  # Validate all documents by checking if the answers are not in the NO_LIST
+  def validate_all_docs(model)
+    model.doc_question_answers.all? do |doc_name, qna|
+      Rails.logger.debug { "Validating #{doc_name}" }
+      qna.all? do |question, response|
+        answer = response["answer"]
+        Rails.logger.debug { "Checking #{doc_name}, Question: #{question} Answer: #{answer}" }
+        NO_LIST.exclude?(answer.to_s.downcase)
       end
-
-      # Tell the model that the documents have been validated
-      model.mark_as_validated(all_docs_valid)
     end
   end
 end

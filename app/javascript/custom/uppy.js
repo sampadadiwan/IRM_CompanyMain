@@ -1,4 +1,5 @@
-const { AwsS3 } = Uppy
+const { AwsS3, AwsS3Multipart, XHRUpload } = Uppy;
+
 
 export function uppyInstance({ id, types, server }) {
   const uppy = new Uppy.Core({
@@ -12,14 +13,17 @@ export function uppyInstance({ id, types, server }) {
   if (server == 's3') {
     uppy.use(AwsS3, {
       companionUrl: '/', // will call Shrine's presign endpoint mounted on `/s3/params`
+      pretty: true,
     })
   } else if (server == 's3_multipart') {
     uppy.use(AwsS3Multipart, {
-      companionUrl: '/' // will call uppy-s3_multipart endpoint mounted on `/s3/multipart`
+      companionUrl: '/', // will call uppy-s3_multipart endpoint mounted on `/s3/multipart`
+      pretty: true,
     })
   } else {
     uppy.use(XHRUpload, {
       endpoint: '/upload', // Shrine's upload endpoint
+      pretty: true,
     })
   }
 

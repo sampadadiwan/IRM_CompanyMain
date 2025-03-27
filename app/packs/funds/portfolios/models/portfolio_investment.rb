@@ -63,6 +63,7 @@ class PortfolioInvestment < ApplicationRecord
 
   counter_culture :aggregate_portfolio_investment, column_name: 'cost_of_remaining_cents', delta_column: 'cost_of_remaining_cents'
   counter_culture :aggregate_portfolio_investment, column_name: 'unrealized_gain_cents', delta_column: 'unrealized_gain_cents'
+  counter_culture :aggregate_portfolio_investment, column_name: 'gain_cents', delta_column: 'gain_cents'
 
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 

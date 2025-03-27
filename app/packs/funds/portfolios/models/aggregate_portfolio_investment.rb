@@ -18,7 +18,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
-  monetize :unrealized_gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
 
   STANDARD_COLUMN_NAMES = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
@@ -75,20 +75,19 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.sold_quantity = pis_before_end_date.sells.sum(:quantity)
     api.sold_amount_cents = pis_before_end_date.sells.sum(:amount_cents)
 
-    net_quantity = net_quantity_on(end_date)
+    net_quantity_on(end_date)
     api.avg_cost_cents = api.bought_amount_cents / api.bought_quantity if api.bought_quantity.positive?
 
     api.fmv_cents = fmv_on_date(end_date)
-
-    api.unrealized_gain_cents = net_quantity * (api.fmv_cents - api.avg_cost_cents)
 
     # Get the StockConversions where the from_portfolio_investment_id is in pis_before_end_date
     transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis_before_end_date.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
     api.transfer_quantity = transfer_quantity
 
     api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
-    api.cost_of_remaining_cents = net_quantity * api.avg_cost_cents
-
+    api.cost_of_remaining_cents = api.bought_amount_cents - api.cost_of_sold_cents
+    api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
+    api.gain_cents = api.sold_amount_cents - api.cost_of_sold_cents
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
 

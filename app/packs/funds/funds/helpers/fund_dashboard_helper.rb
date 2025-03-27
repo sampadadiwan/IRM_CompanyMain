@@ -88,101 +88,59 @@ module FundDashboardHelper
 
   def fund_cashflows(fund, months: 36)
     from_date = Time.zone.today - months.months
-    # Get the calls for last
+
+    # Fetch data
     capital_calls = fund.capital_calls.where(call_date: from_date..)
     capital_distributions = fund.capital_distributions.where(distribution_date: from_date..)
-    # Get the PIs
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
-    # Get the expenses
-    acccount_entries = fund.account_entries.not_cumulative.where(entry_type: %w[Expense Fee]).where(reporting_date: from_date..)
+    account_entries = fund.account_entries.not_cumulative.where(entry_type: %w[Expense Fee], reporting_date: from_date..)
 
-    # Grouping and summing capital_calls by quarter
-    capital_calls_data = capital_calls.group_by do |cc|
-      "Q#{quarter(cc.due_date)}-#{cc.due_date.strftime('%y')}"
+    # Group and sum data by quarter
+    data = {
+      "Capital Calls" => capital_calls,
+      "Capital Distributions" => capital_distributions,
+      "Portfolio Investments" => portfolio_investments,
+      "Expenses" => account_entries
+    }.transform_values do |records|
+      records.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+             .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     end
-      .transform_values { |entries| entries.sum { |e| e.collected_amount_cents / 100.0 } }
 
-    capital_distributions_data = capital_distributions.group_by do |cc|
-      "Q#{quarter(cc.distribution_date)}-#{cc.distribution_date.strftime('%y')}"
-    end
-      .transform_values { |entries| entries.sum { |e| e.gross_amount_cents / 100.0 } }
-
-    # Grouping and summing portfolio_investments by quarter
-    portfolio_investments_data = portfolio_investments.group_by do |pi|
-      "Q#{quarter(pi.investment_date)}-#{pi.investment_date.strftime('%y')}"
-    end
-        .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
-
-    acccount_entries_data = acccount_entries.group_by do |ae|
-      "Q#{quarter(ae.reporting_date)}-#{ae.reporting_date.strftime('%y')}"
-    end
-      .transform_values { |entries| entries.sum { |e| e.amount_cents / 100.0 } }
-
-    # Combining data for stacking
-    # q.split("-") splits strings like "Q4-22" into ["Q4", "22"].
-    # quarter_part.delete_prefix("Q").to_i gets the numeric quarter.
-    # We sort using [year_number, quarter_number], so it’s first by year, then by quarter.
-    all_quarters = (capital_calls_data.keys + capital_distributions_data.keys + portfolio_investments_data.keys + acccount_entries_data.keys).uniq.sort_by do |q|
+    # Get all quarters and sort them
+    all_quarters = data.values.flat_map(&:keys).uniq.sort_by do |q|
       quarter_part, year_part = q.split("-")
-      quarter_number = quarter_part.delete_prefix("Q").to_i
-      year_number = year_part.to_i
-      [year_number, quarter_number] # sort by year first, then quarter
+      [year_part.to_i, quarter_part.delete_prefix("Q").to_i]
     end
 
-    capital_calls_chart_data = all_quarters.map do |quarter|
-      [quarter, capital_calls_data[quarter] || 0]
-    end
-
-    capital_distributions_chart_data = all_quarters.map do |quarter|
-      [quarter, capital_distributions_data[quarter] || 0]
-    end
-
-    portfolio_investments_chart_data = all_quarters.map do |quarter|
-      [quarter, portfolio_investments_data[quarter] || 0]
-    end
-
-    acccount_entries_chart_data = all_quarters.map do |quarter|
-      [quarter, acccount_entries_data[quarter] || 0]
-    end
-
-    chart_data = [
+    # Prepare chart data
+    chart_data = data.map do |name, records|
       {
-        name: "Capital Calls",
-        data: capital_calls_chart_data
-      },
-      {
-        name: "Capital Distributions",
-        data: capital_distributions_chart_data
-      },
-      {
-        name: "Portfolio Investments",
-        data: portfolio_investments_chart_data
-      },
-      {
-        name: "Expenses",
-        data: acccount_entries_chart_data
+        name: name,
+        data: all_quarters.map { |quarter| [quarter, records[quarter] || 0] }
       }
-    ]
+    end
 
     Rails.logger.debug chart_data
 
-    column_chart chart_data, library: {
-      chart: {
-        type: 'column'
-      },
+    # Plot the chart
+    line_chart chart_data, library: {
       plotOptions: {
-        column: {
-          stacking: 'normal', # Enables stacking
+        series: {
           dataLabels: { enabled: true, format: "{point.y:,.2f}" }
         }
       },
-      xAxis: {
-        type: 'category', # Treat x-values as categories (e.g., Q1, Q2, Q3)
-        title: { text: 'Quarters' }
-      },
-      yAxis: {
-        title: { text: 'Amount (in currency)' }
-      }
+      xAxis: { type: 'category', title: { text: 'Quarters' } },
+      yAxis: { title: { text: 'Amount (in currency)' } }
     }, prefix: "#{fund.currency}:"
+  end
+
+  private
+
+  def record_date(record)
+    record.try(:call_date) || record.try(:distribution_date) || record.try(:investment_date) || record.try(:reporting_date)
+  end
+
+  def amount_cents(record)
+    record.try(:collected_amount_cents) || record.try(:gross_amount_cents) || record.try(:amount_cents)
   end
 end

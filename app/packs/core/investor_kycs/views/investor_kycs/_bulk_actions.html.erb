@@ -29,6 +29,12 @@
             class: "dropdown-item", form_class: "w-100",
             data: {msg: "This will generate AML Reports for all filtered KYCs. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.entity_setting.aml_enabled %>
 
+            <%= button_to "Validate Document Data",
+            bulk_actions_investor_kycs_path("bulk_action": "ValidateDocsWithAi", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg: "This will validate docs or extract data from docs into the KYCs as defined by the DocQuestions. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
+
+
             <% msg = "This will send a reminder to each KYC in the search results (including results on other pages). Proceed?" %>
             <%= button_to "Send Reminder",
             bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true),

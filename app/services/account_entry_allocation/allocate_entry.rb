@@ -23,6 +23,7 @@ module AccountEntryAllocation
 
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
         ae = fund_account_entry.dup
+        ae.entry_type = fund_formula.entry_type
         Rails.logger.debug { "fund_unit_setting: #{fund_unit_setting}, ae: #{ae}" }
 
         begin

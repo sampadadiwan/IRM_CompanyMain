@@ -2,7 +2,7 @@
   <% title = @parent || @owner %>
   <%= render FormCard.new(title: "Run Checks on: #{title} ") do %>
 
-    <%= form_with(model: nil, url: run_checks_ai_checks_path(owner_id: params[:owner_id], owner_type: params[:owner_type], rule_type: "compliance"), method: :post) do |form| %>
+    <%= form_with(model: current_user, url: run_checks_ai_checks_path(owner_id: params[:owner_id], owner_type: params[:owner_type], rule_type: "compliance"), method: :post) do |form| %>
       
       <%= form.text_field :parent_id, class: "form-control", hidden: true, value: params[:parent_id]  %>
       <%= form.text_field :parent_type, class: "form-control", hidden: true, value: params[:parent_type]  %>

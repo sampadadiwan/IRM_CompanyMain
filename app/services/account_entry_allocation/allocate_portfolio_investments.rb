@@ -26,7 +26,7 @@ module AccountEntryAllocation
 
           ae = AccountEntry.new(
             name: portfolio_investment.to_s,
-            entry_type: fund_formula.name,
+            entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
             fund: fund,
             reporting_date: end_date,

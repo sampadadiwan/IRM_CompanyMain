@@ -144,7 +144,9 @@ class SoaGenerator
 
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
 
-      commitment_amount_words: amount_in_words
+      commitment_amount_words: amount_in_words,
+
+      portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date))
     }
 
     @context
@@ -165,6 +167,37 @@ class SoaGenerator
 
     file_name = generated_file_name(capital_commitment)
     convert(template, context, file_name)
+  end
+
+  # This method is used to generate the portfolio allocation related data by portfolio company
+  def portfolio_company_allocations(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
+    fund = capital_commitment.fund
+    entries = capital_commitment.account_entries
+                                .where(parent_type: "AggregatePortfolioInvestment",
+                                       entry_type: entry_types, reporting_date: start_date..end_date)
+                                .includes(parent: :portfolio_company)
+
+    # This is used to group the entries by portfolio company
+    # The entry.name is in the format "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}" see AllocateAggregatePortfolios. Extract the formula name from the ae name, as we want to group by that
+    grouped = entries.group_by { |entry| [entry.parent.portfolio_company.investor_name, entry.name.split(":").last.strip, entry.entry_type] }
+
+    # Now we need to calculate the total amount allocated to each portfolio company
+    result = grouped.transform_values do |group|
+      group.sum(Money.new(0, fund.currency), &:amount)
+    end
+
+    # Now we need to convert the result to a hash of portfolio company entries
+    portfolio_company_entries_map = {}
+    result.map do |(portfolio_company_name, ae_name, _ae_entry_type), amount|
+      # Each portfolio_company_entry is an OpenStruct with the fields that are the camelized version of the account entry name
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+      # The ae_name is in the format "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}" see AllocateAggregatePortfolios. Extract the formula name from the ae_name
+      portfolio_company_entry[ae_name.parameterize.underscore] = amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    portfolio_company_entries_map.values
   end
 
   def remittance_amounts(remittances, currency)

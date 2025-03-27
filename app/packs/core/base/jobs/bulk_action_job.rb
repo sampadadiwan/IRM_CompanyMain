@@ -17,11 +17,11 @@ class BulkActionJob < ApplicationJob
       end
     end
 
-    sleep(5)
+    # sleep(5)
     if @error_msg.present?
-      msg = "#{bulk_action} completed for #{record_ids.count} records, with #{@error_msg.length} errors. Errors will be sent via email"
-      send_notification(msg, user_id, :danger)
-      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg).doc_gen_errors.deliver_now
+      msg = "#{bulk_action} completed for #{record_ids.count} records, with #{@error_msg.length} errors."
+      send_notification("#{msg} Errors will be sent via email", user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg, subject: msg).doc_gen_errors.deliver_now
     else
       msg = "#{bulk_action} completed for #{record_ids.count} records"
       send_notification(msg, user_id, :success)

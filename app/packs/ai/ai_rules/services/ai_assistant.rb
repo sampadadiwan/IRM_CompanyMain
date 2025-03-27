@@ -9,8 +9,36 @@ class AiAssistant
     @tools << @data_manager if @data_manager.present?
   end
 
+  def initialize_llm(provider, llm_model, temperature)
+    Rails.logger.debug { "Initializing LLM client with provider: #{provider}, model: #{llm_model}, temperature: #{temperature}" }
+    case provider.to_sym
+    when :openai
+      Langchain::LLM::OpenAI.new(
+        api_key: Rails.application.credentials["OPENAI_API_KEY"],
+        default_options: { model: llm_model, temperature: temperature }
+      )
+    when :anthropic
+      Langchain::LLM::Anthropic.new(
+        api_key: Rails.application.credentials["ANTHROPIC_API_KEY"],
+        default_options: { model: llm_model, temperature: temperature }
+      )
+    when :gemini
+      Langchain::LLM::GoogleGemini.new(
+        api_key: Rails.application.credentials["GOOGLE_GEMINI_API_KEY"],
+        default_options: { model: llm_model, temperature: temperature, generation_config: {
+          response_mime_type: 'application/json'
+        } }
+      )
+    # Add other providers as needed
+    else
+      raise ArgumentError, "Unsupported provider: #{provider}"
+    end
+  end
+
   def assistant
-    @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"], llm_options: { request_timeout: 600 }, default_options: { request_timeout: 600, chat_model: "gpt-4o-mini" })
+    provider = ENV.fetch('AI_CHECKS_PROVIDER', nil)
+    llm_model = ENV.fetch('AI_CHECKS_MODEL', nil)
+    @llm ||= initialize_llm(provider, llm_model, 0.1)
 
     @assistant ||= Langchain::Assistant.new(
       llm: @llm,
@@ -40,6 +68,10 @@ class AiAssistant
   def query(query_string)
     assistant.add_message(content: query_string)
     assistant.run(auto_tool_execution: true)
+    Rails.logger.debug "##########################"
+    Rails.logger.debug "Assistant Messages"
+    Rails.logger.debug assistant.messages
+    Rails.logger.debug "##########################"
     assistant.messages[-1].content
   end
 

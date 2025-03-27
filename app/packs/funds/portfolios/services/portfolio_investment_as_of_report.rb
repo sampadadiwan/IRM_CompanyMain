@@ -1,10 +1,14 @@
 class PortfolioInvestmentAsOfReport
   include FormTypeHelper
 
-  def initialize(aggregate_portfolio_investments, current_user, as_of: nil)
+  def initialize(aggregate_portfolio_investments, current_user, as_of: nil, currency: nil)
     @aggregate_portfolio_investments = aggregate_portfolio_investments
     @current_user = current_user
     @as_of = as_of
+    @currency = currency
+
+    raise "No currency provided" unless @currency
+
     setup_exchange_rates
   end
 
@@ -21,10 +25,7 @@ class PortfolioInvestmentAsOfReport
 
   # This is required to enable adding Money objects in different currencies
   def setup_exchange_rates
-    latest_rates = ExchangeRate.latest_rates_before(@as_of, @current_user.entity_id)
-    latest_rates.each do |(from, to), rate|
-      Money.add_rate(from, to, rate.rate)
-    end
+    @bank = ExchangeRate.setup_variable_exchange(@as_of, @current_user.entity_id)
   end
 
   def add_apis_tab(workbook)
@@ -111,13 +112,13 @@ class PortfolioInvestmentAsOfReport
         apis.each do |api|
           api = api.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
           bought_quantity += api.bought_quantity
-          bought_amount += api.bought_amount
+          bought_amount += @bank.exchange_with(api.bought_amount, @currency)
           sold_quantity += api.sold_quantity
-          sold_amount += api.sold_amount
+          sold_amount += @bank.exchange_with(api.sold_amount, @currency)
           quantity += api.quantity
-          fmv += api.fmv
-          cost_of_remaining += api.cost_of_remaining
-          avg_cost += api.avg_cost
+          fmv += @bank.exchange_with(api.fmv, @currency)
+          cost_of_remaining += @bank.exchange_with(api.cost_of_remaining, @currency)
+          avg_cost += @bank.exchange_with(api.avg_cost, @currency)
         end
 
         inv_custom_field_values = get_custom_values(pc, inv_form_type, inv_custom_field_names)

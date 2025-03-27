@@ -26,7 +26,11 @@ class ComplianceAssistant < AiAssistant
         begin
           # Run the compliance rule
           response = assistant.query(ai_rule.rule + format_hint)
+          # Strip out any ```json that the AI might have added`
+          response = response[/{.*}/m]
           Rails.logger.debug response
+
+          # Parse the response
           llm_response = JSON.parse(response)
           results[ai_rule.rule] = llm_response
           Rails.logger.debug llm_response

@@ -87,7 +87,7 @@ module PortfolioComputations
 
     compute_fmv_cents_on(end_date)
 
-    self.unrealized_gain_cents = fmv_cents - net_amount_cents
+    self.unrealized_gain_cents = fmv_cents - cost_of_remaining_cents
     freeze
   end
 

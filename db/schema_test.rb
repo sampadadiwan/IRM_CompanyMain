@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_18_060702) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_26_125319) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -181,7 +181,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_18_060702) do
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "show_portfolio", default: false
-    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"

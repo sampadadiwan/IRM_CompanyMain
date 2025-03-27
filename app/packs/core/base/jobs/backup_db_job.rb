@@ -42,7 +42,7 @@ class BackupDbJob < ApplicationJob
         restore_db_name == Rails.application.credentials[:DB_NAME]
       msg = "Cannot restore the primary database to itself"
       error_msg = { from: "BackupDbJob", status: "Failed", msg: msg }
-      EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+      EntityMailer.with(error_msg: error_msg, subject: "Error in restore_db").notify_errors.deliver_now
       raise msg
     end
 
@@ -119,7 +119,7 @@ class BackupDbJob < ApplicationJob
       Rails.logger.debug msg
       error_msg = { from: "BackupDbJob", status: "Passed", msg: msg }
     end
-    EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+    EntityMailer.with(error_msg: error_msg, subject: msg).notify_errors.deliver_now
 
     # Clean up the temporary files
     File.delete(temp_file)
@@ -161,7 +161,7 @@ class BackupDbJob < ApplicationJob
     if size_kb < 100
       msg = "mysqldump created file which is too small, backup aborted"
       error_msg = { from: "BackupDbJob", status: "Failed", msg: }
-      EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+      EntityMailer.with(error_msg: error_msg, subject: "Error in backup_db").notify_errors.deliver_now
       raise msg
     end
 
@@ -210,7 +210,7 @@ class BackupDbJob < ApplicationJob
     msg = "Error backing up database: #{e.message}"
     Rails.logger.error { e.backtrace.join("\n") }
     error_msg = { from: "BackupDbJob", status: "Failed", msg: }
-    EntityMailer.with(error_msg: error_msg).notify_errors.deliver_now
+    EntityMailer.with(error_msg: error_msg, subject: "Error in backup_db").notify_errors.deliver_now
     raise msg
   ensure
     # remove local backup file

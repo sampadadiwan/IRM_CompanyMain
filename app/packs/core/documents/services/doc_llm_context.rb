@@ -6,6 +6,10 @@ class DocLlmContext < DocLlmBase
   step :cleanup
   left :handle_errors
 
+  def init(ctx, **)
+    super(ctx, provider: ENV.fetch('DOCUMENT_VALIDATION_PROVIDER', nil), llm_model: ENV.fetch('DOCUMENT_VALIDATION_MODEL', nil), temperature: 0.1, **)
+  end
+
   def populate_context_with_data(ctx, documents:, notes:, **)
     ctx[:context] = ""
 
@@ -32,28 +36,43 @@ class DocLlmContext < DocLlmBase
     ctx[:llm_instructions] ||= "#{ctx[:section].data} Format your output as json array with each point as an item in the array. The key is the index and value is the extracted info. Do not generate nested json, just one level. Do not add any \n (newlines), \t (tabs) within an array item and do not add ```json to the output."
   end
 
-  def extract_data(ctx, open_ai_client:, **)
+  def extract_data(ctx, llm_client:, **)
     messages = [
-      { type: "text", text: ctx[:llm_instructions] },
-      { type: "text", text: ctx[:context] }
+      { role: "user", parts: [{ text: ctx[:llm_instructions] }] },
+      { role: "user", parts: [{ text: ctx[:context] }] }
     ]
 
     Rails.logger.debug "###########Sending to LLM#############"
     Rails.logger.debug messages
     Rails.logger.debug "########################"
 
-    # Run the checks with the llm
-    response = open_ai_client.chat(
-      parameters: {
-        model: "gpt-4o", # Required.
-        response_format: { type: "json_object" },
-        messages: [{ role: "user", content: messages }] # Required.
-      }
+    # Ensure the model parameter is set if not already provided
+    model_name = ctx[:llm_model]
+
+    # Configure generation parameters
+    generation_config = {
+      response_mime_type: 'application/json'
+    }
+
+    # Call the chat method with the correctly structured messages
+    response = llm_client.chat(
+      messages: messages,
+      model: model_name,
+      generation_config: generation_config
     )
 
-    # Get the results from the response
-    ctx[:extracted_info] = response.dig("choices", 0, "message", "content")
-    Rails.logger.debug ctx[:extracted_info]
-    true
+    Rails.logger.debug response
+
+    # Access the response content directly
+    # Access the raw response and navigate to the content
+    raw_response = response.raw_response
+    if raw_response && raw_response["candidates"] && raw_response["candidates"].first["content"] && raw_response["candidates"].first["content"]["parts"]
+      ctx[:extracted_info] = raw_response["candidates"].first["content"]["parts"].pluck("text").join("\n")
+      Rails.logger.debug ctx[:extracted_info]
+      true
+    else
+      Rails.logger.error { "Unexpected response structure: #{raw_response.inspect}" }
+      false
+    end
   end
 end

@@ -46,4 +46,15 @@ class ExchangeRate < ApplicationRecord
 
     latest_rates
   end
+
+  def self.setup_variable_exchange(as_of, entity_id)
+    bank = Money::Bank::VariableExchange.new
+
+    latest_rates = ExchangeRate.latest_rates_before(as_of, entity_id)
+    latest_rates.each do |(from, to), rate|
+      bank.add_rate(from, to, rate.rate)
+    end
+
+    bank
+  end
 end
