@@ -147,15 +147,19 @@ class DocLlmValidator < DocLlmBase
       update_field(model, question, answer, existing_value, answer_and_explanation)
     else
       existing_value = model.properties[question]
-      update_field(model.properties, question, answer, existing_value, answer_and_explanation)
+      update_field(model, question, answer, existing_value, answer_and_explanation)
     end
   end
 
-  # Update the target field with the answer
-  def update_field(target, question, answer, existing_value, answer_and_explanation)
+  # Update the model field with the answer
+  def update_field(model, question, answer, existing_value, answer_and_explanation)
     question = question.parameterize.underscore
-    if existing_value.blank?
-      target.send(:"#{question}=", answer)
+    if existing_value.blank? 
+      if model.respond_to?(question.to_sym)
+        model.send(:"#{question}=", answer)
+      else
+        model.properties[question] = answer
+      end
       answer_and_explanation["update"] = "Updated field #{question.to_sym}"
     else
       answer_and_explanation["update"] = "No Update to field #{question.to_sym}, Existing value = #{existing_value}, Extracted value = #{answer}"
