@@ -27,7 +27,7 @@ class CapitalDistribution < ApplicationRecord
   # gross_amount - this is the total amount that has to be distributed
   # reinvestment - This is the amount that is reinvested
   # income - This is the income from sale of portfolio that is to be distributed
-  monetize :income_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, :fee_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :income_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :completed_distribution_amount_cents, :cost_of_investment_cents, :fee_cents, with_currency: ->(i) { i.fund.currency }
 
   validates_uniqueness_of :title, scope: :fund_id
   validates :title, presence: true

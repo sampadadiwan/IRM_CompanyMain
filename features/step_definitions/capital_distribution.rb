@@ -52,7 +52,8 @@ Then('it should create Capital Distribution') do
   total_amount_cents +=  AccountEntry.where(fund_id: @fund.id).where.not(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
   # total_amount_cents -=  AccountEntry.where(fund_id: @fund.id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
 
-  expect(distribution.gross_amount_cents).to(eq(distribution.capital_distribution_payments.completed.sum(:gross_payable_cents)))  
+  expect(distribution.gross_amount_cents).to(eq(distribution.capital_distribution_payments.sum(:gross_payable_cents)))  
+  expect(distribution.completed_distribution_amount_cents).to(eq(distribution.capital_distribution_payments.completed.sum(:net_payable_cents)))  
 end
 
 Then('the data should be correctly displayed for each Capital Distribution Payment') do

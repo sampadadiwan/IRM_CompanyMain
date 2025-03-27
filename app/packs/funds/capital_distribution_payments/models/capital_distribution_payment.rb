@@ -52,27 +52,25 @@ class CapitalDistributionPayment < ApplicationRecord
   validates :investor_name, length: { maximum: 255 }
 
   counter_culture :capital_distribution,
-                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
-                  delta_column: 'net_payable_cents',
-                  column_names: {
-                    ["capital_distribution_payments.completed = ?", true] => 'distribution_amount_cents'
-                  }
-
-  counter_culture :capital_distribution,
-                  column_name: proc { |r| r.completed ? 'gross_amount_cents' : nil },
-                  delta_column: 'gross_payable_cents',
-                  column_names: {
-                    ["capital_distribution_payments.completed = ?", true] => 'gross_amount_cents'
-                  }
-
-  counter_culture :fund,
-                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
+                  column_name: proc { |r| r.completed ? 'completed_distribution_amount_cents' : nil },
                   delta_column: 'net_payable_cents',
                   column_names: lambda {
                     {
-                      CapitalDistributionPayment.completed => :distribution_amount_cents
+                      CapitalDistributionPayment.completed => :completed_distribution_amount_cents
                     }
                   }
+
+  counter_culture :capital_distribution,
+                  column_name: 'distribution_amount_cents',
+                  delta_column: 'net_payable_cents'
+
+  counter_culture :capital_distribution,
+                  column_name: 'gross_amount_cents',
+                  delta_column: 'gross_payable_cents'
+
+  counter_culture :fund,
+                  column_name: 'distribution_amount_cents',
+                  delta_column: 'net_payable_cents'
 
   counter_culture :fund,
                   column_name: proc { |r| r.completed ? 'tracking_distribution_amount_cents' : nil },
@@ -120,7 +118,9 @@ class CapitalDistributionPayment < ApplicationRecord
 
   # after_commit :send_notification, if: ->(cdp) { cdp.completed && !cdp.destroyed? }
   def send_notification
-    if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
+    if  saved_change_to_completed? && completed && capital_distribution.send_notification_on_complete &&
+        capital_distribution.approved && !capital_distribution.manual_generation
+
       investor.notification_users(fund).each do |user|
         CapitalDistributionPaymentNotifier.with(record: self, entity_id:).deliver_later(user)
       end

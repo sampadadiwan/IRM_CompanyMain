@@ -24,6 +24,11 @@
     </tr>
 
     <tr>
+      <td>Send Notification On Complete</td>
+      <td><%= display_boolean @capital_distribution.send_notification_on_complete %></td>
+    </tr>
+
+    <tr>
       <td>Fund</td>
       <td>
         <%= link_to @capital_distribution.fund.name, fund_path(@capital_distribution.fund, tab: "capital-distributions-tab") %>
