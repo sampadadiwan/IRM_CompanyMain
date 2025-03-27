@@ -147,6 +147,24 @@
 
       <tr>
         <td>
+          Realized Gain
+        </td>
+        <td>
+          <%= money_to_currency aggregate_portfolio_investment.gain, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Unrealized Gain
+        </td>
+        <td>
+          <%= money_to_currency aggregate_portfolio_investment.unrealized_gain, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
           Cost of Remaining
         </td>
         <td>

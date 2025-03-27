@@ -12,6 +12,7 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
   def generate(as_of, user_id, portfolio_company_id: nil, fund_id: nil)
     user = User.find(user_id)
     entity = user.entity
+    currency = entity.currency
     as_of = Date.parse(as_of)
 
     aggregate_portfolio_investments = entity.aggregate_portfolio_investments
@@ -22,6 +23,7 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
 
     if fund_id.present?
       fund = Fund.find(fund_id)
+      currency = fund.currency
       aggregate_portfolio_investments = fund.aggregate_portfolio_investments
     end
 
@@ -29,7 +31,7 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
 
     # Generate the report
     file_name = "tmp/portfolio_investments_#{as_of.strftime('%m_%y')}.xlsx"
-    PortfolioInvestmentAsOfReport.new(aggregate_portfolio_investments, user, as_of:).save_to_file(file_name)
+    PortfolioInvestmentAsOfReport.new(aggregate_portfolio_investments, user, as_of:, currency:).save_to_file(file_name)
     send_notification("Portfolio Investment Report created", user_id)
 
     # Save it as a document

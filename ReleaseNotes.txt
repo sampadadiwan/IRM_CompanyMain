@@ -1,3 +1,9 @@
+V9.0.14
+#####################################
+59237f685 Inv fund docs bug fix (#763)
+fdf8987dd Added error handling for doc_llm_validator
+99af8fd6b Added bulk actions for KYC validate docs
+
 V9.0.13
 #####################################
 791ad1dbc Now aggregates only folio expenses and fees in fund dashboard

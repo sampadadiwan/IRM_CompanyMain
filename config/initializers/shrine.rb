@@ -37,6 +37,7 @@ Shrine.plugin :validation
 Shrine.plugin :keep_files unless Rails.env.local?
 Shrine.plugin :determine_mime_type, analyzer: :marcel, analyzer_options: { filename_fallback: true }
 Shrine.plugin :presign_endpoint
+Shrine.plugin :upload_endpoint
 Shrine.plugin :uppy_s3_multipart # load the plugin
 # Shrine.plugin :instrumentation # adds instrumentation
 Shrine.plugin :backgrounding # load the plugin globally

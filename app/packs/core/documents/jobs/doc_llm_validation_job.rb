@@ -24,6 +24,7 @@ class DocLlmValidationJob < ApplicationJob
         @error_msgs << { msg: "No documents to validate", id: model.id, model: model }
       end
     rescue StandardError => e
+      Rails.logger.debug e.backtrace
       send_notification("Error in validating documents for #{model}: #{e.message}", user_id, "danger")
       @error_msgs << { msg: e.message, id: model.id, model: model }
     end

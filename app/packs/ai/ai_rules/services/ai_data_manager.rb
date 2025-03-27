@@ -11,7 +11,7 @@ class AiDataManager
   end
 
   define_function :get_record_details, description: "Get the details of the record" do
-    property :record, type: "object", description: "The record to get the details of", required: false
+    property :record, type: "string", description: "Unused", required: false
   end
 
   define_function :current_date, description: "Get the current date" do
