@@ -70,10 +70,7 @@ class DocLlmValidator < DocLlmBase
 
     # Construct the messages array with proper structure for Gemini API
     messages = new_checks.map do |check|
-      {
-        role: "user",
-        parts: [{ text: check }]
-      }
+      { role: "user", parts: [{ text: check }] }
     end
 
     # Add instructions and image to the messages array
@@ -90,16 +87,10 @@ class DocLlmValidator < DocLlmBase
     model_name = ctx[:llm_model]
 
     # Configure generation parameters
-    generation_config = {
-      response_mime_type: 'application/json'
-    }
+    generation_config = { response_mime_type: 'application/json' }
 
     # Call the chat method with the correctly structured messages
-    response = llm_client.chat(
-      messages: messages,
-      model: model_name,
-      generation_config: generation_config
-    )
+    response = llm_client.chat(messages: messages, model: model_name, generation_config: generation_config)
 
     Rails.logger.debug response
 

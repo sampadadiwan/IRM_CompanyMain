@@ -140,7 +140,7 @@ class AiDataManager
   def get_latest_data(associated_data:, where: nil, order_by: :id)
     msg = "CDM: get_latest_data called with associated_data: #{associated_data}, order_by: #{order_by}"
     Rails.logger.debug { msg }
-    latest = @record.send(associated_data.underscore.to_sym).order(order_by.to_s => :desc)
+    latest = @record.send(associated_data.underscore.to_sym).order(order_by.underscore.to_sym => :desc)
     latest = latest.where(where) if where.present?
     latest = latest.first
     response = latest.to_json
