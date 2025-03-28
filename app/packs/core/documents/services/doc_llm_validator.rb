@@ -33,7 +33,7 @@ class DocLlmValidator < DocLlmBase
   # Example: checks = ["Is the name $full_name ?", "Is there a date of birth", "What is the PAN number?", "Is the pan number $PAN ?"]
   CHECK_INSTRUCTIONS = "Return the answers to all the questions as a JSON document without any formatting or ```json enclosing tags and only if it is present in the image presented to you. In the JSON document returned, create the key as specified by the Response Format Hint and the value is a JSON with answer to the specific Question and explanation for the answer. Example {'The question that was input': {answer: 'Your answer', explanation: 'Your explanation for the answer given', question_type: 'Extraction, Validation or General question'}}".freeze
 
-  def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **)
+  def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **) # rubocop:disable Metrics/MethodLength
     new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
 

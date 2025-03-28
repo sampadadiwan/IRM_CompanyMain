@@ -41,8 +41,13 @@ class DocumentsController < ApplicationController
                      Document.none
                    end
 
-      @documents = if params[:no_folders].present?
+      @documents = if params[:no_folders].present? || (params[:show_root_docs].presence && current_user.has_cached_role?(:company_admin) && current_user.entity_id == @entity.id)
+                     # if the user is company admin and viewing his own company data then the tree view wil render fullt and we fetch only the root docs
                      @documents.where(folder_id: params[:folder_id])
+                   elsif params[:show_root_docs].presence
+                     # if the user is an investor he should only see the tree view for the docs he has access to (no matter if he is company admin of his own company or not)
+                     folder_ids = Folder.descendants_of(params[:folder_id]).pluck(:id) + [params[:folder_id].to_i]
+                     @documents.where(folder_id: folder_ids)
                    else
                      @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
                      # @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
