@@ -17,7 +17,7 @@ module WithCustomField
     before_save :setup_form_type # , if: -> { respond_to?(:form_type_id) && form_type.blank? }
 
     # This is done so that if there are any custom_fields which are calculations, then they are run and computed
-    after_initialize :perform_all_calculations, if: -> { form_custom_fields && form_custom_fields.calculations.present? }
+    # after_initialize :perform_all_calculations, if: -> { form_custom_fields && form_custom_fields.calculations.present? }
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     if Rails.env.test?
