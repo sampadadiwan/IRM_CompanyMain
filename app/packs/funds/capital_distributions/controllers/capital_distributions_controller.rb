@@ -82,8 +82,14 @@ class CapitalDistributionsController < ApplicationController
   end
 
   def payments_completed
-    @capital_distribution.capital_distribution_payments.update(completed: true)
-    redirect_to capital_distribution_url(@capital_distribution), notice: "All payments marked as completed."
+    payments = @capital_distribution.capital_distribution_payments
+    count = 0
+    payments.each do |cdp|
+      cdp.completed = true
+      count += 1 if CapitalDistributionPaymentUpdate.call(capital_distribution_payment: cdp).success?
+    end
+
+    redirect_to capital_distribution_url(@capital_distribution), notice: "#{count} payments out of #{payments.count} marked as completed."
   end
 
   private
@@ -99,6 +105,6 @@ class CapitalDistributionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
-    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :cost_of_investment, :reinvestment, :income, :distribution_date, :title, :completed, :capital_commitment_id, :distribution_on, :generate_payments, :completed, :notes, distribution_fees_attributes: %i[id name start_date end_date notes fee_type _destroy], unit_prices: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :cost_of_investment, :reinvestment, :income, :distribution_date, :title, :completed, :capital_commitment_id, :distribution_on, :generate_payments, :completed, :send_notification_on_complete, :notes, distribution_fees_attributes: %i[id name start_date end_date notes fee_type _destroy], unit_prices: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

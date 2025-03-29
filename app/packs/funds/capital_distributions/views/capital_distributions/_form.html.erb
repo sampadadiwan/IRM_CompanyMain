@@ -80,6 +80,13 @@
           <%= form.check_box :completed, class: "form-check-input"  %>
         </div>
 
+
+        <div class="form-group">
+          <%= form.label :send_notification_on_complete, "Send Notification" %>
+          <%= form.check_box :send_notification_on_complete, class: "form-check-input"  %>
+          <span class="small_text">Send notification to investors when distribution payment is marked completed</span>
+        </div>
+
         <div class="form-group">
           <%= form.label :notes %>
           <%= form.rich_text_area :notes, class: "form-control"  %>

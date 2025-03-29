@@ -27,7 +27,7 @@
     
     <div class="form-group">
       <%= form.label :widget_name %>
-      <%= form.select :widget_name, grouped_options_for_select(DashboardWidget.widget_select), {prompt: 'Select Widget'}, class: "form-control"  %>
+      <%= form.select :widget_name, grouped_options_for_select(DashboardWidget.widget_select, dashboard_widget.widget_name), {prompt: 'Select Widget'}, class: "form-control"  %>
       <span class="text-muted">Select a widget corresponding to the Dashboard Name sected above</span>
     </div>
 

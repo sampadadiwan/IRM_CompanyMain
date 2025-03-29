@@ -2,7 +2,7 @@
     <h1 class="h3 mb-0 text-gray-800">Distribution Payments</h1>
 
     <span>
-      <% capital_distribution ||= nil %>
+      <% capital_distribution ||= params[:capital_distribution_id].present? ? CapitalDistribution.find(params[:capital_distribution_id]) : nil %>
       <% if capital_distribution %>
 
         <%#= link_to "New Payment",

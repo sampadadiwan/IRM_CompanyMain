@@ -22,13 +22,13 @@ module AccountEntryAllocation
 
       # Generate the fund-level entries for each of the names
       rollups_for_name.each do |name|
-        generate_fund_rollup(name, fund, fund_formula, start_date, end_date)
+        generate_fund_rollup(ctx, name, fund, fund_formula, start_date, end_date)
       end
 
       true
     end
 
-    def generate_fund_rollup(name, fund, fund_formula, start_date, end_date)
+    def generate_fund_rollup(ctx, name, fund, fund_formula, start_date, end_date)
       # Destroy old fund-level entries
       fund.fund_account_entries.where(
         name: name,
@@ -61,7 +61,8 @@ module AccountEntryAllocation
         cumulative: true,
         # Since this is a rollup, the rule_for is reporting
         rule_for: :reporting,
-        amount_cents: sum_cents
+        amount_cents: sum_cents,
+        allocation_run_id: ctx[:allocation_run_id]
       )
     end
   end

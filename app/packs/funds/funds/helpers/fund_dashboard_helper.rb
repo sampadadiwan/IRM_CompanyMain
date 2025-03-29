@@ -93,7 +93,7 @@ module FundDashboardHelper
     capital_calls = fund.capital_calls.where(call_date: from_date..)
     capital_distributions = fund.capital_distributions.where(distribution_date: from_date..)
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
-    account_entries = fund.account_entries.not_cumulative.where(entry_type: %w[Expense Fee], reporting_date: from_date..)
+    account_entries = fund.account_entries.not_cumulative.where.not(capital_commitment_id: nil).where(entry_type: %w[Expense Fee], reporting_date: from_date..)
 
     # Group and sum data by quarter
     data = {

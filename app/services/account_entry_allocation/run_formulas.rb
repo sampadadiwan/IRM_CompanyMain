@@ -3,6 +3,9 @@ module AccountEntryAllocation
   # 1. RunFormulas Operation
   ############################################################
   class RunFormulas < AllocationBaseOperation
+    include Rails.application.routes.url_helpers
+    include ApplicationHelper
+
     step :run_formulas
     step :generate_fund_ratios
     step :generate_soa
@@ -57,7 +60,24 @@ module AccountEntryAllocation
         end
 
         time_taken = ((Time.zone.now - run_start_time)).to_i
-        notify("Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds", :success, user_id)
+        msg = "Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds"
+
+        entry_types = [
+          ['', 'View Account Entries'],
+          ['Fees', 'View Fees'],
+          ['Portfolio Allocation', 'View Portfolio Allocation'],
+          ['Portfolio FMV', 'View Portfolio FMV']
+        ]
+
+        links_html = entry_types.map do |entry_type, label|
+          query_params = ransack_query_params_multiple([
+            ['allocation_run_id', :eq, ctx[:allocation_run_id]],
+            [:entry_type, :eq, entry_type]
+          ])
+          ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank')
+        end.join("")
+
+        notify(msg + "<br>" + links_html, :success, user_id)
         allocation_run&.update_column(:status, "Success")
       end
       true

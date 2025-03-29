@@ -197,4 +197,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
     # Get the fmv for this portfolio_company on the end_date
     net_quantity * valuation.per_share_value_in(fund.currency, end_date)
   end
+
+  # This method is used in some allocations formulas, do NOT delete this, as its not directly referenced by the codebase
+  def sum_custom_field(cf_name, end_date)
+    portfolio_investments.where(investment_date: ..end_date).sum { |pi| (pi.json_fields[cf_name] || 0).to_d }
+  end
 end

@@ -1,5 +1,5 @@
 class ImportCapitalDistribution < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Title", "Income", "Date", "Generate Payments", "Payments Paid", "Reinvestment", "Folio No", "Distribution Basis", "Face Value For Redemption"].freeze
+  STANDARD_HEADERS = ["Fund", "Title", "Income", "Date", "Generate Payments", "Payments Paid", "Reinvestment", "Folio No", "Distribution Basis", "Face Value For Redemption", "Send Notification"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -19,11 +19,12 @@ class ImportCapitalDistribution < ImportUtil
 
         generate_payments = user_data["Generate Payments"]&.downcase == "yes"
         generate_payments_paid = user_data["Payments Paid"]&.downcase == "yes"
+        send_notification_on_complete = user_data["Send Notification"]&.downcase == "yes"
 
         # Make the capital_distribution
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
                                                        fund:, distribution_date: user_data["Date"],
-                                                       manual_generation: true,
+                                                       manual_generation: true, send_notification_on_complete:,
                                                        generate_payments:, generate_payments_paid:)
 
         capital_distribution.import_upload_id = import_upload.id
