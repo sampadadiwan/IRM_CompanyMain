@@ -72,6 +72,7 @@ module AccountEntryAllocation
 
       # Generate the cumulative account entry for the capital commitment
       cumulative_ae = capital_commitment.rollup_account_entries(rollup_name, rollup_entry_type, ctx[:start_date], ctx[:end_date])
+      cumulative_ae.allocation_run_id = ctx[:allocation_run_id]
 
       # Add the attributes of the cumulative account entry to the bulk insert records, excluding certain fields
       ctx[:bulk_insert_cumulative_records] << cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")

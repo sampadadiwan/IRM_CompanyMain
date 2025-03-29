@@ -1,9 +1,11 @@
 V9.0.15
 #####################################
+965e867ae Root docs fix (#770)
+cada6596f aml spec fix for upload server app (#769)
 f02321036 Capital Dist fixes (#768)
 18fbbd3a0 Handle AML response if it is an array (#766)
+80ec85f34 Merge branch 'main' of github.com:ausangshukla/IRM
 0222ca89f Fixed dashboard_widget form selec dropdown
-0f50832ae Fixed specs (#765)
 f24ba8e39 Now Doc LLM Validation works with Gemini and openai
 618b5c27a Fixed doc validation tests
 1a4a28796 Fixed the Ai checks using openAI

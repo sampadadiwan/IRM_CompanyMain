@@ -1,5 +1,5 @@
 class ReportsController < ApplicationController
-  before_action :set_report, only: %i[show edit update destroy configure_grids]
+  before_action :set_report, only: %i[show dynamic edit update destroy configure_grids]
 
   # GET /reports or /reports.json
   def index
@@ -13,12 +13,22 @@ class ReportsController < ApplicationController
   # GET /reports/1 or /reports/1.json
   def show; end
 
+  # This is a special kind of report which has dynamic URL to allow params to be passed to a report
+  def dynamic
+    @report_url = @report.url
+    params.each do |key, value|
+      # Substitute the value in the URL
+      @report_url = @report_url.sub("{#{key}}", value) if @report_url.include?("{#{key}}")
+    end
+    redirect_to @report_url.to_s
+  end
+
   def prompt
     authorize Report
     model_class = params[:model_class].constantize
     query = params[:query]
     @report_url = ReportPrompt.generate_report_url(query, model_class)
-    redirect_to "/#{@report_url}", allow_other_host: true
+    redirect_to @report_url.to_s
   end
 
   # GET /reports/new

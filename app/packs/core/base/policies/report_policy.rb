@@ -17,6 +17,10 @@ class ReportPolicy < ApplicationPolicy
     belongs_to_entity?(user, record) || record.entity.nil?
   end
 
+  def dynamic?
+    show?
+  end
+
   def create?
     belongs_to_entity?(user, record)
   end

@@ -4,6 +4,7 @@ resources :custom_notifications
 
 resources :reports do
   post 'prompt', on: :collection
+  get 'dynamic', on: :member
 end
 
 resources :audits

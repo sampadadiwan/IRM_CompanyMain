@@ -58,7 +58,7 @@ module AccountEntryAllocation
         commitment_cache: @commitment_cache,
         instance_variables: @instance_variables
       }
-      Rails.logger.debug { "Engine: ctx id = #{ctx.object_id}" }
+      Rails.logger.debug { "Engine: ctx = #{ctx}" }
       # Now call the RunFormulas operation (which in turn calls sub-operations).
       AccountEntryAllocation::RunFormulas.call(ctx)
 

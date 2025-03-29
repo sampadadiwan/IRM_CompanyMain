@@ -18,6 +18,7 @@ class AccountEntry < ApplicationRecord
   belongs_to :capital_commitment, optional: true
   belongs_to :entity
   belongs_to :fund
+  belongs_to :allocation_run, optional: true
   belongs_to :fund_formula, optional: true
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
@@ -105,11 +106,11 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date].sort
+    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date allocation_run_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_commitment fund investor]
+    %w[capital_commitment fund investor allocation_run]
   end
 
   def template_field_name
