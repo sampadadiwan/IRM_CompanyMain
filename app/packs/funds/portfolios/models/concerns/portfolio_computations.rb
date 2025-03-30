@@ -45,6 +45,10 @@ module PortfolioComputations
       self.net_amount_cents = net_quantity * cost_cents
       self.net_bought_amount_cents = net_bought_quantity * cost_cents
       self.cost_of_remaining_cents = net_quantity * cost_cents
+      
+      compute_fmv
+      # Unrealized gain is fmv - cost_of_remaining, only for buys
+      self.unrealized_gain_cents = fmv_cents - net_amount_cents
     else
       self.net_quantity = quantity
       self.net_bought_quantity = 0
@@ -52,11 +56,12 @@ module PortfolioComputations
       self.net_bought_amount_cents = 0
       self.cost_of_remaining_cents = 0
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
+
+      compute_fmv
+    
     end
 
-    compute_fmv
-
-    self.unrealized_gain_cents = fmv_cents - net_amount_cents
+    
   end
 
   def compute_all_numbers_on(end_date)
