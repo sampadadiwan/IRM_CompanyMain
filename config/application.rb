@@ -63,7 +63,7 @@ module CapHive
     end
 
     # This is to enable docker to access the app running on localhost
-    config.hosts << "host.docker.internal"
+    # config.hosts << "host.docker.internal"
 
     config.to_prepare do
       Devise::Mailer.layout "mailer" # simple.haml or simple.erb
