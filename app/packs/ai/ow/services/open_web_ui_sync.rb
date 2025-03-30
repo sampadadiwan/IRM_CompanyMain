@@ -24,7 +24,7 @@ class OpenWebUiSync
       when "User" then sync_user(@syncable)
       when "Entity" then sync_group(@syncable)
       when "Document" then sync_document(@syncable)
-      when "KpiReport" then sync_knowledge(@syncable)
+      when "KpiReport", "Folder" then sync_knowledge(@syncable)
       else raise "Syncing not implemented for #{@syncable.class.name}"
       end
 
@@ -42,7 +42,7 @@ class OpenWebUiSync
     when "User" then @users_api.delete_user(@sync_record.openwebui_id)
     when "Entity" then @groups_api.delete_group(@sync_record.openwebui_id)
     when "Document" then @files_api.delete_file(@sync_record.openwebui_id)
-    when "KpiReport" then @knowledge_api.delete_knowledge(@sync_record.openwebui_id)
+    when "KpiReport", "Folder" then @knowledge_api.delete_knowledge(@sync_record.openwebui_id)
     else raise "Unsyncing not implemented for #{@syncable.class.name}"
     end
 
@@ -86,8 +86,7 @@ class OpenWebUiSync
     raise "No entity sync found for #{kpi_report}" unless entity_openwebui_id
 
     Rails.logger.debug { "Creating knowledge #{kpi_report.name}" }
-    kpi_report.portfolio_company.investor_name
-    kpi_report.as_of.strftime("%b %Y")
+
     # Create the knowledge, with read write access to this entity
     response = @knowledge_api.create_knowledge({
                                                  name: kpi_report.name, description: DESCRIPTION,
@@ -120,8 +119,12 @@ class OpenWebUiSync
     end
     doc_openwebui_id = response[:id]
 
-    # Add the document to the knowledge
+    # Add the document to the knowledge, which is either the owner or the folder
+    # If the document is owned by a KpiReport, add it to the knowledge of the KpiReport
+    # If the document is owned by a Folder, add it to the knowledge of the Folder
     knowledge_sync_record = SyncRecord.find_by(syncable: document.owner)
+    knowledge_sync_record ||= SyncRecord.find_by(syncable: document.folder)
+
     if knowledge_sync_record
       Rails.logger.debug { "Adding document to knowledge #{knowledge_sync_record.openwebui_id}" }
       knowledge_id = knowledge_sync_record.openwebui_id

@@ -10,7 +10,7 @@ class OpenWebUiClient
     @conn = Faraday.new(url: API_BASE) do |faraday|
       faraday.request :multipart
       faraday.request :url_encoded
-      faraday.response :logger, @logger # , bodies: true # Enables logging of request/response
+      # faraday.response :logger, @logger, bodies: false # Enables logging of request/response
       faraday.headers['Content-Type'] = 'application/json'
       faraday.headers['Authorization'] = "Bearer #{token}" if token
       faraday.adapter Faraday.default_adapter
@@ -55,8 +55,10 @@ class OpenWebUiClient
   def parse_response(response)
     case response.status
     when 200, 201
+      Rails.logger.debug { "Response: #{response.status}" }
       JSON.parse(response.body, symbolize_names: true)
     else
+      Rails.logger.error { "Error: #{response.status} - #{response.body}" }
       { error: response.status, message: response.body }
     end
   end

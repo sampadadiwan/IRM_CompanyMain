@@ -19,6 +19,7 @@ class OwSyncJob < ApplicationJob
       OpenWebUiSync.new(entity, access_token).sync
       sync_users(entity, access_token)
       sync_kpi_reports(entity, access_token)
+      sync_folders(entity, access_token)
       sync_documents(entity, access_token)
     end
   end
@@ -27,7 +28,7 @@ class OwSyncJob < ApplicationJob
     # Fetch users with the permission to enable open web ui, which are not yet synced
     users = entity.employees
                   .where_permissions(:enable_ai_chat)
-                  .where.not(id: SyncRecord.where(syncable_type: 'User').select(:syncable_id))
+                  .where.not(id: SyncRecord.synced_ids_for(User))
 
     users.each do |user|
       OpenWebUiSync.new(user, access_token).sync
@@ -36,16 +37,31 @@ class OwSyncJob < ApplicationJob
 
   def sync_kpi_reports(entity, access_token)
     # Fetch kpi reports which are not yet synced
-    kpi_reports = entity.kpi_reports.where.not(id: SyncRecord.where(syncable_type: 'KpiReport').select(:syncable_id))
+    kpi_reports = entity.kpi_reports.where.not(id: SyncRecord.synced_ids_for(KpiReport))
     kpi_reports.each do |kpi_report|
       OpenWebUiSync.new(kpi_report, access_token).sync
+    end
+  end
+
+  def sync_folders(entity, access_token)
+    # Fetch kpi reports which are not yet synced
+    folders = entity.folders.where(knowledge_base: true).where.not(id: SyncRecord.synced_ids_for(Folder))
+    folders.each do |folder|
+      OpenWebUiSync.new(folder, access_token).sync
     end
   end
 
   def sync_documents(entity, access_token)
     # Fetch documents for KpiReports which are not yet synced
     documents = entity.documents.where(owner_type: 'KpiReport')
-                      .where.not(id: SyncRecord.where(syncable_type: 'Document').select(:syncable_id))
+                      .where.not(id: SyncRecord.synced_ids_for(Document))
+    documents.each do |document|
+      OpenWebUiSync.new(document, access_token).sync
+    end
+
+    # Fetch documents for knowledge_base Folders which are not yet synced
+    documents = entity.documents.joins(:folder).where(folders: { knowledge_base: true })
+                      .where.not(id: SyncRecord.synced_ids_for(Document))
     documents.each do |document|
       OpenWebUiSync.new(document, access_token).sync
     end
