@@ -125,7 +125,7 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
   end
 
   def total_comm_investor
-    @capital_commitment.committed_amount + committed_reinvest_investor
+    @capital_commitment.committed_amount_cents + committed_reinvest_investor
   end
   memoize :total_comm_investor
 
