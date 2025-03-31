@@ -62,6 +62,9 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/helpers")
     end
 
+    # This is to enable docker to access the app running on localhost
+    # config.hosts << "host.docker.internal"
+
     config.to_prepare do
       Devise::Mailer.layout "mailer" # simple.haml or simple.erb
     end

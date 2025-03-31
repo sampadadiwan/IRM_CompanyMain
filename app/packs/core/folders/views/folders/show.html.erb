@@ -53,7 +53,10 @@
           <td>
             Download <%= display_boolean @folder.download %>     
             &nbsp;&nbsp; Printing <%= display_boolean @folder.printing %>   
-            &nbsp;&nbsp; Original <%= display_boolean @folder.orignal  %>                                
+            &nbsp;&nbsp; Original <%= display_boolean @folder.orignal  %>   
+            <% if @folder.entity.enable_ai_chat %>
+              &nbsp;&nbsp; Knowledge Base <%= display_boolean @folder.knowledge_base %>
+            <% end %>
           </td>
       </tr>
 

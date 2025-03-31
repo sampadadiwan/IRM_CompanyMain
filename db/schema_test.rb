@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_27_091914) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_29_132057) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -65,6 +65,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_27_091914) do
     t.datetime "deleted_at"
     t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.integer "allocation_run_id"
+    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
@@ -1377,6 +1379,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_27_091914) do
     t.boolean "download", default: false
     t.boolean "printing", default: false
     t.boolean "orignal", default: false
+    t.boolean "knowledge_base", default: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
@@ -2529,6 +2532,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_27_091914) do
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
+    t.decimal "capital_expense_cents", precision: 20, scale: 2
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["conversion_date"], name: "index_portfolio_investments_on_conversion_date"

@@ -46,6 +46,15 @@
       </div>
 
 
+      <% if current_user.enable_ai_chat %>
+      <div class="form-group pdfopts">
+        <%= form.label :knowledge_base %>
+        <%= form.check_box :knowledge_base, class: "form-check-input" %>
+        <small class="text-muted">Enable users to chat with documents in this folder</small>
+      </div>
+      <% end %>
+
+
       <%= render "layouts/multi_upload", form: form, title: "Folder Documents", 
                   for_model: "folder" %>
                         

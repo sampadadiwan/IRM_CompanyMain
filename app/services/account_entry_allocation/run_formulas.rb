@@ -71,13 +71,13 @@ module AccountEntryAllocation
 
         links_html = entry_types.map do |entry_type, label|
           query_params = ransack_query_params_multiple([
-            ['allocation_run_id', :eq, ctx[:allocation_run_id]],
-            [:entry_type, :eq, entry_type]
-          ])
-          ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank')
-        end.join("")
+                                                         ['allocation_run_id', :eq, ctx[:allocation_run_id]],
+                                                         [:entry_type, :eq, entry_type]
+                                                       ])
+          ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
+        end.join
 
-        notify(msg + "<br>" + links_html, :success, user_id)
+        notify("#{msg}<br>#{links_html}", :success, user_id)
         allocation_run&.update_column(:status, "Success")
       end
       true
