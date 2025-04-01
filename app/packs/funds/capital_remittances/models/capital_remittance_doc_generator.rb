@@ -35,8 +35,8 @@ class CapitalRemittanceDocGenerator
   def generate(capital_remittance, fund_doc_template_path) # rubocop:disable Metrics/MethodLength
     template = Sablon.template(File.expand_path(fund_doc_template_path))
     fund_as_of = FundAsOf.new(capital_remittance.fund, capital_remittance.remittance_date)
-    fund_as_of_commitments_lp = fund_as_of.capital_commitments.lp
-    fund_as_of_commitments_gp = fund_as_of.capital_commitments.gp
+    fund_as_of_commitments_lp = fund_as_of.capital_commitments.lp(fund_as_of.id)
+    fund_as_of_commitments_gp = fund_as_of.capital_commitments.gp(fund_as_of.id)
     context = {}
 
     context.store :date, Time.zone.today.strftime("%d %B %Y")

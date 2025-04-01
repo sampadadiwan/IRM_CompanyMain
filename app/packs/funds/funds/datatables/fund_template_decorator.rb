@@ -35,12 +35,12 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
   memoize :fund_commitments
 
   def fund_commitments_lp
-    fund_as_of.capital_commitments.lp
+    fund_as_of.capital_commitments.lp(fund_as_of.id)
   end
   memoize :fund_commitments_lp
 
   def fund_commitments_gp
-    fund_as_of.capital_commitments.gp
+    fund_as_of.capital_commitments.gp(fund_as_of.id)
   end
   memoize :fund_commitments_gp
 
