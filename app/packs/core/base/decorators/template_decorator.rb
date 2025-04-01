@@ -63,6 +63,10 @@ class TemplateDecorator < ApplicationDecorator
 
       return sum(attr_name.to_sym)
 
+    elsif method_name.to_s.starts_with?("amt_")
+      attr_name = method_name.to_s.gsub("amt_", "")
+      return (send(attr_name.to_sym) / 100.0)
+
     elsif method_name.to_s.starts_with?("format_")
       attr_name = method_name.to_s.gsub("format_", "")
       return h.number_with_precision(send(attr_name).to_d, precision: 2, delimiter: ",")
