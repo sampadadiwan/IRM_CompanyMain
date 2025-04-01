@@ -168,6 +168,8 @@ Given('Given I upload {string} file for portfolio companies of the fund') do |fi
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
+  @import_upload = ImportUpload.last
+  @import_upload.failed_row_count.should == 0
 end
 
 Then('There should be {string} valuations created') do |count|

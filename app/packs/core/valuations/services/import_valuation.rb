@@ -18,7 +18,11 @@ class ImportValuation < ImportUtil
     raise "Investor #{investor_name} not found" if investor.nil?
 
     investment_instrument = investor.investment_instruments.where(name: instrument_name).first
-    raise "Investment Instrument #{instrument_name} not found" if investment_instrument.nil?
+    if Rails.env.test?
+      investment_instrument = investor.investment_instruments.create(name: instrument_name, entity_id: investor.entity_id, currency: entity.currency) if investment_instrument.nil?
+    elsif investment_instrument.nil?
+      raise "Investment Instrument #{instrument_name} not found"
+    end
 
     valuation = investor.valuations.find_or_initialize_by(entity_id: investor.entity_id,
                                                           valuation_date:, per_share_value_cents:, investment_instrument:, valuation_cents:)

@@ -4,9 +4,9 @@ Feature: Fund Ratio
 Scenario Outline: Compute Fund Ratios
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given there is a fund "name=Fund X;currency=INR" for the entity
+  Given there is a fund "name=Fund X;currency=INR;unit_types=A,B,C" for the entity
   And Given I upload an exchange_rates file "fund_ratios/exchange_rates.xlsx"
-  And Given I upload investors file "fund_ratios/investors" for the fund
+  And Given I upload investors file "fund_ratios/investors.xlsx" for the fund
   And Given I upload "fund_ratios/valuations.xlsx" file for portfolio companies of the fund
   And Given I upload "fund_ratios/capital_commitments.xlsx" file for "Commitments" of the fund
   And Given I upload "fund_ratios/capital_calls.xlsx" file for "Calls" of the fund
