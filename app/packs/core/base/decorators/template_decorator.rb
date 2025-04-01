@@ -59,6 +59,8 @@ class TemplateDecorator < ApplicationDecorator
 
     elsif method_name.to_s.starts_with?("sum_")
       attr_name = method_name.to_s.gsub("sum_", "")
+      return 0.0 if object.empty?
+
       return sum(attr_name.to_sym)
 
     elsif method_name.to_s.starts_with?("format_")

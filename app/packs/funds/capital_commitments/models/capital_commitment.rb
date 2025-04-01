@@ -53,11 +53,13 @@ class CapitalCommitment < ApplicationRecord
   scope :gp, lambda { |fund_id|
     joins(:fund_unit_setting)
       .where(fund_unit_settings: { gp_units: true, fund_id: fund_id })
+      .where("fund_unit_settings.name = capital_commitments.unit_type")
   }
 
   scope :lp, lambda { |fund_id|
     joins(:fund_unit_setting)
       .where(fund_unit_settings: { gp_units: false, fund_id: fund_id })
+      .where("fund_unit_settings.name = capital_commitments.unit_type")
   }
   belongs_to :entity
   belongs_to :investor
