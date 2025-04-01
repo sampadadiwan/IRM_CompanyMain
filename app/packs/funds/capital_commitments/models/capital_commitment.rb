@@ -73,6 +73,7 @@ class CapitalCommitment < ApplicationRecord
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
   belongs_to :fund_unit_setting,
+             -> { where("fund_unit_settings.fund_id = capital_commitments.fund_id") },
              primary_key: :name,
              foreign_key: :unit_type,
              optional: true
