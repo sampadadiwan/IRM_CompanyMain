@@ -2,15 +2,20 @@ class FundRatioCalcs
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/PerceivedComplexity
   # rubocop:disable Metrics/MethodLength
-  def xirr(entity:, net_irr: false, return_cash_flows: false,
+
+  delegate :capital_remittance_payments, to: :model
+
+  delegate :capital_distribution_payments, to: :model
+
+  def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
     cf = XirrCashflow.new
-    entity_type = entity.is_a?(Fund) ? "fund" : "capital_commitment"
-    Rails.logger.debug { "Computing XIRR for #{entity_type}: #{entity} on #{@end_date}" }
+    model_type = model.is_a?(Fund) ? "fund" : "capital_commitment"
+    Rails.logger.debug { "Computing XIRR for #{model_type}: #{model} on #{@end_date}" }
 
     # Capital Remittance Payments
-    Rails.logger.debug { "Adding capital_remittance_payments for #{entity_type}: #{entity} on #{@end_date}" }
-    entity.capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
+    Rails.logger.debug { "Adding capital_remittance_payments for #{model_type}: #{model} on #{@end_date}" }
+    capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
       if use_tracking_currency
         # Add remittance payment in tracking currency if amount is not zero
         cf << XirrTransaction.new(-1 * cr.tracking_amount_cents, date: cr.payment_date, notes: "Remittance #{cr.id}") if cr.tracking_amount_cents != 0
@@ -21,8 +26,8 @@ class FundRatioCalcs
     end
 
     # Capital Distribution Payments
-    Rails.logger.debug { "Adding capital_distribution_payments for #{entity_type}: #{entity} on #{@end_date}" }
-    entity.capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
+    Rails.logger.debug { "Adding capital_distribution_payments for #{model_type}: #{model} on #{@end_date}" }
+    capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
       if use_tracking_currency
         # Add gross distribution payment in tracking currency if amount is not zero
         cf << XirrTransaction.new(cdp.tracking_gross_payable_cents, date: cdp.payment_date, notes: "Gross Payable from Distribution #{cdp.id}") if cdp.tracking_gross_payable_cents != 0
@@ -37,8 +42,8 @@ class FundRatioCalcs
     end
 
     # Additional Financial Metrics
-    Rails.logger.debug { "Adding financial metrics for #{entity_type}: #{entity} on #{@end_date}" }
-    fmv = entity.is_a?(Fund) ? fmv_on_date(scenarios:) : fmv_on_date
+    Rails.logger.debug { "Adding financial metrics for #{model_type}: #{model} on #{@end_date}" }
+    fmv = model.is_a?(Fund) ? fmv_on_date(scenarios:) : fmv_on_date
     cih = cash_in_hand_cents
     nca = net_current_assets_cents
     ec = estimated_carry_cents
@@ -46,9 +51,9 @@ class FundRatioCalcs
 
     if use_tracking_currency
       # get the fund
-      fund = entity.is_a?(Fund) ? entity : entity.fund
+      fund = model.is_a?(Fund) ? model : model.fund
       # Convert to tracking currency
-      tracking_exchange_rate = entity.get_exchange_rate(fund.currency, fund.tracking_currency, @end_date)
+      tracking_exchange_rate = model.get_exchange_rate(fund.currency, fund.tracking_currency, @end_date)
       raise "No exchange rate found for #{fund.currency} to #{fund.tracking_currency} on #{@end_date}" unless tracking_exchange_rate
 
       # Adjust financial metrics to tracking currency
@@ -66,12 +71,12 @@ class FundRatioCalcs
     cf << XirrTransaction.new(-1 * ec, date: @end_date, notes: "Estimated Carry") if net_irr && ec != 0
     cf << XirrTransaction.new(ac, date: @end_date, notes: "Adjustment Cash") if ac != 0
 
-    Rails.logger.debug { "#{entity_type}.xirr cf: #{cf}" }
+    Rails.logger.debug { "#{model_type}.xirr cf: #{cf}" }
     cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
 
     # Calculate XIRR using the cash flow
-    lxirr = XirrApi.new.xirr(cf, "xirr_#{entity_type}_#{entity.id}_#{@end_date}") || 0
-    Rails.logger.debug { "#{entity_type}.xirr irr: #{lxirr}" }
+    lxirr = XirrApi.new.xirr(cf, "xirr_#{model_type}_#{model.id}_#{@end_date}") || 0
+    Rails.logger.debug { "#{model_type}.xirr irr: #{lxirr}" }
 
     # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)

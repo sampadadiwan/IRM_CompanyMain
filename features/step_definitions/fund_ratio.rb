@@ -53,3 +53,31 @@ Then("the Fund ratios must be updated") do
   expect(fund_ratio.value).to(eq(-0.4521e0,))
   expect(fund_ratio.notes).to(eq("Updated"))
 end
+
+
+Given('given the fund_ratios are computed for the date {string}') do |end_date|
+  FundRatiosJob.perform_now(@fund.id, nil, Date.parse(end_date), User.first.id, true)
+end
+
+Then('the fund ratios computed must match the ratios in {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    user_data = [headers, row].transpose.to_h    
+    puts "Checking import of #{user_data}"
+    folio_id = user_data["Folio No"]
+    investor_name = user_data["Investor"]&.strip
+    name = user_data["Name"]
+
+    cc = folio.present? ? @entity.capital_commitments.where(folio_id:).first : nil
+    fund_ratio = FundRatio.where(name:, capital_commitment: cc).first
+    fund_ratio.should_not.nil?
+    fund_ratio.value.should == user_date["Value"].to_d
+    fund_ratio.display_value.should == user_date["Display Value"]
+  end
+end

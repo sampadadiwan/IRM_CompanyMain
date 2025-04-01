@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_29_132057) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_30_044210) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1476,6 +1476,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_29_132057) do
     t.json "cash_flows"
     t.boolean "latest", default: false
     t.bigint "import_upload_id"
+    t.string "scenario", limit: 40, default: "Default"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"

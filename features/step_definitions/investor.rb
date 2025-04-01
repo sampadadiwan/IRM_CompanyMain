@@ -331,6 +331,21 @@ Given('Given I upload an investors file for the fund') do
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
+Given('Given I upload investors file {string} for the fund') do |file_name|
+  visit(investors_path)
+  click_on("Actions")
+  click_on("Upload")
+  #sleep(1)
+  fill_in('import_upload_name', with: "Investor Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  #sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+
 Then('the investors must be added to the fund') do
   @fund.reload
   # puts @fund.investors.to_json

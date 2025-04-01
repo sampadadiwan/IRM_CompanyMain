@@ -8,6 +8,6 @@ Scenario Outline: Import Exchange Rates
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
   And Given I upload the portfolio companies
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
-	And Given I upload an exchange_rates file
+	And Given I upload an exchange_rates file "exchange_rates.xlsx"
   Then I should see the "Import in progress"
   Then There should be 2 exchange rates created
