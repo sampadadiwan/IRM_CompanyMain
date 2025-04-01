@@ -2,13 +2,14 @@ class FundRatioCalcs
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/PerceivedComplexity
   # rubocop:disable Metrics/MethodLength
+  attr_accessor :model
 
   delegate :capital_remittance_payments, to: :model
-
   delegate :capital_distribution_payments, to: :model
 
   def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
+    @model = model
     cf = XirrCashflow.new
     model_type = model.is_a?(Fund) ? "fund" : "capital_commitment"
     Rails.logger.debug { "Computing XIRR for #{model_type}: #{model} on #{@end_date}" }

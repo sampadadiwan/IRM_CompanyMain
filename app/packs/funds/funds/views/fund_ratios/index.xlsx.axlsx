@@ -9,6 +9,6 @@ wb.add_worksheet(name: "FundRatio") do |sheet|
   # Create entries for each item
   @fund_ratios.each do |fr|
     custom_field_values = get_custom_values(fr, form_type, custom_field_names)
-    sheet.add_row [fr.fund.name, fr.capital_commitment&.folio_id, fr.capital_commitment&.investor_name, fr.name, fr.value, fr.display_value, fr.end_date, fr.notes] + custom_field_values
+    sheet.add_row [fr.fund.name, fr.capital_commitment&.folio_id, fr.capital_commitment&.investor_name, fr.name, fr.value, fr.display_value, fr.end_date, fr.notes, fr.created_at] + custom_field_values
   end
 end

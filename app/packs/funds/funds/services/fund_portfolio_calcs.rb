@@ -232,9 +232,9 @@ class FundPortfolioCalcs < FundRatioCalcs
     if @api_irr_map.empty?
 
       @fund.aggregate_portfolio_investments.each do |api|
-        api.portfolio_company_id
+        portfolio_company_id = api.portfolio_company_id
 
-        portfolio_investments = api.portfolio_investments.before(@end_date)
+        portfolio_investments = api.portfolio_investments.where(portfolio_company_id:).before(@end_date)
         # If there are no portfolio investments for this API, then skip
         next if portfolio_investments.blank?
 
