@@ -164,7 +164,7 @@ class FundTemplateDecorator < CapitalCommitmentTemplateDecorator # rubocop:disab
   memoize :drawdown_cash_gp
 
   def drawdown_cash_investor
-    @capital_commitment.capital_remittances.sum(:call_amount_cents)
+    @capital_commitment.capital_remittances(remittance_date: ..@remittance_date).sum(:call_amount_cents)
   end
   memoize :drawdown_cash_investor
 
