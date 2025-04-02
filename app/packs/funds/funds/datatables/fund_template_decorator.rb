@@ -21,6 +21,8 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def percentage(part, total)
     part = part.cents.to_f if part.respond_to?(:cents)
     total = total.cents.to_f if total.respond_to?(:cents)
+    p "part:  #{part}"
+    p "total: #{total}"
     total.zero? ? 0 : (part / total) * 100
   end
 
@@ -375,7 +377,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   # === Drawdown Fees Current notice ===
 
   def drawdown_fees_curr_notice_investor_percent
-    percentage(@capital_remittance.computed_amount, money_sum(fund_as_of.capital_remittances.where(remittance_date: @remittance_date).where(capital_call_id: @capital_remittance.capital_call_id), :capital_fee_cents))
+    percentage(@capital_remittance.capital_fee_cents, money_sum(fund_as_of.capital_remittances.where(remittance_date: @remittance_date).where(capital_call_id: @capital_remittance.capital_call_id), :capital_fee_cents))
   end
 
   # === Drawdown Fees Including Current notice ===
