@@ -1,7 +1,7 @@
 class TemplateDecorator < ApplicationDecorator
   include CurrencyHelper
 
-  METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_].freeze
+  METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)
     object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
