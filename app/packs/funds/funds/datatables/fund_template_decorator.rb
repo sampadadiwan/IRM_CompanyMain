@@ -545,7 +545,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   def undrawn_comm_prior_notice_investor
-    @capital_remittance.committed_amount - agg_drawdown_prior_notice_investor
+    @capital_remittance.committed_amount_cents - agg_drawdown_prior_notice_investor
   end
 
   def undrawn_comm_prior_notice_investor_percent
