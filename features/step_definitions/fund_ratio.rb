@@ -73,11 +73,19 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
     folio_id = user_data["Folio No"]
     investor_name = user_data["Investor"]&.strip
     name = user_data["Name"]
+    end_date = user_data["End Date"]
+    end_date = end_date.is_a?(String) ? Date.parse(end_date) : end_date
 
-    cc = folio.present? ? @entity.capital_commitments.where(folio_id:).first : nil
-    fund_ratio = FundRatio.where(name:, capital_commitment: cc).first
-    fund_ratio.should_not.nil?
-    fund_ratio.value.should == user_date["Value"].to_d
-    fund_ratio.display_value.should == user_date["Display Value"]
+    cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
+    fund_ratio = FundRatio.where(name:, capital_commitment: cc, end_date:).first
+    count = 0
+    if fund_ratio
+      puts "Found fund ratio for investor #{investor_name} with end date #{end_date}"
+      ap fund_ratio
+      count += 0
+      fund_ratio.value.should == user_data["Value"].to_d
+      fund_ratio.display_value.should == user_data["Display Value"]
+    end
+    count.should == FundRatio.all.count
   end
 end

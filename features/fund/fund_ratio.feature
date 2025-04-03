@@ -9,13 +9,12 @@ Scenario Outline: Compute Fund Ratios
   And Given I upload investors file "fund_ratios/investors.xlsx" for the fund
   And Given I upload "fund_ratios/valuations.xlsx" file for portfolio companies of the fund
   And Given I upload "fund_ratios/capital_commitments.xlsx" file for "Commitments" of the fund
-  And Given I upload "fund_ratios/capital_calls.xlsx" file for "Calls" of the fund
   And Given I upload "fund_ratios/capital_distributions.xlsx" file for "Distributions" of the fund
-  And Given I upload "fund_ratios/portfolio_investments3.xlsx" file for "Portfolio" of the fund
+  And Given I upload "fund_ratios/portfolio_investments.xlsx" file for "Portfolio" of the fund
+  And Given I upload "fund_ratios/capital_calls.xlsx" file for "Calls" of the fund
   And given the fund_ratios are computed for the date "30-9-2024"
   Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios computed.xlsx"
   
-
 
 @import
 Scenario Outline: Import Fund Ratio
