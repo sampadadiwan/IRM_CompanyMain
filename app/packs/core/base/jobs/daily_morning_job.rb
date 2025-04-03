@@ -28,6 +28,10 @@ class DailyMorningJob < ApplicationJob
       Rails.logger.debug "Disable SupportClientMappings after end_date"
       SupportClientMapping.disable_expired
       SupportClientMapping.where('enabled = ? and end_date < ?', false, Time.zone.today - 1.week).find_each(&:destroy)
+
+      # Auto lock the Allocation runs which are a week old
+      Rails.logger.debug "Auto lock the Allocation runs which are a week old"
+      AllocationRun.where('locked = ? and created_at < ?', false, Time.zone.today - 1.week).update(locked: true)
     rescue StandardError => e
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message
