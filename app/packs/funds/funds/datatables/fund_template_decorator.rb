@@ -524,7 +524,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
     # take the current remittances committed amount if prior_lp_committment_amt is zero
     prior_lp_committment_amt = @capital_remittance.committed_amount if prior_lp_committment_amt.zero?
-    prior_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)
+    (prior_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)).cents
   end
   memoize :undrawn_comm_prior_notice_lp
 
@@ -541,7 +541,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
     # take the current remittances committed amount if prior_gp_committment_amt is zero
     prior_gp_committment_amt = @capital_remittance.committed_amount if prior_gp_committment_amt.zero?
-    prior_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)
+    (prior_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)).cents
   end
   memoize :undrawn_comm_prior_notice_gp
 
@@ -562,14 +562,14 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def undrawn_comm_curr_notice_lp
     current_lp_committment_amt = money_sum(@capital_remittance.capital_call.capital_remittances, :committed_amount_cents)
     current_lp_committment_amt = @capital_remittance.committed_amount if current_lp_committment_amt.zero?
-    current_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: @remittance_date), :call_amount_cents)
+    (current_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: @remittance_date), :call_amount_cents)).cents
   end
   memoize :undrawn_comm_curr_notice_lp
 
   def undrawn_comm_curr_notice_gp
     current_gp_committment_amt = money_sum(@capital_remittance.capital_call.capital_remittances, :committed_amount_cents)
     current_gp_committment_amt = @capital_remittance.committed_amount if current_gp_committment_amt.zero?
-    current_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: @remittance_date), :call_amount_cents)
+    (current_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: @remittance_date), :call_amount_cents)).cents
   end
   memoize :undrawn_comm_curr_notice_gp
 
