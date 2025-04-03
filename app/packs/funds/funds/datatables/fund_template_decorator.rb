@@ -354,13 +354,13 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   # === Drawdown Cash Including Current notice ===
 
-  def drawdown_cash_incl_current_notice_investor
-    fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id, remittance_date: @remittance_date).sum(:computed_amount_cents)
+  def drawdown_cash_incl_curr_notice_investor
+    fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id, remittance_date: ..@remittance_date).sum(:computed_amount_cents)
   end
-  memoize :drawdown_cash_incl_current_notice_investor
+  memoize :drawdown_cash_incl_curr_notice_investor
 
-  def drawdown_cash_incl_current_notice_investor_percent
-    percentage(drawdown_cash_incl_current_notice_investor, fund_as_of.capital_remittances.sum(:computed_amount_cents))
+  def drawdown_cash_incl_curr_notice_investor_percent
+    percentage(drawdown_cash_incl_curr_notice_investor, fund_as_of.capital_remittances.sum(:computed_amount_cents))
   end
 
   # === Drawdown Fees Prior to current notice ===
