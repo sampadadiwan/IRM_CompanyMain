@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_03_135122) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_03_161005) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1588,7 +1588,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_03_135122) do
     t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
     t.string "unit_type", limit: 25
-    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 26, scale: 8, default: "0.0", null: false
     t.text "reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

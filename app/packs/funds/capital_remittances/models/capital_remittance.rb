@@ -201,4 +201,14 @@ class CapitalRemittance < ApplicationRecord
   def tracking_exchange_rate_date
     remittance_date
   end
+
+  def allocated_unit_amount_cents
+    @allocated_unit_amt ||= fund_units.present? ? fund_units.sum(&:amount).cents : 0
+    @allocated_unit_amt
+  end
+
+  def allocated_unit_amount_cents_before(fund_unit)
+    @allocated_unit_amt ||= fund_units.where(id: ..fund_unit.id).present? ? fund_units.where(id: ..fund_unit.id).sum(&:amount).cents : 0
+    @allocated_unit_amt
+  end
 end

@@ -45,25 +45,23 @@ class DefaultUnitAllocationEngine
     unit_price_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : nil
     unit_premium_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : nil
 
+    # Determine the amount to allocate based on collected or call amount
+    # We also need to check if units have already been allocated, and if so only allocate remaining amount
+    if capital_remittance.collected_amount_cents >= capital_remittance.call_amount_cents
+      amount_cents = capital_remittance.call_amount_cents - capital_remittance.allocated_unit_amount_cents
+      reason += " - Issuing units for net call amount #{money_to_currency(Money.new(amount_cents, capital_remittance.fund.currency))}"
+    else
+      amount_cents = capital_remittance.collected_amount_cents - capital_remittance.allocated_unit_amount_cents
+      reason += " - Issuing units for net collected amount #{money_to_currency(amount_cents, capital_remittance.fund.currency)}"
+    end
+
     # Validate remittance and required data
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
-        capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present? &&
-        capital_remittance.fund_units.blank?
+        capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present? && amount_cents.positive?
 
       # Calculate price and premium in cents
       price_cents = unit_price_cents.to_d * 100
       premium_cents = unit_premium_cents.to_d * 100
-
-      # Determine the amount to allocate based on collected or call amount
-      # We also need to check if units have already been allocated, and if so only allocate remaining amount
-      net_call_amount_cents = capital_remittance.call_amount_cents
-      if capital_remittance.collected_amount_cents >= net_call_amount_cents
-        amount_cents = net_call_amount_cents
-        reason += " - Issuing units for net call amount #{money_to_currency(Money.new(net_call_amount_cents, capital_remittance.fund.currency))}"
-      else
-        amount_cents = capital_remittance.collected_amount_cents
-        reason += " - Issuing units for net collected amount #{money_to_currency(capital_remittance.collected_amount)}"
-      end
 
       # Calculate the quantity of units to allocate
       quantity = price_cents.positive? ? (amount_cents / (price_cents + premium_cents)) : 0

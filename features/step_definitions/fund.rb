@@ -1365,13 +1365,21 @@ Then('there should be correct units for the calls payment for each investor') do
   FundUnit.count.should == CapitalCommitment.count * CapitalCall.count
   CapitalCommitment.all.each do |cc|
     puts "Checking units for #{cc}"
-    cc.fund_units.length.should
+    cc.fund_units.length.should > 0
     cc.fund_units.each do |fu|
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
+
+      capital_remittance = fu.owner      
       fu.price_cents.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d * 100.0
-      amount_cents = fu.owner.collected_amount_cents < fu.owner.call_amount_cents ? fu.owner.collected_amount_cents : fu.owner.call_amount_cents
+      
+      if capital_remittance.collected_amount_cents >= capital_remittance.call_amount_cents
+        amount_cents = capital_remittance.call_amount_cents # - capital_remittance.allocated_unit_amount_cents        
+      else
+        amount_cents = capital_remittance.collected_amount_cents # - capital_remittance.allocated_unit_amount_cents
+      end
+
       fu.quantity.round(2).should == ( amount_cents / (fu.price_cents + fu.premium_cents)).round(2)
     end
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_30_044210) do
+ActiveRecord::Schema[7.2].define(version: 2025_04_03_161005) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1444,7 +1444,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_30_044210) do
     t.string "rule_type", limit: 30
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
-    t.boolean "roll_up", default: true
+    t.boolean "roll_up", default: false
     t.string "rule_for", limit: 10, default: "Accounting"
     t.datetime "deleted_at"
     t.integer "import_upload_id"
@@ -1589,7 +1589,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_30_044210) do
     t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
     t.string "unit_type", limit: 25
-    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 26, scale: 8, default: "0.0", null: false
     t.text "reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
