@@ -21,8 +21,8 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def percentage(part, total)
     part = part.cents.to_f if part.respond_to?(:cents)
     total = total.cents.to_f if total.respond_to?(:cents)
-    p "part:  #{part}"
-    p "total: #{total}"
+    Rails.logger.debug { "part:  #{part}" }
+    Rails.logger.debug { "total: #{total}" }
     total.zero? ? 0 : (part / total) * 100
   end
 
@@ -579,7 +579,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   memoize :undrawn_comm_curr_notice_total
 
   def undrawn_comm_curr_notice_investor
-    @capital_remittance.committed_amount_cents - agg_drawdown_incl_curr_notice_investor
+    @capital_remittance.committed_amount_cents - @capital_remittance.call_amount_cents
   end
 
   def undrawn_comm_curr_notice_investor_percent
