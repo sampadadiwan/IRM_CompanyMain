@@ -47,13 +47,8 @@ class DefaultUnitAllocationEngine
 
     # Determine the amount to allocate based on collected or call amount
     # We also need to check if units have already been allocated, and if so only allocate remaining amount
-    if capital_remittance.collected_amount_cents >= capital_remittance.call_amount_cents
-      amount_cents = capital_remittance.call_amount_cents - capital_remittance.allocated_unit_amount_cents
-      reason += " - Issuing units for net call amount #{money_to_currency(Money.new(amount_cents, capital_remittance.fund.currency))}"
-    else
-      amount_cents = capital_remittance.collected_amount_cents - capital_remittance.allocated_unit_amount_cents
-      reason += " - Issuing units for net collected amount #{money_to_currency(amount_cents, capital_remittance.fund.currency)}"
-    end
+    amount_cents, re = capital_remittance.pending_amount_for_units_allocation
+    reason += re
 
     # Validate remittance and required data
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&

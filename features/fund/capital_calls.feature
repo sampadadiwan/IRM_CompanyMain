@@ -63,6 +63,8 @@ Scenario Outline: Generate fund units from capital call
   Given the remittances are paid and verified
   Given the remittances has some units already allocated
   Given the units are generated
+  Then it should generate only the remaining units
+  Given the units are generated
   Then error email for fund units already allocated should be sent
 
 Examples:
