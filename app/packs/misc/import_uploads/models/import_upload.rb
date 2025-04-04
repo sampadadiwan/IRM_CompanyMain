@@ -30,7 +30,7 @@ class ImportUpload < ApplicationRecord
               "Fund_RATIO_SAMPLE" => "/sample_uploads/fund_ratios.xlsx",
               "INVESTMENT_INSTRUMENT_SAMPLE" => "/sample_uploads/investment_instruments.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundFormula FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 
