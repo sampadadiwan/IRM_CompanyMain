@@ -29,6 +29,7 @@
                         Actions
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <%= link_to "Edit Fund" , dashboard_fund_path(fund), {class: "dropdown-item" } %>
                         <%= link_to "View Fund" , fund_path(fund), {class: "dropdown-item" } %>
                         <%= link_to "Edit Fund" , edit_fund_path(fund), {class: "dropdown-item" } %>
                         <div class="dropdown-divider"></div>

@@ -218,7 +218,7 @@ class CapitalRemittance < ApplicationRecord
       reason = "Issuing units for net call amount #{money_to_currency(Money.new(amount_cents, fund.currency))}"
     else
       amount_cents = collected_amount_cents - allocated_unit_amount_cents
-      reason = "Issuing units for net collected amount #{money_to_currency(amount_cents, fund.currency)}"
+      reason = "Issuing units for net collected amount #{money_to_currency(Money.new(amount_cents, fund.currency))}"
     end
 
     [amount_cents, reason]

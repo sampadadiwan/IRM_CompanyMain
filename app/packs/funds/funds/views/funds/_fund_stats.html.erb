@@ -9,7 +9,7 @@ cards_data = [
   { path: nil, stat: money_to_currency(fund.distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info" },
   #{ path: nil, stat: money_to_currency(fund.committed_amount - fund.call_amount, params), subtitle: "Uncalled", progress_bar_color: "success" },
   # Only select the folios where the committed amount is greater than 0, to ensure transferred folios are not counted
-  { path: nil, stat: fund.capital_commitments.where(committed_amount_cents: 0..).count, subtitle: "Folios", progress_bar_color: "warning" },
+  { path: nil, stat: fund.capital_commitments.where(committed_amount_cents: 1..).count, subtitle: "Folios", progress_bar_color: "warning" },
 ]
 
 %>
