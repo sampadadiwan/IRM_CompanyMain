@@ -2233,3 +2233,11 @@ And('The commitments have investor kycs linked') do
     cc.save!
   end
 end
+
+
+Given('Given import file {string} for {string}') do |file, type|
+  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  ImportUploadJob.perform_now(iu.id)
+  iu.reload
+  iu.failed_row_count.should == 0
+end

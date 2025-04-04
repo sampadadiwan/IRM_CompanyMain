@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("FundRatio")
 
 wb.add_worksheet(name: "FundRatio") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Folio No", "Investor", "Name", "Value", "Display Value", "End Date", "Notes"] + custom_headers)
+  sheet.add_row(["Fund", "Folio No", "Owner", "Investor", "Name", "Value", "Display Value", "End Date", "Notes", "Created", "Owner Type", "Owner ID"] + custom_headers)
 
   # Create entries for each item
   @fund_ratios.each do |fr|
     custom_field_values = get_custom_values(fr, form_type, custom_field_names)
-    sheet.add_row [fr.fund.name, fr.capital_commitment&.folio_id, fr.capital_commitment&.investor_name, fr.name, fr.value, fr.display_value, fr.end_date, fr.notes, fr.created_at] + custom_field_values
+    sheet.add_row [fr.fund.name, fr.capital_commitment&.folio_id, fr.owner, fr.capital_commitment&.investor_name, fr.name, fr.value, fr.display_value, fr.end_date, fr.notes, fr.created_at, fr.owner_type, fr.owner_id] + custom_field_values
   end
 end

@@ -6,6 +6,7 @@ class FundRatioCalcs
 
   delegate :capital_remittance_payments, to: :model
   delegate :capital_distribution_payments, to: :model
+  delegate :aggregate_portfolio_investments, to: :model
 
   def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
@@ -79,6 +80,7 @@ class FundRatioCalcs
     lxirr = XirrApi.new.xirr(cf, "xirr_#{model_type}_#{model.id}_#{@end_date}") || 0
     Rails.logger.debug { "#{model_type}.xirr irr: #{lxirr}" }
 
+    # binding.pry
     # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)
   end

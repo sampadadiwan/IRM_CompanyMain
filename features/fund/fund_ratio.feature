@@ -2,18 +2,21 @@ Feature: Fund Ratio
   Manage fund ratios
 
 Scenario Outline: Compute Fund Ratios
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
-  Given there is a fund "name=Fund X;currency=INR;unit_types=A,B,C" for the entity
-  And Given I upload an exchange_rates file "fund_ratios/exchange_rates.xlsx"
-  And Given I upload investors file "fund_ratios/investors.xlsx" for the fund
-  And Given I upload "fund_ratios/valuations.xlsx" file for portfolio companies of the fund
-  And Given I upload "fund_ratios/capital_commitments.xlsx" file for "Commitments" of the fund
-  And Given I upload "fund_ratios/capital_distributions.xlsx" file for "Distributions" of the fund
-  And Given I upload "fund_ratios/portfolio_investments.xlsx" file for "Portfolio" of the fund
-  And Given I upload "fund_ratios/capital_calls.xlsx" file for "Calls" of the fund
-  And given the fund_ratios are computed for the date "30-9-2024"
-  Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios computed.xlsx"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  And given the fund_ratios are computed for the date "31-03-2024"
+  Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios.xlsx"
   
 
 @import

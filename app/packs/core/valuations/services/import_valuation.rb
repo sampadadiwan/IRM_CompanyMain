@@ -17,7 +17,7 @@ class ImportValuation < ImportUtil
     investor = entity.investors.where(investor_name:, category: "Portfolio Company").first
     raise "Investor #{investor_name} not found" if investor.nil?
 
-    investment_instrument = investor.investment_instruments.where(name: instrument_name).first
+    investment_instrument = investor.reload.investment_instruments.where(name: instrument_name).first
     if Rails.env.test?
       investment_instrument = investor.investment_instruments.create(name: instrument_name, entity_id: investor.entity_id, currency: entity.currency) if investment_instrument.nil?
     elsif investment_instrument.nil?
