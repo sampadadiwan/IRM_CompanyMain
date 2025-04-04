@@ -198,21 +198,23 @@ class FundPortfolioCalcs < FundRatioCalcs
       bought_amount = 0
       total_fmv = 0
       total_sold = 0
+      cost_of_remaining = 0
 
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         api_as_of = api.as_of(@end_date)
         total_fmv += api_as_of.fmv
         bought_amount += api_as_of.bought_amount
         total_sold += api_as_of.sold_amount
+        cost_of_remaining += api_as_of.cost_of_remaining
 
         Rails.logger.debug { "API: #{api.id}, FMV: #{api_as_of.fmv}, Bought: #{api_as_of.bought_amount}, Sold: #{api_as_of.sold_amount}" }
       end
 
-      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV: #{total_fmv}, Total Sold: #{total_sold}, Bought Amount: #{bought_amount}" }
+      Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV: #{total_fmv}, Total Sold: #{total_sold}, Bought Amount: #{bought_amount}, Cost of Remaining: #{cost_of_remaining}" }
 
-      next unless bought_amount.positive?
+      next unless cost_of_remaining.positive?
 
-      value_to_cost = total_fmv / bought_amount.to_f
+      value_to_cost = total_fmv / cost_of_remaining.to_f
       moic = (total_fmv + total_sold) / bought_amount.to_f
 
       @portfolio_company_metrics_map[portfolio_company_id] = {
@@ -292,9 +294,10 @@ class FundPortfolioCalcs < FundRatioCalcs
 
       api_as_of = api.as_of(@end_date)
       bought_amount = api_as_of.bought_amount
+      cost_of_remaining = api_as_of.cost_of_remaining
       fmv = api_as_of.fmv
 
-      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / bought_amount) } if bought_amount.positive?
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining) } if cost_of_remaining.positive?
     end
 
     @api_cost_map
