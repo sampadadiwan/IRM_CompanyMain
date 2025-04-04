@@ -12,6 +12,7 @@ class FundRatio < ApplicationRecord
   validates :name, :owner_type, length: { maximum: 255 }
 
   scope :latest, -> { where(latest: true) }
+  scope :default, -> { where(scenario: "Default") }
 
   def to_s
     "#{name} #{value}"

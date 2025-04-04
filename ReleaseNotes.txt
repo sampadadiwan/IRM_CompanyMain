@@ -1,3 +1,11 @@
+V9.0.16
+#####################################
+1168ff89c Fixed unrealized gain only for buys
+535df0ea4 Removed config.host to application.rb
+52ad617f1 Knowledge folder (#772)
+1f814a3f5 Removed perform_all_calculations after_initialize to improve performance
+7eb72b3c7 Allocation run: Adds the run id to each account entry to enable filtering by run (#771)
+
 V9.0.15
 #####################################
 965e867ae Root docs fix (#770)

@@ -19,6 +19,8 @@ pin "countup.js" # @2.8.0
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
 
+pin "uppy", to: "uppy.min.js"
+
 # For polars graphing
 pin "vega", to: "vega.js"
 pin "vega-lite", to: "vega-lite.js"
@@ -59,3 +61,8 @@ pin "utf-8-validate" # @6.0.5
 pin "util" # @2.1.0
 pin "zlib" # @2.1.0
 pin "moment" # @2.30.1
+pin "typeahead" # @0.2.2
+pin "dom" # @0.0.2
+pin "xtend" # @1.0.3
+pin "sortable" # @2.0.0
+pin "jquery-browserify" # @1.8.1

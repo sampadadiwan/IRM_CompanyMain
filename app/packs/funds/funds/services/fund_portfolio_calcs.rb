@@ -83,45 +83,43 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   def gross_portfolio_irr
-    @gross_portfolio_irr ||= begin
-      cf = XirrCashflow.new
+    cf = XirrCashflow.new
 
-      # Get the buy cash flows
-      buy_pis = @fund.portfolio_investments.buys.before(@end_date)
-      buy_pis.find_each do |buy|
-        cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
-      end
-
-      # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
-      Rails.logger.debug "#########StockConversion#########"
-      @fund.stock_conversions.where(conversion_date: ..@end_date).find_each do |sc|
-        quantity = sc.from_quantity
-        pi = sc.from_portfolio_investment
-        cf << XirrTransaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
-      end
-
-      # Get the sell cash flows
-      @fund.portfolio_investments.sells.where(investment_date: ..@end_date).find_each do |sell|
-        cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
-      end
-
-      # Get the FMV
-      cf << XirrTransaction.new(fmv_on_date, date: @end_date, notes: "FMV on Date") if fmv_on_date.positive?
-
-      # loop over all apis
-      @fund.aggregate_portfolio_investments.each do |api|
-        portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
-        portfolio_cashflows.each do |pcf|
-          cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
-        end
-      end
-
-      cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
-
-      lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
-      # lxirr ? (lxirr * 100).round(2) : 0
-      (lxirr * 100).round(2)
+    # Get the buy cash flows
+    buy_pis = @fund.portfolio_investments.buys.before(@end_date)
+    buy_pis.find_each do |buy|
+      cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
     end
+
+    # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
+    Rails.logger.debug "#########StockConversion#########"
+    @fund.stock_conversions.where(conversion_date: ..@end_date).find_each do |sc|
+      quantity = sc.from_quantity
+      pi = sc.from_portfolio_investment
+      cf << XirrTransaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+    end
+
+    # Get the sell cash flows
+    @fund.portfolio_investments.sells.where(investment_date: ..@end_date).find_each do |sell|
+      cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
+    end
+
+    # Get the FMV
+    cf << XirrTransaction.new(fmv_on_date, date: @end_date, notes: "FMV on Date") if fmv_on_date.positive?
+
+    # loop over all apis
+    @fund.aggregate_portfolio_investments.each do |api|
+      portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
+      portfolio_cashflows.each do |pcf|
+        cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+      end
+    end
+
+    cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
+
+    lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
+    # lxirr ? (lxirr * 100).round(2) : 0
+    (lxirr * 100).round(2)
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -234,9 +232,9 @@ class FundPortfolioCalcs < FundRatioCalcs
     if @api_irr_map.empty?
 
       @fund.aggregate_portfolio_investments.each do |api|
-        api.portfolio_company_id
+        portfolio_company_id = api.portfolio_company_id
 
-        portfolio_investments = api.portfolio_investments.before(@end_date)
+        portfolio_investments = api.portfolio_investments.where(portfolio_company_id:).before(@end_date)
         # If there are no portfolio investments for this API, then skip
         next if portfolio_investments.blank?
 
@@ -328,19 +326,6 @@ class FundPortfolioCalcs < FundRatioCalcs
   # return_cash_flows: true/false - if true, then the cash flows used in computation are returned
   # adjustment_cash: amount to be added to the cash flows, used specifically for scenarios. see PortfolioScenarioJob
   def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
-    super(entity: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
-  end
-
-  def sample_xirr(count)
-    cf = XirrCashflow.new
-    (1..count).each do |_i|
-      cf << XirrTransaction.new(-1 * rand(1..10) * 1_000_000, date: Time.zone.today - rand(1..10).years - rand(1.12).months - rand(1..365).days)
-
-      cf << XirrTransaction.new(rand(1..10) * 1_000_000, date: Time.zone.today - rand(1..10).years - rand(1.12).months - rand(1..365).days)
-    end
-
-    Rails.logger.debug cf
-
-    XirrApi.new.xirr(cf, "sample_xirr")
+    super(model: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
   end
 end

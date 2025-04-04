@@ -54,7 +54,7 @@ class Valuation < ApplicationRecord
   end
 
   def per_share_value_in(to_currency, as_of)
-    convert_currency(currency, to_currency, per_share_value_cents, as_of)
+    convert_currency(currency, to_currency, per_share_value, as_of)
   end
 
   # This method is used to add custom fields to the Valuation form, to enable value bridge
