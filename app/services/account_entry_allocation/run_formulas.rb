@@ -64,9 +64,8 @@ module AccountEntryAllocation
 
         entry_types = [
           ['', 'View Account Entries'],
-          ['Fees', 'View Fees'],
-          ['Portfolio Allocation', 'View Portfolio Allocation'],
-          ['Portfolio FMV', 'View Portfolio FMV']
+          ['Expense', 'View Expenses'],
+          ['Portfolio Allocation', 'View Portfolio Allocation']
         ]
 
         links_html = entry_types.map do |entry_type, label|

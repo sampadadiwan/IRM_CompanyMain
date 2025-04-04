@@ -72,6 +72,6 @@ class CapitalCommitmentCalcs < FundRatioCalcs
   end
 
   def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
-    super(entity: @capital_commitment, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
+    super(model: @capital_commitment, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
   end
 end

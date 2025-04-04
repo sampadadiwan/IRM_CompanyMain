@@ -5,9 +5,6 @@
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#remittances-tab"
           data-action="click->tabdetails#loadData">Remittances</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-          data-action="click->tabdetails#loadData">Documents</a>
-
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
             Notification</a>
     </nav>
@@ -18,13 +15,6 @@
           <div id="remittances" class="associated_entity">
            <%= render "/capital_remittances/index", capital_call: capital_call,
                 lazy_load_data: false, data_source: capital_remittances_path(capital_call_id: capital_call.id, all: true, status: "", verified: "", format: :json) %>
-          </div>
-        </div>
-
-        <div id="docs-tab" class="tab-pane fade in">
-          <div id="docs" class="associated_entity">
-            <%= render "/documents/index", documents: capital_call.documents, owner: capital_call,
-                entity: capital_call.entity %>
           </div>
         </div>
 

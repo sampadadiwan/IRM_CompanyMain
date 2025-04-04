@@ -1,9 +1,9 @@
-Given('Given I upload an exchange_rates file') do
+Given('Given I upload an exchange_rates file {string}') do |file_name|
   visit(exchange_rates_path)
   click_on("Import")
   #sleep(1)
   fill_in('import_upload_name', with: "Exchange Rates Bulk Import Testing")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/exchange_rates.xlsx'), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   #sleep(2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")

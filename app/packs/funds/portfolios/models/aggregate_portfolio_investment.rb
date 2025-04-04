@@ -85,7 +85,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.transfer_quantity = transfer_quantity
 
     api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
-    api.cost_of_remaining_cents = api.bought_amount_cents - api.cost_of_sold_cents
+    # Note cost_of_sold_cents is -ive, so we need to add it to the bought_amount_cents
+    api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
     api.gain_cents = api.sold_amount_cents - api.cost_of_sold_cents
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
@@ -195,7 +196,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
 
     # Get the fmv for this portfolio_company on the end_date
-    net_quantity * valuation.per_share_value_in(fund.currency, end_date)
+    net_quantity * valuation.per_share_value_in(fund.currency, end_date).cents
   end
 
   # This method is used in some allocations formulas, do NOT delete this, as its not directly referenced by the codebase

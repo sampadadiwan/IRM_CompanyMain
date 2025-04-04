@@ -28,7 +28,7 @@ class ElasticImporterJob < ApplicationJob
   def reset
     UserIndex.reset!
     EntityIndex.reset!
-    InvestmentIndex.reset!
+    # InvestmentIndex.reset!
     AccessRightIndex.reset!
     DealInvestorIndex.reset!
     DocumentIndex.reset!

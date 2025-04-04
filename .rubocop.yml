@@ -187,7 +187,7 @@ Metrics/PerceivedComplexity:
     - "app/packs/core/base/decorators/template_decorator.rb"
 Metrics/ClassLength:
   Description: "Avoid classes longer than 200 lines of code."
-  Max: 220
+  Max: 250
   Enabled: true
   Exclude:
     - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
