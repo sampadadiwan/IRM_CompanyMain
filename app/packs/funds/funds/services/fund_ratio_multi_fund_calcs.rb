@@ -306,7 +306,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       api.portfolio_investments.where(investment_date: ..@end_date)
 
       api_as_of = api.as_of(@end_date)
-      bought_amount = convert_to_base_currency(api_as_of.bought_amount)
+      convert_to_base_currency(api_as_of.bought_amount)
       cost_of_remaining = convert_to_base_currency(api_as_of.cost_of_remaining)
       fmv = api_as_of.fmv
 

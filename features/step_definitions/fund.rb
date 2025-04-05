@@ -1064,6 +1064,8 @@ Then('the capital distributions must have the data in the sheet') do
 end
 
 Then('the capital commitments must have the percentages updated') do
+  puts "### Checking capital commitments percentages"
+  ap CapitalCommitment.all.pluck(:id, :percentage)
   CapitalCommitment.where(percentage: 0).count.should == 0
 end
 
