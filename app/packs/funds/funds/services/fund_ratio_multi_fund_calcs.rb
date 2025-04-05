@@ -1,6 +1,7 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(funds, end_date, currency: nil)
+  def initialize(scenario, funds, end_date, currency: nil)
     @funds = funds
+    @scenario = scenario
     # All funds must be in the same entity
     @fund_ids = @funds.pluck(:id)
     @end_date = end_date
