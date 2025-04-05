@@ -1,4 +1,7 @@
 class FundRatiosScenarioJob < ApplicationJob
+  include Rails.application.routes.url_helpers
+  include ApplicationHelper
+
   queue_as :low
   sidekiq_options retry: 1
 
@@ -37,8 +40,18 @@ class FundRatiosScenarioJob < ApplicationJob
       # Perform fund ratio calculations
       calc_fund_ratios
 
+      filters = [
+        [scenario.to_s, 'View Generated Ratios'],
+        ['', 'View All Ratios']
+      ]
+
+      links_html = filters.map do |scenario, label|
+        query_params = ransack_query_params_multiple([[:scenario, :eq, scenario]])
+        ActionController::Base.helpers.link_to(label, fund_ratios_path(fund_id: fund_id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
+      end.join
+
       # Notify the user upon successful completion
-      notify("#{scenario} ratio calculations are now complete. Please refresh the page.", user_id)
+      notify("#{scenario} ratio calculations are now complete.<br> #{links_html}", user_id)
     rescue StandardError => e
       # Notify the user in case of an error and re-raise the exception
       notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
