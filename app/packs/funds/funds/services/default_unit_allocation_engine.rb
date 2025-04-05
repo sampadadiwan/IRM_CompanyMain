@@ -169,11 +169,8 @@ class DefaultUnitAllocationEngine
 
   # Finds or initializes a fund unit for a distribution payment
   def find_or_new_payment(capital_distribution_payment, unit_type)
-
     # Initialize a new fund unit if none exists
-    fund_unit = FundUnit.new(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment)
-
-    fund_unit
+    FundUnit.new(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment)
   end
 
   # Handles cleanup and sends notifications after allocation

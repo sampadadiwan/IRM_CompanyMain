@@ -117,9 +117,9 @@ class FundsController < ApplicationController
       when "fund"
         FundRatiosJob.perform_later(@fund.id, nil, Date.parse(params[:end_date]), current_user.id, generate_for_commitments)
       when "cross-fund"
-        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], currency: params[:currency])
+        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], currency: params[:currency], type: params[:type])
       when "cross-portfolio"
-        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], currency: params[:currency])
+        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], currency: params[:currency], type: params[:type])
       end
 
       redirect_to fund_path(@fund, tab: "fund-ratios-tab"), notice: "Calculations in progress, please check back in a few mins."
