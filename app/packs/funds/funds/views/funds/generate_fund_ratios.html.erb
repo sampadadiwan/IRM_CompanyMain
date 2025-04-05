@@ -5,29 +5,37 @@
 
 <%= render NewCard.new do %>
 
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-      <h1 class="h3 mb-0 text-gray-800">Generate Fund Ratios : <%= @fund.name %> </h1>
-  </div>
+  <div class="associated_entity" data-controller="tabs tabdetails">
 
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-  <%= form_with(model: @fund, url: generate_fund_ratios_fund_path(@fund), method: :post) do |form| %>
-    
-    <%= form.text_field :id, class: "form-control", hidden: true  %>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-tab"
+          data-action="click->tabdetails#loadData">Fund</a>
 
-    <div class="form-group">
-      <%= form.label :end_date %>
-      <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-fund-tab"
+          data-action="click->tabdetails#loadData">Cross Fund</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-portfolio-tab"
+          data-action="click->tabdetails#loadData">Cross Portfolio</a>
+
+    </nav>
+    <div class="tab-content">
+
+      <div class="tab-pane fade show active" id="fund-tab" role="tabpanel">
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "fund" %>        
+      </div>
+
+      <div class="tab-pane fade show" id="cross-fund-tab" role="tabpanel">
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-fund" %>        
+      </div>
+
+      <div class="tab-pane fade show" id="cross-portfolio-tab" role="tabpanel">
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-portfolio" %> 
+      </div>
+
     </div>
+  </div>`
 
-    <div class="form-group">
-      <%= form.label :generate_for_commitments, "Generate For Each Folio" %>
-      <%= form.check_box :generate_for_commitments, class: "form-check-input", name: "generate_for_commitments", value: true %>
-      <small class="text-muted">Check if you want the ratios to be generated for each folio / commitment</small>
-    </div>
-
-    <div class="form-group">
-      <%= form.submit "Generate", {class: "btn btn-outline-primary"}%>
-    </div>
-  <% end %>
+  
 
 <% end %>
