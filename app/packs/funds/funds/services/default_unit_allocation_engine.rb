@@ -159,7 +159,7 @@ class DefaultUnitAllocationEngine
   # Finds or initializes a fund unit for a remittance
   def find_or_new_remittance(capital_remittance, unit_type)
     # Check for existing units, this method needs to be idempotent
-    fund_unit = FundUnit.where(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance).first
+    # fund_unit = FundUnit.where(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance).first
 
     # Initialize a new fund unit if none exists
     fund_unit ||= FundUnit.new(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance)
@@ -169,13 +169,8 @@ class DefaultUnitAllocationEngine
 
   # Finds or initializes a fund unit for a distribution payment
   def find_or_new_payment(capital_distribution_payment, unit_type)
-    # Check for existing units, this method needs to be idempotent
-    fund_unit = FundUnit.where(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment).first
-
     # Initialize a new fund unit if none exists
-    fund_unit ||= FundUnit.new(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment)
-
-    fund_unit
+    FundUnit.new(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment)
   end
 
   # Handles cleanup and sends notifications after allocation

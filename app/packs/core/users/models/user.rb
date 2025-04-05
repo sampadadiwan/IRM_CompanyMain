@@ -18,6 +18,11 @@ class User < ApplicationRecord
     @support_user
   end
 
+  # Get the initials of the user from the first and last name
+  def initials
+    "#{first_name[0].upcase}#{last_name[0].upcase}"
+  end
+
   UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
   CALL_CODES = {
     "in" => "91",
