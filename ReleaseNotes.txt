@@ -1,5 +1,14 @@
 V9.0.17
 #####################################
+87aec2952 Now allows cross-portfolio ratios
+05afa476b Fixed Fund Unit test
+854316879 Added better Menu in fund card
+2d3d14b63 Now creates FundUnit, does not update existing FundUnit
+939fd803d Added fund ratio Scenario in the list cols
+cecc9f954 Better email of errors when CD job fails
+3160d3f99 Updated sebi report
+a9684f0c7 Update fund stats, to reflect 0$  commitments
+1742c2821 Fixes to Fund RAatio computations
 8339a0fc1 Added working test for fund ratio computation
 f1d5a5e12 Fixed tests for fund_units
 486eb2653 Added allocation of fund units for remittances based on multiple payments

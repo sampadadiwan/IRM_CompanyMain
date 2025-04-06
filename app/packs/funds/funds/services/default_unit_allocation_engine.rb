@@ -89,7 +89,7 @@ class DefaultUnitAllocationEngine
 
   # Creates or updates a fund unit for a remittance
   def new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
-    fund_unit = find_or_new_remittance(capital_remittance, unit_type)
+    fund_unit = FundUnit.new(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance)
 
     # Update fund unit attributes
     fund_unit.quantity = quantity
@@ -154,17 +154,6 @@ class DefaultUnitAllocationEngine
       Rails.logger.debug msg.join(", ")
       [nil, msg]
     end
-  end
-
-  # Finds or initializes a fund unit for a remittance
-  def find_or_new_remittance(capital_remittance, unit_type)
-    # Check for existing units, this method needs to be idempotent
-    # fund_unit = FundUnit.where(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance).first
-
-    # Initialize a new fund unit if none exists
-    fund_unit ||= FundUnit.new(entity_id: capital_remittance.entity_id, fund_id: capital_remittance.fund_id, capital_commitment: capital_remittance.capital_commitment, investor_id: capital_remittance.investor_id, unit_type:, owner: capital_remittance)
-
-    fund_unit
   end
 
   # Finds or initializes a fund unit for a distribution payment
