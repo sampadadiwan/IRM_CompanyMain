@@ -57,6 +57,10 @@ class CapitalDistributionJob < ApplicationJob
       end
     end
 
+    post_process(user_id)
+  end
+
+  def post_process(user_id)
     # Update the counter caches
     CapitalDistributionPayment.counter_culture_fix_counts where: { entity_id: @capital_distribution.entity_id }
     if @error_msg.present?

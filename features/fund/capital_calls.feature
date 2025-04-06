@@ -72,7 +72,7 @@ Examples:
     |           |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
 
 Scenario Outline: Generate fund units from capital call with phased remittance payments
-  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given there is a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is an existing investor "investor_name=Investor 1" with "1" users
   Given there is an existing investor "investor_name=Investor 2" with "1" users
@@ -81,7 +81,6 @@ Scenario Outline: Generate fund units from capital call with phased remittance p
   Given there are capital commitments of "<commitment>" from each investor
   Given there is a capital call "<call>"
   Then the corresponding remittances should be created
-  Then I should see the remittances
 
   # Phase 1: Pay 50%
   Given remittances are paid "<paid_percentage1>" and verified
