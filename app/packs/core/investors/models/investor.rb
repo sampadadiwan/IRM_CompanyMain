@@ -54,7 +54,6 @@ class Investor < ApplicationRecord
   has_many :investments, dependent: :destroy, foreign_key: :portfolio_company_id
 
   has_many :investor_kycs, dependent: :destroy
-  has_many :investor_kyc_sebi_datas, through: :investor_kycs
   has_many :capital_commitments, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy

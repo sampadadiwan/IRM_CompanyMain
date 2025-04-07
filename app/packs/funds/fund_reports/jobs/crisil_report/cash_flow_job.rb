@@ -13,7 +13,7 @@ class CashFlowJob
   def generate_report(fund_id, start_date, end_date)
     Rails.logger.debug { "Generating CashFlow Report for #{fund_id}, #{start_date}, #{end_date} " }
 
-    @fund = Fund.includes(capital_commitments: { investor_kyc: :investor_kyc_sebi_data }).find(fund_id)
+    @fund = Fund.includes(:capital_commitments).find(fund_id)
     @end_date = end_date
 
     @fund_report = FundReport.find_or_initialize_by(name: REPORT_NAME, name_of_scheme: @fund.name, fund: @fund, entity_id: @fund.entity_id, start_date: start_date, end_date: end_date)
