@@ -14,9 +14,9 @@ class FundRatiosScenarioJob < ApplicationJob
   # end_date: "2023-10-01"
   # user_id: 1
   # scenario: "Scenario A"
-  def perform(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, currency: nil, type: "cross-fund")
+  def perform(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, currency: nil, type: "cross-fund")
     # Setup the job with the provided parameters
-    setup(fund_id, scenario, end_date, user_id, fund_ids:, portfolio_company_ids:, currency:)
+    setup(fund_id, scenario, end_date, user_id, fund_ids:, portfolio_company_ids:, portfolio_companies_tags:, currency:)
 
     # Use Chewy's sidekiq strategy for Elasticsearch indexing
     Chewy.strategy(:sidekiq) do
@@ -49,7 +49,7 @@ class FundRatiosScenarioJob < ApplicationJob
     end
   end
 
-  def setup(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, currency: nil)
+  def setup(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, currency: nil)
     # Initialize instance variables for the job
     @fund_id = fund_id
     @fund = Fund.find(fund_id) # Find the primary fund
@@ -61,7 +61,7 @@ class FundRatiosScenarioJob < ApplicationJob
 
     @portfolio_companies = Investor.where(id: portfolio_company_ids) if portfolio_company_ids.present? # Optional list of portfolio companies
     @portfolio_company_ids = portfolio_company_ids # Store the portfolio company IDs
-
+    @portfolio_companies_tags = portfolio_companies_tags # Store the portfolio company tags
     @user = User.find(user_id) # User initiating the job
     @currency = currency || @user.entity.currency # Default currency based on the user's entity
   end
@@ -87,7 +87,7 @@ class FundRatiosScenarioJob < ApplicationJob
     # Blow off prev fund ratio calcs for this scenario / date
     FundRatio.where(scenario: @scenario, end_date: @end_date).delete_all
 
-    calc = FundRatioMultiFundCalcs.new(@scenario, @end_date, @user.entity, funds: @funds, portfolio_companies: @portfolio_companies, currency: @currency)
+    calc = FundRatioMultiFundCalcs.new(@scenario, @end_date, @user.entity, funds: @funds, portfolio_companies: @portfolio_companies, portfolio_companies_tags: @portfolio_companies_tags, currency: @currency)
 
     value = calc.gross_portfolio_irr
     display_value = "#{value} %"

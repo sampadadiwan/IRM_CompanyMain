@@ -1,15 +1,21 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, currency: nil)
+  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil)
     @scenario = scenario
     # All funds must be in the same entity
     @funds = funds
     @fund_ids = @funds.pluck(:id) if funds
-
-    @portfolio_companies = portfolio_companies
-    @portfolio_company_ids = @portfolio_companies.pluck(:id) if portfolio_companies
-
+    # The end date is the date of the scenario, all calculations are done as of this date
     @end_date = end_date
+    # The entity for which we are calculating the ratios
     @entity = entity
+    # The portfolio companies for which we are calculating the ratios
+    @portfolio_companies = portfolio_companies
+    # Sometimes we are passed only the tags, and not the portfolio companies
+    @portfolio_companies = entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags) if portfolio_companies_tags.present?
+
+    @portfolio_company_ids = @portfolio_companies.present? ? @portfolio_companies.pluck(:id) : []
+
+    # The currency for which we are calculating the ratios
     @currency = currency || @entity.currency
     # Setup the exchange rate bank, to convert across currencies
     @bank = ExchangeRate.setup_variable_exchange(@end_date, @entity.id)

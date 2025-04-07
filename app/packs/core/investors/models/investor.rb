@@ -114,6 +114,16 @@ class Investor < ApplicationRecord
     joins(entity: :access_rights).where(entity_id:).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata)
   }
 
+  scope :with_any_tags, lambda { |tags|
+    next none if tags.blank?
+
+    tag_list = tags.split(",").map(&:strip).compact_blank
+    tag_list.inject(nil) do |scope, tag|
+      condition = where("tag_list LIKE ?", "%#{tag}%")
+      scope ? scope.or(condition) : condition
+    end
+  }
+
   # Get the investors associated with owner (Fund) which has access rights for investors
   scope :owner_access_rights, lambda { |owner, metadata|
     if metadata

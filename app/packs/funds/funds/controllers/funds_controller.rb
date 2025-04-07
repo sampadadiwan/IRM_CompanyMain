@@ -117,7 +117,7 @@ class FundsController < ApplicationController
       when "fund"
         FundRatiosJob.perform_later(@fund.id, nil, Date.parse(params[:end_date]), current_user.id, generate_for_commitments)
       when "cross-fund", "cross-portfolio"
-        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], currency: params[:currency], type: params[:type])
+        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], portfolio_companies_tags: params[:portfolio_companies_tags], currency: params[:currency], type: params[:type])
       else
         # Invalid type, handle accordingly
         notice = "Invalid type specified for fund ratios generation."

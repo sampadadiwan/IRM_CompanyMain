@@ -44,6 +44,11 @@
         <%= form.select :portfolio_company_ids, policy_scope(Investor).portfolio_companies.map{|f| [f.investor_name, f.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", name: "portfolio_company_ids[]", multiple: true %>
         <small class="text-muted">Select the portfolio companies across which you want to generate ratios</small>
     </div>
+    <div class="form-group">
+        <%= form.label :portfolio_companies_tags %>
+        <%= form.text_field :portfolio_companies_tags, class: "form-control", name: "portfolio_companies_tags" %>
+        <small class="text-muted">Select portfolio companies having any one of the tags in this comma seaparated list.</small>
+    </div>
     <% end %>
 
     <div class="form-group">
