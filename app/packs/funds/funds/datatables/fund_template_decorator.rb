@@ -492,16 +492,17 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   # === Undrawn Commitments PRIOR Calculations ===
   def undrawn_comm_prior_notice_lp
     last_call_before = prior_calls.order(:call_date).last
+    last_call_remittances = if last_call_before
+                              last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
+                            else
+                              []
+                            end
 
-    prior_lp_committment_amt = if last_call_before
-                                 last_call_remittances = last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
-                                 if last_call_remittances.present?
-                                   money_sum(last_call_remittances, :committed_amount_cents)
-                                 else
-                                   @capital_remittance.committed_amount
-                                 end
+    prior_lp_committment_amt = if last_call_before && last_call_remittances.present?
+                                 money_sum(last_call_remittances, :committed_amount_cents)
                                else
-                                 @capital_remittance.committed_amount
+                                 current_call_remittances = @capital_remittance.capital_call.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..@remittance_date)
+                                 current_call_remittances.present? ? money_sum(current_call_remittances, :committed_amount_cents) : Money.new(0, @currency)
                                end
 
     (prior_lp_committment_amt - money_sum(fund_remittances_lp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)).cents
@@ -510,16 +511,17 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   def undrawn_comm_prior_notice_gp
     last_call_before = prior_calls.order(:call_date).last
+    last_call_remittances = if last_call_before
+                              last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
+                            else
+                              []
+                            end
 
-    prior_gp_committment_amt = if last_call_before
-                                 last_call_remittances = last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
-                                 if last_call_remittances.present?
-                                   money_sum(last_call_remittances, :committed_amount_cents)
-                                 else
-                                   @capital_remittance.committed_amount
-                                 end
+    prior_gp_committment_amt = if last_call_before && last_call_remittances.present?
+                                 money_sum(last_call_remittances, :committed_amount_cents)
                                else
-                                 @capital_remittance.committed_amount
+                                 current_call_remittances = @capital_remittance.capital_call.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id)).where(remittance_date: ..@remittance_date)
+                                 current_call_remittances.present? ? money_sum(current_call_remittances, :committed_amount_cents) : Money.new(0, @currency)
                                end
 
     (prior_gp_committment_amt - money_sum(fund_remittances_gp.where(remittance_date: ..(@remittance_date - 1.day).end_of_day), :call_amount_cents)).cents
