@@ -199,3 +199,14 @@ Scenario Outline: Import capital remittance fund documents
   Then I should see the "Import in progress"
   Then The proper documents must be uploaded for the remittances
   And I should see the remittance docs upload errors
+
+
+@import
+Scenario Outline: Import Fund Formulas
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload fund formulas for the fund
+  Then I should see the "Import in progress"
+  Then There should be "9" fund formulas created
+  And the fund formulas must have the data in the sheet

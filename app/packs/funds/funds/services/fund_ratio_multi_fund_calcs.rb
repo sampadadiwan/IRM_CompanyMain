@@ -1,5 +1,5 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil)
+  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil) # rubocop:disable Metrics/ParameterLists
     @scenario = scenario
     # All funds must be in the same entity
     @funds = funds
