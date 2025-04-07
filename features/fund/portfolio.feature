@@ -56,11 +56,9 @@ Scenario Outline: Generate Fund Reports
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
   And Given I upload an investors file for the fund
-  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import in progress"
+  And Given import file "capital_commitments_multi_currency.xlsx" for "CapitalCommitment"
   And Given I upload the portfolio companies
-  And Given I upload "portfolio_investments3.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import in progress"
+  And Given import file "portfolio_investments3.xlsx" for "PortfolioInvestment"
   Then There should be "8" portfolio investments created
   Given The user generates all fund reports for the fund
   Then There should be "3" reports created

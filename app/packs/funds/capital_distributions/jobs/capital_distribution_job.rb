@@ -4,19 +4,20 @@ class CapitalDistributionJob < ApplicationJob
   attr_accessor :payments
 
   # This job is idempotent and can be run multiple times for the same capital_distribution_id
-  def perform(capital_distribution_id)
+  def perform(capital_distribution_id, user_id: nil)
     @payments = []
     Chewy.strategy(:sidekiq) do
       @capital_distribution = CapitalDistribution.find(capital_distribution_id)
-      generate_payments
+      generate_payments(user_id:)
       # This is to ensure the gross_amount is computed correctly, after the payments have been computed
       @capital_distribution.reload.save
     end
   end
 
-  def generate_payments
+  def generate_payments(user_id: nil)
     fund = @capital_distribution.fund
     capital_commitments = fund.capital_commitments
+    @error_msg = []
 
     # Need to distriute the capital based on the percentage holding of the fund by the investor
     capital_commitments.each do |cc|
@@ -26,6 +27,8 @@ class CapitalDistributionJob < ApplicationJob
       income_cents = (@capital_distribution.income_cents * percentage / 100.0).round(2)
       cost_of_investment_cents = (@capital_distribution.cost_of_investment_cents * percentage / 100.0).round(2)
       reinvestment_cents = (@capital_distribution.reinvestment_cents * percentage / 100.0).round(2)
+
+      Rails.logger.debug { "For #{cc}, Income: #{income_cents}, Cost of Investment: #{cost_of_investment_cents}, Reinvestment: #{reinvestment_cents}" }
 
       if CapitalDistributionPayment.exists?(capital_distribution_id: @capital_distribution.id, capital_commitment_id: cc.id)
         Rails.logger.debug { "Skipping CapitalDistributionPayment for #{cc}, already exists" }
@@ -48,12 +51,25 @@ class CapitalDistributionJob < ApplicationJob
           else
             Rails.logger.error { "Error creating Payment for #{cc.investor_name} id #{payment.id}" }
             Rails.logger.error { payment.errors.full_messages }
+            @error_msg << { msg: payment.errors.full_messages, id: cc.id, CapitalCommitment: cc }
           end
         end
       end
     end
 
+    post_process(user_id)
+  end
+
+  def post_process(user_id)
     # Update the counter caches
     CapitalDistributionPayment.counter_culture_fix_counts where: { entity_id: @capital_distribution.entity_id }
+    if @error_msg.present?
+      msg = "Capital Distribution Payments creation completed with #{@error_msg.length} errors."
+      send_notification("#{msg} Errors will be sent via email", user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg, subject: msg).doc_gen_errors.deliver_now
+    else
+      msg = "Capital Distribution Payments created successfully"
+      send_notification(msg, user_id, :success)
+    end
   end
 end

@@ -15,6 +15,7 @@ export default class extends ServerDatatableController {
         {"data": "name"},
         {"data": "display_value"},
         {"data": "end_date"},
+        {"data": "scenario"},
         {"data": "dt_actions"}
       ]
     } else {
@@ -24,6 +25,7 @@ export default class extends ServerDatatableController {
         {"data": "name"},
         {"data": "display_value"},
         {"data": "end_date"},
+        {"data": "scenario"},
         {"data": "dt_actions"}
       ]
     }

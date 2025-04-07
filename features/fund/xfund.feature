@@ -109,9 +109,9 @@ Scenario Outline: Create new capital call
   Given the investors have approved investor access
   Given the fund has capital call template
   Given the investors are added to the fund
-  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
   And Given the commitments have a cc "advisor@gmail.com"
-  And Given I upload "account_entries.xlsx" file for Account Entries
+  And Given import file "account_entries.xlsx" for "AccountEntry"
   When I create a new capital call "<call>"
   Then I should see the capital call details
   Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
@@ -188,7 +188,7 @@ Scenario Outline: Duplicate account entry bulk upload
     Given the investors have approved investor access
     Given the fund has capital call template
     Given the investors are added to the fund
-    And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+    And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
     And Given the commitments have a cc "advisor@gmail.com"
     And Given I upload "account_entries_with_dup.xlsx" "<error_count>" error file for Account Entries
     Then I should see that the duplicate account entries are not uploaded

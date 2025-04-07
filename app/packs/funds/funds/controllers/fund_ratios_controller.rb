@@ -9,7 +9,6 @@ class FundRatiosController < ApplicationController
 
     if params[:fund_id].present?
       @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
-      @fund = @fund_ratios.last&.fund
       @fund ||= Fund.find(params[:fund_id])
     end
     @fund_ratios = @fund_ratios.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
@@ -18,7 +17,7 @@ class FundRatiosController < ApplicationController
 
     @fund_ratios = @fund_ratios.where(owner_type: params[:owner_type]) if params[:owner_type].present?
     @fund_ratios = @fund_ratios.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-
+    @fund_ratios = @fund_ratios.where(scenario: params[:scenario]) if params[:scenario].present?
     @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
     respond_to do |format|

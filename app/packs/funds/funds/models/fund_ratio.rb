@@ -19,7 +19,7 @@ class FundRatio < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes owner_type owner_id end_date latest].sort
+    %w[name value notes owner_type owner_id end_date latest scenario].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

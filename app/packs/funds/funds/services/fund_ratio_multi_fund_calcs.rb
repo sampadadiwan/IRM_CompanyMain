@@ -1,10 +1,21 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(funds, end_date, currency: nil)
-    @funds = funds
+  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil)
+    @scenario = scenario
     # All funds must be in the same entity
-    @fund_ids = @funds.pluck(:id)
+    @funds = funds
+    @fund_ids = @funds.pluck(:id) if funds
+    # The end date is the date of the scenario, all calculations are done as of this date
     @end_date = end_date
-    @entity = @funds[0].entity
+    # The entity for which we are calculating the ratios
+    @entity = entity
+    # The portfolio companies for which we are calculating the ratios
+    @portfolio_companies = portfolio_companies
+    # Sometimes we are passed only the tags, and not the portfolio companies
+    @portfolio_companies = entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags) if portfolio_companies_tags.present?
+
+    @portfolio_company_ids = @portfolio_companies.present? ? @portfolio_companies.pluck(:id) : []
+
+    # The currency for which we are calculating the ratios
     @currency = currency || @entity.currency
     # Setup the exchange rate bank, to convert across currencies
     @bank = ExchangeRate.setup_variable_exchange(@end_date, @entity.id)
@@ -17,15 +28,24 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
   # Returns all the Aggregate portfolio investments for the funds
   def aggregate_portfolio_investments
-    @entity.aggregate_portfolio_investments.where(fund_id: @fund_ids)
+    apis = @entity.aggregate_portfolio_investments
+    apis = apis.where(fund_id: @fund_ids) if @funds
+    apis = apis.where(portfolio_company_id: @portfolio_company_ids) if @portfolio_companies
+    apis
   end
 
   def all_portfolio_investments
-    @entity.portfolio_investments.where(fund_id: @fund_ids)
+    pis = @entity.portfolio_investments
+    pis = pis.where(fund_id: @fund_ids) if @funds
+    pis = pis.where(portfolio_company_id: @portfolio_company_ids) if @portfolio_companies
+    pis
   end
 
   def stock_conversions
-    @entity.stock_conversions.where(fund_id: @fund_ids)
+    sc = @entity.stock_conversions
+    sc = sc.where(fund_id: @fund_ids) if @funds
+    sc = sc.includes(:from_portfolio_investment).where(from_portfolio_investment: { portfolio_company_id: @portfolio_company_ids }) if @portfolio_companies
+    sc
   end
 
   def capital_remittance_payments
@@ -306,7 +326,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       api.portfolio_investments.where(investment_date: ..@end_date)
 
       api_as_of = api.as_of(@end_date)
-      bought_amount = convert_to_base_currency(api_as_of.bought_amount)
+      convert_to_base_currency(api_as_of.bought_amount)
       cost_of_remaining = convert_to_base_currency(api_as_of.cost_of_remaining)
       fmv = api_as_of.fmv
 

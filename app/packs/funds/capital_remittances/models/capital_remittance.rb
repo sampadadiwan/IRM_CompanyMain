@@ -208,7 +208,9 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def allocated_unit_amount_cents_before(fund_unit)
-    @allocated_unit_amt ||= fund_units.where(id: ..fund_unit.id).present? ? fund_units.where(id: ..fund_unit.id).sum(&:amount).cents : 0
+    # Get the fund units that are after the current fund unit
+    units_before = fund_units.where(id: ..fund_unit.id)
+    @allocated_unit_amt ||= units_before.present? ? units_before.sum(&:amount).cents : 0
     @allocated_unit_amt
   end
 

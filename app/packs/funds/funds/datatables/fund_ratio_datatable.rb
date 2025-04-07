@@ -8,22 +8,24 @@ class FundRatioDatatable < ApplicationDatatable
       name: { source: "FundRatio.name", searchable: true, orderable: true },
       display_value: { source: "FundRatio.display_value", searchable: false, orderable: false },
       end_date: { source: "FundRatio.end_date", orderable: true },
+      scenario: { source: "FundRatio.scenario", searchable: true, orderable: true },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
 
   def data
-    records.map do |record|
+    records.decorate.map do |record|
       {
         id: record.id,
-        fund_name: record.decorate.fund_name,
-        owner_name: record.decorate.owner_name,
+        fund_name: record.fund_name,
+        owner_name: record.owner_name,
         owner_type: record.owner_type,
         name: record.name,
         display_value: record.display_value,
-        end_date: record.decorate.display_date(record.end_date),
-        dt_actions: record.decorate.dt_actions,
-        DT_RowId: "fund_ratio_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
+        end_date: record.display_date(record.end_date),
+        scenario: record.scenario,
+        dt_actions: record.dt_actions,
+        DT_RowId: "fund_ratio_#{record.id}"
       }
     end
   end
@@ -33,7 +35,6 @@ class FundRatioDatatable < ApplicationDatatable
   end
 
   def get_raw_records
-    # insert query here
-    fund_ratios
+    fund_ratios.joins(:fund)
   end
 end

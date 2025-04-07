@@ -48,7 +48,12 @@ resources :account_entries do
 end
 
 resources :fund_units
-resources :fund_ratios
+
+resources :fund_ratios do
+  get 'generate', on: :collection
+  post 'generate', on: :collection
+end
+
 resources :capital_remittance_payments
 
 resources :capital_distribution_payments do
