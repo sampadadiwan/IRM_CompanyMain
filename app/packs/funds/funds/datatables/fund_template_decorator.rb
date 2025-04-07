@@ -220,7 +220,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   def percent_drawdown_cash_total
-    percentage(total_drawdown_fund, total_comm_fund)
+    percentage(drawdown_cash_lp + drawdown_cash_gp, committed_cash_lp + committed_cash_gp)
   end
 
   def percent_drawdown_cash_investor
@@ -555,12 +555,12 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   # === Undrawn Commitments CURRENT Calculations ===
 
   def undrawn_comm_curr_notice_lp
-    total_comm_lp - total_drawdown_lp
+    committed_cash_lp - fund_remittances_lp.sum(:call_amount_cents)
   end
   memoize :undrawn_comm_curr_notice_lp
 
   def undrawn_comm_curr_notice_gp
-    total_comm_gp - total_drawdown_gp
+    committed_cash_gp - fund_remittances_gp.sum(:call_amount_cents)
   end
   memoize :undrawn_comm_curr_notice_gp
 
