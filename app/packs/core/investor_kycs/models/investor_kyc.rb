@@ -51,7 +51,6 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :investor
   belongs_to :entity
-  has_one :investor_kyc_sebi_data, dependent: :destroy
   has_many :capital_commitments
   has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
