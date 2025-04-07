@@ -1064,6 +1064,8 @@ Then('the capital distributions must have the data in the sheet') do
 end
 
 Then('the capital commitments must have the percentages updated') do
+  puts "### Checking capital commitments percentages"
+  ap CapitalCommitment.all.pluck(:id, :percentage)
   CapitalCommitment.where(percentage: 0).count.should == 0
 end
 
@@ -1352,26 +1354,36 @@ end
 
 
 Given('the units are generated') do
+  puts "### Generating units"
+  puts "Before: FundUnit.count = #{FundUnit.count}, #{FundUnit.all.pluck(:id, :owner_id, :owner_type, :quantity, :unit_type, :price_cents)}"
   CapitalCall.all.each do |cc|
     FundUnitsJob.perform_now(cc.id, "CapitalCall", "Allocation for collected call amount", User.first.id)
   end
   CapitalDistribution.all.each do |cc|
     FundUnitsJob.perform_now(cc.id, "CapitalDistribution", "Redemption for distribution", User.first.id)
   end
-
+  puts "After: FundUnit.count = #{FundUnit.count}, #{FundUnit.all.pluck(:id, :owner_id, :owner_type, :quantity, :unit_type, :price_cents)}"
 end
 
 Then('there should be correct units for the calls payment for each investor') do
   FundUnit.count.should == CapitalCommitment.count * CapitalCall.count
   CapitalCommitment.all.each do |cc|
     puts "Checking units for #{cc}"
-    cc.fund_units.length.should
+    cc.fund_units.length.should > 0
     cc.fund_units.each do |fu|
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
+
+      capital_remittance = fu.owner
       fu.price_cents.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d * 100.0
-      amount_cents = fu.owner.collected_amount_cents < fu.owner.call_amount_cents ? fu.owner.collected_amount_cents : fu.owner.call_amount_cents
+
+      if capital_remittance.collected_amount_cents >= capital_remittance.call_amount_cents
+        amount_cents = capital_remittance.call_amount_cents # - capital_remittance.allocated_unit_amount_cents
+      else
+        amount_cents = capital_remittance.collected_amount_cents # - capital_remittance.allocated_unit_amount_cents
+      end
+
       fu.quantity.round(2).should == ( amount_cents / (fu.price_cents + fu.premium_cents)).round(2)
     end
   end
@@ -2226,6 +2238,59 @@ And('The commitments have investor kycs linked') do
   end
 end
 
+
+Given('Given import file {string} for {string}') do |file, type|
+  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  ImportUploadJob.perform_now(iu.id)
+  iu.reload
+  iu.failed_row_count.should == 0
+end
+
+
+Given('remittances are paid {string} and verified') do |paid_percentage|
+  @latest_payment = {}
+  @fund.capital_remittances.each do |cr|
+    # Calculate the folio amount to be paid based on the given percentage
+    folio_amount_cents = cr.folio_call_amount_cents * (paid_percentage.to_d / 100)
+
+    # Create a new payment for the capital remittance
+    crp = cr.capital_remittance_payments.create!(
+      fund_id: cr.fund_id,
+      entity_id: cr.entity_id,
+      folio_amount_cents: folio_amount_cents,
+      payment_date: cr.remittance_date
+    )
+
+    # Store the latest payment amount for the remittance
+    @latest_payment[cr.id] = crp.amount_cents
+
+    # Verify the capital remittance after the payment
+    result = CapitalRemittanceVerify.call(capital_remittance: cr)
+    result.success?.should == true
+  end
+end
+
+Then('there should be correct units generated for the latest payment') do
+  @fund.capital_remittances.each do |cr|
+    fund_unit = cr.fund_units.last
+    crp = cr.capital_remittance_payments.last
+    puts "Checking fund unit for #{cr.id} with fund unit id #{fund_unit.id} amount #{fund_unit.amount} against payment #{crp.id} amount #{crp.amount}"
+    fund_unit.amount.should == crp.amount
+  end
+end
+
+Then('the total units should match the total paid amount') do
+  @fund.capital_remittances.each do |cr|
+    total_paid = cr.capital_remittance_payments.sum(&:amount)
+    total_units = cr.fund_units.sum(&:amount)
+    puts "Checking total paid #{total_paid} against total units amount #{total_units}"
+    total_paid.should == total_units
+  end
+end
+
+Then('the total units should be {string}') do |count|
+  FundUnit.count.should == count.to_i
+end
 
 Given('Given I upload fund formulas for the fund') do
   @user.add_role :support # only support user can upload fund formulas

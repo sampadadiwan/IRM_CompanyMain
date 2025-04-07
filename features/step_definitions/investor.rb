@@ -316,20 +316,42 @@ Then('the investors must have the data in the sheet') do
 
 end
 
-
 Given('Given I upload an investors file for the fund') do
+  type = "Investor"
+  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/fund_investors.xlsx")))
+  ImportUploadJob.perform_now(iu.id)
+  iu.reload
+  iu.failed_row_count.should == 0
+end
+
+# Given('Given I upload an investors file for the fund') do
+#   visit(investors_path)
+#   click_on("Actions")
+#   click_on("Upload")
+#   #sleep(1)
+#   fill_in('import_upload_name', with: "Test Investor Upload")
+#   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
+#   sleep(2)
+#   click_on("Save")
+#   expect(page).to have_content("Import Upload:")
+#   #sleep(2)
+#   ImportUploadJob.perform_now(ImportUpload.last.id)
+# end
+
+Given('Given I upload investors file {string} for the fund') do |file_name|
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
   #sleep(1)
-  fill_in('import_upload_name', with: "Test Investor Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
+  fill_in('import_upload_name', with: "Investor Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   sleep(2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   #sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
+
 
 Then('the investors must be added to the fund') do
   @fund.reload

@@ -6,7 +6,8 @@
       { path: nil, stat: money_to_currency(Money.new(fund.portfolio_investments.sum(:net_bought_amount_cents), fund.currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "currency-dollar" },
       { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:sold_amount_cents), fund.currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "cash" },
       { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:fmv_cents), fund.currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph" },
-      { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:cost_of_remaining_cents), fund.currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar" }
+      { path: nil, stat: money_to_currency(Money.new(fund.aggregate_portfolio_investments.sum(:cost_of_remaining_cents), fund.currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar" },
+      { path: nil, stat: money_to_currency(Money.new(fund.portfolio_cashflows.sum(:amount_cents), fund.currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar" },
     ] %>
 
     <div class="row">

@@ -201,4 +201,28 @@ class CapitalRemittance < ApplicationRecord
   def tracking_exchange_rate_date
     remittance_date
   end
+
+  def allocated_unit_amount_cents
+    @allocated_unit_amt ||= fund_units.present? ? fund_units.sum(&:amount).cents : 0
+    @allocated_unit_amt
+  end
+
+  def allocated_unit_amount_cents_before(fund_unit)
+    # Get the fund units that are after the current fund unit
+    units_before = fund_units.where(id: ..fund_unit.id)
+    @allocated_unit_amt ||= units_before.present? ? units_before.sum(&:amount).cents : 0
+    @allocated_unit_amt
+  end
+
+  def pending_amount_for_units_allocation
+    if collected_amount_cents >= call_amount_cents
+      amount_cents = call_amount_cents - allocated_unit_amount_cents
+      reason = "Issuing units for net call amount #{money_to_currency(Money.new(amount_cents, fund.currency))}"
+    else
+      amount_cents = collected_amount_cents - allocated_unit_amount_cents
+      reason = "Issuing units for net collected amount #{money_to_currency(Money.new(amount_cents, fund.currency))}"
+    end
+
+    [amount_cents, reason]
+  end
 end

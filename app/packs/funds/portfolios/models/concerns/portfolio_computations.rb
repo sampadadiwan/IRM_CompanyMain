@@ -45,7 +45,7 @@ module PortfolioComputations
       self.net_amount_cents = net_quantity * cost_cents
       self.net_bought_amount_cents = net_bought_quantity * cost_cents
       self.cost_of_remaining_cents = net_quantity * cost_cents
-      
+
       compute_fmv
       # Unrealized gain is fmv - cost_of_remaining, only for buys
       self.unrealized_gain_cents = fmv_cents - net_amount_cents
@@ -58,10 +58,8 @@ module PortfolioComputations
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
 
       compute_fmv
-    
-    end
 
-    
+    end
   end
 
   def compute_all_numbers_on(end_date)
@@ -116,7 +114,7 @@ module PortfolioComputations
            net_quantity_on(date)
          end
 
-    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
+    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date).cents : 0
   end
 
   # This method is memoized to avoid multiple calls to the database

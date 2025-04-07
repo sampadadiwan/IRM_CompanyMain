@@ -12,13 +12,14 @@ class FundRatio < ApplicationRecord
   validates :name, :owner_type, length: { maximum: 255 }
 
   scope :latest, -> { where(latest: true) }
+  scope :default, -> { where(scenario: "Default") }
 
   def to_s
     "#{name} #{value}"
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes owner_type owner_id end_date latest].sort
+    %w[name value notes owner_type owner_id end_date latest scenario].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

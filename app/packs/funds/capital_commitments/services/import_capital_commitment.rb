@@ -93,7 +93,7 @@ class ImportCapitalCommitment < ImportUtil
   def post_process(ctx, import_upload:, **)
     super
     # Recompute the percentages
-    last_cc = import_upload.imported_data.last
+    last_cc = import_upload.reload.imported_data.last
     last_cc&.compute_percentage
     # Create remittances if required
     import_upload.imported_data.each do |capital_commitment|

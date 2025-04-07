@@ -29,6 +29,7 @@
                         Actions
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <%= link_to "Dashboard" , dashboard_fund_path(fund), {class: "dropdown-item" } %>
                         <%= link_to "View Fund" , fund_path(fund), {class: "dropdown-item" } %>
                         <%= link_to "Edit Fund" , edit_fund_path(fund), {class: "dropdown-item" } %>
                         <div class="dropdown-divider"></div>
@@ -45,7 +46,7 @@
         </div>
 
         <div class="row align-items-center">
-            <div class="col-md-5 d-none d-sm-block">
+            <div class="col-md-6 d-none d-sm-block">
                 <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
                  library: {
                    plotOptions: {
@@ -60,7 +61,8 @@
                     **chart_theme_color
                 } %>
             </div>
-            <div class="col-md-2">
+            
+            <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                     <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
@@ -110,10 +112,9 @@
             
             <% 
                 fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4) 
-                fund_commitment_amounts_cols = "col-md-3"
             %>
             <% if fund_ratios.present? %>
-            <div class="col-md-2">
+            <div class="col-md-3">
 
                 <% fund_ratios.each do |fund_ratio| %>
                     <div class="hstack mb-4 pb-1">
@@ -128,15 +129,8 @@
                 
                 <% end %>
             </div>
-            <% else %>
-                <% fund_commitment_amounts_cols = "col-md-5" %>
             <% end %>
             
-            <div class="<%=fund_commitment_amounts_cols%> d-none d-sm-block">
-                <div class="row align-items-center">
-                    <%= fund_commitment_amounts(fund)  %>
-                </div>                
-            </div>
         </div>
         </div>
     </div>

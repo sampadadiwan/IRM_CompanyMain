@@ -1,0 +1,59 @@
+<% 
+    type ||= "fund" 
+    title = "Generate Fund Ratios" 
+    title += " for #{@fund.name}" if type == "fund"
+    scenario = params[:scenario] || "#{current_user.initials}-#{Time.zone.now.strftime("%Y-%m-%d")}"
+%>
+<%= render FormCard.new(title:) do %>
+
+    <%= form_with(model: @fund, url: generate_fund_ratios_fund_path(@fund), method: :post) do |form| %>
+    
+    <%= form.text_field :id, class: "form-control", hidden: true  %>
+    <%= form.text_field :type, class: "form-control", hidden: true, name: "type", value: type  %>
+    
+    <div class="form-group">
+        <%= form.label :end_date %>
+        <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+    </div>
+
+    <% if type == "fund" %>
+    <div class="form-group">
+        <%= form.label :generate_for_commitments, "Generate For Each Folio" %>
+        <%= form.check_box :generate_for_commitments, class: "form-check-input", name: "generate_for_commitments", value: true %>
+        <small class="text-muted">Check if you want the ratios to be generated for each folio / commitment</small>
+    </div>
+    <% elsif type == "cross-fund" %>
+    <div class="form-group">
+        <%= form.label :scenario %>
+        <%= form.text_field :scenario, class: "form-control", name: "scenario", value: scenario %>
+        <small class="text-muted">Descriptive scenario name to be used for the generated ratios</small>
+    </div>    
+    <div class="form-group">
+        <%= form.label :fund_ids, "Select the funds" %>
+        <%= form.select :fund_ids, policy_scope(Fund).map{|f| [f.name, f.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", name: "fund_ids[]", multiple: true %>
+        <small class="text-muted">Select the funds across which you want to generate ratios</small>
+    </div>
+    <% elsif type == "cross-portfolio" %>
+    <div class="form-group">
+        <%= form.label :scenario %>
+        <%= form.text_field :scenario, class: "form-control", name: "scenario", value: scenario %>
+        <small class="text-muted">Descriptive scenario name to be used for the generated ratios</small>
+    </div>
+    <div class="form-group">
+        <%= form.label :portfolio_company_ids, "Select the portfolio companies" %>
+        <%= form.select :portfolio_company_ids, policy_scope(Investor).portfolio_companies.map{|f| [f.investor_name, f.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", name: "portfolio_company_ids[]", multiple: true %>
+        <small class="text-muted">Select the portfolio companies across which you want to generate ratios</small>
+    </div>
+    <div class="form-group">
+        <%= form.label :portfolio_companies_tags %>
+        <%= form.text_field :portfolio_companies_tags, class: "form-control", name: "portfolio_companies_tags" %>
+        <small class="text-muted">Select portfolio companies having any one of the tags in this comma seaparated list.</small>
+    </div>
+    <% end %>
+
+    <div class="form-group">
+        <%= form.submit "Generate", {class: "btn btn-outline-primary"}%>
+    </div>
+    <% end %>
+
+<% end %>

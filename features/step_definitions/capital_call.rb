@@ -69,21 +69,40 @@ end
 
 Given('the remittances has some units already allocated') do
   capital_remittance = CapitalRemittance.last
-  fund_unit = CapitalRemittance.last.fund_units.build(
+  fund_unit = capital_remittance.fund_units.build(
     fund_id:capital_remittance.capital_commitment.fund_id,
     capital_commitment_id: capital_remittance.capital_commitment.id,
     investor_id: capital_remittance.capital_commitment.investor_id,
     entity_id: capital_remittance.entity_id,
-    unit_type: "Series A",
-    quantity: 100.0,
+    unit_type: capital_remittance.capital_commitment.unit_type,
+    quantity: 10.0,
     price: 50.0,
     premium: 10.0,
     issue_date: Date.today,
     reason: "Initial Allocation"
   )
   fund_unit.save!
+
+  @pending_amount_for_units_allocation, @reason = capital_remittance.pending_amount_for_units_allocation
+  puts "Pending amount for units allocation: #{@pending_amount_for_units_allocation}"
+  puts "Reason: #{@reason}"
 end
 
+
+Then('it should generate only the remaining units') do
+	
+	capital_remittance = CapitalRemittance.last
+	fund_unit = capital_remittance.fund_units.last
+	puts "Fund Unit: #{fund_unit.inspect}"
+	expect(fund_unit).to be_present
+	expect(fund_unit.amount.cents).to eq(@pending_amount_for_units_allocation)
+	expect(fund_unit.reason).to include(@reason)	
+
+	# Ensure that the new fund unit is created
+	capital_remittance.fund_units.count.should == 2
+end
+
+  
 And("error email for fund units already allocated should be sent") do
 	current_email = open_email(User.first.email)
 	expect(current_email).to have_content("Fund Units already allocated")

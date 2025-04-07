@@ -140,7 +140,6 @@ Scenario Outline: Import Fund investors
   Given the user has role "company_admin"
   Given there is a fund "name=Tech Fund" for the entity
   And Given I upload an investors file for the fund
-  Then I should see the "Import in progress"
   Then There should be "6" investors created
   And the investors must have the data in the sheet
   And the investors must be added to the fund

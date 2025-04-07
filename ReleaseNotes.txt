@@ -1,3 +1,39 @@
+V9.0.17
+#####################################
+87aec2952 Now allows cross-portfolio ratios
+05afa476b Fixed Fund Unit test
+854316879 Added better Menu in fund card
+2d3d14b63 Now creates FundUnit, does not update existing FundUnit
+939fd803d Added fund ratio Scenario in the list cols
+cecc9f954 Better email of errors when CD job fails
+3160d3f99 Updated sebi report
+a9684f0c7 Update fund stats, to reflect 0$  commitments
+1742c2821 Fixes to Fund RAatio computations
+8339a0fc1 Added working test for fund ratio computation
+f1d5a5e12 Fixed tests for fund_units
+486eb2653 Added allocation of fund units for remittances based on multiple payments
+054e27f41 Added roll_up default to false for FundFormulas
+ae25dedaf Auto lock the Allocation runs which are a week old
+593a75a62 Removed documents from calls
+e496a229f Changed Fund stats folio count to only have Folios with > 0 commitment amount
+1638007c7 Removed investor composition chart in funds dashboard
+e0eb925db Added sum of portfolio income to API stats
+95152be77 Added tests for FundRation, needs to be improved
+9a2e8545f Removed Entity name from mailer layout
+33650f777 Removed additional Acct entry btns post allocation run
+f49279ca0 Moved some js to vendors and some to importmaps
+28d02da12 Runs, but not tested
+b868152fe First draft of fund_ratio_multi_fund_calcs
+8d8125c5d Added scenario to FundRatio
+
+V9.0.16
+#####################################
+1168ff89c Fixed unrealized gain only for buys
+535df0ea4 Removed config.host to application.rb
+52ad617f1 Knowledge folder (#772)
+1f814a3f5 Removed perform_all_calculations after_initialize to improve performance
+7eb72b3c7 Allocation run: Adds the run id to each account entry to enable filtering by run (#771)
+
 V9.0.15
 #####################################
 965e867ae Root docs fix (#770)
