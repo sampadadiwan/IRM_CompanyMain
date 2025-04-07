@@ -494,7 +494,12 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
     last_call_before = prior_calls.order(:call_date).last
 
     prior_lp_committment_amt = if last_call_before
-                                 last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day).last&.committed_amount || @capital_remittance.committed_amount
+                                 last_call_remittances = last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
+                                 if last_call_remittances.present?
+                                   money_sum(last_call_remittances, :committed_amount_cents)
+                                 else
+                                   @capital_remittance.committed_amount
+                                 end
                                else
                                  @capital_remittance.committed_amount
                                end
@@ -505,8 +510,14 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   def undrawn_comm_prior_notice_gp
     last_call_before = prior_calls.order(:call_date).last
+
     prior_gp_committment_amt = if last_call_before
-                                 last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day).last&.committed_amount || @capital_remittance.committed_amount
+                                 last_call_remittances = last_call_before.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id)).where(remittance_date: ..(@remittance_date - 1.day).end_of_day)
+                                 if last_call_remittances.present?
+                                   money_sum(last_call_remittances, :committed_amount_cents)
+                                 else
+                                   @capital_remittance.committed_amount
+                                 end
                                else
                                  @capital_remittance.committed_amount
                                end
