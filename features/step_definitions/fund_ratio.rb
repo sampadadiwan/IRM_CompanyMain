@@ -100,3 +100,52 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
   puts "Total Fund Ratios in DB: #{FundRatio.all.count}"
   count.should == FundRatio.all.count
 end
+
+
+Given('I have an Excel file {string}') do |file_path|
+  @xls_path = file_path
+  @workbook = Roo::Spreadsheet.open(@xls_path)
+end
+
+When('I read all sheets and compute XIRR') do
+  @results = []
+
+  @workbook.sheets.each do |sheet|
+    @workbook.default_sheet = sheet
+    cashflows = XirrCashflow.new
+
+    (1..@workbook.last_row).each do |i|
+      amount = @workbook.cell(i, 1)
+      date = @workbook.cell(i, 2)
+      type = @workbook.cell(i, 3)
+
+      next if amount.nil? || date.nil? 
+      puts "Row #{i}: Amount: #{amount}, Date: #{date}, Type: #{type}"
+      
+      if type.to_s.downcase == 'output'
+        @expected_xirr = amount.round(2)  
+        break
+      else
+        cashflows << XirrTransaction.new(amount, date: Date.parse(date.to_s), notes: type.to_s)
+      end
+    end
+
+    puts "Processing sheet: #{sheet}"
+    puts "Cashflows: #{cashflows}"
+    puts "Expected XIRR: #{@expected_xirr}"
+
+    lxirr = XirrApi.new.xirr(cashflows, "xirr_#{sheet}") || 0
+    puts "Computed XIRR: #{lxirr}"
+    computed_xirr = (lxirr).round(2)
+
+    @results << { sheet: sheet, expected: @expected_xirr, actual: computed_xirr }
+  end
+end
+
+Then('each computed XIRR should match the expected output') do
+  ap @results
+  @results.each do |result|
+    expect(result[:actual]).to be_within(0.01).of(result[:expected]),
+      "XIRR mismatch on sheet #{result[:sheet]}: expected #{result[:expected]}, got #{result[:actual]}"
+  end
+end

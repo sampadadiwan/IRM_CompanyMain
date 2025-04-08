@@ -51,6 +51,10 @@ class EntitySetting < ApplicationRecord
       EntitySetting.update_all(sandbox: true)
       User.update_all(whatsapp_enabled: false)
 
+      root = User.find_by email: "admin@altx.com"
+      root.password = "password"
+      root.save
+
       if reset_password
         User.find_each do |u|
           u.password = "password"
