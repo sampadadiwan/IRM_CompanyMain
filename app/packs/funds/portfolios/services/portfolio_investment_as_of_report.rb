@@ -49,7 +49,7 @@ class PortfolioInvestmentAsOfReport
         inv_inst_custom_field_values = get_custom_values(api.investment_instrument, inv_inst_form_type, inv_inst_custom_field_names)
 
         # Add row to XL
-        sheet.add_row [api.fund.name, api.portfolio_company_name, api.investment_instrument&.name, api.bought_quantity, api.bought_amount.to_d, api.avg_cost.to_d, api.transfer_quantity, api.transfer_amount, api.sold_quantity, api.sold_amount.to_d, api.cost_of_sold.to_d, api.gain, api.quantity, api.cost_of_remaining.to_d, api.fmv, api.unrealized_gain] +
+        sheet.add_row [api.fund.name, api.portfolio_company_name, api.investment_instrument&.name, api.bought_quantity, api.bought_amount.to_d, api.avg_cost.to_d, api.transfer_quantity, api.transfer_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.cost_of_sold.to_d, api.gain.to_d, api.quantity, api.cost_of_remaining.to_d, api.fmv.to_d, api.unrealized_gain.to_d] +
                       custom_field_values + custom_calc_values +
                       [api.investment_instrument&.category, api.investment_instrument&.sub_category, api.investment_instrument&.sector] + inv_inst_custom_field_values
       end
@@ -83,7 +83,7 @@ class PortfolioInvestmentAsOfReport
 
           pi = pi.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
 
-          sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.amount, pi.cost, pi.fmv, gain, unrealized_gain, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold, pi.notes] + custom_field_values + custom_calc_values
+          sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.amount.to_d, pi.cost.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold.to_d, pi.notes] + custom_field_values + custom_calc_values
         end
       end
     end
@@ -136,7 +136,7 @@ class PortfolioInvestmentAsOfReport
         inv_custom_field_values = get_custom_values(pc, inv_form_type, inv_custom_field_names)
 
         # Add row to XL
-        sheet.add_row [fund, pc.investor_name, bought_quantity, bought_amount.to_d, avg_cost.to_d, transfer_quantity, transfer_amount.to_d, sold_quantity, sold_amount.to_d, cost_of_sold.to_d, gain.to_d, quantity, cost_of_remaining.to_d, fmv, unrealized_gain.to_d] + inv_custom_field_values
+        sheet.add_row [fund, pc.investor_name, bought_quantity, bought_amount.to_d, avg_cost.to_d, transfer_quantity, transfer_amount.to_d, sold_quantity, sold_amount.to_d, cost_of_sold.to_d, gain.to_d, quantity, cost_of_remaining.to_d, fmv.to_d, unrealized_gain.to_d] + inv_custom_field_values
       end
     end
   end

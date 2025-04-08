@@ -20,6 +20,6 @@ wb.add_worksheet(name: "PortfolioInvestment") do |sheet|
       gain = pi.gain
     end
 
-    sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.amount, pi.cost, pi.fmv, gain, unrealized_gain, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold, pi.notes] + custom_field_values + custom_calc_values
+    sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.amount.to_d, pi.cost.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold.to_d, pi.notes] + custom_field_values + custom_calc_values
   end
 end
