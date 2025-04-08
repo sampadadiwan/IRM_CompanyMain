@@ -23,7 +23,7 @@
     </div>
     <div id="cashflows-tab" class="tab-pane fade in">
       <div id="cashflows" class="associated_entity">
-        <%= render "/portfolio_cashflows/index", portfolio_cashflows: @aggregate_portfolio_investment.portfolio_cashflows, aggregate_portfolio_investment: @aggregate_portfolio_investment %>
+        <%= render "/portfolio_cashflows/index", portfolio_cashflows: @aggregate_portfolio_investment.portfolio_cashflows.includes(:fund), aggregate_portfolio_investment: @aggregate_portfolio_investment %>
       </div>
     </div>
 
