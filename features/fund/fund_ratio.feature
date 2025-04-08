@@ -61,3 +61,9 @@ Scenario Outline: Bulk update Fund Ratio
   Examples:
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
+
+
+Scenario: Calculate XIRR from XLS sheets
+  Given I have an Excel file "public/sample_uploads/xirr/xirr_scenarios.xlsx"
+  When I read all sheets and compute XIRR
+  Then each computed XIRR should match the expected output
