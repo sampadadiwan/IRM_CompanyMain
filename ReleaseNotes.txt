@@ -1,3 +1,13 @@
+V9.0.18
+#####################################
+36161a6ef add-description-to-formula-import
+f50288c0d sebi-data-err-fix
+b37d4bb30 Remove investor_kyc_sebi_data table and usage
+223dc9bb9 Added tag based selection of portfolio company in cross portfolio ratios
+a04bc887f Added spec for formula upload, updated excel
+cff45269c Fund Formula upload needs a fund id so cant be done from generic screen
+f49a00e3d Updated Fund Formula import to include description
+
 V9.0.17
 #####################################
 87aec2952 Now allows cross-portfolio ratios

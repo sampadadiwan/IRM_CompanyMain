@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_05_051130) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_07_114252) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1459,7 +1459,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_051130) do
 
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
-    t.bigint "fund_id"
+    t.bigint "fund_id", null: false
     t.bigint "valuation_id"
     t.string "name"
     t.decimal "value", precision: 20, scale: 8, default: "0.0"
@@ -1967,17 +1967,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_051130) do
     t.index ["investor_id"], name: "index_investor_kpi_mappings_on_investor_id"
     t.index ["reported_kpi_name"], name: "index_investor_kpi_mappings_on_reported_kpi_name"
     t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
-  end
-
-  create_table "investor_kyc_sebi_datas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "investor_category"
-    t.string "investor_sub_category"
-    t.bigint "investor_kyc_id", null: false
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_investor_kyc_sebi_datas_on_entity_id"
-    t.index ["investor_kyc_id"], name: "index_investor_kyc_sebi_datas_on_investor_kyc_id"
   end
 
   create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3278,8 +3267,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_051130) do
   add_foreign_key "investor_advisors", "users", column: "created_by_id"
   add_foreign_key "investor_kpi_mappings", "entities"
   add_foreign_key "investor_kpi_mappings", "investors"
-  add_foreign_key "investor_kyc_sebi_datas", "entities"
-  add_foreign_key "investor_kyc_sebi_datas", "investor_kycs"
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"

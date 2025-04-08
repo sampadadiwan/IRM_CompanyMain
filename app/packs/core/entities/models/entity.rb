@@ -61,7 +61,6 @@ class Entity < ApplicationRecord
   has_many :rm_mappings, dependent: :destroy
   has_many :investor_advisors, dependent: :destroy
   has_many :investor_entities, through: :investors
-  has_many :investor_kyc_sebi_datas, dependent: :destroy
 
   # List of investors where this entity is an investor
   has_many :investees, foreign_key: "investor_entity_id", class_name: "Investor", dependent: :destroy
