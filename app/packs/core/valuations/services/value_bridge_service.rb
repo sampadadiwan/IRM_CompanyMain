@@ -1,9 +1,8 @@
-
-# The `ValueBridgeService` class is responsible for computing a "value bridge" 
-# that tracks changes in enterprise value across specific financial metrics 
-# (e.g., Revenue, EBITDA Margin, Valuation Multiple) between two valuation dates: 
-# the investment date and the analysis date. 
-# The value bridge provides a step-by-step breakdown of how each metric contributes 
+# The `ValueBridgeService` class is responsible for computing a "value bridge"
+# that tracks changes in enterprise value across specific financial metrics
+# (e.g., Revenue, EBITDA Margin, Valuation Multiple) between two valuation dates:
+# the investment date and the analysis date.
+# The value bridge provides a step-by-step breakdown of how each metric contributes
 # to the change in enterprise value over time.
 
 # Constants:
@@ -11,17 +10,16 @@
 # - `KEY_FIELDS`: Defines additional fields that may be relevant for calculations.
 
 # Methods:
-# - `initialize(investment_date_valuation, analysis_date_valuation)`: 
-#   Initializes the service with two valuation objects: one for the investment date 
+# - `initialize(investment_date_valuation, analysis_date_valuation)`:
+#   Initializes the service with two valuation objects: one for the investment date
 #   and one for the analysis date.
 #
-# - `compute_bridge`: 
-#   Computes the value bridge by iteratively adjusting each financial metric 
-#   in the valuation and calculating the resulting enterprise value change. 
-#   The method returns a hash where each key represents a step in the bridge 
-#   (e.g., "Entry", "Revenue", "EBITDA Margin", etc.), and the value is the 
+# - `compute_bridge`:
+#   Computes the value bridge by iteratively adjusting each financial metric
+#   in the valuation and calculating the resulting enterprise value change.
+#   The method returns a hash where each key represents a step in the bridge
+#   (e.g., "Entry", "Revenue", "EBITDA Margin", etc.), and the value is the
 #   corresponding valuation object at that step.
-
 
 class ValueBridgeService
   VALUE_BRIDGE_FIELDS = ["Revenue", "EBITDA Margin", "Valuation Multiple"].freeze
@@ -103,7 +101,7 @@ class ValueBridgeService
       # Perform all calculations
       valuation.perform_all_calculations
       # Calculate the enterprise value change
-      valuation.json_fields["enterprise_value_change"] = valuation.json_fields["enterprise_value"] - prev_valuation.json_fields["enterprise_value"] if valuation.json_fields["enterprise_value"].present? && prev_valuation.json_fields["enterprise_value"].present?
+      valuation.json_fields["enterprise_value_change"] = (valuation.json_fields["enterprise_value"] - prev_valuation.json_fields["enterprise_value"]).round(2) if valuation.json_fields["enterprise_value"].present? && prev_valuation.json_fields["enterprise_value"].present?
       # Add the valuation to the bridge
       bridge[bridge_field] = valuation
       # Set the prev valuation to the current valuation

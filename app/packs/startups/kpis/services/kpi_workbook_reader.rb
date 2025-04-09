@@ -186,6 +186,7 @@ class KpiWorkbookReader
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
   end
 
+  # rubocop:disable Metrics/MethodLength
   # Parses a raw period string into a Date object
   def parse_period(raw_period, fiscal_year_start_month: 4)
     return nil if raw_period.blank?
@@ -256,6 +257,7 @@ class KpiWorkbookReader
     Rails.logger.warn("Unrecognized period format: '#{raw_period}'")
     nil
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Normalizes a year (e.g., converts 2-digit years to 4-digit)
   def normalize_year(year)
