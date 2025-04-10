@@ -30,15 +30,15 @@
 class KpiWorkbookReader
   def initialize(document, target_kpis, user, portfolio_company)
     @document = document
-    puts "Document: #{@document.name}" 
+    Rails.logger.debug { "Document: #{@document.name}" }
     # Normalize target KPI names for consistent matching
     @target_kpis = target_kpis.map { |kpi| normalize_kpi_name(kpi) }
-    puts  "Target KPIs: #{@target_kpis.inspect}" 
+    Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
     @user = user
 
     @portfolio_company = portfolio_company
     @portfolio_company_id = portfolio_company.id
-    puts  "Portfolio Company: #{@portfolio_company.name}" 
+    Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Initialize results hash to store extracted KPI data
     @results = {}
     # Initialize error messages array to store processing errors
@@ -53,7 +53,7 @@ class KpiWorkbookReader
 
       # Iterate through each sheet in the workbook
       @workbook.sheets.each do |sheet|
-        puts "KpiWorkbookReader: Processing sheet: #{sheet}" 
+        Rails.logger.debug { "KpiWorkbookReader: Processing sheet: #{sheet}" }
 
         begin
           # Set the current sheet as the default sheet
@@ -73,7 +73,7 @@ class KpiWorkbookReader
           # Process the data rows below the header
           process_data_rows(sheet, header_row_index + 1, header)
         rescue StandardError => e
-          puts e.backtrace
+          Rails.logger.debug e.backtrace
           # Log an error if processing the sheet fails
           msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
           Rails.logger.error(msg)
@@ -135,16 +135,16 @@ class KpiWorkbookReader
       # Iterate through the remaining columns to extract KPI values
       row[1..].each_with_index do |value, col_index|
         # Get the corresponding period from the header
-        raw_period = header[col_index + 1] 
+        raw_period = header[col_index + 1]
         period = raw_period&.to_s&.strip
-        puts "Processing KPI: #{raw_kpi_name}, Period: #{period}, Value: #{value}" 
+        Rails.logger.debug { "Processing KPI: #{raw_kpi_name}, Period: #{period}, Value: #{value}" }
         # Skip if the period or value is blank
         next if period.blank? || value.nil? || value.to_s.strip.empty?
 
         # Check for duplicate periods in the same row
         if seen_periods[period]
           msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
-          puts msg
+          Rails.logger.debug msg
           @error_msg << { msg:, document: document.name, document_id: document.id }
           next # Skip this column
         end
@@ -152,7 +152,7 @@ class KpiWorkbookReader
 
         # Parse the period into a date object
         parsed_period = KpiDateUtils.parse_period(period)
-        
+
         @results[parsed_period] ||= nil
         # Skip if the period could not be parsed
         next unless parsed_period
@@ -168,9 +168,9 @@ class KpiWorkbookReader
         # Add the extracted KPI entry to the results
         kpi = kpi_report.kpis.where(name: raw_kpi_name, portfolio_company_id: @portfolio_company_id, entity_id: @portfolio_company&.entity_id).first_or_initialize
         if kpi.persisted?
-          puts "Updating existing KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" 
+          Rails.logger.debug { "Updating existing KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" }
         else
-          puts "Creating new KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" 
+          Rails.logger.debug { "Creating new KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" }
         end
         kpi.value = value
         kpi.display_value = value
@@ -215,7 +215,6 @@ class KpiWorkbookReader
     # Convert to lowercase and remove spaces
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
   end
-
 
   # Detects the column containing KPI names
   def detect_kpi_name_column(start_row, max_cols_to_scan = 3, sample_size = 10)
