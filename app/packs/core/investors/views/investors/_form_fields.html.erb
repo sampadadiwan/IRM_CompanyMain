@@ -7,7 +7,8 @@
 
   <div class="form-group">
     <%= form.label :category %>
-    <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control"  %>
+    <!-- Even though this is not a custom field, its class is set to custom_field to enable other custom_fields to be dependent on this -->
+    <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control custom_field"  %>
   </div>
 
   <% disabled = !investor.new_record? %>
