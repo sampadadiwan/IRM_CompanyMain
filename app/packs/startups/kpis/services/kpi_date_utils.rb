@@ -1,4 +1,27 @@
 class KpiDateUtils
+  # Determines if a string looks like a date or period label
+  def self.date_like?(string)
+    return false if string.blank?
+
+    # Define patterns for common date-like formats
+    patterns = [
+      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[-' ]?\d{2,4}\b/i, # Jan-24, Feb 2023
+      %r{\b\d{4}[-/]\d{1,2}\b}, # 2024-01 or 2024/1
+      /\bQ[1-4][-' ]?\d{2,4}\b/i # Q1-24
+    ]
+
+    # Return true if any pattern matches
+    return true if patterns.any? { |pat| string =~ pat }
+
+    # Fallback: Try parsing as a date
+    begin
+      Date.parse(string)
+      true
+    rescue StandardError
+      false
+    end
+  end
+
   # rubocop:disable Metrics/MethodLength
   # Parses a raw period string into a Date object
   def self.parse_period(raw_period, fiscal_year_start_month: 4)
@@ -79,9 +102,9 @@ class KpiDateUtils
     end
   end
 
-  def self.start_of_fiscal_quarter(fy, quarter, fiscal_start_month)
+  def self.start_of_fiscal_quarter(fin_year, quarter, fiscal_start_month)
     start_month = (((fiscal_start_month - 1) + ((quarter - 1) * 3)) % 12) + 1
-    year = start_month >= fiscal_start_month ? fy - 1 : fy
+    year = start_month >= fiscal_start_month ? fin_year - 1 : fin_year
     Date.new(year, start_month, 1)
   end
 end

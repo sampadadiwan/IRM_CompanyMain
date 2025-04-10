@@ -100,7 +100,7 @@ class KpiWorkbookReader
       period_candidates = row[1..]
 
       # Count the number of date-like values in the row
-      date_like_count = period_candidates.count { |val| date_like?(val) }
+      date_like_count = period_candidates.count { |val| KpiDateUtils.date_like?(val) }
 
       # Return the row index if it contains 2+ date-like values
       return i if date_like_count >= 2
@@ -112,102 +112,79 @@ class KpiWorkbookReader
 
   # Processes rows of KPI data beneath the header
   def process_data_rows(sheet, start_row, header)
-    # Iterate through each row starting from the data rows
     (start_row..@workbook.last_row).each do |row_index|
       row = clean_row(@workbook.row(row_index))
+      next if row.empty? || row.all?(&:blank?)
 
-      # Skip rows that are completely empty or meaningless
-      next if row.empty? || row.all? { |cell| cell.to_s.strip.empty? }
-
-      # Detect the column containing KPI names
       kpi_col = detect_kpi_name_column(start_row)
       raw_kpi_name = row[kpi_col]
-
-      # Normalize the KPI name for matching
       kpi_name = normalize_kpi_name(raw_kpi_name)
-      # Skip if the KPI is not in the target list
       next unless @target_kpis.include?(kpi_name)
 
-      # Initialize the results array for this KPI if not already present
-
-      seen_periods = {}
-
-      # Iterate through the remaining columns to extract KPI values
-      row[1..].each_with_index do |value, col_index|
-        # Get the corresponding period from the header
-        raw_period = header[col_index + 1]
-        period = raw_period&.to_s&.strip
-        Rails.logger.debug { "Processing KPI: #{raw_kpi_name}, Period: #{period}, Value: #{value}" }
-        # Skip if the period or value is blank
-        next if period.blank? || value.nil? || value.to_s.strip.empty?
-
-        # Check for duplicate periods in the same row
-        if seen_periods[period]
-          msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
-          Rails.logger.debug msg
-          @error_msg << { msg:, document: document.name, document_id: document.id }
-          next # Skip this column
-        end
-        seen_periods[period] = true
-
-        # Parse the period into a date object
-        parsed_period = KpiDateUtils.parse_period(period)
-
-        @results[parsed_period] ||= nil
-        # Skip if the period could not be parsed
-        next unless parsed_period
-
-        # Create or find the KpiReport for this period
-        kpi_report = @results[parsed_period]
-        kpi_report ||= KpiReport.where(entity_id: @portfolio_company&.entity_id, as_of: parsed_period, portfolio_company_id: @portfolio_company_id).first_or_create
-        kpi_report.user ||= @user
-        kpi_report.save! unless kpi_report.persisted?
-
-        @results[parsed_period] = kpi_report
-
-        # Add the extracted KPI entry to the results
-        kpi = kpi_report.kpis.where(name: raw_kpi_name, portfolio_company_id: @portfolio_company_id, entity_id: @portfolio_company&.entity_id).first_or_initialize
-        if kpi.persisted?
-          Rails.logger.debug { "Updating existing KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" }
-        else
-          Rails.logger.debug { "Creating new KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" }
-        end
-        kpi.value = value
-        kpi.display_value = value
-        # kpi.owner = @portfolio_company
-        kpi.source = "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
-        kpi.save
-      end
+      process_kpi_row(sheet, row, header, raw_kpi_name, kpi_name)
     end
+  end
+
+  def process_kpi_row(sheet, row, header, raw_kpi_name, _kpi_name)
+    seen_periods = {}
+
+    row[1..].each_with_index do |value, col_index|
+      raw_period = header[col_index + 1]
+      period = raw_period&.to_s&.strip
+      next if period.blank? || value.blank?
+
+      if seen_periods[period]
+        log_duplicate_period_warning(sheet, period)
+        next
+      end
+      seen_periods[period] = true
+
+      parsed_period = KpiDateUtils.parse_period(period)
+      next unless parsed_period
+
+      kpi_report = find_or_create_kpi_report(parsed_period)
+      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+    end
+  end
+
+  def log_duplicate_period_warning(sheet, period)
+    msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
+    Rails.logger.debug msg
+    @error_msg << { msg:, document: @document.name, document_id: @document.id }
+  end
+
+  def find_or_create_kpi_report(parsed_period)
+    @results[parsed_period] ||= KpiReport.where(
+      entity_id: @portfolio_company&.entity_id,
+      as_of: parsed_period,
+      portfolio_company_id: @portfolio_company_id
+    ).first_or_create.tap do |report|
+      report.user ||= @user
+      report.save! unless report.persisted?
+    end
+  end
+
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+    kpi = kpi_report.kpis.where(
+      name: raw_kpi_name,
+      portfolio_company_id: @portfolio_company_id,
+      entity_id: @portfolio_company&.entity_id
+    ).first_or_initialize
+
+    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period}" }
+
+    kpi.assign_attributes(
+      value: value,
+      display_value: value,
+      source: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
+    )
+    kpi.save
   end
 
   # Strips and normalizes a row's values
   def clean_row(row)
     # Convert each cell to a string, strip whitespace, and handle nil values
     row.map { |cell| cell&.to_s&.strip }
-  end
-
-  # Determines if a string looks like a date or period label
-  def date_like?(string)
-    return false if string.blank?
-
-    # Define patterns for common date-like formats
-    patterns = [
-      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[-' ]?\d{2,4}\b/i, # Jan-24, Feb 2023
-      %r{\b\d{4}[-/]\d{1,2}\b}, # 2024-01 or 2024/1
-      /\bQ[1-4][-' ]?\d{2,4}\b/i # Q1-24
-    ]
-
-    # Return true if any pattern matches
-    return true if patterns.any? { |pat| string =~ pat }
-
-    # Fallback: Try parsing as a date
-    begin
-      Date.parse(string)
-      true
-    rescue StandardError
-      false
-    end
   end
 
   # Normalize KPI names for consistent matching
