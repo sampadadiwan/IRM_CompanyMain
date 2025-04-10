@@ -114,7 +114,7 @@ module PortfolioComputations
            net_quantity_on(date)
          end
 
-    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) * 100.0 : 0
+    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
   end
 
   # This method is memoized to avoid multiple calls to the database
