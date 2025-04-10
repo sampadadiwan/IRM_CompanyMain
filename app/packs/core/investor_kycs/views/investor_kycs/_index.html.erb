@@ -96,7 +96,7 @@
   </div>
 
   <% investor_kycs_frame = "investor_kycs_frame" %>
-  <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.to_unsafe_h, import_upload_id:), turbo_frame: investor_kycs_frame) %>
+  <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
 
   <div class="table-responsive">
     <table id="investor_kycs" class="table table-bordered dataTable action_table hover">
