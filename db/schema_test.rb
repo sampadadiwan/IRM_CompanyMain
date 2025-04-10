@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_04_07_114252) do
+ActiveRecord::Schema[7.2].define(version: 2025_04_10_040220) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1078,7 +1078,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_07_114252) do
     t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false, null: false
+    t.boolean "template", default: false, null: true
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"
@@ -2216,6 +2216,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_07_114252) do
     t.decimal "percentage_change", precision: 5, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
     t.bigint "owner_id"
+    t.string "source", limit: 100
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"

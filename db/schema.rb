@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_07_114252) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2212,6 +2212,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_114252) do
     t.decimal "percentage_change", precision: 5, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
     t.bigint "owner_id"
+    t.string "source", limit: 100
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
@@ -2475,6 +2476,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_114252) do
     t.index ["investment_instrument_id"], name: "index_portfolio_cashflows_on_investment_instrument_id"
     t.index ["payment_date"], name: "index_portfolio_cashflows_on_payment_date"
     t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
+  end
+
+  create_table "portfolio_company_kpi_extraction_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.string "metric_name", limit: 40
+    t.string "sheet_name", limit: 40
+    t.string "metric_label", limit: 40
+    t.integer "match_column"
+    t.string "header_regex"
+    t.json "json_rules"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_portfolio_company_kpi_extraction_mappings_on_entity_id"
+    t.index ["portfolio_company_id"], name: "idx_on_portfolio_company_id_b8c50ead10"
   end
 
   create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3328,6 +3344,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_114252) do
   add_foreign_key "portfolio_cashflows", "funds"
   add_foreign_key "portfolio_cashflows", "investment_instruments"
   add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_company_kpi_extraction_mappings", "entities"
+  add_foreign_key "portfolio_company_kpi_extraction_mappings", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "exchange_rates"

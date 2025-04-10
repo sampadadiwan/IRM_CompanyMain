@@ -30,7 +30,7 @@ class KpiReport < ApplicationRecord
   after_create_commit :import_kpis
   def import_kpis
     kpi_file = documents.where(name: "KPIs").first
-    ImportUpload.create(entity_id: entity_id, owner: self, import_type: "Kpi", name: "KPIs", import_file_data: kpi_file.file_data, user_id: user_id) if kpi_file.present?
+    ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
   end
 
   def custom_kpis

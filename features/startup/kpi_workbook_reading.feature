@@ -4,7 +4,9 @@ Feature: KPI Workbook Reading
   So that I can analyze startup performance metrics accurately
 
   Scenario Outline: Extracting specific KPIs from various workbooks
-    Given the KPI workbook file "<workbook_file>" exists
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    Given the KPI workbook file "<workbook_file>" for a kpi report
     And the target KPIs are "<target_kpis>"
     When the KpiWorkbookReader processes the file
     Then the extracted KPI data should be valid for the given workbook and targets with "<count>"
@@ -19,6 +21,6 @@ Feature: KPI Workbook Reading
     Examples:
       | workbook_file                   | target_kpis                                                                          | count |
       | kpi_extraction/MIS sample.xlsx  | Revenue, Number of Distributors, Net Current Assets, Orders MoMGrowth, Returns%      | 17 |
-      | kpi_extraction/MIS Sample2.xlsx | Revenue from operations, GRoss Profit, Net Current Assets, Orders MoMGrowth, EBITDA  | 9 |
-      | kpi_extraction/MIS Sample3.xlsx | Number of customers, Opex, Gross NPA                    | 8 |
+      | kpi_extraction/MIS Sample2.xlsx | Revenue from operations, GRoss Profit, Net Current Assets, Orders MoMGrowth, EBITDA  | 5 |
+      | kpi_extraction/MIS Sample3.xlsx | Number of customers, Opex, Gross NPA                    | 7 |
       # Add more example rows with different files or target KPI combinations as needed

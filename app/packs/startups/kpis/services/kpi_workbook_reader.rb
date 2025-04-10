@@ -19,7 +19,7 @@
 #   results = reader.extract_kpis
 #
 # The extracted results are stored in a hash where each key is a normalized KPI name, and the value
-# is an array of `KpiEntry` structs containing the worksheet name, raw KPI name, raw period, parsed
+# is an array of `Kpi` structs containing the worksheet name, raw KPI name, raw period, parsed
 # period date, and the extracted value.
 #
 # Error Handling:
@@ -28,14 +28,17 @@
 # - Collects error messages in an array for further inspection.
 
 class KpiWorkbookReader
-  # Struct to hold extracted KPI values
-  KpiEntry = Struct.new(:worksheet, :kpi_name, :period_raw, :period_date, :value)
-
-  def initialize(file_path, target_kpis)
-    # Open the workbook using Roo gem
-    @workbook = Roo::Spreadsheet.open(file_path)
+  def initialize(document, target_kpis, user, portfolio_company)
+    @document = document
+    Rails.logger.debug { "Document: #{@document.name}" }
     # Normalize target KPI names for consistent matching
     @target_kpis = target_kpis.map { |kpi| normalize_kpi_name(kpi) }
+    Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
+    @user = user
+
+    @portfolio_company = portfolio_company
+    @portfolio_company_id = portfolio_company.id
+    Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Initialize results hash to store extracted KPI data
     @results = {}
     # Initialize error messages array to store processing errors
@@ -43,33 +46,40 @@ class KpiWorkbookReader
   end
 
   def extract_kpis
-    # Iterate through each sheet in the workbook
-    @workbook.sheets.each do |sheet|
-      Rails.logger.debug { "Processing sheet: #{sheet}" }
+    @document.file.download do |file|
+      file_path = file.path
+      # Open the workbook using Roo gem
+      @workbook = Roo::Spreadsheet.open(file_path)
 
-      begin
-        # Set the current sheet as the default sheet
-        @workbook.default_sheet = sheet
-        # Detect the header row in the sheet
-        header_row_index = detect_header_row
-        unless header_row_index
-          # Log a warning if no valid header row is found
-          msg = "No valid header found in sheet: #{sheet}"
-          Rails.logger.warn(msg)
-          @error_msg << { msg:, document: document.name, document_id: document.id }
+      # Iterate through each sheet in the workbook
+      @workbook.sheets.each do |sheet|
+        Rails.logger.debug { "KpiWorkbookReader: Processing sheet: #{sheet}" }
+
+        begin
+          # Set the current sheet as the default sheet
+          @workbook.default_sheet = sheet
+          # Detect the header row in the sheet
+          header_row_index = detect_header_row
+          unless header_row_index
+            # Log a warning if no valid header row is found
+            msg = "No valid header found in KPI import file for sheet: #{sheet}"
+            Rails.logger.warn(msg)
+            @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+            next
+          end
+
+          # Clean and normalize the header row
+          header = clean_row(@workbook.row(header_row_index))
+          # Process the data rows below the header
+          process_data_rows(sheet, header_row_index + 1, header)
+        rescue StandardError => e
+          Rails.logger.debug e.backtrace
+          # Log an error if processing the sheet fails
+          msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
+          Rails.logger.error(msg)
+          @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
           next
         end
-
-        # Clean and normalize the header row
-        header = clean_row(@workbook.row(header_row_index))
-        # Process the data rows below the header
-        process_data_rows(sheet, header_row_index + 1, header)
-      rescue StandardError => e
-        # Log an error if processing the sheet fails
-        msg = "Failed to process sheet '#{sheet}': #{e.message}"
-        Rails.logger.error(msg)
-        @error_msg << { msg:, document: document.name, document_id: document.id }
-        next
       end
     end
 
@@ -119,7 +129,7 @@ class KpiWorkbookReader
       next unless @target_kpis.include?(kpi_name)
 
       # Initialize the results array for this KPI if not already present
-      @results[kpi_name] ||= []
+
       seen_periods = {}
 
       # Iterate through the remaining columns to extract KPI values
@@ -142,11 +152,31 @@ class KpiWorkbookReader
 
         # Parse the period into a date object
         parsed_period = parse_period(period)
+
+        @results[parsed_period] ||= nil
         # Skip if the period could not be parsed
         next unless parsed_period
 
+        # Create or find the KpiReport for this period
+        kpi_report = @results[parsed_period]
+        kpi_report ||= KpiReport.where(entity_id: @portfolio_company&.entity_id, as_of: parsed_period, portfolio_company_id: @portfolio_company_id).first_or_create
+        kpi_report.user ||= @user
+        kpi_report.save! unless kpi_report.persisted?
+
+        @results[parsed_period] = kpi_report
+
         # Add the extracted KPI entry to the results
-        @results[kpi_name] << KpiEntry.new(sheet, raw_kpi_name, period, parsed_period, value)
+        kpi = kpi_report.kpis.where(name: raw_kpi_name, portfolio_company_id: @portfolio_company_id, entity_id: @portfolio_company&.entity_id).first_or_initialize
+        if kpi.persisted?
+          Rails.logger.debug { "Updating existing KPI: #{kpi.name} for period: #{period} #{parsed_period}" }
+        else
+          Rails.logger.debug { "Creating new KPI: #{kpi.name} for period: #{period} #{parsed_period}" }
+        end
+        kpi.value = value
+        kpi.display_value = value
+        # kpi.owner = @portfolio_company
+        kpi.source = "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
+        kpi.save
       end
     end
   end
