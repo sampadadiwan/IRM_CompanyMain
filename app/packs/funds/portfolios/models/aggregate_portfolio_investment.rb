@@ -196,7 +196,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
 
     # Get the fmv for this portfolio_company on the end_date
-    net_quantity * valuation.per_share_value_in(fund.currency, end_date).cents
+    net_quantity * valuation.per_share_value_in(fund.currency, end_date) * 100.0
   end
 
   # This method is used in some allocations formulas, do NOT delete this, as its not directly referenced by the codebase
