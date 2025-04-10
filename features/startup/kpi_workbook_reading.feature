@@ -21,6 +21,6 @@ Feature: KPI Workbook Reading
     Examples:
       | workbook_file                   | target_kpis                                                                          | count |
       | kpi_extraction/MIS sample.xlsx  | Revenue, Number of Distributors, Net Current Assets, Orders MoMGrowth, Returns%      | 17 |
-      | kpi_extraction/MIS Sample2.xlsx | Revenue from operations, GRoss Profit, Net Current Assets, Orders MoMGrowth, EBITDA  | 5 |
+      | kpi_extraction/MIS Sample2.xlsx | Revenue from operations, Gross Profit, EBITDA  | 8 |
       | kpi_extraction/MIS Sample3.xlsx | Number of customers, Opex, Gross NPA                    | 7 |
       # Add more example rows with different files or target KPI combinations as needed

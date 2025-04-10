@@ -30,15 +30,15 @@
 class KpiWorkbookReader
   def initialize(document, target_kpis, user, portfolio_company)
     @document = document
-    Rails.logger.debug { "Document: #{@document.name}" }
+    puts "Document: #{@document.name}" 
     # Normalize target KPI names for consistent matching
     @target_kpis = target_kpis.map { |kpi| normalize_kpi_name(kpi) }
-    Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
+    puts  "Target KPIs: #{@target_kpis.inspect}" 
     @user = user
 
     @portfolio_company = portfolio_company
     @portfolio_company_id = portfolio_company.id
-    Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
+    puts  "Portfolio Company: #{@portfolio_company.name}" 
     # Initialize results hash to store extracted KPI data
     @results = {}
     # Initialize error messages array to store processing errors
@@ -53,7 +53,7 @@ class KpiWorkbookReader
 
       # Iterate through each sheet in the workbook
       @workbook.sheets.each do |sheet|
-        Rails.logger.debug { "KpiWorkbookReader: Processing sheet: #{sheet}" }
+        puts "KpiWorkbookReader: Processing sheet: #{sheet}" 
 
         begin
           # Set the current sheet as the default sheet
@@ -73,7 +73,7 @@ class KpiWorkbookReader
           # Process the data rows below the header
           process_data_rows(sheet, header_row_index + 1, header)
         rescue StandardError => e
-          Rails.logger.debug e.backtrace
+          puts e.backtrace
           # Log an error if processing the sheet fails
           msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
           Rails.logger.error(msg)
@@ -135,24 +135,24 @@ class KpiWorkbookReader
       # Iterate through the remaining columns to extract KPI values
       row[1..].each_with_index do |value, col_index|
         # Get the corresponding period from the header
-        raw_period = header[col_index + 1] # Shift by 1 because row[0] is KPI name
+        raw_period = header[col_index + 1] 
         period = raw_period&.to_s&.strip
-
+        puts "Processing KPI: #{raw_kpi_name}, Period: #{period}, Value: #{value}" 
         # Skip if the period or value is blank
         next if period.blank? || value.nil? || value.to_s.strip.empty?
 
         # Check for duplicate periods in the same row
         if seen_periods[period]
           msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
-          Rails.logger.warn(msg)
+          puts msg
           @error_msg << { msg:, document: document.name, document_id: document.id }
           next # Skip this column
         end
         seen_periods[period] = true
 
         # Parse the period into a date object
-        parsed_period = parse_period(period)
-
+        parsed_period = KpiDateUtils.parse_period(period)
+        
         @results[parsed_period] ||= nil
         # Skip if the period could not be parsed
         next unless parsed_period
@@ -168,9 +168,9 @@ class KpiWorkbookReader
         # Add the extracted KPI entry to the results
         kpi = kpi_report.kpis.where(name: raw_kpi_name, portfolio_company_id: @portfolio_company_id, entity_id: @portfolio_company&.entity_id).first_or_initialize
         if kpi.persisted?
-          Rails.logger.debug { "Updating existing KPI: #{kpi.name} for period: #{period} #{parsed_period}" }
+          puts "Updating existing KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" 
         else
-          Rails.logger.debug { "Creating new KPI: #{kpi.name} for period: #{period} #{parsed_period}" }
+          puts "Creating new KPI: #{kpi.name}, value: #{kpi.value}, for period: #{period} #{parsed_period}" 
         end
         kpi.value = value
         kpi.display_value = value
@@ -216,97 +216,6 @@ class KpiWorkbookReader
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
   end
 
-  # rubocop:disable Metrics/MethodLength
-  # Parses a raw period string into a Date object
-  def parse_period(raw_period, fiscal_year_start_month: 4)
-    return nil if raw_period.blank?
-
-    str = raw_period.to_s.strip
-
-    # Normalize whitespace and casing
-    str = str.gsub(/\s+/, ' ').strip
-
-    # Try standard parsing first
-    begin
-      return Date.parse(str)
-    rescue ArgumentError
-      # Keep trying below
-    end
-
-    # Handle specific period formats (e.g., fiscal quarters, FYs, etc.)
-    case str
-    when /\A(?:Q([1-4])[- ]?FY(\d{2,4}))\z/i
-      # e.g., Q3 FY23 or Q3FY2023
-      quarter = ::Regexp.last_match(1).to_i
-      fy = normalize_year(::Regexp.last_match(2))
-      return start_of_fiscal_quarter(fy, quarter, fiscal_year_start_month)
-    when /\A(?:FY(\d{2,4})[- ]?Q([1-4]))\z/i
-      # e.g., FY23 Q2
-      fy = normalize_year(::Regexp.last_match(1))
-      quarter = ::Regexp.last_match(2).to_i
-      return start_of_fiscal_quarter(fy, quarter, fiscal_year_start_month)
-    when /\A([A-Za-z]{3,})[- ]?FY(\d{2,4})\z/i
-      # e.g., Jan FY24
-      month_name = ::Regexp.last_match(1)
-      fy = normalize_year(::Regexp.last_match(2))
-      begin
-        return Date.parse("#{month_name} #{fy}")
-      rescue ArgumentError
-        return nil
-      end
-    when /\AFY(\d{2,4})\z/i
-      # e.g., FY24 => treat as start of FY
-      fy = normalize_year(::Regexp.last_match(1))
-      return Date.new(fy, fiscal_year_start_month, 1)
-    when /\A(?:Q([1-4])\s+(\d{2,4}))\z/i
-      # e.g., "Q1 2024"
-      quarter = ::Regexp.last_match(1).to_i
-      year = normalize_year(::Regexp.last_match(2))
-      return start_of_fiscal_quarter(year, quarter, fiscal_year_start_month)
-    when /\ACY\s+(\d{2,4})\z/i
-      # e.g., "CY 2024"
-      year = normalize_year(::Regexp.last_match(1))
-      return Date.new(year, 1, 1)
-    end
-
-    # Try parsing common date formats
-    date_formats = [
-      "%b-%y", "%b-%Y", "%B-%y", "%B-%Y",
-      "%m-%y", "%m-%Y", "%Y-%m", "%Y/%m",
-      "%b %Y", "%b %y", "%B %Y", "%B %y",
-      "%m/%Y", "%m/%y", "%Y/%b", "%Y/%B"
-    ]
-
-    date_formats.each do |format|
-      return Date.strptime(str, format)
-    rescue ArgumentError
-      next
-    end
-
-    # Log a warning if the period format is unrecognized
-    Rails.logger.warn("Unrecognized period format: '#{raw_period}'")
-    nil
-  end
-  # rubocop:enable Metrics/MethodLength
-
-  # Normalizes a year (e.g., converts 2-digit years to 4-digit)
-  def normalize_year(year)
-    year = year.to_i
-    if year < 100
-      year >= 50 ? 1900 + year : 2000 + year
-    else
-      year
-    end
-  end
-
-  # Calculates the start date of a fiscal quarter
-  def start_of_fiscal_quarter(fyear, quarter, fiscal_start_month)
-    # Calculate the start month of the quarter
-    start_month = ((((quarter - 1) * 3) + fiscal_start_month - 1) % 12) + 1
-    # Adjust the year based on the fiscal start month
-    year = start_month >= fiscal_start_month ? fyear - 1 : fyear
-    Date.new(year, start_month, 1)
-  end
 
   # Detects the column containing KPI names
   def detect_kpi_name_column(start_row, max_cols_to_scan = 3, sample_size = 10)

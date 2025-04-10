@@ -1,8 +1,3 @@
-# features/step_definitions/startups/kpis/kpi_workbook_steps.rb
-
-require 'rspec/expectations' # Include RSpec matchers for assertions
-
-# Using instance variables (@variable) to share state between steps within a scenario
 
 Given('the KPI workbook file {string} for a kpi report') do |workbook_file|  # Store the workbook file path for later use
   @workbook_file = "public/sample_uploads/#{workbook_file}"
@@ -46,6 +41,33 @@ Then('the extracted KPI data should be valid for the given workbook and targets 
   @extracted_kpis.keys.length.should eq(count.to_i)
   @extracted_kpis.each do |date, kpi_report|
     puts "Validating date: #{date} with entries: #{kpi_report.kpis.length}"
+    puts "Expected KPIs: #{@target_kpis} got #{kpi_report.kpis.map(&:name)}"
     kpi_report.kpis.length.should eq(@target_kpis.length)
   end
+end
+
+
+When('I parse the period string {string}') do |period_string|
+  @parsed_date = KpiDateUtils.parse_period(period_string)
+end
+
+# Handle the case where the input string itself might be empty in the feature file
+When('I parse the period string') do
+  # Pass an empty string explicitly for the blank input case
+  @parsed_date = KpiDateUtils.parse_period("")
+end
+
+
+Then('the resulting date should be {string}') do |expected_date_string|
+  if expected_date_string.blank?
+    expect(@parsed_date).to be_nil, "Expected nil date for input, but got #{@parsed_date.inspect}"
+  else
+    expected_date = Date.parse(expected_date_string)
+    expect(@parsed_date).to eq(expected_date), "Expected date #{expected_date} for input, but got #{@parsed_date.inspect}"
+  end
+end
+
+# Handle the case where the expected date is nil/empty
+Then('the resulting date should be') do
+  expect(@parsed_date).to be_nil, "Expected nil date for input, but got #{@parsed_date.inspect}"
 end
