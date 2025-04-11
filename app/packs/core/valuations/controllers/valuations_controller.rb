@@ -100,11 +100,11 @@ class ValuationsController < ApplicationController
 
   def value_bridge
     if params[:initial_valuation_id].present? && params[:final_valuation_id].present?
-      initial_valuation = Valuation.find(params[:initial_valuation_id])
-      authorize(initial_valuation)
-      final_valuation = Valuation.find(params[:final_valuation_id])
-      authorize(final_valuation)
-      @bridge = ValueBridgeService.new(initial_valuation, final_valuation).compute_bridge
+      @initial_valuation = Valuation.find(params[:initial_valuation_id])
+      authorize(@initial_valuation)
+      @final_valuation = Valuation.find(params[:final_valuation_id])
+      authorize(@final_valuation)
+      @bridge = ValueBridgeService.new(@initial_valuation, @final_valuation).compute_bridge
       render "value_bridge"
     elsif params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])

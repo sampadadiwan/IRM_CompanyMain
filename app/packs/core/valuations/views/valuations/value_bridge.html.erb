@@ -1,3 +1,15 @@
+
+<%= turbo_frame_tag "value_bridge_frame" do %>
+
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Value Bridge for <%= @initial_valuation.investment_instrument.name%> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h1>
+    
+    <span>
+    
+    </span>
+</div>
+
 <div class="table-responsive" data-controller="datatable">
 <% 
     bridge_fields = ["Entry"] + ValueBridgeService::VALUE_BRIDGE_FIELDS 
@@ -52,37 +64,10 @@
 
 </div>
 
-<div class="associated_entity">
-    <div id="waterfall-chart" data-chart-values='<%= raw waterfall_chart_data.to_json %>'></div>
+<div class="associated_entity" data-controller="valuebridge">
+    <div id="waterfall-chart" 
+        data-chart-values="<%= json_escape(waterfall_chart_data.map(&:to_h).to_json) %>
+"></div>
 </div>
 
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-  var chartElement = document.getElementById("waterfall-chart");
-  var chartData = chartElement.getAttribute("data-chart-values");
-
-  console.log("Raw Data Attribute:", chartData); // Debugging Step
-
-  try {
-    chartData = JSON.parse(chartData);
-  } catch (e) {
-    console.error("Invalid JSON Data for Chart:", e);
-    return;
-  }
-
-  Highcharts.chart(chartElement, {
-    chart: { type: 'waterfall' },
-    title: { text: 'Value Bridge' },
-    xAxis: { type: 'category' },
-    yAxis: { title: { text: 'Amount' } },
-    series: [{
-      name: "Revenue Flow",
-      data: chartData,
-      dataLabels: { enabled: true }
-    }]
-  });
-
-    console.log("Waterfall chart initialized");
-});
-</script>
+<% end %>
