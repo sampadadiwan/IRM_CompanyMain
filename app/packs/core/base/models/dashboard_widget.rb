@@ -11,7 +11,7 @@ class DashboardWidget < ApplicationRecord
   scope :disabled, -> { where(enabled: false) }
   scope :for_dashboard, ->(dashboard_name) { where(dashboard_name: dashboard_name) }
   scope :widget_name, ->(widget_name) { where(widget_name: widget_name) }
-  scope :size, ->(size) { where(size: size) }
+  scope :with_size, ->(size) { where(size: size) }
 
   # The path to the widget partial to be rendered
   attr_accessor :path
