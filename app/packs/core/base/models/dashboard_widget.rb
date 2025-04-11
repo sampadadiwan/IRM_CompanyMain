@@ -1,5 +1,5 @@
 class DashboardWidget < ApplicationRecord
-  attr_accessor :metadata_help
+  
 
   acts_as_list scope: %i[owner dashboard_name]
   belongs_to :entity
@@ -8,7 +8,15 @@ class DashboardWidget < ApplicationRecord
   validates :dashboard_name, :widget_name, :size, :tags, presence: true
 
   scope :enabled, -> { where(enabled: true) }
+  scope :disabled, -> { where(enabled: false) }
+  scope :for_dashboard, ->(dashboard_name) { where(dashboard_name: dashboard_name) }
+  scope :widget_name, ->(widget_name) { where(widget_name: widget_name) }
+  scope :size, ->(size) { where(size: size) }
+
+  # The path to the widget partial to be rendered
   attr_accessor :path
+  # metadata help text to be show in the UI, to help users understand what metadata can be passed
+  attr_accessor :metadata_help
 
   FUND_WIDGETS = [
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Stats", path: "funds/stats", size: "XL"),
