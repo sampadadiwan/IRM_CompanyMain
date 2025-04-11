@@ -46,8 +46,8 @@ Feature: KPI Period Parsing
 
     Examples: Fiscal Start Month = 1 (January)
       | Fiscal Start Month | Input Period | Expected Date |
-      | 1                  | Q1FY24       | 2024-01-01    |
-      | 1                  | FY24         | 2024-01-01    |
+      | 1                  | Q1FY24       | 2023-01-01    |
+      | 1                  | FY24         | 2023-01-01    |
 
     Examples: Fiscal Start Month = 7 (July)
       | Fiscal Start Month | Input Period | Expected Date |

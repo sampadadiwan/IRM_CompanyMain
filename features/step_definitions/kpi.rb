@@ -115,3 +115,6 @@ When('Im given access to the KPI Reports') do
 end
 
 
+When('I parse the period string {string} with fiscal start month {int}') do |date, fiscal_year_start_month|
+  @parsed_date = KpiDateUtils.parse_period(date, fiscal_year_start_month:)
+end
