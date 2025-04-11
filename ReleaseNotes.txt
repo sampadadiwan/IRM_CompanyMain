@@ -1,3 +1,22 @@
+V9.0.19
+#####################################
+c99f9c1b3 Now allows select standard fields to be used in condition_on for form custom fields
+1401d66ab Renamed Cost to cost per Share
+69ed91cf2 Remove /100 and *100 and just use cents
+b615858c8 Added better support for testing the Kpi new import formats
+6f63c2798 User * 100 instead of cents in per share value
+d73266424 Updated per_share_value_in to use cents for precision
+9940e42f4 Fixed search page item count issue with ransack search
+2d43e807d Fixed ransacker search for enum distribution_on in CD
+ae47385b2 Added better tests for value bridge
+227903afd Added tests for Kpi Extractors
+175008f4e Added logging back to prod servers
+1b83d70a8 Improved the code for KpiWorkbookReader
+0ce3c74ce Added KpiXlExtractionEngine to extract data from kpi workbook using an LLM
+a7556afcb Added xirry_py version 2.4
+6d1055597 Archived old db migrations
+3532af00d Removed additional cols from AccountEntry grid
+
 V9.0.18
 #####################################
 36161a6ef add-description-to-formula-import
