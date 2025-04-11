@@ -13,6 +13,10 @@ class DashboardWidgetPolicy < ApplicationPolicy
     true
   end
 
+  def metadata_help?
+    true
+  end
+
   def show?
     belongs_to_entity?(user, record)
   end

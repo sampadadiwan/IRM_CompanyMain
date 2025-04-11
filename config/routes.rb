@@ -2,11 +2,6 @@ Rails.application.routes.draw do
   resources :portfolio_reports
   resources :excused_investors
   resources :investments
-  resources :viewed_bies
-
-  resources :dashboard_widgets do
-    get 'dashboard', on: :collection
-  end
 
   resources :ai_checks do
     post 'run_checks', on: :collection
@@ -16,8 +11,6 @@ Rails.application.routes.draw do
   resources :ai_rules
   resources :rm_mappings
   resources :key_biz_metrics
-  resources :incoming_emails
-  resources :doc_questions
   # mount Rswag::Ui::Engine => '/api-docs'
   # mount Rswag::Api::Engine => '/api-docs'
   mount ActionCable.server => '/cable'
