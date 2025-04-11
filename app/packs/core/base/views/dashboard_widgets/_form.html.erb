@@ -14,7 +14,7 @@
 
     <div class="form-group">
       <%= form.label :dashboard_name %>
-      <%= form.select :dashboard_name, ["Fund Dashboard", "Portfolio Dashboard",  "Ops Dashboard", "Investor Dashboard", "Portfolio Company Dashboard"].sort, {}, class: "form-control"  %>
+      <%= form.select :dashboard_name, ["Fund Dashboard", "Portfolio Dashboard",  "Ops Dashboard", "Investor Dashboard", "Portfolio Company Dashboard"].sort, {}, class: "form-control", id: "dashboard_name"  %>
     </div>
 
     <div class="form-group">
@@ -25,9 +25,12 @@
     <%= form.hidden_field :owner_id %>
     <%= form.hidden_field :owner_type %>
     
-    <div class="form-group">
+    <div class="form-group" 
+          data-controller="dashboard-widgets" 
+          data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>" 
+          data-dashboard-widgets-param-value="widget_name">
       <%= form.label :widget_name %>
-      <%= form.select :widget_name, grouped_options_for_select(DashboardWidget.widget_select, dashboard_widget.widget_name), {prompt: 'Select Widget'}, class: "form-control"  %>
+      <%= form.select :widget_name, grouped_options_for_select(DashboardWidget.widget_select, dashboard_widget.widget_name), {prompt: 'Select Widget'}, class: "form-control select2"  %>
       <span class="text-muted">Select a widget corresponding to the Dashboard Name sected above</span>
     </div>
 
@@ -50,6 +53,7 @@
     <div class="form-group">
       <%= form.label :metadata %>
       <%= form.text_area :metadata, class: "form-control"  %>
+      <span id="metadata_help" class="text-muted"></span>
     </div>
 
     <div class="form-group">
