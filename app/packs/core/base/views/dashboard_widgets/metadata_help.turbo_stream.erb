@@ -1,0 +1,8 @@
+<% 
+  help_txt = @dashboard_widget&.metadata_help 
+  help_txt = help_txt ? "Sample: #{help_txt}" : "" 
+%>
+
+<%= turbo_stream.update "metadata_help" do %>
+  <%= help_txt %>
+<% end %>

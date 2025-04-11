@@ -11,6 +11,7 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
+    params[:q] = JSON.parse(params[:q]) if params[:q].is_a?(String)
     fetch_rows
 
     respond_to do |format|

@@ -22,11 +22,11 @@
     </div>
 
     <% if valuation.owner %>
-      
+
       <% investment_instruments = valuation.owner.investment_instruments %>
 
-      <% if valuation.new_record? %>      
-        <!-- New record : allow multiple valuations to be created simeltaneously -->  
+      <% if valuation.new_record? %>
+        <!-- New record : allow multiple valuations to be created simeltaneously -->
         <div class="row">
           <div class="form-group col">
             <%= form.label :investment_instrument_ids, "Instrument" %>
@@ -46,7 +46,7 @@
           </div>
           <div class="form-group col" data-controller="currencyformat">
               <%= form.label :per_share_value %> <span class="formatted_currency"></span>
-              <%= form.number_field :per_share_value, class: "form-control",  step: :any,
+              <%= form.number_field :per_share_value, class: "form-control",  step: :any, value: valuation.per_share_value_cents.to_d / 100.0,
                   data: {action: "input->currencyformat#format"} %>
           </div>
         </div>
@@ -55,9 +55,9 @@
     <% end %>
 
     <div class="form-group">
-      
-      <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report", 
-                              for_model: "valuation", field_name: "report", 
+
+      <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report",
+                              for_model: "valuation", field_name: "report",
                               model: valuation %>
 
     </div>

@@ -19,7 +19,7 @@
 #   results = reader.extract_kpis
 #
 # The extracted results are stored in a hash where each key is a normalized KPI name, and the value
-# is an array of `KpiEntry` structs containing the worksheet name, raw KPI name, raw period, parsed
+# is an array of `Kpi` structs containing the worksheet name, raw KPI name, raw period, parsed
 # period date, and the extracted value.
 #
 # Error Handling:
@@ -28,14 +28,17 @@
 # - Collects error messages in an array for further inspection.
 
 class KpiWorkbookReader
-  # Struct to hold extracted KPI values
-  KpiEntry = Struct.new(:worksheet, :kpi_name, :period_raw, :period_date, :value)
-
-  def initialize(file_path, target_kpis)
-    # Open the workbook using Roo gem
-    @workbook = Roo::Spreadsheet.open(file_path)
+  def initialize(document, target_kpis, user, portfolio_company)
+    @document = document
+    Rails.logger.debug { "Document: #{@document.name}" }
     # Normalize target KPI names for consistent matching
     @target_kpis = target_kpis.map { |kpi| normalize_kpi_name(kpi) }
+    Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
+    @user = user
+
+    @portfolio_company = portfolio_company
+    @portfolio_company_id = portfolio_company.id
+    Rails.logger.debug { "Portfolio Company: #{@portfolio_company.name}" }
     # Initialize results hash to store extracted KPI data
     @results = {}
     # Initialize error messages array to store processing errors
@@ -43,33 +46,40 @@ class KpiWorkbookReader
   end
 
   def extract_kpis
-    # Iterate through each sheet in the workbook
-    @workbook.sheets.each do |sheet|
-      Rails.logger.debug { "Processing sheet: #{sheet}" }
+    @document.file.download do |file|
+      file_path = file.path
+      # Open the workbook using Roo gem
+      @workbook = Roo::Spreadsheet.open(file_path)
 
-      begin
-        # Set the current sheet as the default sheet
-        @workbook.default_sheet = sheet
-        # Detect the header row in the sheet
-        header_row_index = detect_header_row
-        unless header_row_index
-          # Log a warning if no valid header row is found
-          msg = "No valid header found in sheet: #{sheet}"
-          Rails.logger.warn(msg)
-          @error_msg << { msg:, document: document.name, document_id: document.id }
+      # Iterate through each sheet in the workbook
+      @workbook.sheets.each do |sheet|
+        Rails.logger.debug { "KpiWorkbookReader: Processing sheet: #{sheet}" }
+
+        begin
+          # Set the current sheet as the default sheet
+          @workbook.default_sheet = sheet
+          # Detect the header row in the sheet
+          header_row_index = detect_header_row
+          unless header_row_index
+            # Log a warning if no valid header row is found
+            msg = "No valid header found in KPI import file for sheet: #{sheet}"
+            Rails.logger.warn(msg)
+            @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+            next
+          end
+
+          # Clean and normalize the header row
+          header = clean_row(@workbook.row(header_row_index))
+          # Process the data rows below the header
+          process_data_rows(sheet, header_row_index + 1, header)
+        rescue StandardError => e
+          Rails.logger.debug e.backtrace
+          # Log an error if processing the sheet fails
+          msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
+          Rails.logger.error(msg)
+          @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
           next
         end
-
-        # Clean and normalize the header row
-        header = clean_row(@workbook.row(header_row_index))
-        # Process the data rows below the header
-        process_data_rows(sheet, header_row_index + 1, header)
-      rescue StandardError => e
-        # Log an error if processing the sheet fails
-        msg = "Failed to process sheet '#{sheet}': #{e.message}"
-        Rails.logger.error(msg)
-        @error_msg << { msg:, document: document.name, document_id: document.id }
-        next
       end
     end
 
@@ -90,7 +100,7 @@ class KpiWorkbookReader
       period_candidates = row[1..]
 
       # Count the number of date-like values in the row
-      date_like_count = period_candidates.count { |val| date_like?(val) }
+      date_like_count = period_candidates.count { |val| KpiDateUtils.date_like?(val) }
 
       # Return the row index if it contains 2+ date-like values
       return i if date_like_count >= 2
@@ -102,53 +112,73 @@ class KpiWorkbookReader
 
   # Processes rows of KPI data beneath the header
   def process_data_rows(sheet, start_row, header)
-    # Iterate through each row starting from the data rows
     (start_row..@workbook.last_row).each do |row_index|
       row = clean_row(@workbook.row(row_index))
+      next if row.empty? || row.all?(&:blank?)
 
-      # Skip rows that are completely empty or meaningless
-      next if row.empty? || row.all? { |cell| cell.to_s.strip.empty? }
-
-      # Detect the column containing KPI names
       kpi_col = detect_kpi_name_column(start_row)
       raw_kpi_name = row[kpi_col]
-
-      # Normalize the KPI name for matching
       kpi_name = normalize_kpi_name(raw_kpi_name)
-      # Skip if the KPI is not in the target list
       next unless @target_kpis.include?(kpi_name)
 
-      # Initialize the results array for this KPI if not already present
-      @results[kpi_name] ||= []
-      seen_periods = {}
-
-      # Iterate through the remaining columns to extract KPI values
-      row[1..].each_with_index do |value, col_index|
-        # Get the corresponding period from the header
-        raw_period = header[col_index + 1] # Shift by 1 because row[0] is KPI name
-        period = raw_period&.to_s&.strip
-
-        # Skip if the period or value is blank
-        next if period.blank? || value.nil? || value.to_s.strip.empty?
-
-        # Check for duplicate periods in the same row
-        if seen_periods[period]
-          msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
-          Rails.logger.warn(msg)
-          @error_msg << { msg:, document: document.name, document_id: document.id }
-          next # Skip this column
-        end
-        seen_periods[period] = true
-
-        # Parse the period into a date object
-        parsed_period = parse_period(period)
-        # Skip if the period could not be parsed
-        next unless parsed_period
-
-        # Add the extracted KPI entry to the results
-        @results[kpi_name] << KpiEntry.new(sheet, raw_kpi_name, period, parsed_period, value)
-      end
+      process_kpi_row(sheet, row, header, raw_kpi_name, kpi_name)
     end
+  end
+
+  def process_kpi_row(sheet, row, header, raw_kpi_name, _kpi_name)
+    seen_periods = {}
+
+    row[1..].each_with_index do |value, col_index|
+      raw_period = header[col_index + 1]
+      period = raw_period&.to_s&.strip
+      next if period.blank? || value.blank?
+
+      if seen_periods[period]
+        log_duplicate_period_warning(sheet, period)
+        next
+      end
+      seen_periods[period] = true
+
+      parsed_period = KpiDateUtils.parse_period(period)
+      next unless parsed_period
+
+      kpi_report = find_or_create_kpi_report(parsed_period)
+      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+    end
+  end
+
+  def log_duplicate_period_warning(sheet, period)
+    msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
+    Rails.logger.debug msg
+    @error_msg << { msg:, document: @document.name, document_id: @document.id }
+  end
+
+  def find_or_create_kpi_report(parsed_period)
+    @results[parsed_period] ||= KpiReport.where(
+      entity_id: @portfolio_company&.entity_id,
+      as_of: parsed_period,
+      portfolio_company_id: @portfolio_company_id
+    ).first_or_create.tap do |report|
+      report.user ||= @user
+      report.save! unless report.persisted?
+    end
+  end
+
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+    kpi = kpi_report.kpis.where(
+      name: raw_kpi_name,
+      portfolio_company_id: @portfolio_company_id,
+      entity_id: @portfolio_company&.entity_id
+    ).first_or_initialize
+
+    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period}" }
+
+    kpi.assign_attributes(
+      value: value,
+      display_value: value,
+      source: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
+    )
+    kpi.save
   end
 
   # Strips and normalizes a row's values
@@ -157,123 +187,10 @@ class KpiWorkbookReader
     row.map { |cell| cell&.to_s&.strip }
   end
 
-  # Determines if a string looks like a date or period label
-  def date_like?(string)
-    return false if string.blank?
-
-    # Define patterns for common date-like formats
-    patterns = [
-      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[-' ]?\d{2,4}\b/i, # Jan-24, Feb 2023
-      %r{\b\d{4}[-/]\d{1,2}\b}, # 2024-01 or 2024/1
-      /\bQ[1-4][-' ]?\d{2,4}\b/i # Q1-24
-    ]
-
-    # Return true if any pattern matches
-    return true if patterns.any? { |pat| string =~ pat }
-
-    # Fallback: Try parsing as a date
-    begin
-      Date.parse(string)
-      true
-    rescue StandardError
-      false
-    end
-  end
-
   # Normalize KPI names for consistent matching
   def normalize_kpi_name(kpi)
     # Convert to lowercase and remove spaces
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
-  end
-
-  # Parses a raw period string into a Date object
-  def parse_period(raw_period, fiscal_year_start_month: 4)
-    return nil if raw_period.blank?
-
-    str = raw_period.to_s.strip
-
-    # Normalize whitespace and casing
-    str = str.gsub(/\s+/, ' ').strip
-
-    # Try standard parsing first
-    begin
-      return Date.parse(str)
-    rescue ArgumentError
-      # Keep trying below
-    end
-
-    # Handle specific period formats (e.g., fiscal quarters, FYs, etc.)
-    case str
-    when /\A(?:Q([1-4])[- ]?FY(\d{2,4}))\z/i
-      # e.g., Q3 FY23 or Q3FY2023
-      quarter = ::Regexp.last_match(1).to_i
-      fy = normalize_year(::Regexp.last_match(2))
-      return start_of_fiscal_quarter(fy, quarter, fiscal_year_start_month)
-    when /\A(?:FY(\d{2,4})[- ]?Q([1-4]))\z/i
-      # e.g., FY23 Q2
-      fy = normalize_year(::Regexp.last_match(1))
-      quarter = ::Regexp.last_match(2).to_i
-      return start_of_fiscal_quarter(fy, quarter, fiscal_year_start_month)
-    when /\A([A-Za-z]{3,})[- ]?FY(\d{2,4})\z/i
-      # e.g., Jan FY24
-      month_name = ::Regexp.last_match(1)
-      fy = normalize_year(::Regexp.last_match(2))
-      begin
-        return Date.parse("#{month_name} #{fy}")
-      rescue ArgumentError
-        return nil
-      end
-    when /\AFY(\d{2,4})\z/i
-      # e.g., FY24 => treat as start of FY
-      fy = normalize_year(::Regexp.last_match(1))
-      return Date.new(fy, fiscal_year_start_month, 1)
-    when /\A(?:Q([1-4])\s+(\d{2,4}))\z/i
-      # e.g., "Q1 2024"
-      quarter = ::Regexp.last_match(1).to_i
-      year = normalize_year(::Regexp.last_match(2))
-      return start_of_fiscal_quarter(year, quarter, fiscal_year_start_month)
-    when /\ACY\s+(\d{2,4})\z/i
-      # e.g., "CY 2024"
-      year = normalize_year(::Regexp.last_match(1))
-      return Date.new(year, 1, 1)
-    end
-
-    # Try parsing common date formats
-    date_formats = [
-      "%b-%y", "%b-%Y", "%B-%y", "%B-%Y",
-      "%m-%y", "%m-%Y", "%Y-%m", "%Y/%m",
-      "%b %Y", "%b %y", "%B %Y", "%B %y",
-      "%m/%Y", "%m/%y", "%Y/%b", "%Y/%B"
-    ]
-
-    date_formats.each do |format|
-      return Date.strptime(str, format)
-    rescue ArgumentError
-      next
-    end
-
-    # Log a warning if the period format is unrecognized
-    Rails.logger.warn("Unrecognized period format: '#{raw_period}'")
-    nil
-  end
-
-  # Normalizes a year (e.g., converts 2-digit years to 4-digit)
-  def normalize_year(year)
-    year = year.to_i
-    if year < 100
-      year >= 50 ? 1900 + year : 2000 + year
-    else
-      year
-    end
-  end
-
-  # Calculates the start date of a fiscal quarter
-  def start_of_fiscal_quarter(fyear, quarter, fiscal_start_month)
-    # Calculate the start month of the quarter
-    start_month = ((((quarter - 1) * 3) + fiscal_start_month - 1) % 12) + 1
-    # Adjust the year based on the fiscal start month
-    year = start_month >= fiscal_start_month ? fyear - 1 : fyear
-    Date.new(year, start_month, 1)
   end
 
   # Detects the column containing KPI names

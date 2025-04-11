@@ -36,8 +36,15 @@ class FormCustomField < ApplicationRecord
 
   validate :condition_on_custom_field, if: -> { condition_on.present? }
   def condition_on_custom_field
-    parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
-    errors.add(:condition_on, "#{name} can be applied only on existing custom fields") if parent_field.nil?
+    # Only investor.category and investor_kyc.kyc_type standard fields can be used as condition_on
+    if (form_type.name == "Investor" && condition_on == "category") ||
+       (form_type.name == "InvestorKyc" && condition_on == "kyc_type")
+      # Do nothing
+    else
+      # Check if the field is a custom field, as we can have custom fields only dependent on other custom fields
+      parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
+      errors.add(:condition_on, "#{name} can be applied only on existing custom fields") if parent_field.nil?
+    end
   end
 
   validate :condition_on_one_level, if: -> { condition_on.present? }
@@ -94,7 +101,7 @@ class FormCustomField < ApplicationRecord
     css_class = "fcf"
     css_class += read_only ? " hidden_form_field" : ""
     if condition_on.present?
-      css_class += " conditional #{form_type.name.underscore}_properties_#{condition_on}"
+      css_class += " conditional #{form_type.name.underscore}_properties_#{condition_on} #{form_type.name.underscore}_#{condition_on}"
       css_class += " #{condition_state}"
     end
     css_class

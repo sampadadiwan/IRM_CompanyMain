@@ -1,4 +1,6 @@
 class DashboardWidget < ApplicationRecord
+  
+
   acts_as_list scope: %i[owner dashboard_name]
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
@@ -6,12 +8,20 @@ class DashboardWidget < ApplicationRecord
   validates :dashboard_name, :widget_name, :size, :tags, presence: true
 
   scope :enabled, -> { where(enabled: true) }
+  scope :disabled, -> { where(enabled: false) }
+  scope :for_dashboard, ->(dashboard_name) { where(dashboard_name: dashboard_name) }
+  scope :widget_name, ->(widget_name) { where(widget_name: widget_name) }
+  scope :with_size, ->(size) { where(size: size) }
+
+  # The path to the widget partial to be rendered
   attr_accessor :path
+  # metadata help text to be show in the UI, to help users understand what metadata can be passed
+  attr_accessor :metadata_help
 
   FUND_WIDGETS = [
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Stats", path: "funds/stats", size: "XL"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Card", path: "funds/card", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium", metadata_help: "{months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI' ....] }"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium"),
@@ -47,7 +57,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "XL")
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Value Bridge", path: "investors/widgets/value_bridge", size: "XL", metadata_help: "{instrument: 'Instrument Name', across: 'First Last or Last 2'}")
 
   ].freeze
 
