@@ -1,4 +1,6 @@
 class DashboardWidget < ApplicationRecord
+  attr_accessor :metadata_desc
+  
   acts_as_list scope: %i[owner dashboard_name]
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
@@ -48,7 +50,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Value Bridge", path: "investors/widgets/value_bridge", size: "XL")
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Value Bridge", path: "investors/widgets/value_bridge", size: "XL", metadata_desc: "{instrument: 'Instrument Name', across: 'First Last or Last 2'}")
 
   ].freeze
 

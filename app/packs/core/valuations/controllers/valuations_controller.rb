@@ -47,7 +47,7 @@ class ValuationsController < ApplicationController
         @valuation = Valuation.new(valuation_params)
         @valuation.investment_instrument_id = investment_instrument_id
         @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
-        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
         authorize @valuation
         saved_all &&= @valuation.save
         valuations << @valuation
@@ -73,10 +73,12 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
-    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+    # We need to remove the per_share_value from the params hash, this is so the per_share_value_cents is used to update the DB till the last 8 decimal digits. Otherwise only 2 digits gets saved
+    cleaned_params = valuation_params.except(:per_share_value)
 
     respond_to do |format|
-      if @valuation.update(valuation_params)
+      if @valuation.update(cleaned_params)
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
         format.json { render :show, status: :ok, location: @valuation }
       else
