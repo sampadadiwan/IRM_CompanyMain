@@ -23,11 +23,16 @@
 
 class ValueBridgeService
   VALUE_BRIDGE_FIELDS = ["Revenue", "EBITDA Margin", "Valuation Multiple"].freeze
-  KEY_FIELDS = ["Revenue", "EBITDA Margin", "EBITDA", "Valuation Multiple", "Enterprise Value", "Enterprise Value Change"].freeze
+  KEY_FIELDS = ["EBITDA", "Enterprise Value", "Enterprise Value Change"].freeze
 
-  def initialize(investment_date_valuation, analysis_date_valuation)
+  attr_accessor :value_bridge_fields, :key_fields
+
+  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields = VALUE_BRIDGE_FIELDS)
     @investment_date_valuation = investment_date_valuation
     @analysis_date_valuation = analysis_date_valuation
+    @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
+    @key_fields = @value_bridge_fields + KEY_FIELDS
+    Rails.logger.debug { "ValueBridgeService: value_bridge_fields = #{@value_bridge_fields}" }
   end
 
   # Example Input:
@@ -92,12 +97,14 @@ class ValueBridgeService
     bridge = {}
     bridge["Entry"] = @investment_date_valuation
     prev_valuation = @investment_date_valuation.dup
-    VALUE_BRIDGE_FIELDS.each do |bridge_field|
+    @value_bridge_fields.each do |bridge_field|
       # Start from the prev valuation
       valuation = prev_valuation.dup
       bridge_field_name = FormCustomField.to_name(bridge_field)
       # Set te value of the bridge field in the current valuation to the value of the analysis date valuation
       valuation.json_fields[bridge_field_name] = @analysis_date_valuation.json_fields[bridge_field_name]
+      Rails.logger.debug { "ValueBridgeService:  bridge_field_name = #{bridge_field_name} value = #{valuation.json_fields[bridge_field_name]}" }
+
       # Perform all calculations
       valuation.perform_all_calculations
       # Calculate the enterprise value change

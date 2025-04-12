@@ -19,17 +19,9 @@
 
     <thead>
       <tr>
-        <% if params[:show_funds].present? %>
-          <input type="hidden" id="fund_ratios_show_columns" value="fund_name,owner_name,owner_type,name,display_value,end_date,scenario,dt_actions">
-          <th>
+        <input type="hidden" id="fund_ratios_show_columns" value="fund_name,name,display_value,end_date,dt_actions">
+        <th>
             Fund
-          </th>
-        <% end %>
-        <th>
-          For
-        </th>
-        <th>
-          Type
         </th>
         <th>
           Name
@@ -39,10 +31,6 @@
         </th>
         <th>
           On
-        </th>
-        <th>
-          Scenario
-        </th>
         <th>
         </th>
       </tr>

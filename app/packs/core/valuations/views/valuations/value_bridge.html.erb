@@ -12,7 +12,7 @@
 
 <div class="table-responsive" data-controller="datatable">
 <% 
-    bridge_fields = ["Entry"] + ValueBridgeService::VALUE_BRIDGE_FIELDS 
+    bridge_fields = ["Entry"] + @value_bridge_service.value_bridge_fields 
     waterfall_chart_data = []
 %>
 <table class="table table-bordered dataTable">
@@ -28,18 +28,24 @@
             </th>
             <% 
                 value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"] 
-                color = value && value > 0 ? "#13deb9" : "#fa896b"
+                
+                if idx == 0
+                    color = "#212529"
+                else
+                    color = value && value > 0 ? "#198754" : "#dc3545"
+                end
+
                 waterfall_chart_data << { name: bridge_field, y: value, color: color } 
             %>
         <% end %>
 
-        <% waterfall_chart_data << { name: "Exit", y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#13deb9" } %>
+        <% waterfall_chart_data << { name: "Exit", y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
     </tr>
     </thead>
 
     <!-- Body rows -->
     <tbody>
-    <% ValueBridgeService::KEY_FIELDS.each do |key| %>    
+    <% @value_bridge_service.key_fields.each do |key| %>    
         
         <tr>
             <td>

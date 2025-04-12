@@ -25,14 +25,6 @@ module PortfolioComputations
     end
   end
 
-  def cost_cents
-    quantity.positive? ? (amount_cents / quantity).abs : 0
-  end
-
-  def base_cost_cents
-    quantity.positive? ? (base_amount_cents / quantity).abs : 0
-  end
-
   def compute_all_numbers
     # We have amount_cents and quantity as stable entered values.
     # cost_cents = amount_cents / quantity and is stable

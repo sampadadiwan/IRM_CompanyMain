@@ -43,9 +43,13 @@
 <% if params[:ag].present? %>
   <div class="table-responsive">
     <%
-      form_type = @current_user.entity.form_types.includes(:grid_view_preferences)
-                        .find_by(name: "PortfolioInvestment")
+      form_type = @current_user.entity.form_types.includes(:grid_view_preferences).find_by(name: "PortfolioInvestment")
       custom_grid_columns = form_type&.ag_grids_columns.presence || PortfolioInvestment.ag_grids_default_columns
+      if params[:show_fund_name].present?
+        fund_params = { key: "fund_name", label: "Fund Name", data_type: "String" } 
+        # add fund name to the front of the custom grid columns
+        custom_grid_columns.unshift(fund_params)
+      end
     %>
 
     <div class="portfolio_investment_ag_grid" data-controller="ag" 
