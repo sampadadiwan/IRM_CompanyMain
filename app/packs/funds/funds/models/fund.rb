@@ -1,10 +1,7 @@
-class Fund < ApplicationRecord
-  acts_as_favoritable
-  include ForInvestor
-  include InvestorsGrantedAccess
+class Fund < FundBase
   include WithFolder
   include WithDataRoom
-  include WithCustomField
+  include InvestorsGrantedAccess
   include Trackable.new
   include WithApprovals
   include WithExchangeRate
@@ -15,13 +12,7 @@ class Fund < ApplicationRecord
     self if index_record?
   end
 
-  self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category]
-
-  CATEGORIES = ["Category I", "Category II", "Category III"].freeze
-  REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
-
-  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
-  scope :master_funds, -> { where(master_fund_id: nil) }
+  self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category co_invest_call_amount_cents co_invest_committed_amount_cents co_invest_distribution_amount_cents co_invest_collected_amount_cents]
 
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
@@ -31,6 +22,9 @@ class Fund < ApplicationRecord
   belongs_to :master_fund, class_name: "Fund", optional: true
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
+
+  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
+  scope :master_funds, -> { where(master_fund_id: nil) }
 
   has_many :fund_ratios, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
