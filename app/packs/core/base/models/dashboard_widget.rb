@@ -52,6 +52,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Valuations", path: "investors/widgets/valuations", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{condensed: true}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company KPIs", path: "investors/widgets/kpis_grid_view", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
@@ -62,7 +63,7 @@ class DashboardWidget < ApplicationRecord
 
   PORTFOLIO_WIDGETS = [
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true/false}"),
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "FMV %", path: "aggregate_portfolio_investments/widgets/fmv_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Holding Cost %", path: "aggregate_portfolio_investments/widgets/holding_costs_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Bought %", path: "aggregate_portfolio_investments/widgets/bought_percentage", size: "Medium"),

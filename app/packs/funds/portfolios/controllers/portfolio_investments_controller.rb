@@ -6,6 +6,8 @@ class PortfolioInvestmentsController < ApplicationController
     @q = PortfolioInvestment.ransack(params[:q])
     @portfolio_investments = policy_scope(@q.result).joins(:investment_instrument).includes(:aggregate_portfolio_investment, :capital_commitment, :fund, :investment_instrument)
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @portfolio_investments = @portfolio_investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+
     @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @portfolio_investments = @portfolio_investments.where(investment_instrument_id: params[:investment_instrument_id]) if params[:investment_instrument_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
