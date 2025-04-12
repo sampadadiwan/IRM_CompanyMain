@@ -156,6 +156,42 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_12_073133) do
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
+  create_table "aggregate_portfolio_investment_snapshots", id: false, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "portfolio_company_name", limit: 100
+    t.decimal "bought_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_type"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_domicile", limit: 10
+    t.datetime "deleted_at"
+    t.bigint "investment_instrument_id"
+    t.bigint "form_type_id"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.boolean "show_portfolio", default: false
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_aggregate_portfolio_investments_on_id_and_snapshot_date"
+    t.index ["id"], name: "index_aggregate_portfolio_investments_on_id"
+    t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
+  end
+
   create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -1613,9 +1649,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_12_073133) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "snapshot_date"
-    t.index ["id", "snapshot_date"], name: "index_fund_snapshots_on_id_and_snapshot_date", unique: true
-    t.index ["id"], name: "index_fund_snapshots_on_id"
-    t.index ["snapshot_date"], name: "index_fund_snapshots_on_snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_funds_on_id_and_snapshot_date"
+    t.index ["id"], name: "index_funds_on_id"
+    t.index ["snapshot_date"], name: "index_funds_on_snapshot_date"
   end
 
   create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2530,6 +2566,58 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_12_073133) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_portfolio_company_kpi_extraction_mappings_on_entity_id"
     t.index ["portfolio_company_id"], name: "idx_on_portfolio_company_id_b8c50ead10"
+  end
+
+  create_table "portfolio_investment_snapshots", id: false, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "form_type_id"
+    t.bigint "portfolio_company_id", null: false
+    t.string "portfolio_company_name", limit: 100
+    t.date "investment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "folio_id", limit: 20
+    t.bigint "capital_commitment_id"
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.string "sector", limit: 100
+    t.boolean "startup", default: true
+    t.string "investment_domicile", limit: 10, default: "Domestic"
+    t.datetime "deleted_at"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.bigint "investment_instrument_id"
+    t.decimal "quantity_as_of_date", precision: 10, default: "0"
+    t.decimal "base_amount_cents", precision: 20, scale: 2
+    t.bigint "exchange_rate_id"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_quantity", precision: 20, scale: 2
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "compliant", default: false
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "conversion_date"
+    t.decimal "capital_expense_cents", precision: 20, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_portfolio_investments_on_id_and_snapshot_date"
+    t.index ["id"], name: "index_portfolio_investments_on_id"
+    t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
   end
 
   create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
