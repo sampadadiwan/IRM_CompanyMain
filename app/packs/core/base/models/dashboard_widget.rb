@@ -1,6 +1,4 @@
 class DashboardWidget < ApplicationRecord
-  
-
   acts_as_list scope: %i[owner dashboard_name]
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
@@ -52,7 +50,7 @@ class DashboardWidget < ApplicationRecord
   PORTFOLIO_COMPANY_WIDGETS = [
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Valuations", path: "investors/widgets/valuations", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{condensed: true}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company KPIs", path: "investors/widgets/kpis_grid_view", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),

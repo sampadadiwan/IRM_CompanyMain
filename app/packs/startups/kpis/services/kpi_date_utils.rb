@@ -87,8 +87,8 @@ class KpiDateUtils
     begin
       Date.parse(raw_period.to_s)
     rescue ArgumentError
-      if Rails.env.test?  
-        nil 
+      if Rails.env.test?
+        nil
       else
         raise "Unrecognized period format: '#{raw_period}'"
       end

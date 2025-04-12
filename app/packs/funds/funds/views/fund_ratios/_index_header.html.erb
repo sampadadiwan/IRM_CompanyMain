@@ -1,0 +1,54 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
+  <span>
+    <% if fund.present? %>
+
+      <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
+        class: "btn btn-outline-primary" , form_class: "deleteButton" ,
+        data: {action: "click->confirm#popup" , turbo: false,
+        msg: "Ratios computations will take the last portfolio FMV and account entries for 'Cash in Hand' and 'Net Current Assets' prior to end date for the computations. Please check these are updated. Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
+
+
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle" type="button" id="fund_ratios_actions"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Actions
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+            <%= link_to "Filter: Portfolio Company", fund_ratios_path(fund_id: fund.id, 
+                        q: ransack_query_params("owner_type", :eq, "Investor")), class: "dropdown-item" %>
+
+            <%= link_to "Filter: Folios", fund_ratios_path(fund_id: fund.id, 
+                        q: ransack_query_params("owner_type", :eq, "CapitalCommitment")), class: "dropdown-item" %>
+
+            <%= link_to "Filter: Instrument", fund_ratios_path(fund_id: fund.id, 
+                        q: ransack_query_params("owner_type", :eq, "AggregatePortfolioInvestment")), class: "dropdown-item" %>
+
+            <%= link_to "Filter: Fund Only", fund_ratios_path(fund_id: fund.id, 
+                        q: ransack_query_params("owner_type", :null, true)), class: "dropdown-item" %>
+
+            <div class="dropdown-divider"></div>
+            
+            <%= link_to "Upload", 
+                        new_import_upload_path("import_upload[owner_id]": fund.id, 
+                        "import_upload[owner_type]": "Fund", 
+                        "import_upload[import_type]": "FundRatio", 
+                        "sample_upload": "Fund_RATIO_SAMPLE"), 
+                        { class: "dropdown-item"}   %>
+
+            <%= link_to "Download", download_xl_link(data_source), class: "dropdown-item" %>
+
+
+          </div>
+        </div>
+      </div>
+
+       
+    <% end %>
+    
+    
+
+  </span>
+</div>
