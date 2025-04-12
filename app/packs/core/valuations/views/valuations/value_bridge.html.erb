@@ -12,7 +12,7 @@
 
 <div class="table-responsive" data-controller="datatable">
 <% 
-    bridge_fields = ["Entry"] + ValueBridgeService::VALUE_BRIDGE_FIELDS 
+    bridge_fields = ["Entry"] + @value_bridge_service.value_bridge_fields 
     waterfall_chart_data = []
 %>
 <table class="table table-bordered dataTable">
@@ -45,7 +45,7 @@
 
     <!-- Body rows -->
     <tbody>
-    <% ValueBridgeService::KEY_FIELDS.each do |key| %>    
+    <% @value_bridge_service.key_fields.each do |key| %>    
         
         <tr>
             <td>
