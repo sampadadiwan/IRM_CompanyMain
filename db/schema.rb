@@ -1613,6 +1613,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_12_073133) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_fund_snapshots_on_id_and_snapshot_date", unique: true
+    t.index ["id"], name: "index_fund_snapshots_on_id"
+    t.index ["snapshot_date"], name: "index_fund_snapshots_on_snapshot_date"
   end
 
   create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

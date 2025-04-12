@@ -60,14 +60,6 @@ class Fund < FundBase
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
-  monetize  :tracking_committed_amount_cents, :tracking_call_amount_cents,
-            :tracking_collected_amount_cents, :tracking_distribution_amount_cents,
-            with_currency: ->(f) { f.tracking_currency.presence || f.currency }
-
-  monetize :call_amount_cents, :committed_amount_cents, :target_committed_amount_cents,
-           :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
-           with_currency: ->(f) { f.currency }
-
   validates :name, :currency, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
   validates_uniqueness_of :name, scope: :entity_id

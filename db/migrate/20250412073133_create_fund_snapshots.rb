@@ -35,5 +35,9 @@ class CreateFundSnapshots < ActiveRecord::Migration[7.0]
       # Add a snapshot_date defaulting to the current date for mysql
       t.date :snapshot_date
     end
+
+    add_index :fund_snapshots, [:id, :snapshot_date], unique: true, name: 'index_fund_snapshots_on_id_and_snapshot_date'
+    add_index :fund_snapshots, [:snapshot_date], name: 'index_fund_snapshots_on_snapshot_date'
+    add_index :fund_snapshots, [:id], name: 'index_fund_snapshots_on_id'
   end
 end

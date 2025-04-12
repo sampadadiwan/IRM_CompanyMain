@@ -7,7 +7,7 @@ class FundSnapshotJob < ApplicationJob
 
     Chewy.strategy(:sidekiq) do
       funds.each do |fund|
-        FundSnapshot.create(fund.attributes)
+        FundSnapshot.snapshot(fund)
       end
     end
   end
