@@ -25,9 +25,10 @@ class ValueBridgeService
   VALUE_BRIDGE_FIELDS = ["Revenue", "EBITDA Margin", "Valuation Multiple"].freeze
   KEY_FIELDS = ["Revenue", "EBITDA Margin", "EBITDA", "Valuation Multiple", "Enterprise Value", "Enterprise Value Change"].freeze
 
-  def initialize(investment_date_valuation, analysis_date_valuation)
+  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields = VALUE_BRIDGE_FIELDS)
     @investment_date_valuation = investment_date_valuation
     @analysis_date_valuation = analysis_date_valuation
+    @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
   end
 
   # Example Input:
@@ -92,7 +93,7 @@ class ValueBridgeService
     bridge = {}
     bridge["Entry"] = @investment_date_valuation
     prev_valuation = @investment_date_valuation.dup
-    VALUE_BRIDGE_FIELDS.each do |bridge_field|
+    @value_bridge_fields.each do |bridge_field|
       # Start from the prev valuation
       valuation = prev_valuation.dup
       bridge_field_name = FormCustomField.to_name(bridge_field)
