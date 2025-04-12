@@ -14,10 +14,6 @@ class TemplateDecorator < ApplicationDecorator
       collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize)
       return TemplateDecorator.decorate_collection(collection)
 
-    # elsif method_name.to_s.starts_with?("money_fund_curr_")
-    #   attr_name = method_name.to_s.gsub("money_fund_curr_", "")
-    #   return money_to_currency(Money.new(send(attr_name), object.fund.currency))
-
     elsif method_name.to_s.starts_with?("money_")
       attr_name = method_name.to_s.gsub("money_", "")
       return money_to_currency(send(attr_name))
