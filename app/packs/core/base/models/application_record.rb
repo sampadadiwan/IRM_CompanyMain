@@ -44,4 +44,26 @@ class ApplicationRecord < ActiveRecord::Base
       { label: label, key: key, data_type: data_type }
     end
   end
+
+  def default_currency_units
+    currency == "INR" ? "Crores" : "Million"
+  end
+
+  # This method is used to find the record in the snapshot table or the main table
+  # based on the id passed in. If the id is a composite key, we need to find the record in the snapshot table
+  # If the id is not a composite key, we need to find the record in the main table
+  # If the id is not found in either table, we return nil
+  def self.find_or_snapshot(id)
+    # Check if the id is a composite key i.e id_yyyymm-dd
+    if id.to_s.include?("_")
+      # Extract the base id and date from the composite key
+      base_id, = id.split("_")
+      # If the id is a composite key, we need to find the record in the snapshot table
+      snapshot_class = "#{name}Snapshot".constantize
+      snapshot_class.find_by(id: base_id)
+    else
+      # If the id is not a composite key, we need to find the record in the main table
+      find_by(id: id)
+    end
+  end
 end

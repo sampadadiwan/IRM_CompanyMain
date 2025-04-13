@@ -66,6 +66,7 @@ class DashboardWidgetsController < ApplicationController
   def set_dashboard_widget
     @dashboard_widget = DashboardWidget.find(params[:id])
     authorize @dashboard_widget
+    @bread_crumbs = { Widgets: dashboard_widgets_path, "#{@dashboard_widget.widget_name}": dashboard_widget_path(@dashboard_widget) }
   end
 
   # Only allow a list of trusted parameters through.

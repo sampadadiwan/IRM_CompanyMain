@@ -21,4 +21,8 @@ class FundSnapshot < FundBase
            class_name: "FundSnapshot",
            foreign_key: :master_fund_id,
            primary_key: :id
+
+  def to_s
+    "#{name} - Snapshot:#{snapshot_date}"
+  end
 end

@@ -104,6 +104,11 @@ class ValueBridgeService
       # Set te value of the bridge field in the current valuation to the value of the analysis date valuation
       valuation.json_fields[bridge_field_name] = @analysis_date_valuation.json_fields[bridge_field_name]
       Rails.logger.debug { "ValueBridgeService:  bridge_field_name = #{bridge_field_name} value = #{valuation.json_fields[bridge_field_name]}" }
+      # Hack for fx_rates dependent on valuation date
+      if bridge_field_name == "fx_rate"
+        # The fx rate is dependent on the valuation_date, so we copy it over
+        valuation.valuation_date = @analysis_date_valuation.valuation_date
+      end
 
       # Perform all calculations
       valuation.perform_all_calculations

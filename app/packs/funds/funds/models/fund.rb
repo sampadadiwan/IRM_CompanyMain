@@ -68,16 +68,8 @@ class Fund < FundBase
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }
 
-  def has_tracking_currency?
-    tracking_currency.present? && tracking_currency != currency
-  end
-
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
-  end
-
-  def pending_call_amount
-    call_amount - collected_amount
   end
 
   def folder_path
@@ -90,27 +82,6 @@ class Fund < FundBase
 
   def investors
     Investor.owner_access_rights(self, nil)
-  end
-
-  def to_s
-    name
-  end
-
-  def get_lps_emails
-    investors.joins(:investor_accesses).where('investor_accesses.approved = true').pluck('investor_accesses.email')
-  end
-
-  TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template", "Distribution Template"].freeze
-  def document_tags
-    TEMPLATE_TAGS
-  end
-
-  def signature_labels
-    ["Investor Signatories", "Fund Signatories", "Other"]
-  end
-
-  def fund_signatories
-    esign_emails&.split(",")&.map(&:strip)
   end
 
   def current_fund_ratios(valuation = nil)
@@ -147,14 +118,6 @@ class Fund < FundBase
     ccs_wihout_ar
   end
 
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[name]
-  end
-
-  def default_currency_units
-    currency == "INR" ? "Crores" : "Million"
-  end
-
   def update_latest_fund_ratios(end_date)
     last_fund_ratio = fund_ratios.order(end_date: :desc).first
     # Only update the latest flag if the end_date is the latest
@@ -166,10 +129,6 @@ class Fund < FundBase
 
   def reports_folder
     get_or_create_folder("Fund Reports")
-  end
-
-  def unit_types_list
-    unit_types&.split(",")&.map(&:strip)
   end
 
   # This method is called when an approval responses are created

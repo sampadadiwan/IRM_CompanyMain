@@ -28,6 +28,8 @@ resources :aggregate_portfolio_investments do
   patch 'toggle_show_portfolio', on: :member
 end
 
+resources :aggregate_portfolio_investment_snapshots, controller: "aggregate_portfolio_investments", defaults: { snapshot: true }
+
 resources :fund_formulas do
   patch "enable_formulas", on: :collection
 end
@@ -36,6 +38,7 @@ resources :fund_unit_settings
 resources :portfolio_investments do
   get 'base_amount_form', on: :collection
 end
+resources :portfolio_investment_snapshots, controller: "portfolio_investments", defaults: { snapshot: true }
 
 resources :investment_instruments do
   get 'sub_categories', on: :collection
@@ -107,6 +110,8 @@ resources :funds do
   get 'dashboard', on: :member
   post 'generate_tracking_numbers', on: :member
 end
+
+resources :fund_snapshots, controller: "funds", defaults: { snapshot: true }
 
 resources :expression_of_interests do
   patch 'approve', on: :member

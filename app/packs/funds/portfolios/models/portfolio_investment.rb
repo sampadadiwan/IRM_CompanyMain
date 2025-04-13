@@ -29,8 +29,6 @@ class PortfolioInvestment < PortfolioInvestmentBase
   attr_accessor :created_by_import
 
   belongs_to :fund
-  # This is only for co invest
-  belongs_to :capital_commitment, optional: true
   belongs_to :aggregate_portfolio_investment
 
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy

@@ -8,7 +8,6 @@ class PortfolioInvestmentBase < ApplicationRecord
   belongs_to :entity
   belongs_to :portfolio_company, class_name: "Investor"
   has_many :valuations, through: :portfolio_company
-
   belongs_to :investment_instrument
 
   monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }

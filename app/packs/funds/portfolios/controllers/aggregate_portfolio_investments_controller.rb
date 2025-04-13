@@ -3,9 +3,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # GET /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def index
-    @q = AggregatePortfolioInvestment.ransack(params[:q])
-    @aggregate_portfolio_investments = policy_scope(@q.result)
-                                       .joins(:investment_instrument)
+    @aggregate_portfolio_investments = model_or_snapshot_ransack(join_list: [:investment_instrument])
                                        .includes(:fund, :portfolio_company, :investment_instrument)
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
@@ -87,7 +85,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_aggregate_portfolio_investment
-    @aggregate_portfolio_investment = AggregatePortfolioInvestment.find(params[:id])
+    @aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_snapshot(params[:id])
     authorize @aggregate_portfolio_investment
 
     api = @aggregate_portfolio_investment

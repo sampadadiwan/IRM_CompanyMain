@@ -1,6 +1,5 @@
 class ImportPortfolioInvestment < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)",
-                      "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes"].freeze
+  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)", "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -16,7 +15,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, capital_commitment = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
@@ -35,7 +34,7 @@ class ImportPortfolioInvestment < ImportUtil
     end
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
-      portfolio_company_name:, investment_date:, ex_expenses_base_amount_cents:, quantity:, investment_instrument:, capital_commitment:, fund:, entity_id: fund.entity_id
+      portfolio_company_name:, investment_date:, ex_expenses_base_amount_cents:, quantity:, investment_instrument:, fund:, entity_id: fund.entity_id
     )
 
     if portfolio_investment.new_record?
@@ -73,9 +72,8 @@ class ImportPortfolioInvestment < ImportUtil
     instrument = user_data["Instrument"]
     investment_domicile = user_data["Investment Domicile"]
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
-    capital_commitment = nil
 
-    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, capital_commitment]
+    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund]
   end
 
   def defer_counter_culture_updates

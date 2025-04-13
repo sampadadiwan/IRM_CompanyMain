@@ -45,6 +45,11 @@
           <th>
             Tag List
           </th>
+          <% if params[:snapshot].present? %>
+            <th>
+              Snapshot Date
+            </th>
+          <% end %>
           <th>
           </th>
         </tr>
@@ -52,7 +57,7 @@
 
       <tbody>
         <% funds.each do |fund| %>
-          <%= render fund %>
+          <%= render "/funds/fund", fund: fund %>
         <% end %>        
       </tbody>
     </table>
