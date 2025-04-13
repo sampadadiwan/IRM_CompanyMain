@@ -1,0 +1,2 @@
+class FundSnapshotPolicy < FundPolicy
+end

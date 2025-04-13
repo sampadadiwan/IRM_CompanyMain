@@ -18,6 +18,7 @@ commands = [
   <%= render "funds/show", fund: @fund %>
 <% end %>
 
+<% if @fund.class == Fund %>
   <div>
     <% if policy(@fund).update? %>
 
@@ -267,3 +268,5 @@ commands = [
   </div>
 
   <%= render "/funds/fund_details", fund: @fund %>
+
+<% end %>

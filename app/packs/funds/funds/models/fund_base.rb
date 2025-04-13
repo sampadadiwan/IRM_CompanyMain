@@ -14,4 +14,12 @@ class FundBase < ApplicationRecord
   monetize :call_amount_cents, :committed_amount_cents, :target_committed_amount_cents,
            :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
            with_currency: ->(f) { f.currency }
+
+  def pending_call_amount
+    call_amount - collected_amount
+  end
+
+  def has_tracking_currency?
+    tracking_currency.present? && tracking_currency != currency
+  end
 end

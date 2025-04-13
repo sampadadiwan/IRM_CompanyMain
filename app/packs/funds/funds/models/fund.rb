@@ -68,16 +68,8 @@ class Fund < FundBase
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }
 
-  def has_tracking_currency?
-    tracking_currency.present? && tracking_currency != currency
-  end
-
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
-  end
-
-  def pending_call_amount
-    call_amount - collected_amount
   end
 
   def folder_path
@@ -149,10 +141,6 @@ class Fund < FundBase
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name]
-  end
-
-  def default_currency_units
-    currency == "INR" ? "Crores" : "Million"
   end
 
   def update_latest_fund_ratios(end_date)

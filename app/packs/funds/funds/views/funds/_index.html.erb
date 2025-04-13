@@ -52,7 +52,7 @@
 
       <tbody>
         <% funds.each do |fund| %>
-          <%= render fund %>
+          <%= render "/funds/fund", fund: fund %>
         <% end %>        
       </tbody>
     </table>

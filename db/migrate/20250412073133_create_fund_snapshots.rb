@@ -4,13 +4,8 @@ class CreateFundSnapshots < ActiveRecord::Migration[7.0]
 
   def down
     TABLES.each do |table|
-      # Drop the indexes on the table
-      remove_index table, name: "index_#{table}_on_id_and_snapshot_date" if index_exists?(table, name: "index_#{table}_on_id_and_snapshot_date")
-      remove_index table, name: "index_#{table}_on_snapshot_date" if index_exists?(table, name: "index_#{table}_on_snapshot_date")
-      remove_index table, name: "index_#{table}_on_id" if index_exists?(table, name: "index_#{table}_on_id")
-
       # Drop the table
-      drop_table table
+      drop_table "#{table.singularize}_snapshots"
     end
   end
 

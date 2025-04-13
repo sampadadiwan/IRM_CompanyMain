@@ -108,6 +108,8 @@ resources :funds do
   post 'generate_tracking_numbers', on: :member
 end
 
+resources :fund_snapshots, controller: "funds", defaults: { snapshot: true }
+
 resources :expression_of_interests do
   patch 'approve', on: :member
   patch 'allocate', on: :member
