@@ -17,6 +17,11 @@
       <% end %>
     <% end %>
   </td>
+  <% if params[:snapshot].present? %>
+    <td>
+      <%= l fund.snapshot_date %>
+    </td>
+  <% end %>
   <td>
     <%= link_to "Show" , fund , {class: "btn btn-outline-primary" }%>
     <% if params[:debug].present? %>
