@@ -195,6 +195,8 @@
   </div>
 </div>
 
+<% if aggregate_portfolio_investment.class == AggregatePortfolioInvestment %>
+
 <div class="associated_entity">
   <%= link_to "Preview", aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'), {class: "btn btn-outline-info"} %>
   <%= button_to "Delete", aggregate_portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?"} if policy(aggregate_portfolio_investment).destroy? %>
@@ -219,3 +221,4 @@
 
 <%= render "/aggregate_portfolio_investments/charts", aggregate_portfolio_investment: aggregate_portfolio_investment %>
 
+<% end %>

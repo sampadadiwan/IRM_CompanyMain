@@ -1,0 +1,2 @@
+class AggregatePortfolioInvestmentSnapshotDecorator < AggregatePortfolioInvestmentDecorator
+end
