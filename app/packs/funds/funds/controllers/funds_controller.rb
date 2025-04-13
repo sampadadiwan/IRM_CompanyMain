@@ -4,7 +4,7 @@ class FundsController < ApplicationController
   # GET /funds or /funds.json
   def index
     # Serves both Fund and FundSnapshot
-    @funds = policy_scope(model_or_snapshot).includes(:entity)
+    @funds = model_or_snapshot_ransack.includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @funds = @funds.where("funds.tag_list LIKE ?", "%#{params[:tag]}%") if params[:tag].present?
     @funds = @funds.page(params[:page]) if params[:card].present? || params[:all].present?

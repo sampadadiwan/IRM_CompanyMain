@@ -1,4 +1,3 @@
 class AggregatePortfolioInvestmentSnapshotPolicy < AggregatePortfolioInvestmentPolicy
-    include SnapshotPolicy
+  include SnapshotPolicy
 end
-  
