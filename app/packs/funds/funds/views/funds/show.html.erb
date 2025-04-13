@@ -18,7 +18,9 @@ commands = [
   <%= render "funds/show", fund: @fund %>
 <% end %>
 
+<!-- Snapshot cannot have details -->
 <% if @fund.class == Fund %>
+
   <div>
     <% if policy(@fund).update? %>
 

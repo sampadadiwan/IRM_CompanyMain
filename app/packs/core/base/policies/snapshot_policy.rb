@@ -23,5 +23,4 @@ module SnapshotPolicy
       false
     end
   end
-  
 end

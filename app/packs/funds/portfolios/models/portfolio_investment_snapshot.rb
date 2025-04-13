@@ -9,4 +9,12 @@ class PortfolioInvestmentSnapshot < PortfolioInvestmentBase
              class_name: "FundSnapshot",
              foreign_key: :fund_id,
              primary_key: :id
+
+  belongs_to :aggregate_portfolio_investment,
+             lambda { |snapshot|
+               where(snapshot_date: snapshot.snapshot_date)
+             },
+             class_name: "AggregatePortfolioInvestmentSnapshot",
+             foreign_key: :aggregate_portfolio_investment_id,
+             primary_key: :id
 end

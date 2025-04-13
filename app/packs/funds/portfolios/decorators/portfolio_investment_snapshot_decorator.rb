@@ -1,0 +1,2 @@
+class PortfolioInvestmentSnapshotDecorator < PortfolioInvestmentDecorator
+end

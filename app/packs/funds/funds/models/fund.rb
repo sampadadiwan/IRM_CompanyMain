@@ -84,27 +84,6 @@ class Fund < FundBase
     Investor.owner_access_rights(self, nil)
   end
 
-  def to_s
-    name
-  end
-
-  def get_lps_emails
-    investors.joins(:investor_accesses).where('investor_accesses.approved = true').pluck('investor_accesses.email')
-  end
-
-  TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template", "Distribution Template"].freeze
-  def document_tags
-    TEMPLATE_TAGS
-  end
-
-  def signature_labels
-    ["Investor Signatories", "Fund Signatories", "Other"]
-  end
-
-  def fund_signatories
-    esign_emails&.split(",")&.map(&:strip)
-  end
-
   def current_fund_ratios(valuation = nil)
     valuation ||= valuations.order(valuation_date: :asc).last
     ratios = valuation ? fund_ratios.where(valuation_id: valuation.id, capital_commitment_id: nil) : fund_ratios.none
@@ -139,10 +118,6 @@ class Fund < FundBase
     ccs_wihout_ar
   end
 
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[name]
-  end
-
   def update_latest_fund_ratios(end_date)
     last_fund_ratio = fund_ratios.order(end_date: :desc).first
     # Only update the latest flag if the end_date is the latest
@@ -154,10 +129,6 @@ class Fund < FundBase
 
   def reports_folder
     get_or_create_folder("Fund Reports")
-  end
-
-  def unit_types_list
-    unit_types&.split(",")&.map(&:strip)
   end
 
   # This method is called when an approval responses are created

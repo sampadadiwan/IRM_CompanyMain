@@ -1,6 +1,6 @@
 class CreateFundSnapshots < ActiveRecord::Migration[7.0]
   
-  TABLES = %w[funds portfolio_investments aggregate_portfolio_investments]
+  TABLES = %w[funds capital_commitments portfolio_investments aggregate_portfolio_investments]
 
   def down
     TABLES.each do |table|
