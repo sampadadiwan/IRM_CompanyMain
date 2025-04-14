@@ -1,0 +1,45 @@
+<table class="table table-bordered dataTable action_table hover">
+  <thead>
+    <tr class="">
+      <th class="">Portfolio Company</th>
+      <th class="">Instrument</th>
+      <th class="">Investment Date</th>
+      <% dates = @time_series.values.flat_map(&:keys).uniq.sort %>
+      <% dates.each do |date| %>
+        <th class="" colspan="<%= @fields.size %>"><%= l date %></th>
+      <% end %>
+    </tr>
+    <tr class="">
+      <th class=""></th>
+      <th class=""></th>
+      <th class=""></th>
+      <% dates.each do |_date| %>
+        <% @fields.each do |field| %>
+          <th class=""><%= field.capitalize %></th>
+        <% end %>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @time_series.each do |investment, date_hash| %>
+      <tr>
+        <td class="">
+          <%= investment.portfolio_company.investor_name %>
+        </td>
+        <td class="">
+          <%= investment.investment_instrument.name %>
+        </td>
+        <td class="">
+          <%= l investment.investment_date %>
+        </td>
+        <% dates.each do |date| %>
+          <% @fields.each do |field| %>
+            <td class="">
+              <%= date_hash[date]&.fetch(field, '-') %>
+            </td>
+          <% end %>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

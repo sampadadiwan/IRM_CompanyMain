@@ -54,7 +54,7 @@ class PortfolioInvestmentBase < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[amount cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at]
+    %w[amount cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at snapshot_date].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

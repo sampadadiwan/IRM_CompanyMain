@@ -17,6 +17,9 @@ class PortfolioInvestmentsController < ApplicationController
       @data_frame = PortfolioInvestmentDf.new.df(@portfolio_investments, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
       template = params[:template].presence || "index"
+    elsif params[:time_series].present?
+      @fields = params[:fields].presence || %i[fmv quantity gain]
+      @time_series = PortfolioInvestmentTimeSeries.new(@portfolio_investments, @fields).call
     elsif params[:all].blank? && params[:ag].blank?
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
