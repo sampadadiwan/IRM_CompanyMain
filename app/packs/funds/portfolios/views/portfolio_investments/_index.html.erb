@@ -80,7 +80,7 @@
           <% end %>
         </tbody>
       </table>
-      <% if portfolio_investments.present? && params[:snapshot].blank? %>
+      <% if portfolio_investments.present?  %>
         <%= page_entries_info portfolio_investments, entry_name: 'item' %>
         <%= paginate portfolio_investments, data: { turbo_frame: pi_turbo_frame } %>
       <% end %>

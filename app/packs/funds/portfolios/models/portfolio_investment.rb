@@ -27,11 +27,12 @@ class PortfolioInvestment < PortfolioInvestmentBase
   include Trackable.new
   include PortfolioComputations
   include Memoized
+  include PortfolioInvestmentCounters
 
   attr_accessor :created_by_import
 
-  belongs_to :fund
-  belongs_to :aggregate_portfolio_investment
+  belongs_to :fund, -> { with_snapshots }
+  belongs_to :aggregate_portfolio_investment, -> { with_snapshots }
 
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy

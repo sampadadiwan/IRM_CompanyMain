@@ -190,7 +190,7 @@ class ApplicationController < ActionController::Base
     # Create the scope for the model
     scope = policy_scope(@q.result)
     # If snapshot is present, we need to return records with_snapshots
-    scope = scope.without_snapshots if params[:snapshot].blank?
+    scope = scope.with_snapshots if params[:snapshot].present?
     scope
   end
 end

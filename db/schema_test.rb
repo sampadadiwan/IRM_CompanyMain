@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
+ActiveRecord::Schema[7.2].define(version: 2025_04_14_122147) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -222,6 +222,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
     t.boolean "show_portfolio", default: false
     t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -520,6 +523,72 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
     t.index ["entity_id"], name: "index_capital_calls_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_calls_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_calls_on_fund_id"
+  end
+
+  create_table "capital_commitment_snapshots", id: false, force: :cascade do |t|
+    t.bigint "id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "fund_id", null: false
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.bigint "form_type_id"
+    t.decimal "percentage", precision: 20, scale: 10, default: "0.0"
+    t.bigint "ppm_number", default: 0
+    t.string "investor_signature_types", limit: 20
+    t.string "folio_id", limit: 20
+    t.bigint "investor_signatory_id"
+    t.boolean "esign_required", default: false
+    t.boolean "esign_completed", default: false
+    t.string "esign_provider", limit: 10
+    t.string "esign_link"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "onboarding_completed", default: false
+    t.datetime "deleted_at"
+    t.bigint "investor_kyc_id"
+    t.string "investor_name"
+    t.bigint "document_folder_id"
+    t.string "unit_type", limit: 25
+    t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "fund_close"
+    t.string "virtual_bank_account", limit: 20
+    t.string "folio_currency", limit: 5
+    t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.boolean "is_feeder_fund", default: false
+    t.date "commitment_date"
+    t.datetime "generated_deleted", null: false
+    t.json "json_fields"
+    t.string "esign_emails"
+    t.bigint "import_upload_id"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "slug"
+    t.boolean "compliant", default: false
+    t.bigint "feeder_fund_id"
+    t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_orig_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_capital_commitments_on_id_and_snapshot_date"
+    t.index ["id"], name: "index_capital_commitments_on_id"
+    t.index ["snapshot_date"], name: "index_capital_commitments_on_snapshot_date"
   end
 
   create_table "capital_commitments", force: :cascade do |t|
@@ -1788,6 +1857,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"   
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2574,6 +2646,73 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
     t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
   end
 
+  create_table "portfolio_company_kpi_extraction_mappings", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.string "metric_name", limit: 40
+    t.string "sheet_name", limit: 40
+    t.string "metric_label", limit: 40
+    t.integer "match_column"
+    t.string "header_regex"
+    t.json "json_rules"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_portfolio_company_kpi_extraction_mappings_on_entity_id"
+    t.index ["portfolio_company_id"], name: "idx_on_portfolio_company_id_b8c50ead10"
+  end
+
+  create_table "portfolio_investment_snapshots", id: false, force: :cascade do |t|
+    t.bigint "id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "form_type_id"
+    t.bigint "portfolio_company_id", null: false
+    t.string "portfolio_company_name", limit: 100
+    t.date "investment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "folio_id", limit: 20
+    t.bigint "capital_commitment_id"
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.string "sector", limit: 100
+    t.boolean "startup", default: true
+    t.string "investment_domicile", limit: 10, default: "Domestic"
+    t.datetime "deleted_at"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.bigint "investment_instrument_id"
+    t.decimal "quantity_as_of_date", precision: 10, default: "0"
+    t.decimal "base_amount_cents", precision: 20, scale: 2
+    t.bigint "exchange_rate_id"
+    t.decimal "transfer_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "transfer_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_amount_cents", precision: 20, scale: 2
+    t.decimal "net_bought_quantity", precision: 20, scale: 2
+    t.decimal "cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "compliant", default: false
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "conversion_date"
+    t.decimal "capital_expense_cents", precision: 20, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "snapshot_date"
+    t.index ["id", "snapshot_date"], name: "index_portfolio_investments_on_id_and_snapshot_date"
+    t.index ["id"], name: "index_portfolio_investments_on_id"
+    t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
+  end
+
   create_table "portfolio_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -2619,6 +2758,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_12_114350) do
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
     t.decimal "capital_expense_cents", precision: 20, scale: 2
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["conversion_date"], name: "index_portfolio_investments_on_conversion_date"

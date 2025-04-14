@@ -6,7 +6,7 @@ class AggregatePortfolioInvestment < AggregatePortfolioInvestmentBase
   include Trackable.new
 
   belongs_to :entity, touch: true
-  belongs_to :fund
+  belongs_to :fund, -> { with_snapshots }
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
 
