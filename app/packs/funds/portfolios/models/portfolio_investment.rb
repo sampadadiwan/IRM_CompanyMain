@@ -21,12 +21,14 @@
 
 class PortfolioInvestment < PortfolioInvestmentBase
   include WithFolder
+  # This has all the utility methods required for snashots
+  include WithSnapshot
   include WithExchangeRate
   include Trackable.new
   include PortfolioComputations
   include Memoized
 
-  attr_accessor :created_by_import, :snapshot_date
+  attr_accessor :created_by_import
 
   belongs_to :fund
   belongs_to :aggregate_portfolio_investment

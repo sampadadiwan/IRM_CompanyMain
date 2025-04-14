@@ -79,7 +79,7 @@ class FundPolicy < FundBasePolicy
 
   def create?
     user.enable_funds &&
-      permissioned_employee?(:create)
+      permissioned_employee?(:create) && !record.snapshot
   end
 
   def new?
@@ -88,7 +88,7 @@ class FundPolicy < FundBasePolicy
 
   def update?
     user.enable_funds &&
-      permissioned_employee?(:update)
+      permissioned_employee?(:update) && !record.snapshot
   end
 
   def edit?

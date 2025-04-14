@@ -1,6 +1,7 @@
 class AggregatePortfolioInvestment < AggregatePortfolioInvestmentBase
   update_index('aggregate_portfolio_investment') { self if index_record?(AggregatePortfolioInvestmentIndex) }
-
+  # This has all the utility methods required for snashots
+  include WithSnapshot
   include WithFolder
   include Trackable.new
 

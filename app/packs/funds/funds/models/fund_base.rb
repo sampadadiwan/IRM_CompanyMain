@@ -29,7 +29,7 @@ class FundBase < ApplicationRecord
   end
 
   def to_s
-    name
+    snapshot ? "#{name} [Snapshot: #{snapshot_date}]" : name
   end
 
   def get_lps_emails

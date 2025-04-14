@@ -1,18 +1,16 @@
 class Fund < FundBase
   include WithFolder
+  include WithSnapshot
   include WithDataRoom
   include InvestorsGrantedAccess
   include Trackable.new
   include WithApprovals
   include WithExchangeRate
-  include WithFriendlyId
   include WithIncomingEmail
 
   update_index('fund') do
     self if index_record?
   end
-
-  self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category co_invest_call_amount_cents co_invest_committed_amount_cents co_invest_distribution_amount_cents co_invest_collected_amount_cents]
 
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
@@ -62,7 +60,8 @@ class Fund < FundBase
 
   validates :name, :currency, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-  validates_uniqueness_of :name, scope: :entity_id
+  # Unique name for the fund, unless its a snapshot
+  validates :name, uniqueness: { scope: :entity_id }, if: -> { !snapshot? }
 
   validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }

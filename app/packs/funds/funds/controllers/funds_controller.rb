@@ -4,7 +4,7 @@ class FundsController < ApplicationController
   # GET /funds or /funds.json
   def index
     # Serves both Fund and FundSnapshot
-    @funds = model_or_snapshot_ransack.includes(:entity)
+    @funds = ransack_with_snapshot.includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @funds = @funds.where("funds.tag_list LIKE ?", "%#{params[:tag]}%") if params[:tag].present?
     @funds = @funds.page(params[:page]) if params[:card].present? || params[:all].present?
@@ -211,7 +211,7 @@ class FundsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_fund
-    @fund = Fund.find_or_snapshot(params[:id])
+    @fund = Fund.with_snapshots.find(params[:id])
     authorize(@fund)
     @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund) }
   end

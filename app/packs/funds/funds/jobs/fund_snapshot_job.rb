@@ -16,17 +16,19 @@ class FundSnapshotJob < ApplicationJob
       # Iterate through each fund
       funds.each do |fund|
         # Create a snapshot for the fund
-        FundSnapshot.snapshot(fund)
+        fund_snapshot = Fund.snapshot(fund)
+        fund_snapshot.save(validate: false)
 
-        # Iterate through each aggregate portfolio investment of the fund
         fund.aggregate_portfolio_investments.each do |api|
-          # Create a snapshot for the aggregate portfolio investment
-          AggregatePortfolioInvestmentSnapshot.snapshot(api)
+          api_snapshot = AggregatePortfolioInvestment.snapshot(api)
+          api_snapshot.fund = fund_snapshot
+          api_snapshot.save(validate: false)
 
-          # Iterate through each portfolio investment within the aggregate portfolio investment
           api.portfolio_investments.each do |pi|
-            # Create a snapshot for the portfolio investment
-            PortfolioInvestmentSnapshot.snapshot(pi)
+            pi_snapshot = PortfolioInvestment.snapshot(pi)
+            pi_snapshot.aggregate_portfolio_investment = api_snapshot
+            pi_snapshot.fund = fund_snapshot
+            pi_snapshot.save(validate: false)
           end
         end
       end
