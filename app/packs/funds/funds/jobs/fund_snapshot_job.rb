@@ -12,9 +12,12 @@ class FundSnapshotJob < ApplicationJob
         Fund.joins(:entity).merge(Entity.where_permissions(:enable_snapshots))
       end
 
+    Rails.logger.debug { "Generating snapshot for #{funds.count} funds" }
+
     Chewy.strategy(:sidekiq) do
       # Iterate through each fund
       funds.each do |fund|
+        Rails.logger.debug { "Creating snapshot for fund: #{fund.name}" }
         # Create a snapshot for the fund
         fund_snapshot = Fund.snapshot(fund)
         fund_snapshot.save(validate: false)

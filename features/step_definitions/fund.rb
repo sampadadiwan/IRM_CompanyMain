@@ -2337,3 +2337,31 @@ Then('the fund formulas must have the data in the sheet') do
     ff.formula.should == user_data["Formula"]
   end
 end
+
+Given ('the fund snapshot is created') do
+  # Need to ensure that the fund has the entity permission to enable snapshots
+  es = @fund.entity
+  es.permissions.set(:enable_snapshots)
+  es.save
+  # Create the fund snapshot
+  FundSnapshotJob.perform_now(fund_id: @fund.id)
+
+  Fund.with_snapshots.where(orignal_id: @fund.id).count.should == 2
+  fs = Fund.with_snapshots.where(orignal_id: @fund.id, snapshot: true).first
+  fs.should_not == nil
+  fs.snapshot_date.should == Time.zone.today
+  
+  @fund.aggregate_portfolio_investments.each do |api|
+    AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id).count.should == 2
+    api_s = AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id, snapshot: true).first
+    api_s.should_not == nil
+    api_s.snapshot_date.should == Time.zone.today
+
+    api.portfolio_investments.each do |pi|
+      PortfolioInvestment.with_snapshots.where(orignal_id: pi.id).count.should == 2
+      pi_s = PortfolioInvestment.with_snapshots.where(orignal_id: pi.id, snapshot: true).first
+      pi_s.should_not == nil
+      pi_s.snapshot_date.should == Time.zone.today
+    end    
+  end
+end
