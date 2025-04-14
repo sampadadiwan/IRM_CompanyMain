@@ -1,3 +1,27 @@
+V9.0.20
+#####################################
+0c24a0fec Added snapshot date to show if present
+cd8936999 Fixed pagination in PI snapshots
+8c581f3be Added sidekiq cron to generate fund snapshots
+aa193077a Added hack for fx_rate dependent on valuation_date
+a0861cdee Allows for model_snapshot_ransack to join for non snapshot models
+e4d7a93de Added better API snapshots view
+bbc5e6acf Added better PI snapshots view
+4f18b4dfa Added better support for SnapshotPolicy
+ee74e7b51 Added funds snapshots filter
+81c166fe9 Started adding ability to view snapshots
+57e9f0872 Fixed ValueBridgeService to enable custom fields from entity setting
+49f6ce70d Added ability to inject value_bridge_fields from entity settings
+7148f2f40 Added garish colors to the VB
+89b889722 Added better PI ag grid to include FundName
+4142a86a2 Added condensed view for fund ratios
+0ca16406a (origin/valuation-fix) Valuation form now reflects actual value and doesnt round it
+e89e84929 Better scopes added to DashboardWidget
+f9d4fbe31 Added metatdata_help for dashboard widgets
+f7256f782 Added better valuation update of decimals
+bd44c96b4 Added value bridge widget for portfolio company dashboard
+b9b0a35de Added better tests for kpi parse_date
+
 V9.0.19
 #####################################
 c99f9c1b3 Now allows select standard fields to be used in condition_on for form custom fields

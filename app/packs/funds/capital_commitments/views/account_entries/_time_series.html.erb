@@ -1,0 +1,23 @@
+<table class="table table-bordered dataTable action_table hover">
+  <thead>
+    <tr class="">
+      <th class="text-left">Name</th>
+      <% reporting_dates = @time_series.values.flat_map(&:keys).uniq.sort %>
+      <% reporting_dates.each do |date| %>
+        <th class=""><%= l date %></th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @time_series.each do |name, dates_hash| %>
+      <tr>
+        <td class=""><%= name %></td>
+        <% reporting_dates.each do |date| %>
+          <td class="text-right">
+            <%= money_to_currency(dates_hash[date], params) if dates_hash[date] %>
+          </td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,12 +1,14 @@
 
 
-<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run], include_template: "/account_entries/group_filter" %>
+<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series]} %>
 
 <%= render ReportingComponent.new do %>
   <%= turbo_frame_tag "account_entries_list", target: "_top" do %>
     <% if params[:ag].present? %>
       <%= render "/account_entries/index_ag", account_entries: @account_entries, 
           fund: nil, lazy_load_data: false, data_source: nil %>
+    <% elsif params[:time_series].present? %>
+      <%= render "/account_entries/time_series" %>
     <% else %>
       <%= render "/account_entries/index", account_entries: @account_entries, 
           fund: nil, lazy_load_data: false, data_source: nil %>
