@@ -3,7 +3,10 @@ module WithSnapshot
 
   included do
     scope :without_snapshots, -> { where(snapshot: false) }
-    scope :with_snapshots, -> { where(snapshot: true) }
+    scope :with_snapshots, -> { where(snapshot: [true, false]) }
+
+    # default_scope { where("#{table_name}.snapshot" => false) }
+    # scope :with_snapshots, -> { unscope(where: "#{table_name}.snapshot") }
   end
 
   # Ensure the snapshot can never be modified

@@ -189,7 +189,7 @@ class ApplicationController < ActionController::Base
     @q = model_class.ransack(params[:q])
     # Create the scope for the model
     scope = policy_scope(@q.result)
-    # I snapshot is NOT present, we need to return only the current records
+    # If snapshot is present, we need to return records with_snapshots
     scope = scope.without_snapshots if params[:snapshot].blank?
     scope
   end
