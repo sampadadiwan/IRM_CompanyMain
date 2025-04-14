@@ -9,6 +9,8 @@ class AddSnapshotToFund < ActiveRecord::Migration[8.0]
     remove_column :funds, :slug, :string
     # Set orignal_id to the current id for existing records
     execute "UPDATE funds SET orignal_id = id"
+    # Add an index for the snapshot_date
+    add_index :funds, :snapshot_date, name: "index_funds_on_snapshot_date"
 
 
     add_column :aggregate_portfolio_investments, :snapshot_date, :date
@@ -16,12 +18,14 @@ class AddSnapshotToFund < ActiveRecord::Migration[8.0]
     add_column :aggregate_portfolio_investments, :orignal_id, :bigint, null: true
     # Set orignal_id to the current id for existing records
     execute "UPDATE aggregate_portfolio_investments SET orignal_id = id"
+    add_index :aggregate_portfolio_investments, :snapshot_date, name: "index_aggregate_portfolio_investments_on_snapshot_date"
 
     add_column :portfolio_investments, :snapshot_date, :date
     add_column :portfolio_investments, :snapshot, :boolean, default: false
     add_column :portfolio_investments, :orignal_id, :bigint, null: true
     # Set orignal_id to the current id for existing records
     execute "UPDATE portfolio_investments SET orignal_id = id"
+    add_index :portfolio_investments, :snapshot_date, name: "index_portfolio_investments_on_snapshot_date"
 
     TABLES.each do |table|
       # Drop the table
