@@ -1,6 +1,10 @@
 <%= render "/layouts/filter", associations: [:investment_instrument], include_template: "/portfolio_investments/group_filter" %>        
 <%= render ReportingComponent.new do %>
     <%= turbo_frame_tag "portfolio_investments_frame", target: "_top" do %>
-        <%= render "/portfolio_investments/index", portfolio_investments: @portfolio_investments %>
+        <% if params[:time_series].present? %>
+            <%= render "/portfolio_investments/time_series", time_series: @time_series, fields: @fields %>
+        <% else %>
+            <%= render "/portfolio_investments/index", portfolio_investments: @portfolio_investments %>
+        <% end  %>
     <% end %>
 <% end %>

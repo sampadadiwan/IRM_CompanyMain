@@ -3,14 +3,13 @@ class FundSnapshotJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(fund_id: nil)
-    
-    funds = 
-      if fund_id 
+    funds =
+      if fund_id
         # Fetch the fund with the given fund_id
-        Fund.where(id: fund_id) 
+        Fund.where(id: fund_id)
       else
         # Fetch all funds with the permission to enable snapshots
-        Fund.joins(:entity).merge(Entity.where_permissions(:enable_snapshots)) 
+        Fund.joins(:entity).merge(Entity.where_permissions(:enable_snapshots))
       end
 
     Chewy.strategy(:sidekiq) do

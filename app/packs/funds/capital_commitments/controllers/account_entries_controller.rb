@@ -32,12 +32,38 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
   end
 
+  def check_time_series_params
+    @time_series_error = []
+
+    if params[:fund_id].blank?
+      params[:fund_id] = current_user.entity.funds.first&.id
+      @time_series_error << "Please select a fund."
+    end
+    # Ensure that folio_id is not nil in the ransack params
+    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('folio_id') }
+      # Add a condition to the ransack query where folio_id is XYX
+      params[:q] ||= {}
+      params[:q][:folio_id_eq] = "Please Enter Folio ID"
+      # Redirect to the current path with notice
+      @time_series_error << "Please select a folio."
+    end
+
+    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('reporting_date') }
+      # Add a condition to the ransack query where folio_id is XYX
+      params[:q] ||= {}
+      params[:q][:reporting_date] = Time.zone.today
+      # Redirect to the current path with notice
+      @time_series_error << "Please select a reporting date."
+    end
+
+    @time_series_error.join(" ") if @time_series_error.present?
+  end
+
   # GET /account_entries or /account_entries.json
   def index
     authorize AccountEntry
 
     @q = AccountEntry.ransack(params[:q])
-
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
     filter_index(params)
 
@@ -45,6 +71,15 @@ class AccountEntriesController < ApplicationController
       @data_frame = AccountEntryDf.new.df(@account_entries, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
       template = params[:template].presence || "index"
+    elsif params[:time_series].present?
+      error = check_time_series_params
+      if error
+        # Redirect to the referrer with an error message
+        redirect_url = request.referer || account_entries_path(params: params.to_unsafe_h)
+        redirect_to redirect_url, alert: error
+        return
+      end
+      @time_series = AccountEntryTimeSeries.new(@account_entries).call
     else
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
       @account_entries = @account_entries.page(params[:page]) if params[:all].blank?

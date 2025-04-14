@@ -26,7 +26,7 @@ class PortfolioInvestment < PortfolioInvestmentBase
   include PortfolioComputations
   include Memoized
 
-  attr_accessor :created_by_import
+  attr_accessor :created_by_import, :snapshot_date
 
   belongs_to :fund
   belongs_to :aggregate_portfolio_investment
