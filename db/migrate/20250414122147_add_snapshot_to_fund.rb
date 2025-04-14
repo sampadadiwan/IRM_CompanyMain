@@ -29,7 +29,7 @@ class AddSnapshotToFund < ActiveRecord::Migration[8.0]
 
     TABLES.each do |table|
       # Drop the table
-      drop_table "#{table.singularize}_snapshots"
+      drop_table "#{table.singularize}_snapshots" if ActiveRecord::Base.connection.table_exists?("#{table.singularize}_snapshots")
     end
   end
 
