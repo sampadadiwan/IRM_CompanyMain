@@ -168,6 +168,8 @@ group :development, :test do
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
+  gem 'bullet'
+  
 end
 
 gem 'awesome_print'
@@ -181,7 +183,6 @@ group :development do
   # gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
-  gem 'bullet'
   gem "letter_opener", group: :development
   gem 'overcommit', require: false
   gem "web-console"
