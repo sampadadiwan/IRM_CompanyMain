@@ -7,7 +7,7 @@ class PortfolioInvestmentTimeSeries
   def call
     time_series = Hash.new { |h, k| h[k] = {} }
 
-    @investments.includes(:portfolio_company).order(:investment_date).each do |investment|
+    @investments.includes(:portfolio_company).find_each do |investment|
       @fields.each do |field|
         date = investment.snapshot_date || Time.zone.today
         time_series[investment.orignal_id][:portfolio_investment] ||= investment

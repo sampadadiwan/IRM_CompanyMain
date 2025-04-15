@@ -46,7 +46,7 @@
       </div>
 
       
-      <%= link_to "Time Series", portfolio_investments_path(fund_id: fund.id, snapshot: true, filter: true, time_series: true),  {class: "btn btn-outline-primary" } if current_user.entity.enable_snapshots %>
+      <%= link_to "Time Series", aggregate_portfolio_investments_path(fund_id: fund.id, snapshot: true, filter: true, time_series: true),  {class: "btn btn-outline-primary" } if current_user.entity.enable_snapshots %>
 
     <% end %>
   </span>
