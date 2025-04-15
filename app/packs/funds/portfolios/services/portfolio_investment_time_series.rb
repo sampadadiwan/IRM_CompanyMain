@@ -7,14 +7,15 @@ class PortfolioInvestmentTimeSeries
   def call
     time_series = Hash.new { |h, k| h[k] = {} }
 
-    @investments.order(:investment_date).each do |investment|
+    @investments.includes(:portfolio_company).order(:investment_date).each do |investment|
       @fields.each do |field|
         date = investment.snapshot_date || Time.zone.today
-        time_series[investment][date] ||= {}
-        time_series[investment][date][field] = investment.public_send(field)
+        time_series[investment.orignal_id][:portfolio_investment] ||= investment
+        time_series[investment.orignal_id][:dates] ||= {}
+        time_series[investment.orignal_id][:dates][date] ||= {}
+        time_series[investment.orignal_id][:dates][date][field] = investment.public_send(field)
       end
     end
-
     time_series
   end
 end

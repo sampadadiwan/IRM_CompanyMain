@@ -32,7 +32,7 @@
 # - The `set_orignal_id` method uses `update_column` to bypass validations and callbacks, which is intentional
 #   to ensure the `orignal_id` is set immediately after creation.
 # - The `readonly?` method ensures that snapshots remain immutable, preventing accidental modifications.
-# 
+#
 module WithSnapshot
   extend ActiveSupport::Concern
 

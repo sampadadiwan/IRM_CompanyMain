@@ -182,7 +182,6 @@ class ApplicationController < ActionController::Base
     value
   end
 
-
   # This method is used to perform a Ransack search on the model associated with the current controller,
   # apply policy scope, and optionally filter the results to include only records with snapshots.
   #
@@ -197,12 +196,11 @@ class ApplicationController < ActionController::Base
   def ransack_with_snapshot
     # Get the current controllers model class
     model_class = controller_name.classify.constantize
+    # If snapshot is present, we need to return records with_snapshots
+    model_class = model_class.with_snapshots if params[:snapshot].present?
     # Get the ransack search object
     @q = model_class.ransack(params[:q])
     # Create the scope for the model
-    scope = policy_scope(@q.result)
-    # If snapshot is present, we need to return records with_snapshots
-    scope = scope.with_snapshots if params[:snapshot].present?
-    scope
+    policy_scope(@q.result)
   end
 end

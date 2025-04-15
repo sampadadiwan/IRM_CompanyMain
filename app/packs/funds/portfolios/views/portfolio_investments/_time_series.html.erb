@@ -1,41 +1,37 @@
 <table class="table table-bordered dataTable action_table hover">
   <thead>
-    <tr class="">
-      <th class="">Portfolio Company</th>
-      <th class="">Instrument</th>
-      <th class="">Investment Date</th>
-      <% dates = @time_series.values.flat_map(&:keys).uniq.sort %>
+    <tr>
+      <th>Portfolio Company</th>
+      <th>Instrument</th>
+      <th>Investment Date</th>
+      <% dates = @time_series.values.flat_map { |data| data[:dates].keys }.uniq.sort %>
       <% dates.each do |date| %>
-        <th class="" colspan="<%= @fields.size %>"><%= l date %></th>
+        <th colspan="<%= @fields.size %>"><%= l(date) %></th>
       <% end %>
     </tr>
-    <tr class="">
-      <th class=""></th>
-      <th class=""></th>
-      <th class=""></th>
+    <tr>
+      <th></th>
+      <th></th>
+      <th></th>
       <% dates.each do |_date| %>
         <% @fields.each do |field| %>
-          <th class=""><%= field.capitalize %></th>
+          <th><%= field.capitalize %></th>
         <% end %>
       <% end %>
     </tr>
   </thead>
   <tbody>
-    <% @time_series.each do |investment, date_hash| %>
+    <% @time_series.each do |investment_id, values| %>
+      <% investment = values[:portfolio_investment] %>
+      <% date_hash = values[:dates] %>
       <tr>
-        <td class="">
-          <%= investment.portfolio_company.investor_name %>
-        </td>
-        <td class="">
-          <%= investment.investment_instrument.name %>
-        </td>
-        <td class="">
-          <%= l investment.investment_date %>
-        </td>
+        <td><%= link_to investment.portfolio_company %></td>
+        <td><%= link_to investment.investment_instrument %></td>
+        <td><%= link_to(l(investment.investment_date), investment) %></td>
         <% dates.each do |date| %>
           <% @fields.each do |field| %>
-            <td class="">
-              <%= date_hash[date]&.fetch(field, '-') %>
+            <td>
+              <%= date_hash.dig(date, field).presence || "-" %>
             </td>
           <% end %>
         <% end %>

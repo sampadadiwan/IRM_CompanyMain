@@ -162,14 +162,13 @@ group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
 
+  gem 'bullet'
   gem 'htmlbeautifier'
   gem 'parallel_tests'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
-  gem 'bullet'
-  
 end
 
 gem 'awesome_print'
