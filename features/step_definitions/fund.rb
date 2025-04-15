@@ -2345,7 +2345,7 @@ Given ('the fund snapshot is created') do
   es.save
   # Create the fund snapshot
   FundSnapshotJob.perform_now(fund_id: @fund.id)
-
+  puts "Checking fund snapshot for #{@fund.id}"
   Fund.with_snapshots.where(orignal_id: @fund.id).count.should == 2
   fs = Fund.with_snapshots.where(orignal_id: @fund.id, snapshot: true).first
   fs.should_not == nil
@@ -2353,12 +2353,14 @@ Given ('the fund snapshot is created') do
   
   @fund.aggregate_portfolio_investments.each do |api|
     AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id).count.should == 2
+    puts "Checking aggregate portfolio investment snapshot for #{api.id}"
     api_s = AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id, snapshot: true).first
     api_s.should_not == nil
     api_s.snapshot_date.should == Time.zone.today
 
     api.portfolio_investments.each do |pi|
       PortfolioInvestment.with_snapshots.where(orignal_id: pi.id).count.should == 2
+      puts "Checking portfolio investment snapshot for #{pi.id}"
       pi_s = PortfolioInvestment.with_snapshots.where(orignal_id: pi.id, snapshot: true).first
       pi_s.should_not == nil
       pi_s.snapshot_date.should == Time.zone.today

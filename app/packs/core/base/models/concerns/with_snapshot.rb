@@ -2,11 +2,8 @@ module WithSnapshot
   extend ActiveSupport::Concern
 
   included do
-    # scope :without_snapshots, -> { where(snapshot: false) }
-    # scope :with_snapshots, -> { where(snapshot: [true, false]) }
-
-    default_scope { where("#{table_name}.snapshot" => false) }
-    scope :with_snapshots, -> { unscope(where: "#{table_name}.snapshot") }
+    default_scope { where("#{table_name}.snapshot_date" => nil) }
+    scope :with_snapshots, -> { unscope(where: "#{table_name}.snapshot_date") }
     after_create :set_orignal_id, if: -> { orignal_id.nil? }
   end
 
