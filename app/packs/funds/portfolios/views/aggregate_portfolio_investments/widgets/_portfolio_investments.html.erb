@@ -1,10 +1,24 @@
 <% 
   uri_params ||= {}
-  fund ||= uri_params[:fund]
-  fund_id ||= uri_params[:owner_id].presence || fund&.id
+  portfolio_company_id = nil
+  fund_id = nil
+  # If this is part of the Fund Dashboard, we will get a fund object
+  if @investor
+    # If this is part of the Investor Dashboard, we will get an investor object
+    portfolio_company_id ||= @investor.id 
+  else
+    fund ||= uri_params[:fund]
+    fund_id ||= uri_params[:owner_id].presence || fund&.id
+  end
+  
   args ||= {}
-  pi_uri = "/portfolio_investments?fund_id=#{fund_id}&ag=true&group_by_column=#{args[:group_by_column]}"
-  api_uri = "/aggregate_portfolio_investments?fund_id=#{fund_id}&grid_only=true"
+  pi_uri = "/portfolio_investments?portfolio_company_id=#{portfolio_company_id}&fund_id=#{fund_id}"
+  # add args as params to the url
+  args.each do |key, value|
+    pi_uri += "&#{key}=#{value}"
+  end
+  
+  api_uri = "/aggregate_portfolio_investments?portfolio_company_id=#{portfolio_company_id}&fund_id=#{fund_id}&grid_only=true"
 %>
 
 <%= render(

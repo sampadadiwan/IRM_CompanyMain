@@ -46,6 +46,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     append_to_commitment_agreement: Field::String,
     regulatory_env: Field::String,
     formula_tag_list: Field::String,
+    value_bridge_cols: Field::String,
     test_account: Field::BooleanEmoji
   }.freeze
 
@@ -114,6 +115,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     whatsapp_endpoint
     formula_tag_list
     custom_flags
+    value_bridge_cols
     created_at
     updated_at
   ].freeze
@@ -155,6 +157,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kpi_reminder_before
     append_to_commitment_agreement
     formula_tag_list
+    value_bridge_cols
     custom_flags
   ].freeze
 

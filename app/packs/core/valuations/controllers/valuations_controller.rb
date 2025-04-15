@@ -47,7 +47,7 @@ class ValuationsController < ApplicationController
         @valuation = Valuation.new(valuation_params)
         @valuation.investment_instrument_id = investment_instrument_id
         @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
-        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
         authorize @valuation
         saved_all &&= @valuation.save
         valuations << @valuation
@@ -73,10 +73,12 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
-    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+    # We need to remove the per_share_value from the params hash, this is so the per_share_value_cents is used to update the DB till the last 8 decimal digits. Otherwise only 2 digits gets saved
+    cleaned_params = valuation_params.except(:per_share_value)
 
     respond_to do |format|
-      if @valuation.update(valuation_params)
+      if @valuation.update(cleaned_params)
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
         format.json { render :show, status: :ok, location: @valuation }
       else
@@ -100,11 +102,18 @@ class ValuationsController < ApplicationController
 
   def value_bridge
     if params[:initial_valuation_id].present? && params[:final_valuation_id].present?
-      initial_valuation = Valuation.find(params[:initial_valuation_id])
-      authorize(initial_valuation)
-      final_valuation = Valuation.find(params[:final_valuation_id])
-      authorize(final_valuation)
-      @bridge = ValueBridgeService.new(initial_valuation, final_valuation).compute_bridge
+      @initial_valuation = Valuation.find(params[:initial_valuation_id])
+      authorize(@initial_valuation)
+      @final_valuation = Valuation.find(params[:final_valuation_id])
+      authorize(@final_valuation)
+
+      # Get the value bridge fields from the entity setting if they exist
+      @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
+      @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
+
+      @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, @value_bridge_fields)
+      @bridge = @value_bridge_service.compute_bridge
+
       render "value_bridge"
     elsif params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])

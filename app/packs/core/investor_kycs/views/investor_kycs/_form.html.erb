@@ -52,7 +52,8 @@
 
             <div class="form-group" data-controller="investor-kycs">
               <%= form.label :kyc_type %>
-              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
+              <!-- Even though this is not a custom field, its class is set to custom_field to enable other custom_fields to be dependent on this -->
+              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control custom_field", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
             </div>
 
             <div class="form-group">

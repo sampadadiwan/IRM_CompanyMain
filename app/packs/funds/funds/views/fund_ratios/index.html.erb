@@ -1,5 +1,9 @@
 <%= render "/layouts/filter", associations: [] %>
 
 <%= turbo_frame_tag "fund_ratios_frame", target: "_top" do %>
-    <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>
+    <% if params[:condensed].present? %>
+        <%= render "/fund_ratios/index_condensed", fund_ratios: @fund_ratios, fund: @fund %>
+    <% else %>
+        <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>
+    <% end %>
 <% end %>

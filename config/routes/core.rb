@@ -153,3 +153,12 @@ resources :entities do
   get 'merge', on: :collection
   post 'merge', on: :collection
 end
+
+resources :viewed_bies
+
+resources :dashboard_widgets do
+  get 'dashboard', on: :collection
+  get 'metadata_help', on: :collection
+end
+resources :incoming_emails
+resources :doc_questions

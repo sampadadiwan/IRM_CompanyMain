@@ -1,4 +1,5 @@
 
-<%= render ReportingComponent.new do %>
+<%= render "/layouts/filter", hidden_fields: {snapshot: params[:snapshot]}, associations: [] %>
+<%= render ReportingComponent.new do %>    
     <%= render "/funds/index",  funds: @funds %>
 <% end %>

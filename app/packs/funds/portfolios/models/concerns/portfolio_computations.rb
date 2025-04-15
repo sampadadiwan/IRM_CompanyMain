@@ -25,14 +25,6 @@ module PortfolioComputations
     end
   end
 
-  def cost_cents
-    quantity.positive? ? (amount_cents / quantity).abs : 0
-  end
-
-  def base_cost_cents
-    quantity.positive? ? (base_amount_cents / quantity).abs : 0
-  end
-
   def compute_all_numbers
     # We have amount_cents and quantity as stable entered values.
     # cost_cents = amount_cents / quantity and is stable
@@ -114,7 +106,7 @@ module PortfolioComputations
            net_quantity_on(date)
          end
 
-    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date).cents : 0
+    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
   end
 
   # This method is memoized to avoid multiple calls to the database

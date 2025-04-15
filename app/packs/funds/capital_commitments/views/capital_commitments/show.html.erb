@@ -26,6 +26,9 @@
 
           <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
 
+          <% report = Report.where(entity_id: current_user.entity_id, name: "Folio Account Entries").first %>
+          <%= link_to "Folio Account Entries" , dynamic_report_path(report, fund_id: @capital_commitment.fund_id, folio_id: @capital_commitment.folio_id, reporting_date: Date.today - 12.months), {class: "dropdown-item" }  if report %>
+
           <div class="dropdown-divider"></div>
       
           <% if policy(@capital_commitment).generate_documentation? %>

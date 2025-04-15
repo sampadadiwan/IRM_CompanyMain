@@ -7,6 +7,10 @@ class Valuation < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   belongs_to :investment_instrument # , optional: true
 
+  scope :by_instrument, lambda { |instrument_name|
+    joins(:investment_instrument).where(investment_instrument: { name: instrument_name })
+  }
+
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
   validates_uniqueness_of :valuation_date, scope: %i[investment_instrument_id entity_id owner_id owner_type]
@@ -54,7 +58,7 @@ class Valuation < ApplicationRecord
   end
 
   def per_share_value_in(to_currency, as_of)
-    convert_currency(currency, to_currency, per_share_value, as_of)
+    convert_currency(currency, to_currency, per_share_value_cents, as_of)
   end
 
   # This method is used to add custom fields to the Valuation form, to enable value bridge

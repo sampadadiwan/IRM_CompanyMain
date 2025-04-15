@@ -3,9 +3,10 @@ class PortfolioInvestmentsController < ApplicationController
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index
-    @q = PortfolioInvestment.ransack(params[:q])
-    @portfolio_investments = policy_scope(@q.result).joins(:investment_instrument).includes(:aggregate_portfolio_investment, :capital_commitment, :fund, :investment_instrument)
+    @portfolio_investments = model_or_snapshot_ransack(join_list: [:investment_instrument]).includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @portfolio_investments = @portfolio_investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+
     @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @portfolio_investments = @portfolio_investments.where(investment_instrument_id: params[:investment_instrument_id]) if params[:investment_instrument_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
@@ -16,6 +17,9 @@ class PortfolioInvestmentsController < ApplicationController
       @data_frame = PortfolioInvestmentDf.new.df(@portfolio_investments, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
       template = params[:template].presence || "index"
+    elsif params[:time_series].present?
+      @fields = params[:fields].presence || %i[fmv quantity gain]
+      @time_series = PortfolioInvestmentTimeSeries.new(@portfolio_investments, @fields).call
     elsif params[:all].blank? && params[:ag].blank?
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
@@ -107,7 +111,7 @@ class PortfolioInvestmentsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_portfolio_investment
-    @portfolio_investment = PortfolioInvestment.find(params[:id])
+    @portfolio_investment = PortfolioInvestment.find_or_snapshot(params[:id])
     authorize @portfolio_investment
 
     @bread_crumbs = { Funds: funds_path,

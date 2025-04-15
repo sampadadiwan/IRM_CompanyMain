@@ -1,10 +1,17 @@
 class DashboardWidgetsController < ApplicationController
   before_action :set_dashboard_widget, only: %i[show edit update destroy]
+  after_action :verify_authorized, except: %i[index search bulk_actions metadata_help]
 
   # GET /dashboard_widgets
   def index
     @q = DashboardWidget.ransack(params[:q])
     @dashboard_widgets = policy_scope(@q.result).includes(:owner).page(params[:page])
+  end
+
+  def metadata_help
+    dashboard_name = params[:dashboard_name]
+    widget_name = params[:widget_name]
+    @dashboard_widget = DashboardWidget::WIDGETS[dashboard_name].find { |w| w.widget_name == widget_name }
   end
 
   # GET /dashboard_widgets/1
@@ -59,6 +66,7 @@ class DashboardWidgetsController < ApplicationController
   def set_dashboard_widget
     @dashboard_widget = DashboardWidget.find(params[:id])
     authorize @dashboard_widget
+    @bread_crumbs = { Widgets: dashboard_widgets_path, "#{@dashboard_widget.widget_name}": dashboard_widget_path(@dashboard_widget) }
   end
 
   # Only allow a list of trusted parameters through.

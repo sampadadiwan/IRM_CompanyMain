@@ -181,4 +181,23 @@ class ApplicationController < ActionController::Base
     end
     value
   end
+
+  def model_or_snapshot_ransack(join_list: nil)
+    # Get the current controllers model class
+    curr_model_class = controller_name.classify.constantize
+    # Derive the snapshot class name from the current model class
+    curr_snapshot_class = "#{curr_model_class}Snapshot".constantize
+    # Check if the params contain a snapshot
+    # If the params contain a snapshot, use the snapshot class
+    # If the params do not contain a snapshot, use the current model class
+    model_class = params[:snapshot].present? ? curr_snapshot_class : curr_model_class
+    # Get the ransack search object
+    @q = model_class.ransack(params[:q])
+    # We cannot join with the snapshot tables, only includes is supported
+    if params[:snapshot].blank? && join_list.present?
+      policy_scope(@q.result).joins(join_list)
+    else
+      policy_scope(@q.result)
+    end
+  end
 end

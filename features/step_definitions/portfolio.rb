@@ -112,7 +112,7 @@ Then('the fmv must be calculated for the portfolio') do
   PortfolioInvestment.all.each do |pi|
     if pi.buy?
       pi.net_quantity.should == pi.quantity + pi.sold_quantity - pi.transfer_quantity
-      pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date).cents)
+      pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date))
     else
       pi.net_quantity.should == pi.quantity
       pi.fmv_cents.should == 0

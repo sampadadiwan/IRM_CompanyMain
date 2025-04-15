@@ -1,4 +1,4 @@
-<% uri = URI(fund_ratios_path(show_funds: true, q: ransack_query_params_multiple([[:owner_id, :eq, @investor.id], [:owner_type, :eq, "Investor"]], sort_by: "end_date", sort_direction: "desc"))) %>
+<% uri = URI(fund_ratios_path(show_funds: true, **args, q: ransack_query_params_multiple([[:owner_id, :eq, @investor.id], [:owner_type, :eq, "Investor"]], sort_by: "end_date", sort_direction: "desc"))) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,

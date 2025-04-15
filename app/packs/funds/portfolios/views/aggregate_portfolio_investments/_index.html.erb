@@ -76,7 +76,7 @@
         <% end %>
       </tbody>
     </table>
-    <% if aggregate_portfolio_investments.present? %>
+    <% if aggregate_portfolio_investments.present? && params[:snapshot].blank? %>
       <%= page_entries_info aggregate_portfolio_investments, entry_name: 'item' %>
       <%= paginate aggregate_portfolio_investments, data: {turbo_frame: api_turbo_frame}  %>
     <% end %>

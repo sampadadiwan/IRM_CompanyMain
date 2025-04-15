@@ -85,6 +85,15 @@ class CapitalDistribution < ApplicationRecord
     %w[fund]
   end
 
+  ransacker :distribution_on, formatter: lambda { |value|
+    # If user passes something like "Upload", map it to 2
+    # If user passes the integer, e.g. "2", then it remains "2"
+    # So we handle both cases safely
+    distribution_ons[value] || value
+  } do |parent|
+    parent.table[:distribution_on]
+  end
+
   def distribution_on_upload?
     distribution_on == "Upload"
   end

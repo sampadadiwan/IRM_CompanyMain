@@ -31,9 +31,6 @@ class KpiReportsController < ApplicationController
       # Now either the portfolio_company has uploaded and given access to the kpi_reports
       # Or the fund company has uploaded the kpi_reports for the portfolio_company
       @kpi_reports = @kpi_reports.where("portfolio_company_id=? or entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
-    else
-      # Show only the ones where the portfolio_company_id is nil
-      @kpi_reports = @kpi_reports.where(portfolio_company_id: nil)
     end
 
     respond_to do |format|

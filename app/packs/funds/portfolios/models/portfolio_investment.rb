@@ -19,27 +19,18 @@
 # unrealized_gain_cents: Unrealized gain from the investment in cents.
 # compliant: Boolean indicating if the investment complies with regulations.
 
-class PortfolioInvestment < ApplicationRecord
-  include WithCustomField
+class PortfolioInvestment < PortfolioInvestmentBase
   include WithFolder
   include WithExchangeRate
-  include ForInvestor
   include Trackable.new
   include PortfolioComputations
-  include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
   include Memoized
 
-  attr_accessor :created_by_import
+  attr_accessor :created_by_import, :snapshot_date
 
-  belongs_to :entity
   belongs_to :fund
-  # This is only for co invest
-  belongs_to :capital_commitment, optional: true
   belongs_to :aggregate_portfolio_investment
-  belongs_to :portfolio_company, class_name: "Investor"
-  has_many :valuations, through: :portfolio_company
 
-  belongs_to :investment_instrument
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
@@ -47,10 +38,6 @@ class PortfolioInvestment < ApplicationRecord
 
   validates :investment_date, :quantity, :amount_cents, presence: true
   validates :base_amount, :amount_cents, numericality: { greater_than_or_equal_to: 0 }
-
-  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
-
-  monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   # We rollup net quantity to the API quantity, only for buys. This takes care of sells and transfers
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "quantity" : nil }, delta_column: 'net_quantity', column_names: {
@@ -93,27 +80,8 @@ class PortfolioInvestment < ApplicationRecord
     ["portfolio_investments.quantity > ?", 0] => 'bought_quantity'
   }
 
-  scope :buys, -> { where("portfolio_investments.quantity > 0") }
-  scope :allocatable_buys, lambda { |portfolio_company_id, investment_instrument_id|
-    where("portfolio_company_id=? and investment_instrument_id = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, investment_instrument_id).order(investment_date: :asc)
-  }
-  scope :sells, -> { where("portfolio_investments.quantity < 0") }
-  scope :conversions, -> { where.not(conversion_date: nil) }
-  # This is a very important scope, used in all as_of computations. It allows us to ignore conversions that have happened after the date, but whose investment_date is before the date
-  scope :before, ->(date) { where(investment_date: ..date).where("conversion_date is NULL OR conversion_date <= ?", date) }
-
   # This is used to improve the performance of the portfolio computations, in allocations
   memoize :compute_fmv, :compute_fmv_cents_on, :net_quantity_on
-
-  STANDARD_COLUMNS = { "Portfolio Company" => "portfolio_company_name",
-                       "Instrument" => "investment_instrument_name",
-                       "Investment Date" => "investment_date",
-                       "Amount" => "amount",
-                       "Quantity" => "quantity",
-                       "Cost Per Share" => "cost",
-                       "FMV" => "fmv",
-                       "FIFO Cost" => "cost_of_sold",
-                       "Notes" => "notes" }.freeze
 
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
@@ -184,39 +152,7 @@ class PortfolioInvestment < ApplicationRecord
     AttributionService.new(self).setup_attribution
   end
 
-  def buy_sell
-    buy? ? 'Buy' : 'Sell'
-  end
-
-  def to_s
-    "#{portfolio_company_name} #{investment_instrument} #{buy_sell} #{investment_date}"
-  end
-
-  def folder_path
-    "#{portfolio_company.folder_path}/Portfolio Investments"
-  end
-
-  def buy?
-    quantity.positive?
-  end
-
-  def sell?
-    quantity.negative?
-  end
-
   def split(stock_split_ratio)
     StockSplitter.new(self).split(stock_split_ratio)
-  end
-
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[amount cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at]
-  end
-
-  def self.ransackable_associations(_auth_object = nil)
-    %w[fund portfolio_company investment_instrument]
-  end
-
-  def name
-    "#{portfolio_company_name} #{investment_instrument.name} #{investment_date}"
   end
 end

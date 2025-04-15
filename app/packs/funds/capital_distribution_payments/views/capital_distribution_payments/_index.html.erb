@@ -9,15 +9,24 @@
           new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id),
           {class: "btn btn-outline-primary" }  %>
 
-        <% disabled = capital_distribution.distribution_on != "Upload" ? "disabled" : nil %>
+        <% 
+          if capital_distribution.distribution_on != "Upload"
+            disabled = "disabled" 
+            tooltip_text = "You can only upload payments for distributions with 'Upload' as the distribution method."
+          else
+            disabled = ""
+            tooltip_text = "Upload payments for this distribution"
+          end
+        %>
 
-        <%= link_to "Upload",
-            new_import_upload_path("import_upload[owner_id]": capital_distribution.id,
-            "import_upload[owner_type]": "CapitalDistribution",
-            "import_upload[import_type]": "CapitalDistributionPayment",
-            "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
-            { class: "btn btn-outline-primary #{disabled}"}  %>
-
+        <span data-bs-toggle="tooltip" title="<%= tooltip_text %>">
+          <%= link_to "Upload",
+              new_import_upload_path("import_upload[owner_id]": capital_distribution.id,
+              "import_upload[owner_type]": "CapitalDistribution",
+              "import_upload[import_type]": "CapitalDistributionPayment",
+              "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
+              class: "btn btn-outline-primary #{disabled}" %>
+        </span>
       <% end %>
       <%
         data_source ||= capital_distribution_payments_path(params: params.to_unsafe_h, format: :json)

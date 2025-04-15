@@ -1,3 +1,46 @@
+V9.0.20
+#####################################
+0c24a0fec Added snapshot date to show if present
+cd8936999 Fixed pagination in PI snapshots
+8c581f3be Added sidekiq cron to generate fund snapshots
+aa193077a Added hack for fx_rate dependent on valuation_date
+a0861cdee Allows for model_snapshot_ransack to join for non snapshot models
+e4d7a93de Added better API snapshots view
+bbc5e6acf Added better PI snapshots view
+4f18b4dfa Added better support for SnapshotPolicy
+ee74e7b51 Added funds snapshots filter
+81c166fe9 Started adding ability to view snapshots
+57e9f0872 Fixed ValueBridgeService to enable custom fields from entity setting
+49f6ce70d Added ability to inject value_bridge_fields from entity settings
+7148f2f40 Added garish colors to the VB
+89b889722 Added better PI ag grid to include FundName
+4142a86a2 Added condensed view for fund ratios
+0ca16406a (origin/valuation-fix) Valuation form now reflects actual value and doesnt round it
+e89e84929 Better scopes added to DashboardWidget
+f9d4fbe31 Added metatdata_help for dashboard widgets
+f7256f782 Added better valuation update of decimals
+bd44c96b4 Added value bridge widget for portfolio company dashboard
+b9b0a35de Added better tests for kpi parse_date
+
+V9.0.19
+#####################################
+c99f9c1b3 Now allows select standard fields to be used in condition_on for form custom fields
+1401d66ab Renamed Cost to cost per Share
+69ed91cf2 Remove /100 and *100 and just use cents
+b615858c8 Added better support for testing the Kpi new import formats
+6f63c2798 User * 100 instead of cents in per share value
+d73266424 Updated per_share_value_in to use cents for precision
+9940e42f4 Fixed search page item count issue with ransack search
+2d43e807d Fixed ransacker search for enum distribution_on in CD
+ae47385b2 Added better tests for value bridge
+227903afd Added tests for Kpi Extractors
+175008f4e Added logging back to prod servers
+1b83d70a8 Improved the code for KpiWorkbookReader
+0ce3c74ce Added KpiXlExtractionEngine to extract data from kpi workbook using an LLM
+a7556afcb Added xirry_py version 2.4
+6d1055597 Archived old db migrations
+3532af00d Removed additional cols from AccountEntry grid
+
 V9.0.18
 #####################################
 36161a6ef add-description-to-formula-import

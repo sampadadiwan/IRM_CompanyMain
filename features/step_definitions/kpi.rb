@@ -113,3 +113,8 @@ When('Im given access to the KPI Reports') do
     kpi_report.access_rights.create!(access_to_investor_id: investor.id, entity_id: kpi_report.entity_id, owner: kpi_report, access_type: "KpiReport", notify: false)
   end
 end
+
+
+When('I parse the period string {string} with fiscal start month {int}') do |date, fiscal_year_start_month|
+  @parsed_date = KpiDateUtils.parse_period(date, fiscal_year_start_month:)
+end
