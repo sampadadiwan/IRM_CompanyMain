@@ -1,4 +1,4 @@
-
+<%= render FormCard.new(title: "KpiMapping #{@investor_kpi_mapping.reported_kpi_name}") do %>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -55,3 +55,4 @@
     <%= button_to "Delete", @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
+<% end %>

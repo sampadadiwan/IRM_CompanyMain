@@ -19,7 +19,7 @@ commands = [
 <% end %>
 
 <!-- Snapshot cannot have details -->
-<% if @fund.class == Fund %>
+<% unless @fund.snapshot %>
 
   <div>
     <% if policy(@fund).update? %>
