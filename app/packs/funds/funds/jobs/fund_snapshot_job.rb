@@ -1,7 +1,17 @@
+# This class represents a background job responsible for handling fund snapshot operations.
+# It inherits from `ApplicationJob`, which is the base class for all Active Job classes in Rails.
+#
+# FundSnapshotJob is designed to perform tasks related to capturing or processing snapshots
+# of fund data asynchronously.  This allows the application to offload potentially time-consuming
+# operations to a background job, improving the responsiveness of the main application.
+#
+#
+# Example:
+#   FundSnapshotJob.perform_later(fund_id: 123)
+
 class FundSnapshotJob < ApplicationJob
   queue_as :low
 
-  # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(fund_id: nil)
     funds =
       if fund_id
@@ -23,11 +33,13 @@ class FundSnapshotJob < ApplicationJob
         fund_snapshot.save(validate: false)
 
         fund.aggregate_portfolio_investments.each do |api|
+          # Create a snapshot for the aggregate portfolio investment
           api_snapshot = AggregatePortfolioInvestment.snapshot(api)
           api_snapshot.fund = fund_snapshot
           api_snapshot.save(validate: false)
 
           api.portfolio_investments.each do |pi|
+            # Create a snapshot for the portfolio investment
             pi_snapshot = PortfolioInvestment.snapshot(pi)
             pi_snapshot.aggregate_portfolio_investment = api_snapshot
             pi_snapshot.fund = fund_snapshot
