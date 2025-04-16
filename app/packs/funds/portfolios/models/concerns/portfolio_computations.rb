@@ -80,8 +80,7 @@ module PortfolioComputations
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
     end
 
-    compute_fmv_cents_on(end_date)
-
+    self.fmv_cents = compute_fmv_cents_on(end_date)
     self.unrealized_gain_cents = fmv_cents - cost_of_remaining_cents
     freeze
   end
