@@ -64,7 +64,8 @@ module PortfolioComputations
       sold_quantity = buys_portfolio_attributions.where(investment_date: ..end_date).sum(:quantity)
       # This is the quantity of the buys that have been transferred/converted before the end date
       transfer_quantity = stock_conversions.where(conversion_date: ..end_date).sum(:from_quantity)
-
+      self.sold_quantity = sold_quantity
+      self.transfer_quantity = transfer_quantity
       self.net_quantity = (quantity + sold_quantity - transfer_quantity)
       self.net_bought_quantity = quantity - transfer_quantity
       # net_amount_cents is cost of remaining
@@ -72,6 +73,8 @@ module PortfolioComputations
       self.net_bought_amount_cents = net_bought_quantity * cost_cents
       self.cost_of_remaining_cents = net_quantity * cost_cents
     else
+      self.sold_quantity = 0
+      self.transfer_quantity = 0
       self.net_quantity = quantity
       self.net_bought_quantity = 0
       self.net_amount_cents = amount_cents
