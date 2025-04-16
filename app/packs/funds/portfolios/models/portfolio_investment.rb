@@ -58,7 +58,7 @@ class PortfolioInvestment < ApplicationRecord
 
   monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
-  monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents, :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :unrealized_gain_cents, :cost_of_sold_cents, :cost_of_remaining_cents, :transfer_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   scope :buys, -> { where("portfolio_investments.quantity > 0") }
   scope :allocatable_buys, lambda { |portfolio_company_id, investment_instrument_id|

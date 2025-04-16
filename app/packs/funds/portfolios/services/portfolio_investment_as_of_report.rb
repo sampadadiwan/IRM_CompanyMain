@@ -61,7 +61,7 @@ class PortfolioInvestmentAsOfReport
 
     workbook.add_worksheet(name: "PortfolioInvestments") do |sheet|
       # Create the header row
-      sheet.add_row(["Id", "Fund", "Portfolio Company", "Instrument", "Investment Date", "Quantity", "Instrument Currency", "Base Amount", "Fund Currency", "Amount", "Cost", "FMV", "Realized Gain", "Unrealized Gain", "Sold Quantity", "Transfer Quantity", "Net Quantity Available", "Total Qty As Of Investment Date", "Cost Of Sold", "Notes"] + custom_headers + custom_calc_headers)
+      sheet.add_row(["Id", "Fund", "Portfolio Company", "Instrument", "Investment Date", "Quantity", "Instrument Currency", "Amount in Instrument Currency", "Fund Currency", "Amount", "Cost", "FMV", "Realized Gain", "Unrealized Gain", "Sold Quantity", "Transfer Quantity", "Net Quantity Available", "Total Qty As Of Investment Date", "Cost Of Sold", "Cost of Remaining", "Notes"] + custom_headers + custom_calc_headers)
 
       # Create entries for each item
       @aggregate_portfolio_investments.includes(portfolio_investments: %i[fund investment_instrument]).find_each do |api|
@@ -70,6 +70,8 @@ class PortfolioInvestmentAsOfReport
         api.portfolio_investments.each do |pi|
           custom_field_values = get_custom_values(pi, form_type, custom_field_names)
           custom_calc_values = get_custom_calc_values(pi, form_type, custom_calcs)
+
+          pi = pi.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
 
           if pi.buy?
             net_qty = pi.net_quantity
@@ -81,9 +83,7 @@ class PortfolioInvestmentAsOfReport
             gain = pi.gain
           end
 
-          pi = pi.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
-
-          sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.investment_instrument&.currency&.to_s, pi.base_amount.to_d, pi.fund.currency.to_s, pi.amount.to_d, pi.cost.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold.to_d, pi.notes] + custom_field_values + custom_calc_values
+          sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.investment_instrument&.currency&.to_s, pi.base_amount.to_d, pi.fund.currency.to_s, pi.amount.to_d, pi.cost.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.cost_of_sold.to_d, pi.cost_of_remaining.to_d, pi.notes] + custom_field_values + custom_calc_values
         end
       end
     end
