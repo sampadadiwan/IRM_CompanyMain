@@ -45,23 +45,30 @@ class TemplateDecorator < ApplicationDecorator
       end
 
       # Final calculation
-      return (add_values.sum - sub_values.sum) / 100.0
+      subunit_to_unit = if object.is_a?(ActiveRecord::Relation)
+                          object.first.send(add_parts.first.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                        else
+                          object.send(add_parts.first.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                        end
+      return (add_values.sum - sub_values.sum) / subunit_to_unit
 
     elsif method_name.to_s.starts_with?("sum_amt_")
       attr_name = method_name.to_s.gsub("sum_amt_", "")
       return 0.0 if object.empty?
 
-      return (sum(attr_name.to_sym) / 100.0)
+      subunit_to_unit = if object.is_a?(ActiveRecord::Relation)
+                          object.first.send(attr_name.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                        else
+                          object.send(attr_name.gsub("_cents", "").to_sym).currency.subunit_to_unit.to_d
+                        end
+
+      return (sum(attr_name.to_sym) / subunit_to_unit)
 
     elsif method_name.to_s.starts_with?("sum_")
       attr_name = method_name.to_s.gsub("sum_", "")
       return 0.0 if object.empty?
 
       return sum(attr_name.to_sym)
-
-    elsif method_name.to_s.starts_with?("amt_")
-      attr_name = method_name.to_s.gsub("amt_", "")
-      return (send(attr_name.to_sym) / 100.0)
 
     elsif method_name.to_s.starts_with?("format_")
       attr_name = method_name.to_s.gsub("format_", "")
