@@ -115,8 +115,7 @@
   end
 
 
-
-Given('there is an {string} offer {string} for each investor') do |approved_arg, args|
+Given('there are {string} offer {string} for each investor') do |approved_arg, args|
   approved = approved_arg == "approved"
   Investor.all.each do |h|
     offer = FactoryBot.build(:offer, user_id:h.investor_entity.employees.sample.id, entity_id: @sale.entity_id, secondary_sale_id: @sale.id, investor_id: h.id, approved: approved)

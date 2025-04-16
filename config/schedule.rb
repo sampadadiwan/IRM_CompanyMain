@@ -20,10 +20,10 @@ every :reboot, roles: [:app] do
 end
 
 # Reboot servers, but first run logrotate
-every :saturday, at: '2:50 am', roles: [:app] do
+every :saturday, at: '00:50 am', roles: [:app] do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
 end
-every :saturday, at: '9:00 pm', roles: [:app] do
+every :saturday, at: '1:00 am', roles: [:app] do
   # This time is in UTC 2am IST is 9pm UTC
   command 'sudo reboot'
 end
