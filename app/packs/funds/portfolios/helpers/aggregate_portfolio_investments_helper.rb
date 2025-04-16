@@ -21,9 +21,9 @@ module AggregatePortfolioInvestmentsHelper
   end
 
   def investment_holding_cost_by_company(fund)
-    portfolio_investments = fund.portfolio_investments.group_by(&:portfolio_company_name)
+    portfolio_investments = fund.portfolio_investments.buys.group_by(&:portfolio_company_name)
 
-    grouped = portfolio_investments.buys.transform_values do |pis|
+    grouped = portfolio_investments.transform_values do |pis|
       pis.sum { |pi| pi.net_quantity * pi.cost.to_d }
     end
 
