@@ -195,7 +195,7 @@
   </div>
 </div>
 
-<% if aggregate_portfolio_investment.class == AggregatePortfolioInvestment %>
+<% unless aggregate_portfolio_investment.snapshot %>
 
 <div class="associated_entity">
   <%= link_to "Preview", aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'), {class: "btn btn-outline-info"} %>

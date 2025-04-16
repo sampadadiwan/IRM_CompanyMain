@@ -25,7 +25,10 @@ Scenario Outline: Create new PI and aggregate PI
   Given there is a fund "<fund>" for the entity
   Given there are "3" portfolio investments "quantity=200"
   Given there are "3" portfolio investments "quantity=-100"
+  Given the fund snapshot is created
+  Then the total number of portfolio investments with snapshots should be "12"
   Then an aggregate portfolio investment should be created
+  And the aggregate portfolio investment should have a quantity of "300"
   Then I should see the aggregate portfolio investment details on the details page
 
   Examples:

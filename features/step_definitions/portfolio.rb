@@ -539,3 +539,15 @@ Then('I should see the investment instrument details on the import page') do
     expect(page).to have_content(ii.portfolio_company.investor_name)
   end
 end
+
+Then('the aggregate portfolio investment should have a quantity of {string}') do |quantity|
+  @api = AggregatePortfolioInvestment.last
+  @api.quantity.should == quantity.to_i
+end
+
+Then('the total number of portfolio investments with snapshots should be {string}') do |count|
+  # Get all the snapshots of the fund
+  fund_ids = Fund.with_snapshots.where(orignal_id: @fund.id).pluck(:id)
+  # Get all the PIs including snapshots of the orignal fund
+  PortfolioInvestment.with_snapshots.where(fund_id: fund_ids).count.should == count.to_i
+end

@@ -19,7 +19,7 @@
   </td>
   <% if params[:snapshot].present? %>
     <td>
-      <%= l fund.snapshot_date %>
+      <%= l fund.snapshot_date if fund.snapshot_date %>
     </td>
   <% end %>
   <td>

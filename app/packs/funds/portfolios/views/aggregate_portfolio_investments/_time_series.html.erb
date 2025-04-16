@@ -1,16 +1,14 @@
 <table class="table table-bordered dataTable action_table hover">
   <thead>
     <tr>
-      <th>Portfolio Company</th>
-      <th>Instrument</th>
-      <th>Investment Date</th>
+      <th>Investment</th>
+      <th>Fund</th>
       <% dates = @time_series.values.flat_map { |data| data[:dates].keys }.uniq.sort %>
       <% dates.each do |date| %>
         <th colspan="<%= @fields.size %>"><%= l(date) %></th>
       <% end %>
     </tr>
     <tr>
-      <th></th>
       <th></th>
       <th></th>
       <% dates.each do |_date| %>
@@ -20,14 +18,16 @@
       <% end %>
     </tr>
   </thead>
+  
   <tbody>
-    <% @time_series.each do |investment_id, values| %>
-      <% investment = values[:portfolio_investment] %>
+    <% @time_series.each do |api_id, values| %>
+      
+      <% api = values[:api] %>
       <% date_hash = values[:dates] %>
+      
       <tr>
-        <td><%= link_to investment.portfolio_company %></td>
-        <td><%= link_to investment.investment_instrument %></td>
-        <td><%= link_to(l(investment.investment_date), investment) %></td>
+        <td><%= link_to api.to_s, aggregate_portfolio_investment_path(api.orignal_id) %></td>
+        <td><%= link_to api.fund %></td>
         <% dates.each do |date| %>
           <% @fields.each do |field| %>
             <td>
@@ -36,6 +36,8 @@
           <% end %>
         <% end %>
       </tr>
+
     <% end %>
   </tbody>
+
 </table>

@@ -32,6 +32,7 @@
 
       <%= link_to "Download", portfolio_investments_path(fund_id: fund_id, aggregate_portfolio_investment_id: aggregate_portfolio_investment&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
 
+
     <% else %>
       <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
       <%= link_to "Download", xl_link,  {class: "btn btn-outline-success" } %>
@@ -80,7 +81,7 @@
           <% end %>
         </tbody>
       </table>
-      <% if portfolio_investments.present? && params[:snapshot].blank? %>
+      <% if portfolio_investments.present?  %>
         <%= page_entries_info portfolio_investments, entry_name: 'item' %>
         <%= paginate portfolio_investments, data: { turbo_frame: pi_turbo_frame } %>
       <% end %>
