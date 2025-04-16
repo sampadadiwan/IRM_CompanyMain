@@ -91,7 +91,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     # Note cost_of_sold_cents is -ive, so we need to add it to the bought_amount_cents
     api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
-    api.gain_cents = api.sold_amount_cents - api.cost_of_sold_cents
+    api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
 
