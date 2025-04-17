@@ -80,6 +80,9 @@ class AccountEntriesController < ApplicationController
         return
       end
       @time_series = AccountEntryTimeSeries.new(@account_entries).call
+    elsif params[:pivot].present?
+      group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
+      @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param).call
     else
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
       @account_entries = @account_entries.page(params[:page]) if params[:all].blank?

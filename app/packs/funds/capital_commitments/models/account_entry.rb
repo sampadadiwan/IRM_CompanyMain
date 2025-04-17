@@ -67,9 +67,11 @@ class AccountEntry < ApplicationRecord
             uniqueness: { scope: %i[fund_id capital_commitment_id entry_type reporting_date cumulative deleted_at],
                           message: "Duplicate Account Entry for reporting date" }
 
-  before_validation :setup_period
-  def setup_period
+  before_validation :setup_defaults
+  def setup_defaults
     self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}"
+    self.parent_name = parent.to_s[0..254] if parent.present?
+    self.commitment_name = capital_commitment.to_s[0..254] if capital_commitment.present?
   end
 
   before_save :set_folio_amount, if: :capital_commitment
@@ -106,7 +108,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date allocation_run_id].sort
+    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date allocation_run_id parent_type].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

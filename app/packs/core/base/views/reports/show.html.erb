@@ -58,6 +58,18 @@
       <%= link_to @report.url, @report.url %>
     </td>
   </tr>
+
+  <% if @report.metadata.present? %>
+  <tr>
+    <td>
+      Metadata
+    </td>
+    <td>
+      <%= @report.metadata %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
   <% if policy(@report).edit? %>
