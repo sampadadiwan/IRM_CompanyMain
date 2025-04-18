@@ -70,7 +70,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
     pis_before_end_date = portfolio_investments.before(end_date)
 
     api.portfolio_investments = pis_before_end_date
-    api.quantity = pis_before_end_date.sum(:quantity)
 
     api.bought_quantity = pis_before_end_date.buys.sum(:quantity)
     api.bought_amount_cents = pis_before_end_date.buys.sum(:amount_cents)
@@ -86,10 +85,13 @@ class AggregatePortfolioInvestment < ApplicationRecord
     # Get the StockConversions where the from_portfolio_investment_id is in pis_before_end_date
     transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis_before_end_date.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
     api.transfer_quantity = transfer_quantity
+    api.transfer_amount_cents = pis_before_end_date.buys.sum(:transfer_amount_cents)
+
+    api.quantity = pis_before_end_date.sum(:quantity) - transfer_quantity
 
     api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
-    # Note cost_of_sold_cents is -ive, so we need to add it to the bought_amount_cents
-    api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents
+    # Note cost_of_sold_cents and transfer_amount is -ive, so we need to add it to the bought_amount_cents
+    api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents + api.transfer_amount_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
     api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
