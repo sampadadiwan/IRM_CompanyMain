@@ -59,13 +59,22 @@
         </td>
       </tr>
       <% end %>
-      
+
 
       <% if @portfolio_investment.base_amount_cents != @portfolio_investment.amount_cents %>
-            
+
       <tr>
         <td>
-          Base Amount
+          Instrument Currency
+        </td>
+        <td>
+          <%= investment_instrument.currency.to_s %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Amount in Instrument Currency
         </td>
         <td>
           <%= money_to_currency @portfolio_investment.base_amount, params %>
@@ -85,7 +94,7 @@
       <% if @portfolio_investment.amount_cents != @portfolio_investment.ex_expenses_amount_cents %>
       <tr>
         <td>
-          Amount (Exluding Expenses) 
+          Amount (Exluding Expenses)
         </td>
         <td>
           <%= money_to_currency @portfolio_investment.ex_expenses_amount, params %>
@@ -123,7 +132,7 @@
             <%= @portfolio_investment.sold_quantity %>
           </td>
         </tr>
-        
+
         <tr>
           <td>
             Transfer Quantity
@@ -198,7 +207,7 @@
         </tr>
       <% end %>
 
-      
+
       <tr>
         <td>
           Startup
@@ -207,7 +216,7 @@
           <%= display_boolean @portfolio_investment.startup %>
         </td>
       </tr>
-      
+
 
       <tr>
         <td>
@@ -216,7 +225,7 @@
         <td>
           <%= @portfolio_investment.notes %>
         </td>
-      </tr>      
+      </tr>
 
       <% if params[:debug].present? && @portfolio_investment.sell? %>
       <tr>
@@ -248,12 +257,12 @@
 
 <div>
   <% if policy(@portfolio_investment).update? %>
-    
-    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"}  %> 
-    <%= link_to "Conversion", new_stock_conversion_path("stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id), {class: "btn btn-outline-success"} if policy(@portfolio_investment).conversion? %> 
+
+    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Conversion", new_stock_conversion_path("stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id), {class: "btn btn-outline-success"} if policy(@portfolio_investment).conversion? %>
   <% end %>
     <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@portfolio_investment).destroy? %>
-  
+
 </div>
 
 <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>
