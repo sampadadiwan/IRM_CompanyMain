@@ -59,19 +59,18 @@ class AccountEntriesController < ApplicationController
     @time_series_error.join(" ") if @time_series_error.present?
   end
 
-  # GET /account_entries or /account_entries.json
-  def index
-    authorize AccountEntry
-
+  def fetch_rows
     @q = AccountEntry.ransack(params[:q])
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
     filter_index(params)
 
     if params[:group_fields].present?
+      # Create a data frame to group the data
       @data_frame = AccountEntryDf.new.df(@account_entries, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
-      template = params[:template].presence || "index"
+      @template = params[:template].presence || "index"
     elsif params[:time_series].present?
+      # Create a time series view
       error = check_time_series_params
       if error
         # Redirect to the referrer with an error message
@@ -81,20 +80,29 @@ class AccountEntriesController < ApplicationController
       end
       @time_series = AccountEntryTimeSeries.new(@account_entries).call
     elsif params[:pivot].present?
+      # Create a pivot table
       group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
       @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param).call
     else
+      # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
       @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
-      template = "index"
+      @template = "index"
     end
+  end
+
+  # GET /account_entries or /account_entries.json
+  def index
+    authorize AccountEntry
+
+    fetch_rows
 
     # Set the breadcrumbs
     fund_bread_crumbs("Account Entries")
 
     respond_to do |format|
       format.html do
-        render template
+        render @template
       end
       format.xlsx do
         template = params[:template].presence || "index"
