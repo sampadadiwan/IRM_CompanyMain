@@ -3,7 +3,7 @@
 
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Value Bridge for <%= @initial_valuation.investment_instrument.name%> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h1>
+    <h1 class="h3 mb-0 text-gray-800">Value Bridge for <%= link_to @initial_valuation.investment_instrument %> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h1>
     
     <span>
     

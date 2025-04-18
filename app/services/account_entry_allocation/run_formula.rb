@@ -41,6 +41,8 @@ module AccountEntryAllocation
         rollup_entry_type = fund_formula.name
       when "Percentage"
         AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
+      when "GeneratePortfolioNumbersForFund"
+        AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
       end
 
       # After the formula method sets up bulk_insert_records, do a bulk insert

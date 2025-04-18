@@ -5,41 +5,32 @@
 
 <%= render "/layouts/filter", associations: [:portfolio_company] %>
 
-<% if params[:ag].present? %>
-  <%= render "/investments/index_ag" %>
-<% else %>
-  <%= render "/investments/index" %>
-<% end %>
+<%= turbo_frame_tag "investments_frame", target: "_top"  do %>
 
-<% if params[:portfolio_company_id].present? %>
-
-  
-
-  <% 
-    portfolio_company_id = params[:portfolio_company_id]
-    all_funding_rounds = @investments.select(:funding_round, :investment_date).
-                                  order(investment_date: :asc).pluck(:funding_round).uniq
-    # This is required to ensure that the funding_round tables are cumulative. i.e first table from round A is displayed, then for funding_round B, we need to display the investments from round A and B and for funding_round C, we need to display the investments from round A, B and C.
-    funding_rounds = []                                  
-  %>
-  <div class="associated_entity">
-
-    <%= render "/investments/charts", investments: @investments %>
-
-    <%= render ToggleCard.new(title: "Cap Table by Funding Round", css_class: "show_cap_table", state: "") do %>
-    <div class="row">
-      <% all_funding_rounds.each do |funding_round| %>
-        <% funding_rounds << funding_round %>
-        <div class="col">
-          <h1 class="h4 mb-0 text-gray-800">Funding Round: <%= funding_round %></h1>
-          <%= render "/investments/funding_round", funding_round:, funding_rounds:, portfolio_company_id: %>
-        </div>
-      <% end %>
-    </div>
+  <% if params[:show_investments].blank? || params[:show_investments] == "true"  %>
+    <% if params[:ag].present? %>
+      <%= render "/investments/index_ag" %>
+    <% else %>
+      <%= render "/investments/index" %>
     <% end %>
+  <% end %>
 
-  </div>
-  
+  <% if params[:portfolio_company_id].present? %>
+
+    
+    <div class="associated_entity">
+
+      <% if params[:show_charts].blank? || params[:show_charts] == "true"  %>
+        <%= render "/investments/charts", investments: @investments %>
+      <% end %>
+
+      <% if params[:show_captable].blank? || params[:show_captable] == "true"  %>
+        <%= render "/investments/captable", investments: @investments %>
+      <% end %>
+
+    </div>
+    
+  <% end %>
 <% end %>
 
 

@@ -84,7 +84,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def to_s
-    "#{portfolio_company_name} #{investment_instrument} #{buy_sell} #{investment_date}"
+    "#{portfolio_company_name} #{investment_instrument} #{buy_sell} #{I18n.l(investment_date)}"
   end
 
   def folder_path

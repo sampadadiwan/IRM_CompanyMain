@@ -3,44 +3,47 @@
   name ||= nil 
   args ||= {}
   uri_params ||= {}
-  
-  instrument = args[:instrument]
+  # The uris for the value bridges for each instrument
+  uris = []
+  # The list of instruments passed
+  instrument_names = args[:instruments]&.split(",") || [] # names of the instrument
   across = args[:across] # "first last" or "last 2"
-  # Check if the instrument is provided in the arguments
-  if instrument
+  # Get the list of instruments for the investor for which the value bridge is to be shown
+  investment_instruments = @investor.investment_instruments
+  investment_instruments = investment_instruments.where(name: instrument_names) if instrument_names.present?
+  # For each instrument, get the valuations and setup the uri
+  investment_instruments.each do |instrument|
+    valuations = @investor.valuations.where(investment_instrument_id: instrument.id)
     if across.nil? || across.downcase == "first last"
       # Get the valuations for the given instrument, first and last
-      initial_valuation = @investor.valuations.by_instrument(instrument).order(valuation_date: :asc).first
-      final_valuation =   @investor.valuations.by_instrument(instrument).order(valuation_date: :asc).last
+      initial_valuation = valuations.order(valuation_date: :asc).first
+      final_valuation =   valuations.order(valuation_date: :asc).last
     else
       # Get the valuations for the given instrument, last 2
-      initial_valuation = @investor.valuations.by_instrument(instrument).order(valuation_date: :desc).offset(1).limit(1).first
-      final_valuation =   @investor.valuations.by_instrument(instrument).order(valuation_date: :desc).first
+      initial_valuation = valuations.order(valuation_date: :desc).offset(1).limit(1).first
+      final_valuation =   valuations.order(valuation_date: :desc).first
     end
     # Load the uri for the value bridge
-    uri = URI("/valuations/value_bridge?initial_valuation_id=#{initial_valuation.id}&final_valuation_id=#{final_valuation.id}")
+    uris << URI("/valuations/value_bridge?initial_valuation_id=#{initial_valuation.id}&final_valuation_id=#{final_valuation.id}") if initial_valuation && final_valuation
   end
+
 %>
 
+  <% uris.each do |uri| %>
+      
+      <%= render(
+            WidgetCardComponent.new(
+              widget: widget,
+              args: args,
+              widget_size: widget.widget_size
+            )
+          ) do 
+      %>
 
-<%= render(
-      WidgetCardComponent.new(
-        widget: widget,
-        args: args,
-        widget_size: widget.widget_size
-      )
-    ) do 
-%>
-
-  <% if instrument.present? %>
-    <%= turbo_frame_tag "value_bridge_frame", target: "_top", src: "#{uri.to_s}" do %>            
-    <%end%>
-  <% else %>
-    <div class="alert alert-danger">
-      No instrument provided for the value bridge.
-    </div>
-  <% end %>
         
-  
-<% end %>
+          <%= turbo_frame_tag "value_bridge_frame", target: "_top", src: "#{uri.to_s}" do %>            
+          <% end %>
+        
+      <% end %>
 
+  <% end %>

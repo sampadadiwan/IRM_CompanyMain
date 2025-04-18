@@ -12,8 +12,8 @@ export default class extends Controller {
     console.log(this.urlValue);
     console.log(this.paramValue);
 
-    $(".select2").on('select2:select', (event) => {
-      console.log("dashboard_widgets_controller: select2:select");
+    $("#widget_name").on('change', (event) => {
+      console.log("dashboard_widgets_controller: select");
       this.change(event); 
     });
   }
