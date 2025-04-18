@@ -231,6 +231,12 @@ class Investor < ApplicationRecord
     User.where(id: investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:user_id), whatsapp_enabled: true)
   end
 
+  # Returns the aggregate portfolio investment for the given fund and as_of
+  # Used in the FundFormulas to compute fund spcific AccountEntries
+  def aggregate_portfolio_investment(fund_id: nil, as_of: nil)
+    PortfolioCompanyCalc.new(self, fund_id:, as_of:).calculate
+  end
+
   def folder_path
     "/Investors/#{investor_name.delete('/')}"
   end

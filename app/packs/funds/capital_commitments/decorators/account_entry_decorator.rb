@@ -3,6 +3,10 @@ class AccountEntryDecorator < ApplicationDecorator
     h.link_to object.folio_id, object.capital_commitment if object.folio_id.present?
   end
 
+  def parent_name
+    h.link_to object.parent_name, "/#{object.parent_type.underscore.pluralize}/#{object.parent_id}" if object.parent_type.present? && object.parent_id.present?
+  end
+
   def entry_type
     if account_entry.cumulative
       h.raw "#{object.entry_type} <br> <span class='badge bg-success'>Cumulative<span>"

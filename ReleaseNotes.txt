@@ -1,3 +1,18 @@
+V9.0.21
+#####################################
+c83e6853 Added better offer test
+79e1e1185 Fixed bug in the api charts
+6ed91aee7 Fixes to portfolio charts
+6728322de Added Time Series for API
+4dbb1956e Added better FormCard to KpiReport
+83a6f774c Added Time Series btn to API index
+26917c728 Better support for filtering by snapshot_date
+dcc5eba78 Added bullet gem to test
+6be975a2b Better check for strong params for user permissons and roles updates
+5698c820a Removed n+1 queries for dashboard
+6ea279100 Added snapshots to the same tables
+f32ae439d Added better support for account entries time series
+
 V9.0.20
 #####################################
 0c24a0fec Added snapshot date to show if present

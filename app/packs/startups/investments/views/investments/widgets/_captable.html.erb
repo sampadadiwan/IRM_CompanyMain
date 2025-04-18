@@ -1,0 +1,22 @@
+<% 
+  uri_params ||= {}
+  uri = URI("/investments")
+  args[:portfolio_company_id] = @investor&.id 
+  # add args as query params to the uri
+  uri.query = URI.encode_www_form(args) if args.present?
+
+%>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+
+  <!-- This block becomes the `content` inside the component -->
+  <%= turbo_frame_tag "investments_frame", target: "_top", src: "#{uri.to_s}" do %>            
+  <%end%>
+
+<% end %>
