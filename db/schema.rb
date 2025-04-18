@@ -65,7 +65,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.datetime "deleted_at"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "allocation_run_id"
+    t.bigint "allocation_run_id"
     t.string "parent_name"
     t.string "commitment_name"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
@@ -185,7 +185,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.decimal "net_bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "show_portfolio", default: false
-    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
@@ -197,6 +197,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
+    t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
   create_table "ai_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -214,8 +215,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.string "rule_type", limit: 15
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
-    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
+    t.index ["owner_type", "owner_id"], name: "index_ai_checks_on_owner"
+    t.index ["parent_type", "parent_id"], name: "index_ai_checks_on_parent"
   end
 
   create_table "ai_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -500,9 +501,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "form_type_id"
-    t.decimal "percentage", precision: 20, scale: 10, default: "0.0"
+    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
-    t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
     t.bigint "investor_signatory_id"
     t.boolean "esign_required", default: false
@@ -587,8 +587,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "exchange_rate_id"
     t.json "json_fields"
     t.bigint "import_upload_id"
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
@@ -670,7 +668,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
     t.boolean "payment_notification_sent", default: false
-    t.bigint "investor_id"
     t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.bigint "form_type_id"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
@@ -827,7 +824,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.string "owner_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["owner_id", "owner_type"], name: "index_custom_grid_views_on_owner_id_and_owner_type"
   end
 
   create_table "custom_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -993,10 +989,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.json "card_view_attrs"
     t.string "tags", limit: 100
     t.string "slug"
-    t.bigint "deal_documents_folder_id"
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
-    t.index ["deal_documents_folder_id"], name: "index_deals_on_deal_documents_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deals_on_document_folder_id"
     t.index ["entity_id"], name: "index_deals_on_entity_id"
@@ -1064,21 +1058,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "folder_id", null: false
     t.integer "impressions_count", default: 0
     t.bigint "form_type_id"
-    t.boolean "download"
-    t.boolean "printing"
+    t.boolean "download", default: false
+    t.boolean "printing", default: false
     t.text "file_data"
     t.string "owner_type"
     t.bigint "owner_id"
     t.string "owner_tag", limit: 40
-    t.boolean "orignal"
+    t.boolean "orignal", default: false
     t.bigint "user_id", null: false
     t.boolean "signature_enabled", default: false, null: false
-    t.bigint "signed_by_id"
     t.bigint "from_template_id"
-    t.boolean "signed_by_accept", default: false
-    t.boolean "adhaar_esign_enabled", default: false
-    t.boolean "adhaar_esign_completed", default: false
-    t.string "signature_type", limit: 100
     t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
@@ -1102,7 +1091,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
-    t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
@@ -1117,11 +1105,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "api_updates"
-    t.string "signer_id", limit: 20
     t.string "email", limit: 60
     t.bigint "document_id"
-    t.datetime "deleted_at"
-    t.index ["deleted_at"], name: "index_e_signatures_on_deleted_at"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
@@ -1195,8 +1180,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
-    t.string "fi_code"
     t.string "sandbox_numbers"
+    t.string "fi_code"
+    t.boolean "ckyc_kra_enabled", default: false
     t.string "kpi_doc_list"
     t.text "kyc_docs_note"
     t.string "stamp_paper_tags"
@@ -1205,24 +1191,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.integer "email_delay_seconds", default: 0
     t.boolean "ckyc_enabled", default: false
     t.boolean "kra_enabled", default: false
-    t.boolean "ckyc_kra_enabled"
     t.string "kpi_reminder_frequency", limit: 10
     t.integer "kpi_reminder_before"
     t.text "custom_dashboards"
+    t.datetime "deleted_at"
     t.text "whatsapp_token"
     t.string "whatsapp_endpoint"
     t.json "whatsapp_templates"
-    t.datetime "deleted_at"
     t.string "digio_client_id"
     t.string "digio_client_secret"
     t.datetime "digio_cutover_date"
     t.string "append_to_commitment_agreement"
     t.string "regulatory_env", limit: 20, default: "SEBI"
     t.json "kanban_steps"
-    t.string "esign_provider", limit: 15, default: "Digio"
     t.boolean "test_account", default: false
     t.string "formula_tag_list"
-    t.string "investor_presentations_email", limit: 50
+    t.string "esign_provider", limit: 15, default: "Digio"
+    t.string "investor_presentations_email", limit: 100
     t.string "domain"
     t.string "mailbox", limit: 30
     t.integer "notification_retention_months", default: 2
@@ -1254,9 +1239,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "entity_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id", default: 21, null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_events_on_owner"
+    t.index ["owner_type", "owner_id"], name: "index_events_on_owner_type_and_owner_id"
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
@@ -1609,7 +1595,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.string "transfer", limit: 8
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
-    t.boolean "gp_units", default: false
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
@@ -1656,8 +1641,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "funding_round_id"
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
-    t.string "fund_signature_types", limit: 20
-    t.string "investor_signature_types", limit: 20
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
@@ -1700,6 +1683,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
     t.index ["master_fund_id"], name: "index_funds_on_master_fund_id"
+    t.index ["snapshot_date"], name: "index_funds_on_snapshot_date"
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
@@ -1713,14 +1697,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.datetime "updated_at", null: false
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
-    t.bigint "entity_id", null: false
+    t.bigint "entity_id"
     t.string "data_type"
     t.string "label"
     t.boolean "derived_field"
-    t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
+    t.index ["owner_id", "owner_type"], name: "index_grid_view_preferences_on_owner_id_and_owner_type"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
+    t.index ["sequence"], name: "index_grid_view_preferences_on_sequence"
   end
 
   create_table "import_uploads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1907,8 +1892,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
-    t.string "first_name", limit: 20
-    t.string "last_name", limit: 20
+    t.string "first_name"
+    t.string "last_name"
     t.boolean "send_confirmation", default: false
     t.bigint "investor_entity_id"
     t.boolean "is_investor_advisor", default: false
@@ -1916,7 +1901,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.boolean "whatsapp_enabled", default: false
     t.text "cc"
     t.bigint "import_upload_id"
-    t.string "call_code", limit: 3
     t.boolean "email_enabled", default: true
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
@@ -2011,7 +1995,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.string "agreement_unit_type", limit: 20
     t.string "slug"
-    t.text "pan_card_data"
     t.json "doc_question_answers"
     t.boolean "all_docs_valid", default: false
     t.boolean "compliant", default: false
@@ -2133,6 +2116,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.text "notes"
     t.string "tags"
     t.integer "sequence"
+    t.index ["data_source_type", "data_source_id"], name: "index_kanban_cards_on_data_source_type_and_data_source_id"
     t.index ["entity_id"], name: "index_kanban_cards_on_entity_id"
     t.index ["kanban_board_id"], name: "index_kanban_cards_on_kanban_board_id"
     t.index ["kanban_column_id"], name: "index_kanban_cards_on_kanban_column_id"
@@ -2366,7 +2350,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 20
+    t.string "demat", limit: 50
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
@@ -2455,7 +2439,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "import_upload_id"
     t.string "tag", limit: 100, default: ""
     t.string "instrument"
-    t.bigint "investment_instrument_id", null: false
+    t.bigint "investment_instrument_id"
     t.bigint "form_type_id"
     t.json "json_fields"
     t.bigint "document_folder_id"
@@ -2528,7 +2512,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
-    t.decimal "capital_expense_cents", precision: 20, scale: 2
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
     t.bigint "orignal_id"
@@ -2545,6 +2528,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
+    t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
   end
 
   create_table "portfolio_report_extracts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2641,7 +2625,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "entity_id"
     t.bigint "user_id", null: false
     t.string "name"
-    t.string "category", limit: 30
+    t.string "category", limit: 50
     t.text "description"
     t.text "url"
     t.datetime "created_at", null: false
@@ -2789,18 +2773,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
     t.bigint "owner_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "state"
-    t.string "stamp_type"
-    t.string "duty_paid_by"
-    t.string "duty_payment_method"
-    t.string "document_category"
-    t.string "doc_ref_id"
-    t.string "ref_id"
-    t.string "duty_payer_phone_number"
-    t.string "duty_payer_email_id"
-    t.string "amounts"
-    t.datetime "deleted_at"
-    t.index ["deleted_at"], name: "index_stamp_papers_on_deleted_at"
     t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
   end
@@ -3189,7 +3161,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "deals", "deals", column: "clone_from_id"
   add_foreign_key "deals", "entities"
   add_foreign_key "deals", "folders", column: "data_room_folder_id"
-  add_foreign_key "deals", "folders", column: "deal_documents_folder_id"
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
   add_foreign_key "doc_questions", "entities"
@@ -3197,7 +3168,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
   add_foreign_key "documents", "users", column: "approved_by_id"
-  add_foreign_key "documents", "users", column: "signed_by_id"
   add_foreign_key "e_signatures", "documents"
   add_foreign_key "e_signatures", "entities"
   add_foreign_key "e_signatures", "users"
@@ -3205,6 +3175,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "esign_logs", "documents"
   add_foreign_key "esign_logs", "entities"
   add_foreign_key "events", "entities"
+  add_foreign_key "events", "users"
   add_foreign_key "exchange_rates", "entities"
   add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "exchange_rates", "import_uploads"
@@ -3247,11 +3218,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"
   add_foreign_key "funds", "folders", column: "document_folder_id"
+  add_foreign_key "funds", "funding_rounds"
   add_foreign_key "funds", "funds", column: "master_fund_id"
   add_foreign_key "funds", "import_uploads"
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "grid_view_preferences", "custom_grid_views"
+  add_foreign_key "grid_view_preferences", "entities"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
   add_foreign_key "incoming_emails", "entities"
@@ -3271,6 +3244,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_opportunities", "funding_rounds"
   add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
@@ -3314,6 +3288,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "kyc_data", "investor_kycs"
   add_foreign_key "messages", "investors"
   add_foreign_key "messages", "users"
+  add_foreign_key "notifications", "entities"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
@@ -3341,6 +3316,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_company_kpi_extraction_mappings", "entities"
   add_foreign_key "portfolio_company_kpi_extraction_mappings", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "exchange_rates"

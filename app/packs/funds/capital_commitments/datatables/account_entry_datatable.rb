@@ -30,7 +30,7 @@ class AccountEntryDatatable < ApplicationDatatable
         amount: record.decorate.amount,
         entry_type: record.decorate.entry_type,
         name: record.name,
-        parent_name: record.parent_name,
+        parent_name: record.decorate.parent_name,
         commitment_name: record.commitment_name,
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "account_entry_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable

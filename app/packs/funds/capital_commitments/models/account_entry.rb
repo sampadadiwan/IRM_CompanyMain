@@ -108,7 +108,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date allocation_run_id parent_type].sort
+    %w[capital_commitment_id amount cumulative entry_type folio_id generated name period reporting_date allocation_run_id parent_type parent_name].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
