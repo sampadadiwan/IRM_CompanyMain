@@ -36,7 +36,7 @@ class AddAccountEntryNamesToReport < ActiveRecord::Migration[8.0]
           pi.portfolio_company_name,
           ii.name,
           CASE WHEN pi.quantity > 0 THEN 'Buy' ELSE 'Sell' END,
-          pi.investment_date
+          DATE_FORMAT(pi.investment_date, '%d/%m/%Y')
         ), 255
       )
       WHERE ae.parent_type = 'PortfolioInvestment';")
@@ -57,9 +57,9 @@ class AddAccountEntryNamesToReport < ActiveRecord::Migration[8.0]
       ActiveRecord::Base.connection.execute("UPDATE account_entries ae
           JOIN account_entries parent ON ae.parent_id = parent.id
           SET ae.parent_name = LEFT(
-            CONCAT_WS(' ',
-              parent.reporting_date,
-              parent.name
+            CONCAT_WS(' ',              
+              parent.name,
+              DATE_FORMAT(parent.reporting_date, '%d/%m/%Y')
             ), 255
           )
           WHERE ae.parent_type = 'AccountEntry';")

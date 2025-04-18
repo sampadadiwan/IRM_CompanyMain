@@ -95,7 +95,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def to_s
-    "#{I18n.l(reporting_date)} #{name}"
+    "#{name} #{I18n.l(reporting_date)}"
   end
 
   def self.total_amount(account_entries, name: nil, entry_type: nil, cumulative: false, start_date: nil, end_date: nil)
