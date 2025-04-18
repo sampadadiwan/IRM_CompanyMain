@@ -29,6 +29,7 @@ module AccountEntryAllocation
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
             fund: fund,
+            parent: portfolio_investment,
             reporting_date: end_date,
             period: "As of #{end_date}",
             generated: true,
