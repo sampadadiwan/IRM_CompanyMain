@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_14_122147) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_18_034951) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -66,7 +66,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_14_122147) do
     t.datetime "deleted_at"
     t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "allocation_run_id"
+    t.bigint "allocation_run_id"
+    t.string "parent_name"
+    t.string "commitment_name"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
@@ -1445,7 +1447,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_14_122147) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sequence", default: 0
-    t.string "rule_type", limit: 30
+    t.string "rule_type", limit: 50
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: false
