@@ -52,7 +52,6 @@ module AccountEntryAllocation
       account_entry.generated       = true
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
-
       account_entry.amount_cents = safe_eval(formula, bdg)
       # Explanation data
       account_entry.explanation = []
