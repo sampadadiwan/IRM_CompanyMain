@@ -38,6 +38,7 @@ class PortfolioCompanyCalc
       aggregated_portfolio_investment.unrealized_gain += bank.exchange_with(pi.unrealized_gain, currency)
       aggregated_portfolio_investment.cost_of_sold += bank.exchange_with(pi.cost_of_sold, currency)
       aggregated_portfolio_investment.transfer_amount = bank.exchange_with(pi.transfer_amount, currency)
+      aggregated_portfolio_investment.cost_of_remaining += bank.exchange_with(pi.cost_of_remaining, currency)
     end
 
     # return the aggregated portfolio investment
