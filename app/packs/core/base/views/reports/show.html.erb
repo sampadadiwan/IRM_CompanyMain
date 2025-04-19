@@ -21,7 +21,11 @@
       Name
     </td>
     <td>
-      <%= link_to @report.name, @report.url %>
+      <% if @report.is_dynamic? %>
+        <%= @report.name %>
+      <% else %>
+        <%= link_to @report.name, @report.url %>
+      <% end %>
     </td>
   </tr>
   <tr>
@@ -55,7 +59,12 @@
       Url
     </td>
     <td>
-      <%= link_to @report.url, @report.url %>
+      <!-- Check if its a dynamic report ie has {some_param} in the url -->
+      <% if @report.is_dynamic? %>        
+        <%= @report.url %>
+      <% else %>        
+        <%= link_to @report.url, @report.url %>
+      <% end %>
     </td>
   </tr>
 

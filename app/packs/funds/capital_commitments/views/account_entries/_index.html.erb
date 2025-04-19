@@ -1,6 +1,7 @@
 <% 
   fund ||= nil 
   import_upload_id ||= params[:import_upload_id]
+  title ||= params[:title] || "Account Entries"
 %>        
 
 <% 
@@ -32,7 +33,7 @@
 <div class="table-responsive">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
 
     <span>  
       <%  
