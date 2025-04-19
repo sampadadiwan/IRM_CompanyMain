@@ -1,7 +1,7 @@
 wb = xlsx_package.workbook
 
 form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers = get_form_type("AggregatePortfolioInvestment")
-inv_form_type, inv_custom_field_names, inv_custom_headers = get_form_type("Investor")
+inv_form_type, inv_custom_field_names, = get_form_type("Investor")
 inv_inst_form_type, inv_inst_custom_field_names, inv_inst_custom_headers = get_form_type("InvestmentInstrument")
 
 # Get the latest FundRatios for the APIs
@@ -19,7 +19,7 @@ wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
     custom_calc_values = get_custom_calc_values(api, form_type, custom_calcs)
 
     # We display the CFs for investor and investment_instrument
-    inv_custom_field_values = get_custom_values(api.portfolio_company, inv_form_type, inv_custom_field_names)
+    get_custom_values(api.portfolio_company, inv_form_type, inv_custom_field_names)
     inv_inst_custom_field_values = get_custom_values(api.investment_instrument, inv_inst_form_type, inv_inst_custom_field_names)
 
     # Get the fund ratios for this api
@@ -28,7 +28,7 @@ wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
 
     # Add row to XL
 
-     sheet.add_row [api.fund.name, api.portfolio_company_name, api.investment_instrument&.name, api.bought_quantity, api.bought_amount.to_d, api.avg_cost.to_d, api.transfer_quantity, api.transfer_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.cost_of_sold.to_d, api.gain.to_d, api.quantity, api.fund.currency.to_s, api.cost_of_remaining.to_d, api.fmv.to_d, api.unrealized_gain.to_d, irr&.display_value, value_to_cost&.display_value, irr&.end_date] +
+    sheet.add_row [api.fund.name, api.portfolio_company_name, api.investment_instrument&.name, api.bought_quantity, api.bought_amount.to_d, api.avg_cost.to_d, api.transfer_quantity, api.transfer_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.cost_of_sold.to_d, api.gain.to_d, api.quantity, api.fund.currency.to_s, api.cost_of_remaining.to_d, api.fmv.to_d, api.unrealized_gain.to_d, irr&.display_value, value_to_cost&.display_value, irr&.end_date] +
                   custom_field_values + custom_calc_values +
                   [api.investment_instrument&.category, api.investment_instrument&.sub_category, api.investment_instrument&.sector] + inv_inst_custom_field_values
   end

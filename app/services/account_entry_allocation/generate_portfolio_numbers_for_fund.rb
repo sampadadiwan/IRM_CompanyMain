@@ -5,6 +5,8 @@ module AccountEntryAllocation
   # Ex FMV for the portfolio company in this fund on this date
   ############################################################
   class GeneratePortfolioNumbersForFund < AllocationBaseOperation
+    DEFAULT_FEILDS = { "Bought Amount" => :bought_amount_cents, "Cost Of Remaining" => :cost_of_remaining_cents, "Cost Of Sold" => :cost_of_sold_cents, "Sold Amount" => :sold_amount_cents, "FMV" => :fmv_cents, "Realized Gain" => :gain_cents, "Unrealized Gain" => :unrealized_gain_cents }.freeze
+
     step :allocate_portfolios_company
 
     def allocate_portfolios_company(ctx, **)
@@ -23,28 +25,42 @@ module AccountEntryAllocation
                                 .where(portfolio_investments: { investment_date: ..end_date })
                                 .distinct
 
-      portfolio_companies.each_with_index do |portfolio_company, idx|
-        ae = AccountEntry.new(
-          name: fund_formula.name,
-          entry_type: fund_formula.entry_type,
-          entity_id: fund.entity_id,
-          fund: fund,
-          parent: portfolio_company,
-          reporting_date: end_date,
-          period: "As of #{end_date}",
-          generated: true,
-          fund_formula: fund_formula
-        )
+      # We create account_entries for each of the following fields
+      # rubocop :disable Security/Eval
+      fields = begin
+        eval(fund_formula.formula)
+      rescue StandardError => e
+        DEFAULT_FEILDS
+      end
+      # rubocop :enable Security/Eval
 
+      fields = DEFAULT_FEILDS if fields.keys.blank?
+
+      portfolio_companies.each_with_index do |portfolio_company, idx|
         begin
           # Do not remove this line, its used inside the eval. Rubocop will try and remove it, if its not used
           aggregate_portfolio_investment = portfolio_company.aggregate_portfolio_investment(fund_id: fund.id, as_of: end_date)
 
-          Rails.logger.debug { "Aggregate Portfolio Investment: fmv = #{aggregate_portfolio_investment.fmv}, net_amount = #{aggregate_portfolio_investment.net_amount}, amount = #{aggregate_portfolio_investment.amount}" }
-
           create_instance_variables(ctx)
 
-          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: nil, parent: portfolio_company, bdg: binding))
+          fields.each do |name, field|
+            fund_formula.name = name
+            fund_formula.formula = "aggregate_portfolio_investment.#{field}"
+
+            ae = AccountEntry.new(
+              name: fund_formula.name,
+              entry_type: fund_formula.entry_type,
+              entity_id: fund.entity_id,
+              fund: fund,
+              parent: portfolio_company,
+              reporting_date: end_date,
+              period: "As of #{end_date}",
+              generated: true,
+              fund_formula: fund_formula
+            )
+
+            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: nil, parent: portfolio_company, bdg: binding))
+          end
         rescue StandardError => e
           raise "Error in #{fund_formula.name} for #{fund}: #{e.message}"
         end

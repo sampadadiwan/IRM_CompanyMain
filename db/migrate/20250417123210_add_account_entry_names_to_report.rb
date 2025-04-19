@@ -9,6 +9,9 @@ class AddAccountEntryNamesToReport < ActiveRecord::Migration[8.0]
     add_column :reports, :metadata, :text
     add_column :account_entries, :parent_name, :string
     add_column :account_entries, :commitment_name, :string
+  end
+
+  def update_old_date
 
     # AccountEntry.includes(:fund_formula).all.each do |entry|
     #   entry.setup_defaults
@@ -16,6 +19,7 @@ class AddAccountEntryNamesToReport < ActiveRecord::Migration[8.0]
     #   entry.entry_type = entry.fund_formula.entry_type   
     #   entry.save(validate: false)
     # end
+
 
     puts "Updating account entries with fund formula names and entry types"
     AccountEntry.joins(:fund_formula).update_all("account_entries.name=fund_formulas.name, account_entries.entry_type=fund_formulas.entry_type")
@@ -53,7 +57,7 @@ class AddAccountEntryNamesToReport < ActiveRecord::Migration[8.0]
         )
         WHERE ae.parent_type = 'AggregatePortfolioInvestment';")
 
-  puts "Updating account entries with parent names for account entries"
+      puts "Updating account entries with parent names for account entries"
       ActiveRecord::Base.connection.execute("UPDATE account_entries ae
           JOIN account_entries parent ON ae.parent_id = parent.id
           SET ae.parent_name = LEFT(
