@@ -6,11 +6,24 @@
   # The uris for the value bridges for each instrument
   uris = []
   # The list of instruments passed
-  instrument_names = args[:instruments]&.split(",") || [] # names of the instrument
+  instrument_names = args[:instruments] || [] # names of the instrument
   across = args[:across] # "first last" or "last 2"
   # Get the list of instruments for the investor for which the value bridge is to be shown
-  investment_instruments = @investor.investment_instruments
-  investment_instruments = investment_instruments.where(name: instrument_names) if instrument_names.present?
+  
+  if instrument_names == "All"
+    # Get all the instruments for the investor
+    investment_instruments = @investor.investment_instruments
+  else
+    # Get the instruments for the investor specified in the json_fields value_bridge_instruments
+    instrument_names = @investor.json_fields["value_bridge_instruments"]&.split(",")
+    if instrument_names.present?      
+      investment_instruments = @investor.investment_instruments.where(name: instrument_names)
+    else
+      # If no instruments are specified, show nothing
+      investment_instruments = InvestmentInstrument.none
+    end
+  end
+
   # For each instrument, get the valuations and setup the uri
   investment_instruments.each do |instrument|
     valuations = @investor.valuations.where(investment_instrument_id: instrument.id)
