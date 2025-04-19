@@ -14,7 +14,7 @@ class PortfolioCompanyCalc
 
     if @as_of
       # Convert to the as_of date if provided
-      @aggregate_portfolio_investments = @aggregate_portfolio_investments.map { |pi| pi.as_of(@as_of) }
+      @aggregate_portfolio_investments = @aggregate_portfolio_investments.map { |api| api.as_of(@as_of) }
     else
       @aggregate_portfolio_investments
     end
