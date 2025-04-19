@@ -48,7 +48,9 @@ class ReportsController < ApplicationController
   end
 
   # GET /reports/1/edit
-  def edit; end
+  def edit
+    @report.decode_url
+  end
 
   # POST /reports or /reports.json
   def create
@@ -56,6 +58,8 @@ class ReportsController < ApplicationController
     @report.user = current_user
     @report.curr_role = current_user.curr_role
     @report.entity = current_user.entity
+    @report.decode_url
+
     authorize @report
 
     respond_to do |format|

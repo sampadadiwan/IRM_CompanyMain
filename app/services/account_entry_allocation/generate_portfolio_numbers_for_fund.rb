@@ -26,11 +26,13 @@ module AccountEntryAllocation
                                 .distinct
 
       # We create account_entries for each of the following fields
+      # rubocop :disable Security/Eval
       fields = begin
         eval(fund_formula.formula)
       rescue StandardError => e
         DEFAULT_FEILDS
       end
+      # rubocop :enable Security/Eval
 
       fields = DEFAULT_FEILDS if fields.keys.blank?
 

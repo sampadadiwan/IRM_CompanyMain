@@ -2653,6 +2653,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_18_142348) do
     t.string "tag_list"
     t.string "curr_role", limit: 10, default: "employee"
     t.string "model"
+    t.text "metadata"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
