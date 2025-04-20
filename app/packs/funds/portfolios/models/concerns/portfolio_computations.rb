@@ -41,6 +41,10 @@ module PortfolioComputations
       compute_fmv
       # Unrealized gain is fmv - cost_of_remaining, only for buys
       self.unrealized_gain_cents = fmv_cents - net_amount_cents
+      # This are the fields in the instrument currency
+      self.base_fmv_cents = compute_base_fmv_cents_on(Time.zone.today)
+      self.base_cost_of_remaining_cents = net_quantity * base_cost_cents
+      self.base_unrealized_gain_cents = base_fmv_cents - base_cost_of_remaining_cents
     else
       self.net_quantity = quantity
       self.net_bought_quantity = 0
@@ -50,6 +54,9 @@ module PortfolioComputations
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
 
       compute_fmv
+      self.base_fmv_cents = 0
+      self.base_cost_of_remaining_cents = 0
+      self.base_unrealized_gain_cents = 0
 
     end
   end
