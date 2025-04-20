@@ -1,31 +1,40 @@
 class AggregatePortfolioInvestment < ApplicationRecord
+  # Indexing for Elasticsearch updates when this record is saved
   update_index('aggregate_portfolio_investment') { self if index_record?(AggregatePortfolioInvestmentIndex) }
-  # This has all the utility methods required for snashots
+
+  # Include shared behaviors for snapshots, folders, tracking, investor views, etc.
   include WithSnapshot
   include WithFolder
   include Trackable.new
   include ForInvestor
   include WithCustomField
   include WithDocQuestions
+
+  # Adds dynamic search capabilities for monetary fields
   include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
 
+  # Associations
   belongs_to :entity, touch: true
   belongs_to :fund, -> { with_snapshots }
-
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
 
-  monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
-
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
-
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
+  # Define monetized fields using fund's currency
+  monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents,
+           :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents,
+           :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents,
+           with_currency: ->(i) { i.fund.currency }
+
+  # Validations for length restrictions
   validates :portfolio_company_name, length: { maximum: 100 }
   validates :investment_domicile, length: { maximum: 10 }
 
+  # Constants used for column headings and field mapping in views
   STANDARD_COLUMN_NAMES = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
 
@@ -40,128 +49,108 @@ class AggregatePortfolioInvestment < ApplicationRecord
   }.freeze
 
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
-
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company").freeze
 
+  # Callbacks
   before_create :update_name
+  before_save :compute_avg_cost, if: -> { bought_quantity.positive? }
+
+  # Set name based on portfolio company if not already set
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name
   end
 
+  # Construct a folder path used for storing files related to this investment
   def folder_path
     "/AggregatePortfolioInvestment/#{portfolio_company_name.delete('/')}_#{id_or_random_int}"
   end
 
+  # Basic string representation
   def to_s
     "#{portfolio_company_name}  #{investment_instrument}"
   end
 
-  before_save :compute_avg_cost, if: -> { bought_quantity.positive? }
+  # Compute average cost if quantity exists
   def compute_avg_cost
-    self.avg_cost_cents = bought_amount_cents / bought_quantity if bought_quantity.positive?
+    self.avg_cost_cents = bought_amount_cents / bought_quantity
   end
 
-  # This is used extensively in the AccountEntryAllocationEngine
-  # The AccountEntryAllocationEngine needs the date as of end_date,
-  # so this creates an AggregatePortfolioInvestment with data as of the end_date
+  # Returns a duplicate of this object as of a specified end_date
+  # Used extensively in historical accounting and allocation engines
   def as_of(end_date)
     api = dup
 
-    # Get the PIs as of the end_date
-    pis_before_end_date = portfolio_investments.before(end_date).map { |pi| pi.as_of(end_date) }
+    # Fetch PIs before the end_date and calculate their state as of that date
+    pis = portfolio_investments.before(end_date).map { |pi| pi.as_of(end_date) }
+    api.portfolio_investments = pis
 
-    api.portfolio_investments = pis_before_end_date
-
-    buys = pis_before_end_date.select { |pi| pi.quantity.positive? }
-    sells = pis_before_end_date.select { |pi| pi.quantity.negative? }
+    # Partition into buys and sells for financial calculation
+    buys, sells = pis.partition { |pi| pi.quantity.positive? }
 
     api.bought_quantity = buys.sum(&:quantity)
     api.bought_amount_cents = buys.sum(&:amount_cents)
-
     api.sold_quantity = sells.sum(&:quantity)
     api.sold_amount_cents = sells.sum(&:amount_cents)
 
-    net_quantity_on(end_date)
     api.avg_cost_cents = api.bought_amount_cents / api.bought_quantity if api.bought_quantity.positive?
-
     api.fmv_cents = fmv_on_date(end_date)
 
-    # Stock conversions for these PIs
-    transfer_quantity = fund.stock_conversions
-                            .where(from_portfolio_investment_id: pis_before_end_date.map(&:id), conversion_date: ..end_date)
-                            .sum(:from_quantity)
-    api.transfer_quantity = transfer_quantity
+    # Compute quantity transfers through stock conversions
+    api.transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis.map(&:id), conversion_date: ..end_date).sum(:from_quantity)
     api.transfer_amount_cents = buys.sum(&:transfer_amount_cents)
+    api.quantity = pis.sum(&:quantity) - api.transfer_quantity
 
-    api.quantity = pis_before_end_date.sum(&:quantity) - transfer_quantity
-
+    # Realized and unrealized gain calculations
     api.cost_of_sold_cents = sells.sum(&:cost_of_sold_cents)
     api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents + api.transfer_amount_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
     api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
 
+    # Calculate net bought amount
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
 
-    # Fields in instrument currency
-    api.base_fmv_cents = buys.sum(&:base_fmv_cents)
-    api.base_cost_of_remaining_cents = buys.sum(&:base_cost_of_remaining_cents)
-    api.base_unrealized_gain_cents = buys.sum(&:base_unrealized_gain_cents)
+    # Base currency conversions
+    api.instrument_currency_fmv_cents = buys.sum(&:instrument_currency_fmv_cents)
+    api.instrument_currency_cost_of_remaining_cents = buys.sum(&:instrument_currency_cost_of_remaining_cents)
+    api.instrument_currency_unrealized_gain_cents = buys.sum(&:instrument_currency_unrealized_gain_cents)
 
     api.freeze
   end
 
-  def sold_amount_allocation(capital_commitment, _end_date)
-    total = 0
-    portfolio_investments.each do |portfolio_investment|
-      # Do not move this check into the query. Sometimes we get as_of API (see method above), then query filtering does not work
-      next unless portfolio_investment.sell?
+  # Allocate sold amount proportionally to capital commitment’s ICP
+  def sold_amount_allocation(commitment, _end_date)
+    portfolio_investments.sum do |pi|
+      next 0 unless pi.sell?
 
-      icp_ae = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..portfolio_investment.investment_date).order(reporting_date: :asc).last
-
-      percentage = icp_ae.amount_cents / 10_000
-      total += portfolio_investment.amount_cents * percentage
+      ae = commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..pi.investment_date).order(:reporting_date).last
+      pct = ae.amount_cents / 10_000.0
+      pi.amount_cents * pct
     end
-    total
   end
 
-  def avg_cost_of_sold_allocation(capital_commitment, _end_date)
-    total = 0
-    portfolio_investments.each do |portfolio_investment|
-      # Do not move this check into the query. Sometimes we get as_of API (see method above), then query filtering does not work
-      next unless portfolio_investment.sell?
+  # Allocate average cost of sold units to the capital commitment
+  def avg_cost_of_sold_allocation(commitment, _end_date)
+    portfolio_investments.sum do |pi|
+      next 0 unless pi.sell?
 
-      icp_ae = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..portfolio_investment.investment_date).order(reporting_date: :asc).last
-
-      percentage = icp_ae.amount_cents / 10_000
-      total += avg_cost_cents * portfolio_investment.quantity * percentage
+      ae = commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..pi.investment_date).order(:reporting_date).last
+      pct = ae.amount_cents / 10_000.0
+      avg_cost_cents * pi.quantity * pct
     end
-    total
   end
 
-  # def fifo_cost_of_sold_allocation(capital_commitment, _end_date)
-  #   total = 0
-  #   portfolio_investments.each do |portfolio_investment|
-  #     # Do not move this check into the query. Sometimes we get as_of API (see method above), then query filtering does not work
-  #     next unless portfolio_investment.sell?
-
-  #     icp_ae = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..portfolio_investment.investment_date).order(reporting_date: :asc).last
-
-  #     percentage = icp_ae.amount_cents / 10_000
-  #     total += portfolio_investment.cost_of_sold_cents * portfolio_investment.quantity * percentage
-  #   end
-  #   total
-  # end
-
-  # This will trigger a stock split for all portfolio_investments
-  def split(stock_split_ratio)
+  # Perform a stock split on all related portfolio investments
+  def split(ratio)
     portfolio_investments.each do |pi|
-      logger.info "Stock split #{stock_split_ratio} for #{pi}"
-      pi.split(stock_split_ratio)
+      logger.info("Stock split #{ratio} for #{pi}")
+      pi.split(ratio)
     end
   end
 
+  # Adds ransack support for additional fields
   include RansackerAmounts.new(fields: %w[avg_cost bought_amount sold_amount fmv cost_of_remaining cost_of_sold net_bought_amount transfer_amount unrealized_gain])
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[avg_cost bought_amount bought_quantity cost_of_remaining cost_of_sold fmv net_bought_amount portfolio_company_name quantity sold_amount sold_quantity transfer_amount transfer_quantity unrealized_gain updated_at]
   end
@@ -170,66 +159,47 @@ class AggregatePortfolioInvestment < ApplicationRecord
     %w[fund investment_instrument portfolio_company]
   end
 
+  # Reserved for future use
   def avg_cost_on(date); end
 
+  # Calculates net quantity as of a given date
+  # Optionally restricts to only buy transactions
   def net_quantity_on(end_date, only_buys: false)
-    # Buys before the end_date
-    buy_portfolio_investments = portfolio_investments.buys.before(end_date)
-    return 0 if buy_portfolio_investments.blank?
+    buys = portfolio_investments.buys.before(end_date)
+    buy_qty = buys.sum(:quantity)
+    return 0 if buy_qty.zero?
 
-    buy_quantity = buy_portfolio_investments.sum(:quantity)
+    # Adjust for stock conversions before the given date
+    converted_qty = fund.stock_conversions.where(from_portfolio_investment_id: buys.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
 
-    # Conversions can happen in the future, but the investment_date of the converted PI is set to the investment_date of the PI from which it was converted (See StockConversion)
-    # If the conversion of any of the buys has happened before the end_date, then we need to subtract the converted quantity from the buy_quantity as it has already been converted.
-    from_conversion_quantity = fund.stock_conversions.where(from_portfolio_investment_id: buy_portfolio_investments.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
+    sells = portfolio_investments.sells.where(investment_date: ..end_date).sum(:quantity)
 
-    conversion_quantity = from_conversion_quantity
-
-    # Sells before the end date
-    sell_portfolio_investments = portfolio_investments.sells.where(investment_date: ..end_date)
-    sell_quantity = sell_portfolio_investments.sum(:quantity)
-    net_quantity = if only_buys
-                     # This is net bought quantity
-                     buy_quantity - conversion_quantity
-                   else
-                     # This is net quantity
-                     buy_quantity + sell_quantity - conversion_quantity
-                   end
-
-    Rails.logger.debug { "Net Quantity: #{net_quantity}, Buy Quantity: #{buy_quantity}, Sell Quantity: #{sell_quantity}, Conversion Quantity: #{conversion_quantity}, API: #{id}" }
-
-    net_quantity
+    only_buys ? buy_qty - converted_qty : buy_qty + sells - converted_qty
   end
 
+  # Calculates FMV as of a given date based on the latest valuation
   def fmv_on_date(end_date)
-    net_quantity = net_quantity_on(end_date)
-    return 0 if net_quantity.zero?
+    qty = net_quantity_on(end_date)
+    return 0 if qty.zero?
 
-    # Get the valuation for this portfolio_company before the end_date
-    valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
+    val = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(:valuation_date).last
+    raise "No valuation found for #{portfolio_company.investor_name}, #{investment_instrument.name} prior to #{end_date}" unless val
 
-    # We cannot proceed without a valid valuation
-    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
-
-    # Get the fmv for this portfolio_company on the end_date
-    net_quantity * valuation.per_share_value_in(fund.currency, end_date)
+    qty * val.per_share_value_in(fund.currency, end_date)
   end
 
-  def base_fmv_on_date(end_date)
-    net_quantity = net_quantity_on(end_date)
-    return 0 if net_quantity.zero?
+  # Calculates FMV in base currency (raw cents)
+  def instrument_currency_fmv_on_date(end_date)
+    qty = net_quantity_on(end_date)
+    return 0 if qty.zero?
 
-    # Get the valuation for this portfolio_company before the end_date
-    valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
+    val = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(:valuation_date).last
+    raise "No valuation found for #{portfolio_company.investor_name}, #{investment_instrument.name} prior to #{end_date}" unless val
 
-    # We cannot proceed without a valid valuation
-    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
-
-    # Get the fmv for this portfolio_company on the end_date
-    net_quantity * valuation.per_share_value_cents
+    qty * val.per_share_value_cents
   end
 
-  # This method is used in some allocations formulas, do NOT delete this, as its not directly referenced by the codebase
+  # Sums a specific custom field (from JSON) across investments up to a given date
   def sum_custom_field(cf_name, end_date)
     portfolio_investments.where(investment_date: ..end_date).sum { |pi| (pi.json_fields[cf_name] || 0).to_d }
   end
