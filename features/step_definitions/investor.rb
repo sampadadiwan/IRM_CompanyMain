@@ -320,7 +320,8 @@ end
 
 Given('Given I upload an investors file for the fund') do
   type = "Investor"
-  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/fund_investors.xlsx")))
+  @import_file = "fund_investors.xlsx"
+  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{@import_file}")))
   ImportUploadJob.perform_now(iu.id)
   iu.reload
   iu.failed_row_count.should == 0
