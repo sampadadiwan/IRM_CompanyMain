@@ -15,12 +15,13 @@ class ImportInvestor < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # puts "processing #{user_data}"
-    saved = true
     investor_name = user_data['Name']
     pan = user_data['Pan']
     primary_email = user_data['Primary Email']
     category = user_data['Category']
-
+    update_only = user_data['Update Only'] == "Yes"
+    # Ensure Update Only is not part of custom fields
+    custom_field_headers -= ["Update Only"]
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields
     custom_field_headers -= ["Force Different Name"]
@@ -28,27 +29,36 @@ class ImportInvestor < ImportUtil
     investor = pan.present? ? Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first : nil
     investor ||= Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
 
-    if investor.present?
-      Rails.logger.debug { "Investor with name #{investor_name} already exists for entity #{import_upload.entity_id}" }
-
-      raise "Investor with already exists." if user_data["Fund"].blank?
+    if update_only
+      if investor.blank?
+        Rails.logger.debug { "Investor #{investor_name} not found for entity #{import_upload.entity_id}" }
+        raise "Investor #{investor_name} not found for entity #{import_upload.entity_id}"
+      else
+        # Update the existing investor
+        investor.assign_attributes(pan:, tag_list: user_data["Tags"],
+                                   category:, city: user_data["City"], primary_email:,
+                                   import_upload_id: import_upload.id,
+                                   entity_id: import_upload.entity_id, imported: true, force_different_name:)
+      end
+    elsif investor.present?
+      Rails.logger.debug { "Investor #{investor_name} already exists for entity #{import_upload.entity_id}" }
+      raise "Investor #{investor_name} already exists."
     else
-
+      # Create a new investor
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
                               category:, city: user_data["City"], primary_email:,
                               import_upload_id: import_upload.id,
                               entity_id: import_upload.entity_id, imported: true, force_different_name:)
-
-      custom_field_headers.delete("Fund")
-
-      setup_custom_fields(user_data, investor, custom_field_headers)
-
-      Rails.logger.debug { "Saving Investor with name '#{investor.investor_name}'" }
-      saved = investor.save!
-
     end
 
+    # Set the custom fields
+    custom_field_headers.delete("Fund")
+    setup_custom_fields(user_data, investor, custom_field_headers)
+    # Save the investor
+    Rails.logger.debug { "Saving Investor with name '#{investor.investor_name}'" }
+    saved = investor.save!
+    # Add the investor to the fund if a fund name is present
     add_to_fund(user_data, import_upload, investor)
     saved
   end
