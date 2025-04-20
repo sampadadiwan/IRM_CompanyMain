@@ -114,7 +114,6 @@
     # end
   end
 
-
 Given('there are {string} offer {string} for each investor') do |approved_arg, args|
   approved = approved_arg == "approved"
   Investor.all.each do |h|

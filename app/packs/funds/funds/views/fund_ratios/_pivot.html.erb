@@ -1,0 +1,37 @@
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Fund</th>
+      <th>Owner</th>
+      <% @pivot.dates.each do |date| %>
+        <th colspan="<%= @pivot.names_by_date[date].size %>"><%= l(date, format: :long) %></th>
+      <% end %>
+    </tr>
+    <tr>
+      <th></th>
+      <th></th>
+      <% @pivot.dates.each do |date| %>
+        <% @pivot.names_by_date[date].each do |name| %>
+          <th><%= name %></th>
+        <% end %>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @pivot.funds.each do |fund| %>
+      <% @pivot.owners_by_fund[fund].each do |owner| %>
+        <tr>
+          <td><%= link_to fund.name, fund_path(fund), target: "_blank" %></td>
+          <td><%= link_to owner, target: "_blank" %></td>
+          <% @pivot.dates.each do |date| %>
+            <% @pivot.names_by_date[date].each do |name| %>
+              <td>
+                <%= @pivot.structured_data.dig(fund, owner, date, name) || "-" %>
+              </td>
+            <% end %>
+          <% end %>
+        </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+</table>

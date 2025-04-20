@@ -1,7 +1,9 @@
-<%= render "/layouts/filter", associations: [] %>
+<%= render "/layouts/filter", associations: [], hidden_fields: {pivot: params[:pivot]} %>
 
 <%= turbo_frame_tag "fund_ratios_frame", target: "_top" do %>
-    <% if params[:condensed].present? %>
+    <% if params[:pivot].present? %>
+        <%= render "/fund_ratios/pivot", fund_ratios: @fund_ratios, fund: @fund, pivot: @pivot %>
+    <% elsif params[:condensed].present? %>
         <%= render "/fund_ratios/index_condensed", fund_ratios: @fund_ratios, fund: @fund %>
     <% else %>
         <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>

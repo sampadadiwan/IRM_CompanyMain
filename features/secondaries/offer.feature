@@ -38,7 +38,7 @@ Scenario Outline: Approve offers as a company
   And the user has role "approver,company_admin"
   Given there is an existing investor "investor_name=Seller" with "1" users
   Given there is a sale "<sale>"
-  And there is an "unapproved" offer "quantity=100;price=1000" for each investor
+  And there are "unapproved" offer "quantity=100;price=1000" for each investor
   And I am at the sales details page
   Then I should see all the offers
   And the sales total_offered_quantity should be "0"

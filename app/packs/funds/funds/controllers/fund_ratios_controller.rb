@@ -20,6 +20,9 @@ class FundRatiosController < ApplicationController
     @fund_ratios = @fund_ratios.where(scenario: params[:scenario]) if params[:scenario].present?
     @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
+
+    @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund)).call if params[:pivot].present?
+
     respond_to do |format|
       format.html
       format.turbo_stream
