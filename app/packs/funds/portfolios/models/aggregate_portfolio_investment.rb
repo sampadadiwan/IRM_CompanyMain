@@ -66,36 +66,47 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # so this creates an AggregatePortfolioInvestment with data as of the end_date
   def as_of(end_date)
     api = dup
+
     # Get the PIs as of the end_date
-    pis_before_end_date = portfolio_investments.before(end_date)
+    pis_before_end_date = portfolio_investments.before(end_date).map { |pi| pi.as_of(end_date) }
 
     api.portfolio_investments = pis_before_end_date
 
-    api.bought_quantity = pis_before_end_date.buys.sum(:quantity)
-    api.bought_amount_cents = pis_before_end_date.buys.sum(:amount_cents)
+    buys = pis_before_end_date.select { |pi| pi.quantity.positive? }
+    sells = pis_before_end_date.select { |pi| pi.quantity.negative? }
 
-    api.sold_quantity = pis_before_end_date.sells.sum(:quantity)
-    api.sold_amount_cents = pis_before_end_date.sells.sum(:amount_cents)
+    api.bought_quantity = buys.sum(&:quantity)
+    api.bought_amount_cents = buys.sum(&:amount_cents)
+
+    api.sold_quantity = sells.sum(&:quantity)
+    api.sold_amount_cents = sells.sum(&:amount_cents)
 
     net_quantity_on(end_date)
     api.avg_cost_cents = api.bought_amount_cents / api.bought_quantity if api.bought_quantity.positive?
 
     api.fmv_cents = fmv_on_date(end_date)
 
-    # Get the StockConversions where the from_portfolio_investment_id is in pis_before_end_date
-    transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis_before_end_date.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
+    # Stock conversions for these PIs
+    transfer_quantity = fund.stock_conversions
+                            .where(from_portfolio_investment_id: pis_before_end_date.map(&:id), conversion_date: ..end_date)
+                            .sum(:from_quantity)
     api.transfer_quantity = transfer_quantity
-    api.transfer_amount_cents = pis_before_end_date.buys.sum(:transfer_amount_cents)
+    api.transfer_amount_cents = buys.sum(&:transfer_amount_cents)
 
-    api.quantity = pis_before_end_date.sum(:quantity) - transfer_quantity
+    api.quantity = pis_before_end_date.sum(&:quantity) - transfer_quantity
 
-    api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
-    # Note cost_of_sold_cents and transfer_amount is -ive, so we need to add it to the bought_amount_cents
+    api.cost_of_sold_cents = sells.sum(&:cost_of_sold_cents)
     api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents + api.transfer_amount_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
     api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
+
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
+
+    # Fields in instrument currency
+    api.base_fmv_cents = buys.sum(&:base_fmv_cents)
+    api.base_cost_of_remaining_cents = buys.sum(&:base_cost_of_remaining_cents)
+    api.base_unrealized_gain_cents = buys.sum(&:base_unrealized_gain_cents)
 
     api.freeze
   end
@@ -202,6 +213,20 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
     # Get the fmv for this portfolio_company on the end_date
     net_quantity * valuation.per_share_value_in(fund.currency, end_date)
+  end
+
+  def base_fmv_on_date(end_date)
+    net_quantity = net_quantity_on(end_date)
+    return 0 if net_quantity.zero?
+
+    # Get the valuation for this portfolio_company before the end_date
+    valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: investment_instrument, valuation_date: ..end_date).order(valuation_date: :asc).last
+
+    # We cannot proceed without a valid valuation
+    raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name}, #{investment_instrument.name} prior to date #{end_date}" unless valuation
+
+    # Get the fmv for this portfolio_company on the end_date
+    net_quantity * valuation.per_share_value_cents
   end
 
   # This method is used in some allocations formulas, do NOT delete this, as its not directly referenced by the codebase

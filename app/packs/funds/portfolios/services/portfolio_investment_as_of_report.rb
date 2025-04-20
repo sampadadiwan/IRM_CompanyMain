@@ -71,8 +71,6 @@ class PortfolioInvestmentAsOfReport
           custom_field_values = get_custom_values(pi, form_type, custom_field_names)
           custom_calc_values = get_custom_calc_values(pi, form_type, custom_calcs)
 
-          pi = pi.as_of(@as_of) if @as_of.present? && @as_of != Time.zone.today
-
           if pi.buy?
             net_qty = pi.net_quantity
             unrealized_gain = pi.unrealized_gain

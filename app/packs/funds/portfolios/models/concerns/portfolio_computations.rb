@@ -41,6 +41,10 @@ module PortfolioComputations
       compute_fmv
       # Unrealized gain is fmv - cost_of_remaining, only for buys
       self.unrealized_gain_cents = fmv_cents - net_amount_cents
+      # This are the fields in the instrument currency
+      self.base_fmv_cents = compute_base_fmv_cents_on(Time.zone.today)
+      self.base_cost_of_remaining_cents = net_quantity * base_cost_cents
+      self.base_unrealized_gain_cents = base_fmv_cents - base_cost_of_remaining_cents
     else
       self.net_quantity = quantity
       self.net_bought_quantity = 0
@@ -50,6 +54,9 @@ module PortfolioComputations
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
 
       compute_fmv
+      self.base_fmv_cents = 0
+      self.base_cost_of_remaining_cents = 0
+      self.base_unrealized_gain_cents = 0
 
     end
   end
@@ -72,8 +79,14 @@ module PortfolioComputations
       self.net_amount_cents = net_quantity * cost_cents
       self.net_bought_amount_cents = net_bought_quantity * cost_cents
       self.cost_of_remaining_cents = net_quantity * cost_cents
+      # FMV in the fund currency
       self.fmv_cents = compute_fmv_cents_on(end_date)
       self.unrealized_gain_cents = fmv_cents - cost_of_remaining_cents
+
+      # This are the fields in the instrument currency
+      self.base_fmv_cents = compute_base_fmv_cents_on(end_date)
+      self.base_cost_of_remaining_cents = net_quantity * base_cost_cents
+      self.base_unrealized_gain_cents = base_fmv_cents - base_cost_of_remaining_cents
     else
       self.sold_quantity = 0
       self.transfer_quantity = 0
@@ -85,6 +98,10 @@ module PortfolioComputations
       self.gain_cents = amount_cents.abs + cost_of_sold_cents
       self.fmv_cents = 0
       self.unrealized_gain_cents = 0
+      # This are the fields in the instrument currency
+      self.base_fmv_cents = 0
+      self.base_cost_of_remaining_cents = 0
+      self.base_unrealized_gain_cents = 0
     end
 
     freeze
@@ -111,6 +128,18 @@ module PortfolioComputations
          end
 
     last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
+  end
+
+  def compute_base_fmv_cents_on(date)
+    last_valuation = valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
+
+    nq = if date == Time.zone.today
+           net_quantity
+         else
+           net_quantity_on(date)
+         end
+
+    last_valuation ? nq * last_valuation.per_share_value_cents : 0
   end
 
   # This method is memoized to avoid multiple calls to the database
