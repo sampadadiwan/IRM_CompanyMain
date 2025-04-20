@@ -133,6 +133,8 @@ Scenario Outline: Import investors
   Then I should see the "Import in progress"
   Then There should be "6" investors created
   And the investors must have the data in the sheet
+  And Given import file "investors update.xlsx" for "Investor"
+  And the investors must have the data in the sheet
 
 @import
 Scenario Outline: Import Fund investors
