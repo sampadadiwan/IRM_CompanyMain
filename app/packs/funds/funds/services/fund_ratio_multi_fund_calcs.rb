@@ -111,7 +111,6 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
     # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
     Rails.logger.debug "#########StockConversion#########"
-    binding.pry
     stock_conversions.where(conversion_date: ..@end_date).find_each do |sc|
       quantity = sc.from_quantity
       pi = sc.from_portfolio_investment
