@@ -12,9 +12,10 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @aggregate_portfolio_investments = filter_by_fund(@aggregate_portfolio_investments)
 
     # Step 3: Additional filters using helper
-    @aggregate_portfolio_investments = filter_param(
+    params[:portfolio_company_id] ||= params[:investor_id] if params[:investor_id].present?
+    @aggregate_portfolio_investments = filter_params(
       @aggregate_portfolio_investments,
-      :portfolio_company_id, :investor_id
+      :portfolio_company_id
     )
 
     # Step 4: Perform additional search refinement using custom search logic

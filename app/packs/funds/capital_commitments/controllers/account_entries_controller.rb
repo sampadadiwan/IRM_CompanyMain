@@ -38,8 +38,8 @@ class AccountEntriesController < ApplicationController
     @account_entries = filter_range(
       @account_entries,
       :reporting_date,
-      start: params[:reporting_date_start],
-      end: params[:reporting_date_end]
+      start_date: params[:reporting_date_start],
+      end_date: params[:reporting_date_end]
     )
   end
 
