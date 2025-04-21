@@ -158,6 +158,26 @@
               <th>Type</th>
               <th>Available variables for rule</th>
             </thead>
+            <tr id="GeneratePortfolioNumbersForFund" class="explanation GeneratePortfolioNumbersForFund">
+              <td>GeneratePortfolioNumbersForFund</td>
+              <td>
+                <ul>
+                  <li> Sums up all the numbers for PortfolioInvestments across PortfolioCompany </li>
+                  <li> The formula should be the list of fields like{ "Bought Amount" => :bought_amount_cents, "Cost Of Remaining" => :cost_of_remaining_cents, "Cost Of Sold" => :cost_of_sold_cents, "Sold Amount" => :sold_amount_cents, "FMV" => :fmv_cents, "Realized Gain" => :gain_cents, "Unrealized Gain" => :unrealized_gain_cents } or {} for all fields </li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="CumulateForPortfolioCompany" class="explanation CumulateForPortfolioCompany">
+              <td>CumulateForPortfolioCompany</td>
+              <td>
+                <ul>
+                  <li> Rolls up the account entry for the name, for a portfolio company </li>
+                  <li> The formula should be the parent type (PortfolioInvestment, AggregatePortfolioInvestment, etc) of the account entries to be rolled up </li>
+                </ul>
+              </td>
+            </tr>
+
             <tr id="AllocateAccountEntry-Name" class="explanation AllocateAccountEntry-Name">
               <td>Allocate Account Entry</td>
               <td>

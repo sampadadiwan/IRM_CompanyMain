@@ -38,7 +38,7 @@ module AccountEntryAllocation
 
       portfolio_companies.each_with_index do |portfolio_company, idx|
         begin
-          # Do not remove this line, its used inside the eval. Rubocop will try and remove it, if its not used
+
           aggregate_portfolio_investment = portfolio_company.aggregate_portfolio_investment(fund_id: fund.id, as_of: end_date)
 
           create_instance_variables(ctx)
