@@ -23,7 +23,7 @@ module AccountEntryAllocation
 
         apis.each do |orig_api|
           ae = AccountEntry.new(
-            name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}",
+            name: fund_formula.name,
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
             fund: fund,
