@@ -14,17 +14,7 @@ class ImportInvestor < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    # puts "processing #{user_data}"
-    investor_name = user_data['Name']
-    pan = user_data['Pan']
-    primary_email = user_data['Primary Email']
-    category = user_data['Category']
-    update_only = user_data['Update Only'] == "Yes"
-    # Ensure Update Only is not part of custom fields
-    custom_field_headers -= ["Update Only"]
-    force_different_name = user_data['Force Different Name'] == "Yes"
-    # Ensure Force Different Name is not part of custom fields
-    custom_field_headers -= ["Force Different Name"]
+    investor_name, pan, primary_email, category, update_only, force_different_name = get_data(user_data, custom_field_headers)
 
     investor = pan.present? ? Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first : nil
     investor ||= Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
@@ -61,6 +51,20 @@ class ImportInvestor < ImportUtil
     # Add the investor to the fund if a fund name is present
     add_to_fund(user_data, import_upload, investor)
     saved
+  end
+
+  def get_data(user_data, _custom_field_headers)
+    # puts "processing #{user_data}"
+    investor_name = user_data['Name']
+    pan = user_data['Pan']
+    primary_email = user_data['Primary Email']
+    category = user_data['Category']
+    update_only = user_data['Update Only'] == "Yes"
+    # Ensure Update Only is not part of custom fields
+    force_different_name = user_data['Force Different Name'] == "Yes"
+    # Ensure Force Different Name is not part of custom fields
+
+    [investor_name, pan, primary_email, category, update_only, force_different_name]
   end
 
   def add_to_fund(user_data, import_upload, investor)

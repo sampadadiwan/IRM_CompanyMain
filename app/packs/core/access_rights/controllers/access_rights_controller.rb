@@ -5,24 +5,27 @@ class AccessRightsController < ApplicationController
 
   # GET /access_rights or /access_rights.json
   def index
+    # Step 1: Apply policy scope and eager load associations
     @access_rights = policy_scope(AccessRight).includes(:investor, :user)
 
-    @access_rights = @access_rights.deals.where(owner_id: params[:deal_id]) if params[:deal_id].present?
+    # Step 2: Apply filters if specific deal or investor access is requested
+    @access_rights = filter_params(@access_rights.deals, :deal_id, :access_to_investor_id)
 
-    @access_rights = @access_rights.deals.where(access_to_investor_id: params[:access_to_investor_id]) if params[:access_to_investor_id].present?
-
-    # Note that if we are filtering by investor, we are not using the owner_id
-    # This is because in the investor we have to investor and for investor access rights
-    # This is required to make the investors/investor_details partial work for access_rights
+    # Step 3: Investor-specific logic
     if params[:investor_id].present?
+      # When filtering by investor, apply investor-specific scope
+      # This ensures the correct behavior in investor details partial
       investor = Investor.find(params[:investor_id])
       @access_rights = @access_rights.for_investor(investor)
     else
+      # Otherwise, include owner-level access rights
       @access_rights = with_owner_access(@access_rights)
     end
 
+    # Step 4: Include soft-deleted records if requested
     @access_rights = @access_rights.with_deleted if params[:with_deleted].present?
 
+    # Step 5: Apply pagination
     @access_rights = @access_rights.page(params[:page])
   end
 

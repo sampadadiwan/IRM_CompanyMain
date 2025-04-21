@@ -38,5 +38,15 @@ module PortfolioInvestmentCounters
     counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_quantity" : nil }, delta_column: 'quantity', column_names: {
       ["portfolio_investments.quantity > ?", 0] => 'bought_quantity'
     }
+
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "instrument_currency_fmv_cents" : nil }, delta_column: 'instrument_currency_fmv_cents', column_names: {
+      ["portfolio_investments.quantity > ?", 0] => 'instrument_currency_fmv_cents'
+    }
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "instrument_currency_cost_of_remaining_cents" : nil }, delta_column: 'instrument_currency_cost_of_remaining_cents', column_names: {
+      ["portfolio_investments.quantity > ?", 0] => 'instrument_currency_cost_of_remaining_cents'
+    }
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "instrument_currency_unrealized_gain_cents" : nil }, delta_column: 'instrument_currency_unrealized_gain_cents', column_names: {
+      ["portfolio_investments.quantity > ?", 0] => 'instrument_currency_unrealized_gain_cents'
+    }
   end
 end

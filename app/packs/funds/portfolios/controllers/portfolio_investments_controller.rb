@@ -2,24 +2,33 @@ class PortfolioInvestmentsController < ApplicationController
   before_action :set_portfolio_investment, only: %i[show edit update destroy]
 
   def fetch_rows
+    # Step 1: Start with base query using search (Ransack) and eager loading
     @portfolio_investments = ransack_with_snapshot
                              .joins(:investment_instrument)
                              .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
 
+    # Step 2: Filter by fund (snapshot-aware)
     if params[:fund_id].present?
       if params[:snapshot].present?
+        # If snapshot mode, use snapshot versions of the fund
         snapshot_fund_ids = Fund.with_snapshots.where(orignal_id: params[:fund_id]).pluck(:id)
         @portfolio_investments = @portfolio_investments.where(fund_id: snapshot_fund_ids)
       else
+        # Otherwise, use the original fund directly
         @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id])
       end
     end
 
-    @portfolio_investments = @portfolio_investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+    # Step 3: Apply additional filters based on optional parameters
+    @portfolio_investments = filter_params(
+      @portfolio_investments,
+      :portfolio_company_id,
+      :import_upload_id,
+      :investment_instrument_id,
+      :aggregate_portfolio_investment_id
+    )
 
-    @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @portfolio_investments = @portfolio_investments.where(investment_instrument_id: params[:investment_instrument_id]) if params[:investment_instrument_id].present?
-    @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
+    # Step 4: Perform any additional search refinements using custom logic
     @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, current_user, params)
   end
 

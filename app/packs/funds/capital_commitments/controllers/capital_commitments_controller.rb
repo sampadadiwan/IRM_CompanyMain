@@ -7,34 +7,47 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments or /capital_commitments.json
   def index
+    # Step 1: Apply Ransack search and policy scope
     @q = CapitalCommitment.ransack(params[:q])
+    @capital_commitments = policy_scope(@q.result)
+                           .includes(:entity, :fund, :investor_kyc, :investor)
 
-    @capital_commitments = policy_scope(@q.result).includes(:entity, :fund, :investor_kyc, :investor)
+    # Step 2: Special filter for DataTables search
+    @capital_commitments = @capital_commitments.where(id: search_ids) if params.dig(:search, :value).present?
 
-    @capital_commitments = @capital_commitments.where(id: search_ids) if params[:search] && params[:search][:value].present?
+    # Step 3: Standard filters using helper
+    @capital_commitments = filter_params(
+      @capital_commitments,
+      :fund_id,
+      :investor_id,
+      :import_upload_id,
+      :onboarding_completed
+    )
 
-    @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
-    @capital_commitments = @capital_commitments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
-    @capital_commitments = @capital_commitments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
-
+    # Step 4: Grouped DataFrame response (adhoc pivot or aggregation)
     template = "index"
     if params[:group_fields].present?
       @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
       template = params[:template].presence || "index"
+
+    # Step 5: Apply pagination unless 'all' records requested
     elsif params[:all].blank?
       @capital_commitments = @capital_commitments.page(params[:page])
       @capital_commitments = @capital_commitments.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
+    # Step 6: Final response formatting
     respond_to do |format|
-      format.html do
-        render template
-      end
+      format.html { render template }
       format.xlsx
       format.json do
-        render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) if params[:jbuilder].blank?
+        if params[:jbuilder].blank?
+          render json: CapitalCommitmentDatatable.new(
+            params,
+            capital_commitments: @capital_commitments
+          )
+        end
       end
     end
   end
