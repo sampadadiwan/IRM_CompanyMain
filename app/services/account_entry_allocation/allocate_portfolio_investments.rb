@@ -25,10 +25,11 @@ module AccountEntryAllocation
           # result = RubyProf.profile do
 
           ae = AccountEntry.new(
-            name: portfolio_investment.to_s,
+            name: fund_formula.name,
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
             fund: fund,
+            parent: portfolio_investment,
             reporting_date: end_date,
             period: "As of #{end_date}",
             generated: true,

@@ -111,7 +111,16 @@
             </div>
             
             <% 
-                fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4) 
+                
+                #fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4) 
+
+                # We preload fund_ratios to avoid N+1 queries, so we use filter here
+                fund_ratios = fund.fund_ratios
+                  .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"].include?(r.name) }
+                  .sort_by(&:id)
+                  .reverse
+                  .take(4)
+
             %>
             <% if fund_ratios.present? %>
             <div class="col-md-3">

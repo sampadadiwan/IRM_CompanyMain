@@ -50,3 +50,14 @@
         <%= l model.updated_at %>
     </td>
 </tr>
+
+<% if model.respond_to?(:snapshot_date) && model.snapshot_date.present? %>
+<tr class="">
+    <td>
+        Snapshot Date
+    </td>
+    <td>
+        <%= l model.snapshot_date %>
+    </td>
+</tr>
+<% end %>

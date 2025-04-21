@@ -1,0 +1,48 @@
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Capital Commitment</th>
+      <th style="min-width: 200px;">Parent</th>
+      <% @pivot.groups.each do |group| %>
+        <th colspan="<%= @pivot.dates_by_group[group].size %>"><%= group %></th>
+      <% end %>
+    </tr>
+    <tr>
+      <th></th>
+      <th></th>
+      <% @pivot.groups.each do |group| %>
+        <% @pivot.dates_by_group[group].each do |date| %>
+          <th><%= l(date, format: :short) %></th>
+        <% end %>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @pivot.rows.each do |commitment_name, capital_commitment_id, parent_name, parent_type, parent_id| %>
+      <tr>
+        <td>
+          <%= link_to commitment_name, 
+                capital_commitment_path(id: capital_commitment_id), 
+                target: "_blank" if commitment_name && capital_commitment_id %>
+        </td>
+
+        <td>
+          <%= link_to parent_name,  
+                "/#{parent_type.underscore.pluralize}/#{parent_id}", 
+                target: "_blank" if parent_type && parent_id %>
+        </td>
+        
+        <% @pivot.groups.each do |group| %>
+          <% @pivot.dates_by_group[group].each do |date| %>
+            <%
+              value = @pivot.structured_data[[commitment_name, capital_commitment_id, parent_name, parent_type, parent_id]].dig(group, date) 
+
+              value = number_with_precision(value.to_d, precision: 2, delimiter: ',') if value && value.is_a?(Money)
+            %>
+            <td><%= value || "-" %></td>
+          <% end %>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

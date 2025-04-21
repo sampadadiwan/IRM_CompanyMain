@@ -106,7 +106,14 @@ class ValuationsController < ApplicationController
       authorize(@initial_valuation)
       @final_valuation = Valuation.find(params[:final_valuation_id])
       authorize(@final_valuation)
-      @bridge = ValueBridgeService.new(@initial_valuation, @final_valuation).compute_bridge
+
+      # Get the value bridge fields from the entity setting if they exist
+      @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
+      @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
+
+      @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, @value_bridge_fields)
+      @bridge = @value_bridge_service.compute_bridge
+
       render "value_bridge"
     elsif params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])

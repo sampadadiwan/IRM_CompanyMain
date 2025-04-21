@@ -269,12 +269,13 @@ Given('Given I upload an investors file large for the fund') do
 end
 
 Given('Given I upload an investors file for the company') do
+  @import_file = "investors.xlsx"
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
   #sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(2)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
@@ -294,7 +295,8 @@ Then('There should be {string} investors created') do |count|
 end
 
 Then('the investors must have the data in the sheet') do
-  file = File.open('./public/sample_uploads/investors.xlsx', "r")
+  puts "Checking import of #{@import_file}"
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
@@ -305,7 +307,7 @@ Then('the investors must have the data in the sheet') do
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     inv = investors[idx-1]
-    puts "Checking import of #{inv.investor_name}"
+    puts "Checking import of #{user_data}"
     inv.investor_name.should == user_data["Name"].strip
     inv.tag_list.should == user_data["Tags"]
     inv.category.should == user_data["Category"]
@@ -318,7 +320,8 @@ end
 
 Given('Given I upload an investors file for the fund') do
   type = "Investor"
-  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/fund_investors.xlsx")))
+  @import_file = "fund_investors.xlsx"
+  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{@import_file}")))
   ImportUploadJob.perform_now(iu.id)
   iu.reload
   iu.failed_row_count.should == 0

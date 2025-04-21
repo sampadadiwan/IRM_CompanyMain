@@ -1,0 +1,44 @@
+<% fund ||= nil %>
+<% valuation ||= nil %>
+<% import_upload_id ||= nil %>
+<% data_source ||= fund_ratios_path(q: params[:q]&.to_unsafe_h, fund_id: fund&.id, import_upload_id: import_upload_id, format: :json, all: true) %>
+<% lazy_load_data ||= false %>
+
+<%= render "fund_ratios/index_header", fund: , valuation: , import_upload_id: , data_source: %>
+
+<div class="table-responsive" data-controller="fund-ratios"
+      data-fund-ratios-lazy-load-data-value=<%= lazy_load_data %>
+      data-fund-ratios-table-name-value="#fund_ratios">
+
+  <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->fund-ratios#loadData"><span>Load Data</span></a>
+  <% end %>
+
+  <table id="fund_ratios" class="table table-bordered dataTable"
+          data-source="<%= data_source %>" style="width:100%" >
+
+    <thead>
+      <tr>
+        <input type="hidden" id="fund_ratios_show_columns" value="fund_name,name,display_value,end_date,dt_actions">
+        <th>
+            Fund
+        </th>
+        <th>
+          Name
+        </th>
+        <th>
+          Display Value
+        </th>
+        <th>
+          On
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+    </tbody>
+  </table>
+
+</div>

@@ -3,17 +3,30 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # GET /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def index
-    @q = AggregatePortfolioInvestment.ransack(params[:q])
-    @aggregate_portfolio_investments = policy_scope(@q.result)
-                                       .joins(:investment_instrument)
-                                       .includes(:fund, :portfolio_company, :investment_instrument)
-    @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @aggregate_portfolio_investments = ransack_with_snapshot.joins(:investment_instrument)
+                                                            .includes(:fund, :portfolio_company, :investment_instrument)
+
+    if params[:fund_id].present?
+      if params[:snapshot].present?
+        snapshot_fund_ids = Fund.with_snapshots.where(orignal_id: params[:fund_id]).pluck(:id)
+        @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: snapshot_fund_ids)
+      else
+        @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id])
+      end
+    end
+
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
+    @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
     @aggregate_portfolio_investments = AggregatePortfolioInvestmentSearch.perform(@aggregate_portfolio_investments, current_user, params)
-    if params[:all].blank?
+
+    if params[:time_series].present?
+      @fields = params[:fields].presence || %i[fmv quantity gain]
+      @time_series = AggregatePortfolioInvestmentTimeSeries.new(@aggregate_portfolio_investments, @fields).call
+    elsif params[:all].blank?
       @aggregate_portfolio_investments = @aggregate_portfolio_investments.page(params[:page])
       @aggregate_portfolio_investments = @aggregate_portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
     end
+
     @show_fund_name = params["show_fund_name"] || false
     respond_to do |format|
       format.html
@@ -86,7 +99,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_aggregate_portfolio_investment
-    @aggregate_portfolio_investment = AggregatePortfolioInvestment.find(params[:id])
+    @aggregate_portfolio_investment = AggregatePortfolioInvestment.with_snapshots.find(params[:id])
     authorize @aggregate_portfolio_investment
 
     api = @aggregate_portfolio_investment

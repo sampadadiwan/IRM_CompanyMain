@@ -1,4 +1,4 @@
-
+<%= render FormCard.new(title: "Kpi Report #{@kpi_report.portfolio_company} : #{l(@kpi_report.as_of)}") do %>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -106,3 +106,4 @@
 <div class="associated_entity">
   <%= render "/kpi_reports/details", kpi_report: @kpi_report %>
 </div>
+<% end %>

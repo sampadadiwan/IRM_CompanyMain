@@ -15,7 +15,7 @@ class ReportsController < ApplicationController
 
   # This is a special kind of report which has dynamic URL to allow params to be passed to a report
   def dynamic
-    @report_url = @report.url
+    @report_url = URI.decode_www_form_component(@report.url)
     params.each do |key, value|
       # Substitute the value in the URL
       @report_url = @report_url.sub("{#{key}}", value) if @report_url.include?("{#{key}}")
@@ -48,7 +48,9 @@ class ReportsController < ApplicationController
   end
 
   # GET /reports/1/edit
-  def edit; end
+  def edit
+    @report.decode_url
+  end
 
   # POST /reports or /reports.json
   def create
@@ -56,6 +58,8 @@ class ReportsController < ApplicationController
     @report.user = current_user
     @report.curr_role = current_user.curr_role
     @report.entity = current_user.entity
+    @report.decode_url
+
     authorize @report
 
     respond_to do |format|
@@ -112,6 +116,6 @@ class ReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def report_params
-    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role)
+    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role, :metadata)
   end
 end

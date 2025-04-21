@@ -539,3 +539,39 @@ Then('I should see the investment instrument details on the import page') do
     expect(page).to have_content(ii.portfolio_company.investor_name)
   end
 end
+
+Then('the aggregate portfolio investment should have a quantity of {string}') do |quantity|
+  @api = AggregatePortfolioInvestment.last
+  @api.quantity.should == quantity.to_i
+end
+
+Then('the total number of portfolio investments with snapshots should be {string}') do |count|
+  # Get all the snapshots of the fund
+  fund_ids = Fund.with_snapshots.where(orignal_id: @fund.id).pluck(:id)
+  # Get all the PIs including snapshots of the orignal fund
+  PortfolioInvestment.with_snapshots.where(fund_id: fund_ids).count.should == count.to_i
+end
+
+Given('I generate a portfolio as of report for {string}') do |string|
+  @fund ||= Fund.last
+  visit("/investors/portfolio_investments_report_all?fund_id=#{@fund.id}")
+  fill_in('as_of', with: Time.zone.parse(string))
+  click_on("Generate")
+  sleep(1)
+  expect(page).to have_content("Report generation started, please check back in a few mins")
+end
+
+Then('the portfolio as of report should be generated for the date {string} with expected data') do |string|
+  @report = Document.last
+  file = @report.file.download
+  data = Roo::Spreadsheet.open(file.path)
+  result_excel = Roo::Spreadsheet.open("./public/result_portfolio_as_of_report_#{string.gsub('/','')}.xlsx")
+
+  data.sheets.each do |sheet|
+    worksheet = data.sheet(sheet)
+
+    worksheet.each_with_index do |row, idx|
+      expect(row).to eq(result_excel.sheet(sheet).row(idx+1))
+    end
+  end
+end

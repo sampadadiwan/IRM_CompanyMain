@@ -1,27 +1,20 @@
 class Fund < ApplicationRecord
-  acts_as_favoritable
-  include ForInvestor
-  include InvestorsGrantedAccess
   include WithFolder
+  include WithSnapshot
   include WithDataRoom
-  include WithCustomField
+  include InvestorsGrantedAccess
   include Trackable.new
   include WithApprovals
   include WithExchangeRate
-  include WithFriendlyId
   include WithIncomingEmail
+  acts_as_favoritable
+  include ForInvestor
+  include WithCustomField
+  include RansackerAmounts.new(fields: %w[collected_amount committed_amount call_amount distribution_amount])
 
   update_index('fund') do
     self if index_record?
   end
-
-  self.ignored_columns += %w[rvpi dpi tvpi moic xirr trustee_name manager_name registration_number contact_name contact_email sponsor_name sub_category]
-
-  CATEGORIES = ["Category I", "Category II", "Category III"].freeze
-  REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
-
-  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
-  scope :master_funds, -> { where(master_fund_id: nil) }
 
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
@@ -31,6 +24,9 @@ class Fund < ApplicationRecord
   belongs_to :master_fund, class_name: "Fund", optional: true
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
+
+  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
+  scope :master_funds, -> { where(master_fund_id: nil) }
 
   has_many :fund_ratios, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
@@ -66,6 +62,18 @@ class Fund < ApplicationRecord
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
+  validates :name, :currency, presence: true
+  normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
+  # Unique name for the fund, unless its a snapshot
+  validates :name, uniqueness: { scope: :entity_id }, if: -> { !snapshot? }
+
+  validates :commitment_doc_list, length: { maximum: 100 }
+  validates :name, :tag_list, :unit_types, length: { maximum: 255 }
+  validates :category, length: { maximum: 15 }
+
+  CATEGORIES = ["Category I", "Category II", "Category III"].freeze
+  REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
+
   monetize  :tracking_committed_amount_cents, :tracking_call_amount_cents,
             :tracking_collected_amount_cents, :tracking_distribution_amount_cents,
             with_currency: ->(f) { f.tracking_currency.presence || f.currency }
@@ -74,40 +82,20 @@ class Fund < ApplicationRecord
            :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
            with_currency: ->(f) { f.currency }
 
-  validates :name, :currency, presence: true
-  normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-  validates_uniqueness_of :name, scope: :entity_id
-
-  validates :commitment_doc_list, length: { maximum: 100 }
-  validates :name, :tag_list, :unit_types, length: { maximum: 255 }
-  validates :category, length: { maximum: 15 }
+  def pending_call_amount
+    call_amount - collected_amount
+  end
 
   def has_tracking_currency?
     tracking_currency.present? && tracking_currency != currency
   end
 
-  def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
-    FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
-  end
-
-  def pending_call_amount
-    call_amount - collected_amount
-  end
-
-  def folder_path
-    "/Funds/#{name.delete('/')}"
-  end
-
-  def folder_type
-    :regular
-  end
-
-  def investors
-    Investor.owner_access_rights(self, nil)
+  def unit_types_list
+    unit_types&.split(",")&.map(&:strip)
   end
 
   def to_s
-    name
+    snapshot ? "#{name} [Snapshot: #{snapshot_date}]" : name
   end
 
   def get_lps_emails
@@ -125,6 +113,30 @@ class Fund < ApplicationRecord
 
   def fund_signatories
     esign_emails&.split(",")&.map(&:strip)
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[call_amount capital_commitments_count category collected_amount committed_amount currency distribution_amount first_close_date last_close_date name start_date tag_list unit_types snapshot_date snapshot].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
+  def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
+    FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
+  end
+
+  def folder_path
+    "/Funds/#{name.delete('/')}"
+  end
+
+  def folder_type
+    :regular
+  end
+
+  def investors
+    Investor.owner_access_rights(self, nil)
   end
 
   def current_fund_ratios(valuation = nil)
@@ -161,14 +173,6 @@ class Fund < ApplicationRecord
     ccs_wihout_ar
   end
 
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[name]
-  end
-
-  def default_currency_units
-    currency == "INR" ? "Crores" : "Million"
-  end
-
   def update_latest_fund_ratios(end_date)
     last_fund_ratio = fund_ratios.order(end_date: :desc).first
     # Only update the latest flag if the end_date is the latest
@@ -180,10 +184,6 @@ class Fund < ApplicationRecord
 
   def reports_folder
     get_or_create_folder("Fund Reports")
-  end
-
-  def unit_types_list
-    unit_types&.split(",")&.map(&:strip)
   end
 
   # This method is called when an approval responses are created

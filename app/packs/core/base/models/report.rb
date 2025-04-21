@@ -2,7 +2,7 @@ class Report < ApplicationRecord
   belongs_to :entity, optional: true
   belongs_to :user
   has_many :grid_view_preferences, as: :owner, dependent: :destroy
-  before_commit :add_report_id_to_url, on: :create
+  before_commit :add_report_id_to_url
   before_create :set_model
 
   validates :name, :curr_role, presence: true
@@ -34,6 +34,13 @@ class Report < ApplicationRecord
     save!
   end
 
+  def decode_url
+    uri = URI.parse(url)
+    decoded_url = uri.path if uri.path
+    decoded_url += "?#{CGI.unescape(uri.query)}" if uri.query.present?
+    self.url = decoded_url
+  end
+
   def set_model
     path = ActiveSupport::HashWithIndifferentAccess.new(Report.reports_for)[category]
     return unless path
@@ -49,5 +56,11 @@ class Report < ApplicationRecord
 
   def to_s
     name
+  end
+
+  def is_dynamic?
+    uri = URI.parse(url)
+    decoded_url = "?#{CGI.unescape(uri.query)}" if uri.query.present?
+    decoded_url.include?("{") && decoded_url.include?("}")
   end
 end

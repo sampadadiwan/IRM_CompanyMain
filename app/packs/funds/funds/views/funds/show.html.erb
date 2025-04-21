@@ -18,6 +18,9 @@ commands = [
   <%= render "funds/show", fund: @fund %>
 <% end %>
 
+<!-- Snapshot cannot have details -->
+<% unless @fund.snapshot %>
+
   <div>
     <% if policy(@fund).update? %>
 
@@ -267,3 +270,5 @@ commands = [
   </div>
 
   <%= render "/funds/fund_details", fund: @fund %>
+
+<% end %>

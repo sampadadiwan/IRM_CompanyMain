@@ -2,7 +2,7 @@ class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable.new
 
-  TYPES = %w[AllocateMasterFundAccountEntry AllocateAccountEntry-Name AllocateAccountEntry-EntryType AllocatePortfolio AllocatePortfolioInvestment GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage].sort.freeze
+  TYPES = %w[AllocateMasterFundAccountEntry AllocateAccountEntry-Name AllocateAccountEntry-EntryType AllocatePortfolio AllocatePortfolioInvestment GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund].sort.freeze
 
   belongs_to :fund, optional: true, touch: true
   belongs_to :entity, optional: true
@@ -15,9 +15,8 @@ class FundFormula < ApplicationRecord
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }
 
-  validates :entry_type, length: { maximum: 50 }
+  validates :rule_type, :entry_type, length: { maximum: 50 }
   validates :name, length: { maximum: 125 }
-  validates :rule_type, length: { maximum: 30 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
 

@@ -26,6 +26,10 @@ Sidekiq.configure_server do |config|
     # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
 
+    # Snapshot the funds at the end of every quarter March, June, September and December
+    Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 31 3,12 *', class: 'FundSnapshotJob')
+    Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
+
     if Rails.env.production?
       # Check the health of the replication
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')

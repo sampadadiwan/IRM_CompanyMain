@@ -46,13 +46,12 @@ module AccountEntryAllocation
       bulk_records   = ctx[:bulk_insert_records] || []
 
       account_entry.capital_commitment = capital_commitment
-      account_entry.folio_id = capital_commitment.folio_id
+      account_entry.folio_id = capital_commitment&.folio_id
 
       account_entry.parent          = parent
       account_entry.generated       = true
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
-
       account_entry.amount_cents = safe_eval(formula, bdg)
       # Explanation data
       account_entry.explanation = []
@@ -69,7 +68,7 @@ module AccountEntryAllocation
       ae_attributes[:updated_at] = Time.zone.now
       bulk_records << ae_attributes
 
-      commitment_cache.add_to_computed_fields_cache(capital_commitment, account_entry)
+      commitment_cache.add_to_computed_fields_cache(capital_commitment, account_entry) if capital_commitment
       # ctx[:instance_variables][@variable_name] = account_entry.amount_cents
 
       ctx[:bulk_insert_records] = bulk_records

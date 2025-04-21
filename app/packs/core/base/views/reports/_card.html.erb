@@ -2,7 +2,13 @@
 <div class="col-md-3 single-note-item all-category <%= type %>">
   <div class="card card-body">
     <span class="side-stick"></span>
-    <h6 class="note-title text-truncate w-75 mb-0"> <%= link_to report.name, report.url, class: "fw-bolder" %> </h6>
+    <h6 class="note-title text-truncate w-75 mb-0"> 
+      <% if report.is_dynamic? %>
+        <%= report.name %>
+      <% else %>
+        <%= link_to report.name, report.url, class: "fw-bolder" %> 
+      <% end %>
+    </h6>
     <p class="note-date fs-2">
         <%= l report.updated_at %> 
     </p>

@@ -20,6 +20,12 @@ class FundRatiosController < ApplicationController
     @fund_ratios = @fund_ratios.where(scenario: params[:scenario]) if params[:scenario].present?
     @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
+
+    if params[:pivot].present?
+      group_by_period = params[:group_by_period] || :quarter
+      @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
+    end
+
     respond_to do |format|
       format.html
       format.turbo_stream

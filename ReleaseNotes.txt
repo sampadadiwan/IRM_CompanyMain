@@ -1,3 +1,66 @@
+V9.0.22
+#####################################
+9ebb95f3d Added dynamic reports to fund_reports widget
+d665ec0ed Added value_bridge_instruments custom field to configure instruments to be used in VB widget
+545fd0331 Better formatting for the pivot
+1550b3c2e Added better url decode to Report
+12af01549 Added DEFAULT_FEILDS to GeneratePortfolioNumbersForFund
+1732d44f4 Changed AllocationRun locked to default false
+311170c88 Added I18 to AccountEntry
+a03f149e1 Added migrations for old AE parent_name and commitment_name
+be87d2789 Fix API as of quantity, cost of remaining and add transfer quantity to pi tab
+642fefd0d Added better instrument names to VB widget
+4693d5cad Changed AllocatePortfolioInvestments to now use fund_formula.name and entry_type
+266710d2f Added cost of remaining to pi
+ef5485663 Added cost_of_remaining to PortfolioCompanyCalc
+62a27f448 Better support for Captable widget
+773e06619 Added GeneratePortfolioNumbersForFund fund formula
+49376aa26 Added additional cols to cache names in AccountEntry
+f044bec62 Fix fmv and gain for sell PI
+e54c8e9bb Fix sold and transfer qty in PI as of, add Instrument curr to show page
+018478dc5 Add base amount and currency to API,PI download
+acc166a5b Fix PI fmv cents on date assignment
+ad3aec9fe Updated downloaded excel files for PIs APIs and API as of report, minor n+1 fix
+
+V9.0.21
+#####################################
+c83e6853 Added better offer test
+79e1e1185 Fixed bug in the api charts
+6ed91aee7 Fixes to portfolio charts
+6728322de Added Time Series for API
+4dbb1956e Added better FormCard to KpiReport
+83a6f774c Added Time Series btn to API index
+26917c728 Better support for filtering by snapshot_date
+dcc5eba78 Added bullet gem to test
+6be975a2b Better check for strong params for user permissons and roles updates
+5698c820a Removed n+1 queries for dashboard
+6ea279100 Added snapshots to the same tables
+f32ae439d Added better support for account entries time series
+
+V9.0.20
+#####################################
+0c24a0fec Added snapshot date to show if present
+cd8936999 Fixed pagination in PI snapshots
+8c581f3be Added sidekiq cron to generate fund snapshots
+aa193077a Added hack for fx_rate dependent on valuation_date
+a0861cdee Allows for model_snapshot_ransack to join for non snapshot models
+e4d7a93de Added better API snapshots view
+bbc5e6acf Added better PI snapshots view
+4f18b4dfa Added better support for SnapshotPolicy
+ee74e7b51 Added funds snapshots filter
+81c166fe9 Started adding ability to view snapshots
+57e9f0872 Fixed ValueBridgeService to enable custom fields from entity setting
+49f6ce70d Added ability to inject value_bridge_fields from entity settings
+7148f2f40 Added garish colors to the VB
+89b889722 Added better PI ag grid to include FundName
+4142a86a2 Added condensed view for fund ratios
+0ca16406a (origin/valuation-fix) Valuation form now reflects actual value and doesnt round it
+e89e84929 Better scopes added to DashboardWidget
+f9d4fbe31 Added metatdata_help for dashboard widgets
+f7256f782 Added better valuation update of decimals
+bd44c96b4 Added value bridge widget for portfolio company dashboard
+b9b0a35de Added better tests for kpi parse_date
+
 V9.0.19
 #####################################
 c99f9c1b3 Now allows select standard fields to be used in condition_on for form custom fields

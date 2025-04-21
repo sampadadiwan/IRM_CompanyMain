@@ -1,6 +1,7 @@
-<%= render ToggleCard.new(title: "Charts", css_class: "show_investment_charts", state: "") do %>
+<%= render ToggleCard.new(title: "Captable Charts", css_class: "show_investment_charts", state: "show") do %>
 <div class="row">
-    <div class="col-md-6">
+    <% if params[:amount_by_funding_round].blank? || params[:amount_by_funding_round] == "true" %>
+    <div class="col">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Amount By Funding Round</h5>
@@ -10,8 +11,10 @@
             </div>
         </div>
     </div>
+    <% end %>
 
-    <div class="col-md-6">
+    <% if params[:diluted_share_holdings].blank? || params[:diluted_share_holdings] == "true" %>
+    <div class="col">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Diluted Share Holdings</h5>
@@ -21,9 +24,10 @@
             </div>
         </div>
     </div>
+    <% end %>
 
-
-    <div class="col-md-12">
+    <% if params[:amount_by_investor].blank? || params[:amount_by_investor] == "true" %>
+    <div class="col">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Amount By Investor</h5>
@@ -33,7 +37,9 @@
             </div>
         </div>
     </div>
+    <% end %>
 
+    <% if params[:self_by_funding_round].blank? || params[:self_by_funding_round] == "true" %>
     <div class="col">
         <div class="card">
             <div class="card-header">
@@ -44,6 +50,7 @@
             </div>
         </div>
     </div>
+    <% end %>
 
 </div>
 <% end %>

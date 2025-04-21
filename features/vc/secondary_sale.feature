@@ -72,7 +72,7 @@ Scenario Outline: Express Interest
   Given my firm is an investor in the company
   And the investor has "Buyer" access rights to the sale
   And I should see the sale details on the details page
-  Given there are "approved" offers for the sale
+  Given there are "approved" offer "" for each investor
   Then I should be able to create an interest in the sale
   Then I should see the interest details
 

@@ -1,7 +1,7 @@
 <%
   fund ||= Fund.find_by(id: params[:fund_id])
   fund_id ||= params[:fund_id] || fund&.id
-  title ||= "Capital Commitments"
+  title ||= params[:title] || "Capital Commitments"
   import_upload_id ||= params[:import_upload_id]
 
   data_source ||= capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:, format: :json, all: true)

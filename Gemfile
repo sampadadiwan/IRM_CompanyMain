@@ -162,6 +162,7 @@ group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
 
+  gem 'bullet'
   gem 'htmlbeautifier'
   gem 'parallel_tests'
   gem 'pry-byebug'
@@ -181,7 +182,6 @@ group :development do
   # gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
-  gem 'bullet'
   gem "letter_opener", group: :development
   gem 'overcommit', require: false
   gem "web-console"

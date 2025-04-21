@@ -1,4 +1,12 @@
-# app/concepts/account_entry_allocation/engine.rb
+# Each Folio within an AIF can have AccountEntries, which are calculated.
+# The logic for these calculations comes from FundFormulas — each of which contains a snippet of code (probably stored as a string or block) that’s evaluated dynamically.
+# There is a FundFormulaEngine, which:
+## Iterates over each Folio.
+## Fetches the relevant data for that folio from the database.
+## Evals the FundFormula code using that data.
+## Produces an amount.
+## Creates an AccountEntry for the folio using this calculated amount.
+# So essentially: Dynamic calculation logic (via FundFormulas) + Per-folio context → AccountEntry
 
 module AccountEntryAllocation
   # This class can serve as a simple "facade" or orchestrator to run

@@ -7,24 +7,24 @@ module AggregatePortfolioInvestmentsHelper
   end
 
   def investment_bought_by_company(fund)
-    portfolio_investments = fund.portfolio_investments.where(quantity: 0..).includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
+    portfolio_investments = fund.portfolio_investments.buys.where(quantity: 0..).includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
     grouped = portfolio_investments.map { |name, amount_cents| [name, amount_cents / 100] }
 
     pie_chart_with_options grouped
   end
 
   def investment_sold_by_company(fund)
-    portfolio_investments = fund.portfolio_investments.where(amount_cents: ..0).includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
+    portfolio_investments = fund.portfolio_investments.sells.includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
     grouped = portfolio_investments.map { |name, amount_cents| [name, amount_cents / 100] }
 
     pie_chart_with_options grouped
   end
 
   def investment_holding_cost_by_company(fund)
-    portfolio_investments = fund.portfolio_investments.group_by(&:portfolio_company_name)
+    portfolio_investments = fund.portfolio_investments.buys.group_by(&:portfolio_company_name)
 
     grouped = portfolio_investments.transform_values do |pis|
-      pis.sum { |pi| pi.quantity * pi.cost.to_d }
+      pis.sum { |pi| pi.net_quantity * pi.cost.to_d }
     end
 
     pie_chart_with_options grouped

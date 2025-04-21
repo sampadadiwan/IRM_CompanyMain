@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_18_142348) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -66,6 +66,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.integer "allocation_run_id"
+    t.string "parent_name"
+    t.string "commitment_name"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
@@ -185,6 +187,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.boolean "show_portfolio", default: false
     t.decimal "portfolio_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -242,7 +247,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.boolean "run_allocations", default: true
     t.text "status"
     t.string "tag_list"
-    t.boolean "locked"
+    t.boolean "locked", default: false
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
@@ -1221,6 +1226,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.string "domain"
     t.string "mailbox", limit: 30
     t.integer "notification_retention_months", default: 2
+    t.string "value_bridge_cols"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
@@ -1440,7 +1446,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sequence", default: 0
-    t.string "rule_type", limit: 30
+    t.string "rule_type", limit: 50
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: false
@@ -1656,30 +1662,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
     t.string "commitment_doc_list", limit: 100
-    t.decimal "rvpi", precision: 10, scale: 6, default: "0.0"
-    t.decimal "dpi", precision: 10, scale: 6, default: "0.0"
-    t.decimal "tvpi", precision: 10, scale: 6, default: "0.0"
-    t.decimal "xirr", precision: 10, scale: 6, default: "0.0"
-    t.decimal "moic", precision: 10, scale: 6, default: "0.0"
     t.datetime "deleted_at"
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
     t.string "unit_types"
     t.string "units_allocation_engine", limit: 50
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "co_invest_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "editable_formulas", default: false
-    t.string "registration_number", limit: 20
     t.string "category", limit: 15
-    t.string "sub_category", limit: 40
-    t.string "sponsor_name", limit: 100
-    t.string "manager_name", limit: 100
-    t.string "trustee_name", limit: 100
-    t.string "contact_name", limit: 100
-    t.string "contact_email", limit: 100
     t.date "start_date"
     t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
@@ -1691,7 +1681,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.bigint "import_upload_id"
     t.date "first_close_date"
     t.date "last_close_date"
-    t.string "slug"
     t.bigint "master_fund_id"
     t.string "tracking_currency", limit: 3
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
@@ -1699,6 +1688,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1708,7 +1700,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
     t.index ["master_fund_id"], name: "index_funds_on_master_fund_id"
-    t.index ["slug"], name: "index_funds_on_slug", unique: true
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
@@ -2538,6 +2529,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
     t.decimal "capital_expense_cents", precision: 20, scale: 2
+    t.date "snapshot_date"
+    t.boolean "snapshot", default: false
+    t.bigint "orignal_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["conversion_date"], name: "index_portfolio_investments_on_conversion_date"
@@ -2655,6 +2649,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_10_040220) do
     t.string "tag_list"
     t.string "curr_role", limit: 10, default: "employee"
     t.string "model"
+    t.text "metadata"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end

@@ -175,8 +175,17 @@ class UsersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def user_params
-    params.require(:user).permit(:first_name, :last_name, :email,
-                                 :phone, :whatsapp_enabled, :signature, :call_code,
-                                 :dept, :sale_notification, :enable_support, role_name: [], permissions: [], extended_permissions: [], properties: {})
+    if current_user.has_cached_role?(:company_admin)
+      # Allow the user to change the role and permissions
+      params.require(:user).permit(:first_name, :last_name, :email,
+                                   :phone, :whatsapp_enabled, :signature, :call_code,
+                                   :dept, :sale_notification, :enable_support, role_name: [], permissions: [], extended_permissions: [], properties: {})
+
+    else
+      # Do not allow the user to change the role or permissions
+      params.require(:user).permit(:first_name, :last_name, :email,
+                                   :phone, :whatsapp_enabled, :signature, :call_code,
+                                   :dept, :sale_notification, :enable_support, properties: {})
+    end
   end
 end

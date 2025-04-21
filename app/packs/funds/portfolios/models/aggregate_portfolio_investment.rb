@@ -1,30 +1,33 @@
 class AggregatePortfolioInvestment < ApplicationRecord
   update_index('aggregate_portfolio_investment') { self if index_record?(AggregatePortfolioInvestmentIndex) }
-
-  include ForInvestor
+  # This has all the utility methods required for snashots
+  include WithSnapshot
   include WithFolder
   include Trackable.new
+  include ForInvestor
   include WithCustomField
-  include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
   include WithDocQuestions
+  include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
 
   belongs_to :entity, touch: true
-  belongs_to :fund
+  belongs_to :fund, -> { with_snapshots }
+
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
+
+  monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
+
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
 
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
-  monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents, :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, with_currency: ->(i) { i.fund.currency }
+  validates :portfolio_company_name, length: { maximum: 100 }
+  validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMN_NAMES = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
-
-  validates :portfolio_company_name, length: { maximum: 100 }
-  validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMNS = {
     "Portfolio Company" => "portfolio_company_name",
@@ -67,7 +70,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
     pis_before_end_date = portfolio_investments.before(end_date)
 
     api.portfolio_investments = pis_before_end_date
-    api.quantity = pis_before_end_date.sum(:quantity)
 
     api.bought_quantity = pis_before_end_date.buys.sum(:quantity)
     api.bought_amount_cents = pis_before_end_date.buys.sum(:amount_cents)
@@ -83,12 +85,15 @@ class AggregatePortfolioInvestment < ApplicationRecord
     # Get the StockConversions where the from_portfolio_investment_id is in pis_before_end_date
     transfer_quantity = fund.stock_conversions.where(from_portfolio_investment_id: pis_before_end_date.pluck(:id), conversion_date: ..end_date).sum(:from_quantity)
     api.transfer_quantity = transfer_quantity
+    api.transfer_amount_cents = pis_before_end_date.buys.sum(:transfer_amount_cents)
+
+    api.quantity = pis_before_end_date.sum(:quantity) - transfer_quantity
 
     api.cost_of_sold_cents = pis_before_end_date.sells.sum(:cost_of_sold_cents)
-    # Note cost_of_sold_cents is -ive, so we need to add it to the bought_amount_cents
-    api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents
+    # Note cost_of_sold_cents and transfer_amount is -ive, so we need to add it to the bought_amount_cents
+    api.cost_of_remaining_cents = api.bought_amount_cents + api.cost_of_sold_cents + api.transfer_amount_cents
     api.unrealized_gain_cents = api.fmv_cents - api.cost_of_remaining_cents
-    api.gain_cents = api.sold_amount_cents - api.cost_of_sold_cents
+    api.gain_cents = api.sold_amount_cents + api.cost_of_sold_cents
     net_bought_quantity = net_quantity_on(end_date, only_buys: true)
     api.net_bought_amount_cents = net_bought_quantity * api.avg_cost_cents
 

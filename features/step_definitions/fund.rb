@@ -2240,7 +2240,9 @@ end
 
 
 Given('Given import file {string} for {string}') do |file, type|
-  iu = ImportUpload.create!(entity: @fund.entity, owner: @fund, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  @import_file = file
+  owner = @fund || @entity
+  iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
   ImportUploadJob.perform_now(iu.id)
   iu.reload
   iu.failed_row_count.should == 0
@@ -2335,5 +2337,35 @@ Then('the fund formulas must have the data in the sheet') do
     ff.tag_list.should == user_data["Tag List"].split(",").map(&:strip)
     ff.rule_type.should == user_data["Rule Type"]
     ff.formula.should == user_data["Formula"]
+  end
+end
+
+Given ('the fund snapshot is created') do
+  # Need to ensure that the fund has the entity permission to enable snapshots
+  es = @fund.entity
+  es.permissions.set(:enable_snapshots)
+  es.save
+  # Create the fund snapshot
+  FundSnapshotJob.perform_now(fund_id: @fund.id)
+  puts "Checking fund snapshot for #{@fund.id}"
+  Fund.with_snapshots.where(orignal_id: @fund.id).count.should == 2
+  fs = Fund.with_snapshots.where(orignal_id: @fund.id, snapshot: true).first
+  fs.should_not == nil
+  fs.snapshot_date.should == Time.zone.today
+  
+  @fund.aggregate_portfolio_investments.each do |api|
+    AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id).count.should == 2
+    puts "Checking aggregate portfolio investment snapshot for #{api.id}"
+    api_s = AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id, snapshot: true).first
+    api_s.should_not == nil
+    api_s.snapshot_date.should == Time.zone.today
+
+    api.portfolio_investments.each do |pi|
+      PortfolioInvestment.with_snapshots.where(orignal_id: pi.id).count.should == 2
+      puts "Checking portfolio investment snapshot for #{pi.id}"
+      pi_s = PortfolioInvestment.with_snapshots.where(orignal_id: pi.id, snapshot: true).first
+      pi_s.should_not == nil
+      pi_s.snapshot_date.should == Time.zone.today
+    end    
   end
 end

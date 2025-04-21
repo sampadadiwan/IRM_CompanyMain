@@ -32,31 +32,77 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
   end
 
-  # GET /account_entries or /account_entries.json
-  def index
-    authorize AccountEntry
+  def check_time_series_params
+    @time_series_error = []
 
+    if params[:fund_id].blank?
+      params[:fund_id] = current_user.entity.funds.first&.id
+      @time_series_error << "Please select a fund."
+    end
+    # Ensure that folio_id is not nil in the ransack params
+    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('folio_id') }
+      # Add a condition to the ransack query where folio_id is XYX
+      params[:q] ||= {}
+      params[:q][:folio_id_eq] = "Please Enter Folio ID"
+      # Redirect to the current path with notice
+      @time_series_error << "Please select a folio."
+    end
+
+    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('reporting_date') }
+      # Add a condition to the ransack query where folio_id is XYX
+      params[:q] ||= {}
+      params[:q][:reporting_date] = Time.zone.today
+      # Redirect to the current path with notice
+      @time_series_error << "Please select a reporting date."
+    end
+
+    @time_series_error.join(" ") if @time_series_error.present?
+  end
+
+  def fetch_rows
     @q = AccountEntry.ransack(params[:q])
-
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
     filter_index(params)
 
     if params[:group_fields].present?
+      # Create a data frame to group the data
       @data_frame = AccountEntryDf.new.df(@account_entries, current_user, params)
       @adhoc_json = @data_frame.to_a.to_json
-      template = params[:template].presence || "index"
+      @template = params[:template].presence || "index"
+    elsif params[:time_series].present?
+      # Create a time series view
+      error = check_time_series_params
+      if error
+        # Redirect to the referrer with an error message
+        redirect_url = request.referer || account_entries_path(params: params.to_unsafe_h)
+        redirect_to redirect_url, alert: error
+        return
+      end
+      @time_series = AccountEntryTimeSeries.new(@account_entries).call
+    elsif params[:pivot].present?
+      # Create a pivot table
+      group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
+      @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param).call
     else
+      # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
       @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
-      template = "index"
+      @template = "index"
     end
+  end
+
+  # GET /account_entries or /account_entries.json
+  def index
+    authorize AccountEntry
+
+    fetch_rows
 
     # Set the breadcrumbs
     fund_bread_crumbs("Account Entries")
 
     respond_to do |format|
       format.html do
-        render template
+        render @template
       end
       format.xlsx do
         template = params[:template].presence || "index"

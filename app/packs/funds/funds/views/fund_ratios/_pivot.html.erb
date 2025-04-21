@@ -1,0 +1,35 @@
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Fund</th>
+      <th>Owner</th>
+      <% @pivot.periods.each do |period| %>
+        <th colspan="<%= @pivot.names_by_period[period].size %>"><%= period %></th>
+      <% end %>
+    </tr>
+    <tr>
+      <th></th>
+      <th></th>
+      <% @pivot.periods.each do |period| %>
+        <% @pivot.names_by_period[period].each do |name| %>
+          <th><%= name %></th>
+        <% end %>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @pivot.funds.each do |fund| %>
+      <% @pivot.owners_by_fund[fund].each do |owner| %>
+        <tr>
+          <td><%= link_to fund.name, fund_path(fund), target: "_blank" %></td>
+          <td><%= owner %></td>
+          <% @pivot.periods.each do |period| %>
+            <% @pivot.names_by_period[period].each do |name| %>
+              <td><%= @pivot.structured_data.dig(fund, owner, period, name) || "-" %></td>
+            <% end %>
+          <% end %>
+        </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+</table>

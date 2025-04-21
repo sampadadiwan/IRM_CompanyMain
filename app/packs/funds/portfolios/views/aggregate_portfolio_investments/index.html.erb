@@ -1,7 +1,13 @@
-<%= render "/layouts/filter", associations: [:investment_instrument] %>
+<%= render "/layouts/filter", associations: [:investment_instrument], hidden_fields: {time_series: params[:time_series], snapshot: params[:snapshot]} %>
 
 <%= render ReportingComponent.new do %>
     <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top" do %>
-        <%= render "/aggregate_portfolio_investments/index", aggregate_portfolio_investments: @aggregate_portfolio_investments , show_fund_name: @show_fund_name%>
+        <% if params[:time_series].present? %>
+            <%= render "/aggregate_portfolio_investments/time_series" %>
+        <% else %>
+            <%= render "/aggregate_portfolio_investments/index", 
+                aggregate_portfolio_investments: @aggregate_portfolio_investments , 
+                show_fund_name: @show_fund_name%>
+        <% end %>
     <% end %>
 <% end %>

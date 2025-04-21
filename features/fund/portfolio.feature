@@ -25,7 +25,10 @@ Scenario Outline: Create new PI and aggregate PI
   Given there is a fund "<fund>" for the entity
   Given there are "3" portfolio investments "quantity=200"
   Given there are "3" portfolio investments "quantity=-100"
+  Given the fund snapshot is created
+  Then the total number of portfolio investments with snapshots should be "12"
   Then an aggregate portfolio investment should be created
+  And the aggregate portfolio investment should have a quantity of "300"
   Then I should see the aggregate portfolio investment details on the details page
 
   Examples:
@@ -157,3 +160,18 @@ Scenario Outline: Stock Conversion
     |conversion                                     | from_instrument | to_instrument |
     |from_quantity=1000;to_quantity=2000;notes=Test  | name=Stock;investment_domicile=Domestic      | name=CCPS;investment_domicile=Domestic     |
     |from_quantity=2000;to_quantity=50000;notes=Test  | name=Stock;investment_domicile=Domestic;currency=INR| name=Debt;investment_domicile=Domestic ;currency=USD    |
+
+Scenario Outline: Aggregate Portfolio Investment As Of report
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  Given there is an existing portfolio company "name=Apple;primary_email=tc@apple.com;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "name=Stock;investment_domicile=Domestic;currency=INR"
+  Given there is a valuation "per_share_value_cents=10000;valuation_date=01/01/2022" for the portfolio company
+  And Given I upload "portfolio_investments_for_as_of_report.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "5" portfolio investments created
+  Given I generate a portfolio as of report for "03/02/2024"
+  Then the portfolio as of report should be generated for the date "03/02/2024" with expected data
+  Given I generate a portfolio as of report for "04/03/2024"
+  Then the portfolio as of report should be generated for the date "04/03/2024" with expected data
