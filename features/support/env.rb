@@ -86,6 +86,7 @@ end
 
 Capybara.server_host = "localhost"
 Capybara.app_host = "http://localhost:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
+Capybara.default_max_wait_time = 10 # or more
 
 
 Capybara.register_driver(:playwright) do |app|

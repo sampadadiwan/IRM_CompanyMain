@@ -4,12 +4,18 @@ class InvestmentInstrumentsController < ApplicationController
 
   # GET /investment_instruments or /investment_instruments.json
   def index
+    # Step 1: Base scope with policy and eager loading
     @investment_instruments = policy_scope(InvestmentInstrument).includes(:portfolio_company)
-    @investment_instruments = @investment_instruments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    @investment_instruments = @investment_instruments.where(category: params[:category]) if params[:category].present?
-    @investment_instruments = @investment_instruments.where(sub_category: params[:sub_category]) if params[:sub_category].present?
-    @investment_instruments = @investment_instruments.where(sector: params[:sector]) if params[:sector].present?
-    @investment_instruments = @investment_instruments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+
+    # Step 2: Apply filters if corresponding params are present
+    @investment_instruments = filter_params(
+      @investment_instruments,
+      :portfolio_company_id,
+      :category,
+      :sub_category,
+      :sector,
+      :import_upload_id
+    )
   end
 
   # GET /investment_instruments/1 or /investment_instruments/1.json

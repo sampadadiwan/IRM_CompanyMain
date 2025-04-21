@@ -1,3 +1,8 @@
+V9.0.23
+#####################################
+a6d444bf4 Added import of investors with Update Only
+37145e1ca Added pivot to fund_ratios
+
 V9.0.22
 #####################################
 9ebb95f3d Added dynamic reports to fund_reports widget
