@@ -57,4 +57,22 @@ class ExchangeRate < ApplicationRecord
 
     bank
   end
+
+  def self.convert(from, to, amount, as_of, entity_id)
+    if from == to
+      amount
+    else
+      er = ExchangeRate.where(from:, to:, as_of: ..as_of, entity_id:).order(as_of: :desc).first
+      er.present? ? er.rate * amount : nil
+    end
+  end
+
+  def self.get_rate(from, to, as_of, entity_id)
+    if from == to
+      1
+    else
+      er = ExchangeRate.where(from:, to:, as_of: ..as_of, entity_id:).order(as_of: :desc).first
+      er.present? ? er.rate : nil
+    end
+  end
 end
