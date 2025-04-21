@@ -32,7 +32,7 @@ module AccountEntryAllocation
         AccountEntryAllocation::CumulateAccountEntries.call(ctx)
       when "GenerateAccountEntry"
         AccountEntryAllocation::GenerateAccountEntries.call(ctx)
-      when "AllocatePortfolio"
+      when "AllocateAggregatePortfolios"
         AccountEntryAllocation::AllocateAggregatePortfolios.call(ctx)
       when "AllocatePortfolioInvestment"
         AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx)
