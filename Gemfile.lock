@@ -457,6 +457,8 @@ GEM
       multipart-post (~> 2.0)
     faraday-net_http (3.4.0)
       net-http (>= 0.5.0)
+    faraday-retry (2.3.1)
+      faraday (~> 2.0)
     faraday-typhoeus (1.1.0)
       faraday (~> 2.0)
       typhoeus (~> 1.4)
@@ -861,6 +863,14 @@ GEM
       logger
     ruby2_keywords (0.0.5)
     ruby_http_client (3.5.5)
+    ruby_llm (1.2.0)
+      base64
+      event_stream_parser (~> 1)
+      faraday (~> 2)
+      faraday-multipart (~> 1)
+      faraday-net_http (~> 3)
+      faraday-retry (~> 2)
+      zeitwerk (~> 2)
     rubyzip (2.4.1)
     sablon (0.4.1)
       nokogiri (>= 1.8.5)
@@ -1161,6 +1171,7 @@ DEPENDENCIES
   ruby-openai!
   ruby-prof
   rubyXL!
+  ruby_llm
   rubyzip
   rupees!
   sablon

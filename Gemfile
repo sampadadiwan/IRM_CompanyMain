@@ -249,3 +249,4 @@ gem 'wikipedia-client'
 
 gem "ferrum_pdf", "~> 0.3.0"
 gem 'ostruct'
+gem 'ruby_llm'
