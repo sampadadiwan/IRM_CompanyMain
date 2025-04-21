@@ -12,7 +12,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @aggregate_portfolio_investments = filter_by_fund(@aggregate_portfolio_investments)
 
     # Step 3: Additional filters using helper
-    @aggregate_portfolio_investments = filter_param(
+    @aggregate_portfolio_investments = filter_params(
       @aggregate_portfolio_investments,
       :portfolio_company_id, :investor_id
     )
