@@ -50,6 +50,8 @@ class CapitalCommitment < ApplicationRecord
   scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
   scope :lp_onboarding_incomplete, -> { where(onboarding_completed: false) }
 
+  # Returns the commitments of type gp for the fund using unit_type
+  # Used in FundTemplateDecorator
   scope :gp, lambda { |fund_id|
     joins(:fund_unit_setting)
       .where(fund_unit_settings: { gp_units: true, fund_id: fund_id })
