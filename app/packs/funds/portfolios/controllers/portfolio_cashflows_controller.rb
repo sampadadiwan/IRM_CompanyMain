@@ -3,11 +3,16 @@ class PortfolioCashflowsController < ApplicationController
 
   # GET /portfolio_cashflows or /portfolio_cashflows.json
   def index
+    # Step 1: Apply policy scope
     @portfolio_cashflows = policy_scope(PortfolioCashflow)
-    @portfolio_cashflows = @portfolio_cashflows.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id].present?
 
-    @portfolio_cashflows = @portfolio_cashflows.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    @portfolio_cashflows = @portfolio_cashflows.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    # Step 2: Apply filters based on presence of params
+    @portfolio_cashflows = filter_params(
+      @portfolio_cashflows,
+      :aggregate_portfolio_investment_id,
+      :portfolio_company_id,
+      :import_upload_id
+    )
   end
 
   # GET /portfolio_cashflows/1 or /portfolio_cashflows/1.json

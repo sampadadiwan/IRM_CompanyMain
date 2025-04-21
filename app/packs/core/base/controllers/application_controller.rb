@@ -203,4 +203,23 @@ class ApplicationController < ActionController::Base
     # Create the scope for the model
     policy_scope(@q.result)
   end
+
+  def filter_params(scope, *keys)
+    keys.each do |key|
+      scope = scope.where(key => params[key]) if params[key].present?
+    end
+    scope
+  end
+
+  def filter_range(scope, column, start_date:, end_date:)
+    return scope unless start_date.present? || end_date.present?
+
+    if start_date.present? && end_date.present?
+      scope.where(column => start_date..end_date)
+    elsif start_date.present?
+      scope.where("#{column} >= ?", start_date)
+    else # end_date.present?
+      scope.where("#{column} <= ?", end_date)
+    end
+  end
 end

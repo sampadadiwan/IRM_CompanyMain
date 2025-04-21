@@ -3,34 +3,45 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
+    # Step 1: Perform Ransack search
     @q = FundRatio.ransack(params[:q])
-
     @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
 
+    # Step 2: Filter by fund_id and preload @fund if applicable
     if params[:fund_id].present?
       @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
       @fund ||= Fund.find(params[:fund_id])
     end
-    @fund_ratios = @fund_ratios.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+
+    # Step 3: Apply additional filters using custom helper
+    @fund_ratios = filter_params(
+      @fund_ratios,
+      :import_upload_id,
+      :capital_commitment_id,
+      :owner_type,
+      :owner_id,
+      :scenario,
+      :valuation_id
+    )
+
+    # Step 4: Special filters with more specific logic
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
-
-    @fund_ratios = @fund_ratios.where(owner_type: params[:owner_type]) if params[:owner_type].present?
-    @fund_ratios = @fund_ratios.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-    @fund_ratios = @fund_ratios.where(scenario: params[:scenario]) if params[:scenario].present?
     @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
-    @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
 
+    # Step 5: Pivot grouping (if requested)
     if params[:pivot].present?
       group_by_period = params[:group_by_period] || :quarter
       @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
     end
 
+    # Step 6: Render appropriate format
     respond_to do |format|
       format.html
       format.turbo_stream
       format.xlsx
-      format.json { render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios) }
+      format.json do
+        render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios)
+      end
     end
   end
 

@@ -3,36 +3,64 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # GET /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def index
-    @aggregate_portfolio_investments = ransack_with_snapshot.joins(:investment_instrument)
-                                                            .includes(:fund, :portfolio_company, :investment_instrument)
+    # Step 1: Start with base query including joins and eager loading
+    @aggregate_portfolio_investments = ransack_with_snapshot
+                                       .joins(:investment_instrument)
+                                       .includes(:fund, :portfolio_company, :investment_instrument)
 
-    if params[:fund_id].present?
-      if params[:snapshot].present?
-        snapshot_fund_ids = Fund.with_snapshots.where(orignal_id: params[:fund_id]).pluck(:id)
-        @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: snapshot_fund_ids)
-      else
-        @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id])
-      end
-    end
+    # Step 2: Fund filtering, considering snapshot mode
+    @aggregate_portfolio_investments = filter_by_fund(@aggregate_portfolio_investments)
 
-    @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
-    @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    @aggregate_portfolio_investments = AggregatePortfolioInvestmentSearch.perform(@aggregate_portfolio_investments, current_user, params)
+    # Step 3: Additional filters using helper
+    @aggregate_portfolio_investments = filter_param(
+      @aggregate_portfolio_investments,
+      :portfolio_company_id, :investor_id
+    )
 
+    # Step 4: Perform additional search refinement using custom search logic
+    @aggregate_portfolio_investments = AggregatePortfolioInvestmentSearch.perform(
+      @aggregate_portfolio_investments,
+      current_user,
+      params
+    )
+
+    # Step 5: Time series or pagination logic
     if params[:time_series].present?
+      # If time series requested, compute time series across fields (default: [:fmv, :quantity, :gain])
       @fields = params[:fields].presence || %i[fmv quantity gain]
       @time_series = AggregatePortfolioInvestmentTimeSeries.new(@aggregate_portfolio_investments, @fields).call
     elsif params[:all].blank?
+      # If not requesting all, apply pagination
       @aggregate_portfolio_investments = @aggregate_portfolio_investments.page(params[:page])
       @aggregate_portfolio_investments = @aggregate_portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
+    # Step 6: Additional view flag for showing fund names
     @show_fund_name = params["show_fund_name"] || false
+
+    # Step 7: Respond in appropriate format
     respond_to do |format|
       format.html
       format.turbo_stream
       format.xlsx
-      format.json { render json: AggregatePortfolioInvestmentsDatatable.new(params, aggregate_portfolio_investments: @aggregate_portfolio_investments) if params[:jbuilder].blank? }
+      format.json do
+        # Fallback to Jbuilder if `jbuilder` param is present
+        render json: AggregatePortfolioInvestmentsDatatable.new(params, aggregate_portfolio_investments: @aggregate_portfolio_investments) if params[:jbuilder].blank?
+      end
+    end
+  end
+
+  private
+
+  # Handles filtering by fund, including snapshot-aware fallback
+  def filter_by_fund(scope)
+    return scope if params[:fund_id].blank?
+
+    if params[:snapshot].present?
+      snapshot_fund_ids = Fund.with_snapshots.where(orignal_id: params[:fund_id]).pluck(:id)
+      scope.where(fund_id: snapshot_fund_ids)
+    else
+      scope.where(fund_id: params[:fund_id])
     end
   end
 
@@ -94,8 +122,6 @@ class AggregatePortfolioInvestmentsController < ApplicationController
       format.json { head :no_content }
     end
   end
-
-  private
 
   # Use callbacks to share common setup or constraints between actions.
   def set_aggregate_portfolio_investment

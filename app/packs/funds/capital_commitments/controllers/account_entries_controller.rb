@@ -18,18 +18,29 @@ class AccountEntriesController < ApplicationController
   end
 
   def filter_index(params)
-    @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
-    @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id].present?
-    @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    # Step 1: Apply basic equality filters using shared helper
+    @account_entries = filter_params(
+      @account_entries,
+      :capital_commitment_id,
+      :investor_id,
+      :import_upload_id,
+      :fund_id,
+      :entry_type,
+      :folio_id,
+      :unit_type,
+      :cumulative
+    )
+
+    # Step 2: Special case - only fund-level accounts (no capital commitment)
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
 
-    @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type].present?
-    @account_entries = @account_entries.where(folio_id: params[:folio_id]) if params[:folio_id].present?
-    @account_entries = @account_entries.where(unit_type: params[:unit_type]) if params[:unit_type].present?
-    @account_entries = @account_entries.where(reporting_date: params[:reporting_date_start]..) if params[:reporting_date_start].present?
-    @account_entries = @account_entries.where(reporting_date: ..params[:reporting_date_end]) if params[:reporting_date_end].present?
-    @account_entries = @account_entries.where(cumulative: params[:cumulative]) if params[:cumulative].present?
+    # Step 3: Apply reporting_date range filter (start and/or end)
+    @account_entries = filter_range(
+      @account_entries,
+      :reporting_date,
+      start: params[:reporting_date_start],
+      end: params[:reporting_date_end]
+    )
   end
 
   def check_time_series_params
