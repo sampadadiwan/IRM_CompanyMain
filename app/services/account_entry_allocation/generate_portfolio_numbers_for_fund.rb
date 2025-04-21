@@ -38,7 +38,6 @@ module AccountEntryAllocation
 
       portfolio_companies.each_with_index do |portfolio_company, idx|
         begin
-
           aggregate_portfolio_investment = portfolio_company.aggregate_portfolio_investment(fund_id: fund.id, as_of: end_date)
 
           create_instance_variables(ctx)
