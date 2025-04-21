@@ -3,11 +3,15 @@ class StockConversion < ApplicationRecord
   include Trackable.new
 
   belongs_to :entity
-  belongs_to :from_portfolio_investment, class_name: "PortfolioInvestment"
+  belongs_to :from_portfolio_investment,
+             -> { unscope(where: :snapshot_date) },
+             class_name: "PortfolioInvestment"
   belongs_to :fund
   belongs_to :from_instrument, class_name: "InvestmentInstrument"
   belongs_to :to_instrument, class_name: "InvestmentInstrument"
-  belongs_to :to_portfolio_investment, class_name: "PortfolioInvestment", optional: true
+  belongs_to :to_portfolio_investment,
+             -> { unscope(where: :snapshot_date) },
+             class_name: "PortfolioInvestment", optional: true
 
   delegate :to_s, to: :from_portfolio_investment
 

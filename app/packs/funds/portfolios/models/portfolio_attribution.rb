@@ -2,8 +2,8 @@ class PortfolioAttribution < ApplicationRecord
   include Trackable.new
   belongs_to :entity
   belongs_to :fund
-  belongs_to :sold_pi, class_name: "PortfolioInvestment"
-  belongs_to :bought_pi, class_name: "PortfolioInvestment", touch: true
+  belongs_to :sold_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment"
+  belongs_to :bought_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment", touch: true
   before_save :compute_cost_of_sold_cents
 
   monetize :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
