@@ -19,11 +19,11 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   def percentage(part, total)
-    part = part.cents.to_f if part.respond_to?(:cents)
-    total = total.cents.to_f if total.respond_to?(:cents)
+    part = part.cents.to_d if part.respond_to?(:cents)
+    total = total.cents.to_d if total.respond_to?(:cents)
     Rails.logger.debug { "part:  #{part}" }
     Rails.logger.debug { "total: #{total}" }
-    total.zero? ? 0 : (part / total) * 100
+    total.zero? ? 0 : (part.to_d / total.to_d) * 100
   end
 
   def fund_as_of
