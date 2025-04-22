@@ -3,9 +3,11 @@ json.url portfolio_investment_url(portfolio_investment, format: :json)
 
 json.quantity portfolio_investment.quantity.to_f
 json.amount portfolio_investment.quantity >= 0 ? portfolio_investment.amount.to_f : -portfolio_investment.amount.to_f
-json.cost portfolio_investment.cost.to_f
-json.fmv portfolio_investment.fmv.to_f
-json.cost_of_sold portfolio_investment.cost_of_sold.to_f
+json.cost portfolio_investment.cost.to_f.round(2)
+json.fmv portfolio_investment.fmv.to_f.round(2)
+json.unrealized_gain portfolio_investment.unrealized_gain.to_f.round(2)
+json.gain portfolio_investment.gain.to_f.round(2)
+json.cost_of_sold portfolio_investment.cost_of_sold.to_f.round(2)
 json.created_at l(portfolio_investment.created_at)
 json.investment_instrument_name portfolio_investment.investment_instrument.name
 json.fund_name portfolio_investment.fund.name
