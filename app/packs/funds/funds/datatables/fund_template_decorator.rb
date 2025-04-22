@@ -27,10 +27,11 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   # === Fund Base ===
-
+  # Fund As Of is the fund object at the time of the remittance date
   def fund_as_of = object
   memoize :fund_as_of
 
+  # Commitments of type All, LP and GP as of the remittance date
   def fund_commitments = fund_as_of.capital_commitments
   memoize :fund_commitments
 
@@ -40,12 +41,14 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def fund_commitments_gp = fund_commitments.gp(fund_as_of.id)
   memoize :fund_commitments_gp
 
+  # Remittances of type LP and GP as of the remittance date
   def fund_remittances_lp = fund_as_of.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id))
   memoize :fund_remittances_lp
 
   def fund_remittances_gp = fund_as_of.capital_remittances.where(capital_commitment_id: fund_commitments_gp.pluck(:id))
   memoize :fund_remittances_gp
 
+  # Distribution Payments of type All, LP and GP as of the remittance date
   def fund_dist_payments = fund_as_of.capital_distribution_payments
   memoize :fund_dist_payments
 
@@ -55,54 +58,68 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def fund_dist_payments_gp = fund_dist_payments.where(capital_commitment_id: fund_commitments_gp.pluck(:id))
   memoize :fund_dist_payments_gp
 
+  # Distribution Payments associated to the capital commitment of type All  as of the remittance date
   def dist_payments = @capital_commitment.capital_distribution_payments.where(payment_date: ..@remittance_date)
   memoize :dist_payments
 
   #=== Committed Cash Helpers ===#
 
+  # Committed Cash Amount of the fund_as_of commitments of type LP and GP
   def committed_cash_lp = money_sum(fund_commitments_lp, :committed_amount_cents)
   memoize :committed_cash_lp
 
   def committed_cash_gp = money_sum(fund_commitments_gp, :committed_amount_cents)
   memoize :committed_cash_gp
 
+  # Committed Reinvestment Amount of the fund_as_of commitments of type LP and GP
   def committed_reinvest_lp = money_sum(fund_dist_payments_lp, :reinvestment_with_fees_cents)
   memoize :committed_reinvest_lp
 
   def committed_reinvest_gp = money_sum(fund_dist_payments_gp, :reinvestment_with_fees_cents)
   memoize :committed_reinvest_gp
 
+  # Committed Reinvestment Amount of the commitment
   def committed_reinvest_investor = money_sum(dist_payments, :reinvestment_with_fees_cents)
   memoize :committed_reinvest_investor
 
+  # Percentage of committed cash of the capital commitment relative to the total fund commitments
   def committed_cash_investor_percent = percentage(@capital_commitment.committed_amount_cents, fund_commitments.sum(:committed_amount_cents))
 
+  # Percentage of committed reinvestment of the capital commitment relative to the total fund commitments
   def committed_reinvest_investor_percent = percentage(committed_reinvest_investor.cents, fund_dist_payments.sum(:reinvestment_with_fees_cents))
 
   #=== Commitment Totals ===#
 
+  # Total Committed Cash And Reinvestment Amount of the fund_as_of commitments of type LP
   def total_comm_lp = committed_cash_lp + committed_reinvest_lp
   memoize :total_comm_lp
 
+  # Total Committed Cash And Reinvestment Amount of the fund_as_of commitments of type GP
   def total_comm_gp = committed_cash_gp + committed_reinvest_gp
   memoize :total_comm_gp
 
+  # Total Committed Cash And Reinvestment Amount of the fund_as_of commitments
   def total_comm_fund = total_comm_lp + total_comm_gp
 
+  # Total Committed Cash And Reinvestment Amount of the commitment
   def total_comm_investor = @capital_commitment.committed_amount + committed_reinvest_investor
   memoize :total_comm_investor
 
+  # Percentage of total committed cash and reinvestment of the capital commitment relative to the total fund
   def total_comm_investor_percent = percentage(total_comm_investor.cents, total_comm_fund.cents)
 
   #=== Reinvestment Ratios ===#
-
+  # Percentage of committed reinvestment to committed cash of type LP and GP
   def percent_reinvest_to_cash_lp = percentage(committed_reinvest_lp, committed_cash_lp)
   def percent_reinvest_to_cash_gp = percentage(committed_reinvest_gp, committed_cash_gp)
+  # Percentage of total committed reinvestment to total committed cash
   def percent_reinvest_to_cash_total = percentage(committed_reinvest_lp + committed_reinvest_gp, committed_cash_lp + committed_cash_gp)
+  # Percentage of investor's committed reinvestment to investor's committed cash
   def percent_reinvest_to_cash_investor = percentage(committed_reinvest_investor.cents, @capital_commitment.committed_amount_cents)
 
   #=== Drawdowns ===#
 
+  # Remittance Call amount of the fund_as_of remittances of type LP and GP and of the investor
   def drawdown_cash_lp = money_sum(fund_remittances_lp, :call_amount_cents)
   memoize :drawdown_cash_lp
 
@@ -114,11 +131,13 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   def drawdown_cash_investor_percent = percentage(drawdown_cash_investor.cents, fund_as_of.capital_remittances.sum(:call_amount_cents))
 
+  # Reinvestment amount of the fund_as_of distribution payments of the investor / commitment
   def drawdown_reinvest_investor = money_sum(dist_payments, :reinvestment_with_fees_cents)
   memoize :drawdown_reinvest_investor
 
   def drawdown_reinvest_investor_percent = percentage(drawdown_reinvest_investor.cents, fund_dist_payments.sum(:reinvestment_with_fees_cents))
 
+  # Total of remittance call amount and Reinvestment amount
   def total_drawdown_lp = drawdown_cash_lp + money_sum(fund_dist_payments_lp, :reinvestment_with_fees_cents)
   memoize :total_drawdown_lp
 
@@ -140,6 +159,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   #=== Undrawn Commitments ===#
 
+  # Undrawn Amount is the difference between the committed cash + commitment reinvestment and the total drawdown amount
   def undrawn_comm_lp = total_comm_lp - total_drawdown_lp
   def undrawn_comm_gp = total_comm_gp - total_drawdown_gp
   def undrawn_comm_total = undrawn_comm_lp + undrawn_comm_gp
@@ -154,14 +174,18 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   # === Distribution Cash ===
   # === Distribution Cash & Reinvestment ===
 
+  # Distribution Cash is the sum of the gross payable amount - reinvestment amount of the dsitribution payments
+  # For investor we use distribution payments of the capital commitment
   def dist_cash_investor = Money.new(dist_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"), @currency)
   memoize :dist_cash_investor
 
+  # For Total we use the distribution payments of the fund_as_of
   def dist_cash_total = Money.new(fund_dist_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"), @currency)
   memoize :dist_cash_total
 
   def dist_cash_investor_percent = percentage(dist_cash_investor.cents, dist_cash_total.cents)
 
+  # Reinvestment amount is sum of the reinvestment amount of the distribution payments
   def dist_reinvest_investor = money_sum(dist_payments, :reinvestment_with_fees_cents)
   def dist_reinvest_investor_percent = percentage(dist_reinvest_investor.cents, fund_dist_payments.sum(:reinvestment_with_fees_cents))
 
@@ -178,6 +202,9 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def total_dist_gp = dist_cash_gp + dist_reinvest_gp
   def total_dist_fund = total_dist_lp + total_dist_gp
 
+  # For PRIOR we consider the data BEFORE the end_date
+  # For CURRENT we consider the data EXACTLY ON the end_date
+  # For INCL we consider the data before and on the end_date i.e. TILL the end_date
   # === Prior / Current / Incl Distributions ===
 
   def agg_dist_prior_notice_investor = Money.new(dist_payments.where(payment_date: ..@remittance_date.yesterday.end_of_day).sum("gross_payable_cents - reinvestment_with_fees_cents"), @currency)
@@ -215,9 +242,11 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   # === Drawdowns ===
   # === Drawdown Cash ===
 
+  # Fetch Capital Calls before the remittance date
   def prior_calls = fund_as_of.capital_calls.where(call_date: ..@remittance_date.yesterday.end_of_day)
   memoize :prior_calls
 
+  # For Drawdown Cash we use Computed Amount as we dont want to include the capital fee in it
   def drawdown_cash_prior_notice_investor
     money_sum(
       fund_as_of.capital_remittances
@@ -315,6 +344,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   # === Aggregate Drawdowns ===
+  # Aggregate Drawdown is the sum of drawdown cash and drawdown fees
 
   def agg_drawdown_prior_notice_investor = drawdown_cash_prior_notice_investor + drawdown_fees_prior_notice_investor
 
@@ -355,6 +385,13 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   # === Undrawn Commitments ===
 
+  # For PRIOR we consider the data BEFORE the end_date
+  # For CURRENT we consider the data EXACTLY ON the end_date
+  # For INCLUDING we consider the data BEFORE and ON the end_date i.e. TILL the end_date
+
+  # Undrawn Amount is the difference between the committed amount and the drawdown amount
+  # Fetch the capital call before the current call that has capital remittances and sum their committed amount
+  # If not then use the remittances from the current call and sum the committed amount
   def undrawn_comm_prior_notice_lp
     last_call = prior_calls.order(:call_date).last
     last_remittances = last_call ? last_call.capital_remittances.where(capital_commitment_id: fund_commitments_lp.pluck(:id)).where(remittance_date: ..@remittance_date.yesterday.end_of_day) : []

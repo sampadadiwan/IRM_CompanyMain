@@ -3,6 +3,7 @@ class FundAsOf
 
   attr_reader :fund, :as_of_date
 
+  DELEGATED_METHODS = %i[id json_fields name currency].freeze
   # Initialize with a fund and the as_of_date
   # @param fund [Fund] The fund to represent
   # @param as_of_date [Date] The date to represent the fund as of
@@ -11,6 +12,7 @@ class FundAsOf
     @as_of_date = as_of_date.is_a?(Date) ? as_of_date.end_of_day : as_of_date
   end
 
+  # Below are the methods that filter the fund's data based on the as_of_date
   def capital_commitments
     fund.capital_commitments.where(commitment_date: ..as_of_date)
   end
@@ -51,9 +53,9 @@ class FundAsOf
   end
   memoize :latest_valuation
 
-  # Delegate all other methods to the fund
+  # Delegate filtered methods to the fund
   def method_missing(method, *, &)
-    if fund.respond_to?(method)
+    if fund.respond_to?(method) && DELEGATED_METHODS.include?(method)
       fund.send(method, *, &)
     else
       super

@@ -58,6 +58,7 @@ class CapitalCommitment < ApplicationRecord
       .where("fund_unit_settings.name = capital_commitments.unit_type")
   }
 
+  # Returns the commitments of type lp for the fund using unit_type
   scope :lp, lambda { |fund_id|
     joins(:fund_unit_setting)
       .where(fund_unit_settings: { gp_units: false, fund_id: fund_id })
@@ -82,6 +83,8 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
+  # Returns the fund_unit_setting associated with the fund
+  # particularly useful to determine if commitment is of type lp or gp as that is store in the fund_unit_setting
   has_one :fund_unit_setting,
           through: :fund,
           source: :fund_unit_settings
