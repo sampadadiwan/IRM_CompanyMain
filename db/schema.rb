@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_22_034125) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -202,6 +202,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
   end
 
+  create_table "ai_chats", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "model_id"
+    t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_ai_chats_on_entity_id"
+    t.index ["user_id"], name: "index_ai_chats_on_user_id"
+  end
+
   create_table "ai_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "ai_rule_id"
@@ -221,6 +231,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
     t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
   end
 
+  create_table "ai_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "ai_chat_id", null: false
+    t.string "role"
+    t.text "content"
+    t.string "model_id"
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "tool_call_id"
+    t.bigint "ai_tool_call_id"
+    t.index ["ai_chat_id"], name: "index_ai_messages_on_ai_chat_id"
+    t.index ["ai_tool_call_id"], name: "index_ai_messages_on_ai_tool_call_id"
+    t.index ["tool_call_id"], name: "index_ai_messages_on_tool_call_id"
+  end
+
   create_table "ai_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "for_class", limit: 20
@@ -233,6 +259,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
     t.string "rule_type", limit: 15
     t.string "name"
     t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
+  end
+
+  create_table "ai_tool_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "ai_message_id", null: false
+    t.string "tool_call_id"
+    t.string "name"
+    t.json "arguments"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_message_id"], name: "index_ai_tool_calls_on_ai_message_id"
+    t.index ["tool_call_id"], name: "index_ai_tool_calls_on_tool_call_id"
   end
 
   create_table "allocation_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -737,6 +774,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
     t.index ["remittance_date"], name: "index_capital_remittances_on_remittance_date"
+  end
+
+  create_table "chats", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "model_id"
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_chats_on_entity_id"
+    t.index ["user_id"], name: "index_chats_on_user_id"
   end
 
   create_table "ci_profiles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2226,17 +2273,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
   end
 
   create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.bigint "chat_id", null: false
+    t.string "role"
+    t.text "content"
+    t.string "model_id"
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.bigint "tool_call_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "owner_type", null: false
-    t.bigint "owner_id", null: false
-    t.bigint "investor_id"
-    t.index ["entity_id"], name: "index_messages_on_entity_id"
-    t.index ["investor_id"], name: "index_messages_on_investor_id"
-    t.index ["owner_type", "owner_id"], name: "index_messages_on_owner"
-    t.index ["user_id"], name: "index_messages_on_user_id"
+    t.index ["chat_id"], name: "index_messages_on_chat_id"
+    t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
   create_table "notes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2944,6 +2991,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "tool_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "message_id", null: false
+    t.string "tool_call_id", null: false
+    t.string "name", null: false
+    t.json "arguments"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id"], name: "index_tool_calls_on_message_id"
+    t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
+  end
+
   create_table "user_alerts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "message"
@@ -3100,9 +3158,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "ai_chats", "entities"
+  add_foreign_key "ai_chats", "users"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
+  add_foreign_key "ai_messages", "ai_chats"
+  add_foreign_key "ai_messages", "ai_tool_calls"
   add_foreign_key "ai_rules", "entities"
+  add_foreign_key "ai_tool_calls", "ai_messages"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
   add_foreign_key "allocation_runs", "users"
@@ -3166,6 +3229,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
+  add_foreign_key "chats", "entities"
+  add_foreign_key "chats", "users"
   add_foreign_key "ci_profiles", "entities"
   add_foreign_key "ci_profiles", "funds"
   add_foreign_key "ci_track_records", "entities"
@@ -3318,8 +3383,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
-  add_foreign_key "messages", "investors"
-  add_foreign_key "messages", "users"
+  add_foreign_key "messages", "chats"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
@@ -3404,6 +3468,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_21_135610) do
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"
   add_foreign_key "tasks", "users"
+  add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"
   add_foreign_key "users", "form_types"

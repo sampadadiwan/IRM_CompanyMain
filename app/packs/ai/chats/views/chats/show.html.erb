@@ -1,0 +1,6 @@
+<%= turbo_stream_from [@chat, "messages"] %>
+<h1>Chat <%= @chat.id %></h1>
+<div id="messages">
+  <%= render @chat.messages %>
+</div>
+<%= render "chats/chat_box", chat: @chat %>

@@ -8,6 +8,10 @@ Rails.application.routes.draw do
     get 'run_checks', on: :collection
   end
 
+  resources :chats do
+    post :send_message, on: :member
+  end
+
   resources :ai_rules
   resources :rm_mappings
   resources :key_biz_metrics
