@@ -1,5 +1,6 @@
 <tr>
     <td><%= chat.user.full_name %></td>
+    <td><%= l chat.created_at %></td>
     <td>
         <%= link_to "View", chat_path(chat), class: "btn btn-outline-primary" %>
         <%= link_to "Delete", chat_path(chat), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-outline-danger" %>

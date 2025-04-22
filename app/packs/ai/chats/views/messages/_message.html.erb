@@ -1,10 +1,17 @@
 <%= turbo_frame_tag message do %>
-  <div class="message <%= message.role %>">
-    <strong><%= message.role.capitalize %>:</strong>
-    <%# Target div for streaming content %>
-    <div id="<%= dom_id(message, "content") %>" style="display: inline;">
-      <%# Render initial content if not streaming, otherwise job appends here %>
-      <%= simple_format(message.content) %>
+
+  <div class="associated_entity <%= message.role %> mb-3 d-flex <%= message.role == 'user' ? 'justify-content-end' : 'justify-content-start' %>">
+    <div class="message-bubble bg-light p-3 rounded shadow-sm">
+      <strong><%= message.role.capitalize %>:</strong>
+      
+      <% if message.role == "assistant" && message.content.blank? %>
+          Thinking...
+      <% else %>
+        <div id="<%= dom_id(message, 'content') %>" class="markdown-body">        
+          <%= markdown_to_html(message.content) %>        
+        </div>
+      <% end %>
     </div>
   </div>
+
 <% end %>
