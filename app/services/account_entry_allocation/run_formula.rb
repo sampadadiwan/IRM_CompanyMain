@@ -32,7 +32,7 @@ module AccountEntryAllocation
         AccountEntryAllocation::CumulateAccountEntries.call(ctx)
       when "GenerateAccountEntry"
         AccountEntryAllocation::GenerateAccountEntries.call(ctx)
-      when "AllocatePortfolio"
+      when "AllocateAggregatePortfolios"
         AccountEntryAllocation::AllocateAggregatePortfolios.call(ctx)
       when "AllocatePortfolioInvestment"
         AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx)
@@ -43,6 +43,8 @@ module AccountEntryAllocation
         AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
       when "GeneratePortfolioNumbersForFund"
         AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
+      when "CumulateForPortfolioCompany"
+        AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx)
       end
 
       # After the formula method sets up bulk_insert_records, do a bulk insert
