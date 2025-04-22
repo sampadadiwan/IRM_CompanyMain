@@ -5,6 +5,17 @@ module AccountEntryAllocation
   class CumulateForPortfolioCompany < AllocationBaseOperation
     step :cumulate_account_entries
 
+    def parent_ids_for_portfolio_company(fund, fund_formula, portfolio_company)
+      case fund_formula.formula.strip
+      when "PortfolioInvestment"
+        fund.portfolio_investments.where(portfolio_company_id: portfolio_company.id).pluck(:id).uniq
+      when "AggregatePortfolioInvestment"
+        fund.aggregate_portfolio_investments.where(portfolio_company_id: portfolio_company.id).pluck(:id).uniq
+      else
+        raise "Unknown formula type: #{fund_formula.formula}"
+      end
+    end
+
     def cumulate_account_entries(ctx, **)
       fund_formula = ctx[:fund_formula]
       ctx[:commitment_cache]
@@ -37,20 +48,12 @@ module AccountEntryAllocation
         )
 
         cumulative_ae.setup_defaults
-
-        case fund_formula.formula.strip
-        when "PortfolioInvestment"
-          parent_ids_for_portfolio_company = fund.portfolio_investments.where(portfolio_company_id: portfolio_company.id).pluck(:id).uniq
-        when "AggregatePortfolioInvestment"
-          parent_ids_for_portfolio_company = fund.aggregate_portfolio_investments.where(portfolio_company_id: portfolio_company.id).pluck(:id).uniq
-        else
-          raise "Unknown formula type: #{fund_formula.formula}"
-        end
+        parent_ids = parent_ids_for_portfolio_company(fund, fund_formula, portfolio_company)
 
         amount_cents = fund.account_entries.not_cumulative.where(
           name: fund_formula.name,
           reporting_date: ..end_date,
-          parent_id: parent_ids_for_portfolio_company,
+          parent_id: parent_ids,
           parent_type: fund_formula.formula.strip
         ).sum(:amount_cents)
 

@@ -4,7 +4,7 @@
 
         args[:fund_id] = @fund&.id
         args[:investor_id] = @investor&.id
-        args[:parent_name] = @investor&.investor_name
+        args[:parent_name] = @investor&.to_s
         args[:title] = report.name
         uri = report.url_from(args)
 
