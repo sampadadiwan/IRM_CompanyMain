@@ -1,3 +1,9 @@
+V9.0.24
+#####################################
+9a5f37f87 Cached api_as_of for improving allocation speed
+71bd9f218 Added better fund_rations widget with charts
+81c0f374b Added better dynamic report url
+
 V9.0.23
 #####################################
 a6d444bf4 Added import of investors with Update Only
