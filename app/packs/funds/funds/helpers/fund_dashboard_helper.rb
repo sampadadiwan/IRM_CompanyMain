@@ -1,5 +1,6 @@
 module FundDashboardHelper
   def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 12)
+    months ||= 12
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
     from_date = Time.zone.today - months.months

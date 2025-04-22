@@ -7,10 +7,13 @@
       )
     ) do 
 %>
-    
-    <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %>            
+    <% if args[:list].blank? || args[:list] == true %>
+      <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %> 
+      <% end %>           
     <%end%>
-    <!-- This block becomes the `content` inside the component -->
-    <%#= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", **widget.metadata_args) %>
+    
+    <% if args[:chart].blank? || args[:chart] == true %>
+      <%= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months]) %>
+    <% end %>
   
 <% end %>

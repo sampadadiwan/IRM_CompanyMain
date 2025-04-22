@@ -97,6 +97,8 @@ class PortfolioInvestment < ApplicationRecord
     "Quantity" => "quantity",
     "Cost Per Share" => "cost",
     "FMV" => "fmv",
+    "Unrealized Gain" => "unrealized_gain",
+    "Realized Gain" => "gain",
     "FIFO Cost" => "cost_of_sold",
     "Notes" => "notes"
   }.freeze
