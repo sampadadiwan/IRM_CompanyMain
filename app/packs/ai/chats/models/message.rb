@@ -9,8 +9,13 @@ class Message < ApplicationRecord
 
   # Helper to broadcast chunks during streaming
   def broadcast_append_chunk(chunk_content)
-    broadcast_append_to [chat, "messages"], # Target the stream
-                        target: dom_id(self, "content"), # Target the content div inside the message frame
-                        html: chunk_content # Append the raw chunk
+    html_chunk = ApplicationController.helpers.markdown_to_html(chunk_content)
+
+    Turbo::StreamsChannel.broadcast_append_to(
+      [chat, "messages"],               # Stream name
+      target: dom_id(self, "content"),  # Append into div#message_123_content
+      html: html_chunk                  # Rendered HTML from markdown
+    )
   end
+  
 end

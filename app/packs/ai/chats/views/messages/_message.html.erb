@@ -1,17 +1,17 @@
 <%= turbo_frame_tag message do %>
-
   <div class="associated_entity <%= message.role %> mb-3 d-flex <%= message.role == 'user' ? 'justify-content-end' : 'justify-content-start' %>">
+    
     <div class="message-bubble bg-light p-3 rounded shadow-sm">
       <strong><%= message.role.capitalize %>:</strong>
-      
-      <% if message.role == "assistant" && message.content.blank? %>
-          Thinking...
-      <% else %>
-        <div id="<%= dom_id(message, 'content') %>" class="markdown-body">        
-          <%= markdown_to_html(message.content) %>        
-        </div>
-      <% end %>
-    </div>
-  </div>
 
+      <div id="<%= dom_id(message, 'content') %>" class="markdown-body">
+        <% if message.role == "assistant" && message.content.blank? %>
+          <em>Thinking...</em>
+        <% else %>
+          <%= markdown_to_html(message.content) %>
+        <% end %>
+      </div>
+    </div>
+    
+  </div>
 <% end %>
