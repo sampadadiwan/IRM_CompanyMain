@@ -23,7 +23,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
     total = total.cents.to_d if total.respond_to?(:cents)
     return 0 if total.zero?
 
-    (part / total) * 100
+    (part.to_d / total.to_d) * 100
   end
 
   # === Fund Base ===
