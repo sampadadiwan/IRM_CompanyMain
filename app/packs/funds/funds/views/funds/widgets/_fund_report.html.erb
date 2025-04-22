@@ -1,24 +1,20 @@
 <% 
     if args[:report_id].present?
-        args[:fund_id] = @fund.id
         report = Report.find(args[:report_id]) 
-        uri = "#{report.url}/dynamic&title=#{ERB::Util.url_encode(report.name)}"
-        # Add the args as query parameters to the URL
-        args.each do |key, value|
-        uri += "&#{key}=#{ERB::Util.url_encode(value)}"
-        end
-%>
-        <%= render(
-            WidgetCardComponent.new(
-                widget: widget,
-                args: args,
-                widget_size: widget.widget_size
-            )
-            ) do %>
-        
-            <turbo-frame id="report_<%=report.id%>" src="<%= uri %>" loading="lazy" target="_top">
-            </turbo-frame>
-        
-        <% end %>
 
+        args[:fund_id] = @fund&.id
+        args[:investor_id] = @investor&.id
+        args[:parent_name] = @investor&.to_s
+        args[:title] = report.name
+        uri = report.url_from(args)
+
+%>
+
+    <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+    
+        <turbo-frame id="report_<%=report.id%>" src="<%= uri %>" loading="lazy" target="_top">
+        </turbo-frame>
+    
     <% end %>
+
+<% end %>

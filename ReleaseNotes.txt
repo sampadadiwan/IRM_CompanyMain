@@ -1,15 +1,8 @@
 V9.0.24
 #####################################
-79cbe4a3e Renamed FundFormula rule_type AllocatePortfolio to AllocateAggregatePortfolios
-bd705b183 Fixed issue with belongs_to :portfolio_investment with snapshots
-b1040b8bd Added CumulateForPortfolioCompany fund formula
-450fe3942 Added better ExchangeRate method for conversion
-dceadf585 Removed PC name AE name in AllocateAggregatePortfolios
-32fac0872 Better support for filter_params
-e9e9c6cf9 Better support for filter_params
-f0b759d6b Refactored PortfolioInvestmentAsOfReport
-4e240909a Refactored PI, API and PC
-06f5a900a Added better as_of for API
+9a5f37f87 Cached api_as_of for improving allocation speed
+71bd9f218 Added better fund_rations widget with charts
+81c0f374b Added better dynamic report url
 
 V9.0.23
 #####################################
