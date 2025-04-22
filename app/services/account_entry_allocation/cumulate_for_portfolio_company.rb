@@ -33,7 +33,7 @@ module AccountEntryAllocation
           reporting_date: end_date,
           cumulative: true,
           generated: true,
-          allocation_run_id: ctx[:allocation_run_id]          
+          allocation_run_id: ctx[:allocation_run_id]
         )
 
         cumulative_ae.setup_defaults

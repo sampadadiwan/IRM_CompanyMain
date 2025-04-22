@@ -15,11 +15,7 @@ class ReportsController < ApplicationController
 
   # This is a special kind of report which has dynamic URL to allow params to be passed to a report
   def dynamic
-    @report_url = URI.decode_www_form_component(@report.url)
-    params.each do |key, value|
-      # Substitute the value in the URL
-      @report_url = @report_url.sub("{#{key}}", value) if @report_url.include?("{#{key}}")
-    end
+    @report_url = report.url_from(params)
     redirect_to @report_url.to_s
   end
 
