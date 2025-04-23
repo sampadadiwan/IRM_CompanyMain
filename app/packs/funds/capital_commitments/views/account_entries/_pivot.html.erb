@@ -1,15 +1,24 @@
 <table class="table table-bordered">
   <thead>
     <tr>
-      <th>Capital Commitment</th>
-      <th style="min-width: 200px;">Parent</th>
+      <% if params[:hide_commitment].blank? %>
+        <th>Capital Commitment</th>
+      <% end %>
+      <% if params[:hide_parent].blank? %>
+        <th style="min-width: 200px;">Parent</th>
+      <% end %>
+
       <% @pivot.groups.each do |group| %>
         <th colspan="<%= @pivot.dates_by_group[group].size %>"><%= group %></th>
       <% end %>
     </tr>
     <tr>
-      <th></th>
-      <th></th>
+      <% if params[:hide_commitment].blank? %>
+        <th></th>
+      <% end %>
+      <% if params[:hide_parent].blank? %>      
+        <th></th>
+      <% end %>
       <% @pivot.groups.each do |group| %>
         <% @pivot.dates_by_group[group].each do |date| %>
           <th><%= date.strftime("%b %Y") %></th>
@@ -20,17 +29,21 @@
   <tbody>
     <% @pivot.rows.each do |commitment_name, capital_commitment_id, parent_name, parent_type, parent_id| %>
       <tr>
+        <% if params[:hide_commitment].blank? %>
         <td>
           <%= link_to commitment_name, 
                 capital_commitment_path(id: capital_commitment_id), 
                 target: "_blank" if commitment_name && capital_commitment_id %>
         </td>
+        <% end %>
 
+        <% if params[:hide_parent].blank? %>
         <td>
           <%= link_to parent_name,  
                 "/#{parent_type.underscore.pluralize}/#{parent_id}", 
                 target: "_blank" if parent_type && parent_id %>
         </td>
+        <% end %>
         
         <% @pivot.groups.each do |group| %>
           <% @pivot.dates_by_group[group].each do |date| %>
