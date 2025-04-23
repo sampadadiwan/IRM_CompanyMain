@@ -29,6 +29,10 @@ class KpiReportPolicy < KpiPolicyBase
     create?
   end
 
+  def analyze?
+    permissioned_employee?
+  end
+
   def update?
     create? || record.owner_id == user.entity_id
   end

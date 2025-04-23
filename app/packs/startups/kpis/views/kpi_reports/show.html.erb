@@ -95,13 +95,11 @@
 </table>
 <div>
   <% if policy(@kpi_report).update? %>
-    
+    <%= button_to "Analyze", analyze_kpi_report_path(@kpi_report), class: "btn btn-outline-warning", data: {action: "click->confirm#popup", msg: "Analysis will be done using an LLM and will take time, so please be patient. Your data will be sent to an external LLM. Proceed?", turbo:false, method: :post} if current_user.entity.enable_ai_chat %>
+
     <%= link_to "Edit", edit_kpi_report_path(@kpi_report), {class: "btn btn-outline-primary"} %> 
     <%= button_to "Delete", @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
-  <% elsif current_user.curr_role == "investor" %>
-    <% msg = "Send reminder to #{@kpi_report.entity.name} to upload KPIs?" %>
-    <%= button_to "Send Reminder", kpi_reminder_entity_path(@kpi_report.entity), class: "btn btn-outline-primary", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg:}  %>
   <% end %>
 </div>
 

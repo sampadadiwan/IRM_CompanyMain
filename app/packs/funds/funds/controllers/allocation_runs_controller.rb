@@ -10,6 +10,7 @@ class AllocationRunsController < ApplicationController
     redirect_back(fallback_location: allocate_form_fund_path(@allocation_run.fund))
   end
 
+  # rubocop :disable Rails/SkipsModelValidations
   def unlock
     fund = @allocation_run.fund
     if AllocationRun.where(fund: fund).update_all(locked: false).positive?
@@ -19,6 +20,7 @@ class AllocationRunsController < ApplicationController
     end
     redirect_back(fallback_location: allocate_form_fund_path(@allocation_run.fund))
   end
+  # rubocop :enable Rails/SkipsModelValidations
 
   private
 

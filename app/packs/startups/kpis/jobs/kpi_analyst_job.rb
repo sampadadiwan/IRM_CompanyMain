@@ -12,8 +12,11 @@ class KpiAnalystJob < ApplicationJob
       # Set the system message
       chat.with_instructions("You are an amazing financial analyst working in an AIF, and can analyze portfolio company data to produce insightful and comprehensive analyst notes. You will generally format your analyst note in tables.")
 
+      send_notification("Analysis of KPIs started", user.id)
       analyze_kpis(current_kpi_report, prev_kpi_report, chat, user)
+      send_notification("Analysis of Investor Presentation started", user.id)
       analyze_investor_presentation(current_kpi_report, chat, user)
+      send_notification("Analysis of KPIs completed", user.id)
     end
   end
 

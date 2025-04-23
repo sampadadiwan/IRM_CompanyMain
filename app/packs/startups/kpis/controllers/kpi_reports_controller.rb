@@ -1,5 +1,5 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze]
 
   # GET /kpi_reports or /kpi_reports.json
   def index
@@ -42,6 +42,12 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
   def show; end
+
+  def analyze
+    @prev_kpi_report = KpiReport.where(entity_id: @kpi_report.entity_id, as_of: ..@kpi_report.as_of - 1.day).order(as_of: :asc).last
+    KpiAnalystJob.perform_later(@kpi_report.id, @prev_kpi_report&.id, current_user.id)
+    redirect_to kpi_report_url(@kpi_report), notice: "Analysis started."
+  end
 
   # GET /kpi_reports/new
   def new
