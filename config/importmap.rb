@@ -1,9 +1,6 @@
 # Pin npm packages by running ./bin/importmap
 
 pin "application", preload: true
-pin "@hotwired/turbo-rails", to: "turbo.min.js", preload: true
-pin "@hotwired/stimulus", to: "stimulus.min.js", preload: true
-pin "@hotwired/stimulus-loading", to: "stimulus-loading.js", preload: true
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "trix"
 pin "@rails/actiontext", to: "actiontext.js"
@@ -66,3 +63,6 @@ pin "dom" # @0.0.2
 pin "xtend" # @1.0.3
 pin "sortable" # @2.0.0
 pin "jquery-browserify" # @1.8.1
+pin "@hotwired/stimulus", to: "stimulus.min.js"
+pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
+pin "@hotwired/turbo-rails", to: "turbo.min.js"

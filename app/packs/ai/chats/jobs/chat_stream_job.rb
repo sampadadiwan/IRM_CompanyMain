@@ -18,7 +18,7 @@ class ChatStreamJob < ApplicationJob
 
         chunk_counter += 1
 
-        if chunk_counter % CHUNK_RENDER_INTERVAL == 0 || chunk.content.strip.ends_with?(".") || chunk.content.include?("\n")
+        if (chunk_counter % CHUNK_RENDER_INTERVAL).zero? || chunk.content.strip.ends_with?(".") || chunk.content.include?("\n")
 
           # Replace full content with markdown-rendered HTML every N chunks
           turbo_stream = ApplicationController.render(

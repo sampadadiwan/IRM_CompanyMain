@@ -1,6 +1,5 @@
 <%= turbo_frame_tag message do %>
   <div class="associated_entity <%= message.role %> mb-3 d-flex <%= message.role == 'user' ? 'justify-content-end' : 'justify-content-start' %>">
-    
     <div class="message-bubble bg-light p-3 rounded shadow-sm">
       <strong><%= message.role.capitalize %>:</strong>
 
@@ -12,6 +11,5 @@
         <% end %>
       </div>
     </div>
-    
   </div>
 <% end %>

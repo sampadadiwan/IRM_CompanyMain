@@ -17,5 +17,4 @@ class Message < ApplicationRecord
       html: html_chunk                  # Rendered HTML from markdown
     )
   end
-  
 end
