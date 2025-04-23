@@ -1,3 +1,10 @@
+V9.0.26
+#####################################
+8a748d682 Added hide_parent and hide_commitment for AE pivot
+793a36137 Fixed CumulateForPortfolioCompany to cumulate only betw start and end date
+d360e8e19 Added better unlock of AllocationRuns
+4924896f6 Merge pull request #739 from ausangshukla/call-notice-update for TN
+
 V9.0.24
 #####################################
 9a5f37f87 Cached api_as_of for improving allocation speed
