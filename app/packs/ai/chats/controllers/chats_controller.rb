@@ -3,7 +3,8 @@ class ChatsController < ApplicationController
 
   # GET /chats
   def index
-    @chats = policy_scope(Chat.all)
+    @chats = policy_scope(Chat.all).includes(:user)
+    @chats = filter_params(@chats, :owner_id, :owner_type)
     @chats = @chats.page(params[:page]) unless params[:format] == "xlsx"
   end
 

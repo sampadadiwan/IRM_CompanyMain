@@ -1,8 +1,9 @@
+<%= turbo_frame_tag "chat_list", target: "_top" do %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Chats</h1>
   <span>
-    <%= link_to "New Rule", new_chat_path, {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Download", chats_path(format: :xlsx), {class: "btn btn-outline-success"}  %>
+    <%= link_to "New Chat", new_chat_path(owner_id: params[:owner_id], owner_type: params[:owner_type]), {class: "btn btn-outline-primary"}  %>    
   </span>
 </div>
 
@@ -13,11 +14,14 @@
     <thead>
       <tr>
         <th>
+          Name
+        </th>
+        <th>
           User
         </th>
         <th>
           Date
-        </th>
+        </th>        
         <th>
         </th>
       </tr>
@@ -30,3 +34,5 @@
   </table>
   <%= paginate @chats %>
 </div>
+
+<% end %>

@@ -4,8 +4,9 @@ class Chat < ApplicationRecord
   acts_as_chat # Assumes Message and ToolCall model names
 
   belongs_to :user
+  belongs_to :owner, polymorphic: true
   belongs_to :entity
-  validates :model_id, presence: true
+  validates :model_id, :name, presence: true
 
   broadcasts_to ->(chat) { [chat, "messages"] }
 end

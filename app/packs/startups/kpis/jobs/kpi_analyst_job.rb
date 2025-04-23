@@ -12,17 +12,26 @@ class KpiAnalystJob < ApplicationJob
   end
 
   def analyze_kpis(current_kpi_report, prev_kpi_report, user)
+    chat = Chat.create(user_id: user.id, entity_id: user.entity_id, model_id: MODEL, owner: current_kpi_report, name: "KPI Analysis")
+    # Set the system message
+    chat.with_instructions("You are an amazing financial analyst working in an AIF, and can analyze portfolio company data to produce insightful and comprehensive analyst notes. You will generally format your analyst note in tables.")
+
     # Get the kpis from the report
     current_kpis = current_kpi_report.kpis.as_json(only: %i[name display_value])
-    prev_kpis = prev_kpi_report.kpis.as_json(only: %i[name display_value])
 
-    #  Craft the query to the LLM
-    query = "Analyze the following KPIs from this period <CurrentPeriodKPIs> #{current_kpis} </CurrentPeriodKPIs> and compare it with the KPIs from the previous period <PreviousPeriodKPIs> #{prev_kpis} </PreviousPeriodKPIs> . Provide insights and recommendations as bullet points."
-    chat = Chat.create(user_id: user.id, entity_id: user.entity_id, model_id: MODEL)
-    chat.with_instructions("You are an amazing financial analyst working in an AIF, and can analyze portfolio company data to produce insightful and comprehensive analyst reports for the fund manager.")
+    if prev_kpi_report.present?
+      prev_kpis = prev_kpi_report.kpis.as_json(only: %i[name display_value])
+
+      #  Craft the query to the LLM
+      query = "Generate an Analyst note from the following KPIs from this period <CurrentPeriodKPIs> #{current_kpis} </CurrentPeriodKPIs> and compare it with the KPIs from the previous period <PreviousPeriodKPIs> #{prev_kpis} </PreviousPeriodKPIs> . Provide insights and recommendations as bullet points with the related numbers. Also generate some key questions to ask the portfolio company based on the analysis."
+    else
+      #  Craft the query to the LLM
+      query = "Analyze the following KPIs from this period <CurrentPeriodKPIs> #{current_kpis} </CurrentPeriodKPIs> . Provide insights and recommendations as bullet points with the related numbers. Also generate some key questions to ask the portfolio company based on the analysis."
+    end
 
     response = chat.ask(query)
-    kpi_report.analysis = response.content
-    kpi_report.save
+    # Save the response to the kpi report
+    current_kpi_report.analysis = response.content
+    current_kpi_report.save
   end
 end
