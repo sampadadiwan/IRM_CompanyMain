@@ -3348,8 +3348,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
-  add_foreign_key "messages", "investors"
-  add_foreign_key "messages", "users"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
