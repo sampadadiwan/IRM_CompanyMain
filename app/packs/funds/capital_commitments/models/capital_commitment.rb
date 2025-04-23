@@ -50,6 +50,20 @@ class CapitalCommitment < ApplicationRecord
   scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
   scope :lp_onboarding_incomplete, -> { where(onboarding_completed: false) }
 
+  # Returns the commitments of type gp for the fund using unit_type
+  # Used in FundTemplateDecorator
+  scope :gp, lambda { |fund_id|
+    joins(:fund_unit_setting)
+      .where(fund_unit_settings: { gp_units: true, fund_id: fund_id })
+      .where("fund_unit_settings.name = capital_commitments.unit_type")
+  }
+
+  # Returns the commitments of type lp for the fund using unit_type
+  scope :lp, lambda { |fund_id|
+    joins(:fund_unit_setting)
+      .where(fund_unit_settings: { gp_units: false, fund_id: fund_id })
+      .where("fund_unit_settings.name = capital_commitments.unit_type")
+  }
   belongs_to :entity
   belongs_to :investor
   belongs_to :investor_kyc, optional: true
@@ -69,6 +83,11 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
+  # Returns the fund_unit_setting associated with the fund
+  # particularly useful to determine if commitment is of type lp or gp as that is store in the fund_unit_setting
+  has_one :fund_unit_setting,
+          through: :fund,
+          source: :fund_unit_settings
   # Fund ratios computed per investor
   has_many :fund_ratios, dependent: :destroy
   has_many :commitment_adjustments, dependent: :destroy
@@ -254,10 +273,6 @@ class CapitalCommitment < ApplicationRecord
 
   def fund_ratio(name, end_date)
     fund_ratios.where(name:, end_date: ..end_date).last
-  end
-
-  def fund_unit_setting
-    fund.fund_unit_settings.where(name: unit_type).last
   end
 
   # The folio id is used in the folder names of commitments, remittances and distributions

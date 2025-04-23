@@ -11,7 +11,8 @@ class AllocationRunsController < ApplicationController
   end
 
   def unlock
-    if @allocation_run.update(locked: false)
+    fund = @allocation_run.fund
+    if AllocationRun.where(fund: fund).update_all(locked: false).positive?
       flash[:notice] = "AllocationRun unlocked successfully."
     else
       flash[:alert] = "Failed to unlock AllocationRun."

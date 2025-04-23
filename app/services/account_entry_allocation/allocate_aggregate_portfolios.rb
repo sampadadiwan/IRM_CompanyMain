@@ -35,22 +35,20 @@ module AccountEntryAllocation
         # We setup the as_of api here from the cache of apis
         api = as_of_apis[orig_api.id]
 
-        ae = AccountEntry.new(
-          name: fund_formula.name,
-          entry_type: fund_formula.entry_type,
-          entity_id: fund.entity_id,
-          fund: fund,
-          reporting_date: end_date,
-          period: "As of #{end_date}",
-          generated: true,
-          fund_formula: fund_formula
-        )
-
-        # We create a "parent" reference
-
         fund_formula.commitments(end_date, sample).each do |capital_commitment|
           # This is used to generate instance variables from the cached computed values
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
+
+          ae = AccountEntry.new(
+            name: fund_formula.name,
+            entry_type: fund_formula.entry_type,
+            entity_id: fund.entity_id,
+            fund: fund,
+            reporting_date: end_date,
+            period: "As of #{end_date}",
+            generated: true,
+            fund_formula: fund_formula
+          )
 
           begin
             create_instance_variables(ctx)
