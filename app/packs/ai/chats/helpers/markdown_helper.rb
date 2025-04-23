@@ -1,5 +1,6 @@
 # app/helpers/markdown_helper.rb
 module MarkdownHelper
+  # rubocop:disable Rails/OutputSafety
   def markdown_to_html(text)
     renderer = Redcarpet::Render::HTML.new(
       filter_html: true,     # removes raw HTML for safety
@@ -17,4 +18,5 @@ module MarkdownHelper
 
     markdown.render(text).html_safe
   end
+  # rubocop:enable Rails/OutputSafety
 end

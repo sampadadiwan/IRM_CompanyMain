@@ -1298,3 +1298,32 @@ iframe {
   overflow: hidden;
   scrollbar-width: none;
 }
+
+.markdown-body {
+  padding: 10px 15px;
+
+  table {
+    table-layout: fixed; /* Ensures columns take fixed space */
+    width: 100%;
+    max-width: 80vw !important;
+    border-collapse: collapse; 
+  }
+  
+  td, th {
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
+    padding: 8px;
+    max-width: fit-content; /* Prevents overflow */
+    overflow-wrap: break-word;
+  }
+
+  li {
+    white-space: normal;        /* Allow wrapping */
+    word-wrap: break-word;      /* Break long words */
+    word-break: break-word;     /* Ensure long strings like URLs break */
+    overflow-wrap: break-word;  /* For better browser compatibility */
+  }
+
+  
+}

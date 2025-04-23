@@ -4,6 +4,7 @@ class ToolCall < ApplicationRecord
 
   # --- Add your standard Rails model logic below ---
   def initialize
+    super
     self.json ||= {}
   end
 end

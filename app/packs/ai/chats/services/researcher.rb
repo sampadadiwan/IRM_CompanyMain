@@ -1,2 +1,0 @@
-class Researcher
-end
