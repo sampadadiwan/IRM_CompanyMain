@@ -18,10 +18,8 @@ module AccountEntryAllocation
 
     def cumulate_account_entries(ctx, **)
       fund_formula = ctx[:fund_formula]
-      ctx[:commitment_cache]
       end_date = ctx[:end_date]
-      ctx[:sample]
-      ctx[:start_date]
+      start_date = ctx[:start_date]
       fund         = ctx[:fund]
       bulk_records = []
 
@@ -52,7 +50,7 @@ module AccountEntryAllocation
 
         amount_cents = fund.account_entries.not_cumulative.where(
           name: fund_formula.name,
-          reporting_date: ..end_date,
+          reporting_date: start_date..end_date,
           parent_id: parent_ids,
           parent_type: fund_formula.formula.strip
         ).sum(:amount_cents)
