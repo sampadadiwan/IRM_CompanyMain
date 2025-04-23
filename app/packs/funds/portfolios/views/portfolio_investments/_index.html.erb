@@ -14,7 +14,7 @@
   <span>
     <% if (fund && policy(fund).update?) %>
 
-      <%= link_to "New Portfolio Investment",
+      <%= link_to "New Investment",
           new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
           "portfolio_investment[fund_id]": fund_id,
           "portfolio_investment[aggregate_portfolio_investment_id]": aggregate_portfolio_investment&.id,
