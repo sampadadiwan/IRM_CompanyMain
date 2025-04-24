@@ -23,12 +23,16 @@ module AccountEntryAllocation
         run_start_time       = Time.zone.now
         ctx[:bulk_insert_records] = []
 
-        fund.account_entries.generated.where(reporting_date: start_date..end_date).delete_all
-
         # Get the enabled formulas
         formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc)
+        # Run only the formulas with the specified rule_for
         formulas = formulas.where(rule_for: rule_for) if rule_for.present?
+        # Run only the formulas with the specified tags
         formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
+
+        fund_account_entries = fund.account_entries.generated.where(reporting_date: start_date..end_date)
+        # Delete existing fund account entries for the formulas
+        fund_account_entries.joins(:fund_formula).merge(formulas).delete_all
 
         ctx[:formula_count] = formulas.count
 
