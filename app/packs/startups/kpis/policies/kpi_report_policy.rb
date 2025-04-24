@@ -30,7 +30,7 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def analyze?
-    permissioned_employee?
+    permissioned_employee? && user.entity.enable_ai_chat
   end
 
   def update?
