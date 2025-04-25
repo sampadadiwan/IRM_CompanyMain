@@ -4,7 +4,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).joins(:user).includes(:entity)
+    @kpi_reports = policy_scope(@q.result).joins(:user)
     authorize(KpiReport)
 
     @kpi_reports = if params[:grid_view].present?
