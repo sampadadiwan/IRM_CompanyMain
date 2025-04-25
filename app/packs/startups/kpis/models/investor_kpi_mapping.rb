@@ -25,4 +25,8 @@ class InvestorKpiMapping < ApplicationRecord
       end
     end
   end
+
+  def to_s
+    reported_kpi_name
+  end
 end

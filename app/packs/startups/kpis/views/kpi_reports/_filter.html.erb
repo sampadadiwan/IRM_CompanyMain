@@ -11,16 +11,16 @@
   <div class="form-group col-md-1">    
     <% months = params[:months].presence %>
     <%= form.label :months, "Period in months" %>
-    <%= form.text_field :months, class: "form-control", value: months, style: "width: 50px;" %>        
+    <%= form.text_field :months, class: "form-control", value: months, style: "width: 50px;", name: "months" %>        
   </div>
 
   <div class="form-group col-md-1">    
     <% period = params[:period].presence %>
-    <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control" %>        
+    <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control", name: "period" %>        
   </div>
 
   <div class="form-group col-md-1">    
-    <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag" %>        
+    <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag", name: "tag_list" %>        
   </div>
 
   <%= form.submit "Filter", {class: "btn btn-outline-success", id: "submit"}%>

@@ -73,6 +73,7 @@ class InvestorKpiMappingsController < ApplicationController
   def set_investor_kpi_mapping
     @investor_kpi_mapping = InvestorKpiMapping.find(params[:id])
     authorize @investor_kpi_mapping
+    @bread_crumbs = { Mappings: investor_kpi_mappings_path(investor_id: @investor_kpi_mapping.investor_id), "#{@investor_kpi_mapping}": investor_kpi_mapping_path(@investor_kpi_mapping) }
   end
 
   # Only allow a list of trusted parameters through.
