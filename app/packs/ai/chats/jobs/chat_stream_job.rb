@@ -13,22 +13,26 @@ class ChatStreamJob < ApplicationJob
     @chat = Chat.find(chat_id)
     @chunk_counter = 0
 
-    # Load the document if provided and valid
-    if document_id.present?
-      document = Document.find_by(id: document_id)
-      Rails.logger.debug { "Adding document to chat: #{document.name}" }
+    begin
+      # Load the document if provided and valid
+      if document_id.present?
+        document = Document.find_by(id: document_id)
+        Rails.logger.debug { "Adding document to chat: #{document.name}" }
+      end
+
+      # Prepare the `with:` options for the chat request
+      options = document.present? ? { pdf: document.file_url } : {}
+
+      # Ask the chat and stream the response chunk by chunk
+      @chat.ask(user_content, with: options) do |chunk|
+        process_chunk(chunk)
+      end
+
+      # Final render to ensure the last message is cleanly displayed
+      broadcast_full_message(@chat.messages.last)
+    rescue StandardError => e
+      send_notification("Error while streaming chat response: #{e.message}", @chat.user_id, :error)
     end
-
-    # Prepare the `with:` options for the chat request
-    options = document.present? ? { pdf: document.file_url } : {}
-
-    # Ask the chat and stream the response chunk by chunk
-    @chat.ask(user_content, with: options) do |chunk|
-      process_chunk(chunk)
-    end
-
-    # Final render to ensure the last message is cleanly displayed
-    broadcast_full_message(@chat.messages.last)
   end
 
   private
