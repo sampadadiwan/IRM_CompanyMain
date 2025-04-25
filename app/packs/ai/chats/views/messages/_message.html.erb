@@ -1,7 +1,7 @@
 <%= turbo_frame_tag message do %>
   <div class="associated_entity <%= message.role %> mb-3 d-flex <%= message.role == 'user' ? 'justify-content-end' : 'justify-content-start' %>">
     <div class="message-bubble bg-light p-3 rounded shadow-sm">
-      <strong><%= message.role.capitalize %>:</strong>
+      <div class="role text-primary"><%= message.role.capitalize %>:</div>
 
       <div id="<%= dom_id(message, 'content') %>" class="markdown-body">
         <% if message.role == "assistant" && message.content.blank? %>

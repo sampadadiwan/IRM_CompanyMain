@@ -4,7 +4,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result)
+    @kpi_reports = policy_scope(@q.result).joins(:user).includes(:entity)
     authorize(KpiReport)
 
     @kpi_reports = if params[:grid_view].present?
@@ -18,13 +18,7 @@ class KpiReportsController < ApplicationController
       @kpi_reports = @kpi_reports.where(as_of: date..)
     end
 
-    if params[:entity_id].present?
-      @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id])
-      @portfolio_company = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).last if current_user.curr_role == "investor"
-    end
-    @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
-    @kpi_reports = @kpi_reports.where(tag_list: params[:tag_list]) if params[:tag_list].present?
-    @kpi_reports = @kpi_reports.where(owner_type: params[:owner_type]) if params[:owner_type].present?
+    @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type)
 
     if params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])

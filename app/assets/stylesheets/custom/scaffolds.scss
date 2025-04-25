@@ -1299,8 +1299,13 @@ iframe {
   scrollbar-width: none;
 }
 
+.role {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
 .markdown-body {
-  padding: 10px 15px;
+  padding: 10px 15px;  
 
   table {
     table-layout: fixed; /* Ensures columns take fixed space */
