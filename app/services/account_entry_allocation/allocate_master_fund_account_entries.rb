@@ -22,7 +22,6 @@ module AccountEntryAllocation
     step :get_exchange_rate
     step :allocate_master_fund_account_entries
 
-    
     def get_exchange_rate(ctx, fund:, end_date:, **)
       if fund.master_fund.currency != fund.currency
         # Possibly exchange rate conversions, etc.

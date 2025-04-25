@@ -45,7 +45,7 @@ class ChatsController < ApplicationController
   end
 
   def send_message
-    ChatStreamJob.perform_later(@chat.id, params[:user_content])
+    ChatStreamJob.perform_later(@chat.id, params[:user_content], document_id: params[:document_id])
   end
 
   # DELETE /chats/1

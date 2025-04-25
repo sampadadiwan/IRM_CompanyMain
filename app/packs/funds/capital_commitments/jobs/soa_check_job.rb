@@ -18,7 +18,6 @@ class SoaCheckJob < ApplicationJob
     end
   end
 
-
   IP_QUESTION = "Summarize the Investor Presentation document. In section 1 clearly outline the key facts and figures from the document in tables, In section 2 present an analysis of the key facts and strategy discussed. In section 3 generate a table of key questions based on the document that need further attention. In section 4 add a table listing the risks for the company.".freeze
 
   def analyze_soa(capital_commitment, soa_name, chat, _user)

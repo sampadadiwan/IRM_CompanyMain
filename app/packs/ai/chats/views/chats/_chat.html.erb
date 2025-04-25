@@ -1,6 +1,7 @@
 <tr>
     <td><%= chat.name %></td>
     <td><%= chat.user.full_name %></td>
+    <td><%= link_to chat.owner if chat.owner %></td>
     <td><%= l chat.created_at %></td>
     <td>
         <%= link_to "View", chat_path(chat), class: "btn btn-outline-primary" %>
