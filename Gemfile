@@ -250,4 +250,5 @@ gem 'wikipedia-client'
 gem "ferrum_pdf", "~> 0.3.0"
 gem 'ostruct'
 
-gem 'ruby_llm'
+# The only change in this gem is that models.json has the new gemini 2.5 flash model
+gem 'ruby_llm', git: "https://github.com/ausangshukla/ruby_llm.git"
