@@ -22,7 +22,6 @@ module AccountEntryAllocation
     step :get_exchange_rate
     step :allocate_master_fund_account_entries
 
-    
     def get_exchange_rate(ctx, fund:, end_date:, **)
       if fund.master_fund.currency != fund.currency
         # Possibly exchange rate conversions, etc.
@@ -50,7 +49,13 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
-      master_fund_account_entries_cache = {}
+      # Get the master fund account entries for the given fund formula, grouped by folio_id
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ? and account_entries.name = ?", fund.id, fund_formula.name).where(reporting_date: start_date..end_date)
+
+      # This may be used inside the fund formula
+      master_fund_account_entries_by_folio = master_fund_account_entries.group_by(&:folio_id).transform_values { |entries| entries.sum(&:amount_cents) }
+
+      Rails.logger.debug { "master_fund_account_entries_by_folio has #{master_fund_account_entries_by_folio.length} entries" }
 
       fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" }
