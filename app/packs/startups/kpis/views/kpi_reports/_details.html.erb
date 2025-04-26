@@ -9,6 +9,11 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
+      <% if policy(kpi_report).analyze? %>          
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#analysis-tab"
+          data-action="click->tabdetails#loadData">Analysis</a>
+      <% end %>
+
       <% if policy(kpi_report).update? %>          
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
               data-action="click->tabdetails#loadData">
@@ -68,6 +73,15 @@
             <% end %>
           </div>     
         </div>
+
+        <% if policy(kpi_report).analyze? %>  
+          <div id="analysis-tab" class="tab-pane fade">
+            <div id="analysis" class="associated_entity">
+              <%= turbo_frame_tag "chat_list", target: "_top", src: chats_path(owner_id: kpi_report.id, owner_type: "KpiReport") do %>
+              <% end %>
+            </div>     
+          </div>
+        <% end %>
   
     </div>
   

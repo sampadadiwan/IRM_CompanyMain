@@ -3,8 +3,8 @@ class KpiReportDatatable < ApplicationDatatable
     @view_columns ||= {
       id: { source: "KpiReport.id", searchable: false },
       period: { source: "KpiReport.period", searchable: true },
-      user: { source: "User.first_name", orderable: true },
-      entity: { source: "Entity.name", orderable: true },
+      user: { source: "User.first_name", orderable: true, searchable: true },
+      entity: { source: "Entity.name", orderable: true, searchable: false },
       notes: { source: "Investor.notes", orderable: false, searchable: false },
       as_of: { source: "KpiReport.as_of", orderable: true },
       dt_actions: { source: "", orderable: false, searchable: false }

@@ -1,10 +1,10 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze]
 
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result)
+    @kpi_reports = policy_scope(@q.result).joins(:user).includes(:entity)
     authorize(KpiReport)
 
     @kpi_reports = if params[:grid_view].present?
@@ -18,19 +18,13 @@ class KpiReportsController < ApplicationController
       @kpi_reports = @kpi_reports.where(as_of: date..)
     end
 
-    if params[:entity_id].present?
-      @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id])
-      @portfolio_company = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).last if current_user.curr_role == "investor"
-    end
-    @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
-    @kpi_reports = @kpi_reports.where(tag_list: params[:tag_list]) if params[:tag_list].present?
-    @kpi_reports = @kpi_reports.where(owner_type: params[:owner_type]) if params[:owner_type].present?
+    @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type)
 
     if params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])
       # Now either the portfolio_company has uploaded and given access to the kpi_reports
       # Or the fund company has uploaded the kpi_reports for the portfolio_company
-      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
+      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or kpi_reports.entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
     end
 
     respond_to do |format|
@@ -42,6 +36,12 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
   def show; end
+
+  def analyze
+    @prev_kpi_report = KpiReport.where(entity_id: @kpi_report.entity_id, as_of: ..@kpi_report.as_of - 1.day).order(as_of: :asc).last
+    KpiAnalystJob.perform_later(@kpi_report.id, @prev_kpi_report&.id, current_user.id)
+    redirect_to kpi_report_url(@kpi_report), notice: "Analysis started."
+  end
 
   # GET /kpi_reports/new
   def new

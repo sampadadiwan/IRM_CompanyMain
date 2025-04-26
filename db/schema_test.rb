@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -66,7 +66,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
     t.datetime "deleted_at"
     t.datetime "generated_deleted", default: "1900-01-01 00:00:00", null: false
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.bigint "allocation_run_id"
+    t.integer "allocation_run_id"
     t.string "parent_name"
     t.string "commitment_name"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
@@ -738,6 +738,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
     t.index ["remittance_date"], name: "index_capital_remittances_on_remittance_date"
+  end
+
+  create_table "chats", force: :cascade do |t|
+    t.string "model_id"
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "name"
+    t.index ["entity_id"], name: "index_chats_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
+    t.index ["user_id"], name: "index_chats_on_user_id"
   end
 
   create_table "ci_profiles", force: :cascade do |t|
@@ -2229,17 +2243,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
   end
 
   create_table "messages", force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.bigint "chat_id", null: false
+    t.string "role"
+    t.text "content"
+    t.string "model_id"
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.bigint "tool_call_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "owner_type", null: false
-    t.bigint "owner_id", null: false
-    t.bigint "investor_id"
-    t.index ["entity_id"], name: "index_messages_on_entity_id"
-    t.index ["investor_id"], name: "index_messages_on_investor_id"
-    t.index ["owner_type", "owner_id"], name: "index_messages_on_owner"
-    t.index ["user_id"], name: "index_messages_on_user_id"
+    t.index ["chat_id"], name: "index_messages_on_chat_id"
+    t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
   create_table "notes", force: :cascade do |t|
@@ -2948,6 +2962,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "tool_calls", force: :cascade do |t|
+    t.bigint "message_id", null: false
+    t.string "tool_call_id", null: false
+    t.string "name", null: false
+    t.json "arguments"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id"], name: "index_tool_calls_on_message_id"
+    t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
+  end
+
   create_table "user_alerts", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "message"
@@ -3323,8 +3348,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_20_100001) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
-  add_foreign_key "messages", "investors"
-  add_foreign_key "messages", "users"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"

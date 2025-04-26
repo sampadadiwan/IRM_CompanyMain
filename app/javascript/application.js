@@ -73,3 +73,4 @@ $( document ).on('turbo:load', function() {
 
     "use strict";
 });
+

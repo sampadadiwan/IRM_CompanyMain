@@ -1,0 +1,10 @@
+<tr>
+    <td><%= chat.name %></td>
+    <td><%= chat.user.full_name %></td>
+    <td><%= link_to chat.owner if chat.owner %></td>
+    <td><%= l chat.created_at %></td>
+    <td>
+        <%= link_to "View", chat_path(chat), class: "btn btn-outline-primary" %>
+        <%= link_to "Delete", chat_path(chat), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-outline-danger" %>
+    </td>
+</tr>

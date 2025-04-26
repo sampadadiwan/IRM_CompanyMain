@@ -5,6 +5,7 @@ end
 resources :kpis
 resources :kpi_reports do
   patch 'recompute_percentage_change', on: :member
+  post "analyze", on: :member
 end
 
 resources :share_transfers

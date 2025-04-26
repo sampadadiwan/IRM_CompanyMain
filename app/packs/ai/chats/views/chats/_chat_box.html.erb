@@ -1,0 +1,27 @@
+<div id="chat_box" class="card mb-4">
+    <div class="card-header">
+        <%= @chat.name %>        
+    </div>    
+
+    <div class="card-body">        
+        <%= form_with(url: send_message_chat_path(@chat), method: :post, data: {turbo: true}) do |f| %>
+            <div class="input-group">
+                <%= f.text_field :content, name: "user_content", class: "form-control", placeholder: "Ask your question here." %>  
+                <% if @chat.owner && @chat.owner.respond_to?(:documents) && @chat.owner.documents.present? %>
+                    <div class="input-group-append">                
+                        <%= f.select :document_id, @chat.owner.documents.select{|d| d.pdf?}.map{|d| [d.name, d.id]}, {prompt: "Select Document"}, class: "form-control" %>
+                    </div>
+                <% end %>
+
+                <div class="input-group-append">
+                    <%= f.submit "Send", class: "btn btn-primary" %>
+                </div>
+
+                
+            </div>
+            <small class="form-text text-muted">
+                The data in the chats above along with any documents you select will be used to generate a response using an external LLM.
+            </small>
+        <% end %>
+    </div>
+</div>

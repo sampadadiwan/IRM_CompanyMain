@@ -15,6 +15,19 @@ GIT
       activerecord (>= 5.0)
 
 GIT
+  remote: https://github.com/ausangshukla/ruby_llm.git
+  revision: c62af95bf4e047c66656d8da82915a312dba4682
+  specs:
+    ruby_llm (1.2.0)
+      base64
+      event_stream_parser (~> 1)
+      faraday (~> 2)
+      faraday-multipart (~> 1)
+      faraday-net_http (~> 3)
+      faraday-retry (~> 2)
+      zeitwerk (~> 2)
+
+GIT
   remote: https://github.com/nejdetkadir/devise-api.git
   revision: bd49310c4e96ec6e56ec38c2542754718b2f1c57
   branch: main
@@ -457,6 +470,8 @@ GEM
       multipart-post (~> 2.0)
     faraday-net_http (3.4.0)
       net-http (>= 0.5.0)
+    faraday-retry (2.3.1)
+      faraday (~> 2.0)
     faraday-typhoeus (1.1.0)
       faraday (~> 2.0)
       typhoeus (~> 1.4)
@@ -1161,6 +1176,7 @@ DEPENDENCIES
   ruby-openai!
   ruby-prof
   rubyXL!
+  ruby_llm!
   rubyzip
   rupees!
   sablon
