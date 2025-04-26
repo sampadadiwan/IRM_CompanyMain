@@ -61,6 +61,8 @@
 </table>
 
 <% if params[:show_chart].present? %>
-  <%= line_chart @pivot.chart,  library: { title: { text: "" } } %>
+  <%= render ToggleCard.new(title: "Chart", css_class: "show_ae_pivot_chart", state: "show") do %>
+    <%= line_chart @pivot.chart,  library: { title: { text: "" } } %>
+  <% end %>
 <% end %>
 
