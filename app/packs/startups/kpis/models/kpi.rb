@@ -54,8 +54,10 @@ class Kpi < ApplicationRecord
   def self.recompute_percentage_change(kpis)
     # Get all the kpis for the entity with same name and period
     kpis.each_cons(2) do |current_kpi, next_kpi|
-      next_kpi.percentage_change = ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
-      next_kpi.save
+      if next_kpi.percentage_change.nil? || next_kpi.percentage_change.zero?
+        next_kpi.percentage_change = ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
+        next_kpi.save
+      end
     end
   end
 end

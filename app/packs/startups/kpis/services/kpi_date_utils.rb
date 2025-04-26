@@ -24,7 +24,7 @@ class KpiDateUtils
 
   # rubocop:disable Metrics/MethodLength
   # Parses a raw period string into a Date object
-  def self.parse_period(raw_period, fiscal_year_start_month: 4)
+  def self.parse_period(raw_period, fiscal_year_start_month: 4, raise_error: true)
     return nil if raw_period.blank?
 
     str = raw_period.to_s.strip.upcase.gsub(/\s+/, ' ')
@@ -87,7 +87,7 @@ class KpiDateUtils
     begin
       Date.parse(raw_period.to_s)
     rescue ArgumentError
-      if Rails.env.test?
+      if Rails.env.test? || !raise_error
         nil
       else
         raise "Unrecognized period format: '#{raw_period}'"

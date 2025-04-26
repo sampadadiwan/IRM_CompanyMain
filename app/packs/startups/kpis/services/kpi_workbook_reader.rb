@@ -28,6 +28,8 @@
 # - Collects error messages in an array for further inspection.
 
 class KpiWorkbookReader
+  attr_reader :error_msg
+
   def initialize(document, target_kpis, user, portfolio_company)
     @document = document
     Rails.logger.debug { "Document: #{@document.name}" }
@@ -68,6 +70,7 @@ class KpiWorkbookReader
             next
           end
 
+          Rails.logger.debug { "Header row index: #{header_row_index}" }
           # Clean and normalize the header row
           header = clean_row(@workbook.row(header_row_index))
           # Process the data rows below the header
@@ -113,6 +116,7 @@ class KpiWorkbookReader
   # Processes rows of KPI data beneath the header
   def process_data_rows(sheet, start_row, header)
     (start_row..@workbook.last_row).each do |row_index|
+      Rails.logger.debug { "Row index: #{row_index},  #{@workbook.row(row_index)}" }
       row = clean_row(@workbook.row(row_index))
       next if row.empty? || row.all?(&:blank?)
 
@@ -131,7 +135,7 @@ class KpiWorkbookReader
     row[1..].each_with_index do |value, col_index|
       raw_period = header[col_index + 1]
       period = raw_period&.to_s&.strip
-      next if period.blank? || value.blank?
+      next if period.blank? || value.blank? || value.downcase == "n/a" || value.downcase == "na"
 
       if seen_periods[period]
         log_duplicate_period_warning(sheet, period)
@@ -139,7 +143,7 @@ class KpiWorkbookReader
       end
       seen_periods[period] = true
 
-      parsed_period = KpiDateUtils.parse_period(period)
+      parsed_period = KpiDateUtils.parse_period(period, raise_error: false)
       next unless parsed_period
 
       kpi_report = find_or_create_kpi_report(parsed_period)

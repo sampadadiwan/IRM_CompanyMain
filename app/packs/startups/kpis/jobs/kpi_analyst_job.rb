@@ -20,6 +20,8 @@ class KpiAnalystJob < ApplicationJob
     end
   end
 
+  KPI_ANALYSIS_QUERY = " In the first section summarize the data in a table. In the second section provide insights and recommendations as bullet points with the related numbers. In the last section generate a table of key questions to ask the portfolio company based on the analysis.".freeze
+
   def analyze_kpis(current_kpi_report, prev_kpi_report, chat, _user)
     Rails.logger.debug { "Analyzing KPIs for report #{current_kpi_report.id} and previous report #{prev_kpi_report.id}" }
 
@@ -36,16 +38,47 @@ class KpiAnalystJob < ApplicationJob
       query = "Analyze the following KPIs from this period <CurrentPeriodKPIs> #{current_kpis} </CurrentPeriodKPIs>."
     end
 
-    query += " In the first section summarize the data in a table. In the second section provide insights and recommendations as bullet points with the related numbers. In the last section generate a table of key questions to ask the portfolio company based on the analysis."
+    # You can add a rule to the AiRule table to override the default query
+    # The rule should be of name 'Kpi Analysis' type 'investment_analyst' and for_class 'KpiReport'
+    ai_rule = get_ai_rule("Kpi Analysis")
+    query += ai_rule&.rule || KPI_ANALYSIS_QUERY
 
     chat.ask(query)
   end
 
-  IP_QUESTION = "Summarize the Investor Presentation document. In section 1 clearly outline the key facts and figures from the document in tables, In section 2 present an analysis of the key facts and strategy discussed. In section 3 generate a table of key questions based on the document that need further attention. In section 4 add a table listing the risks for the company.".freeze
+  IP_ANALYSIS = "Summarize the Investor Presentation document. In section 1 clearly outline the key facts and figures from the document in tables, In section 2 present an analysis of the key facts and strategy discussed. In section 3 generate a table of key questions based on the document that need further attention. In section 4 add a table listing the risks for the company.".freeze
 
   def analyze_investor_presentation(current_kpi_report, chat, _user)
-    Rails.logger.debug { "Analyzing Investor Presentation for report #{current_kpi_report.id}" }
-    doc = current_kpi_report.documents.where("name like '%Investor Presentation%'").first
-    chat.ask(IP_QUESTION, with: { pdf: doc.file_url }) if doc.present?
+    name = "Investor Presentation"
+
+    doc = current_kpi_report.documents.where("name like '%#{name}%'").first
+    if doc.present?
+      # Get the tag_list from the portfolio company
+      tag_list = current_kpi_report.portfolio_company.tag_list.split(",").map(&:strip) if current_kpi_report.portfolio_company && current_kpi_report.portfolio_company.tag_list.present?
+
+      # You can add a rule to the AiRule table to override the default query
+      # The rule should be of name 'Investor Presentation' type 'investment_analyst' and for_class 'KpiReport'
+      ai_rule = get_ai_rule(name, tag_list:)
+
+      query = ai_rule&.rule || IP_ANALYSIS
+
+      Rails.logger.debug { "Analyzing Investor Presentation for report #{current_kpi_report.id}" }
+
+      #  Craft the query to the LLM
+      chat.ask(query, with: { pdf: doc.file_url })
+    end
+  end
+
+  def get_ai_rule(name, tag_list: nil)
+    # Get the ai_rule for KpiReport matching any of the tags
+    if tag_list.present?
+      AiRule.where(for_class: "KpiReport", rule_type: "investment_analyst", name:).where(
+        tag_list.map { "tags = ?" }.join(" OR "),
+        *tag_list.map { |tag| tag }
+      ).first
+    end
+
+    # If no ai_rule is found, get the ai_rule for KpiReport
+    AiRule.where(for_class: "KpiReport", rule_type: "investment_analyst", name:).first
   end
 end

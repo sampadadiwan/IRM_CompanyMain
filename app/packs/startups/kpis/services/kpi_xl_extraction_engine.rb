@@ -28,7 +28,7 @@ class KpiXlExtractionEngine
   def upload_excel_file(client)
     response = client.files.upload(
       parameters: {
-        file: Faraday::UploadIO.new("tmp/MIS sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        file: Faraday::UploadIO.new("public/sample_uploads/kpi_extraction/MIS sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
         purpose: "assistants"
       }
     )
@@ -67,7 +67,7 @@ class KpiXlExtractionEngine
       thread_id: thread_id,
       parameters: {
         role: "user",
-        content: "Please extract the Revenue, Net Current Assets, and Number of Distributors by scanning all the worksheets in the Excel workbook. Please provide the extracted values across all dates for a specific KPI in json format for example {revenue: {date_1: 10000, date_1: 20000}}. Always return pure json. and do not add ```json or ``` at the start and end of the response."
+        content: "Please extract the Total GMV, Revenue, Total Borrowing, EBITDA, Number of Branches by scanning all the worksheets in the Excel workbook. Please provide the extracted values across all dates for a specific KPI in json format for example {revenue: {date_1: 10000, date_1: 20000}}. Always return pure json. and do not add ```json or ``` at the start and end of the response."
       }
     )
   end
