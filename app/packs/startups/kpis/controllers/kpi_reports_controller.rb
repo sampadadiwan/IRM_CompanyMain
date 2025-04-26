@@ -4,7 +4,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).joins(:user)
+    @kpi_reports = policy_scope(@q.result).joins(:user).includes(:entity)
     authorize(KpiReport)
 
     @kpi_reports = if params[:grid_view].present?
@@ -24,7 +24,7 @@ class KpiReportsController < ApplicationController
       @portfolio_company = Investor.find(params[:portfolio_company_id])
       # Now either the portfolio_company has uploaded and given access to the kpi_reports
       # Or the fund company has uploaded the kpi_reports for the portfolio_company
-      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
+      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or kpi_reports.entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
     end
 
     respond_to do |format|
