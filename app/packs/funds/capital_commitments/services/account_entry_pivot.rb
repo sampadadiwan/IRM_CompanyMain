@@ -28,4 +28,33 @@ class AccountEntryPivot
 
     self
   end
+
+  def chart
+    chart_data = [] # Initialize an array to hold the chart data
+
+    @rows.each do |row| # Iterate over each row (key) in the structured data
+      # Destructure the row to extract commitment and parent details
+      commitment_name, _commitment_id, parent_name, parent_type, parent_id = row
+      # Create a label for the row by combining commitment and parent names
+      row_name = "#{commitment_name} - #{parent_name}" 
+
+      row_data = {} # Initialize a hash to hold the data for this row
+
+      @groups.each do |group| # Iterate over each group
+        @dates_by_group[group].each do |date| # Iterate over each date in the group
+          # Retrieve the amount for the current row, group, and date
+          amount = @structured_data.dig(row, group, date)
+          row_data[date] ||= 0 # Initialize the date key in row_data if not already present
+          # Add the amount to the date key, converting to float and checking presence
+          row_data[date] += amount.to_f if amount.present?
+        end
+      end
+
+      # Add the row's data to the chart_data array, sorting the dates
+      chart_data << { name: row_name, data: row_data.sort.to_h }
+    end
+
+    chart_data
+  end
+
 end
