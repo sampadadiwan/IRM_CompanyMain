@@ -118,72 +118,106 @@ class KpiWorkbookReader
     (start_row..@workbook.last_row).each do |row_index|
       Rails.logger.debug { "Row index: #{row_index},  #{@workbook.row(row_index)}" }
       row = clean_row(@workbook.row(row_index))
+      # Skip empty rows or rows where all cells are blank
       next if row.empty? || row.all?(&:blank?)
 
+      # Detect the column containing KPI names
       kpi_col = detect_kpi_name_column(start_row)
       raw_kpi_name = row[kpi_col]
+      # Normalize the KPI name for consistent matching
       kpi_name = normalize_kpi_name(raw_kpi_name)
+      # Skip rows where the KPI name is not in the target list
       next unless @target_kpis.include?(kpi_name)
 
+      # Process the row to extract KPI values
       process_kpi_row(sheet, row, header, raw_kpi_name, kpi_name)
     end
   end
 
+  # Processes a single row of KPI data
   def process_kpi_row(sheet, row, header, raw_kpi_name, _kpi_name)
     seen_periods = {}
-
+    # Iterate through each value in the row (excluding the KPI name column)
     row[1..].each_with_index do |value, col_index|
       raw_period = header[col_index + 1]
       period = raw_period&.to_s&.strip
+      # Skip blank periods, blank values, or invalid values like "n/a"
       next if period.blank? || value.blank? || value.downcase == "n/a" || value.downcase == "na"
 
-      if seen_periods[period]
-        log_duplicate_period_warning(sheet, period)
-        next
-      end
-      seen_periods[period] = true
-
+      # Parse the period into a date object
       parsed_period = KpiDateUtils.parse_period(period, raise_error: false)
       next unless parsed_period
 
-      kpi_report = find_or_create_kpi_report(parsed_period)
-      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+      period_type = KpiDateUtils.detect_period_type(period)
+
+      # Check for duplicate periods in the same row
+      if seen_periods[parsed_period.to_s + period_type.to_s].present?
+        log_duplicate_period_warning(sheet, period, header)
+        next
+      else
+        seen_periods[parsed_period.to_s + period_type.to_s] = true
+      end
+
+      # Find or create a KPI report for the parsed period
+      kpi_report = find_or_create_kpi_report(parsed_period, period)
+      # Save the KPI entry into the database
+      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row)
     end
   end
 
-  def log_duplicate_period_warning(sheet, period)
-    msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping."
+  # Logs a warning for duplicate periods in the same row
+  def log_duplicate_period_warning(sheet, period, header)
+    msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping. Header: #{header.join(', ')}"
     Rails.logger.debug msg
     @error_msg << { msg:, document: @document.name, document_id: @document.id }
   end
 
-  def find_or_create_kpi_report(parsed_period)
+  # Finds or creates a KPI report for the given period
+  def find_or_create_kpi_report(parsed_period, period)
+    # Detect the type of period (e.g., month, quarter, year)
+    period_type = KpiDateUtils.detect_period_type(period)
+
+    # Find or create a KPI report for the portfolio company and period
     @results[parsed_period] ||= KpiReport.where(
       entity_id: @portfolio_company&.entity_id,
       as_of: parsed_period,
+      period: period_type,
       portfolio_company_id: @portfolio_company_id
     ).first_or_create.tap do |report|
+      # Assign the user if the report is newly created
       report.user ||= @user
       report.save! unless report.persisted?
     end
   end
 
-  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period)
+  # rubocop:disable Metrics/ParameterLists
+  # Saves a KPI entry into the database
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row)
+    # Find or initialize a KPI entry for the given report and KPI name
     kpi = kpi_report.kpis.where(
       name: raw_kpi_name,
       portfolio_company_id: @portfolio_company_id,
       entity_id: @portfolio_company&.entity_id
     ).first_or_initialize
 
-    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period}" }
+    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row}" }
 
+    # Check if the value has changed
+    if kpi.persisted? && kpi.value != value
+      msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row}"
+      Rails.logger.debug msg
+      @error_msg << { msg:, document: @document.name, document_id: @document.id }
+    end
+    # Assign attributes to the KPI entry
     kpi.assign_attributes(
       value: value,
       display_value: value,
       source: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
     )
+    # Save the KPI entry
     kpi.save
   end
+  # rubocop:enable Metrics/ParameterLists
 
   # Strips and normalizes a row's values
   def clean_row(row)
@@ -206,6 +240,7 @@ class KpiWorkbookReader
       row = clean_row(@workbook.row(row_index))
       (0...max_cols_to_scan).each do |col_index|
         cell = row[col_index]
+        # Increment the count for non-empty cells in the column
         column_counts[col_index] += 1 unless cell.nil? || cell.to_s.strip.empty?
       end
     end

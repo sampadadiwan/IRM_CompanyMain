@@ -95,6 +95,34 @@ class KpiDateUtils
     end
   end
 
+  # Parses a raw period string and returns Month, Quarter, or Year
+  def self.detect_period_type(raw_period)
+    return nil if raw_period.blank?
+
+    str = raw_period.to_s.strip.upcase.gsub(/\s+/, ' ')
+
+    # === Month Formats ===
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str)
+
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str)
+
+    # === Quarter Formats ===
+
+    return "Quarter" if str =~ /\AQ([1-4])\s*FY\s*(\d{2,4})\z/ || str =~ /\AQ([1-4])FY(\d{2,4})\z/
+
+    return "Quarter" if /\AQ([1-4])\s+(\d{2,4})\z/.match?(str)
+
+    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
+
+    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str)
+
+    # === Year Formats ===
+    return "Year" if /\A(?:CY|FY)?\s*(\d{2,4})\z/.match?(str)
+
+    # === Fallback ===
+    nil
+  end
+
   # rubocop:enable Metrics/MethodLength
 
   def self.normalize_year(year)
