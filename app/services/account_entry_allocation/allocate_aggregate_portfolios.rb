@@ -31,7 +31,7 @@ module AccountEntryAllocation
         ctx[:as_of_apis] = as_of_apis
       end
 
-      fund.aggregate_portfolio_investments.each_with_index do |orig_api, idx|
+      fund.aggregate_portfolio_investments.includes(:portfolio_investments, portfolio_company: :valuations, fund: :stock_conversions).each_with_index do |orig_api, idx|
         # We setup the as_of api here from the cache of apis
         api = as_of_apis[orig_api.id]
 
