@@ -34,9 +34,9 @@ class AccountEntryPivot
 
     @rows.each do |row| # Iterate over each row (key) in the structured data
       # Destructure the row to extract commitment and parent details
-      commitment_name, _commitment_id, parent_name, parent_type, parent_id = row
+      commitment_name, _commitment_id, parent_name, = row
       # Create a label for the row by combining commitment and parent names
-      row_name = "#{commitment_name} - #{parent_name}" 
+      row_name = "#{commitment_name} - #{parent_name}"
 
       row_data = {} # Initialize a hash to hold the data for this row
 
@@ -56,5 +56,4 @@ class AccountEntryPivot
 
     chart_data
   end
-
 end

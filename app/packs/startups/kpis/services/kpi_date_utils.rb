@@ -27,7 +27,11 @@ class KpiDateUtils
   def self.parse_period(raw_period, fiscal_year_start_month: 4, raise_error: true)
     return nil if raw_period.blank?
 
-    str = raw_period.to_s.strip.upcase.gsub(/\s+/, ' ')
+    # Normalize the input
+    str = raw_period.to_s.strip.upcase
+    str = str.gsub(/\s+/, ' ') # collapse spaces
+             .gsub(/\s*([^\w\s])\s*/, '\1')   # remove spaces around symbols
+             .gsub(/([A-Z])\s+(\d)/, '\1\2')  # REMOVE spaces between letters and numbers!
 
     # === Month Formats ===
     if str =~ /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/
@@ -43,15 +47,21 @@ class KpiDateUtils
     end
 
     # === Quarter Formats ===
-
-    # Q[1-4] FYyy or Q[1-4]FYyy
-    if str =~ /\AQ([1-4])\s*FY\s*(\d{2,4})\z/ || str =~ /\AQ([1-4])FY(\d{2,4})\z/
+    # Q[1-4]FYyy (e.g., "Q1FY24")
+    if str =~ /\AQ([1-4])FY(\d{2,4})\z/
       quarter = ::Regexp.last_match(1).to_i
       fy = normalize_year(::Regexp.last_match(2))
       return start_of_fiscal_quarter(fy, quarter, fiscal_year_start_month)
     end
 
-    # Q[1-4] YYYY (e.g., "Q1 2024")
+    # Q[1-4]yy (e.g., "Q12024")
+    if str =~ /\AQ([1-4])(\d{2,4})\z/
+      quarter = ::Regexp.last_match(1).to_i
+      year = normalize_year(::Regexp.last_match(2))
+      return start_of_fiscal_quarter(year, quarter, fiscal_year_start_month)
+    end
+
+    # Q[1-4] yy (e.g., "Q1 2024")
     if str =~ /\AQ([1-4])\s+(\d{2,4})\z/
       quarter = ::Regexp.last_match(1).to_i
       year = normalize_year(::Regexp.last_match(2))
@@ -77,7 +87,7 @@ class KpiDateUtils
     end
 
     # === Year Formats ===
-    if str =~ /\A(?:CY|FY)?\s*(\d{2,4})\z/
+    if str =~ /\A(?:CY|FY)?(\d{2,4})\z/
       year = normalize_year(::Regexp.last_match(1))
       type = str.start_with?("FY") ? "FY" : "CY"
       return type == "FY" ? Date.new(year - 1, fiscal_year_start_month, 1) : Date.new(year, 1, 1)
@@ -99,25 +109,27 @@ class KpiDateUtils
   def self.detect_period_type(raw_period)
     return nil if raw_period.blank?
 
-    str = raw_period.to_s.strip.upcase.gsub(/\s+/, ' ')
+    # === Normalize input ===
+    str = raw_period.to_s.strip.upcase
+    str = str.gsub(/\s+/, ' ') # collapse spaces
+             .gsub(/\s*([^\w\s])\s*/, '\1')   # remove spaces around symbols
+             .gsub(/([A-Z])\s+(\d)/, '\1\2')  # REMOVE spaces between letters and numbers!
+
+    Rails.logger.debug { "Normalized string: #{str}" }
 
     # === Month Formats ===
     return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str)
-
     return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str)
 
     # === Quarter Formats ===
-
-    return "Quarter" if str =~ /\AQ([1-4])\s*FY\s*(\d{2,4})\z/ || str =~ /\AQ([1-4])FY(\d{2,4})\z/
-
+    return "Quarter" if /\AQ([1-4])FY(\d{2,4})\z/.match?(str)
+    return "Quarter" if /\AQ([1-4])(\d{2,4})\z/.match?(str)
     return "Quarter" if /\AQ([1-4])\s+(\d{2,4})\z/.match?(str)
-
     return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
-
     return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str)
 
     # === Year Formats ===
-    return "Year" if /\A(?:CY|FY)?\s*(\d{2,4})\z/.match?(str)
+    return "Year" if /\A(CY|FY)?(\d{2,4})\z/.match?(str)
 
     # === Fallback ===
     nil

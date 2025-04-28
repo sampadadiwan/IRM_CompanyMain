@@ -177,8 +177,9 @@ class KpiWorkbookReader
     # Detect the type of period (e.g., month, quarter, year)
     period_type = KpiDateUtils.detect_period_type(period)
 
+    key = parsed_period.to_s + period_type.to_s
     # Find or create a KPI report for the portfolio company and period
-    @results[parsed_period] ||= KpiReport.where(
+    @results[key] ||= KpiReport.where(
       entity_id: @portfolio_company&.entity_id,
       as_of: parsed_period,
       period: period_type,
@@ -188,6 +189,10 @@ class KpiWorkbookReader
       report.user ||= @user
       report.save! unless report.persisted?
     end
+
+    Rails.logger.debug { "KPI Report: #{period} #{parsed_period} #{period_type} #{@portfolio_company.name}" }
+    Rails.logger.debug @results[key]
+    @results[key]
   end
 
   # rubocop:disable Metrics/ParameterLists
@@ -203,7 +208,7 @@ class KpiWorkbookReader
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row}" }
 
     # Check if the value has changed
-    if kpi.persisted? && kpi.value != value
+    if kpi.persisted? && kpi.value != value.to_d
       msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row}"
       Rails.logger.debug msg
       @error_msg << { msg:, document: @document.name, document_id: @document.id }
