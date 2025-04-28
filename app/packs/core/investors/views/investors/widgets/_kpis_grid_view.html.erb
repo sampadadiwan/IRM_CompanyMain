@@ -1,4 +1,4 @@
-<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true)) %>
+<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true, chart: args[:chart])) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,

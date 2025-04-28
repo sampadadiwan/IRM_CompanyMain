@@ -71,7 +71,8 @@
 </div>
 
 <div class="associated_entity" data-controller="valuebridge">
-    <div id="waterfall-chart" 
+    <div id="waterfall-chart-<%= @initial_valuation.id %>-<%= @final_valuation.id %>" 
+        data-valuebridge-target="chart"
         data-chart-values="<%= json_escape(waterfall_chart_data.map(&:to_h).to_json) %>
 "></div>
 </div>

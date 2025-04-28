@@ -1,5 +1,6 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 12)
+  # rubocop:disable Metrics/ParameterLists
+  def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 12, chart_id: "fund_ratios_chart")
     months ||= 12
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
@@ -34,7 +35,7 @@ module FundDashboardHelper
     end
 
     # Plot the chart with multiple series
-    line_chart series, library: {
+    line_chart series, id: chart_id, library: {
       plotOptions: {
         series: {
           dataLabels: {
@@ -46,6 +47,7 @@ module FundDashboardHelper
       **chart_theme_color
     }
   end
+  # rubocop:enable Metrics/ParameterLists
 
   def account_entries_line_chart(fund, entry_types: %w[Expense Fee], months: 12)
     from_date = Time.zone.today - months.months

@@ -1,11 +1,17 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  connect() {
-    let chartElement = $("#waterfall-chart");
-    let chartData = chartElement.data("chart-values");
+  static targets = ["chart"]
 
-    console.log("Raw Data Attribute:", chartData); // Debugging Step
+  connect() {
+    this.chartTarget.dataset.chartValues && this.initializeChart();
+  }
+
+  initializeChart() {
+    let chartElement = this.chartTarget;
+    let chartData = chartElement.dataset.chartValues;
+
+    console.log("Raw Data Attribute:", chartData);
 
     try {
       chartData = JSON.parse(chartData);
@@ -14,7 +20,7 @@ export default class extends Controller {
       return;
     }
 
-    Highcharts.chart("waterfall-chart", {
+    Highcharts.chart(chartElement.id, { // ← use dynamic id
       chart: { type: 'waterfall' },
       title: { text: '' },
       xAxis: { type: 'category' },
@@ -26,6 +32,6 @@ export default class extends Controller {
       }]
     });
 
-    console.log("Waterfall chart initialized");
+    console.log("Waterfall chart initialized for", chartElement.id);
   }
 }

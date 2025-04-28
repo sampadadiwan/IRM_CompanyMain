@@ -27,7 +27,7 @@
   # For each instrument, get the valuations and setup the uri
   investment_instruments.each do |instrument|
     valuations = @investor.valuations.where(investment_instrument_id: instrument.id)
-    if across.nil? || across.downcase == "first last"
+    if across.nil? || across.strip.downcase == "first last"
       # Get the valuations for the given instrument, first and last
       initial_valuation = valuations.order(valuation_date: :asc).first
       final_valuation =   valuations.order(valuation_date: :asc).last
