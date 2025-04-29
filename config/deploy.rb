@@ -47,6 +47,30 @@ set :puma_service_unit_name, "puma_IRM_#{fetch(:stage)}"
 
 
 namespace :deploy do
+
+  task :notify_before do
+    on roles(:app) do
+      within release_path do
+        with rails_env: fetch(:rails_env) do
+          # execute :rake, "deploy:notify_before"
+        end
+      end
+    end
+  end
+
+  task :notify_after do
+    on roles(:app) do
+      within release_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "deploy:notify_after"
+        end
+      end
+    end
+  end
+
+  before 'deploy:starting', 'deploy:notify_before'
+  after 'deploy:finished', 'deploy:notify_after'
+
   desc "Uploads .env remote servers."
   task :ensure_rails_credentials do
     on roles(:app) do

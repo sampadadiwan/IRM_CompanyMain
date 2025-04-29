@@ -294,4 +294,11 @@ class User < ApplicationRecord
   def generate_session_token
     self.session_token ||= SecureRandom.hex(64)
   end
+
+  def self.msg_todays_users(message, level: :info)
+    User.where("current_sign_in_at >= ?", Time.zone.now.beginning_of_day).each do |user|
+      UserAlert.new(user_id: user.id, message:, level:).broadcast
+    end
+  end
+
 end
