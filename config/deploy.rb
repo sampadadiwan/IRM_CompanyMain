@@ -48,25 +48,23 @@ set :puma_service_unit_name, "puma_IRM_#{fetch(:stage)}"
 
 namespace :deploy do
 
-  desc "Notify users before deployment"
-  task notify_before: :environment do
-    puts "🚨 Trying to enqueue pre-deployment notice..."
-    if defined?(DeploymentNotificationWorker)
-      DeploymentNotificationWorker.perform_async("before")
-      puts "✅ DeploymentNotificationWorker enqueued successfully."
-    else
-      puts "⚠️ DeploymentNotificationWorker not defined yet. Skipping notification."
+  task :notify_before do
+    on roles(:app) do
+      within release_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "deploy:notify_before"
+        end
+      end
     end
   end
 
-  desc "Notify users after deployment"
-  task notify_after: :environment do
-    puts "✅ Trying to enqueue post-deployment notice..."
-    if defined?(DeploymentNotificationWorker)
-      DeploymentNotificationWorker.perform_async("after")
-      puts "✅ DeploymentNotificationWorker enqueued successfully."
-    else
-      puts "⚠️ DeploymentNotificationWorker not defined yet. Skipping notification."
+  task :notify_after do
+    on roles(:app) do
+      within release_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "deploy:notify_after"
+        end
+      end
     end
   end
 

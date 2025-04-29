@@ -4,7 +4,7 @@ class DeploymentNotificationWorker
     def perform(type)
       case type
       when "before"
-        User.msg_todays_users("🚨 System going down for update at 9:00pm IST. Downtime is 15 mins", level: :danger)
+        User.msg_todays_users("🚨 System going down for update. Downtime is 15 mins", level: :danger)
       when "after"
         User.msg_todays_users("✅ System is back online. Thank you for your patience.", level: :success)
       else
