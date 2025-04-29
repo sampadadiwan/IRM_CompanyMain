@@ -104,7 +104,7 @@
           <%= button_to send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id),
                         method: :post,
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
-                        data: { action: "click->confirm#popup", turbo: false, msg: "This will generate a notification to all investor users whose KYC is unverified" } do %>
+                        data: { action: "click->confirm#popup", turbo: false, msg: "This will generate a notification to all investor users whose KYC is unverified", method: :post } do %>
             <i class="ti ti-bell me-2"></i> Send KYC Reminders
           <% end %>
         <% end %>
