@@ -5,51 +5,89 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
 
-  <span>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+
     <% if fund && policy(fund).update? %>
-      <%= link_to "New Investment",
-          new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-          "portfolio_investment[fund_id]": fund.id),
-          {class: "btn btn-outline-primary"}  %>
 
-      <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: fund.id), { class: "btn btn-outline-success"}  %>
+      <%= link_to new_portfolio_investment_path(
+                    "portfolio_investment[entity_id]": current_user.entity_id,
+                    "portfolio_investment[fund_id]": fund.id),
+                  class: "btn btn-outline-primary d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-plus me-2"></i> New Investment
+      <% end %>
 
-      <%= link_to "Conversions", stock_conversions_path(fund_id: fund.id), { class: "btn btn-outline-success"} %>
+      <%= link_to portfolio_scenarios_path(fund_id: fund.id),
+                  class: "btn btn-outline-success d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-sort-ascending-2 me-2"></i> Scenarios
+      <% end %>
 
+      <%= link_to stock_conversions_path(fund_id: fund.id),
+                  class: "btn btn-outline-success d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-transform me-2"></i> Conversions
+      <% end %>
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-success dropdown-toggle upload_download_btn" type="button"
+          <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center upload_download_btn" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Upload / Download
+            <i class="ti ti-upload me-2"></i> Upload / Download
           </button>
+
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
+            <%= link_to aggregate_portfolio_investments_path(fund_id: fund.id, format: "xlsx", all: true),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-download me-2"></i> Download Investments
+            <% end %>
 
-            <%= link_to "Download Investments", aggregate_portfolio_investments_path(fund_id: fund.id, format: "xlsx", all: true), { class: "dropdown-item"}  %>
+            <!--
+            Future addition if needed:
+            <%= link_to portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-download me-2"></i> Individual Investments
+            <% end %>
+            -->
 
-            <%#= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
-
-            <%= link_to "Portfolio Investment Report" , portfolio_investments_report_all_investors_path(fund_id: fund.id), {class: "dropdown-item" } %>
+            <%= link_to portfolio_investments_report_all_investors_path(fund_id: fund.id),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-report me-2"></i> Portfolio Investment Report
+            <% end %>
 
             <div class="dropdown-divider"></div>
 
-            <%= link_to "Upload",
-                new_import_upload_path("import_upload[owner_id]": fund.id,
-                "import_upload[owner_type]": "Fund",
-                "import_upload[import_type]": "PortfolioInvestment",
-                "sample_upload": "PORTFOLIO_SAMPLE"),
-                { class: "dropdown-item"}   %>
+            <%= link_to new_import_upload_path(
+                          "import_upload[owner_id]": fund.id,
+                          "import_upload[owner_type]": "Fund",
+                          "import_upload[import_type]": "PortfolioInvestment",
+                          "sample_upload": "PORTFOLIO_SAMPLE"),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-upload me-2"></i> Upload
+            <% end %>
 
           </div>
         </div>
       </div>
 
-      
-      <%= link_to "Time Series", aggregate_portfolio_investments_path(fund_id: fund.id, snapshot: true, filter: true, time_series: true),  {class: "btn btn-outline-primary" } if current_user.entity.enable_snapshots %>
+      <% if current_user.entity.enable_snapshots %>
+        <%= link_to aggregate_portfolio_investments_path(
+                      fund_id: fund.id, snapshot: true, filter: true, time_series: true),
+                    class: "btn btn-outline-primary d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-chart-line me-2"></i> Time Series
+        <% end %>
+      <% end %>
 
     <% end %>
-  </span>
+
+  </div>
+
 
 </div>
 

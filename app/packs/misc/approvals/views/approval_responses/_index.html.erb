@@ -14,10 +14,19 @@
       
 
       <span>
-        <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-outline-primary"} if approval && policy(approval).create? %>
+        <% if approval && policy(approval).create? %>
+          <%= link_to new_approval_response_path("approval_response[approval_id]": approval.id),
+                      class: "btn btn-outline-primary" do %>
+            <i class="ti ti-file-plus me-2"></i>New Approval Response
+          <% end %>
 
-        <%= link_to "Download", approval_responses_path("approval_id": approval.id, format: :xlsx), {class: "btn btn-outline-success"} if approval && policy(approval).create? %>
+          <%= link_to approval_responses_path("approval_id": approval.id, format: :xlsx),
+                      class: "btn btn-outline-success" do %>
+            <i class="ti ti-download me-2"></i>Download
+          <% end %>
+        <% end %>
       </span>
+
     </div>
 
     <div class="table-responsive" data-controller="datatable">

@@ -3,35 +3,83 @@
 <%= render "investors/show" %>
 
 
-<div style=" display: inline-block;">
-  <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-outline-primary" } if policy(@investor).update? %>
+<div class="d-flex flex-wrap align-items-center gap-2">
 
-  <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-outline-success" %>
-  <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-outline-success"if policy(@investor).update? %>
+  <% if policy(@investor).update? %>
+    <%= link_to edit_investor_path(@investor),
+                class: "btn btn-outline-primary d-inline-flex align-items-center",
+                data: { turbo: false } do %>
+      <i class="ti ti-pencil me-2"></i> Edit
+    <% end %>
+  <% end %>
 
-  <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-outline-danger" ,
-      form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} if policy(@investor).destroy? %>
+  <%= link_to notes_path(investor_id: @investor.id),
+              class: "btn btn-outline-success d-inline-flex align-items-center",
+              data: { turbo: false } do %>
+    <i class="ti ti-notes me-2"></i> View Notes
+  <% end %>
+
+  <% if policy(@investor).update? %>
+    <%= link_to new_note_path("note[investor_id]": @investor.id),
+                class: "btn btn-outline-success d-inline-flex align-items-center",
+                data: { turbo: false } do %>
+      <i class="ti ti-message-plus me-2"></i> Add Note
+    <% end %>
+  <% end %>
+
+  <% if policy(@investor).destroy? %>
+    <%= button_to @investor,
+                  method: :delete,
+                  class: "btn btn-outline-danger d-inline-flex align-items-center",
+                  form_class: "deleteButton",
+                  data: { action: "click->confirm#popup", turbo: false } do %>
+      <i class="ti ti-trash me-2"></i> Delete
+    <% end %>
+  <% end %>
 
   <div class="btn-group">
-        <div class="dropdown">
-          <button class="btn btn-outline-success dropdown-toggle" type="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Misc
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <div class="dropdown">
+      <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="ti ti-dots-vertical me-2"></i> Misc
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
+        <% if policy(@investor).cap_table? %>
+          <%= link_to investments_path(portfolio_company_id: @investor.id),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-table me-2"></i> CapTable
+          <% end %>
+        <% end %>
 
-            <%= link_to "CapTable" , investments_path(portfolio_company_id: @investor.id), {class: "dropdown-item" } if policy(@investor).cap_table? %>
+        <%= link_to dashboard_investor_path(id: @investor.id),
+                    class: "dropdown-item d-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-layout-dashboard me-2"></i> Dashboard
+        <% end %>
 
-            <%= link_to "Dashboard" , dashboard_investor_path(id: @investor.id), {class: "dropdown-item" } %>
-            <%= link_to "Documents" , folder_documents_path(folder_id: @investor.document_folder_id), {class: "dropdown-item" } %>
+        <%= link_to folder_documents_path(folder_id: @investor.document_folder_id),
+                    class: "dropdown-item d-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-folder me-2"></i> Documents
+        <% end %>
 
-            <%= link_to "Portfolio Report" , generate_reports_investor_path(@investor), {class: "dropdown-item" } %>
+        <%= link_to generate_reports_investor_path(@investor),
+                    class: "dropdown-item d-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-report me-2"></i> Portfolio Report
+        <% end %>
 
-            <%= link_to "Portfolio Investment Report" , portfolio_investments_report_investor_path(@investor), {class: "dropdown-item" } %>
-          </div>
-        </div>
+        <%= link_to portfolio_investments_report_investor_path(@investor),
+                    class: "dropdown-item d-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-file-text me-2"></i> Portfolio Investment Report
+        <% end %>
+
       </div>
+    </div>
+  </div>
 
 </div>
 

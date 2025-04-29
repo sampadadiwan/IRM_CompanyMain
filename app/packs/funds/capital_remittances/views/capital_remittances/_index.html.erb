@@ -31,53 +31,70 @@
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
 
     <span>
-      
 
       <% if capital_call %>
-        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: capital_call.id),
-                        class: "btn btn-outline-primary",
-                        data: {action: "click->confirm#popup", turbo:false,
-                        msg: "Send reminder for pending payments?",
-                        method: "post"} if policy(capital_call).reminder? %>
-
+        <% if policy(capital_call).reminder? %>
+          <%= button_to reminder_capital_call_path(id: capital_call.id),
+              class: "btn btn-outline-primary", data: {
+                action: "click->confirm#popup", turbo: false,
+                msg: "Send reminder for pending payments?", method: "post"
+              } do %>
+            <i class="ti ti-bell me-2"></i>Capital Call Reminder
+          <% end %>
+        <% end %>
 
         <div class="btn-group">
           <div class="dropdown">
             <button class="btn btn-outline-primary dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Upload / Download
+              <i class="ti ti-upload me-2"></i>Upload / Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
+              <%= link_to xl_link, class: "dropdown-item" do %>
+                <i class="ti ti-download me-2"></i>Download
+              <% end %>
 
-              <%= link_to "Download", xl_link,  {class: "dropdown-item" } %>
+              <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil %>
 
-              <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil   %>
-              <%= link_to "Upload Remittances",
-                  new_import_upload_path("import_upload[owner_id]": capital_call.id,
-                  "import_upload[owner_type]": "CapitalCall",
-                  "import_upload[import_type]": "CapitalRemittance",
-                  "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"),
-                  { class: "dropdown-item #{disabled}"}  if policy(capital_call).update? %>
+              <% if policy(capital_call).update? %>
+                <%= link_to new_import_upload_path(
+                    "import_upload[owner_id]": capital_call.id,
+                    "import_upload[owner_type]": "CapitalCall",
+                    "import_upload[import_type]": "CapitalRemittance",
+                    "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"
+                  ),
+                  class: "dropdown-item #{disabled}" do %>
+                  <i class="ti ti-upload me-2"></i>Upload Remittances
+                <% end %>
 
-              <%= link_to "Upload Payments",
-                  new_import_upload_path("import_upload[owner_id]": capital_call.id,
-                  "import_upload[owner_type]": "CapitalCall",
-                  "import_upload[import_type]": "CapitalRemittancePayment",
-                  "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"),
-                  { class: "dropdown-item"}  if policy(capital_call).update? %>
+                <%= link_to new_import_upload_path(
+                    "import_upload[owner_id]": capital_call.id,
+                    "import_upload[owner_type]": "CapitalCall",
+                    "import_upload[import_type]": "CapitalRemittancePayment",
+                    "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"
+                  ),
+                  class: "dropdown-item" do %>
+                  <i class="ti ti-cash me-2"></i>Upload Payments
+                <% end %>
+              <% end %>
 
             </div>
           </div>
         </div>
+
         <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
+
       <% else %>
-          <%= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
-          <%= render "/capital_remittances/bulk_actions" %>
+        <%= link_to xl_link, class: "btn btn-outline-primary" do %>
+          <i class="ti ti-download me-2"></i>Download
+        <% end %>
+
+        <%= render "/capital_remittances/bulk_actions" %>
       <% end %>
 
-      <%#= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
     </span>
+
   </div>
 
 

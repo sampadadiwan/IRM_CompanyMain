@@ -93,7 +93,8 @@ class AccountEntriesController < ApplicationController
     elsif params[:pivot].present?
       # Create a pivot table
       group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
-      @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param).call
+      parent_in_key = params[:parent_in_key].blank? || params[:parent_in_key] == "true" # can be "true" or "false"
+      @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param, parent_in_key:).call
     else
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)

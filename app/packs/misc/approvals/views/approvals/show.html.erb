@@ -5,25 +5,43 @@
 
     <%= render "/approvals/show", approval: @approval %>
     
-  <div>
-    <% if policy(@approval).update? %>
-      <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-outline-primary"} %> 
-      <%= button_to "Delete", @approval, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", 
-            data: {action: "click->confirm#popup", turbo:false}  %> 
-      
-    <% end %>
-    <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
-          form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", msg: "Please check that investors are added to access rights before approving. Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
+    <div>
+      <% if policy(@approval).update? %>
+        <%= link_to edit_approval_path(@approval), class: "btn btn-outline-primary" do %>
+          <i class="ti ti-edit me-2"></i>Edit
+        <% end %>
 
-    <%= button_to "Close", close_approval_path(@approval), method: :patch, class: "btn btn-outline-danger", 
-          form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", msg: "This will close the approval, and lock it so no further changes can be made", turbo:true, method: :patch} if policy(@approval).close?  %>
+        <%= button_to @approval, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+              data: { action: "click->confirm#popup", turbo: false } do %>
+          <i class="ti ti-trash me-2"></i>Delete
+        <% end %>
+      <% end %>
 
-    <%= button_to "Send Reminder", send_reminder_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
-          form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", msg: "Send notificatons to pending investors?", turbo:true, method: :patch} if policy(@approval).send_reminder?  %>
-  </div>
+      <% if policy(@approval).approve? %>
+        <%= button_to approve_approval_path(@approval), method: :patch, class: "btn btn-outline-success", form_class: "deleteButton",
+              data: { action: "click->confirm#popup", turbo: true, method: :patch,
+                      msg: "Please check that investors are added to access rights before approving. Approve and send notifications to investors?" } do %>
+          <i class="ti ti-check me-2"></i>Approve
+        <% end %>
+      <% end %>
+
+      <% if policy(@approval).close? %>
+        <%= button_to close_approval_path(@approval), method: :patch, class: "btn btn-outline-danger", form_class: "deleteButton",
+              data: { action: "click->confirm#popup", turbo: true, method: :patch,
+                      msg: "This will close the approval and lock it so no further changes can be made." } do %>
+          <i class="ti ti-lock me-2"></i>Close
+        <% end %>
+      <% end %>
+
+      <% if policy(@approval).send_reminder? %>
+        <%= button_to send_reminder_approval_path(@approval), method: :patch, class: "btn btn-outline-success", form_class: "deleteButton",
+              data: { action: "click->confirm#popup", turbo: true, method: :patch,
+                      msg: "Send notifications to pending investors?" } do %>
+          <i class="ti ti-bell me-2"></i>Send Reminder
+        <% end %>
+      <% end %>
+    </div>
+
 
   <% cache_if(current_user.entity_id == @approval.entity_id, [@approval, "Details"]) do %>
     <%= render "/approvals/approval_details", approval: @approval %>

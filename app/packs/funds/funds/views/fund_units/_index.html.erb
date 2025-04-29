@@ -3,18 +3,38 @@
   <h1 class="h3 mb-0 text-gray-800">Fund Units</h1>
   <%#= link_to "New Fund Unit", new_fund_unit_path, {class: "btn btn-outline-primary"}  %>
 
-  <span>
-    <%= link_to "Transfer", transfer_fund_units_capital_commitment_path(id: params[:capital_commitment_id]), {class: "btn btn-outline-success"} if params[:capital_commitment_id].present? %>
+  <div class="d-flex flex-wrap align-items-center gap-2">
 
+    <% if params[:capital_commitment_id].present? %>
+      <%= link_to transfer_fund_units_capital_commitment_path(id: params[:capital_commitment_id]),
+                  class: "btn btn-outline-success d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-transfer me-2"></i> Transfer
+      <% end %>
+    <% end %>
 
-    <%= link_to "Download", fund_units_path(fund_id: params[:fund_id], capital_commitment_id: params[:capital_commitment_id], investor_id: params[:investor_id], format: "xlsx", all: true),  {class: "btn btn-outline-success" } %>
+    <%= link_to fund_units_path(
+                  fund_id: params[:fund_id],
+                  capital_commitment_id: params[:capital_commitment_id],
+                  investor_id: params[:investor_id],
+                  format: "xlsx", all: true),
+                class: "btn btn-outline-success d-inline-flex align-items-center",
+                data: { turbo: false } do %>
+      <i class="ti ti-download me-2"></i> Download
+    <% end %>
 
-    <%= link_to "Upload",
-                new_import_upload_path(
+    <% if current_user.curr_role != "investor" %>
+      <%= link_to new_import_upload_path(
                     "import_upload[import_type]": "FundUnit",
                     "sample_upload": "FUND_UNIT_SAMPLE"),
-                    { class: "btn btn-outline-primary"}  if current_user.curr_role != "investor" %>
-  </span>                  
+                  class: "btn btn-outline-primary d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-upload me-2"></i> Upload
+      <% end %>
+    <% end %>
+
+  </div>
+               
 
 </div>
 <div class="table-responsive" data-controller="datatable">

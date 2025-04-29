@@ -8,11 +8,14 @@
 <div>
 
   <% if policy(@capital_commitment).update? %>
-    <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-outline-primary" } %>
-    <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-outline-danger" ,
-            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+    <%= link_to edit_capital_commitment_path(@capital_commitment), class: "btn btn-outline-primary" do %>
+      <i class="ti ti-edit me-2"></i>Edit
+    <% end %>
 
-                
+    <%= button_to @capital_commitment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+                data: {action: "click->confirm#popup", turbo: false} do %>
+      <i class="ti ti-trash me-2"></i>Delete
+    <% end %>
   <% end %>
 
   <% if policy(@capital_commitment).update? %>
@@ -20,48 +23,54 @@
       <div class="dropdown">
         <button class="btn btn-outline-success dropdown-toggle" type="button" id="commitment_actions"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Actions
+          <i class="ti ti-settings me-2"></i>Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
+          <%= link_to report_capital_commitment_path(@capital_commitment, report: "lp_statement"), class: "dropdown-item" do %>
+            <i class="ti ti-file-description me-2"></i>LP Account Statement
+          <% end %>
 
           <% report = Report.where(entity_id: current_user.entity_id, name: "Folio Account Entries").first %>
-          <%= link_to "Folio Account Entries" , dynamic_report_path(report, fund_id: @capital_commitment.fund_id, folio_id: @capital_commitment.folio_id, reporting_date: Date.today - 12.months), {class: "dropdown-item" }  if report %>
+          <% if report %>
+            <%= link_to dynamic_report_path(report, fund_id: @capital_commitment.fund_id, folio_id: @capital_commitment.folio_id, reporting_date: Date.today - 12.months), class: "dropdown-item" do %>
+              <i class="ti ti-file-search me-2"></i>Folio Account Entries
+            <% end %>
+          <% end %>
 
           <div class="dropdown-divider"></div>
-      
-          <% if policy(@capital_commitment).generate_documentation? %>
 
-            <%= button_to "Generate All Documents", 
-            generate_documentation_capital_commitment_path(@capital_commitment), 
-            method: :patch, class: "dropdown-item" , 
-            form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-            msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"}  %>
+          <% if policy(@capital_commitment).generate_documentation? %>
+            <%= button_to generate_documentation_capital_commitment_path(@capital_commitment),
+                method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                data: {action: "click->confirm#popup", method: :patch,
+                       msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} do %>
+              <i class="ti ti-files me-2"></i>Generate All Documents
+            <% end %>
 
             <div class="dropdown-divider"></div>
 
             <% @capital_commitment.templates("Commitment Template").each do |template| %>
-              <%= button_to "Generate #{template.name}", 
-              generate_documentation_capital_commitment_path(@capital_commitment, template_id: template.id), 
-              method: :patch, class: "dropdown-item" , 
-              form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-              msg: "Generate #{template.name} for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"}  %>
-
+              <%= button_to generate_documentation_capital_commitment_path(@capital_commitment, template_id: template.id),
+                  method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                  data: {action: "click->confirm#popup", method: :patch,
+                         msg: "Generate #{template.name} for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} do %>
+                <i class="ti ti-file-text me-2"></i>Generate <%= template.name %>
+              <% end %>
             <% end %>
-
           <% end %>
 
+          <% if policy(@capital_commitment).generate_soa? %>
+            <%= link_to generate_soa_form_capital_commitment_path(@capital_commitment), class: "dropdown-item" do %>
+              <i class="ti ti-file-invoice me-2"></i>Generate SOA
+            <% end %>
+          <% end %>
 
-          <%= link_to "Generate SOA", 
-          generate_soa_form_capital_commitment_path(@capital_commitment), 
-          class: "dropdown-item" if policy(@capital_commitment).generate_soa? %>
-          
         </div>
       </div>
     </div>
   <% end %>
-  
-  
+
 </div>
+
 <%= render "capital_commitments/details", capital_commitment: @capital_commitment %>

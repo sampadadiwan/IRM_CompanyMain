@@ -12,46 +12,75 @@
     <%= header %>
   </h1>
 
-  <div class="d-flex align-items-center ms-auto">
+  <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+
     <% investor = Investor.new(entity_id: current_user.entity_id) %>
-    <%= link_to "New" , new_investor_path("investor[entity_id]": current_user.entity_id),
-      {class: "btn btn-outline-primary" } if policy(investor).new? %>
 
-    <%= link_to "All Notes" , notes_path, {class: "btn btn-outline-success" } %>
+    <% if policy(investor).new? %>
+      <%= link_to new_investor_path("investor[entity_id]": current_user.entity_id),
+                  class: "btn btn-outline-primary d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-user-plus me-2"></i> New
+      <% end %>
+    <% end %>
 
+    <%= link_to notes_path,
+                class: "btn btn-outline-success d-inline-flex align-items-center",
+                data: { turbo: false } do %>
+      <i class="ti ti-notes me-2"></i> All Notes
+    <% end %>
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+        <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Actions
+          <i class="ti ti-settings me-2"></i> Actions
         </button>
+
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= link_to "Download" , investors_path(format: "xlsx", all: true),
-            {class: "dropdown-item" } %>
+          <%= link_to investors_path(format: "xlsx", all: true),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-download me-2"></i> Download
+          <% end %>
 
-          <%= link_to "Upload",
-            new_import_upload_path(
-                "import_upload[import_type]": "Investor",
-                "sample_upload": "INVESTORS_SAMPLE"),
-                { class: "dropdown-item"} if policy(investor).upload? %>
+          <% if policy(investor).upload? %>
+            <%= link_to new_import_upload_path(
+                          "import_upload[import_type]": "Investor",
+                          "sample_upload": "INVESTORS_SAMPLE"),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false } do %>
+              <i class="ti ti-upload me-2"></i> Upload
+            <% end %>
+          <% end %>
 
+          <%= link_to portfolio_reports_path,
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-file-report me-2"></i> Portfolio Reports Setup
+          <% end %>
 
-            <%= link_to "Portfolio Reports Setup" , portfolio_reports_path,
-            {class: "dropdown-item" } %>
+          <%= link_to portfolio_investments_report_all_investors_path(all: true),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-file-text me-2"></i> Portfolio Investment Report
+          <% end %>
 
-            <%= link_to "Portfolio Investment Report" , portfolio_investments_report_all_investors_path(all: true), {class: "dropdown-item" } %>
-
-            <%= link_to "Add Stakeholder Notice" ,
-                new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id,
-                                          "investor_notice[owner_type]": "Entity"), {class: "dropdown-item" } %>
+          <%= link_to new_investor_notice_path(
+                        "investor_notice[owner_id]": current_user.entity_id,
+                        "investor_notice[owner_type]": "Entity"),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-bell-plus me-2"></i> Add Stakeholder Notice
+          <% end %>
 
         </div>
       </div>
     </div>
 
   </div>
+
 </div>
 
 <% investors_frame = "investors_frame" %>

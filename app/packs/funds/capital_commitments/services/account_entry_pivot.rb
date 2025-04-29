@@ -1,9 +1,10 @@
 class AccountEntryPivot
   attr_reader :rows, :groups, :dates_by_group, :structured_data
 
-  def initialize(account_entries, group_by:)
+  def initialize(account_entries, group_by:, parent_in_key: true)
     @account_entries = account_entries
     @group_by_field = group_by.to_sym
+    @parent_in_key = parent_in_key
   end
 
   def call
@@ -11,7 +12,11 @@ class AccountEntryPivot
     @structured_data = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = {} } }
 
     @account_entries.each do |entry|
-      key = [entry.commitment_name, entry.capital_commitment_id, entry.parent_name, entry.parent_type, entry.parent_id]
+      key = if @parent_in_key
+              [entry.commitment_name, entry.capital_commitment_id, entry.parent_name, entry.parent_type, entry.parent_id]
+            else
+              [entry.commitment_name, entry.capital_commitment_id, nil, nil, nil]
+            end
       group = entry.public_send(@group_by_field)
       @structured_data[key][group][entry.reporting_date] = entry.amount
     end

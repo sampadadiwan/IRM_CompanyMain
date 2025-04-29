@@ -1,65 +1,90 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
-    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
 
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
-          data-action="click->tabdetails#loadData">Commitments</a>
+        data-action="click->tabdetails#loadData">
+        Commitments
+      </a>
 
       <% if fund.entity_id == current_user.entity_id %>
-
         <% unless false && fund.cat3? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
-            data-action="click->tabdetails#loadData">Calls</a>
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
+            data-action="click->tabdetails#loadData">
+            Calls
+          </a>
         <% end %>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distributions-tab"
-            data-action="click->tabdetails#loadData">Distributions</a>
+          data-action="click->tabdetails#loadData">
+          Distributions
+        </a>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
-              data-action="click->tabdetails#loadData">Ratios</a>
+          data-action="click->tabdetails#loadData">
+          Ratios
+        </a>
 
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
-              data-action="click->tabdetails#loadData">Portfolio</a>
+            data-action="click->tabdetails#loadData">
+            Portfolio
+          </a>
         <% end %>
+
       <% else %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-remittances-tab"
-            data-action="click->tabdetails#loadData">Calls</a>
+          data-action="click->tabdetails#loadData">
+          Calls
+        </a>
+
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distribution-payments-tab"
-            data-action="click->tabdetails#loadData">Distributions</a>
+          data-action="click->tabdetails#loadData">
+          Distributions
+        </a>
 
         <% if fund.entity.permissions.enable_units? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
-                data-action="click->tabdetails#loadData">Units</a>
+            data-action="click->tabdetails#loadData">
+            Units
+          </a>
         <% end %>
 
         <% if fund.show_fund_ratios %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
-              data-action="click->tabdetails#loadData">Ratios</a>
+            data-action="click->tabdetails#loadData">
+            Ratios
+          </a>
         <% end %>
 
         <% if fund.show_portfolios %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
-              data-action="click->tabdetails#loadData">Portfolio</a>
+            data-action="click->tabdetails#loadData">
+            Portfolio
+          </a>
         <% end %>
-
-
       <% end %>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab"
-          id="documents_tab" href="#docs-tab"
-          data-action="click->tabdetails#loadData">Documents</a>
+        id="documents_tab" href="#docs-tab"
+        data-action="click->tabdetails#loadData">
+        Documents
+      </a>
 
       <% if fund.entity_id == current_user.entity_id %>
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
-              data-action="click->tabdetails#loadData">
-            Tasks
-          </a>
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
-              data-action="click->tabdetails#loadData">Access</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
+          data-action="click->tabdetails#loadData">
+          Tasks
+        </a>
+
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
+          data-action="click->tabdetails#loadData">
+          Access
+        </a>
       <% end %>
 
     </nav>
+
 
     <div class="tab-content">
 

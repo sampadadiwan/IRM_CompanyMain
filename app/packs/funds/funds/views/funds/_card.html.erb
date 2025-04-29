@@ -29,18 +29,41 @@
                         Actions
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <%= link_to "Dashboard" , dashboard_fund_path(fund), {class: "dropdown-item" } %>
-                        <%= link_to "View Fund" , fund_path(fund), {class: "dropdown-item" } %>
-                        <%= link_to "Edit Fund" , edit_fund_path(fund), {class: "dropdown-item" } %>
-                        <div class="dropdown-divider"></div>
-                        <%= link_to "Documents" , fund_path(fund, tab: "docs-tab"), {class: "dropdown-item" } %>
-                        <%= link_to "Portfolio" , fund_path(fund, tab: "portfolio-investments-tab"), {class: "dropdown-item" } %>
-                        <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: fund.id), {class: "dropdown-item" } %>
-                        <%= link_to "Fund Account Entries", account_entries_path(fund_id: fund.id, fund_accounts_only: true, all: true),
-                  class: "dropdown-item" %>
+
+                    <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-layout-dashboard me-2"></i> Dashboard
+                    <% end %>
+
+                    <%= link_to fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-eye me-2"></i> View Fund
+                    <% end %>
+
+                    <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-edit me-2"></i> Edit Fund
+                    <% end %>
+
+                    <div class="dropdown-divider"></div>
+
+                    <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-file-text me-2"></i> Documents
+                    <% end %>
+
+                    <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-briefcase me-2"></i> Portfolio
+                    <% end %>
+
+                    <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-settings me-2"></i> Fund Unit Settings
+                    <% end %>
+
+                    <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true, all: true), class: "dropdown-item d-flex align-items-center" do %>
+                        <i class="ti ti-book me-2"></i> Fund Account Entries
+                    <% end %>
+
                     </div>
                 </div>
-            </div>
+                </div>
+
 
 
         </div>
@@ -116,7 +139,7 @@
 
                 # We preload fund_ratios to avoid N+1 queries, so we use filter here
                 fund_ratios = fund.fund_ratios
-                  .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"].include?(r.name) }
+                  .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Portfolio Value to Cost", "Gross Portfolio IRR"].include?(r.name) }
                   .sort_by(&:id)
                   .reverse
                   .take(4)

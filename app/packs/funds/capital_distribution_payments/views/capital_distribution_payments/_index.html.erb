@@ -3,15 +3,11 @@
 
     <span>
       <% capital_distribution ||= params[:capital_distribution_id].present? ? CapitalDistribution.find(params[:capital_distribution_id]) : nil %>
+
       <% if capital_distribution %>
-
-        <%#= link_to "New Payment",
-          new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id),
-          {class: "btn btn-outline-primary" }  %>
-
-        <% 
+        <%
           if capital_distribution.distribution_on != "Upload"
-            disabled = "disabled" 
+            disabled = "disabled"
             tooltip_text = "You can only upload payments for distributions with 'Upload' as the distribution method."
           else
             disabled = ""
@@ -20,21 +16,29 @@
         %>
 
         <span data-bs-toggle="tooltip" title="<%= tooltip_text %>">
-          <%= link_to "Upload",
-              new_import_upload_path("import_upload[owner_id]": capital_distribution.id,
-              "import_upload[owner_type]": "CapitalDistribution",
-              "import_upload[import_type]": "CapitalDistributionPayment",
-              "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
-              class: "btn btn-outline-primary #{disabled}" %>
+          <%= link_to new_import_upload_path(
+                  "import_upload[owner_id]": capital_distribution.id,
+                  "import_upload[owner_type]": "CapitalDistribution",
+                  "import_upload[import_type]": "CapitalDistributionPayment",
+                  "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
+                class: "btn btn-outline-primary #{disabled}" do %>
+            <i class="ti ti-upload me-2"></i>Upload
+          <% end %>
         </span>
       <% end %>
+
       <%
         data_source ||= capital_distribution_payments_path(params: params.to_unsafe_h, format: :json)
         xl_link = download_xl_link(data_source)
       %>
-      <%= link_to "Download", xl_link, { class: "btn btn-outline-success", data: { turbo: false } } %>
+
+      <%= link_to xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
+        <i class="ti ti-download me-2"></i>Download
+      <% end %>
+
       <%#= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
     </span>
+
 
 </div>
 

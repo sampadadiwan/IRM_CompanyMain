@@ -4,12 +4,19 @@
 
 <div>
   <% if policy(@capital_distribution_payment).update? %>
-    <%= link_to "Edit" , edit_capital_distribution_payment_path(@capital_distribution_payment),
-        {class: "btn btn-outline-primary" } %> |
-    <%= button_to "Delete" , @capital_distribution_payment, method: :delete, class: "btn btn-outline-danger" ,
-            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+    <%= link_to edit_capital_distribution_payment_path(@capital_distribution_payment),
+                class: "btn btn-outline-primary" do %>
+      <i class="ti ti-edit me-2"></i>Edit
+    <% end %>
+
+    <%= button_to @capital_distribution_payment, method: :delete,
+                class: "btn btn-outline-danger", form_class: "deleteButton",
+                data: { action: "click->confirm#popup", turbo: false } do %>
+      <i class="ti ti-trash me-2"></i>Delete
+    <% end %>
   <% end %>
 </div>
+
 
 <%= render "/capital_distribution_payments/details", 
     capital_distribution_payment: @capital_distribution_payment %>

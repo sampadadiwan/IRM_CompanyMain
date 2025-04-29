@@ -1,54 +1,79 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
-  <span>
+  <h1 class="h3 mb-0 text-gray-800">
+    Fund Ratios 
+    <%= link_to l(valuation.valuation_date), valuation if valuation %>
+  </h1>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
+
     <% if fund.present? %>
 
-      <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
-        class: "btn btn-outline-primary" , form_class: "deleteButton" ,
-        data: {action: "click->confirm#popup" , turbo: false,
-        msg: "Ratios computations will take the last portfolio FMV and account entries for 'Cash in Hand' and 'Net Current Assets' prior to end date for the computations. Please check these are updated. Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
-
+      <% if policy(fund).generate_fund_ratios? %>
+        <%= button_to generate_fund_ratios_fund_path(fund),
+                      method: :get,
+                      class: "btn btn-outline-primary d-inline-flex align-items-center",
+                      form_class: "deleteButton",
+                      data: {
+                        action: "click->confirm#popup",
+                        turbo: false,
+                        msg: "Ratios computations will take the last portfolio FMV and account entries for 'Cash in Hand' and 'Net Current Assets' prior to end date for the computations. Please check these are updated. Computation will take a few mins, please be patient. Proceed?",
+                        method: :get
+                      } do %>
+          <i class="ti ti-analyze me-2"></i> Compute Ratios
+        <% end %>
+      <% end %>
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-success dropdown-toggle" type="button" id="fund_ratios_actions"
+          <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+                  id="fund_ratios_actions"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Actions
+            <i class="ti ti-settings me-2"></i> Actions
           </button>
+
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "Filter: Portfolio Company", fund_ratios_path(fund_id: fund.id, 
-                        q: ransack_query_params("owner_type", :eq, "Investor")), class: "dropdown-item" %>
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "Investor")),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-building-bank me-2"></i> Filter: Portfolio Company
+            <% end %>
 
-            <%= link_to "Filter: Folios", fund_ratios_path(fund_id: fund.id, 
-                        q: ransack_query_params("owner_type", :eq, "CapitalCommitment")), class: "dropdown-item" %>
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "CapitalCommitment")),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-users me-2"></i> Filter: Folios
+            <% end %>
 
-            <%= link_to "Filter: Instrument", fund_ratios_path(fund_id: fund.id, 
-                        q: ransack_query_params("owner_type", :eq, "AggregatePortfolioInvestment")), class: "dropdown-item" %>
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "AggregatePortfolioInvestment")),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-briefcase me-2"></i> Filter: Instrument
+            <% end %>
 
-            <%= link_to "Filter: Fund Only", fund_ratios_path(fund_id: fund.id, 
-                        q: ransack_query_params("owner_type", :null, true)), class: "dropdown-item" %>
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :null, true)),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-circle-off me-2"></i> Filter: Fund Only
+            <% end %>
 
             <div class="dropdown-divider"></div>
-            
-            <%= link_to "Upload", 
-                        new_import_upload_path("import_upload[owner_id]": fund.id, 
-                        "import_upload[owner_type]": "Fund", 
-                        "import_upload[import_type]": "FundRatio", 
-                        "sample_upload": "Fund_RATIO_SAMPLE"), 
-                        { class: "dropdown-item"}   %>
 
-            <%= link_to "Download", download_xl_link(data_source), class: "dropdown-item" %>
+            <%= link_to new_import_upload_path(
+                            "import_upload[owner_id]": fund.id,
+                            "import_upload[owner_type]": "Fund",
+                            "import_upload[import_type]": "FundRatio",
+                            "sample_upload": "Fund_RATIO_SAMPLE"),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-upload me-2"></i> Upload
+            <% end %>
 
+            <%= link_to download_xl_link(data_source),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-download me-2"></i> Download
+            <% end %>
 
           </div>
         </div>
       </div>
 
-       
     <% end %>
-    
-    
 
-  </span>
+  </div>
 </div>

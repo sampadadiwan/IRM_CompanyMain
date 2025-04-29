@@ -2,20 +2,39 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Distributions</h1>
 
-    <span>
-      <%= link_to "New Distribution" , new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary" } if params[:fund_id].present? %>
+    <div class="d-flex flex-wrap align-items-center gap-2">
 
-      <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": owner.id, 
-            "import_upload[owner_type]": owner.class.name, 
-            "import_upload[import_type]": "CapitalDistribution", 
-            "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
-    
-      <%= link_to "Download" , capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"), {class: "btn btn-outline-success" } if params[:fund_id].present? %>
+      <%# New Distribution button (only if fund_id present) %>
+      <% if params[:fund_id].present? %>
+        <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]),
+                    class: "btn btn-outline-primary d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-plus me-2"></i> New Distribution
+        <% end %>
+      <% end %>
 
-    
-    </span>
+      <%# Upload button (always shown) %>
+      <%= link_to new_import_upload_path(
+                    "import_upload[owner_id]": owner.id,
+                    "import_upload[owner_type]": owner.class.name,
+                    "import_upload[import_type]": "CapitalDistribution",
+                    "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"),
+                  class: "btn btn-outline-primary d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-upload me-2"></i> Upload
+      <% end %>
+
+      <%# Download button (only if fund_id present) %>
+      <% if params[:fund_id].present? %>
+        <%= link_to capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"),
+                    class: "btn btn-outline-success d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-download me-2"></i> Download
+        <% end %>
+      <% end %>
+
+    </div>
+
   </div>
 
   <div class="table-responsive" data-controller="datatable" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>

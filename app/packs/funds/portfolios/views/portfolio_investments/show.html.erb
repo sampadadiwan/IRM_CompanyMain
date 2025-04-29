@@ -256,12 +256,28 @@
 <% unless @portfolio_investment.snapshot %>
 
 <div>
+  
   <% if policy(@portfolio_investment).update? %>
+    <%= link_to edit_portfolio_investment_path(@portfolio_investment), class: "btn btn-outline-primary" do %>
+      <i class="ti ti-edit me-2"></i>Edit
+    <% end %>
 
-    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Conversion", new_stock_conversion_path("stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id), {class: "btn btn-outline-success"} if policy(@portfolio_investment).conversion? %>
+    <% if policy(@portfolio_investment).conversion? %>
+      <%= link_to new_stock_conversion_path(
+                    "stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id),
+                  class: "btn btn-outline-success" do %>
+        <i class="ti ti-transfer me-2"></i>Conversion
+      <% end %>
+    <% end %>
   <% end %>
-    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@portfolio_investment).destroy? %>
+
+  <% if policy(@portfolio_investment).destroy? %>
+    <%= button_to @portfolio_investment, method: :delete,
+                class: "btn btn-outline-danger", form_class: "deleteButton",
+                data: { action: "click->confirm#popup", turbo: false } do %>
+      <i class="ti ti-trash me-2"></i>Delete
+    <% end %>
+  <% end %>
 
 </div>
 

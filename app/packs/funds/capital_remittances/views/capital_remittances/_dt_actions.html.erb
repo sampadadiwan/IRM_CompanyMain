@@ -2,21 +2,34 @@
   <div class="dropdown">
     <button class="btn btn-outline-primary dropdown-toggle" type="button"
             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      Actions
+      <i class="ti ti-settings me-2"></i>Actions
     </button>
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-      <%= link_to "Show", capital_remittance_path(capital_remittance), {class: "dropdown-item" }  %>
-      <% if policy(capital_remittance).verify? 
-          label = capital_remittance.verified ? "Unverify" : "Verify"
-          msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?"
-      %>
-        <%= button_to(label, verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]), method: :patch,
-                  class: "dropdown-item", form_class: "deleteButton",
-                  data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch }) %>
 
+      <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item" do %>
+        <i class="ti ti-eye me-2"></i>Show
       <% end %>
 
-      <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "dropdown-item"} %>
+      <% if policy(capital_remittance).verify? %>
+        <% 
+          label = capital_remittance.verified ? "Unverify" : "Verify"
+          msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?"
+          icon_class = capital_remittance.verified ? "ti ti-user-x" : "ti ti-user-check"
+        %>
+
+        <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
+                      method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                      data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch } do %>
+          <i class="<%= icon_class %> me-2"></i><%= label %>
+        <% end %>
+      <% end %>
+
+      <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
+                  class: "dropdown-item" do %>
+        <i class="ti ti-cash me-2"></i>New Payment
+      <% end %>
+
     </div>
   </div>
+
 </div>

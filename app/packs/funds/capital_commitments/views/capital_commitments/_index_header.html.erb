@@ -4,60 +4,75 @@
     <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
 
     <% if toolbar == "Yes" %>
-    <span>
-
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        
         <% if fund && policy(fund).update? %>
 
-            <%= link_to "New Commitment",
-                        new_capital_commitment_path("capital_commitment[fund_id]": fund.id),
-                        { class: "btn btn-outline-primary", data: { turbo: false } } %>
+            <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id),
+                        class: "btn btn-outline-primary d-inline-flex align-items-center",
+                        data: { turbo: false } do %>
+            <i class="ti ti-plus me-2"></i> New Commitment
+            <% end %>
 
             <div class="btn-group">
-                <div class="dropdown">
-                    <button class="btn btn-outline-success dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Generate
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <div class="dropdown">
+                <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="ti ti-script me-2"></i> Generate
+                </button>
 
-                    <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
 
-                        <%= button_to "All Documents",
-                                      generate_documentation_fund_path(fund),
-                                      method: :patch,
-                                      class: "dropdown-item",
-                                      form_class: "deleteButton",
-                                      data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } %>
+                <%= button_to generate_documentation_fund_path(fund),
+                                method: :patch,
+                                class: "dropdown-item d-flex align-items-center",
+                                form_class: "deleteButton",
+                                data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
+                    <i class="ti ti-file-text me-2"></i> All Documents
+                <% end %>
 
-                        <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
-                            <%= button_to template.name,
-                                          generate_documentation_fund_path(fund, template_id: template.id),
-                                          method: :patch,
-                                          class: "dropdown-item",
-                                          form_class: "deleteButton",
-                                          data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } %>
-                        <% end %>
+                <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
+                    <%= button_to generate_documentation_fund_path(fund, template_id: template.id),
+                                method: :patch,
+                                class: "dropdown-item d-flex align-items-center",
+                                form_class: "deleteButton",
+                                data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
+                    <i class="ti ti-file-description me-2"></i> <%= template.name %>
+                    <% end %>
+                <% end %>
 
-                        <%= link_to "Generate SOA",
-                                    allocate_form_fund_path(fund, generate_soa: true),
-                                    class: "dropdown-item",
-                                    data: { turbo: false } if policy(fund).allocate? %>
-
-                    </div>
+                <% if policy(fund).allocate? %>
+                    <%= link_to allocate_form_fund_path(fund, generate_soa: true),
+                                class: "dropdown-item d-flex align-items-center",
+                                data: { turbo: false } do %>
+                    <i class="ti ti-file-invoice me-2"></i> Generate SOA
+                    <% end %>
+                <% end %>
                 </div>
             </div>
+            </div>
 
-            <%= link_to "Upload",
-                        new_import_upload_path("import_upload[owner_id]": fund.id,
+            <%= link_to new_import_upload_path(
+                        "import_upload[owner_id]": fund.id,
                         "import_upload[owner_type]": "Fund",
                         "import_upload[import_type]": "CapitalCommitment",
                         "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"),
-                        { class: "btn btn-outline-primary", data: { turbo: false } } %>
+                        class: "btn btn-outline-primary d-inline-flex align-items-center",
+                        data: { turbo: false } do %>
+            <i class="ti ti-upload me-2"></i> Upload
+            <% end %>
 
         <% end %>
 
-        <%= link_to "Download", xl_link, { class: "btn btn-outline-success", data: { turbo: false } } %>
+        <%# ⬇️⬇️ OUTSIDE THE IF BLOCK but INSIDE the FLEX ROW %>
+        <%= link_to xl_link,
+                    class: "btn btn-outline-success d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+            <i class="ti ti-download me-2"></i> Download
+        <% end %>
 
-    </span>
+    </div>
+
     <% end %>
 </div>

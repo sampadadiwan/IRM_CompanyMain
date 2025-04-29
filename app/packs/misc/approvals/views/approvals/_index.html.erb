@@ -1,7 +1,12 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Approvals</h1>
-  <%= link_to "New Approval", new_approval_path, {class: "btn btn-outline-primary"}  if policy(Approval.new(entity_id: current_user.entity_id)).new? %>
+  <% if policy(Approval.new(entity_id: current_user.entity_id)).new? %>
+    <%= link_to new_approval_path, class: "btn btn-outline-primary" do %>
+      <i class="ti ti-checkup-list me-2"></i>New Approval
+    <% end %>
+  <% end %>
+
 </div>
 
 <div class="table-responsive" data-controller="datatable">

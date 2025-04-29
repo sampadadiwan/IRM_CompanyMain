@@ -6,21 +6,36 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><%= label.pluralize %></h1>
 
-    <span>
-        <%= link_to "New #{label}", 
-            new_investor_access_path("investor_access[investor_id]": investor.id, 
-                "investor_access[entity_id]": current_user.entity_id), 
-                { data: { turbo_frame: 'new_investor_access' }, class: "btn btn-outline-primary"} if investor  %> 
-        
-        <%= link_to "Download #{label}", investor_accesses_path(all: true, format: :xlsx) , 
-                { class: "btn btn-outline-primary", id: "download_stakeholder_users"} unless investor %>
+    <div class="d-flex flex-wrap align-items-center gap-2">
 
-        <%= link_to "Upload #{label}", 
-                new_import_upload_path(
-                    "import_upload[import_type]": "InvestorAccess", 
-                    "sample_upload": "INVESTOR_ACCESS_SAMPLE"), 
-                    { class: "btn btn-outline-success", id: "upload_stakeholder_users"}   %> 
-    </span>
+        <% if investor %>
+            <%= link_to new_investor_access_path(
+                        "investor_access[investor_id]": investor.id,
+                        "investor_access[entity_id]": current_user.entity_id),
+                        class: "btn btn-outline-primary d-inline-flex align-items-center",
+                        data: { turbo_frame: 'new_investor_access' } do %>
+            <i class="ti ti-user-plus me-2"></i> New <%= label %>
+            <% end %>
+        <% else %>
+            <%= link_to investor_accesses_path(all: true, format: :xlsx),
+                        class: "btn btn-outline-primary d-inline-flex align-items-center",
+                        id: "download_stakeholder_users",
+                        data: { turbo: false } do %>
+            <i class="ti ti-download me-2"></i> Download <%= label %>
+            <% end %>
+        <% end %>
+
+        <%= link_to new_import_upload_path(
+                        "import_upload[import_type]": "InvestorAccess",
+                        "sample_upload": "INVESTOR_ACCESS_SAMPLE"),
+                    class: "btn btn-outline-success d-inline-flex align-items-center",
+                    id: "upload_stakeholder_users",
+                    data: { turbo: false } do %>
+            <i class="ti ti-upload me-2"></i> Upload <%= label %>
+        <% end %>
+
+    </div>
+
 </div>
   
 

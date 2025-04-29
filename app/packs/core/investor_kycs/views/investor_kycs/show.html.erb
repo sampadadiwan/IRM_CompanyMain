@@ -2,42 +2,105 @@
 
 <%= render "investor_kycs/show", investor_kyc: @investor_kyc %>
 
-  <div>
+<div>
 
-    <%= link_to "Edit" , edit_investor_kyc_path(@investor_kyc), {class: "btn btn-outline-primary" } if policy(@investor_kyc).update? %>
+  <% if policy(@investor_kyc).update? %>
+    <%= link_to edit_investor_kyc_path(@investor_kyc), class: "btn btn-outline-primary" do %>
+      <i class="ti ti-edit me-2"></i>Edit
+    <% end %>
+  <% end %>
 
-    <%= button_to "Delete" , @investor_kyc, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} if policy(@investor_kyc).destroy? %>
+  <% if policy(@investor_kyc).destroy? %>
+    <%= button_to @investor_kyc, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+        data: { action: "click->confirm#popup", turbo: false } do %>
+      <i class="ti ti-trash me-2"></i>Delete
+    <% end %>
+  <% end %>
 
-    <% label = @investor_kyc.verified ? "UnVerify" : "Verify" %>
-    <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
-    <%= button_to label, toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
+  <% label = @investor_kyc.verified ? "UnVerify" : "Verify" %>
+  <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
+  <% label_icon = @investor_kyc.verified ? "ti ti-user-x" : "ti ti-user-check" %>
+  <% if policy(@investor_kyc).toggle_verified? %>
+    <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" do %>
+      <i class="<%= label_icon %> me-2"></i><%= label %>
+    <% end %>
+  <% end %>
 
-    <%= button_to "Updates Required", send_notification_investor_kyc_path(@investor_kyc, message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC  #{@investor_kyc.full_name}"), method: :put, class: label_class, form_class: "deleteButton", data: {action: "click->confirm#popup",
-            method: :patch, msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to me made to the KYC #{@investor_kyc.full_name}. Proceed?"} if policy(@investor_kyc).send_notification? %>
+  <% if policy(@investor_kyc).send_notification? %>
+    <%= button_to send_notification_investor_kyc_path(
+                    @investor_kyc,
+                    message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC #{@investor_kyc.full_name}"),
+                method: :put, class: label_class, form_class: "deleteButton",
+                data: {
+                  action: "click->confirm#popup",
+                  method: :patch,
+                  msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
+                } do %>
+      <i class="ti ti-message-2 me-2"></i>Updates Required
+    <% end %>
+  <% end %>
 
-    <% if current_user.curr_role != "investor" %>
-      <div class="btn-group">
-        <div class="dropdown">
-          <button class="btn btn-outline-success dropdown-toggle" type="button" id="kyc_actions"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            KYC Actions
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate a notification to all users associated with this investor"} if policy(@investor_kyc).send_kyc_reminder? %>
+  <% if current_user.curr_role != "investor" %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" id="kyc_actions"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="ti ti-settings me-2"></i>KYC Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "dropdown-item" } if policy(@investor_kyc).generate_docs? %>
+          <% if policy(@investor_kyc).send_kyc_reminder? %>
+            <%= button_to send_kyc_reminder_investor_kyc_path(@investor_kyc),
+                method: :post, class: "dropdown-item", form_class: "deleteButton",
+                data: {
+                  action: "click->confirm#popup", turbo: false, method: :post,
+                  msg: "This will generate a notification to all users associated with this investor"
+                } do %>
+              <i class="ti ti-bell me-2"></i>Send KYC Reminder
+            <% end %>
+          <% end %>
 
-            <%= button_to "Validate Document Data", validate_docs_with_ai_investor_kyc_path(@investor_kyc), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This try and validate the data in the documents and kyc. It will take a few minutes. Proceed?"} if policy(@investor_kyc).validate_docs_with_ai? %>
+          <% if policy(@investor_kyc).generate_docs? %>
+            <%= link_to generate_docs_investor_kyc_path(@investor_kyc), class: "dropdown-item" do %>
+              <i class="ti ti-file-plus me-2"></i>Generate Docs
+            <% end %>
+          <% end %>
 
-            <%= link_to "Audit Trail" , investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
+          <% if policy(@investor_kyc).validate_docs_with_ai? %>
+            <%= button_to validate_docs_with_ai_investor_kyc_path(@investor_kyc),
+                method: :post, class: "dropdown-item", form_class: "deleteButton",
+                data: {
+                  action: "click->confirm#popup", turbo: false, method: :post,
+                  msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?"
+                } do %>
+              <i class="ti ti-brain me-2"></i>Validate Document Data
+            <% end %>
+          <% end %>
 
-            <%= button_to "Generate Aml Report", generate_new_aml_report_investor_kyc_path(@investor_kyc), method: :put, class: "dropdown-item" if policy(@investor_kyc).generate_new_aml_report? %>
+          <% if policy(@investor_kyc).toggle_verified? %>
+            <%= link_to investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), class: "dropdown-item" do %>
+              <i class="ti ti-history me-2"></i>Audit Trail
+            <% end %>
+          <% end %>
 
-            <%= link_to "View Aml Reports", aml_reports_path(investor_kyc_id: @investor_kyc.id), class: "dropdown-item" if @investor_kyc.aml_reports %>
-          </div>
+          <% if policy(@investor_kyc).generate_new_aml_report? %>
+            <%= button_to generate_new_aml_report_investor_kyc_path(@investor_kyc), method: :put, class: "dropdown-item" do %>
+              <i class="ti ti-shield-lock me-2"></i>Generate AML Report
+            <% end %>
+          <% end %>
+
+          <% if @investor_kyc.aml_reports.present? %>
+            <%= link_to aml_reports_path(investor_kyc_id: @investor_kyc.id), class: "dropdown-item" do %>
+              <i class="ti ti-list-search me-2"></i>View AML Reports
+            <% end %>
+          <% end %>
+
         </div>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
+
+</div>
+
 
 <%= render "investor_kycs/details", investor_kyc: @investor_kyc %>

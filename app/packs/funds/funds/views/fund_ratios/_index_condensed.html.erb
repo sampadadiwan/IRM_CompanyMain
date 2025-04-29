@@ -1,7 +1,7 @@
 <% fund ||= nil %>
 <% valuation ||= nil %>
 <% import_upload_id ||= nil %>
-<% data_source ||= fund_ratios_path(q: params[:q]&.to_unsafe_h, fund_id: fund&.id, import_upload_id: import_upload_id, format: :json, all: true) %>
+<% data_source ||= fund_ratios_path(params: params.to_unsafe_h, fund_id: fund&.id, import_upload_id: import_upload_id, format: :json, all: true) %>
 <% lazy_load_data ||= false %>
 
 <%= render "fund_ratios/index_header", fund: , valuation: , import_upload_id: , data_source: %>

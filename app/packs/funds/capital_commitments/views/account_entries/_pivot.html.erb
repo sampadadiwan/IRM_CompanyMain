@@ -41,7 +41,7 @@
         <td>
           <%= link_to parent_name,  
                 "/#{parent_type.underscore.pluralize}/#{parent_id}", 
-                target: "_blank" if parent_type && parent_id %>
+                target: "_blank" if parent_type && parent_id if parent_name.present? %>
         </td>
         <% end %>
         

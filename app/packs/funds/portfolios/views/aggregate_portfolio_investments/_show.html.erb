@@ -197,25 +197,49 @@
 
 <% unless aggregate_portfolio_investment.snapshot %>
 
-<div class="associated_entity">
-  <%= link_to "Preview", aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'), {class: "btn btn-outline-info"} %>
-  <%= button_to "Delete", aggregate_portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?"} if policy(aggregate_portfolio_investment).destroy? %>
 
-  <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor",  "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success"}%>
+<div class="associated_entity">
+
+  <%= link_to aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'),
+              class: "btn btn-outline-info" do %>
+    <i class="ti ti-eye me-2"></i>Preview
+  <% end %>
+
+  <% if policy(aggregate_portfolio_investment).destroy? %>
+    <%= button_to aggregate_portfolio_investment, method: :delete,
+                  class: "btn btn-outline-danger", form_class: "deleteButton",
+                  data: { action: "click->confirm#popup", turbo: false,
+                          msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
+      <i class="ti ti-trash me-2"></i>Delete
+    <% end %>
+  <% end %>
+
+  <%= link_to new_valuation_path(
+                "valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id,
+                "valuation[owner_type]": "Investor",
+                "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id),
+              class: "btn btn-outline-success" do %>
+    <i class="ti ti-currency-dollar me-2"></i>Add Valuation
+  <% end %>
+
   <%
     toggle_show_portfolio_text = "Show Portfolio"
     show_portfolio_value = true
+    toggle_icon = "ti ti-eye"
     if aggregate_portfolio_investment.show_portfolio
       toggle_show_portfolio_text = "Hide Portfolio"
       show_portfolio_value = false
+      toggle_icon = "ti ti-eye-off"
     end
   %>
 
-  <%= button_to "#{toggle_show_portfolio_text}",
-            toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
-            method: :patch,
-            class: "btn btn-outline-info" %>
+  <%= button_to toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
+                method: :patch, class: "btn btn-outline-info" do %>
+    <i class="<%= toggle_icon %> me-2"></i><%= toggle_show_portfolio_text %>
+  <% end %>
+
 </div>
+
 
 <%= render "/aggregate_portfolio_investments/details", aggregate_portfolio_investment: aggregate_portfolio_investment %>
 

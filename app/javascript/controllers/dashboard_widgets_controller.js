@@ -101,9 +101,7 @@ export default class extends Controller {
       const option = document.createElement("option")
       option.value = widgetName
       option.textContent = widgetName
-      console.log("widgetName", widgetName);
-      console.log("this.selectedWidgetName", this.selectedWidgetName);
-
+      
       // 🧠 If matches pre-selected widget, mark as selected
       if (widgetName === this.selectedWidgetName) {
         option.selected = true

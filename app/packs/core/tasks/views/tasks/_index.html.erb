@@ -2,43 +2,62 @@
 <%= turbo_frame_tag "task_list", target: "_top" do %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
+
+  <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
     <% investor ||= nil %>
 
-    <%= link_to "New Task" , new_task_path("task[investor_id]": investor.id), 
-            {class: "btn btn-outline-primary" } if investor %>
-
+    <% if investor %>
+      <%= link_to new_task_path("task[investor_id]": investor.id),
+                  class: "btn btn-outline-primary d-inline-flex align-items-center",
+                  data: { turbo: false } do %>
+        <i class="ti ti-plus me-2"></i> New Task
+      <% end %>
+    <% end %>
 
     <% unless search %>
-      
-    <h6 class="m-0 font-weight-bold text-primary">
-        <% show_for = belongs_to_entity_id?(current_user, for_entity.id) ? nil : for_entity %>
-        <%= link_to "Show All" , tasks_path(for_entity_id: show_for&.id, 
-                                        entity_id: params[:entity_id],
-                                        assigned_to_id: params[:assigned_to_id],
-                                        owner_id: owner&.id, owner_type: owner&.class&.name, 
-                                        completed: :all), 
-                                        data: { turbo_frame: 'task_list' },
-                                        class: "btn btn-outline-sm btn-outline-success " if for_entity || owner%>
+      <% show_for = belongs_to_entity_id?(current_user, for_entity.id) ? nil : for_entity %>
 
-        <%= link_to "Incomplete" , tasks_path(for_entity_id: show_for&.id, 
-                                        entity_id: params[:entity_id],
-                                        assigned_to_id: params[:assigned_to_id],
-                                        owner_id: owner&.id, owner_type: owner&.class&.name), 
-                                        data: { turbo_frame: 'task_list' },
-                                        class: "btn btn-outline-sm btn-outline-warning " if for_entity || owner %>
-        
-        <%= link_to "New Task" , new_task_path("task[for_entity_id]": for_entity.id, 
-                                        "task[entity_id]": params[:entity_id],
-                                        "task[owner_id]": owner&.id || params[:owner_id],
-                                        "task[owner_type]": owner&.class&.name || params[:owner_type]), 
-                                        data: { turbo_frame: 'new_task' },
-                                        class: "btn btn-outline-sm btn-outline-primary " if for_entity || owner %>
-    </h6>
+      <% if for_entity || owner %>
+        <%= link_to tasks_path(
+                      for_entity_id: show_for&.id,
+                      entity_id: params[:entity_id],
+                      assigned_to_id: params[:assigned_to_id],
+                      owner_id: owner&.id,
+                      owner_type: owner&.class&.name,
+                      completed: :all),
+                    class: "btn btn-sm btn-outline-success d-inline-flex align-items-center",
+                    data: { turbo_frame: 'task_list' } do %>
+          <i class="ti ti-list-check me-2"></i> Show All
+        <% end %>
 
-    <% end %>         
+        <%= link_to tasks_path(
+                      for_entity_id: show_for&.id,
+                      entity_id: params[:entity_id],
+                      assigned_to_id: params[:assigned_to_id],
+                      owner_id: owner&.id,
+                      owner_type: owner&.class&.name),
+                    class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center",
+                    data: { turbo_frame: 'task_list' } do %>
+          <i class="ti ti-alert-triangle me-2"></i> Incomplete
+        <% end %>
+
+        <%= link_to new_task_path(
+                      "task[for_entity_id]": for_entity.id,
+                      "task[entity_id]": params[:entity_id],
+                      "task[owner_id]": owner&.id || params[:owner_id],
+                      "task[owner_type]": owner&.class&.name || params[:owner_type]),
+                    class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
+                    data: { turbo_frame: 'new_task' } do %>
+          <i class="ti ti-plus me-2"></i> New Task
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
 
 </div>
+
 
     <div class="table-responsive">
         <%= turbo_frame_tag "new_task" do %>
