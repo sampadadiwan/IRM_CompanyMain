@@ -1,5 +1,5 @@
 # lib/tasks/deploy_notifications.rake
-namespace :deploy_notifications do
+namespace :deploy do
     desc "Notify users that system will go down (before deploy)"
     task notify_before: :environment do
       puts "🚨 Enqueueing pre-deployment notification..."
