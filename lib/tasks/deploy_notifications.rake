@@ -15,7 +15,7 @@ namespace :deploy do
     task notify_after: :environment do
       puts "✅ Enqueueing post-deployment notification..."
       if defined?(DeploymentNotificationWorker)
-        DeploymentNotificationWorker.perform_async("after")
+        DeploymentNotificationWorker.perform_in(1.minute, "after")
         puts "✅ Post-deployment notification enqueued."
       else
         Rails.logger.warn "⚠️ DeploymentNotificationWorker not defined. Skipping post-deployment notification."
