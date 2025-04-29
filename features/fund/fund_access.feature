@@ -186,4 +186,18 @@ Scenario Outline: Access fund & details as Advisor with update access
     # |  	        |entity_type=Investment Fund  |investor   |yes   |false   |edit,update     | destroy |
 
 
-
+Scenario Outline: View Access Rights with Access to fund as Advisor with update
+  Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "<role>"
+  Given there is an existing investor "entity_type=Family Office"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
+  Given there is a fund "name=Test fund" for the entity
+  And another user is "<given>" investor access to the fund
+  And the access right has access "<crud>"
+  Given I log in as the first user
+  Then user should see the access rights of the fund "<crud>"
+  
+  Examples:
+  	|user	    |entity                         |role       |given  |should	|access | crud |
+    |  	        |entity_type=Investment Fund  |company_admin   |yes   |true   |show  | read |
+    |  	        |entity_type=Investment Fund  |company_admin   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |

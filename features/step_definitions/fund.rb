@@ -2369,3 +2369,20 @@ Given ('the fund snapshot is created') do
     end    
   end
 end
+
+Then('user should see the access rights of the fund {string}') do |crud|
+  visit("funds/#{@fund.id}")
+  click_on("Access")
+  expect(page).to have_content(@investor.investor_name)
+  crud.split(",").each do |access|
+    expect(page).to have_content(access)
+  end
+end
+
+Given('I log in as the first user') do
+  @user = User.first
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end

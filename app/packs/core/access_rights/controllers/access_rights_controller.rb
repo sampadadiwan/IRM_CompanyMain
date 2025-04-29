@@ -9,7 +9,9 @@ class AccessRightsController < ApplicationController
     @access_rights = policy_scope(AccessRight).includes(:investor, :user)
 
     # Step 2: Apply filters if specific deal or investor access is requested
-    @access_rights = filter_params(@access_rights.deals, :deal_id, :access_to_investor_id)
+    @access_rights = filter_params(@access_rights, :access_to_investor_id)
+    # access_rights.deals returns the rights that have access_type deals, thus filtering out all other ones, so calling it conditionally
+    @access_rights = filter_params(@access_rights.deals, :deal_id) if params[:deal_id].present?
 
     # Step 3: Investor-specific logic
     if params[:investor_id].present?
