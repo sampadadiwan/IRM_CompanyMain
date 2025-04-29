@@ -25,12 +25,17 @@
     <%= form.hidden_field :owner_id %>
     <%= form.hidden_field :owner_type %>
     
+    <!-- This is a hidden field to store the widget options in JSON format -->
+    <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select.to_json, id: "widget_options_json" %>
+    <!-- This is a hidden field to store the selected widget name, used in dashboard_widgets_controller.js -->
+    <%= hidden_field_tag "selected_widget_name", dashboard_widget.widget_name, id: "selected_widget_name" %>
+
     <div class="form-group" 
           data-controller="dashboard-widgets" 
           data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>" 
           data-dashboard-widgets-param-value="widget_name">
       <%= form.label :widget_name %>
-      <%= form.select :widget_name, grouped_options_for_select(DashboardWidget.widget_select, dashboard_widget.widget_name), {prompt: 'Select Widget'}, class: "form-control", id: :widget_name  %>
+      <%= form.select :widget_name, {}, {prompt: 'Select Widget'}, class: "form-control", id: :widget_name  %>
       <span class="text-muted">Select a widget corresponding to the Dashboard Name sected above</span>
     </div>
 

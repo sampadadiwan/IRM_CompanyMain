@@ -1,3 +1,8 @@
+V9.0.30
+#####################################
+fa13cf56a Parse dates2 (#803)
+7a0d92722 Added better checks for Kpi import
+
 V9.0.26
 #####################################
 8a748d682 Added hide_parent and hide_commitment for AE pivot
