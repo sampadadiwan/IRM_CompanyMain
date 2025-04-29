@@ -147,6 +147,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   # rubocop:disable Metrics/BlockLength
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
+    Rails.logger.debug "Portfolio Company IRR for #{@portfolio_company_ids}"
     @portfolio_company_irr_map ||= {}
 
     if @portfolio_company_irr_map.empty?
@@ -215,6 +216,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   # rubocop:enable Metrics/BlockLength
 
   def portfolio_company_metrics
+    Rails.logger.debug "Portfolio Company IRR for #{@portfolio_company_ids}"
     @portfolio_company_metrics_map ||= {}
 
     aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
@@ -344,7 +346,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     Rails.logger.debug apis
 
     apis.each do |api|
-      fmv_on_end_date_cents = convert_to_base_currency(Money.new(api.fmv_on_date(@end_date), api.fund.currency))
+      fmv_on_end_date_cents = convert_to_base_currency(Money.new(api.fmv_on_date(@end_date), api.fund.currency)).cents
 
       # Applied only if there is a scenario
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
