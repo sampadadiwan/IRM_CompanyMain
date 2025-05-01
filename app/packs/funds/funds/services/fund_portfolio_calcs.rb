@@ -314,7 +314,7 @@ class FundPortfolioCalcs < FundRatioCalcs
       fmv_on_end_date_cents = api.fmv_on_date(@end_date)
 
       # Applied only if there is a scenario
-      fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
+      fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s].present? && scenarios[api.id.to_s]["percentage_change"].present?
 
       Rails.logger.debug { "FMV on End Date: #{fmv_on_end_date_cents}, API: #{api.id}" }
       # Aggregate the fmv across the fun

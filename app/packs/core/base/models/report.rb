@@ -2,7 +2,7 @@ class Report < ApplicationRecord
   belongs_to :entity, optional: true
   belongs_to :user
   has_many :grid_view_preferences, as: :owner, dependent: :destroy
-  before_commit :add_report_id_to_url
+  before_commit :add_report_id_to_url, unless: -> { destroyed? }
   before_create :set_model
 
   validates :name, :curr_role, presence: true

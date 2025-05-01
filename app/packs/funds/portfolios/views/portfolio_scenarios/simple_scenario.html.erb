@@ -79,7 +79,7 @@
 
         <div class="form-group col text-primary">
           <% xirr = scenario_xirr.nil? || scenario_xirr[api.id].nil? ? 0 : scenario_xirr[api.id][:xirr] %>
-          <% Rails.logger.debug "scenario_xirr = #{scenario_xirr} api.id = #{api.id} #{scenario_xirr[api.id]}" %>
+          <% Rails.logger.debug "scenario_xirr = #{scenario_xirr} api.id = #{api.id} #{scenario_xirr&.dig(api.id)}" %>
           <%= text_field_tag :scenario_irr, xirr , class: "form-control", disabled: true %>
         </div>
 
