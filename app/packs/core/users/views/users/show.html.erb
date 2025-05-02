@@ -131,7 +131,7 @@
       </table>
 
       <div>
-        <%= link_to "Edit" , edit_user_path(@user), {class: "btn btn-outline-primary" } if policy(@user).update? %>
+        <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary" } if policy(@user).update? %>
       </div>
 
 

@@ -33,7 +33,7 @@
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center upload_download_btn" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-upload me-2"></i> Upload / Download
+            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> / Download
           </button>
 
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -41,7 +41,7 @@
             <%= link_to aggregate_portfolio_investments_path(fund_id: fund.id, format: "xlsx", all: true),
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>
-              <i class="ti ti-download me-2"></i> Download Investments
+              <i class="ti ti-download me-2"></i> <%= t_common(:download) %> Investments
             <% end %>
 
             <!--
@@ -68,7 +68,7 @@
                           "sample_upload": "PORTFOLIO_SAMPLE"),
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>
-              <i class="ti ti-upload me-2"></i> Upload
+              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
             <% end %>
 
           </div>

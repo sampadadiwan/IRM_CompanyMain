@@ -13,7 +13,7 @@
 
 <div class="btn-group">
 <div class="dropdown">
-    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
+    <button class="btn btn-outline-primary dropdown-toggle ti ti-checklist" type="button" id="doc_actions"
             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     Bulk Actions
     </button>
@@ -25,13 +25,13 @@
     <% msg = "This will Verify each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Verify",
     bulk_actions_allocations_path("bulk_action": "Verify", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
-    class: "dropdown-item", form_class: "w-100",
+    class: "dropdown-item ti ti-check", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     <% msg = "This will Unverify each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Unverify",
     bulk_actions_allocations_path("bulk_action": "Unverify", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
-    class: "dropdown-item", form_class: "w-100",
+    class: "dropdown-item ti ti-x", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     <div class="dropdown-divider"></div>
@@ -39,20 +39,20 @@
     <% msg = "This will generate documents for each allocation in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Generate All Docs",
     bulk_actions_allocations_path("bulk_action": "Generate All Docs", secondary_sale_id: secondary_sale.id, q: params.to_unsafe_h[:q], all: true),
-    class: "dropdown-item", form_class: "w-100",
+    class: "dropdown-item ti ti-files", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     <% end %>
 
     <% if folder_id.present? %>
-        <%= button_to "Download Docs", download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id), class: "dropdown-item", data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } if folder_id.present? %>
+        <%= button_to t_common(:download_docs), download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id), class: "dropdown-item ti ti-download", data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } if folder_id.present? %>
     <% end %>
     
     <% if secondary_sale && policy(secondary_sale).owner? %>
         <div class="dropdown-divider"></div>
-        <%= link_to "All Documents", documents_path(filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item"  %>
-        <%= link_to "Approved Documents", documents_path(q: ransack_query_params(:approved, :eq, true), filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item" %>
-        <%= link_to "Unapproved Documents", documents_path(q: ransack_query_params(:approved, :eq, false), filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item" %>
+        <%= link_to t_common(:all_docs), documents_path(filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item ti ti-files"  %>
+        <%= link_to "Approved Documents", documents_path(q: ransack_query_params(:approved, :eq, true), filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item ti ti-file-check" %>
+        <%= link_to "Unapproved Documents", documents_path(q: ransack_query_params(:approved, :eq, false), filter: true, folder_id: folder_id, no_folders: true), class: "dropdown-item ti ti-file-x" %>
     <% end %>
         
 

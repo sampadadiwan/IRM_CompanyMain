@@ -28,7 +28,7 @@
     <%= display_boolean dashboard_widget.enabled %>
   </td>
   <td>
-    <%= link_to "Show", dashboard_widget , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_dashboard_widget_path(dashboard_widget), {class: "btn btn-outline-success"}%>
+    <%= link_to  t_common(:show), dashboard_widget , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_dashboard_widget_path(dashboard_widget), {class: "btn btn-outline-success"}%>
   </td>
 </tr>

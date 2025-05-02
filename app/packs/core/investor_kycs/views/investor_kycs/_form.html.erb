@@ -107,7 +107,7 @@
 
             <%= custom_form_fields(investor_kyc, form, step: :one, required: is_investor) %>
 
-            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
 
         </div>
       </div>
@@ -183,7 +183,7 @@
           <% end %>
 
           <div class="form-group">
-            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
           </div>
         </div>
       </div>
@@ -227,7 +227,7 @@
           <% end %>
 
           <div class="form-group">
-            <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg"}%>
+            <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
           </div>
 
         </div>

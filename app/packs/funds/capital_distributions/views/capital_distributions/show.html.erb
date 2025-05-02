@@ -140,12 +140,12 @@
 <div>
   <% if policy(@capital_distribution).update? %>
     <%= link_to edit_capital_distribution_path(@capital_distribution), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i>Edit
+      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
     <% end %>
 
     <%= button_to @capital_distribution, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
         data: { action: "click->confirm#popup", turbo: false } do %>
-      <i class="ti ti-trash me-2"></i>Delete
+      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 

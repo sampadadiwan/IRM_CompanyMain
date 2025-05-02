@@ -12,6 +12,6 @@
     <%= link_to fee.owner_type, id: fee.owner_id, controller: fee.owner_type.underscore.pluralize, action: "show" %>
   </td>
   <td>
-    <%= link_to "Show" , fee , {class: "btn btn-outline-primary" }%>
+    <%= link_to  t_common(:show) , fee , {class: "btn btn-outline-primary" }%>
   </td>
 </tr>

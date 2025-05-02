@@ -20,7 +20,7 @@
                   format: "xlsx", all: true),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
-      <i class="ti ti-download me-2"></i> Download
+      <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
     <% end %>
 
     <% if current_user.curr_role != "investor" %>
@@ -29,7 +29,7 @@
                     "sample_upload": "FUND_UNIT_SAMPLE"),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-upload me-2"></i> Upload
+        <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
       <% end %>
     <% end %>
 

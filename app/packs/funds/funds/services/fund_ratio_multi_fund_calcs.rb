@@ -147,7 +147,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   # rubocop:disable Metrics/BlockLength
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
-    Rails.logger.debug "Portfolio Company IRR for #{@portfolio_company_ids}"
+    Rails.logger.debug { "Portfolio Company IRR for #{@portfolio_company_ids}" }
     @portfolio_company_irr_map ||= {}
 
     if @portfolio_company_irr_map.empty?
@@ -216,7 +216,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   # rubocop:enable Metrics/BlockLength
 
   def portfolio_company_metrics
-    Rails.logger.debug "Portfolio Company IRR for #{@portfolio_company_ids}"
+    Rails.logger.debug { "Portfolio Company IRR for #{@portfolio_company_ids}" }
     @portfolio_company_metrics_map ||= {}
 
     aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|

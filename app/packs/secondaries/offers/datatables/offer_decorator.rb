@@ -36,8 +36,8 @@ class OfferDecorator < ApplicationDecorator
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions
   def dt_actions
     links = []
-    links << h.link_to('Show', h.offer_path(object), class: "btn btn-outline-primary")
-    links << h.link_to("Complete Offer Details", h.edit_offer_path(offer), class: "btn btn-outline-warning") if object.approved && h.policy(object).edit?
+    links << h.link_to(h.t_common(:show), h.offer_path(object), class: "btn btn-outline-primary ti ti-eye")
+    links << h.link_to("Complete Offer Details", h.edit_offer_path(offer), class: "btn btn-outline-warning ti ti-check") if object.approved && h.policy(object).edit?
     h.safe_join(links, '')
   end
 end

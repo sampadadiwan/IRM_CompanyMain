@@ -32,7 +32,7 @@
         <%= deal_activity.days %>
     </td>
     <td>
-        <%= link_to "Show", deal_activity, class: "btn btn-outline-primary" %>
-        <%= link_to "Edit", edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" if policy(deal_activity).update? %>
+        <%= link_to  t_common(:show), deal_activity, class: "btn btn-outline-primary" %>
+        <%= link_to  t_common(:edit), edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" if policy(deal_activity).update? %>
     </td>
 </tr>

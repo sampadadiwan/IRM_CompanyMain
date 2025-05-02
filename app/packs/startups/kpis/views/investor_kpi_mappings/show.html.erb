@@ -51,8 +51,8 @@
 </table>
 <div>
   <% if policy(@investor_kpi_mapping).edit? %>
-    <%= link_to "Edit", edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %> 
+    <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
 <% end %>

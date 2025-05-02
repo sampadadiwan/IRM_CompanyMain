@@ -111,9 +111,11 @@
 
                 <div class="form-group">
                     <% if interest.short_listed %>
-                        <button id="next1" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right" type="button">Next</button>
+                        <button id="next1" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right ti ti-arrow-right" type="button"><%= t_common(:next) %></button>
                     <% else %>
-                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                        <%= form.button type: 'submit', class: "btn btn-outline-primary btn-outline-lg" do %>
+                            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+                        <% end %>
                     <% end %>
                 </div>
 
@@ -200,7 +202,9 @@
                     
                     <div class="form-group">
                         <div class="uppy_wait_info alert alert-info">Please wait for the file upload above to complete, before clicking Save.</div>
-                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                        <%= form.button type: 'submit', class: "btn btn-outline-primary btn-outline-lg" do %>
+                            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+                        <% end %>
                     </div>
 
                 </div>

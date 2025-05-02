@@ -115,13 +115,13 @@
           <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-upload me-2"></i> Upload/Download
+              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>/Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <%= link_to download_xl_link(data_source),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-download me-2"></i> Download
+                <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
               <% end %>
 
               <div class="dropdown-divider"></div>
@@ -130,14 +130,14 @@
                             "import_upload[import_type]": "InvestorKyc",
                             "sample_upload": "INVESTOR_KYCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload me-2"></i> Upload KYC Details
+                <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> KYC Details
               <% end %>
 
               <%= link_to new_import_upload_path(
                             "import_upload[import_type]": "KycDocs",
                             "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload me-2"></i> Upload KYC Documents
+                <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> KYC Documents
               <% end %>
 
             </div>

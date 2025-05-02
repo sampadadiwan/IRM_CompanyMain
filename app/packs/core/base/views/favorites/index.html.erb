@@ -22,7 +22,7 @@
             <td><%= favorite.favoritor %></td>
             <td><%= favorite.created_at %></td>
             <td>
-                <%= button_to "Delete", favorite, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+                <%= button_to t_common(:delete), favorite, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
             </td>
         </tr>
         <% end %>

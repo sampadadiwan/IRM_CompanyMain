@@ -28,7 +28,7 @@
                 
                 <div class="text-center">
                     <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
-                    <%= link_to "Show" , link , {class: "btn btn-outline-primary btn-lg" } unless hide_show_btn %>
+                    <%= link_to  t_common(:show) , link , {class: "btn btn-outline-primary btn-lg" } unless hide_show_btn %>
                 </div>
             </div>
             

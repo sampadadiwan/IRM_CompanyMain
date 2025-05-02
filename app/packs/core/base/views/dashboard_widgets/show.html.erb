@@ -102,8 +102,8 @@
   </table>
   <div class="associated_entity">
     <% if policy(@dashboard_widget).update? %>
-      <%= link_to "Edit", edit_dashboard_widget_path(@dashboard_widget), {class: "btn btn-outline-primary"} %>
-      <%= button_to "Delete", @dashboard_widget, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to  t_common(:edit), edit_dashboard_widget_path(@dashboard_widget), {class: "btn btn-outline-primary"} %>
+      <%= button_to t_common(:delete), @dashboard_widget, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
   </div>
 <% end %>

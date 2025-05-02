@@ -12,7 +12,7 @@
     <%= display_boolean rm_mapping.approved %>
   </td>
   <td>
-    <%= link_to "Show", rm_mapping , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_rm_mapping_path(rm_mapping), {class: "btn btn-outline-success"} if policy(rm_mapping).update? %>
+    <%= link_to  t_common(:show), rm_mapping , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_rm_mapping_path(rm_mapping), {class: "btn btn-outline-success"} if policy(rm_mapping).update? %>
   </td>
 </tr>

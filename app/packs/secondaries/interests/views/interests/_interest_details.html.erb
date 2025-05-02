@@ -2,12 +2,12 @@
 
   
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Interest Documents</a>
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"><%= t('secondaries_tabs.interest_documents') %></a>
     <% if interest.allocation_quantity > 0 %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#transaction-docs-tab">Transaction Documents</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#transaction-docs-tab"><%= t('secondaries_tabs.transaction_documents') %></a>
     <% end %>
     <% if policy(interest.secondary_sale).owner? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#changes-tab">Changes</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#changes-tab"><%= t('secondaries_tabs.changes') %></a>
     <% end %>
   </nav>
 

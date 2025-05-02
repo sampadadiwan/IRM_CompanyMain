@@ -135,8 +135,8 @@
 
   <div>
     <% if policy(@expression_of_interest).update? %>
-      <%= link_to "Edit" , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-outline-primary" } %> 
-      <%= button_to "Delete" , @expression_of_interest, method: :delete, class: "btn btn-outline-danger" ,
+      <%= link_to  t_common(:edit) , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-outline-primary" } %> 
+      <%= button_to t_common(:delete) , @expression_of_interest, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
 

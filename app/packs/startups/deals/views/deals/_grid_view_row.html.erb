@@ -63,9 +63,9 @@
                         <%= button_to "N/A", toggle_completed_deal_activity_path(activity, "deal_activity[status]": "skip"), class: "dropdown-item" %>
                         </div>
 
-                        <%= link_to "Show", deal_activity_path(activity), class: "dropdown-item" %>
+                        <%= link_to  t_common(:show), deal_activity_path(activity), class: "dropdown-item" %>
 
-                        <%= link_to "Edit", edit_deal_activity_path(activity,
+                        <%= link_to  t_common(:edit), edit_deal_activity_path(activity,
                                         back_to: deal_path(id: deal_investor.deal_id, grid_view: true)),
                                         class: "dropdown-item" %>
 

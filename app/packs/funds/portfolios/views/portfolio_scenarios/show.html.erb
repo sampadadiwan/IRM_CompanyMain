@@ -3,8 +3,8 @@
 <%= render "portfolio_scenarios/show", portfolio_scenario: @portfolio_scenario %>
 <div>
   <% if policy(@portfolio_scenario).update? %>
-    <%= link_to "Edit", edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success"} %> 
-    <%= button_to "Delete", @portfolio_scenario, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success"} %> 
+    <%= button_to t_common(:delete), @portfolio_scenario, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 
   <div class="btn-group">

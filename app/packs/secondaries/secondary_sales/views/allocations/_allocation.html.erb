@@ -45,7 +45,7 @@
     <%= display_boolean allocation.verified %>
   </td>
   <td>
-    <%= link_to "Show", allocation , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_allocation_path(allocation), {class: "btn btn-outline-success"} if policy(allocation).update? %>
+    <%= link_to  t_common(:show), allocation , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= link_to  t_common(:edit), edit_allocation_path(allocation), {class: "btn btn-outline-success ti ti-edit"} if policy(allocation).update? %>
   </td>
 </tr>

@@ -41,7 +41,9 @@
             </div>
 
             <div class="form-group">
-              <%= form.submit "Save", class: "btn btn-outline-primary btn-lg pull-right" %>
+              <%= form.button type: 'submit', class: "btn btn-outline-primary btn-lg pull-right" do %>
+                  <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+              <% end %>
             </div>
           <% end %>
         </div>

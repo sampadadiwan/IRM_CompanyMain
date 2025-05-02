@@ -4,15 +4,15 @@
 
     <span>
     <% if @secondary_sale %>
-        <%= link_to "Download Report", interests_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), class: "btn btn-outline-success btn-outline-sm"  %>
+        <%= link_to t('secondaries_actions.download_report'), interests_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), class: "btn btn-outline-success btn-outline-sm"  %>
         |
-        <%= link_to "Not Shortlisted", interests_secondary_sale_path(@secondary_sale, short_listed: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
-        <%= link_to "No Signature", interests_secondary_sale_path(@secondary_sale, signature: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
+        <%= link_to t('secondaries_actions.not_shortlisted'), interests_secondary_sale_path(@secondary_sale, short_listed: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
+        <%= link_to t('secondaries_actions.no_signature'), interests_secondary_sale_path(@secondary_sale, signature: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
         |
         
-        <%= link_to "SPA Not Accepted", interests_secondary_sale_path(@secondary_sale, final_agreement: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
+        <%= link_to t('secondaries_actions.spa_not_accepted'), interests_secondary_sale_path(@secondary_sale, final_agreement: false, report: "completion_report"), class: "btn btn-outline-warning btn-outline-sm"  %>
         |
-        <%= link_to "All", interests_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "btn btn-outline-success btn-outline-sm"  %>
+        <%= link_to t_common(:all), interests_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "btn btn-outline-success btn-outline-sm"  %>
 
     <% end %>
     </span>

@@ -16,7 +16,7 @@
   </td>
 
   <td>
-    <%= link_to "Show", user, {class: "btn btn-outline-primary" } if policy(user).show? %>
-    <%= link_to "Edit", edit_user_path(user), {class: "btn btn-outline-success" } if policy(user).edit? %>
+    <%= link_to  t_common(:show), user, {class: "btn btn-outline-primary" } if policy(user).show? %>
+    <%= link_to  t_common(:edit), edit_user_path(user), {class: "btn btn-outline-success" } if policy(user).edit? %>
   </td>
 </tr>

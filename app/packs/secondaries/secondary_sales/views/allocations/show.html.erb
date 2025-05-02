@@ -59,8 +59,8 @@
   </table>
   <div class="associated_entity">
   
-    <%= link_to "Edit", edit_allocation_path(@allocation), {class: "btn btn-outline-primary"} if policy(@allocation).update? %>
-    <%= button_to "Delete", @allocation, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@allocation).destroy? %>
+    <%= link_to  t_common(:edit), edit_allocation_path(@allocation), {class: "btn btn-outline-primary"} if policy(@allocation).update? %>
+    <%= button_to t_common(:delete), @allocation, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@allocation).destroy? %>
     <%= link_to "Audit Trail", allocation_path(@allocation, audit_trail: true), {class: "btn btn-outline-success"} %>
 
     <% if policy(@allocation).update?  %>

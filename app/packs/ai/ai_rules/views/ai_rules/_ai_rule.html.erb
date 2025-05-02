@@ -21,7 +21,7 @@
     <%= display_boolean ai_rule.enabled %>
   </td>
   <td>
-    <%= link_to "Show", ai_rule , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_ai_rule_path(ai_rule), {class: "btn btn-outline-success"} if policy(ai_rule).update? %>
+    <%= link_to  t_common(:show), ai_rule , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_ai_rule_path(ai_rule), {class: "btn btn-outline-success"} if policy(ai_rule).update? %>
   </td>
 </tr>

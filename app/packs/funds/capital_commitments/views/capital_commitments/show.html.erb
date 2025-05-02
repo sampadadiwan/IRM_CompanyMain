@@ -9,12 +9,12 @@
 
   <% if policy(@capital_commitment).update? %>
     <%= link_to edit_capital_commitment_path(@capital_commitment), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i>Edit
+      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
     <% end %>
 
     <%= button_to @capital_commitment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
                 data: {action: "click->confirm#popup", turbo: false} do %>
-      <i class="ti ti-trash me-2"></i>Delete
+      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 
@@ -23,7 +23,7 @@
       <div class="dropdown">
         <button class="btn btn-outline-success dropdown-toggle" type="button" id="commitment_actions"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i>Actions
+          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 

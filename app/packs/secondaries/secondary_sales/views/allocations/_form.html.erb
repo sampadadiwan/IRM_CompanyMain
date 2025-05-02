@@ -26,7 +26,7 @@
       </div>
 
       <div class="form-group">
-        <%= form.label :price, "Allocation Price" %>
+        <%= form.label :price, t('secondaries_actions.allocation_price') %>
         <%= form.text_field :price, class: "form-control"  %>
         <span class="text-muted">The price at which the transaction is done</span>
       </div>
@@ -34,7 +34,7 @@
     <% end %> 
   
     <div class="form-group">
-      <%= form.label :quantity, "Allocation Quantity" %>
+      <%= form.label :quantity, t('secondaries_actions.allocation_quantity') %>
       <%= form.text_field :quantity, class: "form-control", disabled: allocation.verified %>
     </div>
     <div class="form-group">
@@ -46,7 +46,9 @@
       <%= form.check_box :verified, class: "form-check-input"  %>
     </div>
     <div class="form-group">
-      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+          <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+      <% end %>
     </div>
   <% end %>
 <% end %>

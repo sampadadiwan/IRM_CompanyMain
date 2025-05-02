@@ -18,8 +18,8 @@
     <div class="divTableCell"><%= expression_of_interest.comment %></div>
 
     <div class="divTableCell">
-        <%= link_to "Show", expression_of_interest, class: "btn btn-outline-primary", target: '_top' %>
-        <%= link_to "Edit", allocation_form_expression_of_interest_path(expression_of_interest), 
+        <%= link_to  t_common(:show), expression_of_interest, class: "btn btn-outline-primary", target: '_top' %>
+        <%= link_to  t_common(:edit), allocation_form_expression_of_interest_path(expression_of_interest), 
                 data: { turbo_frame: "tf_#{dom_id(expression_of_interest)}" }, 
                 class: "btn btn-outline-success" if policy(expression_of_interest).allocation_form? %>
     </div>

@@ -91,8 +91,8 @@
 </table>
 
 <div class="associated_entity">
-  <%= link_to "Edit", edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>
-  <%= button_to "Delete", @fund_ratio, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@fund_ratio).destroy? %>
+  <%= link_to  t_common(:edit), edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>
+  <%= button_to t_common(:delete), @fund_ratio, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@fund_ratio).destroy? %>
 </div>
 
 <% end %>

@@ -93,7 +93,7 @@ class KpiReport < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[kpis entity]
+    %w[kpis entity portfolio_company]
   end
 
   def self.grid(kpi_reports)

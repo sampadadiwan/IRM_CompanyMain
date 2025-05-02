@@ -130,12 +130,12 @@ class KpiWorkbookReader
       next unless @target_kpis.include?(kpi_name)
 
       # Process the row to extract KPI values
-      process_kpi_row(sheet, row, header, raw_kpi_name, kpi_name)
+      process_kpi_row(sheet, row, row_index, header, raw_kpi_name, kpi_name)
     end
   end
 
   # Processes a single row of KPI data
-  def process_kpi_row(sheet, row, header, raw_kpi_name, _kpi_name)
+  def process_kpi_row(sheet, row, row_index, header, raw_kpi_name, _kpi_name)
     seen_periods = {}
     # Iterate through each value in the row (excluding the KPI name column)
     row[1..].each_with_index do |value, col_index|
@@ -161,7 +161,7 @@ class KpiWorkbookReader
       # Find or create a KPI report for the parsed period
       kpi_report = find_or_create_kpi_report(parsed_period, period)
       # Save the KPI entry into the database
-      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row)
+      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
     end
   end
 
@@ -197,7 +197,7 @@ class KpiWorkbookReader
 
   # rubocop:disable Metrics/ParameterLists
   # Saves a KPI entry into the database
-  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row)
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
     # Find or initialize a KPI entry for the given report and KPI name
     kpi = kpi_report.kpis.where(
       name: raw_kpi_name,
@@ -205,11 +205,11 @@ class KpiWorkbookReader
       entity_id: @portfolio_company&.entity_id
     ).first_or_initialize
 
-    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row}" }
+    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row} #{col_index}" }
 
     # Check if the value has changed
     if kpi.persisted? && kpi.value != value.to_d
-      msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row}"
+      msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row_index} col #{col_index}"
       Rails.logger.debug msg
       @error_msg << { msg:, document: @document.name, document_id: @document.id }
     end
@@ -217,7 +217,7 @@ class KpiWorkbookReader
     kpi.assign_attributes(
       value: value,
       display_value: value,
-      source: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}"
+      notes: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
     )
     # Save the KPI entry
     kpi.save

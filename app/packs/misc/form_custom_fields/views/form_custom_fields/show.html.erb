@@ -40,8 +40,14 @@
 
 
 <div>
-  <%= link_to "Edit", edit_form_custom_field_path(@form_custom_field), {class: "btn btn-outline-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
+  <%= link_to edit_form_custom_field_path(@form_custom_field), {class: "btn btn-outline-primary"} do %>
+    <i class="ti ti-edit"></i> <%= t_common(:edit) %>
+  <% end %> |
+  <%= link_to :back, {class: "btn btn-outline-primary"} do %>
+    <i class="ti ti-arrow-left"></i> Back
+  <% end %> |
 
-  <%= button_to "Delete", @form_custom_field, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>
+  <%= button_to @form_custom_field, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" do %>
+    <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+  <% end %>
 </div>

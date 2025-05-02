@@ -93,7 +93,7 @@
 
 
 <div>
-  <%= link_to "Edit", edit_deal_activity_path(@deal_activity), 
+  <%= link_to  t_common(:edit), edit_deal_activity_path(@deal_activity), 
       {class: "btn btn-outline-primary"} if policy(@deal_activity).update? %> 
 </div>
 

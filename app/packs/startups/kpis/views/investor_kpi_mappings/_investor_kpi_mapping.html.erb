@@ -18,7 +18,7 @@
     <%= investor_kpi_mapping.upper_threshold %>
   </td>
   <td>
-    <%= link_to "Show", investor_kpi_mapping , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_investor_kpi_mapping_path(investor_kpi_mapping), {class: "btn btn-outline-success"} if policy(investor_kpi_mapping).edit? %>
+    <%= link_to  t_common(:show), investor_kpi_mapping , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(investor_kpi_mapping), {class: "btn btn-outline-success"} if policy(investor_kpi_mapping).edit? %>
   </td>
 </tr>

@@ -86,5 +86,5 @@
 </table>
 <% end %>
 <div>
-  <%= button_to "Delete", @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
+  <%= button_to t_common(:delete), @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 </div>

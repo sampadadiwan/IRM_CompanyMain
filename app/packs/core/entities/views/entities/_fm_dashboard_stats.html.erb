@@ -6,7 +6,7 @@
         <div class="d-flex align-items-center mb-3">
           <div>
             <h3 class="fs-8"><%= policy_scope(current_user.entity.funds).count %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Funds</h6>
+            <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.funds') %> </h6>
           </div>
           <div class="ms-auto">
             <span class="text-success display-6"><i class="ti ti-currency-dollar"></i></span>
@@ -24,7 +24,7 @@
         <div class="d-flex align-items-center mb-3">
           <div>
             <h3 class="fs-8"><%= policy_scope(current_user.entity.investors).count %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Stakeholders</h6>
+            <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.stakeholders') %> </h6>
           </div>
           <div class="ms-auto">
             <span class="text-info display-6"><i class="ti ti-users"></i></span>
@@ -44,7 +44,7 @@
             <div class="d-flex align-items-center mb-3">
               <div>
                 <h3 class="fs-8"><%= policy_scope(current_user.entity.investment_opportunities).count %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Opportunities</h6>
+                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.opportunities') %> </h6>
               </div>
               <div class="ms-auto">
                 <span class="text-danger display-6"><i class="ti ti-filter"></i></span>
@@ -68,7 +68,7 @@
             <div class="d-flex align-items-center mb-3">
               <div>
                 <h3 class="fs-8"><%= policy_scope(current_user.entity.capital_commitments).count %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Commitments</h6>
+                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.commitments') %> </h6>
               </div>
               <div class="ms-auto">
                 <span class="text-warning display-6"><i class="ti ti-lock"></i></span>

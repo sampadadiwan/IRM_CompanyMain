@@ -4,11 +4,11 @@
 
   <div>
     <% if policy(@interest).update? %>
-      <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-outline-primary" } %> 
-      <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to  t_common(:edit) , edit_interest_path(@interest), {class: "btn btn-outline-primary ti ti-edit" } %>
+      <%= button_to t_common(:delete) , @interest, method: :delete, class: "btn btn-outline-danger ti ti-trash" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% elsif policy(@interest).send_email_to_change? %>
       <% emails = @interest.secondary_sale.notification_users.map(&:email).join(",").presence || @interest.secondary_sale.support_email %>
-      <%= link_to 'Send Email', "mailto:#{emails}?subject=Request changes to Interest for #{@interest.buyer_entity_name}", class: 'btn btn-outline-success' %>
+      <%= link_to t('secondaries_actions.send_email_to_change'), "mailto:#{emails}?subject=Request changes to Interest for #{@interest.buyer_entity_name}", class: 'btn btn-outline-success ti ti-mail' %>
     <% end %>
 
 
@@ -16,25 +16,25 @@
     <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on. Please ensure all documents have been uploaded before proceeding." %>
 
 
-    <%= button_to "Accept Transaction Documents" , accept_spa_interest_path(@interest), 
-        method: :patch, class: "btn btn-outline-success" , 
+    <%= button_to t('secondaries_actions.accept_transaction_documents') , accept_spa_interest_path(@interest),
+        method: :patch, class: "btn btn-outline-success ti ti-check" ,
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the transaction documents listed below."} if policy(@interest).accept_spa? %>
 
-    <%= link_to "Allocations", allocations_path(secondary_sale_id: @interest.secondary_sale_id, q: ransack_query_params(:interest_id, :eq, @interest.id)), {class: "btn btn-outline-primary" } %> 
+    <%= link_to t('secondaries_actions.allocations'), allocations_path(secondary_sale_id: @interest.secondary_sale_id, q: ransack_query_params(:interest_id, :eq, @interest.id)), {class: "btn btn-outline-primary ti ti-list" } %>
 
 
     <% if policy(@interest).generate_docs?  %>
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+        <button class="btn btn-outline-primary dropdown-toggle ti ti-file-text" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Generate Document
+          <%= t('secondaries_actions.generate_document') %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= button_to "All Docs",
+          <%= button_to t_common(:all_docs),
                 generate_docs_interest_path(@interest),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-files",
                 data: {action: "click->confirm#popup",
                 msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
 
@@ -42,7 +42,7 @@
 
             <%= button_to template.name,
                 generate_docs_interest_path(@interest, template_id: template.id),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-file",
                 data: {action: "click->confirm#popup",
                 msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
 

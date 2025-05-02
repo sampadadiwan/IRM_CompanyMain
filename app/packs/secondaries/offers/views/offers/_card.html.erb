@@ -109,14 +109,14 @@
 
             <div class="row align-items-center">
               <div class="col">
-                <%= link_to "Show" , offer_path(offer), {class: "btn btn-outline-primary" } %>
+                <%= link_to  t_common(:show) , offer_path(offer), {class: "btn btn-outline-primary ti ti-eye" } %>
                 <% if policy(offer).update? %>
-                  <%= link_to "Edit" , edit_offer_path(offer), {class: "btn btn-outline-primary" } if !offer.approved %>
-                  <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>
+                  <%= link_to  t_common(:edit) , edit_offer_path(offer), {class: "btn btn-outline-primary ti ti-edit" } if !offer.approved %>
+                  <%= link_to "Complete Offer Details", edit_offer_path(offer) , {class: "btn btn-outline-warning ti ti-list-check" } if offer.approved %>
                 <% end %>
 
                 <%= button_to "Accept Transaction Documents" , accept_spa_offer_path(offer), method: :patch,
-                    class: "btn btn-outline-success" , id: 'accept_spa_btn',
+                    class: "btn btn-outline-success ti ti-check" , id: 'accept_spa_btn',
                     form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
                     msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(offer).accept_spa? && offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>
 

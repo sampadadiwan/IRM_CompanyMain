@@ -56,7 +56,7 @@
 
 <% if current_user.has_cached_role?(:super) %>
 <div>
-  <%= link_to "Edit", edit_payment_path(@payment), {class: "btn btn-outline-primary"} %> |
-  <%= button_to "Delete", @payment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: false} %>
+  <%= link_to  t_common(:edit), edit_payment_path(@payment), {class: "btn btn-outline-primary"} %> |
+  <%= button_to t_common(:delete), @payment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: false} %>
 </div>
 <% end %>

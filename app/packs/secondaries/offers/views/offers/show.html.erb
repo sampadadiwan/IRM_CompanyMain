@@ -7,46 +7,46 @@
 
 <div>
   <% if policy(@offer).update? %>
-    <%= link_to "Edit" , edit_offer_path(@offer), {class: "btn btn-outline-primary" } if !@offer.approved %>
-    <%= link_to "Complete Offer Details", edit_offer_path(@offer) , {class: "btn btn-outline-warning" } if @offer.approved %>
+    <%= link_to  t_common(:edit) , edit_offer_path(@offer), {class: "btn btn-outline-primary ti ti-edit" } if !@offer.approved %>
+    <%= link_to t("secondaries_actions.complete_offer_details"), edit_offer_path(@offer) , {class: "btn btn-outline-warning ti ti-list-check" } if @offer.approved %>
   <% end %>
 
-  <% label = @offer.approved ?  "UnApprove" : "Approve" %>
-  <%= button_to label , approve_offer_path(@offer), method: :patch, class: "btn btn-outline-success" ,
+  <% label_key = @offer.approved ?  ".unapprove" : ".approve" %>
+  <%= button_to t(label_key) , approve_offer_path(@offer), method: :patch, class: "btn btn-outline-success ti ti-check" ,
     form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-  <%= button_to "Accept Transaction Documents" , accept_spa_offer_path(@offer), method: :patch,
-      class: "btn btn-outline-success" , id: 'accept_spa_btn',
+  <%= button_to t("secondaries_actions.accept_transaction_documents") , accept_spa_offer_path(@offer), method: :patch,
+      class: "btn btn-outline-success ti ti-check" , id: 'accept_spa_btn',
       form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-      msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? && @offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>
+      msg: t("secondaries_actions.accept_spa_confirmation")} if policy(@offer).accept_spa? && @offer.documents&.where(owner_tag: "Generated", approved: true)&.present? %>
 
-  <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-outline-primary" } %>
+  <%= link_to t("secondaries_actions.secondary_sale") , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-outline-primary ti ti-building-estate" } %>
 
-  <%= link_to "Allocations", allocations_path(secondary_sale_id: @offer.secondary_sale_id, q: ransack_query_params(:offer_id, :eq, @offer.id)), {class: "btn btn-outline-primary" } %> 
+  <%= link_to t("secondaries_actions.allocations"), allocations_path(secondary_sale_id: @offer.secondary_sale_id, q: ransack_query_params(:offer_id, :eq, @offer.id)), {class: "btn btn-outline-primary ti ti-list" } %>
 
   <% if policy(@offer).generate_docs?  %>
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+        <button class="btn btn-outline-primary dropdown-toggle ti ti-file-text" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Generate Document
+          <%= t("secondaries_actions.generate_document") %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= button_to "All Docs",
+          <%= button_to t("secondaries_actions.all_docs"),
                 generate_docs_offer_path(@offer),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-files",
                 data: {action: "click->confirm#popup",
-                msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
+                msg: t("secondaries_actions.generate_docs_confirmation"), method: :patch } %>
 
           <% @offer.secondary_sale.documents.templates.where(owner_tag: "Offer Template").each do |template| %>
 
             <%= button_to template.name,
                 generate_docs_offer_path(@offer, template_id: template.id),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-file",
                 data: {action: "click->confirm#popup",
-                msg: "Document generation will take a few min, please be patient. Proceed?", method: :patch } %>
+                msg: t("secondaries_actions.generate_docs_confirmation"), method: :patch } %>
 
           <% end %>
 

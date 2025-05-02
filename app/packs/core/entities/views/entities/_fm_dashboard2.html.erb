@@ -13,7 +13,7 @@
     <% cache_if(current_user != nil, cache_key("FMDashBoard", include_theme: true), expires_in: 5.day) do %>
 
         <% if current_user.enable_funds %>
-            <% title = link_to("Funds", funds_path) %>
+            <% title = link_to(t('entities.fm_dashboard2.funds'), funds_path) %>
             <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
                 <% funds = policy_scope(Fund).page(params[:page]) %>
 
@@ -29,7 +29,7 @@
     
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
         <% if investment_opportunities.count > 0 %>
-            <%= render ToggleCard.new(title: "Investment Opportunities", css_class: "show_ios") do %>
+            <%= render ToggleCard.new(title: t('entities.fm_dashboard2.investment_opportunities'), css_class: "show_ios") do %>
                 <% investment_opportunities.each do |investment_opportunity| %>
                     <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
                 <% end %>

@@ -108,7 +108,7 @@
                         for_model: "deal_investor", owner_tag: doc_owner_tag %>
 
             <div class="form-group">
-                <%= form.submit "Save", class: "btn btn-outline-primary", id: "saveButton", data: { turbo_frame: turbo_tag } %>
+                <%= form.submit t_common(:save), class: "btn btn-outline-primary", id: "saveButton", data: { turbo_frame: turbo_tag } %>
                 <a class="btn btn-outline-danger", data-bs-dismiss="offcanvas">Close</a>
             </div>
         <% end %>

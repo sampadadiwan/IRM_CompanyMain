@@ -4,9 +4,9 @@
     </h1>
 
     <span>
-        <%= link_to "Download", payments_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+        <%= link_to t_common(:download), payments_secondary_sale_path(@secondary_sale, format: "xlsx"),
             class: "btn btn-outline-primary" %>
-        <%= link_to "Verified Offers", payments_secondary_sale_path(@secondary_sale, verified: true), 
+        <%= link_to t('secondaries_actions.verified_offers'), payments_secondary_sale_path(@secondary_sale, verified: true),
             class: "btn btn-outline-primary" %>
     </span>
 </div>
@@ -20,35 +20,35 @@
         <thead>
             <tr>
                 <th>
-                    Full Name
+                    <%= t('secondaries_actions.full_name') %>
                 </th>
                 <th>
-                    Allocation Quantity
+                    <%= t('secondaries_actions.allocation_quantity') %>
                 </th>
                 <th>
-                    Price
+                    <%= t('secondaries_actions.price') %>
                 </th>
                 <th>
-                    Allocation Amount
+                    <%= t('secondaries_actions.allocation_amount') %>
                 </th>                
                 <th>
-                    Fees
+                    <%= t('secondaries_actions.fees') %>
                 </th>
                 <th>
-                    Net Amount (Ex Fees)
+                    <%= t('secondaries_actions.net_amount_ex_fees') %>
                 </th>
                 <th>
-                    Bank Account Number
+                    <%= t('secondaries_actions.bank_account_number') %>
                 </th>
                 <th>
-                    IFSC Code
+                    <%= t('secondaries_actions.ifsc_code') %>
                 </th>
                 <th>
-                    PAN
+                    <%= t('secondaries_actions.pan') %>
                 </th>
                 
                 <th>
-                    Verified
+                    <%= t('secondaries_actions.verified') %>
                 </th>
                 <th>
                 </th>
@@ -110,7 +110,7 @@
                         </td>
 
                         <td>
-                            <%= link_to "Show", offer, class: "btn btn-outline-sm btn-outline-primary"  %>
+                            <%= link_to  t_common(:show), offer, class: "btn btn-outline-sm btn-outline-primary"  %>
                         </td>
                     </tr>
 
@@ -157,14 +157,14 @@
                         </td>
                         <td></td>
                         <td>
-                            <%= link_to "Show", fee[:fee], class: "btn btn-outline-sm btn-outline-primary"  %> 
+                            <%= link_to  t_common(:show), fee[:fee], class: "btn btn-outline-sm btn-outline-primary"  %> 
                         </td>
                     </tr>
                 <% end %>
                 
                 <tr>
                     <td>
-                        Total
+                        <%= t('secondaries_actions.total') %>
                     </td>
                     <td>
                         

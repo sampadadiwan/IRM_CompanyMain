@@ -41,8 +41,10 @@
   </div>
 
   <div class="form-group">
-    <%= form.submit "Save", class: "btn btn-outline-primary" %>
-    <a class="btn btn-outline-danger" data-action="click->grid-view#close">Close</a>
+    <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+        <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+    <% end %>
+    <a class="btn btn-outline-danger ti ti-x" data-action="click->grid-view#close">Close</a>
   </div>
 <% end %>
 

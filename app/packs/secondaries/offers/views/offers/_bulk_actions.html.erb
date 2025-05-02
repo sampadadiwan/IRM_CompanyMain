@@ -3,7 +3,7 @@
 
 <div class="btn-group">
 <div class="dropdown">
-    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
+    <button class="btn btn-outline-primary dropdown-toggle ti ti-checklist" type="button" id="doc_actions"
             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     Bulk Actions
     </button>
@@ -13,13 +13,13 @@
     <% msg = "This will Verify each offer in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Verify",
     bulk_actions_offers_path("bulk_action": "Verify", q: params.to_unsafe_h[:q], all: true, secondary_sale_id: secondary_sale&.id),
-    class: "dropdown-item", form_class: "w-100",
+    class: "dropdown-item ti ti-check", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     <% msg = "This will Unverify each offer in the search results (including results on other pages). Proceed?" %>
     <%= button_to "Unverify",
     bulk_actions_offers_path("bulk_action": "Unverify", q: params.to_unsafe_h[:q], all: true, secondary_sale_id: secondary_sale&.id),
-    class: "dropdown-item", form_class: "w-100",
+    class: "dropdown-item ti ti-x", form_class: "w-100",
     data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
     </div>

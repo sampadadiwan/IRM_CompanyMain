@@ -4,6 +4,6 @@
 
 <div>
   <% if policy(@scenario_investment).destroy? %>
-  <%= button_to "Delete", @scenario_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= button_to t_common(:delete), @scenario_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

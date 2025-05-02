@@ -1,4 +1,5 @@
 
+<%= kpi_reports.count %> KPIReports
 <% kpi_reports = kpi_reports.order(as_of: :asc) %>
 
 <div data-controller="export-xl">
@@ -69,7 +70,7 @@
 %>
 
 <div class="table-responsive" data-controller="datatable">
-    <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
+    <table id="kpi_reports_grid" class="table table-bordered dataTable">
         <thead>
             <tr>
                 <th>KPI</th>

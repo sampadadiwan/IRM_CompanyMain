@@ -1,3 +1,13 @@
+V9.0.31
+#####################################
+7bae7017a Added deploy notifications
+44e523051 Fixed bug with cross portfolio ratio, fixed fmv cents
+a463f5161 Fixed send reminders to all button (#806)
+e98586d12 Added deploy notifications
+e81bb4b41 Icons1 (#805)
+d6bda1155 Fixed access rights filtering (#804)
+54723246d Added better dashboard widget dropdowns
+
 V9.0.30
 #####################################
 fa13cf56a Parse dates2 (#803)

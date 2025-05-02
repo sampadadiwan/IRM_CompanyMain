@@ -72,8 +72,8 @@
 
 <div>
   <% if policy(@portfolio_cashflow).update? %>
-    <%= link_to "Edit", edit_portfolio_cashflow_path(@portfolio_cashflow), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @portfolio_cashflow, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_portfolio_cashflow_path(@portfolio_cashflow), {class: "btn btn-outline-primary"} %> 
+    <%= button_to t_common(:delete), @portfolio_cashflow, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
 

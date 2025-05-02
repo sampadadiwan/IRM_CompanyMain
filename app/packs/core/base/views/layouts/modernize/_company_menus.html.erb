@@ -36,8 +36,8 @@
             <i class="ti ti-home"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Company Profile</h6>
-            <span class="fs-2 d-block text-body-secondary">Account Settings</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.company_profile') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.account_settings') %></span>
             </div>
         </a>
         <a href="<%= users_path %>" class="py-8 px-7 d-flex align-items-center">
@@ -45,8 +45,8 @@
             <i class="ti ti-users"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">User</h6>
-            <span class="fs-2 d-block text-body-secondary">Company Employees</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.user') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.company_employees') %></span>
             </div>
         </a>
         <% if current_user.enable_investor_advisors %>
@@ -55,8 +55,8 @@
             <i class="ti ti-user-check"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Advisors</h6>
-            <span class="fs-2 d-block text-body-secondary">External Company Advisors</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.advisors') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.external_company_advisors') %></span>
             </div>
         </a>
         <% end %>
@@ -68,8 +68,8 @@
             <i class="ti ti-lock-access"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Access Rights</h6>
-            <span class="fs-2 d-block text-body-secondary">Provide Access</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.access_rights') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.provide_access') %></span>
             </div>
         </a>
 
@@ -79,8 +79,8 @@
             <i class="ti ti-forms"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Customize Forms</h6>
-            <span class="fs-2 d-block text-body-secondary"> Design Personalized Form</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.customize_forms') %></h6>
+            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.design_personalized_form') %></span>
             </div>
         </a>
         <% end %>
@@ -90,8 +90,8 @@
             <i class="ti ti-layers-difference"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Notices</h6>
-            <span class="fs-2 d-block text-body-secondary">Personalize Investor Notices</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.notices') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.personalize_investor_notices') %></span>
             </div>
         </a>
 
@@ -101,8 +101,8 @@
             <i class="ti ti-upload"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Imports</h6>
-            <span class="fs-2 d-block text-body-secondary">Bulk Upload Data</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.imports') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.bulk_upload_data') %></span>
             </div>
         </a>
         <% end %>
@@ -112,8 +112,8 @@
             <i class="ti ti-currency-dollar"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Exchange Rates</h6>
-            <span class="fs-2 d-block text-body-secondary">Manage Exchange Rates</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.exchange_rates') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.manage_exchange_rates') %></span>
             </div>
         </a>
 
@@ -122,8 +122,8 @@
             <i class="ti ti-route"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Audit Trail</h6>
-            <span class="fs-2 d-block text-body-secondary">Download Audit Trail</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.audit_trail') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.download_audit_trail') %></span>
             </div>
         </a>
 
@@ -133,8 +133,8 @@
             <i class="ti ti-report"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Compliance Rules</h6>
-            <span class="fs-2 d-block text-body-secondary"> Setup Compliance Rules</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_rules') %></h6>
+            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.setup_compliance_rules') %></span>
             </div>
         </a>
 
@@ -143,8 +143,8 @@
             <i class="ti ti-list-check"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Compliance Checks</h6>
-            <span class="fs-2 d-block text-body-secondary"> View All Checks</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_checks') %></h6>
+            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.view_all_checks') %></span>
             </div>
         </a>
         <% end %>

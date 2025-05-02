@@ -113,8 +113,8 @@
 </table>
 
 <div>
-  <%= link_to "Edit", edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %> 
-  <%= button_to "Delete", @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %> 
+  <%= link_to  t_common(:edit), edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %> 
+  <%= button_to t_common(:delete), @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %> 
   <% if policy(@fund_formula).enable_formulas? %>
     <div class="btn-group">
       <div class="dropdown">

@@ -90,9 +90,9 @@
 
             <div class="row align-items-center">
               <div class="col">
-                <%= link_to "Show" , interest_path(interest), {class: "btn btn-outline-primary" } %>
+                <%= link_to  t_common(:show) , interest_path(interest), {class: "btn btn-outline-primary ti ti-eye" } %>
                 <% if policy(interest).update? %>
-                  <%= link_to "Edit" , edit_interest_path(interest), {class: "btn btn-outline-primary" } %>
+                  <%= link_to  t_common(:edit) , edit_interest_path(interest), {class: "btn btn-outline-primary ti ti-edit" } %>
                 <% end %>
 
               </div>

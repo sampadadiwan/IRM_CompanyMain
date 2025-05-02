@@ -4,63 +4,63 @@
 
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
         data-action="click->tabdetails#loadData">
-        Commitments
+        <%= t('funds.fund_details.commitments') %> 
       </a>
 
       <% if fund.entity_id == current_user.entity_id %>
         <% unless false && fund.cat3? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">
-            Calls
+            <%= t('funds.fund_details.calls') %>
           </a>
         <% end %>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distributions-tab"
           data-action="click->tabdetails#loadData">
-          Distributions
+          <%= t('funds.fund_details.distributions') %>
         </a>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
           data-action="click->tabdetails#loadData">
-          Ratios
+          <%= t('funds.fund_details.ratios') %>
         </a>
 
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
             data-action="click->tabdetails#loadData">
-            Portfolio
+            <%= t('funds.fund_details.portfolio') %>
           </a>
         <% end %>
 
       <% else %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-remittances-tab"
           data-action="click->tabdetails#loadData">
-          Calls
+          <%= t('funds.fund_details.calls') %>
         </a>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distribution-payments-tab"
           data-action="click->tabdetails#loadData">
-          Distributions
+          <%= t('funds.fund_details.distributions') %>
         </a>
 
         <% if fund.entity.permissions.enable_units? %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
             data-action="click->tabdetails#loadData">
-            Units
+            <%= t('funds.fund_details.units') %>
           </a>
         <% end %>
 
         <% if fund.show_fund_ratios %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
             data-action="click->tabdetails#loadData">
-            Ratios
+            <%= t('funds.fund_details.ratios') %>
           </a>
         <% end %>
 
         <% if fund.show_portfolios %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
             data-action="click->tabdetails#loadData">
-            Portfolio
+            <%= t('funds.fund_details.portfolio') %>
           </a>
         <% end %>
       <% end %>
@@ -68,18 +68,18 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab"
         id="documents_tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">
-        Documents
+        <%= t('funds.fund_details.documents') %>
       </a>
 
       <% if fund.entity_id == current_user.entity_id %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
-          Tasks
+          <%= t('funds.fund_details.tasks') %>
         </a>
 
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
           data-action="click->tabdetails#loadData">
-          Access
+          <%= t('funds.fund_details.access') %>
         </a>
       <% end %>
 

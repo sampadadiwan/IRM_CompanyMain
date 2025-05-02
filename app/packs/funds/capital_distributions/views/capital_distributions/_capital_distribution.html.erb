@@ -12,7 +12,7 @@
     <%= display_boolean capital_distribution.approved %>
   </td>
   <td>
-    <%= link_to "Show" , capital_distribution_path(capital_distribution) , {class: "btn btn-outline-primary" }%>
-    <%= link_to "Edit" , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-outline-success" } if policy(capital_distribution).update? %>
+    <%= link_to  t_common(:show) , capital_distribution_path(capital_distribution) , {class: "btn btn-outline-primary" }%>
+    <%= link_to  t_common(:edit) , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-outline-success" } if policy(capital_distribution).update? %>
   </td>
 </tr>

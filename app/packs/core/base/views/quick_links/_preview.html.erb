@@ -22,7 +22,7 @@
   <% end %>
 </div>
   <% if policy(quick_link).edit? %>    
-    <%= link_to "Edit", edit_quick_link_path(quick_link), {class: "btn btn-outline-primary"} %> |
-    <%= button_to "Delete", quick_link, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_quick_link_path(quick_link), {class: "btn btn-outline-primary"} %> |
+    <%= button_to t_common(:delete), quick_link, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 

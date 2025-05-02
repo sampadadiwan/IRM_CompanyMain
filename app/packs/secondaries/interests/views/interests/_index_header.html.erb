@@ -4,7 +4,7 @@
     <%= render "/interests/stats", secondary_sale: @secondary_sale %>    
 <% end %>
 
-<%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale], hidden_fields: {secondary_sale_id:} %>
+<%= render "/layouts/filter", associations: [:interest_entity, :secondary_sale], hidden_fields: {secondary_sale_id:}, filter_button_text: t_common(:filter) %>
 
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -15,27 +15,29 @@
         <% if @secondary_sale %>
             <% if policy(@secondary_sale).update? || policy(@secondary_sale).import_interests? %>
                 
-                <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
+                <%= link_to "#{t_common(:new)} Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary ti ti-plus" } %>
 
 
-                <%= link_to "Pivot" , interests_path("secondary_sale_id": @secondary_sale.id, ag: true, all: true), {class: "btn btn-outline-primary", target: "_blank"} %>
+                <%= link_to 'Pivot' , interests_path("secondary_sale_id": @secondary_sale.id, ag: true, all: true), {class: "btn btn-outline-primary ti ti-rotate", target: "_blank"} %>
 
-                <%= link_to "Upload Interests", 
-                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                    "import_upload[owner_type]": "SecondarySale", 
-                    "import_upload[import_type]": "Interest", 
-                    "sample_upload": "INTERESTS_SAMPLE"), 
-                    { class: "btn btn-outline-primary"}  %> 
+                <%= link_to "#{t_common(:upload)} Interests",
+                                                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id,
+                                                    "import_upload[owner_type]": "SecondarySale",
+                                                    "import_upload[import_type]": "Interest",
+                                                    "sample_upload": "INTERESTS_SAMPLE"),
+                                                    { class: "btn btn-outline-primary ti ti-upload"}  %>
 
             <% elsif policy(@secondary_sale).buyer? %>
-                <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary" } %>
+                <%= link_to "#{t_common(:new)} Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), {class: "btn btn-outline-primary ti ti-plus" } %>
             <% end %>
 
         <% end %>
 
-        <%= link_to "Download", interests_path(secondary_sale_id: @secondary_sale&.id, format: :xlsx), {class: "btn btn-outline-success"} %>
+        <%= link_to t_common(:download), interests_path(secondary_sale_id: @secondary_sale&.id, format: :xlsx), {class: "btn btn-outline-success ti ti-download"} %>
 
-        <%= button_to "Shortlist All", short_list_interests_secondary_sale_path(@secondary_sale), 
-                                method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will shortlist all interests. Proceed?"} if @secondary_sale && policy(@secondary_sale).short_list_interests? %>
+        <%= button_to short_list_interests_secondary_sale_path(@secondary_sale),
+                                                 method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will shortlist all interests. Proceed?"} if @secondary_sale && policy(@secondary_sale).short_list_interests? do %>
+            <i class="ti ti-star"></i> <%= t('secondaries_actions.shortlist_all') %>
+        <% end %>
     </span>
 </div>

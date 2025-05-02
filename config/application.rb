@@ -11,6 +11,7 @@ module CapHive
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
+    config.i18n.available_locales = %i[en ja]
     config.i18n.default_locale = :en
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1

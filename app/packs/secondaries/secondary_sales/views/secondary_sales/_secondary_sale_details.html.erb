@@ -12,44 +12,44 @@
       <% interests_active = true %>
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
       
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"   
-            data-action="click->tabdetails#loadData">Offers</a>
-      
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
-      
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"
+            data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.offers') %></a>
+
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"><%= t('secondaries_tabs.access_rights') %></a>
 
       <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a -->
-      
-      <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
+
+      <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab"
             data-action="click->tabdetails#loadData">Reminders</a -->
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
-            Notification</a>
+            <%= t('secondaries_tabs.notification') %></a>
     
     <% elsif policy(secondary_sale).rm? %>
       <% interests_active = true %>
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"   
-            data-action="click->tabdetails#loadData">Offers</a>
-      
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"
+            data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.offers') %></a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
       
     <% elsif policy(secondary_sale).seller? %>
       <% offers_active = true; document_tag="Seller" %>
       <input hidden=true value="#offerings-tab" id="clickOnLoad" />
       <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab" 
-          data-action="click->tabdetails#loadData">My Offers</a>      
+          data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.my_offers') %></a>
 
     <% elsif policy(secondary_sale).buyer? %>
       <% interests_active = true; document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
       
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"    
-          data-action="click->tabdetails#loadData">Interests</a>      
+          data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
     <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData">Documents</a>
+        data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.documents') %></a>
 
   </nav>
 

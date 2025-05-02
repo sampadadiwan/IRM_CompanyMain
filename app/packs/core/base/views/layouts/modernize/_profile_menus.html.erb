@@ -13,7 +13,7 @@
             aria-labelledby="profile_menu">
     <div class="profile-dropdown position-relative data-simplebar" data-simplebar>
         <div class="py-3 px-7 pb-0">
-        <h5 class="mb-0 fs-5 fw-semibold">User Profile</h5>
+        <h5 class="mb-0 fs-5 fw-semibold"><%= t('top_menus.user_profile') %></h5>
         </div>
         <div class="d-flex align-items-center py-9 mx-7 border-bottom">
         <div class="">
@@ -30,8 +30,8 @@
             <img src="/modernize/images/svgs/icon-account.svg" alt="" width="24" height="24" />
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">My Profile</h6>
-            <span class="fs-2 d-block text-body-secondary">Account Settings</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.my_profile') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.account_settings') %></span>
             </div>
         </a>
         <a href="<%= notifications_path %>" class="py-8 px-7 d-flex align-items-center">
@@ -39,8 +39,8 @@
             <img src="/modernize/images/svgs/icon-inbox.svg" alt="" width="24" height="24" />
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">My Inbox</h6>
-            <span class="fs-2 d-block text-body-secondary">Messages & Notifications</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.my_inbox') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.messages_notifications') %></span>
             </div>
         </a>
         <a href="/tasks?assigned_to_id=<%=current_user.id%>" class="py-8 px-7 d-flex align-items-center">
@@ -48,8 +48,8 @@
             <img src="/modernize/images/svgs/icon-tasks.svg" alt="" width="24" height="24" />
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">My Task</h6>
-            <span class="fs-2 d-block text-body-secondary">To-do and Daily Tasks</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.my_task') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.todo_daily_tasks') %></span>
             </div>
         </a>
 
@@ -58,8 +58,8 @@
             <img src="/modernize/images/svgs/icon-star.svg" alt="" width="24" height="24" />
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Favorites</h6>
-            <span class="fs-2 d-block text-body-secondary">Favorites / Bookmarks</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.favorites') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.favorites_bookmarks') %></span>
             </div>
         </a>
 
@@ -69,8 +69,8 @@
             <img src="/modernize/images/svgs/icon-dd-chat.svg" alt="" width="24" height="24" />
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base">Chat</h6>
-            <span class="fs-2 d-block text-body-secondary">Chat With CapHive</span>
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.chat') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.chat_with_caphive') %></span>
             </div>
         </a>
         <% end %>
@@ -81,10 +81,10 @@
             <div class="gap-3 customizer-box align-items-center py-8 px-7 d-flex align-items-center" role="group">
                 <input type="radio" class="btn-check" name="theme-layout" id="light-layout" autocomplete="off" />
                 <label class="btn p-9 btn-outline-primary" for="light-layout"><i
-                            class="icon ti ti-brightness-up fs-7 me-2"></i>Light</label>
+                            class="icon ti ti-brightness-up fs-7 me-2"></i><%= t('top_menus.light_theme') %></label>
                 <input type="radio" class="btn-check" name="theme-layout" id="dark-layout" autocomplete="off" />
                 <label class="btn p-9 btn-outline-primary" for="dark-layout"><i
-                            class="icon ti ti-moon fs-7 me-2"></i>Dark</label>
+                            class="icon ti ti-moon fs-7 me-2"></i><%= t('top_menus.dark_theme') %></label>
             </div>
 
         </div>
@@ -92,7 +92,7 @@
         <div class="d-grid py-4 px-7 pt-8">
 
             <a id="logout" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal" class="btn btn-outline-primary">
-                Log Out
+                <%= t('top_menus.log_out') %>
             </a>
 
         </div>

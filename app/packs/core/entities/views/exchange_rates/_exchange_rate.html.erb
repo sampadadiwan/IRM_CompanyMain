@@ -15,7 +15,7 @@
     <%= display_boolean exchange_rate.latest %>
   </td>
   <td>
-    <%= link_to "Show", exchange_rate , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:show), exchange_rate , {class: "btn btn-outline-primary"}%>
     <%= link_to "Reverse", new_exchange_rate_path(to: exchange_rate.from, from: exchange_rate.to) , {class: "btn btn-outline-success"}%>
   </td>
 </tr>

@@ -10,10 +10,14 @@
 
     <div class="form-actions">
       <div class="border-top pt-3">
-        <%= button_to "Delete Imported Data", delete_data_import_upload_path(@import_upload), 
-                  class: "btn btn-outline-danger", form_class: "deleteButton",
-                  data: { action: "click->confirm#popup", method: :delete,
-                  msg: "This will delete all the imported data. Delete #{@import_upload.imported_data.count} rows?"} if policy(@import_upload).delete_data? && params[:debug].present? %>
+        <% if policy(@import_upload).delete_data? && params[:debug].present? %>`
+          <%= button_to delete_data_import_upload_path(@import_upload),
+                    class: "btn btn-outline-danger", form_class: "deleteButton",
+                    data: { action: "click->confirm#popup", method: :delete,
+                    msg: "This will delete all the imported data. Delete #{@import_upload.imported_data.count} rows?"}  do %>
+            <i class="ti ti-trash"></i> Delete Imported Data
+          <% end %>
+        <% end %>
 
       </div>
     </div>

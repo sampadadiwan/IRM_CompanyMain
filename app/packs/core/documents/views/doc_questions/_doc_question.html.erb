@@ -17,7 +17,7 @@
     <%= doc_question.qtype %>
   </td>
   <td>
-    <%= link_to "Show", doc_question , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_doc_question_path(doc_question), {class: "btn btn-outline-success"}%>
+    <%= link_to  t_common(:show), doc_question , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_doc_question_path(doc_question), {class: "btn btn-outline-success"}%>
   </td>
 </tr>

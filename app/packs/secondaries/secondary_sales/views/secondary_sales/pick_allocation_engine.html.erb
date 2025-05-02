@@ -25,7 +25,9 @@
       </div>
 
       <div class="form-group">
-        <%= f.submit "Submit", class: "btn btn-primary" %>
+        <%= f.button type: 'submit', class: "btn btn-primary" do %>
+            <i class="ti ti-send"></i> Submit
+        <% end %>
       </div>
     <% end %>
 

@@ -23,8 +23,8 @@
 
 <div class="associated_entity">
   <% if policy(@viewed_by).update? %>
-    <%= link_to "Edit", edit_viewed_by_path(@viewed_by), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @viewed_by, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_viewed_by_path(@viewed_by), {class: "btn btn-outline-primary"} %> 
+    <%= button_to t_common(:delete), @viewed_by, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
 

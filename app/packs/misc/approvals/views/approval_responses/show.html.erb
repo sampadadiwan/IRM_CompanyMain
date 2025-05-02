@@ -5,10 +5,14 @@
 
   <div class="associated_entity">
     <% if policy(@approval_response).update? %>
-      <%= link_to "Edit" , edit_approval_response_path(@approval_response), {class: "btn btn-outline-primary" } %> |
+      <%= link_to  edit_approval_response_path(@approval_response), {class: "btn btn-outline-primary" } do %>
+        <i class="ti ti-edit"></i> <%= t_common(:edit) %>
+      <% end %> |
 
-      <%= button_to "Delete" , @approval_response, method: :delete, class: "btn btn-outline-danger" ,
-        form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+      <%= button_to @approval_response, method: :delete, class: "btn btn-outline-danger" ,
+        form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} do %>
+        <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+      <% end %>
     <% end %>
   </div>
 

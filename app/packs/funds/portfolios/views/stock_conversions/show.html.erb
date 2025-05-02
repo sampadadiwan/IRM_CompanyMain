@@ -86,7 +86,7 @@
   </table>
   <div class="associated_entity">
     <% if policy(@stock_conversion).update? %>
-      <%= link_to "Edit", edit_stock_conversion_path(@stock_conversion), {class: "btn btn-outline-primary"} %>
+      <%= link_to  t_common(:edit), edit_stock_conversion_path(@stock_conversion), {class: "btn btn-outline-primary"} %>
     <% end %>
 
     <%= button_to "Reverse", reverse_stock_conversion_path(@stock_conversion), method: :post, class: "btn btn-outline-danger", form_class: "deleteButton", data: {msg: "This will delete the conversion, the 'To Investment', and remove the transfer from the 'From Investment'", action: "click->confirm#popup", method: :post, turbo:false} if policy(@stock_conversion).reverse?  %>

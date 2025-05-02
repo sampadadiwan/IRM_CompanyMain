@@ -210,7 +210,7 @@
                   class: "btn btn-outline-danger", form_class: "deleteButton",
                   data: { action: "click->confirm#popup", turbo: false,
                           msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
-      <i class="ti ti-trash me-2"></i>Delete
+      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 

@@ -21,13 +21,13 @@
                         "sample_upload": "CAPITAL_CALL_SAMPLE"),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-upload me-2"></i> Upload
+            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
             <% end %>
 
             <%= link_to capital_calls_path(fund_id: fund&.id, format: "xlsx"),
                         class: "btn btn-outline-success d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-download me-2"></i> Download
+            <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
             <% end %>
 
         <% end %>

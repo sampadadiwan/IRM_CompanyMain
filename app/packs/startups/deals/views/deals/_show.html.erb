@@ -96,8 +96,8 @@
 
   <% if current_user.entity_id == deal.entity_id %>
     <div>
-      <%= link_to "Edit", edit_deal_path(deal), {class: "btn btn-outline-primary"} %> |
-      <%= button_to "Delete", deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to  t_common(:edit), edit_deal_path(deal), {class: "btn btn-outline-primary"} %> |
+      <%= button_to t_common(:delete), deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
     </div>
   <% end %>

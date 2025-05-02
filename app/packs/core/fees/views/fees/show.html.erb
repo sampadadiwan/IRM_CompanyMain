@@ -69,8 +69,8 @@
   <div>
 
     <% if policy(@fee).update? %>
-      <%= link_to "Edit" , edit_fee_path(@fee), {class: "btn btn-outline-primary" } %> |
-        <%= button_to "Delete" , @fee, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" , data:
+      <%= link_to  t_common(:edit) , edit_fee_path(@fee), {class: "btn btn-outline-primary" } %> |
+        <%= button_to t_common(:delete) , @fee, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" , data:
           {action: "click->confirm#popup" , turbo:false} %>
           <% end %>
   </div>

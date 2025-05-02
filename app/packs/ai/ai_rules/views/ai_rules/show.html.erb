@@ -67,8 +67,8 @@
   </table>
   <div class="associated_entity">
     <% if policy(@ai_rule).update? %>
-      <%= link_to "Edit", edit_ai_rule_path(@ai_rule), {class: "btn btn-outline-primary"} %>
-      <%= button_to "Delete", @ai_rule, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to  t_common(:edit), edit_ai_rule_path(@ai_rule), {class: "btn btn-outline-primary"} %>
+      <%= button_to t_common(:delete), @ai_rule, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
   </div>
 <% end %>

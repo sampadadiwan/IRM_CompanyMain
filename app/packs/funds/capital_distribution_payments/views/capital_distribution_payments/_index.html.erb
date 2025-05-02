@@ -22,7 +22,7 @@
                   "import_upload[import_type]": "CapitalDistributionPayment",
                   "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"),
                 class: "btn btn-outline-primary #{disabled}" do %>
-            <i class="ti ti-upload me-2"></i>Upload
+            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
           <% end %>
         </span>
       <% end %>
@@ -33,7 +33,7 @@
       %>
 
       <%= link_to xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
-        <i class="ti ti-download me-2"></i>Download
+        <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
       <% end %>
 
       <%#= render "/funds/search_bar", model_name: "capital_distribution_payment" %>

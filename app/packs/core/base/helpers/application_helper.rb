@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def t_common(key)
+    t("common.#{key}")
+  end
+
   def display_boolean(field)
     render(DisplayBooleanComponent.new(bool: field))
   end

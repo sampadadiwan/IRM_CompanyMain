@@ -21,7 +21,7 @@
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         id: "download_stakeholder_users",
                         data: { turbo: false } do %>
-            <i class="ti ti-download me-2"></i> Download <%= label %>
+            <i class="ti ti-download me-2"></i> <%= t_common(:download) %> <%= label %>
             <% end %>
         <% end %>
 
@@ -31,7 +31,7 @@
                     class: "btn btn-outline-success d-inline-flex align-items-center",
                     id: "upload_stakeholder_users",
                     data: { turbo: false } do %>
-            <i class="ti ti-upload me-2"></i> Upload <%= label %>
+            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> <%= label %>
         <% end %>
 
     </div>

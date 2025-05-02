@@ -38,7 +38,7 @@
     </td>
 
     <td>
-        <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger" ,
+        <%= button_to t_common(:delete), access_right, method: :delete, class: "btn btn-outline-danger" ,
               form_class: "deleteButton" , data: {msg: "This will remove access for this investor from the fund and all documents of this fund. Proceed?", action: "click->confirm#popup" , turbo: true} unless access_right.deleted_at.present? %>
     </td>
 </tr>

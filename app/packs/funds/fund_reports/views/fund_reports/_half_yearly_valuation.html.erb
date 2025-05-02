@@ -16,7 +16,7 @@
                     <%= button_to "Regenerate", regenerate_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).regenerate? %>
                     <%= button_to "Download", download_page_fund_report_path(id: fund_report.id, single: true),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
                     <%= button_to "Download (All Funds)", download_page_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
-                    <%= button_to "Delete", fund_report, method: :delete, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(fund_report).destroy? %>
+                    <%= button_to t_common(:delete), fund_report, method: :delete, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(fund_report).destroy? %>
 
                 </div>
             </div>

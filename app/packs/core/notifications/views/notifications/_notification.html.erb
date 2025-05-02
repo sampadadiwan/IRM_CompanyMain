@@ -21,7 +21,7 @@
     <%= display_boolean notification.whatsapp_sent %>
   </td>
   <td>
-    <%= link_to "Show", notification_path(id: notification.id) , {class: "btn btn-outline-primary"}%>      
+    <%= link_to  t_common(:show), notification_path(id: notification.id) , {class: "btn btn-outline-primary"}%>      
     <% if Noticed::NotificationPolicy.new(current_user, notification).mark_as_read? %>          
       <%= button_to "Mark As Read", mark_as_read_notification_path(notification, mark: :read) , {class: "btn btn-outline-success", method: :patch} if notification.unread? %>
       <%= button_to "Mark As UnRead", mark_as_read_notification_path(notification, mark: :unread) , {class: "btn btn-outline-warning", method: :patch} if notification.read? %>

@@ -1,5 +1,5 @@
 
-<%= render "/layouts/filter", associations: [:kpis, :entity], hidden_fields: {grid_view: params[:grid_view]} %>
+<%= render "/layouts/filter", associations: [:kpis, :entity, :portfolio_company], hidden_fields: {grid_view: params[:grid_view]} %>
 
 <%= render ReportingComponent.new do %>
     <% if params[:grid_view].present? %>

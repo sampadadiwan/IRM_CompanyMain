@@ -4,9 +4,9 @@
   
 
   <div>
-    <%= link_to "Edit", edit_capital_remittance_path(@capital_remittance), {class: "btn btn-outline-primary" } if policy(@capital_remittance).update? %>    
+    <%= link_to  t_common(:edit), edit_capital_remittance_path(@capital_remittance), {class: "btn btn-outline-primary" } if policy(@capital_remittance).update? %>    
 
-    <%= button_to "Delete", @capital_remittance, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
+    <%= button_to t_common(:delete), @capital_remittance, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
 
     <% unless current_user.curr_role_investor? %>
     <div class="btn-group">

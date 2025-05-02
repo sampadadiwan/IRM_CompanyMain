@@ -12,9 +12,9 @@
 
   <%
 
-  steps = ["Complete your offer details using the button below".html_safe,
-          "You may need to upload documents to complete the offer.",
-          "Wait for communication from #{offer.secondary_sale.entity.name}"].freeze
+  steps = [t('secondaries_actions.complete_offer_details_button').html_safe,
+          t('secondaries_actions.upload_documents_complete_offer').html_safe,
+          t('secondaries_actions.wait_communication', entity_name: offer.secondary_sale.entity.name)].freeze
 
   %>
 
@@ -26,21 +26,21 @@
   <%
     spas = []
     offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
-      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-primary")
+      spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-primary ti ti-file-text")
     end
 
-    if spas.present? 
+    if spas.present?
       accept_spa = button_to("Accept" , accept_spa_offer_path(offer), method: :patch,
-          class: "btn btn-outline-primary" , id: 'accept_spa_btn',
+          class: "btn btn-outline-primary ti ti-check" , id: 'accept_spa_btn',
           form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
           msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
               
-      steps = ["Please review the Transaction Document(s) </br> #{spas.join(' ')}".html_safe,
-              "Accept the Transaction Document(s) <br> #{accept_spa}".html_safe,
-              ("Your acceptance of the Transaction Document(s) has already been recorded".html_safe unless policy(offer).accept_spa? ),
-              "Wait for communication from #{offer.secondary_sale.entity.name}"].compact
+      steps = [t('secondaries_actions.review_transaction_documents', documents: spas.join(' ')).html_safe,
+              t('secondaries_actions.accept_transaction_documents_button', accept_button: accept_spa).html_safe,
+              (t('secondaries_actions.acceptance_recorded').html_safe unless policy(offer).accept_spa? ),
+              t('secondaries_actions.wait_communication', entity_name: offer.secondary_sale.entity.name)].compact
     else
-      steps = ["Your offer is being processed.", "The next step will be to accept your transaction documents.", "Wait for communication from #{offer.secondary_sale.entity.name}."]
+      steps = [t('secondaries_actions.offer_being_processed'), t('secondaries_actions.next_step_accept_documents'), t('secondaries_actions.wait_communication', entity_name: offer.secondary_sale.entity.name)]
     end
   %>
 

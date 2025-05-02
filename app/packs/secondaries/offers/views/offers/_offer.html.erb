@@ -36,11 +36,11 @@
     <%= display_boolean(offer.verified) %>
   </td>
   <td>
-    <%= link_to "Show" , offer , {class: "btn btn-outline-primary" } if policy(offer).show? %>
+    <%= link_to  t_common(:show) , offer , {class: "btn btn-outline-primary" } if policy(offer).show? %>
 
     <% if policy(offer).update? %>
       <%= link_to "Complete Offer Details" , edit_offer_path(offer) , {class: "btn btn-outline-warning" } if offer.approved %>    
-      <%= button_to "Delete", offer, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup"} if policy(offer).destroy? %>    
+      <%= button_to t_common(:delete), offer, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup"} if policy(offer).destroy? %>    
     <% end %>
   </td>
 </tr>

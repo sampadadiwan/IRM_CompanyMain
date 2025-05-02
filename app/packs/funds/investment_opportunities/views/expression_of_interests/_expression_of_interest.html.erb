@@ -23,7 +23,7 @@
     <%= money_to_currency expression_of_interest.allocation_amount, params %>
   </td>
   <td>
-    <%= link_to "Show" , expression_of_interest , {class: "btn btn-outline-primary" }%>
+    <%= link_to  t_common(:show) , expression_of_interest , {class: "btn btn-outline-primary" }%>
     <% label = expression_of_interest.approved ?  "UnApprove" : "Approve" %>
     <%= button_to label , approve_expression_of_interest_path(expression_of_interest), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(expression_of_interest).approve? %>
 

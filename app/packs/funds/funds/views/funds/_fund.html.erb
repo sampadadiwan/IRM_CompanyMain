@@ -23,7 +23,7 @@
     </td>
   <% end %>
   <td>
-    <%= link_to "Show" , fund , {class: "btn btn-outline-primary" }%>
+    <%= link_to  t_common(:show) , fund , {class: "btn btn-outline-primary" }%>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>
       <%= link_to "Remittances" , last_fund_path(id: fund.id, entry: "CapitalCall") , {class: "btn btn-outline-primary" }%>    

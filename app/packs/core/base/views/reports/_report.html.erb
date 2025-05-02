@@ -17,9 +17,9 @@
     <%= report.description %>
   </td>
   <td>
-    <%= link_to "Show", report , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:show), report , {class: "btn btn-outline-primary"}%>
     <% if policy(report).edit? %>    
-      <%= link_to "Edit", edit_report_path(report), {class: "btn btn-outline-success"} %>
+      <%= link_to  t_common(:edit), edit_report_path(report), {class: "btn btn-outline-success"} %>
     <% end %>
   </td>
 </tr>

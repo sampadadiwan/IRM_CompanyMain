@@ -4,8 +4,8 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Secondary Sales</h1>
-    <%= link_to "New Secondary Sale" , new_secondary_sale_path("secondary_sale[entity_id]": current_user.entity_id),
-      {class: "btn btn-outline-primary" } if current_user.has_cached_role?(:employee) %>
+    <%= link_to t('secondaries_actions.new_secondary_sale') , new_secondary_sale_path("secondary_sale[entity_id]": current_user.entity_id),
+      {class: "btn btn-outline-primary ti ti-plus" } if current_user.has_cached_role?(:employee) %>
   </div>
 
   <div class="table-responsive" data-controller="datatable">
@@ -15,28 +15,28 @@
       <thead>
         <tr>
           <th>
-            Name
+            <%= t('secondaries_actions.name') %>
           </th>
           <th>
-            Total Offered
+            <%= t('secondaries_actions.total_offered') %>
           </th>
           <th>
-            Entity
+            <%= t('secondaries_actions.entity') %>
           </th>
           <th>
-            Start Date
+            <%= t('secondaries_actions.start_date') %>
           </th>
           <th>
-            End Date
+            <%= t('secondaries_actions.end_date') %>
           </th>
           <th>
-            Min Price
+            <%= t('secondaries_actions.min_price') %>
           </th>
           <th>
-            Max Price
+            <%= t('secondaries_actions.max_price') %>
           </th>
           <th>
-            Active
+            <%= t('secondaries_actions.active') %>
           </th>
 
           <th>

@@ -56,9 +56,9 @@
 
 
   <div>
-    <%= link_to "Edit" , edit_investor_access_path(@investor_access), {class: "btn btn-outline-primary" } %> |
+    <%= link_to  t_common(:edit) , edit_investor_access_path(@investor_access), {class: "btn btn-outline-primary" } %> |
       <%= link_to "Back" , :back, {class: "btn btn-outline-primary" } %> |
 
-        <%= button_to "Delete" , @investor_access, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton"
+        <%= button_to t_common(:delete) , @investor_access, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton"
           %>
   </div>

@@ -47,12 +47,12 @@
           <div class="dropdown">
             <button class="btn btn-outline-primary dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-upload me-2"></i>Upload / Download
+              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> / Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <%= link_to xl_link, class: "dropdown-item" do %>
-                <i class="ti ti-download me-2"></i>Download
+                <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
               <% end %>
 
               <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil %>
@@ -65,7 +65,7 @@
                     "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"
                   ),
                   class: "dropdown-item #{disabled}" do %>
-                  <i class="ti ti-upload me-2"></i>Upload Remittances
+                  <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> Remittances
                 <% end %>
 
                 <%= link_to new_import_upload_path(
@@ -75,7 +75,7 @@
                     "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"
                   ),
                   class: "dropdown-item" do %>
-                  <i class="ti ti-cash me-2"></i>Upload Payments
+                  <i class="ti ti-cash me-2"></i> <%= t_common(:upload) %> Payments
                 <% end %>
               <% end %>
 
@@ -87,7 +87,7 @@
 
       <% else %>
         <%= link_to xl_link, class: "btn btn-outline-primary" do %>
-          <i class="ti ti-download me-2"></i>Download
+          <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
         <% end %>
 
         <%= render "/capital_remittances/bulk_actions" %>

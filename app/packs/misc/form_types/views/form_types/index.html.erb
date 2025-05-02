@@ -1,7 +1,9 @@
 <%= render "/layouts/steps", steps: ["Customize forms fields for different areas", "Ensure customer support has walked you through this before doing this", "This is an advanced feature, please do not attempt on your own"].freeze %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Form Types</h1>
-  <%= link_to "New Form Type", new_form_type_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to new_form_type_path, {class: "btn btn-outline-primary"} do %>
+    <i class="ti ti-plus"></i> New Form Type
+  <% end %>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

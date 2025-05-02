@@ -63,8 +63,8 @@
 
 <div class="associated_entity">
   <% if policy(@ticker_feed).update? %>
-    <%= link_to "Edit", edit_ticker_feed_path(@ticker_feed), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @ticker_feed, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_ticker_feed_path(@ticker_feed), {class: "btn btn-outline-primary"} %> 
+    <%= button_to t_common(:delete), @ticker_feed, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
 

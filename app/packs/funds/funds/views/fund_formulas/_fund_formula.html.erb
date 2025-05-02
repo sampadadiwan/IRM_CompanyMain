@@ -33,7 +33,7 @@
     <%= display_boolean fund_formula.enabled %>
   </td>
   <td>
-    <%= link_to "Show", fund_formula , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_fund_formula_path(fund_formula) , {class: "btn btn-outline-success"} if policy(fund_formula).update? %>
+    <%= link_to  t_common(:show), fund_formula , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_fund_formula_path(fund_formula) , {class: "btn btn-outline-success"} if policy(fund_formula).update? %>
   </td>
 </tr>

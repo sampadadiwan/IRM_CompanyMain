@@ -4,7 +4,7 @@
         <li class="sidebar-item">                
             <a class="sidebar-link has-arrow" href="/investors" data-bs-toggle="collapse" data-bs-target="#investorMenus">
                 <span><i class="ti ti-users"></i></span>
-                <span class="hide-menu">Stakeholders</span>
+                <span class="hide-menu"><%= t('sidebar.stakeholders') %></span>
             </a>
 
             <ul aria-expanded="false" class="collapse first-level">
@@ -14,7 +14,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">IR Dashboard</span>
+                        <span class="hide-menu"><%= t('sidebar.ir_dashboard') %></span>
                     </a>
                 </li>
 
@@ -23,7 +23,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">New Stakeholder</span>
+                        <span class="hide-menu"><%= t('sidebar.new_stakeholder') %></span>
                     </a>
                 </li>
 
@@ -32,7 +32,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">View Stakeholders</span>                    
+                        <span class="hide-menu"><%= t('sidebar.view_stakeholders') %></span>
                     </a>
                 </li>
                 <% if current_user.enable_approvals %>
@@ -41,7 +41,7 @@
                             <div class="round-16 d-flex align-items-center justify-content-center">
                                 <i class="ti ti-chevron-right fs-2"></i>
                             </div>
-                            <span class="hide-menu">Approvals</span>
+                            <span class="hide-menu"><%= t('sidebar.approvals') %></span>
                         </a>
                     </li>
                 <% end %>
@@ -50,7 +50,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">Notes</span>
+                        <span class="hide-menu"><%= t('sidebar.notes') %></span>
                     </a>
                 </li>
                 <li class="sidebar-item">
@@ -58,7 +58,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">Pending Access</span>
+                        <span class="hide-menu"><%= t('sidebar.pending_access') %></span>
                     </a>
                 </li>
                 <li class="sidebar-item">
@@ -66,7 +66,7 @@
                         <div class="round-16 d-flex align-items-center justify-content-center">
                             <i class="ti ti-chevron-right fs-2"></i>
                         </div>
-                        <span class="hide-menu">All Stakeholder Access</span>                    
+                        <span class="hide-menu"><%= t('sidebar.all_stakeholder_access') %></span>
                     </a>
                 </li>
             </ul>
@@ -78,7 +78,7 @@
         <li class="sidebar-item"> 
             <a class="sidebar-link" href="/documents">
                 <span><i class="ti ti-files"></i></span>
-                <span class="hide-menu">Documents</span>
+                <span class="hide-menu"><%= t('sidebar.documents') %></span>
             </a>
         </li>
     <% end %>
@@ -92,7 +92,7 @@
         <li class="sidebar-item"> 
             <a class="sidebar-link" href="/deals">
                 <span><i class="ti ti-briefcase"></i></span>
-                <span class="hide-menu">Deals</span>
+                <span class="hide-menu"><%= t('sidebar.deals') %></span>
             </a>
         </li>
     <% end %>

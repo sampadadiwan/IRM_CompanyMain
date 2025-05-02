@@ -8,7 +8,7 @@
       <input type="hidden" name="id" value="<%= @form_type.id %>">
       <div class="col-5"><input type="text" name="old_name" class="form-control" placeholder="Old Name"></div>
       <div class="col-5"><input type="text" name="new_name" class="form-control" placeholder="New Name"></div>
-      <div class="col-1"><input type="submit" class="btn btn-outline-primary"></div>
+      <div class="col-1"><button type="submit" class="btn btn-outline-primary ti ti-device-floppy"></button></div>
     </form>
   <% end %>
 <% end %>
@@ -59,8 +59,10 @@
       </div>
 
       <div class="form-group">
-        <%= link_to_add_association 'Add Field', form, :form_custom_fields, class: "btn btn-outline-primary" %>
-        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+        <%= link_to_add_association '<i class="ti ti-plus"></i> Add Field'.html_safe, form, :form_custom_fields, class: "btn btn-outline-primary" %>
+        <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+        <% end %>
       </div>
     </div>
   <% end %>

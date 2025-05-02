@@ -4,12 +4,14 @@
     
     <h1 class="h3 mb-0 text-gray-800">Import Uploads</h1>
     <span>
-    <%= link_to "Upload", 
-            new_import_upload_path("import_upload[entity_id]": current_user.entity_id), 
-                { class: "btn btn-outline-primary"} %> 
-    <%= link_to "Filter", 
-            import_uploads_path(filter: true), 
-                { class: "btn btn-outline-primary"} %> 
+    <%= link_to new_import_upload_path("import_upload[entity_id]": current_user.entity_id),
+                { class: "btn btn-outline-primary"} do %>
+      <i class="ti ti-upload"></i> Upload
+    <% end %>
+    <%= link_to import_uploads_path(filter: true),
+                { class: "btn btn-outline-primary"} do %>
+      <i class="ti ti-filter"></i> Filter
+    <% end %>
     </span>
   </div>
 

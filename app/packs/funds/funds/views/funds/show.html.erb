@@ -134,13 +134,13 @@ commands = [
               <% end %>
 
               <%= link_to fund_report_path(fund_id: @fund.id, report: "sebi_report"), class: "dropdown-item" do %>
-                <i class="ti ti-file-download me-2"></i>Download SEBI Report
+                <i class="ti ti-file-download me-2"></i> <%= t_common(:download) %> SEBI Report
               <% end %>
 
               <div class="dropdown-divider"></div>
 
               <%= link_to fund_report_path(fund_id: @fund.id, report: "crisil_report"), class: "dropdown-item" do %>
-                <i class="ti ti-file-download me-2"></i>Download CRISIL Report
+                <i class="ti ti-file-download me-2"></i> <%= t_common(:download) %> CRISIL Report
               <% end %>
 
               <%= link_to portfolio_investments_report_all_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
@@ -199,19 +199,19 @@ commands = [
         <div class="dropdown">
           <button class="btn btn-outline-primary dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-settings me-2"></i>Actions
+            <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(@fund).update? %>
                 <%= link_to edit_fund_path(@fund), class: "dropdown-item" do %>
-                  <i class="ti ti-edit me-2"></i>Edit Fund
+                  <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %> Fund
                 <% end %>
 
                 <% if policy(@fund).destroy? %>
                   <%= button_to @fund, method: :delete, class: "dropdown-item", form_class: "deleteButton",
                       data: {action: "click->confirm#popup", turbo: false} do %>
-                    <i class="ti ti-trash me-2"></i>Delete Fund
+                    <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %> Fund
                   <% end %>
                 <% end %>
 

@@ -123,9 +123,9 @@
 
 <div class="associated_entity">
 
-  <%= link_to "Edit", edit_commitment_adjustment_path(@commitment_adjustment), {class: "btn btn-outline-primary"} if policy(@commitment_adjustment).update? %> 
+  <%= link_to  t_common(:edit), edit_commitment_adjustment_path(@commitment_adjustment), {class: "btn btn-outline-primary"} if policy(@commitment_adjustment).update? %> 
 
-  <%= button_to "Delete", @commitment_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {msg: "This will permanently delete this item. Please note that the payment created against this adjustment, if any, will not be deleted. Proceed?", action: "click->confirm#popup", turbo:false} if policy(@commitment_adjustment).destroy?  %>
+  <%= button_to t_common(:delete), @commitment_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {msg: "This will permanently delete this item. Please note that the payment created against this adjustment, if any, will not be deleted. Proceed?", action: "click->confirm#popup", turbo:false} if policy(@commitment_adjustment).destroy?  %>
   
 </div>
 

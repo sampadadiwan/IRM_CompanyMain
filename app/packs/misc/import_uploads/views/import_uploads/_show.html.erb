@@ -154,8 +154,8 @@
   </table>
   <% if params[:debug].present? %>
     <div>
-      <%= link_to "Edit" , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary" } %> 
-      <%= button_to "Delete" , import_upload, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
+      <%= link_to  t_common(:edit) , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary ti ti-eye" } %> 
+      <%= button_to t_common(:delete) , import_upload, method: :delete, class: "btn btn-outline-danger ti ti-trash" , form_class: "deleteButton" %>
     </div>
   <% end %>
 

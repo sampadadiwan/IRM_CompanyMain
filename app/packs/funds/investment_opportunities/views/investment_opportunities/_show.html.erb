@@ -133,8 +133,8 @@
   <div>
     <% if policy(investment_opportunity).update? %>
 
-    <%= link_to "Edit" , edit_investment_opportunity_path(investment_opportunity), {class: "btn btn-outline-primary" } %> 
-    <%= button_to "Delete" , investment_opportunity, method: :delete, class: "btn btn-outline-danger" ,
+    <%= link_to  t_common(:edit) , edit_investment_opportunity_path(investment_opportunity), {class: "btn btn-outline-primary" } %> 
+    <%= button_to t_common(:delete) , investment_opportunity, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
 
     <%= link_to "Preview", investment_opportunity_path(investment_opportunity, preview: 'true'), {class: "btn btn-outline-info"} %> 

@@ -70,6 +70,6 @@
 
 </table>
 <div>
-  <%= link_to "Edit", edit_fund_unit_setting_path(@fund_unit_setting), {class: "btn btn-outline-primary"} %>
-  <%= button_to "Delete", @fund_unit_setting, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= link_to  t_common(:edit), edit_fund_unit_setting_path(@fund_unit_setting), {class: "btn btn-outline-primary"} %>
+  <%= button_to t_common(:delete), @fund_unit_setting, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

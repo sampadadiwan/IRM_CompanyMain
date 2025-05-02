@@ -4,7 +4,7 @@
 
 <div>
   <% if policy(@capital_remittance_payment).update? %>
-    <%= link_to "Edit", edit_capital_remittance_payment_path(@capital_remittance_payment), {class: "btn btn-outline-primary"} %>
-    <%= button_to "Delete", @capital_remittance_payment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_capital_remittance_payment_path(@capital_remittance_payment), {class: "btn btn-outline-primary"} %>
+    <%= button_to t_common(:delete), @capital_remittance_payment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

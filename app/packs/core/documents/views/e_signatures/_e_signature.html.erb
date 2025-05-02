@@ -26,7 +26,7 @@
     <% end %>
   </td>
   <td>
-    <%= link_to "Show", e_signature , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_e_signature_path(e_signature) , {class: "btn btn-outline-primary"} if policy(e_signature).edit?%>
+    <%= link_to  t_common(:show), e_signature , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_e_signature_path(e_signature) , {class: "btn btn-outline-primary"} if policy(e_signature).edit?%>
   </td>
 </tr>

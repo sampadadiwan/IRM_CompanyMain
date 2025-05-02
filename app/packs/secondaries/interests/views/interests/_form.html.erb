@@ -144,7 +144,9 @@
       <%= custom_form_fields(interest, form) %>
 
       <div class="form-group">
-        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+        <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+        <% end %>
       </div>
     <% end %>
 

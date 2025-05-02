@@ -8,32 +8,32 @@
             <li class="sidebar-item">
                 <a class="sidebar-link" href="/entities/dashboard" >
                     <span><i class="ti ti-layout-dashboard"></i></span>
-                    <span class="hide-menu">Dashboard</span></a>
+                    <span class="hide-menu"><%= t('sidebar.dashboard') %></span></a>
             </li>
 
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/admin">
                         <span><i class="ti ti-radioactive"></i></span>
-                        <span class="hide-menu">Admin</span></a>
+                        <span class="hide-menu"><%= t('sidebar.admin') %></span></a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/support_client_mappings">
                         <span><i class="ti ti-help"></i></span>
-                        <span class="hide-menu">Support Mapping</span></a>
+                        <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/blazer">
                         <span><i class="ti ti-files"></i></span>
-                        <span class="hide-menu">Reports</span></a>
+                        <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/key_biz_metrics?card=true&filter=true">
                         <span><i class="ti ti-dashboard"></i></span>
-                        <span class="hide-menu">Key Metrics</span></a>
+                        <span class="hide-menu"><%= t('sidebar.key_metrics') %></span></a>
                 </li>
             <% end %>
 
@@ -63,7 +63,7 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
                         <span><i class="ti ti-currency-dollar"></i></span>
-                        <span class="hide-menu">Funds</span>
+                        <span class="hide-menu"><%= t('sidebar.funds') %></span>
                     </a>
 
 
@@ -74,7 +74,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">Funds</span>
+                                <span class="hide-menu"><%= t('sidebar.funds') %></span>
                             </a>
                         </li>
 
@@ -85,7 +85,7 @@
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-chevron-right fs-2"></i>
                                     </div>
-                                    <span class="hide-menu">Commitments</span>
+                                    <span class="hide-menu"><%= t('sidebar.commitments') %></span>
                                 </a>
                             </li>
                             <li class="sidebar-item">
@@ -94,7 +94,7 @@
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-chevron-right fs-2"></i>
                                     </div>
-                                    <span class="hide-menu">Documents</span>
+                                    <span class="hide-menu"><%= t('sidebar.documents') %></span>
                                 </a>
                             </li>
                         <% elsif current_user.enable_reports %>
@@ -104,7 +104,7 @@
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-chevron-right fs-2"></i>
                                     </div>
-                                    <span class="hide-menu">Reports</span>
+                                    <span class="hide-menu"><%= t('sidebar.reports') %></span>
                                 </a>
                             </li>
                         <% end %>
@@ -115,7 +115,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">KYCs</span>
+                                <span class="hide-menu"><%= t('sidebar.kycs') %></span>
                             </a>
                         </li>
                     </ul>
@@ -127,7 +127,7 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/investment_opportunities" >
                         <span><i class="ti ti-device-analytics"></i></span>
-                        <span class="hide-menu">Opportunities</span>
+                        <span class="hide-menu"><%= t('sidebar.opportunities') %></span>
                     </a>
                 </li>
             <% end %>
@@ -145,7 +145,7 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
                         <span><i class="ti ti-checklist"></i></span>
-                        <span class="hide-menu">Tasks</span>
+                        <span class="hide-menu"><%= t('sidebar.tasks') %></span>
                     </a>
 
                     <ul aria-expanded="false" class="collapse first-level">
@@ -154,7 +154,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">All Tasks</span>
+                                <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
                             </a>
                         </li>
                         <li class="sidebar-item">
@@ -162,7 +162,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">My Tasks</span>
+                                <span class="hide-menu"><%= t('sidebar.my_tasks') %></span>
                             </a>
                         </li>
                         
@@ -172,7 +172,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">Support Tasks</span>
+                                <span class="hide-menu"><%= t('sidebar.support_tasks') %></span>
                             </a>
                         </li>
                         <% end %>
@@ -184,14 +184,14 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/boards">
                         <span><i class="ti ti-brand-trello"></i></span>
-                        <span class="hide-menu">Boards</span>
+                        <span class="hide-menu"><%= t('sidebar.boards') %></span>
                     </a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/events">
                         <span><i class="ti ti-calendar"></i></span>
-                        <span class="hide-menu">Events</span>
+                        <span class="hide-menu"><%= t('sidebar.events') %></span>
                     </a>
                 </li>
             <% end %>
@@ -201,7 +201,7 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#quickLinksMenus">
                         <span><i class="ti ti-map-pin"></i></span>
-                        <span class="hide-menu">Quick Links</span>
+                        <span class="hide-menu"><%= t('sidebar.quick_links') %></span>
                     </a>
 
                     <ul aria-expanded="false" class="collapse first-level">
@@ -211,7 +211,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">Funds</span>
+                                <span class="hide-menu"><%= t('sidebar.quick_links_funds') %></span>
                             </a>
                         </li>
                         <% end %>
@@ -221,7 +221,7 @@
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
-                                <span class="hide-menu">Stakeholders</span>
+                                <span class="hide-menu"><%= t('sidebar.quick_links_stakeholders') %></span>
                             </a>
                         </li>
                     </ul>
@@ -231,7 +231,7 @@
                     <li class="sidebar-item"> 
                         <a class="sidebar-link" href="/ai">
                             <span><i class="ti ti-robot"></i></span>
-                            <span class="hide-menu">AI</span>
+                            <span class="hide-menu"><%= t('sidebar.ai') %></span>
                         </a>
                     </li>
                 <% end %>

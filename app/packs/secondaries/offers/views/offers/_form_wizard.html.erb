@@ -5,17 +5,17 @@
 
                 <div class="stepwizard-step">
                     <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
-                    <p>Step 1</p>
+                    <p><%= t_common(:step) %> 1</p>
                 </div>
                 <% if offer.approved %>
                     
                 <div class="stepwizard-step">
                     <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
-                    <p>Step 2</p>
+                    <p><%= t_common(:step) %> 2</p>
                 </div>
                 <div class="stepwizard-step">
                     <a href="#step-3" type="button" class="btn disabled btn-outline-primary btn-outline-circle">3</a>
-                    <p>Step 3</p>
+                    <p><%= t_common(:step) %> 3</p>
                 </div>
 
                 <% end %>
@@ -39,7 +39,7 @@
   <div class="row setup-content" id="step-1">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header"> 1. Offer Quantity </div>
+            <div class="card-header"> 1. <%= t('secondaries_actions.offer_quantity') %> </div>
             <div class="card-body">
 
                 <div class="form-group">
@@ -56,12 +56,12 @@
 
                 <% if current_user.entity_id == offer.entity_id %>
                     <div class="form-group">
-                        <%= form.label :investor_id, "Seller" %>
+                        <%= form.label :investor_id, t('secondaries_actions.seller') %>
                         <%= form.select :investor_id, offer.secondary_sale.seller_investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
                     </div>
                 <% elsif current_user.has_cached_role?(:rm) %>
                     <div class="form-group">
-                        <%= form.label :investor_id, "Seller" %>
+                        <%= form.label :investor_id, t('secondaries_actions.seller') %>
                         <%= form.select :investor_id, RmMapping.investors_for(current_user, offer.entity).map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
                     </div>
                 <% else %>
@@ -70,12 +70,12 @@
 
                 
                 <div class="form-group">
-                    <%= form.label :full_name %>
+                    <%= form.label :full_name, t('secondaries_actions.full_name') %>
                     <%= form.text_field :full_name, class: "form-control" %>
                 </div>
 
                 <div class="form-group" data-controller="currencyformat">
-                    <%= form.label :quantity %> <span class="formatted_currency"></span>
+                    <%= form.label :quantity, t('secondaries_actions.quantity') %> <span class="formatted_currency"></span>
                     <% if offer.approved %>
                         <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
                     <% else %>
@@ -84,7 +84,7 @@
                 </div>
 
                 <div class="form-group" data-controller="currencyformat">
-                    <%= form.label :price %> <span class="formatted_currency"></span>
+                    <%= form.label :price, t('secondaries_actions.price') %> <span class="formatted_currency"></span>
                     <% if offer.approved || offer.secondary_sale.price_type == "Fixed Price" %>
                         <%= form.number_field :price, class: "form-control", required: true, disabled: true %>
                     <% else %>
@@ -96,15 +96,17 @@
                 <%= custom_form_fields(offer, form, step: :one) %>
 
                 <div class="form-group">
-                    <%= form.label :notes %>
+                    <%= form.label :notes, t('secondaries_actions.notes') %>
                     <%= form.text_area :notes, class: "form-control"  %>
                 </div>
 
                 <div class="form-group">
                     <% if offer.approved %>
-                        <button id="next1" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right" type="button">Next</button>
+                        <button id="next1" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right ti ti-arrow-right" type="button"><%= t_common(:next) %></button>
                     <% else %>
-                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                        <%= form.button type: 'submit', class: "btn btn-outline-primary btn-outline-lg" do %>
+                            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+                        <% end %>
                     <% end %>
                 </div>
 
@@ -118,23 +120,23 @@
     <div class="row setup-content" id="step-2">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header"> 2. Personal Details </div>
+                <div class="card-header"> 2. <%= t('secondaries_actions.personal_details') %> </div>
                 <div class="card-body">
 
                     <div class="form-group">
-                        <%= form.label :seller_signatory_emails %>
+                        <%= form.label :seller_signatory_emails, t('secondaries_actions.seller_signatory_emails') %>
                         <%= form.text_field :seller_signatory_emails, class: "form-control" %>
                         <small class="form-text text-muted">Comma separated emails if esignature is required</small>
                     </div>
 
                     <div class="form-group">
-                        <%= form.label :address %>
+                        <%= form.label :address, t('secondaries_actions.address') %>
                         <%= form.text_area :address, class: "form-control" %>
                     </div>
 
 
                     <div class="form-group">
-                        <%= form.label :PAN, "PAN" %>
+                        <%= form.label :PAN, t('secondaries_actions.pan') %>
                         <%= form.text_field :PAN, class: "form-control" %>
                     </div>
 
@@ -144,18 +146,18 @@
                     </div>
 
                     <div class="form-group">
-                        <%= form.label :bank_account_number %>
+                        <%= form.label :bank_account_number, t('secondaries_actions.bank_account_number') %>
                         <%= form.text_field :bank_account_number, class: "form-control" %>
                     </div>
 
                     <div class="form-group">
-                        <%= form.label :ifsc_code %>
+                        <%= form.label :ifsc_code, t('secondaries_actions.ifsc_code') %>
                         <%= form.text_field :ifsc_code, class: "form-control"  %>
                     </div>
 
                     <%= custom_form_fields(offer, form, step: :two) %>
 
-                    <button id="next2" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right" type="button">Next</button>
+                    <button id="next2" class="btn btn-outline-primary nextBtn btn-outline-lg pull-right ti ti-arrow-right" type="button"><%= t_common(:next) %></button>
                 </div>
             </div>
         </div>
@@ -164,7 +166,7 @@
     <div class="row setup-content" id="step-3">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header"> 3. Additional Documents </div>
+                <div class="card-header"> 3. <%= t('secondaries_actions.additional_documents') %> </div>
                 <div class="card-body">
 
                     <% if false && offer.secondary_sale.seller_doc_list.present? %>
@@ -181,14 +183,16 @@
                     <%= custom_form_fields(offer, form, step: :end) %>
 
                     <div class="form-group">
-                        <%= form.label :completed %>
+                        <%= form.label :completed, t('secondaries_actions.completed') %>
                         <%= form.check_box :completed, class: "form-check-input"  %>
                         <small class="form-text text-muted">Please check this box to confirm that you have uploaded all the required documents and filled out all required information above correctly</small>
                     </div>
 
                     <div class="form-group">
                         <div class="uppy_wait_info alert alert-info">Please wait for the file upload above to complete, before clicking Save.</div>
-                        <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
+                        <%= form.button type: 'submit', class: "btn btn-outline-primary btn-outline-lg" do %>
+                            <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+                        <% end %>
                     </div>
 
                 </div>

@@ -7,7 +7,7 @@
     <%= link_to kanban_board.owner %>
   </td>
   <td>
-    <%= link_to "Show", board_path(kanban_board) , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_board_path(kanban_board) , {class: "btn btn-outline-primary"} if policy(kanban_board).edit?%>
+    <%= link_to  t_common(:show), board_path(kanban_board) , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_board_path(kanban_board) , {class: "btn btn-outline-primary"} if policy(kanban_board).edit?%>
   </td>
 </tr>

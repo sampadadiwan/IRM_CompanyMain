@@ -22,7 +22,7 @@
 
           <%= link_to approval_responses_path("approval_id": approval.id, format: :xlsx),
                       class: "btn btn-outline-success" do %>
-            <i class="ti ti-download me-2"></i>Download
+            <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
           <% end %>
         <% end %>
       </span>

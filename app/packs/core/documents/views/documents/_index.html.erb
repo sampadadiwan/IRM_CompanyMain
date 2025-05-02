@@ -44,7 +44,7 @@
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                 id="doc_actions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i> Actions
+          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
         </button>
 
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -55,7 +55,7 @@
                             method: :post,
                             class: "dropdown-item d-flex align-items-center",
                             data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup" } do %>
-                <i class="ti ti-download me-2"></i> Download ZIP
+                <i class="ti ti-download me-2"></i> <%= t_common(:download) %> ZIP
               <% end %>
             <% else %>
               <% if policy(@folder).download? %>
@@ -63,7 +63,7 @@
                               method: :get,
                               class: "dropdown-item d-flex align-items-center d-none d-sm-block",
                               data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?" } do %>
-                  <i class="ti ti-download me-2"></i> Download Folder
+                  <i class="ti ti-download me-2"></i> <%= t_common(:download) %> Folder
                 <% end %>
               <% end %>
             <% end %>

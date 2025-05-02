@@ -6,25 +6,25 @@
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Actions
+            <%= t_common(:actions) %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } %>
+            <%= link_to  t_common(:edit) , edit_secondary_sale_path(@secondary_sale), {class: "dropdown-item ti ti-edit" } %>
 
-            <%= button_to "Delete" , @secondary_sale, method: :delete, class: "dropdown-item" ,
+            <%= button_to t_common(:delete) , @secondary_sale, method: :delete, class: "dropdown-item ti ti-trash" ,
                 form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
-            <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } if policy(@secondary_sale).allocate? %>
+            <%= link_to t('secondaries_actions.allocate_sale') , allocate_secondary_sale_path(@secondary_sale), {class: "dropdown-item ti ti-clipboard-list" } if policy(@secondary_sale).allocate? %>
 
 
             <%
               document = Document.new(entity_id: @secondary_sale.entity_id , owner: @secondary_sale)
               doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
             %>
-            <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item"} %>
+            <%= link_to t('secondaries_actions.new_template'), new_document_path(document: doc_attributes, "document[folder_id]": @secondary_sale.document_folder.id), {class: "dropdown-item ti ti-file-plus"} %>
 
           </div>
         </div>
@@ -39,28 +39,28 @@
     <%  if policy(@secondary_sale).view_allocations? %>
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-list" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            View Allocations
+            <%= t('secondaries_actions.view_allocations') %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "All Allocations",
+            <%= link_to t('secondaries_actions.all_allocations'),
                 allocations_path(secondary_sale_id: @secondary_sale.id, q: ransack_query_params(:secondary_sale_id, :eq, @secondary_sale.id)),
-                {class: "dropdown-item" } %>
-            <%= link_to "Un Allocated Offers",
+                {class: "dropdown-item ti ti-list-check" } %>
+            <%= link_to t('secondaries_actions.un_allocated_offers'),
                 offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
-                {class: "dropdown-item" } %>
-            <%= link_to "Allocated Offers",
+                {class: "dropdown-item ti ti-playlist-x" } %>
+            <%= link_to t('secondaries_actions.allocated_offers'),
                 offers_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :gt, 0)),
-                {class: "dropdown-item" } %>
+                {class: "dropdown-item ti ti-list-check" } %>
 
-            <%= link_to "Un Allocated Interests",
+            <%= link_to t('secondaries_actions.un_allocated_interests'),
                 interests_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :eq, 0)),
-                {class: "dropdown-item" } %>
+                {class: "dropdown-item ti ti-playlist-x" } %>
 
-            <%= link_to "Allocated Interests",
+            <%= link_to t('secondaries_actions.allocated_interests'),
                 interests_secondary_sale_path(@secondary_sale, q: ransack_query_params(:allocation_quantity, :gt, 0)),
-                {class: "dropdown-item" } %>
+                {class: "dropdown-item ti ti-list-check" } %>
 
           </div>
         </div>
@@ -69,26 +69,26 @@
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-report" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Reports
+            <%= t('secondaries_actions.reports') %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Generated Docs",
+            <%= link_to t('secondaries_actions.generated_docs'),
                 documents_path({"q"=>{"c"=>{"0"=>{"a"=>{"0"=>{"name"=>"owner_tag"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"Generated"}}}, "1"=>{"a"=>{"0"=>{"name"=>"approved"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"false"}}}}}, "no_folders"=>"true", "folder_id"=>"#{@secondary_sale.document_folder_id}", "button"=>""}),
-                {class: "dropdown-item" } %>
+                {class: "dropdown-item ti ti-files" } %>
 
             <div class="dropdown-divider"></div>
 
-            <%= link_to "Offers Completion Report",
+            <%= link_to t('secondaries_actions.offers_completion_report'),
                 offers_secondary_sale_path(@secondary_sale, report: "completion_report"),
-                class: "dropdown-item" %>
+                class: "dropdown-item ti ti-report-analytics" %>
 
-            <%= link_to "Interests Completion Report",
+            <%= link_to t('secondaries_actions.interests_completion_report'),
                 interests_secondary_sale_path(@secondary_sale, report: "completion_report"),
-                class: "dropdown-item" %>
+                class: "dropdown-item ti ti-report-analytics" %>
 
-            <%= link_to "eSignatures Report" , report_secondary_sale_path(id: @secondary_sale.id, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
+            <%= link_to t('secondaries_actions.esignatures_report') , report_secondary_sale_path(id: @secondary_sale.id, report: "dashboard/e_signatures"), {class: "dropdown-item ti ti-signature" } %>
 
           </div>
         </div>
@@ -99,75 +99,75 @@
     <% if policy(@secondary_sale).update? %>
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-bell" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Notifications
+            <%= t('secondaries_actions.notifications') %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "Add Investor Notice" ,
+            <%= link_to t('secondaries_actions.add_investor_notice') ,
                   new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id,
-                  "investor_notice[owner_type]": "SecondarySale"), {class: "dropdown-item" } %>
+                  "investor_notice[owner_type]": "SecondarySale"), {class: "dropdown-item ti ti-bell-plus" } %>
 
             <div class="dropdown-divider"></div>
-            <%= button_to "Send Sale Open : To Sellers",
+            <%= button_to t('secondaries_actions.send_sale_open_sellers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_offers"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail-opened",
                 data: { action: "click->confirm#popup",
                         msg: "Send email to all sellers notifying that the sale is open",
                         method: :patch }  %>
 
-            <%= button_to "Send Offer Reminder : To Sellers",
+            <%= button_to t('secondaries_actions.send_offer_reminder_sellers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail-forward",
                 data: { action: "click->confirm#popup",
                         msg: "Send email to all sellers notifying that the offer date is approaching",
                         method: :patch }  %>
 
             <div class="dropdown-divider"></div>
 
-            <%= button_to "Send Sale Open : To Buyers",
+            <%= button_to t('secondaries_actions.send_sale_open_buyers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_interests"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail-opened",
                 data: { action: "click->confirm#popup",
                         msg: "Send email to all buyers notifying that the sale is open for interests",
                         method: :patch }  %>
 
-            <%= button_to "Send Interest Reminder : To Buyers",
+            <%= button_to t('secondaries_actions.send_interest_reminder_buyers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_interests"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail-forward",
                 data: { action: "click->confirm#popup",
                         msg: "Send email to all buyers notifying that they need to enter their interest",
                         method: :patch }  %>
 
             <div class="dropdown-divider"></div>
 
-            <%= button_to "Allocation Notification : To All",
+            <%= button_to t('secondaries_actions.allocation_notification_all'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_allocation"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail",
                 data: {action: "click->confirm#popup",
                 msg: "Send email to all participants notifying that the allocation is complete & documents need to be uploaded", method: :patch } if policy(@secondary_sale).notify_allocations? %>
 
 
-            <%= button_to "Confirm SPA Notification : To Sellers",
+            <%= button_to t('secondaries_actions.confirm_spa_notification_sellers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_sellers"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail",
                 data: {action: "click->confirm#popup",
                 msg: "Send email to all veriied sellers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %>
 
-            <%= button_to "Confirm SPA Notification : To Buyers",
+            <%= button_to t('secondaries_actions.confirm_spa_notification_buyers'),
                 send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_buyers"),
-                class: "dropdown-item",
+                class: "dropdown-item ti ti-mail",
                 data: {action: "click->confirm#popup",
                 msg: "Send email to all buyers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %>
 
             <div class="dropdown-divider"></div>
             <% @secondary_sale.custom_notifications.adhoc_notifications.each do |adhoc_notification| %>
               <%= button_to adhoc_notification.subject,
-                send_notification_secondary_sale_path(@secondary_sale, notification: "adhoc_notification", notification_id: adhoc_notification.id),
-                class: "dropdown-item",
-                data: {action: "click->confirm#popup",
-                msg: "Send email with selected template", method: :patch } if policy(@secondary_sale).notify_allocations? %>
+               send_notification_secondary_sale_path(@secondary_sale, notification: "adhoc_notification", notification_id: adhoc_notification.id),
+               class: "dropdown-item ti ti-mail",
+               data: {action: "click->confirm#popup",
+               msg: t('secondaries_actions.send_email_with_selected_template'), method: :patch } if policy(@secondary_sale).notify_allocations? %>
             <% end %>
 
           </div>

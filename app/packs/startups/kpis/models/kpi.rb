@@ -44,7 +44,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[kpi_report entity investor_kpi_mappings]
+    %w[kpi_report entity investor_kpi_mappings portfolio_company]
   end
 
   def kpis_for_entity

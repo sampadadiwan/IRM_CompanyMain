@@ -58,6 +58,6 @@
 <% end %>
 
 <div>
-  <%= link_to "Edit", edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %>
-  <%= button_to "Delete", @ci_track_record, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= link_to  t_common(:edit), edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %>
+  <%= button_to t_common(:delete), @ci_track_record, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

@@ -49,8 +49,8 @@
 </table>
 <div class="associated_entity">
   <% if policy(@investment_instrument).edit? %>
-    <%= link_to "Edit", edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %>
-    <%= button_to "Delete", @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "This will permanently delete this item and also all associated portfolio transactions across funds. Proceed?"}  %>
+    <%= link_to  t_common(:edit), edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %>
+    <%= button_to t_common(:delete), @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "This will permanently delete this item and also all associated portfolio transactions across funds. Proceed?"}  %>
   <% end %>
 </div>
 

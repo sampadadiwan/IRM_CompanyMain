@@ -46,5 +46,7 @@
 </div>
 
 <div class="actions">
-  <%= link_to 'Edit', edit_grid_view_preference_path(@grid_view_preference), {class: "btn btn-outline-primary"} %>
+  <%= link_to edit_grid_view_preference_path(@grid_view_preference), {class: "btn btn-outline-primary"} do %>
+    <i class="ti ti-edit"></i> Edit
+  <% end %>
 </div>

@@ -18,7 +18,7 @@
     <%= scenario_investment.notes %>
   </td>
   <td>
-    <%= link_to "Show", scenario_investment , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_scenario_investment_path(scenario_investment), {class: "btn btn-outline-success", data: { turbo_frame: 'new_scenario_investment' } } if policy(scenario_investment).update? %> 
+    <%= link_to  t_common(:show), scenario_investment , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_scenario_investment_path(scenario_investment), {class: "btn btn-outline-success", data: { turbo_frame: 'new_scenario_investment' } } if policy(scenario_investment).update? %> 
   </td>
 </tr>

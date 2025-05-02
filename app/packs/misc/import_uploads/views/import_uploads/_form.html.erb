@@ -46,11 +46,13 @@
                             model: import_upload, allowed_types: %>
 
     <small class="text-muted">
-      <%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %> 
+      <%= link_to '<i class="ti ti-download"></i> Sample upload format'.html_safe, ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %>
     </small>
   </div>
 
   <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+      <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
+    <% end %>
   </div>
 <% end %>

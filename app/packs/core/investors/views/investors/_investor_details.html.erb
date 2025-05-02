@@ -1,37 +1,37 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
   <%
-    label = "Users"
+    label = t('investor_details_nav.users')
   %>
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
     <% if investor.category == "Portfolio Company" %>
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
-        Valuations
+        <%= t('investor_details_nav.valuations') %>
       </a>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
-        <span class="d-none d-sm-block">Portfolio</span> Investments
+        <%= t('investor_details_nav.portfolio_investments') %>
       </a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#instruments-tab">
-        Instruments
+        <%= t('investor_details_nav.instruments') %>
       </a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab">
-        Portfolio Income
+        <%= t('investor_details_nav.portfolio_income') %>
       </a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stock-adjustments-tab">
-        Stock Adjustments
+        <%= t('investor_details_nav.stock_adjustments') %>
       </a>
 
       <% if current_user.enable_kpis #&& current_user.curr_role_investor? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab">
-          Kpis
+          <%= t('investor_details_nav.kpis') %>
         </a>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpi-mappings-tab">
-          Kpi Mapping
+          <%= t('investor_details_nav.kpi_mapping') %>
         </a>
       <% end %>
     <% else %>
@@ -43,26 +43,26 @@
 
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
-              data-action="click->tabdetails#loadData">Commitments</a>
+              data-action="click->tabdetails#loadData"><%= t('investor_details_nav.commitments') %></a>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab">
-          Units
+          <%= t('investor_details_nav.units') %>
         </a>
       <% else %>
         <% if investor.entity.permissions.enable_investments? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab">
-            Investments
+            <%= t('investor_details_nav.investments') %>
         </a>
         <% end %>
       <% end %>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">
-          Tasks
+          <%= t('investor_details_nav.tasks') %>
       </a>
 
       <% if investor.entity.permissions.enable_kycs? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"
             data-action="click->tabdetails#loadData">
-            KYC
+            <%= t('investor_details_nav.kyc') %>
         </a>
       <% end %>
 
@@ -70,13 +70,13 @@
 
     <% if policy(investor).update? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
-          Access Rights
+          <%= t('investor_details_nav.access_rights') %>
         </a>
     <% end %>
 
     <% if current_user.has_cached_role?(:company_admin) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#emails-tab">
-          Emails
+          <%= t('investor_details_nav.emails') %>
       </a>
     <% end %>
 
@@ -206,11 +206,11 @@
             <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
               <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
-                Employee Access
+                <%= t('investor_details_nav.employee_access') %>
               </a>
 
               <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
-                Investor Access
+                <%= t('investor_details_nav.investor_access') %>
               </a>
 
             </nav>

@@ -1,0 +1,361 @@
+---
+ja:
+  access_right:
+    create: アクセス権が付与されました
+    destroy: アクセス権が削除されました
+    update: アクセス権が更新されました
+  activerecord:
+    attributes:
+      fund_unit_setting:
+        name: クラス / シリーズ / ユニットタイプ
+      investor_kyc:
+        full_name: 投資主体
+      offer:
+        final_agreement: SPAに同意する
+  capital_call:
+    create: キャピタルコールが作成されました
+    destroy: キャピタルコールが削除されました
+    started: キャピタルコールが開始されました
+    update: キャピタルコールが更新されました
+  capital_commitment:
+    create: キャピタルコミットメントが作成されました
+    destroy: キャピタルコミットメントが削除されました
+    started: キャピタルコミットメントが開始されました
+    update: キャピタルコミットメントが更新されました
+  capital_distribution:
+    create: キャピタル分配が作成されました
+    destroy: キャピタル分配が削除されました
+    started: キャピタル分配が開始されました
+    update: キャピタル分配が更新されました
+  capital_remittance:
+    create: キャピタルレミタンスが作成されました
+    destroy: キャピタルレミタンスが削除されました
+    started: キャピタルレミタンスが開始されました
+    update: キャピタルレミタンスが更新されました
+  common:
+    actions: アクション
+    all: 全て
+    all_docs: 全てのドキュメント
+    cancel: キャンセル
+    close: 閉じる
+    confirm: 確認
+    delete: 削除
+    download: ダウンロード
+    edit: 編集
+    filter: フィルタ
+    new: 新規
+    next: 次へ
+    ok: OK
+    proceed: 続行
+    save: 保存
+    show: 表示
+    step: ステップ
+    upload: アップロード
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      long: "%Y年%m月%d日"
+      short: "%m月%d日"
+  deal:
+    create: ディールが作成されました
+    destroy: ディールが削除されました
+    started: ディールが開始されました
+    update: ディールが更新されました
+  deal_activity:
+    completed: アクティビティが完了しました
+    create: アクティビティが作成されました
+    destroy: アクティビティが削除されました
+    update: アクティビティが更新されました
+  deal_doc:
+    create: ディールドキュメントがアップロードされました
+    destroy: ディールドキュメントが削除されました
+    update: ディールドキュメントが更新されました
+  deal_investor:
+    create: ディール投資家が作成されました
+    destroy: ディール投資家が削除されました
+    update: ディール投資家が更新されました
+  deal_message:
+    create: メッセージが送信されました
+    destroy: メッセージが削除されました
+    update: メッセージが更新されました
+  document:
+    create: ドキュメントがアップロードされました
+    destroy: ドキュメントが削除されました
+    update: ドキュメントが更新されました
+  entities:
+    fm_dashboard2:
+      funds: ファンド
+      investment_opportunities: 投資機会
+    fm_dashboard_menus:
+      kycs: KYC
+      quick_links: クイックリンク
+      reports: レポート
+    fm_dashboard_stats:
+      commitments: コミットメント
+      funds: ファンド
+      opportunities: 機会
+      stakeholders: ステークホルダー
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      blank: を入力してください
+      confirmation: と一致しません
+      invalid: は不正な値です
+      taken: はすでに存在します
+      too_long: は%{count}文字以内で入力してください
+      too_short: は%{count}文字以上で入力してください
+  fund:
+    create: ファンドが作成されました
+    destroy: ファンドが削除されました
+    started: ファンドが開始されました
+    update: ファンドが更新されました
+  funding_round:
+    create: 資金調達ラウンドが作成されました
+    destroy: 資金調達ラウンドが削除されました
+    update: 資金調達ラウンドが更新されました
+  funds:
+    fund_details:
+      access: アクセス
+      calls: コール
+      commitments: コミットメント
+      distributions: 分配
+      documents: ドキュメント
+      portfolio: ポートフォリオ
+      ratios: 比率
+      tasks: タスク
+      units: ユニット
+  hello: こんにちは
+  investment:
+    create: 投資が作成されました
+    destroy: 投資が削除されました
+    update: 投資が更新されました
+  investor:
+    create: 投資家が作成されました
+    destroy: 投資家が削除されました
+    update: 投資家が更新されました
+  investor_access:
+    create: 投資家アクセス権が付与されました
+    destroy: 投資家アクセス権が削除されました
+    update: 投資家アクセス権が更新されました
+  investor_details_nav:
+    access_rights: アクセス権
+    commitments: コミットメント
+    emails: Eメール
+    employee_access: 従業員アクセス
+    instruments: 金融商品
+    investments: 投資
+    investor_access: 投資家アクセス
+    kpi_mapping: KPIマッピング
+    kpis: KPI
+    kyc: KYC
+    portfolio_income: ポートフォリオ収益
+    portfolio_investments: ポートフォリオ投資
+    stock_adjustments: 株式調整
+    tasks: タスク
+    units: ユニット
+    users: ユーザー
+    valuations: 評価
+  note:
+    create: ノートが作成されました
+    destroy: ノートが削除されました
+    update: ノートが更新されました
+  number:
+    currency:
+      format:
+        format: "%u%n"
+        unit: YEN
+  secondaries_actions:
+    accept_spa_confirmation: SPAに同意することを確認してください
+    accept_transaction_documents: 取引ドキュメントに同意する
+    accept_transaction_documents_button: 取引ドキュメントに同意する <br> %{accept_button}
+    acceptance_recorded: 取引ドキュメントへの同意はすでに記録されています
+    add_investor_notice: 投資家通知を追加
+    additional_documents: 追加ドキュメント
+    address: 住所
+    all_allocations: 全てのアロケーション
+    all_docs: 全てのドキュメント
+    allocate_sale: アロケーションセール
+    allocated_interests: 割り当て済み関心
+    allocated_offers: 割り当て済みオファー
+    allocated_quantity: 割り当て数量
+    allocation_notification_all: アロケーション通知：全てへ
+    allocations: アロケーション
+    approve: 承認
+    approve_all_pending: 保留中の全てを承認
+    audit_trail: 監査証跡
+    buy_quantity: 購入数量
+    change_status: ステータスを変更
+    complete_offer_details: オファー詳細を完了
+    complete_offer_details_button: 以下のボタンを使用してオファーの詳細を完了してください
+    completed: 完了
+    confirm_spa_notification_buyers: SPA通知を確認：買い手へ
+    confirm_spa_notification_sellers: SPA通知を確認：売り手へ
+    download_all_offers: 全てのオファーをダウンロード
+    download_allocations: アロケーションをダウンロード
+    download_docs: ドキュメントをダウンロード
+    download_payments: 支払いをダウンロード
+    download_report: レポートをダウンロード
+    download_spa: SPAをダウンロード
+    esignatures_report: e署名レポート
+    fees: 手数料
+    full_name: 氏名
+    generate_all_docs: 全てのドキュメントを生成
+    generate_docs_confirmation: ドキュメントを生成することを確認してください
+    generate_document: ドキュメントを生成
+    generated_docs: 生成されたドキュメント
+    interests_completion_report: 関心完了レポート
+    load_data: データをロード
+    net_amount_ex_fees: 純額（手数料除く）
+    new_offer: 新規オファー
+    new_secondary_sale: 新規セカンダリーセールス
+    new_template: 新規テンプレート
+    next_step_accept_documents: 次のステップは取引ドキュメントに同意することです。
+    no_signature: 署名なし
+    not_shortlisted: ショートリストされていません
+    notes: 備考
+    notifications: 通知
+    offer_being_processed: オファーを処理中です。
+    offer_quantity: オファー数量
+    offers_completion_report: オファー完了レポート
+    pan: PAN
+    pending: 保留中
+    personal_details: 個人情報
+    price: 価格
+    quantity: 数量
+    reject: 拒否
+    reports: レポート
+    review_transaction_documents: 取引ドキュメントをご確認ください </br> %{documents}
+    secondary_sale: セカンダリーセール
+    sell_quantity: 売却数量
+    seller: 売り手
+    seller_signatory_emails: 売り手署名者メールアドレス
+    send_email_to_change: 変更のためにメールを送信
+    send_email_with_selected_template: 選択したテンプレートでメールを送信
+    send_interest_reminder_buyers: 関心リマインダーを送信：買い手へ
+    send_offer_reminder_sellers: オファーリマインダーを送信：売り手へ
+    send_sale_open_buyers: セールス開始を送信：買い手へ
+    send_sale_open_sellers: セールス開始を送信：売り手へ
+    shortlist: ショートリスト
+    shortlist_all: 全てをショートリスト
+    spa_not_accepted: SPAが同意されていません
+    total: 合計
+    total_offered: 提供総数
+    un_allocated_interests: 未割り当て関心
+    un_allocated_offers: 未割り当てオファー
+    unapprove: 未承認
+    unverify: 検証解除
+    upload_allocations: アロケーションをアップロード
+    upload_documents_complete_offer: オファーを完了するためにドキュメントをアップロードする必要がある場合があります。
+    upload_download: アップロード / ダウンロード
+    upload_interests: 関心をアップロード
+    upload_offers: オファーをアップロード
+    upload_offers_documents: オファードキュメントをアップロード
+    verified_offers: 検証済みオファー
+    verify: 検証
+    view_all_offers: 全てのオファーを表示
+    view_allocations: アロケーションを表示
+    view_sale: セールスを表示
+    view_sale_upload_docs: セールスを表示＆ドキュメントをアップロード
+    wait_communication: "%{entity_name}からの連絡をお待ちください"
+    withdraw: 撤回
+  secondaries_tabs:
+    access_rights: アクセス権
+    changes: 変更
+    documents: ドキュメント
+    interest_documents: 関心ドキュメント
+    interests: 関心
+    my_offers: マイオファー
+    notification: 通知
+    offers: オファー
+    transaction_documents: 取引ドキュメント
+  sidebar:
+    admin: 管理者
+    ai: AI
+    all_stakeholder_access: 全ステークホルダーアクセス
+    all_tasks: 全タスク
+    approvals: 承認
+    blazer_reports: レポート (Blazer)
+    boards: ボード
+    commitments: コミットメント
+    dashboard: ダッシュボード
+    deals: ディール
+    documents: ドキュメント
+    events: イベント
+    funds: ファンド
+    interests: 関心
+    investments: 投資
+    ir_dashboard: IRダッシュボード
+    key_metrics: 主要指標
+    kpis: KPI
+    kycs: KYC
+    my_tasks: マイタスク
+    new_investment: 新規投資
+    new_stakeholder: 新規ステークホルダー
+    notes: ノート
+    offers: オファー
+    opportunities: 機会
+    pending_access: 保留中のアクセス
+    quick_links: クイックリンク
+    quick_links_funds: ファンド (クイックリンク)
+    quick_links_stakeholders: ステークホルダー (クイックリンク)
+    reports: レポート
+    secondary_sales: セカンダリーセールス
+    shareholding: 株式保有
+    stakeholders: ステークホルダー
+    support_mapping: サポートマッピング
+    support_tasks: サポートタスク
+    tasks: タスク
+    valuations: 評価
+    view_stakeholders: ステークホルダー表示
+  time:
+    formats:
+      default: "%Y/%m/%d %H:%M"
+      long: "%Y年%m月%d日"
+      short: "%m月%d日"
+  top_menus:
+    access_rights: アクセス権
+    account_settings: アカウント設定
+    advisors: アドバイザー
+    audit_trail: 監査証跡
+    bulk_upload_data: データの一括アップロード
+    chat: チャット
+    chat_with_caphive: CapHiveとチャット
+    company_employees: 会社の従業員
+    company_profile: 会社プロフィール
+    compliance_checks: コンプライアンスチェック
+    compliance_rules: コンプライアンスルール
+    customize_forms: フォームのカスタマイズ
+    dark_theme: ダーク
+    design_personalized_form: パーソナライズされたフォームのデザイン
+    download_audit_trail: 監査証跡のダウンロード
+    exchange_rates: 為替レート
+    external_company_advisors: 外部会社アドバイザー
+    favorites: お気に入り
+    favorites_bookmarks: お気に入り / ブックマーク
+    imports: インポート
+    light_theme: ライト
+    log_out: ログアウト
+    manage_exchange_rates: 為替レートの管理
+    messages_notifications: メッセージと通知
+    my_inbox: 受信トレイ
+    my_profile: マイプロフィール
+    my_task: マイタスク
+    notices: 通知
+    personalize_investor_notices: 投資家通知のパーソナライズ
+    provide_access: アクセスを提供する
+    setup_compliance_rules: コンプライアンスルールの設定
+    todo_daily_tasks: ToDoと日次タスク
+    user: ユーザー
+    user_profile: ユーザープロフィール
+    view_all_checks: 全チェックの表示
+  user:
+    create: ユーザーが作成されました
+    destroy: ユーザーが削除されました
+    update: ユーザーが更新されました
+  views:
+    pagination:
+      first: "&laquo; 最初"
+      last: 最後 &raquo;
+      next: "&rsaquo;"
+      previous: "&lsaquo;"
+      truncate: "&hellip;"

@@ -10,37 +10,37 @@
         <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
     </h1>
     <span>
-        <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
-                                class: "btn btn-outline-primary" if @secondary_sale && policy(@secondary_sale).owner? %>
+        <%= link_to t("secondaries_actions.view_all_offers"), offers_secondary_sale_path(@secondary_sale),
+                                 class: "btn btn-outline-primary ti ti-list" if @secondary_sale && policy(@secondary_sale).owner? %>
         
-        <%= link_to "New Offer", new_offer_path("offer[secondary_sale_id]": @secondary_sale), 
-                                class: "btn btn-outline-primary" if @secondary_sale && policy(@secondary_sale).offer?  %>
+        <%= link_to t("secondaries_actions.new_offer"), new_offer_path("offer[secondary_sale_id]": @secondary_sale),
+                                 class: "btn btn-outline-primary ti ti-plus" if @secondary_sale && policy(@secondary_sale).offer?  %>
         
         <div class="btn-group">
             <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                <button class="btn btn-outline-primary dropdown-toggle ti ti-upload" type="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Upload / Download
+                <%= t("secondaries_actions.upload_download") %>
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-                <%= link_to "Upload Offers", 
-                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                    "import_upload[owner_type]": "SecondarySale", 
-                    "import_upload[import_type]": "Offer", 
-                    "sample_upload": "OFFERS_SAMPLE"), 
-                    { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
+                <%= link_to t("secondaries_actions.upload_offers"),
+                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id,
+                    "import_upload[owner_type]": "SecondarySale",
+                    "import_upload[import_type]": "Offer",
+                    "sample_upload": "OFFERS_SAMPLE"),
+                    { class: "dropdown-item ti ti-upload"} if @secondary_sale && policy(@secondary_sale).update? %>
 
-                <%= link_to "Upload Offers Documents", 
-                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                        "import_upload[owner_type]": "SecondarySale", 
-                        "import_upload[import_type]": "OfferDocs", 
-                        "sample_upload": "OFFERS_DOCS_SAMPLE"), 
-                        { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
+                <%= link_to t("secondaries_actions.upload_offers_documents"),
+                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id,
+                        "import_upload[owner_type]": "SecondarySale",
+                        "import_upload[import_type]": "OfferDocs",
+                        "sample_upload": "OFFERS_DOCS_SAMPLE"),
+                        { class: "dropdown-item ti ti-upload"} if @secondary_sale && policy(@secondary_sale).update? %>
 
 
-                <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                        class: "dropdown-item" if @secondary_sale %>
+                <%= link_to t("secondaries_actions.download_all_offers"), offers_secondary_sale_path(@secondary_sale, format: "xlsx"),
+                                        class: "dropdown-item ti ti-download" if @secondary_sale %>
 
 
                 </div>
@@ -48,8 +48,8 @@
         </div>
         
 
-        <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
-                                method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will approve all offer. Proceed?"} if @secondary_sale && policy(@secondary_sale).approve_offers? %>
+        <%= button_to t("secondaries_actions.approve_all_pending"), approve_offers_secondary_sale_path(@secondary_sale),
+                                 method: :patch, class: "btn btn-outline-success ti ti-check" , form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: t("common.confirm")} if @secondary_sale && policy(@secondary_sale).approve_offers? %>
 
 
         <%= render "offers/bulk_actions" %>
@@ -89,7 +89,7 @@
         <div class="table-responsive">
 
             <% if lazy_load_data %>
-            <a class="load_data_link" data-action="click->offers#loadData"><span>Load Data</span></a>
+            <a class="load_data_link ti ti-database" data-action="click->offers#loadData"><span><%= t("secondaries_actions.load_data") %></span></a>
             <% end %>
 
             <%= render CustomTable.new(data_source:, id: "offers", column_names:) %>

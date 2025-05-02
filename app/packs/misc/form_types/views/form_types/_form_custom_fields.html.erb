@@ -75,9 +75,9 @@
         <div class="form-group col-md-2">    
             <%= f.label :none, "&nbsp;".html_safe %>
             <span>
-                <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger mt-4" %>
+                <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger ti ti-trash mt-4" %>
                 <% collapse_id = f.object.id || rand(100**100) %>
-                <a class="btn btn-primary mt-4" data-bs-toggle="collapse" href="#custom_condition_row_<%=collapse_id%>" >
+                <a class="btn btn-outline-primary mt-4" data-bs-toggle="collapse" href="#custom_condition_row_<%=collapse_id%>" >
                 <i class="ti ti-caret-down"></i>
                 </a>
             </span>

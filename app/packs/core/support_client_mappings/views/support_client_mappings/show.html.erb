@@ -35,7 +35,7 @@
     </tr>
   </table>
   <div class="associated_entity">
-    <%= link_to "Edit", edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @support_client_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %> 
+    <%= button_to t_common(:delete), @support_client_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   </div>
 <% end %>

@@ -121,9 +121,9 @@
 
   
   <div>
-    <%= link_to "Edit" , edit_investor_notice_path(@investor_notice), {class: "btn btn-outline-primary" } %> 
+    <%= link_to  t_common(:edit) , edit_investor_notice_path(@investor_notice), {class: "btn btn-outline-primary" } %> 
       
-    <%= button_to "Delete" , @investor_notice, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
+    <%= button_to t_common(:delete) , @investor_notice, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
 
     <a class="btn btn-outline-primary" data-bs-toggle="collapse" href="#preview" role="button" aria-expanded="false" aria-controls="collapseExample">
       Preview

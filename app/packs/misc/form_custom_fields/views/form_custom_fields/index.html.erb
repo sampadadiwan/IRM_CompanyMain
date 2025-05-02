@@ -2,7 +2,9 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Form Custom Fields</h1>
-  <%= link_to "New Form Custom Field", new_form_custom_field_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to new_form_custom_field_path, {class: "btn btn-outline-primary"} do %>
+    <i class="ti ti-plus"></i> New Form Custom Field
+  <% end %>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

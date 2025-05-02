@@ -7,22 +7,22 @@
               class: "btn btn-outline-primary #{'active' if @view == 'month'}", 
               title: "month view", 
               aria: { pressed: @view == 'month' } do %>
-    Month
-  <% end %>
+   <i class="ti ti-calendar-month"></i> Month
+ <% end %>
 
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, view: 'week'), 
               class: "btn btn-outline-primary #{'active' if @view == 'week'}", 
               title: "week view", 
               aria: { pressed: @view == 'week' } do %>
-    Week
-  <% end %>
+   <i class="ti ti-calendar-week"></i> Week
+ <% end %>
 
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, view: 'day'), 
               class: "btn btn-outline-primary #{'active' if @view == 'day'}", 
               title: "day view", 
               aria: { pressed: @view == 'day' } do %>
-    Day
-  <% end %>
+   <i class="ti ti-calendar-event"></i> Day
+ <% end %>
 </div>
 
 <div class="container mt-2">

@@ -73,8 +73,8 @@
 </table>
 <div>
   <% if policy(@valuation).update? %>
-    <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-outline-primary" } %> |
-    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-outline-danger" ,
+    <%= link_to  t_common(:edit) , edit_valuation_path(@valuation), {class: "btn btn-outline-primary" } %> |
+    <%= button_to t_common(:delete) , @valuation, method: :delete, class: "btn btn-outline-danger" ,
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
   <% end %>
 </div>

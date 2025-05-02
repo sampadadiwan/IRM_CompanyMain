@@ -33,7 +33,7 @@
         <% end %>
         <%= link_to "Preview", deal_path(id: @deal.id, overview: true) , {class: "btn btn-outline-success"}%>
         <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-outline-primary"} do %>
-          <i class="fa-lg fa-regular fa-file-excel"></i> Download
+          <i class="fa-lg fa-regular fa-file-excel"></i> <%= t_common(:download) %>
         <% end %>
         <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-outline-success"} do %>
           <i class="fas fa-chart-line"></i> Charts

@@ -39,23 +39,54 @@
 
     
 
-    <% label = investor_access.approved ?  "UnApprove" : "Approve" %>
-    <%= button_to label , approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name]), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(investor_access).approve? %>
+    <%
+      label = investor_access.approved ? "UnApprove" : "Approve"
+      icon_class = investor_access.approved ? "ti ti-user-x" : "ti ti-user-check"
+      btn_class = investor_access.approved ? "btn btn-outline-warning" : "btn btn-outline-success"
+    %>
+
+    <% if policy(investor_access).approve? %>
+      <%= button_to approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name]),
+                    method: :patch, class: btn_class, form_class: "deleteButton" do %>
+        <i class="<%= icon_class %> me-2"></i><%= label %>
+      <% end %>
+    <% end %>
+
+
 
     <div class="btn-group">
-        <div class="dropup">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Actions
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Edit" , edit_investor_access_path(investor_access), data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" if policy(investor_access).edit? %>
+      <div class="dropup">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= button_to "Delete" , investor_access, method: :delete, class: "dropdown-item" ,
-            form_class: "deleteButton", data: {action: "click->confirm#popup"} if Pundit.policy(current_user, investor_access).destroy? %>
+          <% if policy(investor_access).edit? %>
+            <%= link_to edit_investor_access_path(investor_access),
+                        data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" do %>
+              <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+            <% end %>
+          <% end %>
 
-            <%= link_to "Notifications" , notifications_path(all: true, filter: true, entity_id: investor_access.entity_id, q: ransack_query_params("user_email", :eq, investor_access.email)), class: "dropdown-item" if policy(investor_access).edit? %>
-          </div>        
+          <% if Pundit.policy(current_user, investor_access).destroy? %>
+            <%= button_to investor_access, method: :delete, class: "dropdown-item", form_class: "deleteButton",
+                          data: { action: "click->confirm#popup" } do %>
+              <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+            <% end %>
+          <% end %>
+
+          <% if policy(investor_access).edit? %>
+            <%= link_to notifications_path(all: true, filter: true, entity_id: investor_access.entity_id,
+                                            q: ransack_query_params("user_email", :eq, investor_access.email)),
+                        class: "dropdown-item" do %>
+              <i class="ti ti-bell me-2"></i>Notifications
+            <% end %>
+          <% end %>
+
+        </div>
+      </div>
     </div>
+
   </td>
 </tr>

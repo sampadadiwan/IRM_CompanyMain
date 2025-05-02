@@ -7,8 +7,8 @@
   <% if current_user.entity_id == @deal_investor.entity_id %>
     <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal_investor.deal_id, "deal_investor[entity_id]": @deal_investor.entity_id) , {class: "btn btn-outline-success"}%> 
   <% end %>  
-  <%= link_to "Edit", edit_deal_investor_path(@deal_investor), {class: "btn btn-outline-primary"} if policy(@deal_investor).update? %> 
-  <%= button_to "Delete", @deal_investor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@deal_investor).destroy?  %>
+  <%= link_to  t_common(:edit), edit_deal_investor_path(@deal_investor), {class: "btn btn-outline-primary"} if policy(@deal_investor).update? %> 
+  <%= button_to t_common(:delete), @deal_investor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@deal_investor).destroy?  %>
 </div>
 
 <%= render "/layouts/steps", steps: ["Setup Investor Details", "Upload Deal Docs", 

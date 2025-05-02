@@ -80,7 +80,7 @@
 </table>
 
 <div class="d-inline-flex">
-  <%= link_to "Edit", edit_kanban_card_path(kanban_card, turbo_frame: turbo_tag), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
+  <%= link_to  t_common(:edit), edit_kanban_card_path(kanban_card, turbo_frame: turbo_tag), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
   <%= form_with(model: kanban_card, url: kanban_card_path(kanban_card), method: :delete) do |form| %>
     <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
   <% end %>

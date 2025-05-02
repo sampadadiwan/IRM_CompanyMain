@@ -4,7 +4,7 @@
             <li class="sidebar-item">
             <a class="sidebar-link" href="/entities/investor_entities">
                 <span><i class="ti ti-cash-banknote"></i></span>
-                <span class="hide-menu">Investments</span>
+                <span class="hide-menu"><%= t('sidebar.investments') %></span>
             </a>
             </li>
         <% end %>
@@ -13,7 +13,7 @@
             <li class="sidebar-item">
             <a class="sidebar-link" href="/deal_investors?for_investor=true">
                 <span><i class="ti ti-briefcase"></i></span>
-                <span class="hide-menu">Deals</span>
+                <span class="hide-menu"><%= t('sidebar.deals') %></span>
             </a>
             </li>
         <% end %>
@@ -23,21 +23,21 @@
                 <li class="sidebar-item">
                 <a class="sidebar-link" href="/secondary_sales">
                     <span><i class="ti ti-report-analytics"></i></span>
-                    <span class="hide-menu">Secondary Sales</span>
+                    <span class="hide-menu"><%= t('sidebar.secondary_sales') %></span>
                 </a>
                 </li>
             <% else %>
                 <li class="sidebar-item">
                 <a class="sidebar-link" href="/offers?card=true">
                     <span><i class="ti ti-report-analytics"></i></span>
-                    <span class="hide-menu">Offers</span>
+                    <span class="hide-menu"><%= t('sidebar.offers') %></span>
                 </a>
                 </li>
 
                 <li class="sidebar-item">
                 <a class="sidebar-link" href="/interests?card=true">
                     <span><i class="ti ti-report-analytics"></i></span>
-                    <span class="hide-menu">Interests</span>
+                    <span class="hide-menu"><%= t('sidebar.interests') %></span>
                 </a>
                 </li>
             <% end %>
@@ -47,7 +47,7 @@
             <li class="sidebar-item">
             <a class="sidebar-link" href="/approvals">
                 <span><i class="ti ti-rubber-stamp"></i></span>
-                <span class="hide-menu">Approvals</span>                        
+                <span class="hide-menu"><%= t('sidebar.approvals') %></span>
             </a>
             </li>
         <% end %>

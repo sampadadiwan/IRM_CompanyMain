@@ -23,7 +23,7 @@
     <%= kpi.notes %>
   </td>
   <td>
-    <%= link_to "Show" , kpi , {class: "btn btn-outline-primary" }%>
-    <%= button_to "Delete", kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(kpi).destroy? %>
+    <%= link_to  t_common(:show) , kpi , {class: "btn btn-outline-primary" }%>
+    <%= button_to t_common(:delete), kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(kpi).destroy? %>
   </td>
 </tr>

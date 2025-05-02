@@ -9,7 +9,7 @@
     <%= portfolio_scenario.user.full_name %>
   </td>
   <td>
-    <%= link_to "Show", portfolio_scenario , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_portfolio_scenario_path(portfolio_scenario), {class: "btn btn-outline-success"} if policy(portfolio_scenario).update? %> 
+    <%= link_to  t_common(:show), portfolio_scenario , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(portfolio_scenario), {class: "btn btn-outline-success"} if policy(portfolio_scenario).update? %> 
   </td>
 </tr>

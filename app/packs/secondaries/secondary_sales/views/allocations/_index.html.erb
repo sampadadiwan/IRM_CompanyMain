@@ -1,17 +1,17 @@
 <%= render "/layouts/alerts" %>
-<%= render "/layouts/filter", associations: [:offer, :interest, :secondary_sale] %>
+<%= render "/layouts/filter", associations: [:offer, :interest, :secondary_sale], filter_button_text: t_common(:filter) %>
 <%#= render "/allocations/stats", allocations: @allocations %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Allocations</h1>
   <span>
-    <%= link_to "Filter", allocations_path(q: params[:q]&.to_unsafe_h, filter: true), {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Download", allocations_path(q: params[:q]&.to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Upload",
+    <%= link_to t_common(:filter), allocations_path(q: params[:q]&.to_unsafe_h, filter: true), {class: "btn btn-outline-primary ti ti-filter"}  %>
+    <%= link_to t_common(:download), allocations_path(q: params[:q]&.to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary ti ti-download"}  %>
+    <%= link_to t_common(:upload),
             new_import_upload_path(
                 "import_upload[import_type]": "Allocation",
                 "sample_upload": "ALLOCATIONS_SAMPLE"),
-                { class: "btn btn-outline-primary"} %> <!-- Closing parentheses added -->
+                { class: "btn btn-outline-primary ti ti-upload"} %> <!-- Closing parentheses added -->
 
     <%= render "/allocations/bulk_actions" %>
   </span>

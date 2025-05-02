@@ -9,7 +9,7 @@
     <%= display_boolean investor_notice_entry.active %>
   </td>
   <td>
-    <%= link_to "Show" , investor_notice_entry , {class: "btn btn-outline-primary" }%>
-    <%= button_to "Delete", investor_notice_entry, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>  
+    <%= link_to  t_common(:show) , investor_notice_entry , {class: "btn btn-outline-primary" }%>
+    <%= button_to t_common(:delete), investor_notice_entry, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>  
   </td>
 </tr>

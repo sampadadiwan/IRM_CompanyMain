@@ -296,9 +296,8 @@ class User < ApplicationRecord
   end
 
   def self.msg_todays_users(message, level: :info)
-    User.where("current_sign_in_at >= ?", Time.zone.now.beginning_of_day).each do |user|
+    User.where(current_sign_in_at: Time.zone.now.beginning_of_day..).find_each do |user|
       UserAlert.new(user_id: user.id, message:, level:).broadcast
     end
   end
-
 end

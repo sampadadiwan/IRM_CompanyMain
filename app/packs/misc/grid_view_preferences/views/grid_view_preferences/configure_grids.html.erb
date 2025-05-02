@@ -15,8 +15,8 @@
                                                  "grid_view_preference[owner_id]": @parent.id, 
                                                  turbo: true), 
                                                  data: { turbo_frame: "new_grid_view_preference" } do %>
-          <span>Add Derived Field</span>
-        <% end %>
+        <i class="ti ti-plus"></i> <span>Add Derived Field</span>
+      <% end %>
       </small>
     </div>
 
@@ -43,17 +43,23 @@
           
           <td><%= preference.sequence %></td>
 
-          <td><i class="fas fa-arrows-alt handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
+          <td><i class="ti ti-arrows-move handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
           
           <td><%= preference.key %></td>
           <td><%= preference.label %></td>
           <td><%= preference.data_type %></td>
 
           <td>
-            <%= link_to "Show", grid_view_preference_path(preference), {class: "btn btn-outline-success"} %>
-            <%= link_to 'Edit', edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} %>
-            <%= button_to "Delete", preference, method: :delete, class: "btn btn-outline-danger",
-              form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} %>
+            <%= link_to grid_view_preference_path(preference), {class: "btn btn-outline-success"} do %>
+              <i class="ti ti-eye"></i> <%= t_common(:show) %>
+            <% end %>
+            <%= link_to edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} do %>
+              <i class="ti ti-edit"></i> Edit
+            <% end %>
+            <%= button_to preference, method: :delete, class: "btn btn-outline-danger",
+              form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} do %>
+              <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+            <% end %>
           </td>
         </tr>
       <% end %>

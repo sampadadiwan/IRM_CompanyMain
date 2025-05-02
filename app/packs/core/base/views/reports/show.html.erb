@@ -82,7 +82,7 @@
 </table>
 <div>
   <% if policy(@report).edit? %>
-    <%= link_to "Edit", edit_report_path(@report), {class: "btn btn-outline-primary"} %>
-    <%= button_to "Delete", @report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary"} %>
+    <%= button_to t_common(:delete), @report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

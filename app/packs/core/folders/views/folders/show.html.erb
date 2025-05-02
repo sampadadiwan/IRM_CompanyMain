@@ -76,7 +76,7 @@
         "folder[parent_id]": @folder.id), 
         {class: "btn btn-outline-success"} %> 
 
-    <%= button_to "Delete" , @folder, method: :delete, class: "btn btn-outline-danger" , 
+    <%= button_to t_common(:delete) , @folder, method: :delete, class: "btn btn-outline-danger" , 
         form_class: "deleteButton" , 
         data: {action: "click->confirm#popup" , turbo:false} if policy(@folder).destroy? %> |
 

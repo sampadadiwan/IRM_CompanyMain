@@ -51,6 +51,6 @@
   </tr>
 </table>
 <div>
-  <%= link_to "Edit", edit_stock_adjustment_path(@stock_adjustment), {class: "btn btn-outline-primary"} if policy(@stock_adjustment).update? %> 
-  <%= button_to "Delete", @stock_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@stock_adjustment).destroy? %>
+  <%= link_to  t_common(:edit), edit_stock_adjustment_path(@stock_adjustment), {class: "btn btn-outline-primary"} if policy(@stock_adjustment).update? %> 
+  <%= button_to t_common(:delete), @stock_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@stock_adjustment).destroy? %>
 </div>

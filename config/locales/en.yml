@@ -1,123 +1,355 @@
-
+---
 en:
+  access_right:
+    create: Access was given
+    destroy: Access was removed
+    update: Access was updated
+  activerecord:
+    attributes:
+      fund_unit_setting:
+        name: Class / Series / Unit Type
+      investor_kyc:
+        full_name: Investing Entity
+      offer:
+        final_agreement: Accept SPA
+  capital_call:
+    create: Capital Call was created
+    destroy: Capital Call was deleted
+    started: Capital Call was started
+    update: Capital Call was updated
+  capital_commitment:
+    create: Capital Commitment was created
+    destroy: Capital Commitment was deleted
+    started: Capital Commitment was started
+    update: Capital Commitment was updated
+  capital_distribution:
+    create: Capital Distribution was created
+    destroy: Capital Distribution was deleted
+    started: Capital Distribution was started
+    update: Capital Distribution was updated
+  capital_remittance:
+    create: Capital Remittance was created
+    destroy: Capital Remittance was deleted
+    started: Capital Remittance was started
+    update: Capital Remittance was updated
+  common:
+    actions: Actions
+    all: All
+    all_docs: All Docs
+    cancel: Cancel
+    close: Close
+    confirm: Confirm
+    delete: Delete
+    download: Download
+    edit: Edit
+    filter: Filter
+    new: New
+    next: Next
+    ok: OK
+    proceed: Proceed
+    save: Save
+    show: Show
+    step: Step
+    upload: Upload
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      long: "%B %d, %Y"
+      short: "%b %d"
+  deal:
+    create: Deal was created
+    destroy: Deal was deleted
+    started: Deal was started
+    update: Deal was updated
+  deal_activity:
+    completed: Activity was completed
+    create: Activity was created
+    destroy: Activity was deleted
+    update: Activity was updated
+  deal_doc:
+    create: Deal Document was uploaded
+    destroy: Deal Document was deleted
+    update: Deal Document was updated
+  deal_investor:
+    create: Deal Investor was created
+    destroy: Deal Investor was deleted
+    update: Deal Investor was updated
+  deal_message:
+    create: Message was sent
+    destroy: Message was deleted
+    update: Message was updated
+  document:
+    create: Document was uploaded
+    destroy: Document was deleted
+    update: Document was updated
+  entities:
+    fm_dashboard2:
+      funds: Funds
+      investment_opportunities: Investment Opportunities
+    fm_dashboard_menus:
+      kycs: KYC's
+      quick_links: Quick Links
+      reports: Reports
+    fm_dashboard_stats:
+      commitments: Commitments
+      funds: Funds
+      opportunities: Opportunities
+      stakeholders: Stakeholders
+  fund:
+    create: Fund was created
+    destroy: Fund was deleted
+    started: Fund was started
+    update: Fund was updated
+  funding_round:
+    create: Funding round was created
+    destroy: Funding round was deleted
+    update: Funding round was updated
+  funds:
+    fund_details:
+      access: Access
+      calls: Calls
+      commitments: Commitments
+      distributions: Distributions
+      documents: Documents
+      portfolio: Portfolio
+      ratios: Ratios
+      tasks: Tasks
+      units: Units
+  hello: Hello
+  investment:
+    create: Investment was created
+    destroy: Investment was deleted
+    update: Investment was updated
+  investor:
+    create: Investor was created
+    destroy: Investor was deleted
+    update: Investor was updated
+  investor_access:
+    create: Investor access was given
+    destroy: Investor access was removed
+    update: Investor access was updated
+  investor_details_nav:
+    access_rights: Access Rights
+    commitments: Commitments
+    emails: Emails
+    employee_access: Employee Access
+    instruments: Instruments
+    investments: Investments
+    investor_access: Investor Access
+    kpi_mapping: Kpi Mapping
+    kpis: Kpis
+    kyc: KYC
+    portfolio_income: Portfolio Income
+    portfolio_investments: Portfolio Investments
+    stock_adjustments: Stock Adjustments
+    tasks: Tasks
+    units: Units
+    users: Users
+    valuations: Valuations
+  note:
+    create: Note was created
+    destroy: Note was deleted
+    update: Note was updated
   number:
     currency:
       format:
         format: "%u%n"
-        unit: "INR"
-
-  date:
-    formats:
-      default: "%d/%m/%Y"
-      short: "%b %d"
-      long: "%B %d, %Y"
+        unit: INR
+  secondaries_actions:
+    accept_transaction_documents: Accept Transaction Documents
+    accept_transaction_documents_button: Accept the Transaction Document(s) <br> %{accept_button}
+    acceptance_recorded: Your acceptance of the Transaction Document(s) has already
+      been recorded
+    add_investor_notice: Add Investor Notice
+    additional_documents: Additional Documents
+    address: Address
+    all_allocations: All Allocations
+    allocate_sale: Allocate Sale
+    allocated_interests: Allocated Interests
+    allocated_offers: Allocated Offers
+    allocated_quantity: Allocated Quantity
+    allocation_notification_all: 'Allocation Notification : To All'
+    allocations: Allocations
+    approve_all_pending: Approve All Pending
+    audit_trail: Audit Trail
+    buy_quantity: Buy Quantity
+    change_status: Change Status
+    complete_offer_details: Complete Offer Details
+    complete_offer_details_button: Complete your offer details using the button below
+    completed: Completed
+    confirm_spa_notification_buyers: 'Confirm SPA Notification : To Buyers'
+    confirm_spa_notification_sellers: 'Confirm SPA Notification : To Sellers'
+    download_all_offers: Download All Offers
+    download_allocations: Download Allocations
+    download_docs: Download Docs
+    download_payments: Download Payments
+    download_report: Download Report
+    download_spa: Download SPA
+    esignatures_report: eSignatures Report
+    fees: Fees
+    full_name: Full Name
+    generate_all_docs: Generate All Docs
+    generate_document: Generate Document
+    generated_docs: Generated Docs
+    interests_completion_report: Interests Completion Report
+    load_data: Load Data
+    net_amount_ex_fees: Net Amount (Ex Fees)
+    new_offer: New Offer
+    new_secondary_sale: New Secondary Sale
+    new_template: New Template
+    next_step_accept_documents: The next step will be to accept your transaction documents.
+    no_signature: No Signature
+    not_shortlisted: Not Shortlisted
+    notes: Notes
+    notifications: Notifications
+    offer_being_processed: Your offer is being processed.
+    offer_quantity: Offer Quantity
+    offers_completion_report: Offers Completion Report
+    pan: PAN
+    pending: Pending
+    personal_details: Personal Details
+    price: Price
+    quantity: Quantity
+    reject: Reject
+    reports: Reports
+    review_transaction_documents: Please review the Transaction Document(s) </br>
+      %{documents}
+    sell_quantity: Sell Quantity
+    seller: Seller
+    seller_signatory_emails: Seller Signatory Emails
+    send_email_to_change: Send email to change
+    send_email_with_selected_template: Send email with selected template
+    send_interest_reminder_buyers: 'Send Interest Reminder : To Buyers'
+    send_offer_reminder_sellers: 'Send Offer Reminder : To Sellers'
+    send_sale_open_buyers: 'Send Sale Open : To Buyers'
+    send_sale_open_sellers: 'Send Sale Open : To Sellers'
+    shortlist: Shortlist
+    shortlist_all: Shortlist All
+    spa_not_accepted: SPA Not Accepted
+    total: Total
+    total_offered: Total Offered
+    un_allocated_interests: Un Allocated Interests
+    un_allocated_offers: Un Allocated Offers
+    unverify: Unverify
+    upload_allocations: Upload Allocations
+    upload_documents_complete_offer: You may need to upload documents to complete
+      the offer.
+    upload_download: Upload / Download
+    upload_interests: Upload Interests
+    upload_offers: Upload Offers
+    upload_offers_documents: Upload Offers Documents
+    verified_offers: Verified Offers
+    verify: Verify
+    view_all_offers: View All Offers
+    view_allocations: View Allocations
+    view_sale: View Sale
+    view_sale_upload_docs: View Sale & Upload Docs
+    wait_communication: Wait for communication from %{entity_name}
+    withdraw: Withdraw    
+    approve: Approve
+    unapprove: UnApprove
+    secondary_sale: Secondary Sale
+    all_docs: All Docs
+    accept_spa_confirmation: This will mark your acceptance of the SPA. Proceed?
+    generate_docs_confirmation: Document generation will take a few min, please be patient. Proceed?
+  secondaries_tabs:
+    access_rights: Access Rights
+    changes: Changes
+    documents: Documents
+    interest_documents: Interest Documents
+    interests: Interests
+    my_offers: My Offers
+    notification: Notification
+    offers: Offers
+    transaction_documents: Transaction Documents
+  sidebar:
+    admin: Admin
+    ai: AI
+    all_stakeholder_access: All Stakeholder Access
+    all_tasks: All Tasks
+    approvals: Approvals
+    blazer_reports: Reports (Blazer)
+    boards: Boards
+    commitments: Commitments
+    dashboard: Dashboard
+    deals: Deals
+    documents: Documents
+    events: Events
+    funds: Funds
+    interests: Interests
+    investments: Investments
+    ir_dashboard: IR Dashboard
+    key_metrics: Key Metrics
+    kpis: KPIs
+    kycs: KYCs
+    my_tasks: My Tasks
+    new_investment: New Investment
+    new_stakeholder: New Stakeholder
+    notes: Notes
+    offers: Offers
+    opportunities: Opportunities
+    pending_access: Pending Access
+    quick_links: Quick Links
+    quick_links_funds: Funds (Quick Links)
+    quick_links_stakeholders: Stakeholders (Quick Links)
+    reports: Reports
+    secondary_sales: Secondary Sales
+    shareholding: Shareholding
+    stakeholders: Stakeholders
+    support_mapping: Support Mapping
+    support_tasks: Support Tasks
+    tasks: Tasks
+    valuations: Valuations
+    view_stakeholders: View Stakeholders
   time:
     formats:
       default: "%d/%m/%Y %H:%M"
-      short: "%b %d"
       long: "%B %d, %Y"
-  note:
-    create: 'Note was created'
-    update: 'Note was updated'
-    destroy: 'Note was deleted'
-  funding_round:
-    create: 'Funding round was created'
-    update: 'Funding round was updated'
-    destroy: 'Funding round was deleted'
-  deal:
-    create: 'Deal was created'
-    update: 'Deal was updated'
-    destroy: 'Deal was deleted'
-    started: 'Deal was started'
-  investor:
-    create: 'Investor was created'
-    update: 'Investor was updated'
-    destroy: 'Investor was deleted'
-  investment:
-    create: 'Investment was created'
-    update: 'Investment was updated'
-    destroy: 'Investment was deleted'
-  document:
-    create: 'Document was uploaded'
-    update: 'Document was updated'
-    destroy: 'Document was deleted'
-  deal_investor:
-    create: 'Deal Investor was created'
-    update: 'Deal Investor was updated'
-    destroy: 'Deal Investor was deleted'
-  deal_activity:
-    create: 'Activity was created'
-    update: 'Activity was updated'
-    destroy: 'Activity was deleted'
-    completed: 'Activity was completed'
-  deal_message:
-    create: 'Message was sent'
-    update: 'Message was updated'
-    destroy: 'Message was deleted'
-
-  deal_doc:
-    create: 'Deal Document was uploaded'
-    update: 'Deal Document was updated'
-    destroy: 'Deal Document was deleted'
+      short: "%b %d"
+  top_menus:
+    access_rights: Access Rights
+    account_settings: Account Settings
+    advisors: Advisors
+    audit_trail: Audit Trail
+    bulk_upload_data: Bulk Upload Data
+    chat: Chat
+    chat_with_caphive: Chat With CapHive
+    company_employees: Company Employees
+    company_profile: Company Profile
+    compliance_checks: Compliance Checks
+    compliance_rules: Compliance Rules
+    customize_forms: Customize Forms
+    dark_theme: Dark
+    design_personalized_form: Design Personalized Form
+    download_audit_trail: Download Audit Trail
+    exchange_rates: Exchange Rates
+    external_company_advisors: External Company Advisors
+    favorites: Favorites
+    favorites_bookmarks: Favorites / Bookmarks
+    imports: Imports
+    light_theme: Light
+    log_out: Log Out
+    manage_exchange_rates: Manage Exchange Rates
+    messages_notifications: Messages & Notifications
+    my_inbox: My Inbox
+    my_profile: My Profile
+    my_task: My Task
+    notices: Notices
+    personalize_investor_notices: Personalize Investor Notices
+    provide_access: Provide Access
+    setup_compliance_rules: Setup Compliance Rules
+    todo_daily_tasks: To-do and Daily Tasks
+    user: User
+    user_profile: User Profile
+    view_all_checks: View All Checks
   user:
-    create: 'User was created'
-    update: 'User was updated'
-    destroy: 'User was deleted'
-  access_right:
-    create: 'Access was given'
-    update: 'Access was updated'
-    destroy: 'Access was removed'
-
-  investor_access:
-    create: 'Investor access was given'
-    update: 'Investor access was updated'
-    destroy: 'Investor access was removed'
-
-  fund:
-    create: 'Fund was created'
-    update: 'Fund was updated'
-    destroy: 'Fund was deleted'
-    started: 'Fund was started'
-
-  capital_call:
-    create: 'Capital Call was created'
-    update: 'Capital Call was updated'
-    destroy: 'Capital Call was deleted'
-    started: 'Capital Call was started'
-
-  capital_commitment:
-    create: 'Capital Commitment was created'
-    update: 'Capital Commitment was updated'
-    destroy: 'Capital Commitment was deleted'
-    started: 'Capital Commitment was started'
-
-  capital_remittance:
-    create: 'Capital Remittance was created'
-    update: 'Capital Remittance was updated'
-    destroy: 'Capital Remittance was deleted'
-    started: 'Capital Remittance was started'            
-
-  capital_distribution:
-    create: 'Capital Distribution was created'
-    update: 'Capital Distribution was updated'
-    destroy: 'Capital Distribution was deleted'
-    started: 'Capital Distribution was started' 
-
+    create: User was created
+    destroy: User was deleted
+    update: User was updated
   views:
     pagination:
       first: "&laquo; First"
-      last: "Last &raquo;"
-      previous: "&lsaquo;"
+      last: Last &raquo;
       next: "&rsaquo;"
-      truncate: "&hellip;"        
-
-  
-  activerecord:
-    attributes:
-      investor_kyc:
-        full_name: 'Investing Entity'
-      fund_unit_setting:
-        name: "Class / Series / Unit Type"
-      offer:
-        final_agreement: "Accept SPA"
-
+      previous: "&lsaquo;"
+      truncate: "&hellip;"
