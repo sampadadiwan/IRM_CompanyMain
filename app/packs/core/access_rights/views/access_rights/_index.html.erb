@@ -58,8 +58,8 @@
     </thead>
 
     <tbody id="access_rights_table_body">
-      <% access_rights = access_rights.includes(:granted_by) if access_rights.respond_to?(:includes) %>
-      <% access_rights.includes(:user).each do |access_right| %>
+      <% access_rights = access_rights.includes(:granted_by, :user) if access_rights.respond_to?(:includes) %>
+      <% access_rights.each do |access_right| %>
         <%= render access_right, access_right: access_right, show_for: show_for, show_metadata: show_metadata %>
       <% end %>
     </tbody>
