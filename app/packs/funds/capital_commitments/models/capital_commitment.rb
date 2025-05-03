@@ -53,14 +53,14 @@ class CapitalCommitment < ApplicationRecord
   # Returns the commitments of type gp for the fund using unit_type
   # Used in FundTemplateDecorator
   scope :gp, lambda { |fund_id|
-    joins(:fund_unit_setting)
+    joins("INNER JOIN fund_unit_settings ON fund_unit_settings.fund_id = capital_commitments.fund_id")
       .where(fund_unit_settings: { gp_units: true, fund_id: fund_id })
       .where("fund_unit_settings.name = capital_commitments.unit_type")
   }
 
   # Returns the commitments of type lp for the fund using unit_type
   scope :lp, lambda { |fund_id|
-    joins(:fund_unit_setting)
+    joins("INNER JOIN fund_unit_settings ON fund_unit_settings.fund_id = capital_commitments.fund_id")
       .where(fund_unit_settings: { gp_units: false, fund_id: fund_id })
       .where("fund_unit_settings.name = capital_commitments.unit_type")
   }
@@ -83,11 +83,6 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
-  # Returns the fund_unit_setting associated with the fund
-  # particularly useful to determine if commitment is of type lp or gp as that is store in the fund_unit_setting
-  has_one :fund_unit_setting,
-          through: :fund,
-          source: :fund_unit_settings
   # Fund ratios computed per investor
   has_many :fund_ratios, dependent: :destroy
   has_many :commitment_adjustments, dependent: :destroy
@@ -162,6 +157,10 @@ class CapitalCommitment < ApplicationRecord
     self.orig_folio_committed_amount_cents = amount_cents
     self.folio_committed_amount_cents = amount_cents
     save
+  end
+
+  def fund_unit_setting
+    fund.fund_unit_settings.where(name: unit_type).last
   end
 
   def compute_hurdle(end_date)

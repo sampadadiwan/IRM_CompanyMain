@@ -66,7 +66,7 @@ class Investor < ApplicationRecord
   has_many :investor_notice_entries, dependent: :destroy
 
   has_many :offers, dependent: :destroy
-  has_many :messages, dependent: :destroy
+  # has_many :messages, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :investee
   validates :category, :investor_name, presence: true

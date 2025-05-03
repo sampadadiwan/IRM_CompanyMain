@@ -2386,3 +2386,46 @@ Given('I log in as the first user') do
     When I fill and submit the login page
   )
 end
+
+Then('I can fetch the fund unit setting associated with the commitments') do
+  commitment_investors_fund_unit_settings = {
+    "Investor 1" => "Series A",
+    "Investor 2" => "Series A",
+    "Investor 3" => "Series B",
+    "Investor 4" => "Series B",
+    "Investor 5" => "Series C",
+    "Investor 6" => "Series D",
+  }
+  @fund.capital_commitments.each do |cc|
+    expect(cc.fund_unit_setting).to be_present
+    expect(cc.fund_unit_setting.name).to eq(cc.unit_type)
+    expect(cc.fund_unit_setting.name).to eq(commitment_investors_fund_unit_settings[cc.investor_name])
+  end
+end
+
+Then('I can fetch the lp and gp commitments') do
+  series_to_lp_gp = {
+    "Series A" => "LP",
+    "Series B" => "GP",
+    "Series C" => "LP",
+    "Series D" => "GP"
+  }
+
+  commitment_investors_fund_unit_settings = {
+    "Investor 1" => "Series A",
+    "Investor 2" => "Series A",
+    "Investor 3" => "Series B",
+    "Investor 4" => "Series B",
+    "Investor 5" => "Series C",
+    "Investor 6" => "Series D",
+  }
+  expect(@fund.capital_commitments.lp(@fund.id).pluck(:unit_type).uniq).to match_array(series_to_lp_gp.keys.select { |k| series_to_lp_gp[k] == "LP" })
+  expect(@fund.capital_commitments.gp(@fund.id).pluck(:unit_type).uniq).to match_array(series_to_lp_gp.keys.select { |k| series_to_lp_gp[k] == "GP" })
+  expect(@fund.capital_commitments.lp(@fund.id).count).to eq(3)
+  expect(@fund.capital_commitments.gp(@fund.id).count).to eq(5)
+
+  expect(@fund.capital_commitments.lp(@fund.id).pluck(:unit_type)).to match_array(["Series A", "Series A", "Series C"])
+  expect(@fund.capital_commitments.gp(@fund.id).pluck(:unit_type)).to match_array(["Series B", "Series B", "Series B", "Series D", "Series D"])
+  expect(@fund.capital_commitments.lp(@fund.id).pluck(:investor_name)).to match_array(["Investor 1", "Investor 2", "Investor 5"])
+  expect(@fund.capital_commitments.gp(@fund.id).pluck(:investor_name)).to match_array(["Investor 3", "Investor 4", "Investor 4", "Investor 6", "Investor 6"])
+end
