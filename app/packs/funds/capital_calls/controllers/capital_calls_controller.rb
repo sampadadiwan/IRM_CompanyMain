@@ -5,7 +5,6 @@ class CapitalCallsController < ApplicationController
   def index
     @q = CapitalCall.ransack(params[:q])
     # Create the scope for the model
-    policy_scope(@q.result)
     @capital_calls = policy_scope(@q.result).includes(:fund)
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
