@@ -122,8 +122,8 @@
         <% unless false && fund.cat3? %>
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">
-            <%= render "/capital_calls/index", fund: fund,
-                lazy_load_data: true, data_source: capital_calls_path(fund_id: fund.id, all: true) %>
+             <%= turbo_frame_tag "capital_calls_frame", target: "_top", loading: :lazy, src: capital_calls_path(fund_id: fund.id) do %>
+              <% end %>
           </div>
         </div>
         <% end %>

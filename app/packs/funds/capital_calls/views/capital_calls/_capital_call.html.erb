@@ -1,29 +1,9 @@
-<tr id="<%= dom_id capital_call %>">
-  <td>
-    <%= capital_call.fund.name %>
-  </td>
-  <td>
-    <%= link_to capital_call.name, capital_call %>
-  </td>
-  <td>
-    <%= capital_call.percentage_called %> %
-  </td>
-  <td>
-    <%= l capital_call.due_date %>
-  </td>
-  <td>
-    <%= money_to_currency capital_call.call_amount, params %> 
-  </td>
-  <td>
-    <%= render "/capital_calls/percentage_raised", capital_call: capital_call %>
-  </td>
-  <td>
-    <%= money_to_currency capital_call.due_amount, params %>     
-  </td>
-  <td>
-    <%= display_boolean capital_call.approved %>
-  </td>
-  <td>
-    <%= link_to  t_common(:show) , capital_call , {class: "btn btn-outline-primary ti ti-eye" }%>
-  </td>
-</tr>
+<tr id="capital_call_<%= capital_call.id %>">
+
+    <%= render RansackTableRow.new(model: capital_call, columns:) %>
+
+    <td>
+      <%= link_to  t_common(:show), capital_call , {class: "btn btn-outline-primary ti ti-eye"}%>
+    </td>
+
+  </tr>
