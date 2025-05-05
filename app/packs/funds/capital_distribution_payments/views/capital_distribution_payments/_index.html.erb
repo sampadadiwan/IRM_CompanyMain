@@ -42,33 +42,19 @@
 
 </div>
 
-  <%
-    import_upload_id ||= params[:import_upload_id]
-  %>
-
-
- <% distribution_payments_frame = "distribution_payments_frame" %>
-  <%=render SearchComponent.new(data_source: capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: distribution_payments_frame) %>
 
   <div class="table-responsive">
-    <table id="capital_distribution_payments" class="table table-bordered dataTable action_table hover">
         <%
+          import_upload_id ||= params[:import_upload_id]
+          distribution_payments_frame = "distribution_payments_frame"
           default_columns_map = if current_user.curr_role == "investor"
             CapitalDistributionPayment::INVESTOR_STANDARD_COLUMNS
           else
             CapitalDistributionPayment::STANDARD_COLUMNS
           end
         %>
-        <% ransack_table_header = RansackTableHeader.new(CapitalDistributionPayment, q: @q, default_columns_map:, current_user: current_user, records: capital_distribution_payments, report_id: params["report_id"], turbo_frame: distribution_payments_frame, referrer: request.referrer) %>
-        <%= render ransack_table_header %>
-      <tbody>
-        <% capital_distribution_payments.each do |capital_distribution_payment| %>
-          <%= render "capital_distribution_payments/capital_distribution_payment",  capital_distribution_payment: capital_distribution_payment.decorate, columns: ransack_table_header.columns%>
-        <% end %>
-      </tbody>
-    </table>
-    <% if capital_distribution_payments.present? %>
-      <%= page_entries_info capital_distribution_payments, entry_name: 'item' %>
-      <%= paginate capital_distribution_payments, data: {turbo_frame: distribution_payments_frame} %>
-    <% end %>
-</div>
+
+        <%=render SearchComponent.new(data_source: capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: distribution_payments_frame) %>
+
+        <%= render RansackTable.new(CapitalDistributionPayment, q: @q, default_columns_map:, current_user: current_user, records: capital_distribution_payments, report_id: params["report_id"], turbo_frame: distribution_payments_frame, referrer: request.referrer) %>
+  </div>

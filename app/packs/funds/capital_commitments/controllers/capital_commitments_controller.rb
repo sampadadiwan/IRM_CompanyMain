@@ -41,14 +41,7 @@ class CapitalCommitmentsController < ApplicationController
     respond_to do |format|
       format.html { render template }
       format.xlsx
-      format.json do
-        if params[:jbuilder].blank?
-          render json: CapitalCommitmentDatatable.new(
-            params,
-            capital_commitments: @capital_commitments
-          )
-        end
-      end
+      format.json 
     end
   end
 

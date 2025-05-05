@@ -149,12 +149,10 @@
 
   </div>
 
-  <% investor_kycs_frame = "investor_kycs_frame" %>
-  <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
-
   <div class="table-responsive">
-    <table id="investor_kycs" class="table table-bordered dataTable action_table hover">
         <%
+          investor_kycs_frame = "investor_kycs_frame"
+          
           default_columns_map = if current_user.curr_role == "investor"
             InvestorKyc::INVESTOR_STANDARD_COLUMNS
           else
@@ -165,16 +163,9 @@
             end
           end
         %>
-        <% ransack_table_header = RansackTableHeader.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer) %>
-        <%= render ransack_table_header %>
-      <tbody>
-        <% investor_kycs.each do |investor_kyc| %>
-          <%= render "investor_kycs/investor_kyc",  investor_kyc: investor_kyc.decorate, columns: ransack_table_header.columns%>
-        <% end %>
-      </tbody>
-    </table>
-    <% if investor_kycs.present? %>
-      <%= page_entries_info investor_kycs, entry_name: 'item' %>
-      <%= paginate investor_kycs, data: {turbo_frame: investor_kycs_frame} %>
-    <% end %>
-</div>
+
+        <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
+
+
+        <%= render RansackTable.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer) %>
+  </div>

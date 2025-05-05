@@ -1,3 +1,10 @@
+V9.0.32
+#####################################
+d62198ba5 Updated fetching fund_unit_setting (#810)
+7187fa45f Fixed AR index page bug (#809)
+e153cf102 Localization of secondaries and misc (#808)
+a61c32b11 Report deletion bugfix 010525 (#807
+
 V9.0.31
 #####################################
 7bae7017a Added deploy notifications

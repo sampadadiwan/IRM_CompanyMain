@@ -16,8 +16,17 @@ module GridColsHelper
 
   def get_columns(model_class, params: {})
     # Default Columns for KYC
-    column_names ||= params[:column_names].presence || model_class::STANDARD_COLUMN_NAMES
-    field_list ||= params[:column_fields].presence || model_class::STANDARD_COLUMN_FIELDS
+    column_names ||= params[:column_names].presence
+    field_list ||= params[:column_fields].presence
+
+    if current_user.curr_role == "investor"
+      column_names ||= model_class::INVESTOR_STANDARD_COLUMNS.keys
+      field_list ||= model_class::INVESTOR_STANDARD_COLUMNS.values
+    else
+      column_names ||= model_class::STANDARD_COLUMNS.keys
+      field_list ||= model_class::STANDARD_COLUMNS.values
+    end
+
     # Custom Columns if applicable
     entity = @current_entity.presence || current_user.entity
     # Ex : investor_custom_cols or individual_kyc_custom_cols

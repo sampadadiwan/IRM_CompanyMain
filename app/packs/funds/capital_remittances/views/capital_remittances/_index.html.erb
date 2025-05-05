@@ -15,10 +15,7 @@
   
   xl_link = download_xl_link(data_source) 
   col_params = { fund_id: fund_id, capital_call_id: capital_call_id, capital_commitment_id: capital_commitment_id }
-  if current_user.curr_role == "investor"
-    col_params[:column_names] = CapitalRemittance::INVESTOR_COLUMN_NAMES
-    col_params[:column_fields] = CapitalRemittance::INVESTOR_COLUMN_FIELDS
-  end
+  
   column_names, field_list = get_columns(CapitalRemittance, params: col_params) 
 %>
               

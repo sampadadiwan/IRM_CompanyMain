@@ -44,10 +44,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
       format.html
       format.turbo_stream
       format.xlsx
-      format.json do
-        # Fallback to Jbuilder if `jbuilder` param is present
-        render json: AggregatePortfolioInvestmentsDatatable.new(params, aggregate_portfolio_investments: @aggregate_portfolio_investments) if params[:jbuilder].blank?
-      end
+      format.json
     end
   end
 

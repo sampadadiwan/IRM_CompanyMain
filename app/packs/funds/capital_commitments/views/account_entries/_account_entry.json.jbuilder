@@ -14,7 +14,7 @@ json.investor_name account_entry.investor&.investor_name
 
 json.dt_actions begin
   links = []
-  links << link_to('Show', account_entry_path(account_entry), class: "btn btn-outline-primary")
-  links << link_to('Edit', edit_account_entry_path(account_entry), class: "btn btn-outline-success") if policy(account_entry).update?
+  links << link_to('Show', account_entry_path(account_entry), class: "btn btn-outline-primary ti ti-eye")
+  links << link_to('Edit', edit_account_entry_path(account_entry), class: "btn btn-outline-success ti ti-edit") if policy(account_entry).update?
   safe_join(links, '')
 end

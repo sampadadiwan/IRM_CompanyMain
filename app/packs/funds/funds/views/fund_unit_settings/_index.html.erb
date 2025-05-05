@@ -20,21 +20,12 @@
 </div>
 
 <%fund_unit_settings_frame = "fund_unit_settings_frame"%>
-  <%=render SearchComponent.new(data_source: fund_unit_settings_path( params: params.to_unsafe_h), turbo_frame: fund_unit_settings_frame) %>
-
+  
 <div class="table-responsive">
-  <table id="fund_unit_settings" class="table table-bordered dataTable action_table hover">
-      <% ransack_table_header = RansackTableHeader.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame, referrer: request.referrer) %>
-      <%= render ransack_table_header %>
-    <tbody>
-      <% fund_unit_settings.each do |fund_unit_setting| %>
-        <%= render "fund_unit_settings/fund_unit_setting", fund_unit_setting: fund_unit_setting.decorate, columns: ransack_table_header.columns%>
-      <% end %>
-    </tbody>
-  </table>
-  <% if fund_unit_settings.present? %>
-    <%= page_entries_info fund_unit_settings, entry_name: 'item' %>
-    <%= paginate fund_unit_settings, data: {turbo_frame: fund_unit_settings_frame} %>
-  <% end %>
+
+  <%=render SearchComponent.new(data_source: fund_unit_settings_path(params: params.to_unsafe_h), turbo_frame: fund_unit_settings_frame) %>
+
+  <%= render RansackTable.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame, referrer: request.referrer) %>
+
 </div>
 

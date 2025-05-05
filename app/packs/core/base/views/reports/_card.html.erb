@@ -41,7 +41,7 @@
                                   position-relative
                                   category-business
                                   d-flex
-                                  align-items-center
+                                  ti ti-eye
                                 " href="<%= report_path(report) %>">Show</a>
 
             <% if policy(report).update? %>              
@@ -52,9 +52,9 @@
                                     position-relative
                                     category-social
                                     d-flex
-                                    align-items-center
+                                    ti ti-edit
                                   " href="<%= edit_report_path(report) %>"> Edit</a>
-              <% if ["Portfolio Investments", "Aggregate Portfolio Investments"].include? report.category %>
+              
                 <a class="
                                       note-social
                                       badge-group-item badge-social
@@ -62,9 +62,9 @@
                                       position-relative
                                       category-social
                                       d-flex
-                                      align-items-center
+                                      ti ti-settings
                                     " href="<%= configure_grids_grid_view_preferences_path(owner_type: 'Report', owner_id: report.id) %>">Configure Grid</a>
-              <%end%>
+              
             <% end %>
           </div>
         </div>

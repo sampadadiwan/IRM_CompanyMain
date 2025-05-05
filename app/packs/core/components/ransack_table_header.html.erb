@@ -3,7 +3,7 @@
     <% @columns.each do |column_name, attribute| %>
       <th>
         <% if attribute.present? && !attribute.starts_with?("custom_field") %>
-          <%= sort_link @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
+          <%= sortable_header @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
         <% else %>
           <%= column_name %>
         <% end %>

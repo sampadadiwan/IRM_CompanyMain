@@ -1,0 +1,18 @@
+<div class="table-responsive">
+    <table id="<%= @model.model_name.plural %>" class="table table-bordered dataTable action_table hover">
+    <%= render @ransack_table_header %>
+
+    <tbody>
+        <% @records.each do |record| %>
+        <%= render "#{@partial_base_path}/#{@partial_name}", 
+                    "#{@model.model_name.element}": record.decorate, 
+                    columns: @ransack_table_header.columns %>
+        <% end %>
+    </tbody>
+    </table>
+
+    <% if @records.present? %>
+        <%= page_entries_info @records, entry_name: 'item' %>
+        <%= paginate @records, data: { turbo_frame: @turbo_frame } %>
+    <% end %>
+</div>

@@ -4,7 +4,7 @@
 <div class="row">
    <% if @document.video? %>
      <%= render "layouts/video", url: @document.file_url %>
-   <% elsif @document.excel? && false %>
+   <% elsif @document.excel?  %>
      <%= render "documents/excel", url: @document.file_url %>
    <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
       <%= render "documents/pdf" %>

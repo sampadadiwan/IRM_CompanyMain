@@ -62,8 +62,8 @@ class CapitalCommitmentDecorator < ApplicationDecorator
 
   def dt_actions
     links = []
-    links << h.link_to('Show', h.capital_commitment_path(object), class: "btn btn-outline-primary")
-    links << h.link_to('Edit', h.edit_capital_commitment_path(object), class: "btn btn-outline-success") if h.policy(object).update?
+    links << h.link_to('Showxxxx', h.capital_commitment_path(object), class: "btn btn-outline-primary ti ti-eye ")
+    links << h.link_to('Edit', h.edit_capital_commitment_path(object), class: "btn btn-outline-success ti ti-edit") if h.policy(object).update?
     h.safe_join(links, '')
   end
 end

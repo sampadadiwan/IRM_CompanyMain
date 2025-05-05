@@ -1,4 +1,18 @@
-<table class="table table-bordered">
+<% title = params[:title] || "Account Entries" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+
+    <span>  
+      <button class="btn btn-outline-success" data-controller="export-xl"
+        data-action="click->export-xl#export"
+        data-tableid="account_entries_pivot"
+        data-filename="Account Entries">
+        Export to Excel
+      </button>
+    </span>
+</div>
+
+<table id="account_entries_pivot" class="table table-bordered">
   <thead>
     <tr>
       <% if params[:hide_commitment].blank? %>

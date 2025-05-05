@@ -7,13 +7,15 @@ class AccountEntry < ApplicationRecord
   include Trackable.new(on: [:update])
   include RansackerAmounts.new(fields: %w[amount])
 
-  STANDARD_COLUMN_NAMES = ["Folio", "Reporting Date", "Period", "For", "Entry Type", "Name", "Amount",
-                           " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[folio_id reporting_date period parent_name entry_type name amount dt_actions].freeze
-
-  INVESTOR_COLUMN_NAMES = ["Folio", "Reporting Date", "Period", "For", "Entry Type", "Name", "Amount",
-                           " "].freeze
-  INVESTOR_COLUMN_FIELDS = %w[folio_id reporting_date period parent_name entry_type name amount dt_actions].freeze
+  STANDARD_COLUMNS = {
+    "Folio" => "folio_id",
+    "Reporting Date" => "reporting_date",
+    "Period" => "period",
+    "For" => "parent_name",
+    "Entry Type" => "entry_type",
+    "Name" => "name",
+    "Amount" => "amount"
+  }.freeze
 
   belongs_to :capital_commitment, optional: true
   belongs_to :entity

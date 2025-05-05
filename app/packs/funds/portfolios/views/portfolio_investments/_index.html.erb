@@ -36,26 +36,30 @@
         <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
       <% end %>
 
-      <%= link_to portfolio_investments_path(
-                    fund_id: fund_id,
-                    aggregate_portfolio_investment_id: aggregate_portfolio_investment&.id,
-                    format: "xlsx",
-                    all: true),
-                  class: "btn btn-outline-primary d-inline-flex align-items-center",
-                  data: { turbo: false } do %>
-        <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
-      <% end %>
-
-    <% else %>
+      
+    <% end %>
 
       <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
-      <%= link_to xl_link,
-                  class: "btn btn-outline-success d-inline-flex align-items-center",
-                  data: { turbo: false } do %>
-        <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
-      <% end %>
-
-    <% end %>
+      <div class="btn-group">
+        <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+              <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+            <% end %>
+          </li>
+          <li>
+            <button class="dropdown-item" data-controller="export-xl"
+                    data-action="click->export-xl#export"
+                    data-tableid="portfolio_investments"
+                    data-filename="Portfolio Investments">
+              <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+            </button>
+          </li>
+        </ul>
+      </div>
 
   </div>
 
@@ -89,22 +93,13 @@
 <% else %>
 
   <% pi_turbo_frame = "portfolio_investments_frame"%>
-  <%=render SearchComponent.new(data_source: portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: pi_turbo_frame) %>
-
+  
   <div class="table-responsive">
-      <table id="portfolio_investments" class="table table-bordered dataTable action_table hover">
-          <% ransack_table_header = RansackTableHeader.new(PortfolioInvestment, q: @q, current_user: current_user, records: portfolio_investments, report_id: params["report_id"], turbo_frame: pi_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot]) %>
-          <%= render ransack_table_header %>
-        <tbody>
-          <% portfolio_investments.each do |portfolio_investment| %>
-            <%= render "portfolio_investments/portfolio_investment",  portfolio_investment: portfolio_investment.decorate, columns: ransack_table_header.columns%>
-          <% end %>
-        </tbody>
-      </table>
-      <% if portfolio_investments.present?  %>
-        <%= page_entries_info portfolio_investments, entry_name: 'item' %>
-        <%= paginate portfolio_investments, data: { turbo_frame: pi_turbo_frame } %>
-      <% end %>
+
+    <%=render SearchComponent.new(data_source: portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: pi_turbo_frame) %>
+
+    <%= render RansackTable.new(PortfolioInvestment, q: @q, current_user: current_user, records: portfolio_investments, report_id: params["report_id"], turbo_frame: pi_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot]) %>
+      
   </div>
 
 <% end %>

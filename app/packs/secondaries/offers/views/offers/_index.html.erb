@@ -74,10 +74,6 @@
         data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) 
 
         col_params = {no_fund: true}
-        if current_user.curr_role == "investor"
-        col_params[:column_names] = Offer::INVESTOR_COLUMN_NAMES
-        col_params[:column_fields] = Offer::INVESTOR_COLUMN_FIELDS
-        end
         column_names, field_list = get_columns(Offer, params: col_params) 
     %>
 

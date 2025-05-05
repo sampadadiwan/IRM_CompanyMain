@@ -65,12 +65,27 @@
 
         <% end %>
 
-        <%# ⬇️⬇️ OUTSIDE THE IF BLOCK but INSIDE the FLEX ROW %>
-        <%= link_to xl_link,
-                    class: "btn btn-outline-success d-inline-flex align-items-center",
-                    data: { turbo: false } do %>
-            <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
-        <% end %>
+        <div class="btn-group">
+            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+                    <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+                <% end %>
+                </li>
+                <li>
+                <button class="dropdown-item" data-controller="export-xl"
+                        data-action="click->export-xl#export"
+                        data-tableid="capital_commitments"
+                        data-filename="Capital Commitments">
+                    <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+                </button>
+                </li>
+            </ul>
+        </div>
+
 
     </div>
 

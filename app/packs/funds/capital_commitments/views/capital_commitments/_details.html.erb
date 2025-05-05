@@ -114,8 +114,10 @@
           params[:capital_commitment_id] = capital_commitment.id
           params[:fund_id] = capital_commitment.fund_id
         %>
-        <%= render "/account_entries/index",
-                lazy_load_data: true, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
+
+        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: capital_commitment.id) do %>
+          <p>Loading Account Entries...</p>
+        <% end %>
       </div>
     </div>
 

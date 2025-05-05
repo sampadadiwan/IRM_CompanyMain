@@ -7,11 +7,27 @@ class Offer < ApplicationRecord
   include WithIncomingEmail
   include WithAllocations
 
-  STANDARD_COLUMN_NAMES = ["Investor", "User", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", "Approved", "Verified", "Updated At", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[investor_name user quantity price allocation_quantity allocation_amount approved verified updated_at dt_actions].freeze
+  STANDARD_COLUMNS = {
+    "Investor" => "investor_name",
+    "User" => "user",
+    "Quantity" => "quantity",
+    "Price" => "price",
+    "Allocation Quantity" => "allocation_quantity",
+    "Allocation Amount" => "allocation_amount",
+    "Approved" => "approved",
+    "Verified" => "verified",
+    "Updated At" => "updated_at",
+    "" => "dt_actions"
+  }.freeze
 
-  INVESTOR_COLUMN_NAMES = ["User", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", " "].freeze
-  INVESTOR_COLUMN_FIELDS = %w[user quantity price allocation_quantity allocation_amount dt_actions].freeze
+  INVESTOR_STANDARD_COLUMNS = {
+    "User" => "user",
+    "Quantity" => "quantity",
+    "Price" => "price",
+    "Allocation Quantity" => "allocation_quantity",
+    "Allocation Amount" => "allocation_amount",
+    "" => "dt_actions"
+  }.freeze
 
   # Make all models searchable
   update_index('offer') { self if index_record? }

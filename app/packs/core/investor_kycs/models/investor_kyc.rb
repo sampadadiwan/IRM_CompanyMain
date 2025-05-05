@@ -1,10 +1,4 @@
 class InvestorKyc < ApplicationRecord
-  STANDARD_COLUMN_NAMES = ["Investor", "Investing Entity", "Type", "Kyc Verified", "Expired", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type verified expired dt_actions].freeze
-
-  INVESTOR_COLUMN_NAMES = ["Entity"] + STANDARD_COLUMN_NAMES - ["Investor"]
-  INVESTOR_COLUMN_FIELDS = ["entity_name"] + STANDARD_COLUMN_FIELDS - ["investor_name"]
-
   STANDARD_COLUMNS = { "Investor" => "investor_name",
                        "Investing Entity" => "full_name",
                        "Type" => "kyc_type",

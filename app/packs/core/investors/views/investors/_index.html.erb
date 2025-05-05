@@ -85,21 +85,6 @@
 
 <% investors_frame = "investors_frame" %>
 <%=render SearchComponent.new(data_source: investors_path( params: params.to_unsafe_h, import_upload_id:), turbo_frame: investors_frame) %>
-
 <div class="table-responsive">
-    <table id="investors" class="table table-bordered dataTable action_table hover">
-        <% ransack_table_header = RansackTableHeader.new(Investor, q: @q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], turbo_frame: investors_frame, referrer: request.referrer) %>
-        <%= render ransack_table_header %>
-      <tbody>
-        <% @investors&.each do |investor| %>
-          <%= render "investors/investor",  investor: investor.decorate, columns: ransack_table_header.columns%>
-        <% end %>
-      </tbody>
-
-    </table>
-
-    <% if @investors.present? %>
-      <%= page_entries_info @investors, entry_name: 'item' %>
-      <%= paginate @investors, data: {turbo_frame: investors_frame} %>
-    <% end %>
+  <%= render RansackTable.new(Investor, q: @q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer) %>    
 </div>

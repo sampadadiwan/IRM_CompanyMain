@@ -7,9 +7,6 @@ class CapitalDistributionPayment < ApplicationRecord
 
   include WithFolder
 
-  STANDARD_COLUMN_NAMES = ["Stakeholder", "Folio No", "Gross Payable", "Net Payable", "Payment Date", "Completed", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[investor_name folio_id gross_payable net_payable payment_date completed dt_actions].freeze
-
   STANDARD_COLUMNS = { "Stakeholder" => "investor_name",
                        "Folio No" => "folio_id",
                        "Gross Payable" => "gross_payable",
@@ -23,9 +20,6 @@ class CapitalDistributionPayment < ApplicationRecord
                                 "Net Payable" => "net_payable",
                                 "Payment Date" => "payment_date",
                                 "Completed" => "completed" }.freeze
-
-  INVESTOR_COLUMN_NAMES = ["Distribution Name"] + STANDARD_COLUMN_NAMES - ["Stakeholder"]
-  INVESTOR_COLUMN_FIELDS = ["distribution_name"] + STANDARD_COLUMN_FIELDS - %w[investor_name]
 
   include ForInvestor
   update_index('capital_distribution_payment') { self if index_record? }

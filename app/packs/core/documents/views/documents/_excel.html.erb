@@ -1,19 +1,18 @@
 <div id="excel_viewer" class="card">
+  <input id="viewer_content_type" value="<%= @document.file.content_type %>" hidden />
+  <input id="viewer_link" value="<%= @document.file_url %>" hidden />
 
-   <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
-   <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
+  <% if current_user %>
+    <input id="viewer_watermark" value="<%= current_user.entity.name %>" hidden />
+  <% end %>
 
-   <% if current_user %>
-      <input id="viewer_watermark" value="<%= current_user.entity.name %>" hidden="hidden" />
-   <% end %>
+  <div class="card-header d-none d-sm-block">
+    <h6 class="m-0 font-weight-bold text-primary">Viewing: <%= @document.name %></h6>
+  </div>
 
-   <div class="card-header d-none d-sm-block">
-      <h6 class="m-0 font-weight-bold text-primary">Viewing: <%= @document.name %>
-      </h6>
+  <div class="card-body" data-controller="export-xl" data-url="<%= @document.file_url %>">
+      <div data-export-xl-target="spreadsheetContainer" style=""></div>
    </div>
-   
-   <div id='viewer' class="card-body">
-    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=<%= ERB::Util.url_encode(@document.file_url) %>" width="100%" height="100%"></iframe>
-   </div>
+
 
 </div>

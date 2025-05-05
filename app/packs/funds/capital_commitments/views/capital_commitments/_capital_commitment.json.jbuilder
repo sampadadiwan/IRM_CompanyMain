@@ -16,7 +16,7 @@ json.fund_name capital_commitment.fund.name
 
 json.dt_actions begin
   links = []
-  links << link_to('Show', capital_commitment_path(capital_commitment), class: "btn btn-outline-primary")
-  links << link_to('Edit', edit_capital_commitment_path(capital_commitment), class: "btn btn-outline-success") if policy(capital_commitment).update?
+  links << link_to('Show', capital_commitment_path(capital_commitment), class: "btn btn-outline-primary ti ti-eye")
+  links << link_to('Edit', edit_capital_commitment_path(capital_commitment), class: "btn btn-outline-success ti ti-edit") if policy(capital_commitment).update?
   safe_join(links, '')
 end

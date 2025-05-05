@@ -1338,3 +1338,24 @@ iframe {
     margin-left: 5px !important;
   }
 }
+
+// To space out the icons in the button
+.btn.ti::before {
+  margin-right: 0.3em; /* or px if you prefer fixed spacing */
+}
+
+.dropdown-item.ti::before {
+  margin-right: 0.3em; /* or px if you prefer fixed spacing */
+}
+
+
+.sort-icons {
+  margin-left: 4px;
+  font-size: 0.9em;
+}
+
+.sort-icons .arrow {
+  color: #aaa; /* default grey */
+  margin-left: 2px;
+}
+

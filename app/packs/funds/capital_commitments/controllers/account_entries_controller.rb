@@ -98,7 +98,7 @@ class AccountEntriesController < ApplicationController
     else
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-      @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
+      @account_entries = @account_entries.page(params[:page])
       @template = "index"
     end
   end
@@ -120,9 +120,7 @@ class AccountEntriesController < ApplicationController
         template = params[:template].presence || "index"
         render xlsx: template, filename: "account_entries.xlsx"
       end
-      format.json do
-        render json: AccountEntryDatatable.new(params, account_entries: @account_entries) if params[:jbuilder].blank?
-      end
+      format.json
     end
   end
 

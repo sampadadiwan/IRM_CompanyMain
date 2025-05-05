@@ -11,13 +11,12 @@
 
 <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
 
-<%capital_commitments_frame = "capital_commitments_frame"%>
-
-<%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
 
 <div class="table-responsive">
-    <table id="capital_commitments" class="table table-bordered dataTable action_table hover">
         <%
+
+          capital_commitments_frame = "capital_commitments_frame"
+          
           default_columns_map = if current_user.curr_role == "investor"
             CapitalCommitment::INVESTOR_STANDARD_COLUMNS
           else
@@ -28,17 +27,10 @@
             end
           end
         %>
-        <% ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer) %>
-        <%= render ransack_table_header %>
-      <tbody>
-        <% capital_commitments.each do |capital_commitment| %>
-          <%= render "capital_commitments/capital_commitment",  capital_commitment: capital_commitment.decorate, columns: ransack_table_header.columns%>
-        <% end %>
-      </tbody>
-    </table>
-    <% if capital_commitments.present? %>
-      <%= page_entries_info capital_commitments, entry_name: 'item' %>
-      <%= paginate capital_commitments, data: {turbo_frame: capital_commitments_frame} %>
-    <% end %>
+
+        <%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
+
+        <%= render RansackTable.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer) %>
+
 </div>
 

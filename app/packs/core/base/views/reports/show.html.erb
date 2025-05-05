@@ -82,7 +82,12 @@
 </table>
 <div>
   <% if policy(@report).edit? %>
-    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary"} %>
-    <%= button_to t_common(:delete), @report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary ti ti-eye"} %>
+    <%= button_to t_common(:delete), @report, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+
+
+    <%= link_to configure_grids_grid_view_preferences_path(owner_type: 'Report', owner_id: @report.id), method: :get, class: "btn btn-outline-secondary" do %>
+      <i class="ti ti-settings"></i> Configure Grids
+    <% end %>
   <% end %>
 </div>

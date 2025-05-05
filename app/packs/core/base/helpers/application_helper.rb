@@ -105,4 +105,27 @@ module ApplicationHelper
     end
     options.sort_by! { |label, _value| label }
   end
+
+  # rubocop:disable Naming/MethodParameterName
+  def sortable_header(q, attr, label, **)
+    sort_link(q, attr, **) do
+      active_sort = q.sorts.find { |s| s.name == attr.to_s }
+
+      icon_up = ''.html_safe
+      icon_down = ''.html_safe
+
+      case active_sort&.dir
+      when 'asc'
+        icon_down = content_tag(:span, "▼", class: "arrow")
+      when 'desc'
+        icon_up = content_tag(:span, "▲", class: "arrow")
+      else
+        icon_up = content_tag(:span, "▲", class: "arrow")
+        icon_down = content_tag(:span, "▼", class: "arrow")
+      end
+
+      safe_join([label, content_tag(:span, icon_up + icon_down, class: "sort-icons")], ' ')
+    end
+  end
+  # rubocop:enable Naming/MethodParameterName
 end

@@ -13,14 +13,9 @@
     col_params = { }
     cols ||= "default"
 
-    if current_user.curr_role == "investor"
-      col_params[:column_names] = AccountEntry::INVESTOR_COLUMN_NAMES
-      col_params[:column_fields] = AccountEntry::INVESTOR_COLUMN_FIELDS
-    else
-      col_params[:column_names] = AccountEntry::STANDARD_COLUMN_NAMES
-      col_params[:column_fields] = AccountEntry::STANDARD_COLUMN_FIELDS
-    end
-
+    col_params[:column_names] = AccountEntry::STANDARD_COLUMNS.keys
+    col_params[:column_fields] = AccountEntry::STANDARD_COLUMNS.values
+    
     if params[:capital_commitment_id].blank?
       col_params[:column_names] = ["Fund", "Investor"] + col_params[:column_names]
       col_params[:column_fields] = ["fund_name", "investor_name"] + col_params[:column_fields]
@@ -54,8 +49,27 @@
                       { class: "btn btn-outline-primary"}   %> 
 
 
-        <%= link_to "Download", xl_link, 
-                                class: "btn btn-outline-success" %>
+        <div class="btn-group">
+          <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-download me-2"></i> Download
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+                <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+              <% end %>
+            </li>
+            <li>
+              <button class="dropdown-item" data-controller="export-xl"
+                      data-action="click->export-xl#export"
+                      data-tableid="account_entries_table"
+                      data-filename="Account Entries">
+                <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+              </button>
+            </li>
+          </ul>
+        </div>
+
 
         <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
 
@@ -75,17 +89,10 @@
 
   
 
-  <div class="table-responsive" data-controller="account-entries" 
-    data-account-entries-lazy-load-data-value=<%= lazy_load_data %> 
-    data-account-entries-table-name-value="#account_entries_table"
-    data-account-entries-field-list-value=<%=field_list%> >
+  <div class="table-responsive">
 
-    <% if lazy_load_data %>
-      <a class="load_data_link" data-action="click->account-entries#loadData"><span>Load Data</span></a>
-    <% end %>
+      <%= render RansackTable.new(AccountEntry, q: @q, current_user: current_user, records: account_entries, report_id: params["report_id"], turbo_frame: "account_entries_list", referrer: request.referrer) %>
 
-    <%= render CustomTable.new(data_source:, id: "account_entries_table", column_names:) %>
-    
   </div>
 
 </div>

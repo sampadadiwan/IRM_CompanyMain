@@ -8,18 +8,26 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
-  STANDARD_COLUMN_NAMES = ["Stakeholder", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[investor_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
+  STANDARD_COLUMNS = {
+    "Stakeholder" => "investor_name",
+    "Folio No" => "folio_id",
+    "Status" => "status",
+    "Verified" => "verified",
+    "Due Amount" => "due_amount",
+    "Collected Amount" => "collected_amount",
+    "Payment Date" => "payment_date",
+    "" => "dt_actions"
+  }.freeze
 
-  INVESTOR_COLUMN_NAMES = (STANDARD_COLUMN_NAMES - ["Stakeholder", "Verified", "Folio No", "Status"])
-                          .insert(0, "Capital Call")
-                          .insert(1, "Folio Id")
-                          .insert(2, "Status")
-
-  INVESTOR_COLUMN_FIELDS = (STANDARD_COLUMN_FIELDS - %w[investor_name verified folio_id status])
-                           .insert(0, "capital_call_name")
-                           .insert(1, "folio_id")
-                           .insert(2, "status")
+  INVESTOR_STANDARD_COLUMNS = {
+    "Capital Call" => "capital_call_name",
+    "Folio Id" => "folio_id",
+    "Status" => "status",
+    "Due Amount" => "due_amount",
+    "Collected Amount" => "collected_amount",
+    "Payment Date" => "payment_date",
+    "" => "dt_actions"
+  }.freeze
 
   update_index('capital_remittance') { self if index_record? }
 

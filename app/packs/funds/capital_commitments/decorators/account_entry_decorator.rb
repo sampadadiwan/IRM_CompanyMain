@@ -28,8 +28,8 @@ class AccountEntryDecorator < ApplicationDecorator
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions
   def dt_actions
     links = []
-    links << h.link_to('Show', h.account_entry_path(object), class: "btn btn-outline-primary")
-    links << h.link_to('Edit', h.edit_account_entry_path(object), class: "btn btn-outline-success") if h.policy(object).update?
+    links << h.link_to('Show', h.account_entry_path(object), class: "btn btn-outline-primary ti ti-eye")
+    links << h.link_to('Edit', h.edit_account_entry_path(object), class: "btn btn-outline-success ti ti-edit") if h.policy(object).update?
     h.safe_join(links, '')
   end
 end

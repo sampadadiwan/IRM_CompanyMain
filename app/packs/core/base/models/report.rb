@@ -41,11 +41,12 @@ class Report < ApplicationRecord
     self.url = decoded_url
   end
 
-  def set_model
-    path = ActiveSupport::HashWithIndifferentAccess.new(Report.reports_for)[category]
-    return unless path
+  def model
+    @model ||= url.split('?').first.delete_prefix('/').singularize.camelize
+  end
 
-    controller_name = path.split('?').first.delete_prefix('/')
+  def set_model
+    controller_name = url.split('?').first.delete_prefix('/')
     self.model = controller_name.singularize.camelize
   end
 

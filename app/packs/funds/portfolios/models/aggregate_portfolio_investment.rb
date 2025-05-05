@@ -34,10 +34,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
   validates :portfolio_company_name, length: { maximum: 100 }
   validates :investment_domicile, length: { maximum: 10 }
 
-  # Constants used for column headings and field mapping in views
-  STANDARD_COLUMN_NAMES = ["Portfolio Company", "Instrument", "Net Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Unrealized Gain", "Realized Gain", "Avg Cost / Share", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv unrealized_gain gain avg_cost dt_actions].freeze
-
   STANDARD_COLUMNS = {
     "Portfolio Company" => "portfolio_company_name",
     "Instrument" => "investment_instrument_name",

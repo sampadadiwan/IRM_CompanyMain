@@ -1,6 +1,6 @@
 <% if current_user.entity.investors.not_interacted(30).count > 0 %>
 <div class="associated_entity">
-    <% investors = current_user.entity.investors.includes(:investor_accesses, :investor_entity, :entity) %>
-    <%= render "investors/index", investors: investors.not_interacted(30).limit(5).page, title: "No Interaction in 30 Days" %>
+    <% @investors = current_user.entity.investors.includes(:investor_accesses, :investor_entity, :entity).not_interacted(30).limit(5).page %>
+    <%= render "investors/index", investors: @investors, title: "No Interaction in 30 Days" %>
 </div>
 <% end %>

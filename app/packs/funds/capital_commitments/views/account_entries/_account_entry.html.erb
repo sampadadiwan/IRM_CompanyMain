@@ -1,30 +1,6 @@
 <tr id="<%= dom_id account_entry %>">
+  <%= render RansackTableRow.new(model: account_entry, columns:) %>
   <td>
-    <%= link_to account_entry.folio_id, capital_commitment_path(id: account_entry.capital_commitment_id, tab: "account-entries-tab") if account_entry.folio_id.present? %>
-  </td>
-  <td>
-    <%= l account_entry.reporting_date if account_entry.reporting_date %>
-  </td>
-  <td>
-    <%= account_entry.period %>
-  </td>
-  <td>
-    <%= account_entry.entry_type %>
-    <% if account_entry.cumulative %>
-      <span class="badge bg-success">Cumulative<span>
-    <% end %>
-  </td>
-  <td>
-    <%= account_entry.name %>
-  </td>
-  <td>
-    <% if account_entry.name.include?("Percentage") %>
-      <%= account_entry.amount %> %
-    <% else %>
-      <%= money_to_currency account_entry.amount, params %>
-    <% end %>
-  </td>
-  <td>
-    <%= link_to  t_common(:show), account_entry , {class: "btn btn-outline-primary"}%>
+    <%= link_to  t_common(:show), account_entry , {class: "btn btn-outline-primary ti ti-eye"}%>
   </td>
 </tr>

@@ -16,7 +16,7 @@ class InvestorsController < ApplicationController
       format.html
       format.turbo_stream
       format.xlsx
-      format.json { render json: InvestorDatatable.new(params, investors: @investors) }
+      format.json
     end
   end
 

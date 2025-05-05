@@ -1,31 +1,36 @@
+
+<%# Check if any of the filter parameters (:filter, :q, :ag) are present before rendering the filter form %>
 <% if params[:filter].present? || params[:q].present? || params[:ag].present? %>
 
   <%
-    hidden_fields ||= {}
-    include_template ||= nil
-    disabled ||= false
-    state ||= "show"
-    css_class||= "show_filter"
-    url ||= polymorphic_path(@q.klass.new)
-    page_size ||= false
-    page_size_options ||= [["", ""], 10, 20, 50, 100]
+    # Initialize variables for hidden fields, template inclusion, and form configurations
+    hidden_fields ||= {} # Hash to store hidden field tags for the filter form
+    hidden_fields[:report_id] ||= params[:report_id] # Pass report_id to the filter form if present
+    include_template ||= nil # Optional template to include in the filter form
+    disabled ||= false # Flag to disable the form
+    state ||= "show" # State of the filter toggle card
+    css_class ||= "show_filter" # CSS class for the toggle card
+    url ||= polymorphic_path(@q.klass.new) # Default URL for the form
+    page_size ||= false # Flag to enable page size selection
+    page_size_options ||= [["", ""], 10, 20, 50, 100] # Options for page size dropdown
   %>
 
-
-
-
-
+  <%# Render a ToggleCard component for the filter form %>
   <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state) do %>
 
-    <% if false && current_user.enable_user_llm_chat  %>
+    <%# Optional LLM chat form (currently disabled with `false &&`) %>
+    <% if false && current_user.enable_user_llm_chat %>
       <div class="">
         <div class="row justify-content-center">
           <div class="col-md-6">
+            <%# Render a form for submitting user queries %>
             <%= form_with(url: prompt_reports_path(model_class: controller_name.singularize.camelize), method: :post, local: true, data: { turbo: false }, class: "row") do |form| %>
               <div class="col-10">
+                <%# Input field for user query %>
                 <%= form.text_field :query, class: "form-control", id: "query", rows: 4, placeholder: "Enter your query here" %>
               </div>
               <div class="col-2">
+                <%# Submit button for the query form %>
                 <%= form.submit "Submit", class: "btn btn-primary" %>
               </div>
             <% end %>
@@ -34,29 +39,36 @@
       </div>
     <% end %>
 
+    <%# Ensure at least one condition is built for the search object %>
     <% @q.build_condition if @q.conditions.empty? %>
 
     <% if disabled %>
-      <!-- Disable the form if the disabled flag is set -->
+      <%# Render a disabled filter form if the `disabled` flag is set %>
       <fieldset disabled="disabled">
         <%= search_form_for @q, method: :post, url: do |f| %>
+          <%# Render additional filter extensions %>
           <%= render "/layouts/filter_ext" %>
+          <%# Render condition fields for the filter form %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
           <% end %>
         <% end %>
       </fieldset>
     <% else %>
+      <%# Render the active filter form %>
       <%= search_form_for @q, method: :post, url: do |f| %>
+          <%# Render additional filter extensions %>
           <%= render "/layouts/filter_ext" %>
+          <%# Render condition fields for the filter form %>
           <%= f.condition_fields do |c| %>
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
           <% end %>
 
           <div class="action float-end">
-
+            <%# Render additional options based on the controller %>
             <% if %w[portfolio_investments].include?(params[:controller]) %>
             <div class="form-check form-check-inline">
+              <%# Checkbox to enable pivots %>
               <input class="form-check-input" type="checkbox" id="ag_grid" name="ag" value="true" <%= params[:ag].present? ? "checked" : nil %> >
               <label class="form-check-label" for="ag_grid">Enable Pivots</label>
             </div>
@@ -64,37 +76,42 @@
 
             <% if %w[kpis kpi_reports].include?(params[:controller]) %>
             <div class="form-check form-check-inline">
+              <%# Checkbox to enable grid view %>
               <input class="form-check-input" type="checkbox" id="grid_view" name="grid_view" value="true" <%= params[:grid_view].present? ? "checked" : nil %> >
               <label class="form-check-label" for="grid_view">Grid View</label>
             </div>
             <% end %>
 
             <% if page_size %>
+            <%# Dropdown for selecting page size %>
             <%= select_tag :page_size, options_for_select(page_size_options, selected: params[:page_size]), class: "form-control mt-2", style: "width:unset;display:unset;" %>
             <% end %>
 
+            <%# Search button %>
             <%= f.button "", class: "btn btn-outline-primary search-button", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
               <i class="ti ti-search"></i>
             <% end %>
 
+            <%# Button to add new condition fields dynamically %>
             <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
 
+            <%# Link to create a new report %>
             <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
               <i class="ti ti-database"></i>
             <% end %>
           </div>
 
+          <%# Render additional template if specified %>
           <% if include_template.present? %>
             <%= render include_template, form: f %>
           <% end %>
 
+          <%# Render hidden fields for the form %>
           <% hidden_fields.each do |key, value| %>
             <%= hidden_field_tag key, value if value %>
           <% end %>
-
-
       <% end %>
     <% end %>
-    <!-- End of ToggleCard -->
+    <%# End of ToggleCard %>
   <% end %>
 <% end %>

@@ -4,8 +4,8 @@
   <%= render RansackTableRow.new(model: investor, columns:) %>
 
   <td>
-    <%= link_to  t_common(:show), investor_path(investor.id), {class: "btn btn-outline-primary"}  %>
-    <%= link_to  t_common(:edit), edit_investor_path(investor.id), {class: "btn btn-outline-success"} if policy(investor).edit? %>
+    <%= link_to  t_common(:show), investor_path(investor.id), {class: "btn btn-outline-primary ti ti-eye"}  %>
+    <%= link_to  t_common(:edit), edit_investor_path(investor.id), {class: "btn btn-outline-success ti ti-edit"} if policy(investor).edit? %>
   </td>
 
 </tr>
