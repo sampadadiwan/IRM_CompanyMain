@@ -38,6 +38,7 @@ class ImportCapitalCommitment < ImportUtil
       # No update, but we have a pre-existing capital_commitment
       raise "Capital Commitment already exists for #{folio_id}"
     end
+    true
   end
 
   def save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)

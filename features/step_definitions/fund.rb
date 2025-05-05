@@ -973,6 +973,15 @@ Then('There should be {string} capital commitments created') do |count|
   @fund.capital_commitments.count.should == count.to_i
 end
 
+Then('the import upload must be updated correctly for capital commitments') do
+  @import_upload = ImportUpload.last
+  @import_upload.failed_row_count.should == 0
+  @import_upload.processed_row_count.should == @fund.capital_commitments.count
+  @import_upload.total_rows_count.should == @fund.capital_commitments.count
+  @import_upload.status.should == nil
+  @import_upload.import_type.should == "CapitalCommitment"
+end
+
 Then('the capital commitments must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet

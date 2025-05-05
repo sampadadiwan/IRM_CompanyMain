@@ -10,6 +10,7 @@ Scenario Outline: Import capital commitments
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
   Then There should be "8" capital commitments created
+  And the import upload must be updated correctly for capital commitments
   And the imported data must have the form_type updated
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
