@@ -32,6 +32,10 @@ class FundRatiosController < ApplicationController
     if params[:pivot].present?
       group_by_period = params[:group_by_period] || :quarter
       @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
+    elsif params[:all].blank? && params[:condensed].blank?
+      page = params[:page] || 1
+      @fund_ratios = @fund_ratios.page(page)
+      @fund_ratios = @fund_ratios.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
     # Step 6: Render appropriate format
@@ -39,9 +43,7 @@ class FundRatiosController < ApplicationController
       format.html
       format.turbo_stream
       format.xlsx
-      format.json do
-        render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios)
-      end
+      format.json
     end
   end
 

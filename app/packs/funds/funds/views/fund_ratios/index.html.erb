@@ -6,6 +6,6 @@
     <% elsif params[:condensed].present? %>
         <%= render "/fund_ratios/index_condensed", fund_ratios: @fund_ratios, fund: @fund %>
     <% else %>
-        <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, fund: @fund %>
+        <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, q: @q, fund: @fund %>
     <% end %>
 <% end %>

@@ -3,8 +3,9 @@
 
 <div id="fund-ratios-tab" class="">
     <div id="fund-ratios" class="associated_entity">
-    <%= render "/fund_ratios/index", fund: fund,
-        lazy_load_data: false, data_source: fund_ratios_path(fund_id: fund.id, all: true, fund_ratios_only: true, latest: true) %>
+        <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(fund_id: fund.id, fund_ratios_only: true, latest: true) do %>
+            <%= render "/layouts/loading" %>
+        <% end %>
     </div>
 </div>
 
