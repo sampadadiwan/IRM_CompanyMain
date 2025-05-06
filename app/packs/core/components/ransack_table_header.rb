@@ -25,10 +25,22 @@ class RansackTableHeader < ViewComponent::Base
 
   attr_accessor :columns, :entity, :current_user
 
+  def ag_selected_columns
+    report = Report.find_by(id: @report_id)
+    columns ||= report.ag_selected_columns if report.present?
+
+    form_type = entity.form_types.find_by(name: @model.to_s)
+    columns ||= form_type.ag_selected_columns
+    columns ||= default_columns_map
+    columns ||= @model.ag_grids_default_columns
+
+    columns
+  end
+
   private
 
   def cache_key
-    ["#{@model}Header", current_user, entity, @referrer]
+    ["#{@model}Header", current_user, entity, @referrer, @report_id]
   end
 
   def fetch_columns(entity, default_columns_map)
@@ -40,23 +52,14 @@ class RansackTableHeader < ViewComponent::Base
   # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)
     report = Report.find_by(id: @report_id)
-    columns = fetch_report_columns(report) if report.present?
-    columns = fetch_custom_columns(entity) if columns.blank?
-    columns = default_columns_map if columns.blank?
-    return @model::STANDARD_COLUMNS if columns.blank?
-
-    columns
-  end
-
-  def fetch_report_columns(report)
-    report.selected_columns.presence || @model::STANDARD_COLUMNS
-  end
-
-  def fetch_custom_columns(entity)
-    return @model::STANDARD_COLUMNS if entity.nil?
+    columns ||= report.selected_columns if report.present?
 
     form_type = entity.form_types.find_by(name: @model.to_s)
-    form_type&.selected_columns
+    columns ||= form_type&.selected_columns
+    columns ||= default_columns_map
+    columns ||= @model::STANDARD_COLUMNS
+
+    columns
   end
 
   def get_owner_entity(records)

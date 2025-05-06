@@ -1,7 +1,8 @@
 class Report < ApplicationRecord
+  include WithGridViewPreferences
   belongs_to :entity, optional: true
   belongs_to :user
-  has_many :grid_view_preferences, as: :owner, dependent: :destroy
+
   before_commit :add_report_id_to_url, unless: -> { destroyed? }
   before_create :set_model
 
@@ -48,11 +49,6 @@ class Report < ApplicationRecord
   def set_model
     controller_name = url.split('?').first.delete_prefix('/')
     self.model = controller_name.singularize.camelize
-  end
-
-  def selected_columns
-    grid_view_preferences.order(:sequence)
-                         .to_h { |preference| [preference.label.presence || preference.name, preference.key] }
   end
 
   def to_s

@@ -48,7 +48,7 @@ export default class BaseAgGrid extends Controller {
             rowHeight: 60,
             suppressAggFuncInHeader: true,
             defaultColDef: {
-                flex: 1,
+                // flex: 1,
                 resizable: true,
                 filter: 'agTextColumnFilter',
                 sortable: true,                
@@ -222,8 +222,10 @@ export default class BaseAgGrid extends Controller {
     }
 
     formatNumberWithCommas(value) {
-        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        const rounded = Number(value).toFixed(2); // e.g., "1234.57"
+        return rounded.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
+    
 
     numberFormatColumn(controller, field, headerName, formatNumberWithCommas, aggFunc = "sum", enableRowGroup = true, enablePivot = true) {
         return {

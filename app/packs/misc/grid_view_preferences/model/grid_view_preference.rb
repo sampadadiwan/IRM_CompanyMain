@@ -33,7 +33,7 @@ class GridViewPreference < ApplicationRecord
       DEFAULT_DATA_TYPE
     else
       begin
-        column = owner.name.constantize.columns_hash[key].presence || owner.name.constantize.columns_hash["#{key}_cents"]
+        column = owner.model.constantize.columns_hash[key].presence || owner.model.constantize.columns_hash["#{key}_cents"]
         if column.nil?
           nil
         else

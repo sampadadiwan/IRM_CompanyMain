@@ -115,14 +115,15 @@ class KpiWorkbookReader
 
   # Processes rows of KPI data beneath the header
   def process_data_rows(sheet, start_row, header)
+    # Detect the column containing KPI names
+    kpi_col = detect_kpi_name_column(start_row)
+
     (start_row..@workbook.last_row).each do |row_index|
       Rails.logger.debug { "Row index: #{row_index},  #{@workbook.row(row_index)}" }
       row = clean_row(@workbook.row(row_index))
       # Skip empty rows or rows where all cells are blank
       next if row.empty? || row.all?(&:blank?)
 
-      # Detect the column containing KPI names
-      kpi_col = detect_kpi_name_column(start_row)
       raw_kpi_name = row[kpi_col]
       # Normalize the KPI name for consistent matching
       kpi_name = normalize_kpi_name(raw_kpi_name)
@@ -146,7 +147,13 @@ class KpiWorkbookReader
 
       # Parse the period into a date object
       parsed_period = KpiDateUtils.parse_period(period, raise_error: false)
-      next unless parsed_period
+      unless parsed_period
+        # Log a warning if the period format is unrecognized
+        msg = "Unrecognized period format: '#{period}' in sheet '#{sheet}', skipping"
+        Rails.logger.debug msg
+        @error_msg << { msg:, document: @document.name, document_id: @document.id }
+        next
+      end
 
       period_type = KpiDateUtils.detect_period_type(period)
 
