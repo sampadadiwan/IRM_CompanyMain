@@ -1,10 +1,13 @@
 module SearchHelper
   ALLOWED_KEYS = %w[controller action utf8 commit per_page page search].freeze
+  IGNORED_KEYS = ["search[value]"].freeze
 
   def add_hidden_fields_from_source(data_source)
     query_string = URI.parse(data_source).query
     params_hash = Rack::Utils.parse_nested_query(query_string)
     flattened_params = flatten_params(params_hash).to_h
+
+    flattened_params = flattened_params.except(*IGNORED_KEYS)
 
     render partial: "layouts/form_hidden_field", locals: {
       params_hash: flattened_params,
