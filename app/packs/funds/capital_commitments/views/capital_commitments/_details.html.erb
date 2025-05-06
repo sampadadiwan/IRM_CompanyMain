@@ -115,7 +115,7 @@
           params[:fund_id] = capital_commitment.fund_id
         %>
 
-        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: capital_commitment.id) do %>
+        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: capital_commitment.id, fund_id: capital_commitment.fund_id) do %>
           <p>Loading Account Entries...</p>
         <% end %>
       </div>
