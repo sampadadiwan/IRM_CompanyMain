@@ -1,11 +1,16 @@
 
-<%= turbo_frame_tag "offers_frame", target: "_top" do %>
-    
+<% secondary_sale_id ||= @secondary_sale&.id || params[secondary_sale_id] 
+    offers_frame = "offers_frame"
+%>
+<%= render "/layouts/filter", associations: [:investor, :user, :secondary_sale, :interest], hidden_fields: {secondary_sale_id:} %>
+
+<%= turbo_frame_tag offers_frame, target: "_top" do %>
+<%= render "/offers/stats", secondary_sale: @secondary_sale, offers_frame: offers_frame if @secondary_sale && policy(@secondary_sale).update? %>
     <%
         show_entity = params[:show_entity].present? ? params[:show_entity]=="true" : true
     %>
     <%= render "/offers/index", offers: @offers, show_entity:show_entity, 
-                secondary_sale:nil, lazy_load_data: false %>
+                secondary_sale: @secondary_sale, q: @q %>
 
 <% end %>
 

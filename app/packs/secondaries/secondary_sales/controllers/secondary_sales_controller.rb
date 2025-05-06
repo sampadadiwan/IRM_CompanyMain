@@ -18,7 +18,11 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :documents)
 
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
-    # @offers = @offers.page(params[:page]) unless request.format.xlsx?
+    if !request.format.xlsx? && params[:all].blank?
+      page = params[:page] || 1
+      @offers = @offers.page(page)
+      @offers = @offers.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     if params[:report]
       render "/offers/#{params[:report]}"
@@ -47,10 +51,11 @@ class SecondarySalesController < ApplicationController
 
     @interests = @interests.page(params[:page]) unless request.format.xlsx?
 
+    q = params[:q].nil? ? nil : @q
     if params[:report]
       render "/interests/#{params[:report]}"
     else
-      render "/interests/index"
+      render "/interests/index", q: q
     end
   end
 
