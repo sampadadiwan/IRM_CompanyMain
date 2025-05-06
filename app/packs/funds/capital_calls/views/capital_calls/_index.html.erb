@@ -38,10 +38,9 @@
 </div>
 
 <% 
-    lazy_load_data ||= false 
     import_upload_id ||= params[:import_upload_id]
 %>
-<% data_source ||= capital_calls_path(params: params.to_unsafe_h, import_upload_id:) %>    
+<% data_source ||= capital_calls_path(params: params.to_unsafe_h, import_upload_id:) %>
 
 <% capital_calls_frame = "capital_calls_frame" %>
 <% q ||= nil %>

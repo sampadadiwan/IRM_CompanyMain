@@ -7,7 +7,10 @@ class CapitalCallsController < ApplicationController
     # Create the scope for the model
     @capital_calls = policy_scope(@q.result).includes(:fund)
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
-    @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
+    if params[:fund_id].present?
+      @capital_calls = @capital_calls.where(fund_id: params[:fund_id])
+      @fund = Fund.find(params[:fund_id])
+    end
     @capital_calls = @capital_calls.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
     if params[:all].blank?
