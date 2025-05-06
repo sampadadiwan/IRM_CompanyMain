@@ -4,12 +4,16 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     fetch_rows
-    @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank? && params[:search].blank?
+    if params[:all].blank?
+      page = params[:page] || 1
+      @capital_remittances = @capital_remittances.page(page)
+      @capital_remittances = @capital_remittances.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     respond_to do |format|
       format.html
       format.xlsx
-      format.json { render json: CapitalRemittanceDatatable.new(params, capital_remittances: @capital_remittances) }
+      format.json
     end
   end
 
@@ -23,8 +27,14 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_remittances = @capital_remittances.where(status: params[:status].split(",")) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
-    @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id].present?
-    @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+    if params[:capital_call_id].present?
+      @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id])
+      @capital_call = CapitalCall.find(params[:capital_call_id])
+    end
+    if params[:capital_commitment_id].present?
+      @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id])
+      @capital_commitment = CapitalCommitment.find(params[:capital_commitment_id])
+    end
     @capital_remittances = @capital_remittances.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
     @capital_remittances

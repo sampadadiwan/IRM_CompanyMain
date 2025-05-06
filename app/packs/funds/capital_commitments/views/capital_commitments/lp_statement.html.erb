@@ -113,8 +113,9 @@
 
   <tr>
     <td colspan="2">
-        <%= render "/capital_remittances/index", capital_commitment: @capital_commitment,
-                lazy_load_data: false, data_source: capital_remittances_path(capital_commitment_id: @capital_commitment.id, all: true) %>
+        <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(capital_commitment_id: @capital_commitment.id) do %>
+            <%= render "/layouts/loading" %>
+        <% end %>
     </td>
   </tr>
 

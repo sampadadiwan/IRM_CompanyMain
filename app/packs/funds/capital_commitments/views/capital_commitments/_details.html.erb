@@ -57,8 +57,9 @@
     <% unless false && capital_commitment.fund.cat3? %>
     <div id="remittances-tab" class="tab-pane fade in">
           <div id="remittances" class="associated_entity">
-            <%= render "/capital_remittances/index", capital_commitment_id: capital_commitment.id,
-                lazy_load_data: true, data_source: capital_remittances_path(capital_commitment_id: capital_commitment.id, all: true, status: "", verified: "", for_commitment: true) %>
+            <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(capital_commitment_id: capital_commitment.id, status: "", verified: "", for_commitment: true) do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
           </div>
     </div>
     <% end %>

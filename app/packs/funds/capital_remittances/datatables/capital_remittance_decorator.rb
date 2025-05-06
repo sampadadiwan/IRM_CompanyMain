@@ -1,7 +1,7 @@
 class CapitalRemittanceDecorator < ApplicationDecorator
-  def due_amount
-    h.render partial: "/capital_remittances/due_amount", locals: { capital_remittance: object }, formats: [:html]
-  end
+  # def due_amount
+  #   h.render partial: "/capital_remittances/due_amount", locals: { capital_remittance: object }, formats: [:html]
+  # end
 
   def folio_id
     h.link_to object.folio_id, object.capital_commitment
@@ -11,8 +11,16 @@ class CapitalRemittanceDecorator < ApplicationDecorator
     h.link_to object.capital_call.name, object.capital_call
   end
 
-  def collected_amount
-    h.money_to_currency object.collected_amount
+  # def collected_amount
+  #   h.money_to_currency object.collected_amount
+  # end
+
+  def investor_name
+    h.link_to object.investor_name, object.investor
+  end
+
+  def verified
+    h.display_boolean object.verified
   end
 
   def payment_date

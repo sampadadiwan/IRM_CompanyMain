@@ -1,27 +1,22 @@
-<%= form_tag "/capital_remittances", method: :get, id: "remittance_filter", data: { turbo_frame: "capital_remittances_frame" } do %>
+<div data-controller="remittances"
+     data-remittances-filter-src="<%= data_source %>">
+  <div class="d-flex align-items-center gap-2">
+    <div class="form-group">
+      <%= select_tag :status,
+        options_for_select(["Paid", "Pending", "Overdue", "Overpaid"], params[:status]),
+        id: "status",
+        class: "form-control",
+        prompt: "Payment Status",
+        data: { action: "change->remittances#filter" } %>
+    </div>
 
-  <%= hidden_field_tag :capital_call_id, capital_call_id %>
-
-  <div class="form-group" data-controller="remittance">
-    <% status = params[:status].presence %>
-    <%= select_tag :status,
-      options_for_select(["Paid", "Pending", "Overdue", "Overpaid"], status),
-      id: "status",
-      class: "form-control",
-      prompt: "Payment Status",
-      data: { action: "change->remittances#filterData" } %>
+    <div class="form-group">
+      <%= select_tag :verified,
+        options_for_select([["Yes", true], ["No", false]], params[:verified]),
+        id: "verified",
+        class: "form-control",
+        prompt: "Verified",
+        data: { action: "change->remittances#filter" } %>
+    </div>
   </div>
-
-  <div class="form-group" data-controller="remittance">
-    <% verified = params[:verified].presence %>
-    <%= select_tag :verified,
-      options_for_select([["Yes", true], ["No", false]], verified),
-      id: "verified",
-      class: "form-control",
-      prompt: "Verified",
-      data: { action: "change->remittances#filterData" } %>
-  </div>
-
-  <%= submit_tag "Submit", hidden: true, id: "submit" %>
-
-<% end %>
+</div>
