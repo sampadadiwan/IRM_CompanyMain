@@ -48,9 +48,9 @@ class GridViewPreference < ApplicationRecord
       DEFAULT_DATA_TYPE
     else
       begin
-        model = owner.model.constantize
+        model_columns_hash = owner.model_columns_hash
         # lookup the column type in the model's columns hash i.e DB
-        column = model.columns_hash[key] || model.columns_hash["#{key}_cents"]
+        column = model_columns_hash[key] || model_columns_hash["#{key}_cents"]
         # If the column is not found, fallback to the default data type
         # If the column is found, use its type
         column&.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
