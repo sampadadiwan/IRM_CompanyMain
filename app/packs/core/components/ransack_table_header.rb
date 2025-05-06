@@ -58,7 +58,6 @@ class RansackTableHeader < ViewComponent::Base
     columns = form_type&.selected_columns if columns.blank?
     columns = default_columns_map if columns.blank?
     columns = @model::STANDARD_COLUMNS if columns.blank?
-
     columns
   end
 
