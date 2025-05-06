@@ -52,12 +52,12 @@ class RansackTableHeader < ViewComponent::Base
   # Fetches the columns based on the report or entity
   def get_columns(entity, default_columns_map)
     report = Report.find_by(id: @report_id)
-    columns ||= report.selected_columns if report.present?
+    columns = report.selected_columns if report.present?
 
     form_type = entity.form_types.find_by(name: @model.to_s)
-    columns ||= form_type&.selected_columns
-    columns ||= default_columns_map
-    columns ||= @model::STANDARD_COLUMNS
+    columns = form_type&.selected_columns if columns.blank?
+    columns = default_columns_map if columns.blank?
+    columns = @model::STANDARD_COLUMNS if columns.blank?
 
     columns
   end
