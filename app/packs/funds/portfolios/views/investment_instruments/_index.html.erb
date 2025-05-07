@@ -2,9 +2,9 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
     <span>
-      <%= link_to "New Investment Instrument", new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id]), {class: "btn btn-outline-primary"} if params[:portfolio_company_id].present? %>
+      <%= link_to "New Investment Instrument", new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id]), {class: "btn btn-outline-primary ti ti-plus"} if params[:portfolio_company_id].present? %>
       <% import_upload_id ||=  nil%>
-      <%= link_to "Download", investment_instruments_path(params: params.to_unsafe_h, import_upload_id:, format: :xlsx), {class: "btn btn-outline-success"} %>
+      <%= link_to "Download", investment_instruments_path(params: params.to_unsafe_h, import_upload_id:, format: :xlsx), {class: "btn btn-outline-success ti ti-download"} %>
 
 
       <% owner_id = if params[:portfolio_company_id].present?
@@ -24,7 +24,7 @@
                       "import_upload[owner_type]": owner_type,
                       "import_upload[import_type]": "InvestmentInstrument",
                       "sample_upload": "INVESTMENT_INSTRUMENT_SAMPLE"),
-                      { class: "btn btn-outline-success"}%>
+                      { class: "btn btn-outline-success ti ti-upload"}%>
     </span>
   </div>
   <div class="table-responsive" data-controller="datatable">

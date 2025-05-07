@@ -6,10 +6,10 @@
       <%= link_to "New Fund Formula", new_fund_formula_path("fund_formula[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary"}  if policy(FundFormula.new(fund_id: params[:fund_id])).create? %>
 
       <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id], run_allocations: true), 
-                      class: "btn btn-outline-success"  %> 
+                      class: "btn btn-outline-success ti ti-run"  %> 
 
       <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx), 
-                      class: "btn btn-outline-success"  %>      
+                      class: "btn btn-outline-success ti ti-download"  %>      
 
 
       <%= link_to "Upload",
@@ -18,18 +18,18 @@
                     "import_upload[owner_type]": "Fund",
                     "import_upload[import_type]": "FundFormula",
                     "sample_upload": "FUND_FORMULA_SAMPLE"),
-                    { class: "btn btn-outline-primary"}  if current_user.support? %>                 
+                    { class: "btn btn-outline-primary ti ti-upload"}  if current_user.support? %>                 
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-checks" type="button" 
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Enable All
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           
-          <%= button_to "Enable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: true, fund_id: params[:fund_id] }, class: "dropdown-item" %>
-          <%= button_to "Disable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: false, fund_id: params[:fund_id] }, class: "dropdown-item" %>
+          <%= button_to "Enable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: true, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-checks" %>
+          <%= button_to "Disable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: false, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-copy-x" %>
           </div>
         </div>
       </div>

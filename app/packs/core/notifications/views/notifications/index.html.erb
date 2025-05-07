@@ -1,4 +1,4 @@
-<%= render "layouts/filter", associations: [], hidden_fields: {all: params[:all], entity_id: params[:entity_id]} %>
+<%= render "layouts/filter", associations: [:event], hidden_fields: {all: params[:all], entity_id: params[:entity_id]} %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Notifications</h1>

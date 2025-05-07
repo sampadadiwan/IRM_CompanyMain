@@ -91,8 +91,8 @@
   </table>
   <div class="associated_entity">
     <% if policy(@investment).update? %>
-      <%= link_to  t_common(:edit), edit_investment_path(@investment), {class: "btn btn-outline-primary"} %>
-      <%= button_to t_common(:delete), @investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to  t_common(:edit), edit_investment_path(@investment), {class: "btn btn-outline-primary ti ti-eye"} %>
+      <%= button_to t_common(:delete), @investment, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
   </div>
 <% end %>

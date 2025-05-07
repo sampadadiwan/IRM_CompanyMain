@@ -6,16 +6,14 @@ class CapitalCallsController < ApplicationController
     @q = CapitalCall.ransack(params[:q])
     # Create the scope for the model
     @capital_calls = policy_scope(@q.result).includes(:fund)
+    @capital_calls = CapitalCallSearch.perform(@capital_calls, current_user, params)
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
-    if params[:fund_id].present?
-      @capital_calls = @capital_calls.where(fund_id: params[:fund_id])
-      @fund = Fund.find(params[:fund_id])
-    end
-    @capital_calls = @capital_calls.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
     if params[:all].blank?
-      @capital_calls = @capital_calls.page(params[:page])
-      @capital_calls = @capital_calls.per(params[:per_page].to_i) if params[:per_page].present?
+      page = params[:page] || 1
+      @capital_calls = @capital_calls.page(page)
+      @capital_calls = @capital_calls.per(params[:per_page] || 10)
     end
 
     respond_to do |format|

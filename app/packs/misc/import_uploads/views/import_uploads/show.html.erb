@@ -31,7 +31,7 @@
       <turbo-frame id="<%= "#{model_class}_frame" %>" 
                    src="<%= url_for(controller: model_class, action: :index, import_upload_id: @import_upload.id) %>" 
                    loading="lazy" target="_top">
-        <p>Loading <%= model_class.humanize %>...</p>
+        <%= render "/layouts/loading" %>
       </turbo-frame>
 
 

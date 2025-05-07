@@ -19,7 +19,7 @@ class InvestorAccess < ApplicationRecord
   delegate :investor_name, to: :investor
 
   validates_uniqueness_of :email, scope: :investor_id, message: "Aready added as a stakeholder"
-  validates_format_of :email, with: Devise.email_regexp, multiline: true
+  validates_format_of :email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
   validates :phone, length: { maximum: 15 }
 
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' },

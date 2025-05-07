@@ -13,7 +13,7 @@
       <%= render "/account_entries/pivot" %>
     <% else %>
       <%= render "/account_entries/index", account_entries: @account_entries, 
-          fund: nil, lazy_load_data: false, data_source: nil %>
+          fund: @fund, lazy_load_data: false, data_source: nil %>
     <% end %>
   <% end %>
 <% end %>

@@ -22,6 +22,7 @@ When('the KpiWorkbookReader processes the file') do
   begin
     reader = KpiWorkbookReader.new(@document, @target_kpis, @user, @portfolio_company)
     @extracted_kpis = reader.extract_kpis
+    puts reader.error_msg
   rescue StandardError => e
     # Store any exception raised during processing to check in the Then step if needed
     @processing_error = e
@@ -45,6 +46,20 @@ Then('the extracted KPI data should be valid for the given workbook and targets 
     puts "Expected KPIs: #{@target_kpis} got #{kpi_report.kpis.map(&:name)}"
     kpi_report.kpis.length.should eq(@target_kpis.length)
   end
+end
+
+
+Given('the string {string}') do |input|
+  @input_string = input
+end
+
+When('I check if it is date-like') do
+  @result = KpiDateUtils.date_like?(@input_string)
+end
+
+Then('the result should be {word}') do |expected|
+  expected_bool = expected == "true"
+  expect(@result).to eq(expected_bool)
 end
 
 

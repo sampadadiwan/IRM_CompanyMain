@@ -20,7 +20,7 @@
     <%= portfolio_cashflow.notes %>
   </td>
   <td>
-    <%= link_to  t_common(:show), portfolio_cashflow , {class: "btn btn-outline-primary"}%>
-    <%= link_to  t_common(:edit), edit_portfolio_cashflow_path(portfolio_cashflow), {class: "btn btn-outline-success"}  if policy(portfolio_cashflow).update? %>
+    <%= link_to  t_common(:show), portfolio_cashflow , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= link_to  t_common(:edit), edit_portfolio_cashflow_path(portfolio_cashflow), {class: "btn btn-outline-success ti ti-edit"}  if policy(portfolio_cashflow).update? %>
   </td>
 </tr>
