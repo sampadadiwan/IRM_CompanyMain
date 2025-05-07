@@ -20,7 +20,7 @@ class GridViewPreferencesController < ApplicationController
         format.html { redirect_to configure_grids_grid_view_preferences_path(owner_type: parent.class.name, owner_id: parent.id), alert: "This column is already selected." }
       end
     else
-     
+
       # Setup the grid_view_preference object
       grid_view_preference = parent.grid_view_preferences.build(
         key: grid_view_preference_params[:key],

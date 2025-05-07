@@ -39,7 +39,6 @@ class GridViewPreference < ApplicationRecord
     self.data_type = custom_data_type
   end
 
-  
   # Determines the data type for the column
   # Returns DEFAULT_DATA_TYPE if the type can't be inferred
   def custom_data_type
