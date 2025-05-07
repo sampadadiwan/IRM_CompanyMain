@@ -23,6 +23,7 @@ class ElasticImporterJob < ApplicationJob
     KanbanCardIndex.import
     AggregatePortfolioInvestmentIndex.import
     PortfolioInvestmentIndex.import
+    KpiReportIndex.import
   end
 
   def reset
@@ -47,6 +48,7 @@ class ElasticImporterJob < ApplicationJob
     KanbanCardIndex.reset!
     AggregatePortfolioInvestmentIndex.reset!
     PortfolioInvestmentIndex.reset!
+    KpiReportIndex.reset!
   end
 
   def create
@@ -71,5 +73,6 @@ class ElasticImporterJob < ApplicationJob
     KanbanCardIndex.create
     AggregatePortfolioInvestmentIndex.create
     PortfolioInvestmentIndex.create
+    KpiReportIndex.create
   end
 end

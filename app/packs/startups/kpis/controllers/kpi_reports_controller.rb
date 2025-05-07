@@ -3,29 +3,36 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports or /kpi_reports.json
   def index
-    @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).joins(:user).includes(:entity)
-    authorize(KpiReport)
+    # Extract sort_field and sort_direction
+    sort_field, sort_direction, sort_query = extract_sorting_params
+
+    # Apply the policy scope which already uses the `for_both` logic
+    # We want to do this before ransack as it contains union ransack can apply ordering which must be dont after union
+    @kpi_reports = policy_scope(KpiReport).includes(:entity)
 
     @kpi_reports = if params[:grid_view].present?
-                     @kpi_reports.includes(:kpis, :documents, :entity, :portfolio_company, :owner)
+                     @kpi_reports.includes(:kpis, :documents, :owner)
                    else
-                     @kpi_reports.includes(:kpis, :documents, :entity, :user, :portfolio_company)
+                     @kpi_reports.includes(:user)
                    end
 
-    if params[:months].present?
-      date = Time.zone.today - params[:months].to_i.months
-      @kpi_reports = @kpi_reports.where(as_of: date..)
+    @q = @kpi_reports.ransack(params[:q])
+
+    @kpi_reports = sort_field == "entity_name" ? @q.result.includes(:entity).order("entities.name #{sort_direction}") : @q.result
+
+    authorize(KpiReport)
+    @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
+    @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type, :entity_id)
+    @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
+
+    if params[:all].blank? && !request.format.xlsx?
+      page = params[:page] || 1
+      @kpi_reports = @kpi_reports.page(page)
+      @kpi_reports = @kpi_reports.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
-    @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type)
-
-    if params[:portfolio_company_id].present?
-      @portfolio_company = Investor.find(params[:portfolio_company_id])
-      # Now either the portfolio_company has uploaded and given access to the kpi_reports
-      # Or the fund company has uploaded the kpi_reports for the portfolio_company
-      @kpi_reports = @kpi_reports.where("portfolio_company_id=? or kpi_reports.entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id)
-    end
+    # Add back the sort field so UI can reflect the current sort if sorted by entity_name
+    @q.sorts = sort_query if sort_query.present?
 
     respond_to do |format|
       format.html { render :index }
@@ -107,6 +114,17 @@ class KpiReportsController < ApplicationController
   end
 
   private
+
+  def extract_sorting_params
+    return [nil, nil, nil] unless params[:q]&.dig(:s)
+
+    sort_field, sort_direction = params[:q][:s].split
+    sort_field = nil unless sort_field == "entity_name"
+    sort_direction = sort_direction&.downcase == 'desc' ? 'DESC' : 'ASC'
+    sort_query = params[:q].delete(:s)
+
+    [sort_field, sort_direction, sort_query]
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_kpi_report

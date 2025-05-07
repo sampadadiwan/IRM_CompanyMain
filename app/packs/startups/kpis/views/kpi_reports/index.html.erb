@@ -7,6 +7,8 @@
             <%= render "/kpi_reports/grid_view", kpi_reports: @kpi_reports if @kpi_reports %>
         <% end %>
     <% else %>
-        <%= render "/kpi_reports/index", kpi_reports: @kpi_reports if @kpi_reports %>
+        <% turbo_frame_tag "kpi_reports_frame", target: "_top" do %>
+            <%= render "/kpi_reports/index", kpi_reports: @kpi_reports, q: @q if @kpi_reports %>
+        <% end %>
     <% end %>
 <% end %>

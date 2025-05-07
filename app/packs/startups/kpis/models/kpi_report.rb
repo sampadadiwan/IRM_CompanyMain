@@ -6,6 +6,15 @@ class KpiReport < ApplicationRecord
 
   PERIODS = ["Month", "Quarter", "Semi Annual", "Annual"].freeze
 
+  STANDARD_COLUMNS = {
+    "As Of" => "as_of",
+    "Period" => "period",
+    "Notes" => "notes",
+    "User" => "user_name",
+    "For" => "entity_name",
+    "" => "dt_actions"
+  }.freeze
+
   belongs_to :entity
   # This is in case the fund is uploading the kpis
   belongs_to :portfolio_company, class_name: "Investor", optional: true

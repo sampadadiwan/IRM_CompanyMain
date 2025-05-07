@@ -1,7 +1,7 @@
 module KpisHelper
   def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    grouped_kpis = kpis.includes(:kpi_report, :entity, :owner).group_by { |k| [k.entity, k.owner, k.kpi_report.tag_list] }
+    grouped_kpis = kpis.includes(:entity, :owner).group_by { |k| [k.entity, k.owner, k.kpi_report.tag_list] }
 
     data_map = []
     grouped_kpis.each do |key, entity_kpis|
