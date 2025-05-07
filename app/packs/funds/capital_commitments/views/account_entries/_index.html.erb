@@ -5,7 +5,7 @@
 %>        
 
 <% 
-    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], import_upload_id:, capital_commitment_id: params[:capital_commitment_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only])
+    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
 
     xl_link = download_xl_link(data_source) 
     lazy_load_data ||= false 
