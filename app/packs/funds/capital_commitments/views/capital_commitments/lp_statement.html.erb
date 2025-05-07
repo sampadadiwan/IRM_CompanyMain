@@ -138,8 +138,9 @@
 
   <tr>
     <td colspan="2">
-        <%= render "/account_entries/index",
-                lazy_load_data: false, data_source: account_entries_path(capital_commitment_id: @capital_commitment.id, all: true, format: :json) %>
+        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: @capital_commitment.id, fund_id: @capital_commitment.fund_id) do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
     </td>
   </tr>
 

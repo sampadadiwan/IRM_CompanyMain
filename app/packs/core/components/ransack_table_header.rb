@@ -14,6 +14,7 @@ class RansackTableHeader < ViewComponent::Base
     @report_id = report_id
     @referrer = referrer
     @snapshot = snapshot
+    @default_columns_map = default_columns_map
     # fetch columns uses @referrer in the cache key, it should have a value assigned before use
     @columns = fetch_columns(@entity, default_columns_map)
 
@@ -31,7 +32,7 @@ class RansackTableHeader < ViewComponent::Base
 
     form_type = entity.form_types.find_by(name: @model.to_s)
     columns = form_type.ag_selected_columns if columns.blank?
-    columns = default_columns_map if columns.blank?
+    columns = @default_columns_map if columns.blank? && @default_columns_map.present?
     columns = @model.ag_grids_default_columns if columns.blank?
 
     columns
