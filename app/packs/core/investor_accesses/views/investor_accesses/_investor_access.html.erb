@@ -12,12 +12,13 @@
   </td>
   <td>
     <%= investor_access.email %>
+    <% if investor_access.cc.present? %>
+      <br>
+      <%= "cc: #{investor_access.cc}" %>
+    <% end %>
   </td>
   <td>
     <%= display_boolean investor_access.email_enabled %>
-  </td>
-  <td>
-    <%= investor_access.cc %>
   </td>
   <td>
 
