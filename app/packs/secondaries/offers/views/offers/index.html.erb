@@ -6,11 +6,9 @@
 
 <%= turbo_frame_tag offers_frame, target: "_top" do %>
 <%= render "/offers/stats", secondary_sale: @secondary_sale, offers_frame: offers_frame if @secondary_sale && policy(@secondary_sale).update? %>
-    <%
-        show_entity = params[:show_entity].present? ? params[:show_entity]=="true" : true
-    %>
-    <%= render "/offers/index", offers: @offers, show_entity:show_entity, 
-                secondary_sale: @secondary_sale, q: @q %>
+<% show_entity = params[:show_entity].present? ? params[:show_entity]=="true" : true %>
+<%= render "/offers/index", offers: @offers, show_entity:show_entity, 
+            secondary_sale: @secondary_sale, q: @q %>
 
 <% end %>
 
