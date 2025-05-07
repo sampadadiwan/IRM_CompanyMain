@@ -74,6 +74,7 @@ class AccountEntriesController < ApplicationController
     @q = AccountEntry.ransack(params[:q])
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
     filter_index(params)
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
     if params[:group_fields].present?
       # Create a data frame to group the data
@@ -98,7 +99,7 @@ class AccountEntriesController < ApplicationController
     else
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-      @account_entries = @account_entries.page(params[:page])
+      @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
       @template = "index"
     end
   end
@@ -130,7 +131,7 @@ class AccountEntriesController < ApplicationController
   # GET /account_entries/new
   def new
     @account_entry = AccountEntry.new(account_entry_params)
-    @account_entry.entity_id = @account_entry.fund.entity_id
+    @account_entry.entity_id = current_user.entity_id
     authorize @account_entry
     @account_entry.investor_id = @account_entry.capital_commitment&.investor_id
     @account_entry.folio_id = @account_entry.capital_commitment&.folio_id

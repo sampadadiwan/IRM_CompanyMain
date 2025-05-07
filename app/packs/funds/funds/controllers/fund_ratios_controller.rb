@@ -7,11 +7,9 @@ class FundRatiosController < ApplicationController
     @q = FundRatio.ransack(params[:q])
     @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
 
-    # Step 2: Filter by fund_id and preload @fund if applicable
-    if params[:fund_id].present?
-      @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
-      @fund ||= Fund.find(params[:fund_id])
-    end
+    @fund_ratios = FundRatioSearch.perform(@fund_ratios, current_user, params)
+
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
     # Step 3: Apply additional filters using custom helper
     @fund_ratios = filter_params(

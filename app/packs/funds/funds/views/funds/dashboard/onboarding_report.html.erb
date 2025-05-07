@@ -10,6 +10,6 @@
   <turbo-frame id="<%= "capital_commitments_frame" %>" 
                src="<%= url_for(controller: "capital_commitments", action: :index, onboarding_completed: false) %>" 
                loading="lazy" target="_top">
-    <p>Loading Capital Commitments...</p>
+    <%= render "/layouts/loading" %>
   </turbo-frame>
 </div>

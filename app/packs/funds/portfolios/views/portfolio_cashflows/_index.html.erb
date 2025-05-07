@@ -3,13 +3,13 @@
   <h1 class="h3 mb-0 text-gray-800">Portfolio Income</h1>
 
   <span>
-    <%= link_to "New Portfolio Income", new_portfolio_cashflow_path("portfolio_cashflow[aggregate_portfolio_investment_id]": aggregate_portfolio_investment.id), {class: "btn btn-outline-primary"}  if aggregate_portfolio_investment %>
+    <%= link_to "New Portfolio Income", new_portfolio_cashflow_path("portfolio_cashflow[aggregate_portfolio_investment_id]": aggregate_portfolio_investment.id), {class: "btn btn-outline-primary ti ti-plus"}  if aggregate_portfolio_investment %>
 
     <%= link_to "Upload",
           new_import_upload_path(
           "import_upload[import_type]": "PortfolioCashflow",
           "sample_upload": "PORTFOLIO_INCOME_SAMPLE"),
-          { class: "btn btn-outline-primary"}   %>
+          { class: "btn btn-outline-primary ti ti-upload"}   %>
   </span>
 
 </div>

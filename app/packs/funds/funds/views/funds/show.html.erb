@@ -241,7 +241,7 @@ commands = [
                   </a>
                   <ul class="dropdown-menu">
                     <li>
-                      <%= link_to account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true), class: "dropdown-item" do %>
+                      <%= link_to account_entries_path(fund_id: @fund.id, fund_accounts_only: true), class: "dropdown-item" do %>
                         <i class="ti ti-article me-2"></i>Fund Account Entries
                       <% end %>
                     </li>

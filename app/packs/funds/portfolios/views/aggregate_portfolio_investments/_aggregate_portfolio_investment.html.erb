@@ -4,8 +4,8 @@
   <%= render RansackTableRow.new(model: aggregate_portfolio_investment, columns:) %>
 
   <td>
-    <%= link_to  t_common(:show), aggregate_portfolio_investment , {class: "btn btn-outline-primary"} if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) || aggregate_portfolio_investment.show_portfolio %>
-    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success"} if policy(aggregate_portfolio_investment).add_valuation? %>
+    <%= link_to  t_common(:show), aggregate_portfolio_investment , {class: "btn btn-outline-primary ti ti-eye"} if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) || aggregate_portfolio_investment.show_portfolio %>
+    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success ti ti-plus"} if policy(aggregate_portfolio_investment).add_valuation? %>
   </td>
 
 </tr>

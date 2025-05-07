@@ -6,7 +6,7 @@
     %>
 
     <%= turbo_frame_tag "ai_checks_frame", target: "_top", loading: :lazy, src: ai_checks_path(owner_id: model.id, owner_type: model_class, rule_type: params[:rule_type]) do %>
-        <h3 class="text-center text-primary">Loading ....</h3>
+        <%= render "/layouts/loading" %>
     <% end %>
 
 <% end %>

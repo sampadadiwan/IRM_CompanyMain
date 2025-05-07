@@ -41,7 +41,7 @@ class CapitalCommitmentsController < ApplicationController
     respond_to do |format|
       format.html { render template }
       format.xlsx
-      format.json 
+      format.json
     end
   end
 
