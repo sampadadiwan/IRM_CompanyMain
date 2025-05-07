@@ -83,8 +83,6 @@
                         <% end %>
                         <% if kpi_report.owner.present? %>
                             <small class="badge badge-pill bg-info-subtle text-info"><%= kpi_report.owner %></small>
-                        <% else %>
-                            <small class="badge badge-pill bg-warning-subtle text-warning"><%= kpi_report.entity %></small>
                         <% end %>
                         </span>
                     </th>
@@ -103,6 +101,16 @@
                     <% end %>
                 </tr>
             <% end %>
+
+            <tr>
+                <td>Period</td>
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
+                        <td>
+                            <%= kpi_report.period %>
+                        </td>                    
+                <% end %>
+            </tr>
+            
             <% investor_kpi_mappings.each do |ikm| %>            
                 <tr>
                     <td>
@@ -134,15 +142,6 @@
                     
                 </tr>
             <% end %>
-
-            <tr>
-                <td>Period</td>
-                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
-                        <td>
-                            <%= kpi_report.period %>
-                        </td>                    
-                <% end %>
-            </tr>
 
             <tr>
                 <td>Documents</td>
