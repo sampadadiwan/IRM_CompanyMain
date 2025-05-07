@@ -97,6 +97,7 @@
         <div id="portfolio-investments-tab" class="tab-pane fade">
           <div id="portfolio_investments" class="associated_entity">
             <%= turbo_frame_tag "aggregate_portfolio_investments_frame", target: "_top", src: aggregate_portfolio_investments_path(investor_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -104,6 +105,7 @@
         <div id="instruments-tab" class="tab-pane fade">
           <div id="investment_instruments" class="associated_entity">
             <%= turbo_frame_tag "investment_instruments_list", target: "_top", src: investment_instruments_path(portfolio_company_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -111,6 +113,7 @@
         <div id="cashflows-tab" class="tab-pane fade">
           <div id="portfolio_cashflows" class="associated_entity">
             <%= turbo_frame_tag "portfolio_cashflows_list", target: "_top", src: portfolio_cashflows_path(portfolio_company_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -118,6 +121,7 @@
         <div id="kpis-tab" class="tab-pane fade">
           <div id="kpis" class="associated_entity">
             <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: kpi_reports_path(portfolio_company_id: investor.id, entity_id: current_user.entity_id, grid_view: true), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -125,12 +129,14 @@
         <div id="kpi-mappings-tab" class="tab-pane fade">
           <div id="investor_kpi_mappings" class="associated_entity">
             <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
 
         <div id="stock-adjustments-tab" class="tab-pane fade">
           <%= turbo_frame_tag "stock_adjustments_frame", target: "_top", src: stock_adjustments_path(portfolio_company_id: investor.id), loading: :lazy do %>
+            <%= render "/layouts/loading" %>
           <% end %>
         </div>
 
@@ -146,6 +152,7 @@
         <div id="investments-tab" class="tab-pane fade">
           <div id="investments" class="associated_entity">
             <%= turbo_frame_tag "investments_frame", target: "_top", src: investments_path(investor_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -153,6 +160,7 @@
         <div id="notes-tab" class="tab-pane fade">
           <div id="notes" class="associated_entity">
             <%= turbo_frame_tag "notes_frame", target: "_top", src: notes_path(investor_id: investor.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -160,6 +168,7 @@
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
             <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(for_entity_id: investor.investor_entity_id, entity_id: investor.entity_id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -167,6 +176,7 @@
         <div id="reminders-tab" class="tab-pane fade">
           <div id="reminders" class="associated_entity">
             <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: investor.id, owner_type: "Investor", sent: false), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
