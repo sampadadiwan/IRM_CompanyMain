@@ -12,6 +12,7 @@ class ElasticImporterJob < ApplicationJob
     InvestorAccessIndex.import
     NoteIndex.import
     SecondarySaleIndex.import
+    CapitalCallIndex.import
     OfferIndex.import
     TaskIndex.import
     InvestmentOpportunityIndex.import
@@ -36,6 +37,7 @@ class ElasticImporterJob < ApplicationJob
     InvestorAccessIndex.reset!
     NoteIndex.reset!
     SecondarySaleIndex.reset!
+    CapitalCallIndex.reset!
     OfferIndex.reset!
     TaskIndex.reset!
     InvestmentOpportunityIndex.reset!
@@ -60,6 +62,7 @@ class ElasticImporterJob < ApplicationJob
     InvestorAccessIndex.create
     NoteIndex.create
     SecondarySaleIndex.create
+    CapitalCallIndex.create
     OfferIndex.create
     TaskIndex.create
     InvestmentOpportunityIndex.create
