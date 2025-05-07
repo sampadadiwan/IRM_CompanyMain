@@ -49,8 +49,8 @@ class IncomingEmail < ApplicationRecord
       errors.add(:to, "Invalid email address, does not belong to any owner.")
     end
   rescue StandardError => e
-    log.error "Error setting owner for incoming email: #{e.message}"
-    log.error e.backtrace.join("\n")
+    Rails.logger.error "Error setting owner for incoming email: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
   end
 
   def save_attachments(params)

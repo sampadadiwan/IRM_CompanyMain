@@ -1,3 +1,19 @@
+V9.0.35
+#####################################
+d19cdd231 Minor fix for bug in custom columns being blank
+0f53cd7db Parse dates3 (#819)
+b9c8e8f95 Fix search bug with datasource changes (#818)
+c7eb06c82 User better regex for emails and fund formula tag list fix (#817)
+68961fd9c Allow uploading same fund unit with different issue date (#813)
+3ec80a19b Pass fund id when creating new AE for commitment (#816)
+
+V9.0.33
+#####################################
+261ba2c3f Added icons to fund formulas
+ba1bde73c Fix import commitment bug - save before reload (#812)
+b7385fc5f Added better step to test commitment import
+7eead3c0c Custom cols2 (#811)
+
 V9.0.32
 #####################################
 d62198ba5 Updated fetching fund_unit_setting (#810)

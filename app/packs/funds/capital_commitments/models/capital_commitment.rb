@@ -131,7 +131,7 @@ class CapitalCommitment < ApplicationRecord
   def allowed_unit_type
     return unless unit_type
 
-    errors.add(:unit_type, "#{unit_type} is not allowed. Allowed values: #{fund.unit_types}") unless fund.unit_types.include?(unit_type)
+    errors.add(:unit_type, "#{unit_type} is not allowed. Allowed values: #{fund.unit_types}") unless fund.unit_types&.split(",")&.map { |x| x.strip.downcase }&.include?(unit_type&.to_s&.downcase)
   end
 
   def allowed_feeder_fund

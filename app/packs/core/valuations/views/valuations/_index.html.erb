@@ -10,19 +10,19 @@
     <span>
     <%= link_to "New Valuation",
         new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type),
-        {class: "btn btn-outline-primary"}  %>
+        {class: "btn btn-outline-primary ti ti-plus"}  %>
 
 
     <%= link_to "Value Bridge",
         value_bridge_valuations_path("portfolio_company_id": owner_id),
-        {class: "btn btn-outline-primary"} if owner_type == "Investor" %>
+        {class: "btn btn-outline-primary ti ti-chart-column"} if owner_type == "Investor" %>
 
-    <%= link_to "Import Valuations",
+    <%= link_to "Upload",
                   new_import_upload_path("import_upload[owner_id]": owner_id,
                   "import_upload[owner_type]": owner_type,
                   "import_upload[import_type]": "Valuation",
                   "sample_upload": "VALUATION_SAMPLE"),
-                  { class: "btn btn-outline-primary"}   %>
+                  { class: "btn btn-outline-primary ti ti-upload"}   %>
 
     </span>
   </div>

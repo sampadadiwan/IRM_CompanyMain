@@ -46,5 +46,5 @@
 
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments], disabled: true %>
 <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(params.to_unsafe_h), target: "_top" do %>
-  <p>Loading Investor KYCs...</p>
+  <%= render "/layouts/loading" %>
 <% end %>

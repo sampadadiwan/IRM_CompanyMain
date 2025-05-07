@@ -41,7 +41,7 @@ class FundFormula < ApplicationRecord
   end
 
   def tag_list
-    self[:tag_list].split(",") if self[:tag_list].present?
+    self[:tag_list].split(",").map(&:strip) if self[:tag_list].present?
   end
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok
