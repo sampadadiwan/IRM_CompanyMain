@@ -44,7 +44,7 @@
 
     <div class="form-group">
         <%= file_fields("KPIs", @kpi_report, form, required: false, meta_data: "KPIs") %>
-        <small class="form-text text-muted">Please upload the KPIs. <%= link_to "Sample upload format", ImportUpload::SAMPLES["KPIS_SAMPLE"] %> </small>
+        <small class="form-text text-muted">Please upload the KPIs.</small>
     </div>
     
     <%= custom_form_fields(@kpi_report, form) %>
