@@ -3,6 +3,6 @@
 
   <td>
     <%= link_to  t_common(:show), capital_commitment , {class: "btn btn-outline-primary ti ti-eye"}%>
-    <%= link_to  t_common(:edit), edit_capital_commitment_path(capital_commitment.id), {class: "btn btn-outline-success ti ti-trash"} if policy(capital_commitment).edit? %>
+    <%= link_to  t_common(:edit), edit_capital_commitment_path(capital_commitment.id), {class: "btn btn-outline-success ti ti-edit"} if policy(capital_commitment).edit? %>
   </td>
 </tr>

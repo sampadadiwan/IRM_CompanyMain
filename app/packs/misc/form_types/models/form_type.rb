@@ -1,4 +1,5 @@
 class FormType < ApplicationRecord
+  include WithGridViewPreferences
   belongs_to :entity
 
   validates :name, presence: true
@@ -6,7 +7,6 @@ class FormType < ApplicationRecord
   validates :tag, length: { maximum: 50 }
 
   has_many :form_custom_fields, -> { order(position: :asc) }, inverse_of: :form_type, dependent: :destroy
-  has_many :grid_view_preferences, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :form_custom_fields, reject_if: :all_blank, allow_destroy: true
 
   # Sometimes after we import data, we have custom fields which get imported
@@ -95,21 +95,7 @@ class FormType < ApplicationRecord
     cn.where(entity_id:).find_each(&:ensure_json_fields)
   end
 
-  def selected_columns
-    grid_view_preferences.not_derived.order(:sequence)
-                         .to_h { |preference| [preference.label.presence || preference.name, preference.key] }
-  end
-
-  def ag_grids_columns
-    grid_view_preferences.order(:sequence).filter_map do |preference|
-      custom_data_type = preference.custom_data_type
-      # next if custom_data_type.nil?
-
-      {
-        label: preference.label.presence || preference.name,
-        key: preference.key,
-        data_type: custom_data_type.presence
-      }
-    end
+  def model
+    name.constantize
   end
 end

@@ -9,7 +9,7 @@ class FundRatio < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true
 
   STANDARD_COLUMNS = {
-    "Fund" => "fund_name",
+    "For" => "owner_name",
     "Type" => "owner_type",
     "Name" => "name",
     "Display Value" => "display_value",

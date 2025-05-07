@@ -5,7 +5,7 @@
 %>        
 
 <% 
-    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], import_upload_id:, capital_commitment_id: params[:capital_commitment_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only])
+    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
 
     xl_link = download_xl_link(data_source) 
     lazy_load_data ||= false 
@@ -39,14 +39,14 @@
       %>
 
       
-        <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
+        <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary ti ti-plus"} if policy(account_entry).new? %>
 
         <%= link_to "Upload", 
                       new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
                       "import_upload[owner_type]": "Fund", 
                       "import_upload[import_type]": "AccountEntry", 
                       "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                      { class: "btn btn-outline-primary"}   %> 
+                      { class: "btn btn-outline-primary ti ti-upload"}   %> 
 
 
         <div class="btn-group">
@@ -71,7 +71,7 @@
         </div>
 
 
-        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
+        <%= button_to "Delete Results", delete_all_account_entries_path(fund_id: params[:fund_id], q: params[:q].to_unsafe_h), class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
 
       <% else %>
         <%= link_to "Download", xl_link, class: "btn btn-outline-success" %>
@@ -79,7 +79,7 @@
       <% end %>
 
 
-      <%= link_to "Filter", account_entries_path(fund_id: params[:fund_id], q: ransack_query_params("capital_commitment_id", :eq, params[:capital_commitment_id])), {class: "btn btn-outline-success" }  %>
+      <%= link_to "Filter", account_entries_path(fund_id: params[:fund_id], q: ransack_query_params("capital_commitment_id", :eq, params[:capital_commitment_id])), {class: "btn btn-outline-success ti ti-filter" }  %>
 
 
     </span>

@@ -1,21 +1,41 @@
 class KpiDateUtils
-  # Determines if a string looks like a date or period label
+  # Determines if a raw_period looks like a date or period label
   def self.date_like?(string)
     return false if string.blank?
 
-    # Define patterns for common date-like formats
+    normalized = string.strip.squeeze(" ")
+
     patterns = [
-      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[-' ]?\d{2,4}\b/i, # Jan-24, Feb 2023
-      %r{\b\d{4}[-/]\d{1,2}\b}, # 2024-01 or 2024/1
-      /\bQ[1-4][-' ]?\d{2,4}\b/i # Q1-24
+      # Quarters like Q1 FY21 or Q3CY22
+      /\bQ[1-4][-' ]?(?:FY|CY)?\d{2,4}\b/i,
+
+      # Fiscal year ranges like FY2020-21 or FY 20-21
+      /\bFY\s?\d{2,4}[-–]\d{2,4}\b/i,
+
+      # CY/FY + year, with optional space (e.g. CY2024, CY 2025, FY 2023)
+      /\b(?:FY|CY)\s?\d{2,4}\b/i,
+
+      # Month + year (short and full)
+      /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|
+          Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|
+          Nov(?:ember)?|Dec(?:ember)?)\s+\d{2,4}\b/ix,
+
+      # Quarter shorthands like JFM 2021, AMJ 2022
+      /\b(?:JFM|AMJ|JAS|OND)\s+\d{4}\b/i,
+
+      # Month ranges like Jan-Mar 2021, Apr-Jun 2022
+      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)
+         [-](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+\d{4}\b/ix,
+
+      # Date format like 01-11-2023 or 03/11/2022
+      %r{\b\d{2}[-/]\d{2}[-/]\d{2,4}\b}
     ]
 
-    # Return true if any pattern matches
-    return true if patterns.any? { |pat| string =~ pat }
+    return true if patterns.any? { |pat| normalized =~ pat }
 
-    # Fallback: Try parsing as a date
+    # Fallback to Date.parse
     begin
-      Date.parse(string)
+      Date.parse(normalized)
       true
     rescue StandardError
       false
@@ -24,7 +44,7 @@ class KpiDateUtils
 
   # Parses a raw period string into a Date object
   def self.parse_period(raw_period, fiscal_year_start_month: 4, raise_error: true)
-    return nil if raw_period.blank?
+    return nil if raw_period.blank? || !date_like?(raw_period)
 
     str = normalize_input(raw_period)
 
@@ -170,9 +190,15 @@ class KpiDateUtils
     normalized = raw_period.to_s.strip.gsub(/\s+/, ' ')
 
     begin
-      return Date.strptime(normalized, "%b %y") if /\A[A-Za-z]{3,9}\s+\d{2}\z/.match?(normalized)
+      date =
+        if /\A[A-Za-z]{3,9}\s+\d{2}\z/.match?(normalized)
+          Date.strptime(normalized, "%b %y")
+        else
+          Date.parse(normalized)
+        end
 
-      Date.parse(normalized)
+      # Always return the end of the month
+      date.end_of_month
     rescue ArgumentError
       if Rails.env.test? || !raise_error
         nil
@@ -212,7 +238,7 @@ class KpiDateUtils
     return "Year" if /\A(CY|FY)?(\d{2,4})\z/.match?(str)
 
     # === Fallback ===
-    nil
+    return "Month"
   end
 
   def self.normalize_year(year)

@@ -202,24 +202,24 @@
 <% if current_user %>
 
    <div style="display: inline-block;">
-      <%= link_to  t_common(:edit), edit_document_path(@document), {class: "btn btn-outline-primary"} if policy(@document).update? %>
+      <%= link_to  t_common(:edit), edit_document_path(@document), {class: "btn btn-outline-primary ti ti-edit"} if policy(@document).update? %>
 
-      <%= button_to "Approve", document_path(@document, "document[approved]": true, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).approve? %>
+      <%= button_to "Approve", document_path(@document, "document[approved]": true, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success ti ti-check", method: :patch} if policy(@document).approve? %>
 
-      <%= button_to "UnApprove", document_path(@document, "document[approved]": false, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success", method: :patch} if policy(@document).unapprove? %>
+      <%= button_to "UnApprove", document_path(@document, "document[approved]": false, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success ti ti-cross", method: :patch} if policy(@document).unapprove? %>
 
       <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
-      <%= button_to t_common(:delete), @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
+      <%= button_to t_common(:delete), @document, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
 
-      <%unless current_user.curr_role == "investor"%>
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <% unless current_user.curr_role == "investor" %>
+        <button class="btn btn-outline-primary dropdown-toggle ti ti-send" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown">
           Send Document
         </button>
         <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
           <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
             <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
-                          method: :patch,
-                          class: "dropdown-item" %>
+                          method: :patch, form_class: "deleteButton",
+                          class: "dropdown-item ti ti-mail" %>
           <% end %>
         </div>
       <% end %>

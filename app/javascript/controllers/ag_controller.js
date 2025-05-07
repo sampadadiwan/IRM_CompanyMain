@@ -43,6 +43,11 @@ export default class extends BaseAgGrid {
       headerName: "Actions",
     });
 
+    const lastColIndex = columnDefs.length - 2; 
+    if (columnDefs[lastColIndex]) {
+      columnDefs[lastColIndex].flex = 1;
+    }
+
     return columnDefs;
   }
 

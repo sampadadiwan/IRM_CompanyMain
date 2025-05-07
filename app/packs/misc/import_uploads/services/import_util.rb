@@ -140,6 +140,7 @@ class ImportUtil < Trailblazer::Operation
       end
     end
 
+    import_upload.save!
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
   end

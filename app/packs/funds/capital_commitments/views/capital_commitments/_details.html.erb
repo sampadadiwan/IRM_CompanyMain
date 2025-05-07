@@ -67,6 +67,7 @@
     <div id="distributions-tab" class="tab-pane fade in">
           <div id="distributions" class="associated_entity">
             <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_commitment_id: capital_commitment.id) do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
     </div>
@@ -75,7 +76,7 @@
     <div id="kycs-tab" class="tab-pane fade">
       <div id="kycs" class="associated_entity">
         <%= turbo_frame_tag "investor_kycs_frame", loading: :lazy, src: investor_kycs_path(investor_id: capital_commitment.investor_id), target: "_top" do %>
-          <p>Loading Investor KYCs...</p>
+          <%= render "/layouts/loading" %>
         <% end %>
       </div>
     </div>
@@ -102,7 +103,7 @@
         <%= link_to fund_units_path(capital_commitment_id: capital_commitment.id),
                                 class: "load_data_link",
                                 data: { turbo_frame: 'fund_units_list' } do %>
-          <span>Loading...</span>
+          <%= render "/layouts/loading" %>
         <% end %>
         <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
         <% end %>
@@ -116,8 +117,8 @@
           params[:fund_id] = capital_commitment.fund_id
         %>
 
-        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: capital_commitment.id) do %>
-          <p>Loading Account Entries...</p>
+        <%= turbo_frame_tag "account_entries_list", loading: :lazy, target: "_top", src: account_entries_path(capital_commitment_id: capital_commitment.id, fund_id: capital_commitment.fund_id) do %>
+          <%= render "/layouts/loading" %>
         <% end %>
       </div>
     </div>
