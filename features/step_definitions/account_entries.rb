@@ -42,3 +42,29 @@ Then("I get the error on AllocationRun creation") do
 	expect(AllocationRun.count).to(eq(1))
 	 expect(page).to have_text("This AllocationRun already exists for the specified period and is locked")  # Wait for the error message
 end
+
+
+Given('I am at the capital commitment page') do
+  @capital_commitment = CapitalCommitment.last
+	visit(capital_commitment_path(@capital_commitment))
+end
+
+Given('I add a new account entry') do
+	click_on("Account Entries")
+	click_on("New Account Entry")
+	fill_in("account_entry_period", with: "Q1")
+	fill_in("account_entry_name", with: "Test Account Entry")
+	fill_in("account_entry_amount", with: 100000)
+	fill_in("account_entry_notes", with: "Test Account Entry")
+	click_on("Save")
+end
+
+Then('an account entry is created for the commitment') do
+	expect(page).to have_text("Account entry was successfully created.")
+	ae = AccountEntry.last
+	expect(ae.capital_commitment_id).to(eq(@capital_commitment.id))
+	@capital_commitment.reload
+	expect(@capital_commitment.account_entries).to(include(ae))
+	expect(ae.fund).to (eq(@capital_commitment.fund))
+end
+
