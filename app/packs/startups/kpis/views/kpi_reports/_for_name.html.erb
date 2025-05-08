@@ -1,6 +1,6 @@
 <% if kpi_report.portfolio_company_id.present? %>
     <%= link_to kpi_report.portfolio_company.investor_name, kpi_reports_path(portfolio_company_id: kpi_report.portfolio_company_id, grid_view: true) %>
-    <small class="text-muted d-none d-sm-block d-sm-none d-md-block">
+    <small class="text-muted d-none d-md-block">
         Entity - <%= kpi_report.entity.name %>
     </small>
 <% else %>
