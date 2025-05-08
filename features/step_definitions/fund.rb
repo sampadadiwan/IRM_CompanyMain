@@ -1779,13 +1779,13 @@ Then('Given I upload {string} file for Distributions of the fund') do |string|
   ImportUpload.last.failed_row_count.should == 0
 end
 
-Then('Given I upload {string} file for Fund Units of the fund') do |string|
+Then('Given I upload {string} file for Fund Units of the fund') do |file_name|
   visit(fund_units_url)
   #sleep((2)
   click_on("Upload")
   #sleep((2)
   fill_in('import_upload_name', with: "Test Fund Units Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_units.xlsx'), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
   #sleep((2)
   click_on("Save")
   #sleep((2)
@@ -2437,4 +2437,37 @@ Then('I can fetch the lp and gp commitments') do
   expect(@fund.capital_commitments.gp(@fund.id).pluck(:unit_type)).to match_array(["Series B", "Series B", "Series B", "Series D", "Series D"])
   expect(@fund.capital_commitments.lp(@fund.id).pluck(:investor_name)).to match_array(["Investor 1", "Investor 2", "Investor 5"])
   expect(@fund.capital_commitments.gp(@fund.id).pluck(:investor_name)).to match_array(["Investor 3", "Investor 4", "Investor 4", "Investor 6", "Investor 6"])
+end
+
+
+Then('There should be {string} fund units created with data in the {string} sheet') do |count, file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+    capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
+
+    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: row_data["Quantity"].to_f).first
+
+    puts "Checking import of #{fund_unit.to_json}"
+
+    fund_unit.quantity.should == row_data["Quantity"].to_f
+    fund_unit.unit_type.should == row_data["Unit Type"]
+    fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
+    fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
+    fund_unit.issue_date.should == row_data["Issue Date"]
+    fund_unit.reason.should == row_data["Reason"]
+    fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
+
+    if fund_unit.quantity.positive?
+      fund_unit.owner_type.should == "CapitalRemittance"
+    else
+      fund_unit.owner_type.should == "CapitalDistributionPayment"
+    end
+  end
 end

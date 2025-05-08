@@ -124,3 +124,23 @@ Examples:
   	|fund                 | call                 | transfer |
   	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,quantity=1|
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,quantity=2 |
+
+@import
+Scenario Outline: Import fund units that are same except issue date
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "<fund>" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  When I create a new capital call "<call>"
+  Then I should see the capital call details
+  Then when the capital call is approved
+  And Given I upload "capital_remittances.xlsx" file for Call remittances of the fund
+  And Given I upload "capital_distributions.xlsx" file for Distributions of the fund
+  And Given I upload "fund_units_diff_issue_date.xlsx" file for Fund Units of the fund
+  Then There should be "5" fund units created with data in the "fund_units_diff_issue_date.xlsx" sheet
+
+  Examples:
+  	|entity                                         |fund                |msg	| call | collected_amount |
+  	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
