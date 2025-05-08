@@ -238,7 +238,7 @@ class KpiDateUtils
     return "Year" if /\A(CY|FY)?(\d{2,4})\z/.match?(str)
 
     # === Fallback ===
-    return "Month"
+    "Month"
   end
 
   def self.normalize_year(year)

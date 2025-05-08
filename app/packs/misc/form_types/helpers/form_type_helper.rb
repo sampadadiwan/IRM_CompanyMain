@@ -27,7 +27,11 @@ module FormTypeHelper
   end
 
   def get_custom_values(model, form_type, custom_field_names)
-    form_type && model&.properties ? model.properties.values_at(*custom_field_names) : []
+    if form_type && model&.properties
+      model.properties.values_at(*custom_field_names).map(&:to_s)
+    else
+      []
+    end
   end
 
   def get_custom_calc_values(model, form_type, custom_calcs)

@@ -1,3 +1,11 @@
+V9.0.36
+#####################################
+96883030c Removed Entity name from kpi grid view
+f34281fdf Better icons
+b9b9fa5bb Fixed AE index page buttons (#823)
+09f0461d5 Fixed bug with LP statements reports
+d08fd90d9 Added Better spinner
+
 V9.0.35
 #####################################
 d19cdd231 Minor fix for bug in custom columns being blank

@@ -130,7 +130,7 @@
 
 <div>
   <% if policy(@fund_unit).update? %>
-    <%= link_to  t_common(:edit), edit_fund_unit_path(@fund_unit), {class: "btn btn-outline-primary"} %>
-    <%= button_to t_common(:delete), @fund_unit, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_fund_unit_path(@fund_unit), {class: "btn btn-outline-primary ti ti-edit"} %>
+    <%= button_to t_common(:delete), @fund_unit, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
