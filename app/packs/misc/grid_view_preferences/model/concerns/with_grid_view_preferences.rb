@@ -19,7 +19,7 @@ module WithGridViewPreferences
                                                .to_h { |preference| [preference.label.presence || preference.name, preference.key] }
 
     # Fallback to standard columns if no preferences are found
-    @selected_columns ||= model::STANDARD_COLUMNS
+    @selected_columns ||= model::STANDARD_COLUMNS.reject { |k, _| k.blank? }
     @selected_columns
   end
 
