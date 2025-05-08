@@ -137,6 +137,14 @@ class CapitalRemittancesController < ApplicationController
 
   def verify
     result = CapitalRemittanceVerify.call(capital_remittance: @capital_remittance)
+    default_columns_map = if current_user.curr_role == "investor"
+                            CapitalRemittance::INVESTOR_STANDARD_COLUMNS
+                          else
+                            CapitalRemittance::STANDARD_COLUMNS
+                          end
+
+    @capital_remittance = @capital_remittance.decorate
+    @ransack_table_header = RansackTableHeader.new(CapitalRemittance, default_columns_map: default_columns_map, current_user: current_user, records: [@capital_remittance], q: nil, turbo_frame: nil)
     notice = result.success? ? "Successfully verified." : "Failed to verify. #{@capital_remittance.errors}"
     respond_to do |format|
       format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }
