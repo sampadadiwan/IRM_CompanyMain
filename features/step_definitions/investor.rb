@@ -1638,7 +1638,7 @@ Then('I should see the filtered investors with {string}') do |string|
   expect(page).to have_content(string)
   expect(page).to have_content(@investor_kyc.investor_name)
   expect(page).to have_content(@investor_kyc.kyc_type.titleize)
-  expect(page).not_to have_content("Investor 2")
-  expect(page).not_to have_content("Investor 3")
-  expect(page).not_to have_content("Investor 4")
+  InvestorKyc.where.not(full_name: string).each do |kyc|
+    expect(page).not_to have_content(kyc.investor_name)
+  end
 end

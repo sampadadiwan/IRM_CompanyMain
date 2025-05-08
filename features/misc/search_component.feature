@@ -13,6 +13,8 @@ Scenario Outline: Create investors and search with search component
   When I go to the Investor Kycs index page
   And I filter the investors with "<filter>"
   Then I should see the filtered investors with "<filter>"
+  And I filter the investors with "<filter2>"
+  Then I should see the filtered investors with "<filter2>"
 Examples:
-  |filter    |
-  |Import 1|
+  |filter  |filter2|
+  |Import 1|Import 2|
