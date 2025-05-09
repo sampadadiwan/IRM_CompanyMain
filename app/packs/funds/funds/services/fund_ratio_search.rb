@@ -10,6 +10,6 @@ class FundRatioSearch
     entity_ids = [current_user.entity_id]
     FundRatioIndex.filter(terms: { entity_id: entity_ids })
                   .query(query_string: { fields: FundRatioIndex::SEARCH_FIELDS,
-                                         query:, default_operator: 'and' }).per(100).map(&:id)
+                                         query:, default_operator: 'and' }).per(1000).map(&:id)
   end
 end
