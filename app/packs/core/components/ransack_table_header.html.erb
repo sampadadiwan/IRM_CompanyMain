@@ -2,17 +2,15 @@
   <tr>
     <% @columns.each do |column_name, attribute| %>
       <th>
-        <% if attribute.present? && !attribute.starts_with?("custom_field") && attribute != "dt_actions" %>
+        <% if attribute.present? && !attribute.starts_with?("custom_field") %>
           <%= sortable_header @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
         <% else %>
           <%= column_name %>
         <% end %>
       </th>
     <% end %>
-    <% if !@columns.values.include?("dt_actions") %>
     <th>
       <!-- Actions -->
     </th>
-    <% end %>
   </tr>
 </thead>
