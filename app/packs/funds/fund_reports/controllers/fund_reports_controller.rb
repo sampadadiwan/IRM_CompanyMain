@@ -3,17 +3,23 @@ class FundReportsController < ApplicationController
 
   # GET /fund_reports or /fund_reports.json
   def index
-    @fund_reports = policy_scope(FundReport).includes(:fund).order(id: :desc)
+    @q = FundReport.ransack(params[:q])
+    # Create the scope for the model
+    @fund_reports = policy_scope(@q.result).includes(:fund).order(id: :desc)
     @fund_reports = @fund_reports.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_reports = @fund_reports.where(name: params[:name]) if params[:name].present?
     if params[:fund_id].present?
       @fund = Fund.find(params[:fund_id])
       @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Fund Reports': nil }
     end
+    if params[:all].blank?
+      @fund_reports = @fund_reports.page(params[:page])
+      @fund_reports = @fund_reports.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     respond_to do |format|
       format.html
-      format.json { render json: FundReportDatatable.new(params, fund_reports: @fund_reports) }
+      format.json
     end
   end
 

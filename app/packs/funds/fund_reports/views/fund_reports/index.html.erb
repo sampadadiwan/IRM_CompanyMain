@@ -1,2 +1,3 @@
-
-<%= render "/fund_reports/index", fund_reports: @fund_reports, lazy_load_data: false %>
+<%= turbo_frame_tag "fund_reports_frame", target: "_top" do %>
+    <%= render "/fund_reports/index", fund_reports: @fund_reports, q: @q, lazy_load_data: false %>
+<% end %>

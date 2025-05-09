@@ -13,6 +13,10 @@ class CapitalCallDecorator < ApplicationDecorator
     h.link_to object.fund.name, object.fund
   end
 
+  def approved
+    display_boolean(object.approved)
+  end
+
   def percentage_raised
     h.render partial: "/capital_calls/percentage_raised", locals: { capital_call: object }, formats: [:html]
   end

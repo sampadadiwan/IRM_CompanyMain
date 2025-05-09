@@ -1,18 +1,9 @@
-<tr id="<%= dom_id fund_report %>">
-  <td>
-    <%= link_to fund_report.name, fund_report_path(fund_report, view: "report_view") %>
-    <%= fund_report_path(fund_report, view: "report_view") %>
-  </td>
-  <td>
-    <%= link_to fund_report.fund %>
-  </td>
-  <td>
-    <%= l fund_report.start_date %>
-  </td>
-  <td>
-    <%= l fund_report.end_date %>
-  </td>
-  <td>
-    <%= link_to  t_common(:show), fund_report_path(fund_report, view: "report_view") , {class: "btn btn-outline-primary"}%>
-  </td>
-</tr>
+<tr id="fund_report_<%= fund_report.id %>">
+
+    <%= render RansackTableRow.new(model: fund_report, columns:) %>
+
+    <td>
+      <%= link_to  t_common(:show), fund_report , {class: "btn btn-outline-primary ti ti-eye"}%>
+    </td>
+
+  </tr>

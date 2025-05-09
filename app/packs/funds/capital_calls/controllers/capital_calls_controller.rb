@@ -3,15 +3,28 @@ class CapitalCallsController < ApplicationController
 
   # GET /capital_calls or /capital_calls.json
   def index
-    @capital_calls = policy_scope(CapitalCall).includes(:fund)
+    @q = CapitalCall.ransack(params[:q])
+    # Create the scope for the model
+    @capital_calls = policy_scope(@q.result).includes(:fund)
+    @capital_calls = CapitalCallSearch.perform(@capital_calls, current_user, params)
+    @capital_calls = filter_params(
+      @capital_calls,
+      :fund_id,
+      :import_upload_id
+    )
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
-    @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
-    @capital_calls = @capital_calls.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
+
+    if params[:all].blank?
+      page = params[:page] || 1
+      @capital_calls = @capital_calls.page(page)
+      @capital_calls = @capital_calls.per(params[:per_page] || 10)
+    end
 
     respond_to do |format|
       format.xlsx
       format.html { render :index }
-      format.json { render json: CapitalCallDatatable.new(params, capital_calls: @capital_calls) }
+      format.json
     end
   end
 
