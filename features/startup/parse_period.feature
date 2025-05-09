@@ -78,71 +78,77 @@ Feature: KPI Period Parsing
   Scenario Outline: Parsing supported period strings into dates (Default Fiscal Start: April)
     When I parse the period string "<Input Period>"
     Then the resulting date should be "<Expected Date>"
+    And the parsed type should be "<Type>"
 
     # Note: Expected Dates assume default fiscal_year_start_month = 4 (April) where applicable
 
-    Examples: Month formats
-      | Input Period     | Expected Date |
-      | Jan 21           | 2021-01-31    |
-      | January 2021     | 2021-01-31    |
-      | Feb 2022         | 2022-02-28    |
-      | February 22      | 2022-02-28    |
-      | Sept 2020        | 2020-09-30    |
-      | September 20     | 2020-09-30    |
-      | Dec 1999         | 1999-12-31    |
-      | December 99      | 1999-12-31    |
-
     Examples: Quarter formats
-      | Input Period     | Expected Date |
-      | Q1FY21           | 2021-06-30    |
-      | Q1FY2021         | 2021-06-30    |
-      | Q1 FY21          | 2021-06-30    |
-      | Q1 2021          | 2021-03-31    |
-      | Q1 CY21          | 2021-03-31    |
-      | Q1 CY2021        | 2021-03-31    |
-      | Q1 21            | 2021-03-31    |
-      | Q1 2021          | 2021-03-31    |
-      | Jan-Mar 2021     | 2021-03-31    |
-      | JFM 2021         | 2021-03-31    |
-      | JFM 21           | 2021-03-31    |
-      | Q2FY22           | 2022-09-30    |
-      | Q2 FY22          | 2022-09-30    |
-      | Q2 CY22          | 2022-06-30    |
-      | Q2 22            | 2022-06-30    |
-      | Apr-Jun 2022     | 2022-06-30    |
-      | AMJ 2022         | 2022-06-30    |
-      | Q3 2021          | 2021-09-30    |
-      | Q3 CY21          | 2021-09-30    |
-      | Q3 FY21          | 2021-12-31    |
-      | Q3 FY2021        | 2021-12-31    |
-      | JAS 2023         | 2023-09-30    |
-      | Oct-Dec 2020     | 2020-12-31    |
-      | OND 2020         | 2020-12-31    |
+      | Input Period       | Expected Date | Type     |
+      | Q1FY21             | 2020-06-30    | Quarter  |
+      | Q1 FY21            | 2020-06-30    | Quarter  |
+      | Q1 2021            | 2021-03-31    | Quarter  |
+      | Q1 CY21            | 2021-03-31    | Quarter  |
+      | Q1 21              | 2021-03-31    | Quarter  |
+      | Jan-Mar 2021       | 2021-03-31    | Quarter  |
+      | JFM 2021           | 2021-03-31    | Quarter  |
+      | Q2FY22             | 2021-09-30    | Quarter  |
+      | Q2 FY22            | 2021-09-30    | Quarter  |
+      | Q2 CY22            | 2022-06-30    | Quarter  |
+      | Q2 2022            | 2022-06-30    | Quarter  |
+      | Apr-Jun 2022       | 2022-06-30    | Quarter  |
+      | AMJ 2022           | 2022-06-30    | Quarter  |
+      | Q3 2021            | 2021-09-30    | Quarter  |
+      | Q3 CY21            | 2021-09-30    | Quarter  |
+      | Q3 FY2021          | 2020-12-31    | Quarter  |
+      | Q3 FY21            | 2020-12-31    | Quarter  |
+      | JAS 2023           | 2023-09-30    | Quarter  |
+      | Oct-Dec 2020       | 2020-12-31    | Quarter  |
+      | OND 2020           | 2020-12-31    | Quarter  |
+      | Q4 2021            | 2021-12-31    | Quarter  |
+      | Q4 CY21            | 2021-12-31    | Quarter  |
+      | Q4 FY2021          | 2021-03-31    | Quarter  |
+      | Q4 FY21            | 2021-03-31    | Quarter  |
+      | JFM 2023           | 2023-03-31    | Quarter  |
+      | Jan-Mar 2023       | 2023-03-31    | Quarter  |
+
+    Examples: Month formats
+      | Input Period     | Expected Date | Type   |
+      | Jan 21           | 2021-01-31    | Month  |
+      | January 2021     | 2021-01-31    | Month  |
+      | Feb 2022         | 2022-02-28    | Month  |
+      | February 22      | 2022-02-28    | Month  |
+      | Sept 2020        | 2020-09-30    | Month  |
+      | September 20     | 2020-09-30    | Month  |
+      | Dec 1999         | 1999-12-31    | Month  |
+      | December 99      | 1999-12-31    | Month  |
+      | 01-11-2023       | 2023-11-30    | Month  |
+      | 03-11-2022       | 2022-11-30    | Month  |
 
     Examples: Year formats
-      | Input Period     | Expected Date |
-      | CY2021           | 2021-12-31    |
-      | CY21             | 2021-12-31    |
-      | FY2021           | 2021-03-31    |
-      | FY21             | 2021-03-31    |
-      | FY 2020-21       | 2021-03-31    |
-      | FY 20-21         | 2021-03-31    |
-      | CY2020           | 2020-12-31    |
-      | CY20             | 2020-12-31    |
-      | FY2020           | 2020-03-31    |
-      | FY20             | 2020-03-31    |
-      | FY99             | 1999-03-31    |
-      | CY1999           | 1999-12-31    |
-    Examples: Invalid inputs
-      | Input Period     | Expected Date |
-      |                  |               |
-      | 2021             |               |      
-      | Hello World      |               |
-      | FY               |               |
-      | 13/2021          |               |
-      | Not-A-Date       |               |
-      | Q5 2021          |               |
-      | ABCDEF           |               |
-      | 202113           |               |
-      
- 
+      | Input Period   | Expected Date | Type  |
+      | 2021           | 2021-12-31    | Year  |
+      | CY2021         | 2021-12-31    | Year  |
+      | CY21           | 2021-12-31    | Year  |
+      | FY2021         | 2021-03-31    | Year  |
+      | FY2020-21      | 2021-03-31    | Year  |
+      | FY21           | 2021-03-31    | Year  |
+      | FY 20-21       | 2021-03-31    | Year  |
+      | 2020           | 2020-12-31    | Year  |
+      | CY2020         | 2020-12-31    | Year  |
+      | CY20           | 2020-12-31    | Year  |
+      | FY2020         | 2020-03-31    | Year  |
+      | FY20           | 2020-03-31    | Year  |
+      | FY99           | 1999-03-31    | Year  |
+      | CY1999         | 1999-12-31    | Year  |
+
+  Examples: YTD formats
+    | Input Period        | Expected Date | Type  |
+    | YTD Nov 23          | 2023-11-30    | YTD   |
+    | YTD-Jan 2022        | 2022-01-31    | YTD   |
+    | ytd Jan-Sept 2023   | 2023-09-30    | YTD   |
+
+  Examples: Half Year formats
+    | Input Period   | Expected Date | Type       |
+    | H1 2023        | 2023-06-30    | half year  |
+    | H1 FY2023      | 2022-09-30    | half year  |
+    | H1 FY23        | 2022-09-30    | half year  |

@@ -64,7 +64,13 @@ end
 
 
 When('I parse the period string {string}') do |period_string|
+  @period_string = period_string
   @parsed_date = KpiDateUtils.parse_period(period_string)
+end
+
+
+Then('the parsed type should be {string}') do |type|
+  KpiDateUtils.detect_period_type(@period_string).downcase.should == type.downcase
 end
 
 # Handle the case where the input string itself might be empty in the feature file
