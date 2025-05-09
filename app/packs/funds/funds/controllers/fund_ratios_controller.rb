@@ -19,7 +19,8 @@ class FundRatiosController < ApplicationController
       :owner_type,
       :owner_id,
       :scenario,
-      :valuation_id
+      :valuation_id,
+      :fund_id
     )
 
     # Step 4: Special filters with more specific logic
