@@ -24,18 +24,17 @@ class CapitalRemittancesController < ApplicationController
 
     @capital_remittances = @capital_remittances.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
-    @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @capital_remittances = filter_params(
+      @capital_remittances,
+      :fund_id,
+      :capital_call_id,
+      :capital_commitment_id,
+      :import_upload_id
+    )
     @capital_remittances = @capital_remittances.where(status: params[:status].split(",")) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
-    if params[:capital_call_id].present?
-      @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id])
-      @capital_call = CapitalCall.find(params[:capital_call_id])
-    end
-    if params[:capital_commitment_id].present?
-      @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id])
-      @capital_commitment = CapitalCommitment.find(params[:capital_commitment_id])
-    end
-    @capital_remittances = @capital_remittances.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
+    @capital_commitment = CapitalCommitment.find(params[:capital_commitment_id]) if params[:capital_commitment_id].present?
 
     @capital_remittances
   end
