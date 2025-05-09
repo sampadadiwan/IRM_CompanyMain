@@ -2,12 +2,12 @@
   <div class="dropdown">
     <button class="btn btn-outline-primary dropdown-toggle" type="button"
             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+      <i class="ti ti-settings"></i> <%= t_common(:actions) %>
     </button>
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
       <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item" do %>
-        <i class="ti ti-eye me-2"></i>Show
+        <i class="ti ti-eye"></i>Show
       <% end %>
 
       <% if policy(capital_remittance).verify? %>
@@ -20,13 +20,13 @@
         <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
                       method: :patch, class: "dropdown-item", form_class: "deleteButton",
                       data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch } do %>
-          <i class="<%= icon_class %> me-2"></i><%= label %>
+          <i class="<%= icon_class %>"></i><%= label %>
         <% end %>
       <% end %>
 
       <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
                   class: "dropdown-item" do %>
-        <i class="ti ti-cash me-2"></i>New Payment
+        <i class="ti ti-cash"></i>New Payment
       <% end %>
 
     </div>

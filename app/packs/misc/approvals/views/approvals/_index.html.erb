@@ -3,7 +3,7 @@
   <h1 class="h3 mb-0 text-gray-800">Approvals</h1>
   <% if policy(Approval.new(entity_id: current_user.entity_id)).new? %>
     <%= link_to new_approval_path, class: "btn btn-outline-primary" do %>
-      <i class="ti ti-checkup-list me-2"></i>New Approval
+      <i class="ti ti-checkup-list"></i>New Approval
     <% end %>
   <% end %>
 

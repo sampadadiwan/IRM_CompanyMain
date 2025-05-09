@@ -140,12 +140,12 @@
 <div>
   <% if policy(@capital_distribution).update? %>
     <%= link_to edit_capital_distribution_path(@capital_distribution), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %>
     <% end %>
 
     <%= button_to @capital_distribution, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
         data: { action: "click->confirm#popup", turbo: false } do %>
-      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 
@@ -154,7 +154,7 @@
         data: { action: "click->confirm#popup", turbo: false,
                 msg: "This will mark the distribution as approved. The notification will be triggered only when the payments are 'Mark Payments Completed'.",
                 method: :post } do %>
-      <i class="ti ti-check me-2"></i>Approve
+      <i class="ti ti-check"></i>Approve
     <% end %>
   <% end %>
 
@@ -164,7 +164,7 @@
           data: { action: "click->confirm#popup", turbo: false,
                   msg: "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.",
                   method: :patch } do %>
-      <i class="ti ti-check me-2"></i>Mark Payments Completed
+      <i class="ti ti-check"></i>Mark Payments Completed
     <% end %>
   <% end %>
 
@@ -174,7 +174,7 @@
           data: { action: "click->confirm#popup", turbo: false,
                   msg: "This will compute the units to be redeemed against each commitment in this fund.",
                   method: :patch } do %>
-      <i class="ti ti-arrow-back-up me-2"></i>Redeem Units
+      <i class="ti ti-arrow-back-up"></i>Redeem Units
     <% end %>
   <% end %>
 </div>

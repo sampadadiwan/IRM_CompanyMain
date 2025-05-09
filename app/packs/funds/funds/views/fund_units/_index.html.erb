@@ -9,7 +9,7 @@
       <%= link_to transfer_fund_units_capital_commitment_path(id: params[:capital_commitment_id]),
                   class: "btn btn-outline-success d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-transfer me-2"></i> Transfer
+        <i class="ti ti-transfer"></i> Transfer
       <% end %>
     <% end %>
 
@@ -20,7 +20,7 @@
                   format: "xlsx", all: true),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
-      <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+      <i class="ti ti-download"></i> <%= t_common(:download) %>
     <% end %>
 
     <% if current_user.curr_role != "investor" %>
@@ -29,7 +29,7 @@
                     "sample_upload": "FUND_UNIT_SAMPLE"),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
       <% end %>
     <% end %>
 

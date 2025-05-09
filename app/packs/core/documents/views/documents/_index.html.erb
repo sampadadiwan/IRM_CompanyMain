@@ -44,7 +44,7 @@
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                 id="doc_actions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+          <i class="ti ti-settings"></i> <%= t_common(:actions) %>
         </button>
 
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -55,7 +55,7 @@
                             method: :post,
                             class: "dropdown-item d-flex align-items-center",
                             data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup" } do %>
-                <i class="ti ti-download me-2"></i> <%= t_common(:download) %> ZIP
+                <i class="ti ti-download"></i> <%= t_common(:download) %> ZIP
               <% end %>
             <% else %>
               <% if policy(@folder).download? %>
@@ -63,7 +63,7 @@
                               method: :get,
                               class: "dropdown-item d-flex align-items-center d-none d-sm-block",
                               data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?" } do %>
-                  <i class="ti ti-download me-2"></i> <%= t_common(:download) %> Folder
+                  <i class="ti ti-download"></i> <%= t_common(:download) %> Folder
                 <% end %>
               <% end %>
             <% end %>
@@ -71,14 +71,14 @@
             <% if policy(@folder).create? %>
               <%= link_to new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": @folder.id),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-folder-plus me-2"></i> New Folder
+                <i class="ti ti-folder-plus"></i> New Folder
               <% end %>
             <% end %>
 
             <% if policy(document).create? %>
               <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": folder_id, format: :html, turbo: false),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-file-plus me-2"></i> New Document
+                <i class="ti ti-file-plus"></i> New Document
               <% end %>
             <% end %>
 
@@ -89,14 +89,14 @@
                             "import_upload[import_type]": "Documents",
                             "sample_upload": "DOCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center d-none d-sm-block" do %>
-                <i class="ti ti-upload me-2"></i> Bulk Upload
+                <i class="ti ti-upload"></i> Bulk Upload
               <% end %>
             <% end %>
 
             <% if @folder && policy(@folder).generate_report? %>
               <%= link_to generate_report_folder_path(id: folder_id, report_type: @folder.owner.class.name),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-report me-2"></i> Generate Report
+                <i class="ti ti-report"></i> Generate Report
               <% end %>
             <% end %>
 
@@ -105,7 +105,7 @@
                             method: :post,
                             class: "dropdown-item d-flex align-items-center",
                             data: { action: "click->confirm#popup", msg: "This will send the documents in this folder to an external LLM to generate answer to the questions for this document name setup by you. Proceed?" } do %>
-                <i class="ti ti-question-mark me-2"></i> Q&A
+                <i class="ti ti-question-mark"></i> Q&A
               <% end %>
             <% end %>
 
@@ -116,7 +116,7 @@
             <% else %>
               <%= link_to documents_path(folder_id: folder_id, filter: true, no_folders: true),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-filter me-2"></i> Filter Documents
+                <i class="ti ti-filter"></i> Filter Documents
               <% end %>
             <% end %>
 
@@ -127,7 +127,7 @@
             <% if document && policy(document).create? %>
               <%= link_to new_document_path(document: doc_attributes),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-file-plus me-2"></i> New Document
+                <i class="ti ti-file-plus"></i> New Document
               <% end %>
             <% end %>
 
@@ -149,7 +149,7 @@
       <%= link_to folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-database me-2"></i> Data Room
+        <i class="ti ti-database"></i> Data Room
       <% end %>
     <% end %>
 

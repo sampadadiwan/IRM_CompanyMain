@@ -9,7 +9,9 @@
   src: url("./fonts/tabler-icons.woff2?v3.31.0") format("woff2"), url("./fonts/tabler-icons.woff?") format("woff"), url("./fonts/tabler-icons.ttf?v3.31.0") format("truetype");
 }
 .ti {
-  font-family: "tabler-icons" !important;
+  /* font-family: "tabler-icons" !important; */
+  font-family: inherit !important;
+
   speak: none;
   font-style: normal;
   font-weight: normal;
@@ -20,6 +22,22 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.ti::before {
+  font-family: "tabler-icons" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* margin-right: 0.4rem; optional spacing between icon and text */
+}
+
 
 .ti-a-b:before {
   content: "\ec36";

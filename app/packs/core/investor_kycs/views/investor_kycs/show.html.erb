@@ -6,14 +6,14 @@
 
   <% if policy(@investor_kyc).update? %>
     <%= link_to edit_investor_kyc_path(@investor_kyc), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %>
     <% end %>
   <% end %>
 
   <% if policy(@investor_kyc).destroy? %>
     <%= button_to @investor_kyc, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
         data: { action: "click->confirm#popup", turbo: false } do %>
-      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 
@@ -22,7 +22,7 @@
   <% label_icon = @investor_kyc.verified ? "ti ti-user-x" : "ti ti-user-check" %>
   <% if policy(@investor_kyc).toggle_verified? %>
     <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" do %>
-      <i class="<%= label_icon %> me-2"></i><%= label %>
+      <i class="<%= label_icon %>"></i><%= label %>
     <% end %>
   <% end %>
 
@@ -36,7 +36,7 @@
                   method: :patch,
                   msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
                 } do %>
-      <i class="ti ti-message-2 me-2"></i>Updates Required
+      <i class="ti ti-message-2"></i>Updates Required
     <% end %>
   <% end %>
 
@@ -45,7 +45,7 @@
       <div class="dropdown">
         <button class="btn btn-outline-success dropdown-toggle" type="button" id="kyc_actions"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i>KYC Actions
+          <i class="ti ti-settings"></i>KYC Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
@@ -56,13 +56,13 @@
                   action: "click->confirm#popup", turbo: false, method: :post,
                   msg: "This will generate a notification to all users associated with this investor"
                 } do %>
-              <i class="ti ti-bell me-2"></i>Send KYC Reminder
+              <i class="ti ti-bell"></i>Send KYC Reminder
             <% end %>
           <% end %>
 
           <% if policy(@investor_kyc).generate_docs? %>
             <%= link_to generate_docs_investor_kyc_path(@investor_kyc), class: "dropdown-item" do %>
-              <i class="ti ti-file-plus me-2"></i>Generate Docs
+              <i class="ti ti-file-plus"></i>Generate Docs
             <% end %>
           <% end %>
 
@@ -73,25 +73,25 @@
                   action: "click->confirm#popup", turbo: false, method: :post,
                   msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?"
                 } do %>
-              <i class="ti ti-brain me-2"></i>Validate Document Data
+              <i class="ti ti-brain"></i>Validate Document Data
             <% end %>
           <% end %>
 
           <% if policy(@investor_kyc).toggle_verified? %>
             <%= link_to investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), class: "dropdown-item" do %>
-              <i class="ti ti-history me-2"></i>Audit Trail
+              <i class="ti ti-history"></i>Audit Trail
             <% end %>
           <% end %>
 
           <% if policy(@investor_kyc).generate_new_aml_report? %>
             <%= button_to generate_new_aml_report_investor_kyc_path(@investor_kyc), method: :put, class: "dropdown-item" do %>
-              <i class="ti ti-shield-lock me-2"></i>Generate AML Report
+              <i class="ti ti-shield-lock"></i>Generate AML Report
             <% end %>
           <% end %>
 
           <% if @investor_kyc.aml_reports.present? %>
             <%= link_to aml_reports_path(investor_kyc_id: @investor_kyc.id), class: "dropdown-item" do %>
-              <i class="ti ti-list-search me-2"></i>View AML Reports
+              <i class="ti ti-list-search"></i>View AML Reports
             <% end %>
           <% end %>
 

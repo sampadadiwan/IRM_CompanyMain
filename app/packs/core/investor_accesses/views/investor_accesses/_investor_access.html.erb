@@ -49,7 +49,7 @@
     <% if policy(investor_access).approve? %>
       <%= button_to approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name]),
                     method: :patch, class: btn_class, form_class: "deleteButton" do %>
-        <i class="<%= icon_class %> me-2"></i><%= label %>
+        <i class="<%= icon_class %>"></i><%= label %>
       <% end %>
     <% end %>
 
@@ -59,21 +59,21 @@
       <div class="dropup">
         <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+          <i class="ti ti-settings"></i> <%= t_common(:actions) %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
           <% if policy(investor_access).edit? %>
             <%= link_to edit_investor_access_path(investor_access),
                         data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" do %>
-              <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+              <i class="ti ti-edit"></i> <%= t_common(:edit) %>
             <% end %>
           <% end %>
 
           <% if Pundit.policy(current_user, investor_access).destroy? %>
             <%= button_to investor_access, method: :delete, class: "dropdown-item", form_class: "deleteButton",
                           data: { action: "click->confirm#popup" } do %>
-              <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+              <i class="ti ti-trash"></i> <%= t_common(:delete) %>
             <% end %>
           <% end %>
 
@@ -81,7 +81,7 @@
             <%= link_to notifications_path(all: true, filter: true, entity_id: investor_access.entity_id,
                                             q: ransack_query_params("user_email", :eq, investor_access.email)),
                         class: "dropdown-item" do %>
-              <i class="ti ti-bell me-2"></i>Notifications
+              <i class="ti ti-bell"></i>Notifications
             <% end %>
           <% end %>
 

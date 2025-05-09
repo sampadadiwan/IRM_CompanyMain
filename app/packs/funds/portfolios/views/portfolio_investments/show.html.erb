@@ -259,14 +259,14 @@
   
   <% if policy(@portfolio_investment).update? %>
     <%= link_to edit_portfolio_investment_path(@portfolio_investment), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %>
     <% end %>
 
     <% if policy(@portfolio_investment).conversion? %>
       <%= link_to new_stock_conversion_path(
                     "stock_conversion[from_portfolio_investment_id]": @portfolio_investment.id),
                   class: "btn btn-outline-success" do %>
-        <i class="ti ti-transfer me-2"></i>Conversion
+        <i class="ti ti-transfer"></i>Conversion
       <% end %>
     <% end %>
   <% end %>
@@ -275,7 +275,7 @@
     <%= button_to @portfolio_investment, method: :delete,
                 class: "btn btn-outline-danger", form_class: "deleteButton",
                 data: { action: "click->confirm#popup", turbo: false } do %>
-      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 

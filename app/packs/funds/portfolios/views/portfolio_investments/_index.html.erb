@@ -25,7 +25,7 @@
                     "portfolio_investment[portfolio_company_id]": aggregate_portfolio_investment&.portfolio_company_id),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-plus me-2"></i> New Investment
+        <i class="ti ti-plus"></i> New Investment
       <% end %>
 
       <%= link_to new_import_upload_path(
@@ -35,7 +35,7 @@
                     "sample_upload": "PORTFOLIO_SAMPLE"),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
       <% end %>
 
       
@@ -44,12 +44,12 @@
       <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
       <div class="btn-group">
         <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+          <i class="ti ti-download"></i> <%= t_common(:download) %>
         </button>
         <ul class="dropdown-menu">
           <li>
             <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
-              <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+              <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
             <% end %>
           </li>
           <li>
@@ -57,7 +57,7 @@
                     data-action="click->export-xl#export"
                     data-tableid="portfolio_investments"
                     data-filename="Portfolio Investments">
-              <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+              <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
             </button>
           </li>
         </ul>

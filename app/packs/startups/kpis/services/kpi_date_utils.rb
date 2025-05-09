@@ -159,18 +159,17 @@ class KpiDateUtils
   def self.end_of_fiscal_quarter(fiscal_year, quarter, fiscal_year_start_month)
     # Fiscal year FY21 means starting in April 2020 and ending March 2021
     # So we shift fiscal year back to get the starting year
-    year = quarter == 4 ? fiscal_year : fiscal_year - 1 
-  
+    year = quarter == 4 ? fiscal_year : fiscal_year - 1
+
     start_month = ((((quarter - 1) * 3) + fiscal_year_start_month - 1) % 12) + 1
-  
+
     # Move 2 months forward to get the end month of the quarter
     end_month = ((start_month + 2 - 1) % 12) + 1
     end_year_adjustment = end_month < start_month ? 1 : 0
     end_year = year + end_year_adjustment
-  
+
     Date.new(end_year, end_month, -1)
   end
-  
 
   def self.end_of_quarter(year, start_month)
     # Move 2 months forward
@@ -200,36 +199,34 @@ class KpiDateUtils
   def self.parse_half_year(str)
     # Normalize to remove spaces and upcase
     str = str.to_s.strip.upcase.gsub(/\s+/, '')
-  
+
     # Match: H1FY2023 or H2FY23 (Fiscal Half Year)
     if (match = str.match(/\AH([12])FY(\d{2,4})\z/))
       half = match[1].to_i
       fy_end_year = normalize_year(match[2])
       fy_start_year = fy_end_year - 1
-  
+
       if half == 1
         return Date.new(fy_start_year, 9, 30)  # Apr–Sep
       else
         return Date.new(fy_end_year, 3, 31)    # Oct–Mar
       end
     end
-  
+
     # Match: H1 2023 or H2 2023 (Calendar Half Year)
     if (match = str.match(/\AH([12])(\d{2,4})\z/))
       half = match[1].to_i
       year = normalize_year(match[2])
-  
+
       if half == 1
         return Date.new(year, 6, 30)  # Jan–Jun
       else
         return Date.new(year, 12, 31) # Jul–Dec
       end
     end
-  
+
     nil
   end
-  
-  
 
   def self.parse_ytd(str)
     # Match: YTD Nov 23, YTD-Jan 2022, etc.
@@ -239,7 +236,7 @@ class KpiDateUtils
       month = Date::ABBR_MONTHNAMES.index(month_name.capitalize) || Date::MONTHNAMES.index(month_name.capitalize)
       return Date.new(year, month, -1) if year && month
     end
-  
+
     # Match: YTD Jan–Sept 2023 (range)
     if (match = str.match(/\AYTD[- ]?[A-Z]{3,9}[- ]?([A-Z]{3,9})[- ]?(\d{2,4})\z/i))
       end_month_abbr = match[1]
@@ -247,11 +244,9 @@ class KpiDateUtils
       month = Date::ABBR_MONTHNAMES.index(end_month_abbr.capitalize) || Date::MONTHNAMES.index(end_month_abbr.capitalize)
       return Date.new(year, month, -1) if year && month
     end
-  
+
     nil
   end
-  
-  
 
   def self.fallback_parse(raw_period, raise_error)
     normalized = raw_period.to_s.strip.gsub(/\s+/, ' ')
@@ -290,7 +285,7 @@ class KpiDateUtils
     return "Half Year" if /\AH[12](?:\s?FY)?\s?\d{2,4}\z/.match?(str) # H1 2023, H2FY23, H1 FY2023
 
     # === YTD Formats ===
-    return "YTD" if /\AYTD[- ]?[A-Z]{3,9}[- ]?\d{2,4}\z/.match?(str)            # e.g. YTD Nov 23, YTD-Jan 2022
+    return "YTD" if /\AYTD[- ]?[A-Z]{3,9}[- ]?\d{2,4}\z/.match?(str) # e.g. YTD Nov 23, YTD-Jan 2022
     return "YTD" if /\AYTD[- ]?[A-Z]{3,9}[- ]?[A-Z]{3,9}[- ]?\d{2,4}\z/.match?(str) # e.g. YTD Jan-Sept 2023
 
     # === Year Formats ===
@@ -312,8 +307,6 @@ class KpiDateUtils
     return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
     return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str)
 
-    
-
     # === Fallback ===
     "Month"
   end
@@ -326,7 +319,7 @@ class KpiDateUtils
       year
     end
   end
-  
+
   def self.start_of_fiscal_quarter(fin_year, quarter, fiscal_start_month)
     start_month = (((fiscal_start_month - 1) + ((quarter - 1) * 3)) % 12) + 1
     year = start_month >= fiscal_start_month ? fin_year - 1 : fin_year

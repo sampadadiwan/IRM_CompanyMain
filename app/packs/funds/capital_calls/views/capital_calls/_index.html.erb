@@ -11,7 +11,7 @@
             <%= link_to new_capital_call_path("capital_call[fund_id]": fund.id),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-plus me-2"></i> New Call
+            <i class="ti ti-plus"></i> New Call
             <% end %>
 
             <%= link_to new_import_upload_path(
@@ -21,13 +21,13 @@
                         "sample_upload": "CAPITAL_CALL_SAMPLE"),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
 
             <%= link_to capital_calls_path(fund_id: fund&.id, format: "xlsx"),
                         class: "btn btn-outline-success d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+            <i class="ti ti-download"></i> <%= t_common(:download) %>
             <% end %>
 
         <% end %>

@@ -9,7 +9,7 @@
         <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]),
                     class: "btn btn-outline-primary d-inline-flex align-items-center",
                     data: { turbo: false } do %>
-          <i class="ti ti-plus me-2"></i> New Distribution
+          <i class="ti ti-plus"></i> New Distribution
         <% end %>
       <% end %>
 
@@ -21,7 +21,7 @@
                     "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
       <% end %>
 
       <%# Download button (only if fund_id present) %>
@@ -29,7 +29,7 @@
         <%= link_to capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"),
                     class: "btn btn-outline-success d-inline-flex align-items-center",
                     data: { turbo: false } do %>
-          <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+          <i class="ti ti-download"></i> <%= t_common(:download) %>
         <% end %>
       <% end %>
 

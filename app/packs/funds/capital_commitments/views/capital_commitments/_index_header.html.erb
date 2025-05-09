@@ -11,14 +11,14 @@
             <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-plus me-2"></i> New Commitment
+            <i class="ti ti-plus"></i> New Commitment
             <% end %>
 
             <div class="btn-group">
             <div class="dropdown">
                 <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="ti ti-script me-2"></i> Generate
+                <i class="ti ti-script"></i> Generate
                 </button>
 
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -29,7 +29,7 @@
                                 class: "dropdown-item d-flex align-items-center",
                                 form_class: "deleteButton",
                                 data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
-                    <i class="ti ti-file-text me-2"></i> All Documents
+                    <i class="ti ti-file-text"></i> All Documents
                 <% end %>
 
                 <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
@@ -38,7 +38,7 @@
                                 class: "dropdown-item d-flex align-items-center",
                                 form_class: "deleteButton",
                                 data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
-                    <i class="ti ti-file-description me-2"></i> <%= template.name %>
+                    <i class="ti ti-file-description"></i> <%= template.name %>
                     <% end %>
                 <% end %>
 
@@ -46,7 +46,7 @@
                     <%= link_to allocate_form_fund_path(fund, generate_soa: true),
                                 class: "dropdown-item d-flex align-items-center",
                                 data: { turbo: false } do %>
-                    <i class="ti ti-file-invoice me-2"></i> Generate SOA
+                    <i class="ti ti-file-invoice"></i> Generate SOA
                     <% end %>
                 <% end %>
                 </div>
@@ -60,19 +60,19 @@
                         "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
 
         <% end %>
 
         <div class="btn-group">
             <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+                <i class="ti ti-download"></i> <%= t_common(:download) %>
             </button>
             <ul class="dropdown-menu">
                 <li>
                 <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
-                    <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+                    <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
                 <% end %>
                 </li>
                 <li>
@@ -80,7 +80,7 @@
                         data-action="click->export-xl#export"
                         data-tableid="capital_commitments"
                         data-filename="Capital Commitments">
-                    <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+                    <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
                 </button>
                 </li>
             </ul>

@@ -19,7 +19,7 @@
                         msg: "Ratios computations will take the last portfolio FMV and account entries for 'Cash in Hand' and 'Net Current Assets' prior to end date for the computations. Please check these are updated. Computation will take a few mins, please be patient. Proceed?",
                         method: :get
                       } do %>
-          <i class="ti ti-analyze me-2"></i> Compute Ratios
+          <i class="ti ti-analyze"></i> Compute Ratios
         <% end %>
       <% end %>
 
@@ -28,29 +28,29 @@
           <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                   id="fund_ratios_actions"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+            <i class="ti ti-settings"></i> <%= t_common(:actions) %>
           </button>
 
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
             <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "Investor")),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-building-bank me-2"></i> Filter: Portfolio Company
+              <i class="ti ti-building-bank"></i> Filter: Portfolio Company
             <% end %>
 
             <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "CapitalCommitment")),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-users me-2"></i> Filter: Folios
+              <i class="ti ti-users"></i> Filter: Folios
             <% end %>
 
             <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "AggregatePortfolioInvestment")),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-briefcase me-2"></i> Filter: Instrument
+              <i class="ti ti-briefcase"></i> Filter: Instrument
             <% end %>
 
             <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :null, true)),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-circle-off me-2"></i> Filter: Fund Only
+              <i class="ti ti-circle-off"></i> Filter: Fund Only
             <% end %>
 
             <div class="dropdown-divider"></div>
@@ -61,12 +61,12 @@
                             "import_upload[import_type]": "FundRatio",
                             "sample_upload": "Fund_RATIO_SAMPLE"),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+              <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
 
             <%= link_to download_xl_link(data_source),
                         class: "dropdown-item d-flex align-items-center" do %>
-              <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+              <i class="ti ti-download"></i> <%= t_common(:download) %>
             <% end %>
 
           </div>

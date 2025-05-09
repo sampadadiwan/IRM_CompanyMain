@@ -20,21 +20,21 @@
       <%= link_to new_investor_path("investor[entity_id]": current_user.entity_id),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-user-plus me-2"></i> New
+        <i class="ti ti-user-plus"></i> New
       <% end %>
     <% end %>
 
     <%= link_to notes_path,
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
-      <i class="ti ti-notes me-2"></i> All Notes
+      <i class="ti ti-notes"></i> All Notes
     <% end %>
 
     <div class="btn-group">
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+          <i class="ti ti-settings"></i> <%= t_common(:actions) %>
         </button>
 
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -42,7 +42,7 @@
           <%= link_to investors_path(format: "xlsx", all: true),
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
-            <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+            <i class="ti ti-download"></i> <%= t_common(:download) %>
           <% end %>
 
           <% if policy(investor).upload? %>
@@ -51,20 +51,20 @@
                           "sample_upload": "INVESTORS_SAMPLE"),
                         class: "dropdown-item d-flex align-items-center",
                         data: { turbo: false } do %>
-              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>
+              <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
           <% end %>
 
           <%= link_to portfolio_reports_path,
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
-            <i class="ti ti-file-report me-2"></i> Portfolio Reports Setup
+            <i class="ti ti-file-report"></i> Portfolio Reports Setup
           <% end %>
 
           <%= link_to portfolio_investments_report_all_investors_path(all: true),
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
-            <i class="ti ti-file-text me-2"></i> Portfolio Investment Report
+            <i class="ti ti-file-text"></i> Portfolio Investment Report
           <% end %>
 
           <%= link_to new_investor_notice_path(
@@ -72,7 +72,7 @@
                         "investor_notice[owner_type]": "Entity"),
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
-            <i class="ti ti-bell-plus me-2"></i> Add Stakeholder Notice
+            <i class="ti ti-bell-plus"></i> Add Stakeholder Notice
           <% end %>
 
         </div>

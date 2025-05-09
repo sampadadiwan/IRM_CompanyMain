@@ -4,7 +4,7 @@ class KpiReport < ApplicationRecord
   include WithFolder
   include Trackable.new
 
-  PERIODS = ["Month", "Quarter", "Semi Annual", "Annual"].freeze
+  PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
   belongs_to :entity
   # This is in case the fund is uploading the kpis

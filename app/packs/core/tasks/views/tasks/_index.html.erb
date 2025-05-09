@@ -12,7 +12,7 @@
       <%= link_to new_task_path("task[investor_id]": investor.id),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-plus me-2"></i> New Task
+        <i class="ti ti-plus"></i> New Task
       <% end %>
     <% end %>
 
@@ -29,7 +29,7 @@
                       completed: :all),
                     class: "btn btn-sm btn-outline-success d-inline-flex align-items-center",
                     data: { turbo_frame: 'task_list' } do %>
-          <i class="ti ti-list-check me-2"></i> Show All
+          <i class="ti ti-list-check"></i> Show All
         <% end %>
 
         <%= link_to tasks_path(
@@ -40,7 +40,7 @@
                       owner_type: owner&.class&.name),
                     class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center",
                     data: { turbo_frame: 'task_list' } do %>
-          <i class="ti ti-alert-triangle me-2"></i> Incomplete
+          <i class="ti ti-alert-triangle"></i> Incomplete
         <% end %>
 
         <%= link_to new_task_path(
@@ -50,7 +50,7 @@
                       "task[owner_type]": owner&.class&.name || params[:owner_type]),
                     class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
                     data: { turbo_frame: 'new_task' } do %>
-          <i class="ti ti-plus me-2"></i> New Task
+          <i class="ti ti-plus"></i> New Task
         <% end %>
       <% end %>
     <% end %>

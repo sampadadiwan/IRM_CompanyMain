@@ -30,11 +30,11 @@
                     <span class="m-0 font-weight-bold text-primary">Documents</span>
                     <div class="d-flex flex-column flex-sm-row gap-2 mt-2 mt-sm-0">
                         <%= link_to documents_path(entity_id: params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-primary" do %>
-                          <i class="ti ti-database-export me-2"></i>Index
+                          <i class="ti ti-database-export"></i>Index
                         <% end %>
 
                         <%= link_to documents_path(entity_id: params[:entity_id]), class: "btn btn-outline-primary" do %>
-                            <i class="ti ti-files me-2"></i>All Documents
+                            <i class="ti ti-files"></i>All Documents
                         <% end %>
 
                     </div>

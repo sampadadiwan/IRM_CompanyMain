@@ -51,12 +51,12 @@
 
         <div class="btn-group">
           <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="ti ti-download me-2"></i> Download
+            <i class="ti ti-download"></i> Download
           </button>
           <ul class="dropdown-menu">
             <li>
               <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
-                <i class="ti ti-file-spreadsheet me-2"></i> <%= t_common(:export_all) %>
+                <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
               <% end %>
             </li>
             <li>
@@ -64,7 +64,7 @@
                       data-action="click->export-xl#export"
                       data-tableid="account_entries_table"
                       data-filename="Account Entries">
-                <i class="ti ti-table-export me-2"></i> <%= t_common(:export_visible) %>
+                <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
               </button>
             </li>
           </ul>

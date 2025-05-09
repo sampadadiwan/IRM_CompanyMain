@@ -28,48 +28,48 @@ commands = [
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-file-report me-2"></i>Reports
+            <i class="ti ti-file-report"></i>Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
             <li class="dropdown-submenu dropend">
               <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">
-                <i class="ti ti-report me-2"></i>Basic Reports
+                <i class="ti ti-report"></i>Basic Reports
               </a>
               <ul class="dropdown-menu">
                 <li>
                   <%= link_to report_fund_path(@fund, report: "dashboard/e_signatures"), class: "dropdown-item" do %>
-                    <i class="ti ti-signature me-2"></i>eSignatures Report
+                    <i class="ti ti-signature"></i>eSignatures Report
                   <% end %>
                 </li>
                 <li>
                   <%= link_to export_fund_path(@fund), class: "dropdown-item" do %>
-                    <i class="ti ti-database-export me-2"></i>Fund Export
+                    <i class="ti ti-database-export"></i>Fund Export
                   <% end %>
                 </li>
                 <li>
                   <%= link_to report_fund_path(@fund, report: "dashboard/foreign_remittances"), class: "dropdown-item" do %>
-                    <i class="ti ti-currency-dollar me-2"></i>Foreign Remittances
+                    <i class="ti ti-currency-dollar"></i>Foreign Remittances
                   <% end %>
                 </li>
                 <li>
                   <%= link_to report_fund_path(@fund, report: "dashboard/chart"), class: "dropdown-item" do %>
-                    <i class="ti ti-chart-bar me-2"></i>Fund Numbers
+                    <i class="ti ti-chart-bar"></i>Fund Numbers
                   <% end %>
                 </li>
                 <li>
                   <%= link_to dashboard_fund_path(@fund), class: "dropdown-item" do %>
-                    <i class="ti ti-layout-dashboard me-2"></i>Dashboard
+                    <i class="ti ti-layout-dashboard"></i>Dashboard
                   <% end %>
                 </li>
                 <li>
                   <%= link_to report_fund_path(@fund, report: "dashboard/calls_report"), class: "dropdown-item" do %>
-                    <i class="ti ti-phone-call me-2"></i>Pending Remittances
+                    <i class="ti ti-phone-call"></i>Pending Remittances
                   <% end %>
                 </li>
                 <li>
                   <%= link_to report_fund_path(@fund, report: "dashboard/advisor_payouts"), class: "dropdown-item" do %>
-                    <i class="ti ti-user-dollar me-2"></i>Advisor Payouts
+                    <i class="ti ti-user-dollar"></i>Advisor Payouts
                   <% end %>
                 </li>
               </ul>
@@ -78,21 +78,21 @@ commands = [
             <div class="dropdown-divider"></div>
 
             <%= link_to dashboard_fund_path(@fund), class: "dropdown-item" do %>
-              <i class="ti ti-layout-dashboard me-2"></i>Dashboard
+              <i class="ti ti-layout-dashboard"></i>Dashboard
             <% end %>
 
             <%= link_to report_fund_path(@fund, report: "dashboard/sign_in_count"), class: "dropdown-item" do %>
-              <i class="ti ti-login me-2"></i>Sign In Report
+              <i class="ti ti-login"></i>Sign In Report
             <% end %>
 
             <%= link_to report_fund_path(@fund, report: "dashboard/onboarding_report", show_docs: true), class: "dropdown-item" do %>
-              <i class="ti ti-user-check me-2"></i>Onboarding Report
+              <i class="ti ti-user-check"></i>Onboarding Report
             <% end %>
 
             <div class="dropdown-divider"></div>
 
             <%= link_to report_fund_path(@fund, report: "generate_reports"), class: "dropdown-item" do %>
-              <i class="ti ti-settings-cog me-2"></i>Generate Reports
+              <i class="ti ti-settings-cog"></i>Generate Reports
             <% end %>
 
           </div>
@@ -105,46 +105,46 @@ commands = [
           <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-file-report me-2"></i>Fund Reports
+              <i class="ti ti-file-report"></i>Fund Reports
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(FundReport.new(fund_id: @fund.id, entity_id: @fund.entity_id)).new? %>
                 <%= link_to new_fund_report_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                  <i class="ti ti-settings-cog me-2"></i>Generate Reports
+                  <i class="ti ti-settings-cog"></i>Generate Reports
                 <% end %>
               <% end %>
 
               <%= link_to fund_reports_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                <i class="ti ti-folder me-2"></i>All Reports
+                <i class="ti ti-folder"></i>All Reports
               <% end %>
 
               <div class="dropdown-divider"></div>
 
               <%= link_to fund_reports_path(fund_id: @fund.id, name: "CorpusDetails"), class: "dropdown-item" do %>
-                <i class="ti ti-building-bank me-2"></i>Corpus Details
+                <i class="ti ti-building-bank"></i>Corpus Details
               <% end %>
 
               <%= link_to fund_reports_path(fund_id: @fund.id, name: "InformationOnInvestments"), class: "dropdown-item" do %>
-                <i class="ti ti-briefcase me-2"></i>Information on Investments
+                <i class="ti ti-briefcase"></i>Information on Investments
               <% end %>
 
               <%= link_to fund_reports_path(fund_id: @fund.id, name: "InfoOnInvestors"), class: "dropdown-item" do %>
-                <i class="ti ti-users me-2"></i>Info on Stakeholders
+                <i class="ti ti-users"></i>Info on Stakeholders
               <% end %>
 
               <%= link_to fund_report_path(fund_id: @fund.id, report: "sebi_report"), class: "dropdown-item" do %>
-                <i class="ti ti-file-download me-2"></i> <%= t_common(:download) %> SEBI Report
+                <i class="ti ti-file-download"></i> <%= t_common(:download) %> SEBI Report
               <% end %>
 
               <div class="dropdown-divider"></div>
 
               <%= link_to fund_report_path(fund_id: @fund.id, report: "crisil_report"), class: "dropdown-item" do %>
-                <i class="ti ti-file-download me-2"></i> <%= t_common(:download) %> CRISIL Report
+                <i class="ti ti-file-download"></i> <%= t_common(:download) %> CRISIL Report
               <% end %>
 
               <%= link_to portfolio_investments_report_all_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                <i class="ti ti-chart-pie me-2"></i>Portfolio Investment Report
+                <i class="ti ti-chart-pie"></i>Portfolio Investment Report
               <% end %>
 
             </div>
@@ -157,7 +157,7 @@ commands = [
           <div class="dropdown">
             <button class="btn btn-outline-primary dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-upload me-2"></i>Import
+              <i class="ti ti-upload"></i>Import
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
@@ -168,7 +168,7 @@ commands = [
                               "import_upload[import_type]": "AccountEntry",
                               "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
                             class: "dropdown-item" do %>
-                  <i class="ti ti-file-text me-2"></i>Import Account Entries
+                  <i class="ti ti-file-text"></i>Import Account Entries
                 <% end %>
               <% end %>
 
@@ -178,7 +178,7 @@ commands = [
                             "import_upload[import_type]": "FundDocs",
                             "sample_upload": "FUND_DOCS_SAMPLE"),
                           class: "dropdown-item" do %>
-                <i class="ti ti-file-upload me-2"></i>Import Documents
+                <i class="ti ti-file-upload"></i>Import Documents
               <% end %>
 
               <%= link_to new_import_upload_path(
@@ -187,7 +187,7 @@ commands = [
                             "import_upload[import_type]": "InvestorAdvisor",
                             "sample_upload": "FUND_INVESTOR_ADVISORS_SAMPLE"),
                           class: "dropdown-item" do %>
-                <i class="ti ti-user-plus me-2"></i>Import Investor Advisors
+                <i class="ti ti-user-plus"></i>Import Investor Advisors
               <% end %>
 
             </div>
@@ -199,35 +199,35 @@ commands = [
         <div class="dropdown">
           <button class="btn btn-outline-primary dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+            <i class="ti ti-settings"></i> <%= t_common(:actions) %>
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(@fund).update? %>
                 <%= link_to edit_fund_path(@fund), class: "dropdown-item" do %>
-                  <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %> Fund
+                  <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
                 <% end %>
 
                 <% if policy(@fund).destroy? %>
                   <%= button_to @fund, method: :delete, class: "dropdown-item", form_class: "deleteButton",
                       data: {action: "click->confirm#popup", turbo: false} do %>
-                    <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %> Fund
+                    <i class="ti ti-trash"></i> <%= t_common(:delete) %> Fund
                   <% end %>
                 <% end %>
 
                 <%= link_to new_approval_path("approval[owner_id]": @fund.id, "approval[owner_type]": "Fund"), class: "dropdown-item" do %>
-                  <i class="ti ti-checkup-list me-2"></i>Fund Approval
+                  <i class="ti ti-checkup-list"></i>Fund Approval
                 <% end %>
 
                 <% if policy(@fund).run_checks? %>
                   <div class="dropdown-divider"></div>
 
                   <%= link_to run_checks_ai_checks_path(parent_id: @fund.id, parent_type: "Fund", rule_type: "compliance"), class: "dropdown-item" do %>
-                    <i class="ti ti-shield-check me-2"></i>Run Compliance Check
+                    <i class="ti ti-shield-check"></i>Run Compliance Check
                   <% end %>
 
                   <%= link_to ai_checks_path(q: ransack_query_params_multiple([[:ai_rule_rule_type, :eq, "compliance"], [:parent_id, :eq, @fund.id], [:parent_type, :eq, "Fund"]])), class: "dropdown-item" do %>
-                    <i class="ti ti-eye me-2"></i>View Compliance Check
+                    <i class="ti ti-eye"></i>View Compliance Check
                   <% end %>
                 <% end %>
               <% end %>
@@ -237,23 +237,23 @@ commands = [
 
                 <li class="dropdown-submenu dropend">
                   <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">
-                    <i class="ti ti-report-money me-2"></i>Account Entries
+                    <i class="ti ti-report-money"></i>Account Entries
                   </a>
                   <ul class="dropdown-menu">
                     <li>
                       <%= link_to account_entries_path(fund_id: @fund.id, fund_accounts_only: true), class: "dropdown-item" do %>
-                        <i class="ti ti-article me-2"></i>Fund Account Entries
+                        <i class="ti ti-article"></i>Fund Account Entries
                       <% end %>
                     </li>
                     <li>
                       <%= link_to fund_formulas_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                        <i class="ti ti-function me-2"></i>Allocation Formulas
+                        <i class="ti ti-function"></i>Allocation Formulas
                       <% end %>
                     </li>
                     <% if policy(@fund).allocate? %>
                       <li>
                         <%= link_to allocate_form_fund_path(@fund, run_allocations: true), class: "dropdown-item" do %>
-                          <i class="ti ti-calculator me-2"></i>Allocate Account Entries
+                          <i class="ti ti-calculator"></i>Allocate Account Entries
                         <% end %>
                       </li>
                     <% end %>
@@ -270,32 +270,32 @@ commands = [
                 <div class="d-none d-sm-block">
                   <li class="dropdown-submenu dropend">
                     <a href="#" id="misc_action_menu" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">
-                      <i class="ti ti-dots me-2"></i>Misc
+                      <i class="ti ti-dots"></i>Misc
                     </a>
                     <ul class="dropdown-menu">
                       <li>
                         <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), class: "dropdown-item" do %>
-                          <i class="ti ti-file-plus me-2"></i>New Template
+                          <i class="ti ti-file-plus"></i>New Template
                         <% end %>
                       </li>
                       <li>
                         <%= link_to new_investor_notice_path("investor_notice[owner_id]": @fund.id, "investor_notice[owner_type]": "Fund"), class: "dropdown-item" do %>
-                          <i class="ti ti-bell-plus me-2"></i>Add Investor Notice
+                          <i class="ti ti-bell-plus"></i>Add Investor Notice
                         <% end %>
                       </li>
                       <li>
                         <%= link_to "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" do %>
-                          <i class="ti ti-mail me-2"></i>Send Email
+                          <i class="ti ti-mail"></i>Send Email
                         <% end %>
                       </li>
                       <li>
                         <%= link_to check_access_rights_fund_path(@fund, create_missing: false), class: "dropdown-item" do %>
-                          <i class="ti ti-lock-access me-2"></i>Check Access Rights
+                          <i class="ti ti-lock-access"></i>Check Access Rights
                         <% end %>
                       </li>
                       <li>
                         <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton" do %>
-                          <i class="ti ti-barcode me-2"></i>Generate Tracking Numbers
+                          <i class="ti ti-barcode"></i>Generate Tracking Numbers
                         <% end %>
                       </li>
                     </ul>
@@ -307,21 +307,21 @@ commands = [
                 <div class="dropdown-divider"></div>
 
                 <%= link_to fund_unit_settings_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                  <i class="ti ti-settings me-2"></i>Fund Unit Settings
+                  <i class="ti ti-settings"></i>Fund Unit Settings
                 <% end %>
 
                 <%= link_to fund_units_path(fund_id: @fund.id, cols: :all), class: "dropdown-item" do %>
-                  <i class="ti ti-building-community me-2"></i>Fund Units
+                  <i class="ti ti-building-community"></i>Fund Units
                 <% end %>
 
                 <% if current_user.enable_investors %>
                   <%= link_to investors_path(owner_id: @fund.id, owner_type: "Fund"), class: "dropdown-item" do %>
-                    <i class="ti ti-users-group me-2"></i>View Stakeholders
+                    <i class="ti ti-users-group"></i>View Stakeholders
                   <% end %>
                 <% end %>
 
                 <%= link_to excused_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
-                  <i class="ti ti-user-off me-2"></i>Excused Investors
+                  <i class="ti ti-user-off"></i>Excused Investors
                 <% end %>
               <% end %>
 

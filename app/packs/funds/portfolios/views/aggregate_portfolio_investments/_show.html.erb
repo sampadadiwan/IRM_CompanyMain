@@ -202,7 +202,7 @@
 
   <%= link_to aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'),
               class: "btn btn-outline-info" do %>
-    <i class="ti ti-eye me-2"></i>Preview
+    <i class="ti ti-eye"></i>Preview
   <% end %>
 
   <% if policy(aggregate_portfolio_investment).destroy? %>
@@ -210,7 +210,7 @@
                   class: "btn btn-outline-danger", form_class: "deleteButton",
                   data: { action: "click->confirm#popup", turbo: false,
                           msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
-      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 
@@ -219,7 +219,7 @@
                 "valuation[owner_type]": "Investor",
                 "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id),
               class: "btn btn-outline-success" do %>
-    <i class="ti ti-currency-dollar me-2"></i>Add Valuation
+    <i class="ti ti-currency-dollar"></i>Add Valuation
   <% end %>
 
   <%
@@ -235,7 +235,7 @@
 
   <%= button_to toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
                 method: :patch, class: "btn btn-outline-info" do %>
-    <i class="<%= toggle_icon %> me-2"></i><%= toggle_show_portfolio_text %>
+    <i class="<%= toggle_icon %>"></i><%= toggle_show_portfolio_text %>
   <% end %>
 
 </div>

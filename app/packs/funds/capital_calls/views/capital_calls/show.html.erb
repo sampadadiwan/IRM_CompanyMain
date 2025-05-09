@@ -6,12 +6,12 @@
 
   <% if policy(@capital_call).update? %>
     <%= link_to edit_capital_call_path(@capital_call), class: "btn btn-outline-primary" do %>
-      <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %>
+      <i class="ti ti-edit"></i> <%= t_common(:edit) %>
     <% end %>
 
     <%= button_to @capital_call, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
         data: {action: "click->confirm#popup", turbo: false} do %>
-      <i class="ti ti-trash me-2"></i> <%= t_common(:delete) %>
+      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
   <% end %>
 
@@ -19,7 +19,7 @@
     <div class="dropdown">
       <button class="btn btn-outline-success dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="ti ti-settings me-2"></i> <%= t_common(:actions) %>
+        <i class="ti ti-settings"></i> <%= t_common(:actions) %>
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
@@ -27,7 +27,7 @@
           <%= button_to approve_capital_call_path(@capital_call), method: :post, class: "dropdown-item", form_class: "deleteButton",
               data: {action: "click->confirm#popup", turbo: false, method: :post,
                      msg: "This will generate a notification to your clients, if enabled. Please note only approved call notices will be attached to the email."} do %>
-            <i class="ti ti-check me-2"></i>Approve
+            <i class="ti ti-check"></i>Approve
           <% end %>
         <% end %>
 
@@ -35,7 +35,7 @@
           <%= button_to generate_docs_capital_call_path(@capital_call), method: :patch, class: "dropdown-item", form_class: "deleteButton",
               data: {action: "click->confirm#popup", method: :patch,
                      msg: "This will generate the drawdown notices for all remittances in this call. Proceed?"} do %>
-            <i class="ti ti-file-plus me-2"></i>Generate Documents
+            <i class="ti ti-file-plus"></i>Generate Documents
           <% end %>
         <% end %>
 
@@ -43,7 +43,7 @@
           <%= button_to allocate_units_capital_call_path(@capital_call), method: :patch, class: "dropdown-item", form_class: "deleteButton",
               data: {action: "click->confirm#popup", turbo: false, method: :patch,
                      msg: "This will compute the units to be allocated to each commitment in this fund."} do %>
-            <i class="ti ti-box-multiple me-2"></i>Allocate Units
+            <i class="ti ti-box-multiple"></i>Allocate Units
           <% end %>
         <% end %>
 
@@ -51,7 +51,7 @@
           <%= button_to recompute_fees_capital_call_path(@capital_call), method: :patch, class: "dropdown-item", form_class: "deleteButton",
               data: {action: "click->confirm#popup", turbo: false, method: :patch,
                      msg: "This will recompute the fees for each remittance in this call. Proceed?"} do %>
-            <i class="ti ti-calculator me-2"></i>Recompute Fees
+            <i class="ti ti-calculator"></i>Recompute Fees
           <% end %>
         <% end %>
 

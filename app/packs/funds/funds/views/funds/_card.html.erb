@@ -31,33 +31,33 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
                     <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-layout-dashboard me-2"></i> Dashboard
+                        <i class="ti ti-layout-dashboard"></i> Dashboard
                     <% end %>
 
                     <%= link_to fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-eye me-2"></i> View Fund
+                        <i class="ti ti-eye"></i> View Fund
                     <% end %>
 
                     <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-edit me-2"></i> <%= t_common(:edit) %> Fund
+                        <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
                     <% end %>
 
                     <div class="dropdown-divider"></div>
 
                     <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-file-text me-2"></i> Documents
+                        <i class="ti ti-file-text"></i> Documents
                     <% end %>
 
                     <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-briefcase me-2"></i> Portfolio
+                        <i class="ti ti-briefcase"></i> Portfolio
                     <% end %>
 
                     <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-settings me-2"></i> Fund Unit Settings
+                        <i class="ti ti-settings"></i> Fund Unit Settings
                     <% end %>
 
                     <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-book me-2"></i> Fund Account Entries
+                        <i class="ti ti-book"></i> Fund Account Entries
                     <% end %>
 
                     </div>

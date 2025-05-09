@@ -18,7 +18,7 @@
           <div class="dropdown">
             <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-id me-2"></i> New KYC
+              <i class="ti ti-id"></i> New KYC
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
@@ -27,7 +27,7 @@
                             "investor_kyc[entity_id]": entity_id,
                             "investor_kyc[kyc_type]": "Individual"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-user me-2"></i> Individual
+                <i class="ti ti-user"></i> Individual
               <% end %>
 
               <%= link_to new_investor_kyc_path(
@@ -35,26 +35,26 @@
                             "investor_kyc[entity_id]": entity_id,
                             "investor_kyc[kyc_type]": "Non Individual"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-building me-2"></i> Non Individual
+                <i class="ti ti-building"></i> Non Individual
               <% end %>
 
               <%= link_to investor_kycs_path(filter: true),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-report me-2"></i> Report
+                <i class="ti ti-report"></i> Report
               <% end %>
 
               <%= link_to new_custom_notification_path(
                             "custom_notification[for_type]": "InvestorKyc",
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-mail me-2"></i> Custom KYC Notification
+                <i class="ti ti-mail"></i> Custom KYC Notification
               <% end %>
 
               <%= link_to new_custom_notification_path(
                             "custom_notification[for_type]": "Send Document",
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-mail-forward me-2"></i> Custom Agreement Notification
+                <i class="ti ti-mail-forward"></i> Custom Agreement Notification
               <% end %>
 
             </div>
@@ -67,28 +67,28 @@
           <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-file-certificate me-2"></i> KYC Documents
+              <i class="ti ti-file-certificate"></i> KYC Documents
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(ESignature).index? %>
                 <%= link_to report_entity_path(id: entity_id, report: "dashboard/e_signatures"),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-signature me-2"></i> eSignatures Report
+                  <i class="ti ti-signature"></i> eSignatures Report
                 <% end %>
               <% end %>
 
               <% if params[:q].present? && policy(investor_kyc).new? %>
                 <%= link_to generate_all_docs_investor_kycs_path(entity_id: entity_id, q: params[:q].to_unsafe_h),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-file-plus me-2"></i> Generate KYC Docs
+                  <i class="ti ti-file-plus"></i> Generate KYC Docs
                 <% end %>
               <% end %>
 
               <% if current_user.has_cached_role?(:approver) %>
                 <%= link_to approve_documents_path(entity_id: entity_id, owner_type: "InvestorKyc"),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-checkbox me-2"></i> Approve KYC Docs
+                  <i class="ti ti-checkbox"></i> Approve KYC Docs
                 <% end %>
               <% end %>
 
@@ -105,7 +105,7 @@
                         method: :post,
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { action: "click->confirm#popup", turbo: false, msg: "This will generate a notification to all investor users whose KYC is unverified", method: :post } do %>
-            <i class="ti ti-bell me-2"></i> Send KYC Reminders
+            <i class="ti ti-bell"></i> Send KYC Reminders
           <% end %>
         <% end %>
       <% end %>
@@ -115,13 +115,13 @@
           <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %>/Download
+              <i class="ti ti-upload"></i> <%= t_common(:upload) %>/Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <%= link_to download_xl_link(data_source),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-download me-2"></i> <%= t_common(:download) %>
+                <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
 
               <div class="dropdown-divider"></div>
@@ -130,14 +130,14 @@
                             "import_upload[import_type]": "InvestorKyc",
                             "sample_upload": "INVESTOR_KYCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> KYC Details
+                <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Details
               <% end %>
 
               <%= link_to new_import_upload_path(
                             "import_upload[import_type]": "KycDocs",
                             "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload me-2"></i> <%= t_common(:upload) %> KYC Documents
+                <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Documents
               <% end %>
 
             </div>
