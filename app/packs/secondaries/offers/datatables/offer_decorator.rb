@@ -19,9 +19,18 @@ class OfferDecorator < ApplicationDecorator
     h.render partial: "/offers/percentage", locals: { offer: object }, formats: [:html]
   end
 
+  def approved
+    h.display_boolean object.approved
+  end
+
+  def verified
+    h.display_boolean object.verified
+  end
+
   def investor_link
     h.link_to object.investor.investor_name, h.investor_path(id: object.investor_id)
   end
+  alias investor_name investor_link
 
   def bank_verification_enabled?
     entity.entity_setting.bank_verification && !secondary_sale.disable_bank_kyc

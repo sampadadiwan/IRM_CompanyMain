@@ -17,8 +17,12 @@ class SecondarySalesController < ApplicationController
     @offers = policy_scope(@q.result)
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :documents)
 
-    @offers = OfferSearchService.new.fetch_rows(@offers, params)
-    # @offers = @offers.page(params[:page]) unless request.format.xlsx?
+    @offers = OfferSearchService.perform(@offers, current_user, params)
+    if !request.format.xlsx? && params[:all].blank?
+      page = params[:page] || 1
+      @offers = @offers.page(page)
+      @offers = @offers.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     if params[:report]
       render "/offers/#{params[:report]}"

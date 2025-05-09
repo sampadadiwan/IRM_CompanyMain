@@ -96,9 +96,11 @@
           
           <% if policy(secondary_sale).owner? || policy(secondary_sale).rm?  %>
             <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false), loading: :lazy  do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           <% elsif policy(secondary_sale).seller? %>
             <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, approved: approved, card: true), loading: :lazy  do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           <% end %>          
 
@@ -110,6 +112,7 @@
       <div id="interests-tab" class="tab-pane fade <%= interests_active ? 'in show active' : '' %>">
         <div id="interests" class="associated_entity">
           <%= turbo_frame_tag "interests_frame", target: "_top", src: interests_secondary_sale_path(secondary_sale), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
           <% end %>
         </div>     
       </div>

@@ -1,24 +1,10 @@
-<tr id="<%= dom_id kpi_report %>">
+<tr id="kpi_report_<%= kpi_report.id %>">
+
+  <%= render RansackTableRow.new(model: kpi_report, columns:) %>
+
   <td>
-    <%= l kpi_report.as_of %>
-  </td>
+    <%= object = kpi_report.respond_to?(:object) ? kpi_report.object : kpi_report %>
+    <%= link_to  t_common(:show) , kpi_report_path(kpi_report) , {class: "btn btn-outline-primary ti ti-eye" }%>
+    <%= link_to  t_common(:edit) , edit_kpi_report_path(kpi_report) , {class: "btn btn-outline-success ti ti-pencil" } if policy(object).edit?%>
   <td>
-    <%= kpi_report.period %>
-  </td>
-  <td>
-    <%= kpi_report.notes %>
-  </td>
-  <td>
-    <%= kpi_report.user.full_name %>
-  </td>
-  <td>
-    <% if kpi_report.investor_id.present? %>
-      <%= link_to kpi_report.portfolio_company.investor_name, kpi_reports_path(investor_id: kpi_report.investor_id, grid_view: true) %>
-    <% else %>
-      <%= link_to kpi_report.entity.name, kpi_reports_path(entity_id: kpi_report.entity_id, grid_view: true) %>
-    <% end %>
-  </td>
-  <td>
-    <%= link_to  t_common(:show), kpi_report , {class: "btn btn-outline-primary"}%>
-  </td>
 </tr>
