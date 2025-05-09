@@ -174,3 +174,37 @@ When("I visit Portfolio Investment AG Grid and find the derived field") do
   find('button.search-button[aria-label="Search"]').click
   expect(page).to have_content("PI's Instrument")
 end
+
+
+When('I visit {string} Page and find columns in the grid') do |class_name|
+  page_url = "/#{class_name.underscore.pluralize}"
+  visit(page_url)
+  # @expected_columns = class_name::STANDARD_COLUMNS.keys.compact
+  @expected_columns = 
+  case class_name.to_s
+  when 'CapitalRemittance'
+    ["Stakeholder", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date"]
+  when 'CapitalCall'
+    ["Name", "Due Date", "Call Amount", "Collected Amount", "Due Amount", "Approved"]
+  when 'FundReport'
+    ["Id", "Name", "Name Of Scheme", "Start Date", "End Date"]
+  when "FundRatio"
+    ["For", "Type", "Name", "Display Value", "On", "Scenario"]
+  when "KpiReport"
+    ["As Of", "Period", "Notes", "User", "For"]
+  when "Offer"
+     ["Investor", "User", "Quantity", "Price", "Allocation Quantity", "Allocation Amount", "Approved", "Verified", "Updated At"]
+  end
+
+  @expected_columns.each do |column_name|
+    expect(page).to have_text(column_name)
+  end
+end
+
+When('I should not find {string} column in the {string} Grid') do |column, class_name|
+  visit("/#{class_name.underscore.pluralize}")
+  #sleep(0.25)
+  column_title = column.titleize
+  
+  expect(page).not_to have_selector('thead th', text: column_title)
+end

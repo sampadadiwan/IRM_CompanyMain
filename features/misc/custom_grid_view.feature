@@ -109,3 +109,23 @@ Scenario Outline: Create custom grid view for FundUnitSetting
 Examples:
   |user       |entity|
   |           |entity_type=Company|
+
+
+Scenario Outline: Create custom grid view for CapitalRemittance, CapitalCall, Offer, FundRatio, FundReport, KpiReport
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the form type page
+  When I create a form type and custom grid view for "<class_name>"
+  When I select each option and click Add
+  And I visit "<class_name>" Page and find columns in the grid
+  When I visit Custom Grid View page and uncheck "<uncheck_column>"
+  And I should not find "<uncheck_column>" column in the "<class_name>" Grid
+
+Examples:
+  |user       |entity             | class_name |uncheck_column|
+  |           |entity_type=Company|CapitalRemittance|Payment_Date|
+  |           |entity_type=Company|CapitalCall|Collected_Amount|
+  |           |entity_type=Company|FundReport|Name_Of_Scheme|
+  |           |entity_type=Company|FundRatio|Display_Value|
+  |           |entity_type=Company|KpiReport|Period|
+  |           |entity_type=Company|Offer|Allocation_Quantity|
