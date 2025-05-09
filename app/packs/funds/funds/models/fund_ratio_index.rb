@@ -8,6 +8,7 @@ class FundRatioIndex < Chewy::Index
   field :scenario
   field :capital_commitment_id
   field :end_date
+  field :entity_id
   field :fund_name, value: ->(f) { f.fund&.name }
   field :entity_name, value: ->(f) { f.entity.name }
 end
