@@ -1,4 +1,10 @@
 <tr id="offer_<%= offer.id %>">
 
   <%= render RansackTableRow.new(model: offer, columns:) %>
+
+  <td>
+    <% object = offer.respond_to?(:object) ? offer.object : offer %>
+    <%= link_to  t_common(:show) , offer_path(object) , {class: "btn btn-outline-primary ti ti-eye" }%>
+    <%= link_to  "Complete Offer Details" , edit_offer_path(object) , {class: "btn btn-outline-warning ti ti-check" }  if object.approved && policy(object).edit?%>
+  <td>
 </tr>
