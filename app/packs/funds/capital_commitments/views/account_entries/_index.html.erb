@@ -91,7 +91,7 @@
 
   <div class="table-responsive">
 
-      <%= render RansackTable.new(AccountEntry, q: @q, current_user: current_user, records: account_entries, report_id: params["report_id"], turbo_frame: "account_entries_list", referrer: request.referrer) %>
+      <%= render RansackTable.new(AccountEntry, q: @q, current_user: current_user, records: account_entries, report_id: params["report_id"], turbo_frame: "account_entries_frame", referrer: request.referrer) %>
 
   </div>
 

@@ -27,7 +27,7 @@
 
   <div class="associated_entity">
     <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-    <% if ["interests", "investors", "portfolio_investments", "capital_commitments", "investor_kycs", "allocations", "fund_unit_settings"].include?(model_class) %>
+    <% if ["interests", "investors", "portfolio_investments", "capital_commitments", "investor_kycs", "allocations", "fund_unit_settings", "account_entries", "capital_calls", "fund_ratios", "capital_remittances", "kpi_reports", "offers"].include?(model_class) %>
       <turbo-frame id="<%= "#{model_class}_frame" %>" 
                    src="<%= url_for(controller: model_class, action: :index, import_upload_id: @import_upload.id) %>" 
                    loading="lazy" target="_top">
