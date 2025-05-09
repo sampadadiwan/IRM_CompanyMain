@@ -1,17 +1,14 @@
 <% @columns.each do |column_name, attribute| %>
+    <td>
       <% if attribute.start_with?("custom_fields.") %>
-        <td>
         <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
       <% else %>
         <% value = @model.send(attribute) %>
         <% if  value.is_a?(Date) %>
-          <td data-sort="<%= value.to_time.to_i %>">
           <%= l(value) %>
         <% elsif value.is_a?(Money) %>
-          <td data-sort="<%=value.cents%>">
           <%= money_to_currency value, params %>
         <% else %>
-          <td>
           <%= value %>
         <% end %>
       <% end %>
