@@ -271,6 +271,7 @@ class KpiDateUtils
   end
 
   # Parses a raw period string and returns Month, Quarter, or Year
+  # rubocop:disable Metrics/CyclomaticComplexity
   def self.detect_period_type(raw_period)
     return nil if raw_period.blank?
 
@@ -310,6 +311,7 @@ class KpiDateUtils
     # === Fallback ===
     "Month"
   end
+  # rubocop:enable Metrics/CyclomaticComplexity
 
   def self.normalize_year(year)
     year = year.to_i
