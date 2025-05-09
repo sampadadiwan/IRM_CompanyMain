@@ -7,6 +7,11 @@ class CapitalCallsController < ApplicationController
     # Create the scope for the model
     @capital_calls = policy_scope(@q.result).includes(:fund)
     @capital_calls = CapitalCallSearch.perform(@capital_calls, current_user, params)
+    @capital_calls = filter_params(
+      @capital_calls,
+      :fund_id,
+      :import_upload_id
+    )
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
