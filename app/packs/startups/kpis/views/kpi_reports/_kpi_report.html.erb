@@ -3,7 +3,8 @@
   <%= render RansackTableRow.new(model: kpi_report, columns:) %>
 
   <td>
+    <%= object = kpi_report.respond_to?(:object) ? kpi_report.object : kpi_report %>
     <%= link_to  t_common(:show) , kpi_report_path(kpi_report) , {class: "btn btn-outline-primary ti ti-eye" }%>
-    <%= link_to  t_common(:edit) , edit_kpi_report_path(kpi_report) , {class: "btn btn-outline-success ti ti-pencil" } if policy(kpi_report).edit?%>
+    <%= link_to  t_common(:edit) , edit_kpi_report_path(kpi_report) , {class: "btn btn-outline-success ti ti-pencil" } if policy(object).edit?%>
   <td>
 </tr>

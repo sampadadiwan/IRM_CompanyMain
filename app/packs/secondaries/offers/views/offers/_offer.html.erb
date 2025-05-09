@@ -3,7 +3,8 @@
   <%= render RansackTableRow.new(model: offer, columns:) %>
 
   <td>
-    <%= link_to  t_common(:show) , offer_path(offer) , {class: "btn btn-outline-primary ti ti-eye" }%>
-    <%= link_to  "Complete Offer Details" , edit_offer_path(offer) , {class: "btn btn-outline-warning ti ti-check" }  if kpi_report.approved && policy(kpi_report).edit?%>
+    <% object = offer.respond_to?(:object) ? offer.object : offer %>
+    <%= link_to  t_common(:show) , offer_path(object) , {class: "btn btn-outline-primary ti ti-eye" }%>
+    <%= link_to  "Complete Offer Details" , edit_offer_path(object) , {class: "btn btn-outline-warning ti ti-check" }  if object.approved && policy(object).edit?%>
   <td>
 </tr>

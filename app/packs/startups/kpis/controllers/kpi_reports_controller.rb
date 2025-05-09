@@ -7,7 +7,7 @@ class KpiReportsController < ApplicationController
     # Extract sort_field and sort_direction
     sort_field, sort_direction, sort_query = extract_sorting_params
 
-    @q = KpiReports.ransack(params[:q])
+    @q = KpiReport.ransack(params[:q])
 
     @kpi_reports = policy_scope(@q.result).includes(:entity)
 
