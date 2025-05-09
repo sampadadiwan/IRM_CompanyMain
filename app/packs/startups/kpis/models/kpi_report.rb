@@ -11,8 +11,7 @@ class KpiReport < ApplicationRecord
     "Period" => "period",
     "Notes" => "notes",
     "User" => "user_name",
-    "For" => "entity_name",
-    "" => "dt_actions"
+    "For" => "entity_name"
   }.freeze
 
   belongs_to :entity

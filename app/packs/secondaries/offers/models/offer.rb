@@ -16,8 +16,7 @@ class Offer < ApplicationRecord
     "Allocation Amount" => "allocation_amount",
     "Approved" => "approved",
     "Verified" => "verified",
-    "Updated At" => "updated_at",
-    "" => "dt_actions"
+    "Updated At" => "updated_at"
   }.freeze
 
   INVESTOR_STANDARD_COLUMNS = {
@@ -25,8 +24,7 @@ class Offer < ApplicationRecord
     "Quantity" => "quantity",
     "Price" => "price",
     "Allocation Quantity" => "allocation_quantity",
-    "Allocation Amount" => "allocation_amount",
-    "" => "dt_actions"
+    "Allocation Amount" => "allocation_amount"
   }.freeze
 
   # Make all models searchable

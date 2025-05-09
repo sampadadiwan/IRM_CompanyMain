@@ -1,4 +1,9 @@
 <tr id="kpi_report_<%= kpi_report.id %>">
 
   <%= render RansackTableRow.new(model: kpi_report, columns:) %>
+
+  <td>
+    <%= link_to  t_common(:show) , kpi_report_path(kpi_report) , {class: "btn btn-outline-primary ti ti-eye" }%>
+    <%= link_to  t_common(:edit) , edit_kpi_report_path(kpi_report) , {class: "btn btn-outline-success ti ti-pencil" } if policy(kpi_report).edit?%>
+  <td>
 </tr>

@@ -3,12 +3,13 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports or /kpi_reports.json
   def index
+    authorize(KpiReport)
     # Extract sort_field and sort_direction
     sort_field, sort_direction, sort_query = extract_sorting_params
 
-    # Apply the policy scope which already uses the `for_both` logic
-    # We want to do this before ransack as it contains union ransack can apply ordering which must be dont after union
-    @kpi_reports = policy_scope(KpiReport).includes(:entity)
+    @q = KpiReports.ransack(params[:q])
+
+    @kpi_reports = policy_scope(@q.result).includes(:entity)
 
     @kpi_reports = if params[:grid_view].present?
                      @kpi_reports.includes(:kpis, :documents, :owner)
@@ -16,11 +17,7 @@ class KpiReportsController < ApplicationController
                      @kpi_reports.includes(:user)
                    end
 
-    @q = @kpi_reports.ransack(params[:q])
-
-    @kpi_reports = sort_field == "entity_name" ? @q.result.includes(:entity).order("entities.name #{sort_direction}") : @q.result
-
-    authorize(KpiReport)
+    @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
     @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
     @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type, :entity_id)
     @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
