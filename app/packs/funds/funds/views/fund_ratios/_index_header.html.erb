@@ -63,8 +63,9 @@
                         class: "dropdown-item d-flex align-items-center" do %>
               <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
-
-            <%= link_to download_xl_link(data_source),
+            
+            <% xl_data_source = fund_ratios_path(params: params.to_unsafe_h, format: :json, all: true)%>
+            <%= link_to download_xl_link(xl_data_source),
                         class: "dropdown-item d-flex align-items-center" do %>
               <i class="ti ti-download"></i> <%= t_common(:download) %>
             <% end %>

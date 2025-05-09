@@ -7,11 +7,9 @@ class FundRatiosController < ApplicationController
     @q = FundRatio.ransack(params[:q])
     @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
 
-    # Step 2: Filter by fund_id and preload @fund if applicable
-    if params[:fund_id].present?
-      @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
-      @fund ||= Fund.find(params[:fund_id])
-    end
+    @fund_ratios = FundRatioSearch.perform(@fund_ratios, current_user, params)
+
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
     # Step 3: Apply additional filters using custom helper
     @fund_ratios = filter_params(
@@ -21,7 +19,8 @@ class FundRatiosController < ApplicationController
       :owner_type,
       :owner_id,
       :scenario,
-      :valuation_id
+      :valuation_id,
+      :fund_id
     )
 
     # Step 4: Special filters with more specific logic
@@ -32,6 +31,10 @@ class FundRatiosController < ApplicationController
     if params[:pivot].present?
       group_by_period = params[:group_by_period] || :quarter
       @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
+    elsif params[:all].blank? && params[:condensed].blank?
+      page = params[:page] || 1
+      @fund_ratios = @fund_ratios.page(page)
+      @fund_ratios = @fund_ratios.per(params[:per_page].to_i) if params[:per_page].present?
     end
 
     # Step 6: Render appropriate format
@@ -39,9 +42,7 @@ class FundRatiosController < ApplicationController
       format.html
       format.turbo_stream
       format.xlsx
-      format.json do
-        render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios)
-      end
+      format.json
     end
   end
 

@@ -1,20 +1,9 @@
-<tr id="<%= dom_id fund_ratio %>">
+<tr id="fund_ratio_<%= fund_ratio.id %>">
+
+  <%= render RansackTableRow.new(model: fund_ratio, columns:) %>
+
   <td>
-    <%= link_to fund_ratio.owner if fund_ratio.owner %>
+    <%= link_to  t_common(:show), fund_ratio , {class: "btn btn-outline-primary ti ti-eye"}%>
   </td>
-  <td>
-    <%= fund_ratio.owner_type %>
-  </td>
-  <td>
-    <%= link_to fund_ratio.name, fund_ratio %>
-  </td>
-  <td>
-    <%= fund_ratio.display_value %>
-  </td>
-  <td>
-    <%= l fund_ratio.end_date if fund_ratio.end_date %>
-  </td>
-  <td>
-    <%= fund_ratio.scenario %>
-  </td>
+
 </tr>

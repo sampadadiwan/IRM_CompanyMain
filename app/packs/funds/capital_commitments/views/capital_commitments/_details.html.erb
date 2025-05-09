@@ -138,8 +138,9 @@
 
     <div id="fund-ratios-tab" class="tab-pane fade in">
           <div id="fund-ratios" class="associated_entity">
-            <%= render "/fund_ratios/index", fund: capital_commitment.fund,
-                lazy_load_data: true, data_source: fund_ratios_path(capital_commitment_id: capital_commitment.id, fund_id: capital_commitment.fund_id, all: true) %>
+            <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(capital_commitment_id: capital_commitment.id, fund_id: capital_commitment.fund_id) do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
           </div>
     </div>
 

@@ -8,6 +8,15 @@ class FundRatio < ApplicationRecord
   belongs_to :valuation, optional: true
   belongs_to :owner, polymorphic: true, optional: true
 
+  STANDARD_COLUMNS = {
+    "For" => "owner_name",
+    "Type" => "owner_type",
+    "Name" => "name",
+    "Display Value" => "display_value",
+    "On" => "end_date",
+    "Scenario" => "scenario"
+  }.freeze
+
   validates :display_value, length: { maximum: 50 }
   validates :name, :owner_type, length: { maximum: 255 }
 
