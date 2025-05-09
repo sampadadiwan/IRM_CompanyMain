@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_08_092418) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -65,7 +65,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.datetime "deleted_at"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.integer "allocation_run_id"
+    t.bigint "allocation_run_id"
     t.string "parent_name"
     t.string "commitment_name"
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
@@ -200,16 +200,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
-  end
-
-  create_table "ai_chats", force: :cascade do |t|
-    t.string "model_id"
-    t.bigint "user_id", null: false
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_ai_chats_on_entity_id"
-    t.index ["user_id"], name: "index_ai_chats_on_user_id"
+    t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
   create_table "ai_checks", force: :cascade do |t|
@@ -231,22 +222,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
   end
 
-  create_table "ai_messages", force: :cascade do |t|
-    t.bigint "ai_chat_id", null: false
-    t.string "role"
-    t.text "content"
-    t.string "model_id"
-    t.integer "input_tokens"
-    t.integer "output_tokens"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "tool_call_id"
-    t.bigint "ai_tool_call_id"
-    t.index ["ai_chat_id"], name: "index_ai_messages_on_ai_chat_id"
-    t.index ["ai_tool_call_id"], name: "index_ai_messages_on_ai_tool_call_id"
-    t.index ["tool_call_id"], name: "index_ai_messages_on_tool_call_id"
-  end
-
   create_table "ai_rules", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "for_class", limit: 20
@@ -259,17 +234,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.string "rule_type", limit: 15
     t.string "name"
     t.index ["entity_id"], name: "index_ai_rules_on_entity_id"
-  end
-
-  create_table "ai_tool_calls", force: :cascade do |t|
-    t.bigint "ai_message_id", null: false
-    t.string "tool_call_id"
-    t.string "name"
-    t.json "arguments"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["ai_message_id"], name: "index_ai_tool_calls_on_ai_message_id"
-    t.index ["tool_call_id"], name: "index_ai_tool_calls_on_tool_call_id"
   end
 
   create_table "allocation_runs", force: :cascade do |t|
@@ -1175,6 +1139,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.string "email", limit: 60
     t.bigint "document_id"
     t.datetime "deleted_at"
+    t.integer "remind_in", default: 0
     t.index ["deleted_at"], name: "index_e_signatures_on_deleted_at"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
@@ -1467,6 +1432,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.string "condition_state", limit: 5, default: "show"
     t.boolean "internal", default: false
     t.string "js_events"
+    t.boolean "regulatory_field", default: false
+    t.text "regulation_type"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
@@ -1536,9 +1503,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.boolean "latest", default: false
     t.bigint "import_upload_id"
     t.string "scenario", limit: 40, default: "Default"
+    t.bigint "form_type_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
+    t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
@@ -1554,7 +1523,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.datetime "updated_at", null: false
     t.date "start_date"
     t.date "end_date"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
+    t.index ["form_type_id"], name: "index_fund_reports_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
@@ -1745,6 +1716,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
     t.bigint "orignal_id"
+    t.string "slug"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1754,6 +1726,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
     t.index ["import_upload_id"], name: "index_funds_on_import_upload_id"
     t.index ["master_fund_id"], name: "index_funds_on_master_fund_id"
+    t.index ["slug"], name: "index_funds_on_slug", unique: true
+    t.index ["snapshot_date"], name: "index_funds_on_snapshot_date"
     t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
@@ -2583,7 +2557,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
-    t.decimal "capital_expense_cents", precision: 20, scale: 2
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
     t.bigint "orignal_id"
@@ -2603,6 +2576,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
+    t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
   end
 
   create_table "portfolio_report_extracts", force: :cascade do |t|
@@ -3163,14 +3137,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
-  add_foreign_key "ai_chats", "entities"
-  add_foreign_key "ai_chats", "users"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
-  add_foreign_key "ai_messages", "ai_chats"
-  add_foreign_key "ai_messages", "ai_tool_calls"
   add_foreign_key "ai_rules", "entities"
-  add_foreign_key "ai_tool_calls", "ai_messages"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
   add_foreign_key "allocation_runs", "users"
@@ -3306,9 +3275,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_045254) do
   add_foreign_key "fund_formulas", "funds"
   add_foreign_key "fund_ratios", "capital_commitments"
   add_foreign_key "fund_ratios", "entities"
+  add_foreign_key "fund_ratios", "form_types"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "fund_reports", "entities"
+  add_foreign_key "fund_reports", "form_types"
   add_foreign_key "fund_reports", "funds"
   add_foreign_key "fund_sebi_infos", "entities"
   add_foreign_key "fund_sebi_infos", "funds"
