@@ -30,8 +30,9 @@
   <tr>
     <td colspan="2">
 
-        <%= render "/capital_remittances/index",
-                lazy_load_data: false, data_source: capital_remittances_path(fund_id: @fund.id, all: true, status: "Pending,Overdue", verified: "", format: :json) %>
+      <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(fund_id: @fund.id, status: "Pending,Overdue", verified: "") do %>
+            <%= render "/layouts/loading" %>
+      <% end %>
     </td>
   </tr>
 

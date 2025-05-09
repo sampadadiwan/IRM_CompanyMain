@@ -4,12 +4,16 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     fetch_rows
-    @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank? && params[:search].blank?
+    if params[:all].blank?
+      page = params[:page] || 1
+      @capital_remittances = @capital_remittances.page(page)
+      @capital_remittances = @capital_remittances.per(params[:per_page].to_i) if params[:per_page].present?
+    end
 
     respond_to do |format|
       format.html
       format.xlsx
-      format.json { render json: CapitalRemittanceDatatable.new(params, capital_remittances: @capital_remittances) }
+      format.json
     end
   end
 
@@ -20,12 +24,17 @@ class CapitalRemittancesController < ApplicationController
 
     @capital_remittances = @capital_remittances.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
-    @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @capital_remittances = filter_params(
+      @capital_remittances,
+      :fund_id,
+      :capital_call_id,
+      :capital_commitment_id,
+      :import_upload_id
+    )
     @capital_remittances = @capital_remittances.where(status: params[:status].split(",")) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
-    @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id].present?
-    @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
-    @capital_remittances = @capital_remittances.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
+    @capital_commitment = CapitalCommitment.find(params[:capital_commitment_id]) if params[:capital_commitment_id].present?
 
     @capital_remittances
   end
@@ -127,6 +136,14 @@ class CapitalRemittancesController < ApplicationController
 
   def verify
     result = CapitalRemittanceVerify.call(capital_remittance: @capital_remittance)
+    default_columns_map = if current_user.curr_role == "investor"
+                            CapitalRemittance::INVESTOR_STANDARD_COLUMNS
+                          else
+                            CapitalRemittance::STANDARD_COLUMNS
+                          end
+
+    @capital_remittance = @capital_remittance.decorate
+    @ransack_table_header = RansackTableHeader.new(CapitalRemittance, default_columns_map: default_columns_map, current_user: current_user, records: [@capital_remittance], q: nil, turbo_frame: nil)
     notice = result.success? ? "Successfully verified." : "Failed to verify. #{@capital_remittance.errors}"
     respond_to do |format|
       format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }

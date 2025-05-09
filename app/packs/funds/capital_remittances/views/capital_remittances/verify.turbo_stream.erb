@@ -1,5 +1,4 @@
     <%
         partial = params[:for_commitment].blank? ? "capital_remittances/capital_remittance" : "capital_remittances/capital_remittance_for_commitment" 
     %>
-
-    <%= turbo_stream.replace(dom_id(@capital_remittance), partial:, locals: { capital_remittance: @capital_remittance }) %>
+    <%= turbo_stream.replace(dom_id(@capital_remittance), partial:, locals: { capital_remittance: @capital_remittance, columns: @ransack_table_header.columns}) %>

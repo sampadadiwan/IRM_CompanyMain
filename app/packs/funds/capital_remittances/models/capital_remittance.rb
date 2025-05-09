@@ -15,8 +15,7 @@ class CapitalRemittance < ApplicationRecord
     "Verified" => "verified",
     "Due Amount" => "due_amount",
     "Collected Amount" => "collected_amount",
-    "Payment Date" => "payment_date",
-    "" => "dt_actions"
+    "Payment Date" => "payment_date"
   }.freeze
 
   INVESTOR_STANDARD_COLUMNS = {
@@ -25,8 +24,7 @@ class CapitalRemittance < ApplicationRecord
     "Status" => "status",
     "Due Amount" => "due_amount",
     "Collected Amount" => "collected_amount",
-    "Payment Date" => "payment_date",
-    "" => "dt_actions"
+    "Payment Date" => "payment_date"
   }.freeze
 
   update_index('capital_remittance') { self if index_record? }

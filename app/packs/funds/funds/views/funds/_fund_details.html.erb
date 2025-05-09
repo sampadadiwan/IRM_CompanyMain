@@ -159,8 +159,9 @@
 
         <div id="capital-remittances-tab" class="tab-pane fade in">
           <div id="capital-remittances" class="associated_entity">
-            <%= render "/capital_remittances/index", fund: fund,
-                lazy_load_data: true, data_source: capital_remittances_path(fund_id: fund.id, all: true, status: "", verified: "") %>
+            <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(fund_id: fund.id, status: "", verified: "") do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
           </div>
         </div>
 

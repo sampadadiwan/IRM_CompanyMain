@@ -12,9 +12,10 @@
 
       <% if policy(capital_remittance).verify? %>
         <% 
-          label = capital_remittance.verified ? "Unverify" : "Verify"
-          msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?"
-          icon_class = capital_remittance.verified ? "ti ti-user-x" : "ti ti-user-check"
+          object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
+          label = object.verified ? "Unverify" : "Verify"
+          msg = object.verified ? "Mark as Unverified?" : "Mark as Verified?"
+          icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
         %>
 
         <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),

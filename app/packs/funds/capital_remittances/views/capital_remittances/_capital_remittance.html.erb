@@ -1,26 +1,7 @@
-<tr id="<%= dom_id capital_remittance %>">  
+<tr id="capital_remittance_<%= capital_remittance.id %>">
+
+  <%= render RansackTableRow.new(model: capital_remittance, columns:) %>
   <td>
-    <%= link_to capital_remittance.investor_name, investor_path(id: capital_remittance.investor_id) %>
-  </td>
+    <%= render "/capital_remittances/dt_actions", capital_remittance: capital_remittance%>
   <td>
-    <%= link_to capital_remittance.folio_id, capital_commitment_path(capital_remittance.capital_commitment_id) %>
-  </td>
-  <td class="status">
-    <%= capital_remittance.status %>
-  </td>
-  <td class="verified">
-    <%= display_boolean(capital_remittance.verified) %>
-  </td>
-  <td>
-    <%= render "/capital_remittances/due_amount", capital_remittance: capital_remittance %>
-  </td>
-  <td>
-    <%= money_to_currency capital_remittance.collected_amount, params %>
-  </td>
-  <td>
-    <%= l capital_remittance.payment_date if  capital_remittance.payment_date %>
-  </td>
-  <td>
-    <%= render "/capital_remittances/dt_actions", capital_remittance: capital_remittance %>
-  </td>
 </tr>

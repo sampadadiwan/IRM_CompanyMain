@@ -5,29 +5,22 @@
   capital_commitment ||= nil 
   fund ||= nil
   fund_id ||= params[:fund_id] || fund&.id
-  capital_call_id ||= params[:capital_call_id] || capital_call&.id 
-  capital_commitment_id ||= params[:capital_commitment_id] || capital_commitment&.id 
   import_upload_id ||= params[:import_upload_id]
 %>
 
 <% 
-  data_source ||= capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:) 
-  
-  xl_link = download_xl_link(data_source) 
-  col_params = { fund_id: fund_id, capital_call_id: capital_call_id, capital_commitment_id: capital_commitment_id }
-  
-  column_names, field_list = get_columns(CapitalRemittance, params: col_params) 
+  data_source = capital_remittances_path(params: params.to_unsafe_h, status: "", verified: "", import_upload_id:) 
+  xl_data_source = capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:)
+  xl_link = download_xl_link(xl_data_source) 
 %>
               
-<div data-controller="remittances"
-     data-remittances-lazy-load-data-value=<%= lazy_load_data %>
-     data-remittances-table-name-value="#capital_remittances"
-     data-remittances-field-list-value=<%=field_list%> >
+<div data-controller="remittances" data-remittances-table-name-value="#capital_remittances">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
 
-    <span>
+    <span class="d-flex align-items-center gap-2 flex-wrap">
+
 
       <% if capital_call %>
         <% if policy(capital_call).reminder? %>
@@ -80,7 +73,7 @@
           </div>
         </div>
 
-        <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
+        <%= render "capital_remittances/filter", data_source: data_source %>
 
       <% else %>
         <%= link_to xl_link, class: "btn btn-outline-primary" do %>
@@ -96,12 +89,17 @@
 
 
   
-  <div class="table-responsive">
-    <% if lazy_load_data %>
-      <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
-    <% end %>
+  <div class="table-responsive"  data-source="<%= data_source %>">
+    <% capital_remittances_frame ||= "capital_remittances_frame" 
+        default_columns_map = if current_user.curr_role == "investor"
+            CapitalRemittance::INVESTOR_STANDARD_COLUMNS
+          else
+            CapitalRemittance::STANDARD_COLUMNS
+          end
+    
+    %>
+    <%=render SearchComponent.new(data_source: , turbo_frame: capital_remittances_frame) %>
 
-    <%= render CustomTable.new(data_source:, id: "capital_remittances", column_names:) %>
-
+    <%= render RansackTable.new(CapitalRemittance, q: @q, default_columns_map:, current_user: current_user, records: capital_remittances, report_id: params["report_id"], turbo_frame: capital_remittances_frame, referrer: request.referrer) %>
   </div>
 </div>
