@@ -92,7 +92,6 @@ gem 'administrate-field-boolean_emoji'
 gem 'administrate-field-shrine'
 
 # This generates rails based datatables
-gem 'ajax-datatables-rails'
 gem 'draper'
 
 # This is the S3 upload gem
