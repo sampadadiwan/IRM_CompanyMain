@@ -1275,7 +1275,7 @@ Then('when the capital commitment docs are generated') do
     #sleep((1)
     click_on("Proceed")
     expect(page).to have_content("Documentation generation started")
-    sleep(5)
+    sleep(8)
     # expect(page).to have_content("generated successfully")
   end
 end
