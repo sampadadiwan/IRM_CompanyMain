@@ -1,4 +1,5 @@
 class CapitalCommitmentUpdate < CapitalCommitmentAction
+  step :set_orig_amounts
   step :set_committed_amount
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
