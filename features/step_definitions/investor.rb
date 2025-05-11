@@ -142,6 +142,13 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
   puts @investor.to_json
 end
 
+Given('the investor users have the role {string}') do |role|
+  @investor.users.each do |user|
+    user.add_role(role)
+  end
+end
+
+
 Given('there are {string} existing investor {string} with {string} users') do |count, arg1, emp_count|
   (1..count.to_i).each do
     steps %(

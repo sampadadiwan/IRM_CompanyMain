@@ -247,3 +247,24 @@
       expect(page).to have_content(doc.name)
     end
   end
+
+  When('the RM create an EOI {string} and the corresponding kyc {string}') do |eoi_args, kyc_args|
+    @expression_of_interest = FactoryBot.build(:expression_of_interest, investment_opportunity: @investment_opportunity, investor: @investor, user: @investor.users.first)
+    key_values(@expression_of_interest, eoi_args)
+    @expression_of_interest.save!
+
+    @kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: @investor, full_name: @expression_of_interest.investor_name)
+    key_values(@kyc, kyc_args)
+    @kyc.save
+
+    @expression_of_interest.investor_kyc = @kyc
+    @expression_of_interest.save!
+  end
+  
+  When('a new investor should be created from the EOI') do
+    @new_investor = Investor.last
+    @new_investor.entity_id.should == @expression_of_interest.entity_id
+    @new_investor.investor_name.should == @expression_of_interest.investor_name
+    @new_investor.primary_email.should == @expression_of_interest.investor_email
+    @new_investor.category.should == "LP"
+  end
