@@ -31,12 +31,23 @@
 
       <tr>
         <td>
-          For
+          Investor Name
         </td>
         <td>
-          <%= @expression_of_interest.investor.investor_name %>
+          <%= @expression_of_interest.investor_name.presence || @expression_of_interest.investor.investor_name %>
         </td>
       </tr>
+
+      <% if @expression_of_interest.investor_email %>
+      <tr>
+        <td>
+          Investor Email
+        </td>
+        <td>
+          <%= @expression_of_interest.investor_email %>
+        </td>
+      </tr>
+      <% end %>
 
 
       <tr>

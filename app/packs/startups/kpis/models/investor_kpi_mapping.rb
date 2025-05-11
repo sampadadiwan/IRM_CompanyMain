@@ -7,6 +7,13 @@ class InvestorKpiMapping < ApplicationRecord
 
   scope :show_in_report, -> { where(show_in_report: true) }
 
+  before_create :setup_standard_kpi_name
+  def setup_standard_kpi_name
+    self.reported_kpi_name = reported_kpi_name.strip
+    self.standard_kpi_name = reported_kpi_name if standard_kpi_name.blank?
+    self.standard_kpi_name = standard_kpi_name.strip
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[reported_kpi_name standard_kpi_name]
   end

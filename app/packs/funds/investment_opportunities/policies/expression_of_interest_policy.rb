@@ -11,7 +11,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   def create?
     belongs_to_entity?(user, record) ||
       permissioned_employee?(:create) ||
-      permissioned_investor?
+      permissioned_rm? || permissioned_investor?
   end
 
   def new?
