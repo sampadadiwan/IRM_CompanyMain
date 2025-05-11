@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_08_092418) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_10_154511) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1344,6 +1344,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_08_092418) do
     t.json "json_fields"
     t.bigint "investor_kyc_id"
     t.string "investor_name", limit: 100
+    t.string "investor_email"
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"

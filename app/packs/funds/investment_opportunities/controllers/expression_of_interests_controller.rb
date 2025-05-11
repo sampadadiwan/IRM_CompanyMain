@@ -3,7 +3,7 @@ class ExpressionOfInterestsController < ApplicationController
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
-    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, :user)
+    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, user: [:roles])
     @expression_of_interests = @expression_of_interests.where(investment_opportunity_id: params[:investment_opportunity_id]) if params[:investment_opportunity_id].present?
   end
 
@@ -28,14 +28,15 @@ class ExpressionOfInterestsController < ApplicationController
   # POST /expression_of_interests or /expression_of_interests.json
   def create
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
-    @expression_of_interest.eoi_entity_id = @expression_of_interest.investor.investor_entity_id
+    @expression_of_interest.eoi_entity_id = @expression_of_interest.investor&.investor_entity_id
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     @expression_of_interest.user_id = current_user.id
 
     authorize @expression_of_interest
 
+    result = EoiCreate.wtf?(expression_of_interest: @expression_of_interest)
     respond_to do |format|
-      if @expression_of_interest.save
+      if result.success?
         format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "Expression of interest was successfully created." }
         format.json { render :show, status: :created, location: @expression_of_interest }
       else
@@ -64,8 +65,12 @@ class ExpressionOfInterestsController < ApplicationController
   end
 
   def approve
-    @expression_of_interest.approved = !@expression_of_interest.approved
-    @expression_of_interest.save
+    if !@expression_of_interest.approved
+      result = EoiApprove.wtf?(expression_of_interest: @expression_of_interest)
+    else
+      result = EoiUnapprove.wtf?(expression_of_interest: @expression_of_interest)
+    end
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
@@ -121,6 +126,6 @@ class ExpressionOfInterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def expression_of_interest_params
-    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_name, :investor_id, :investor_kyc_id, :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :comment, :investor_signatory_id, :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_name, :investor_id, :investor_kyc_id, :investment_opportunity_id, :amount, :approved, :verified, :investor_email, :allocation_percentage, :comment, :investor_signatory_id, :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

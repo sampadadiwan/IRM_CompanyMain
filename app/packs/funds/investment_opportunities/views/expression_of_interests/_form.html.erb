@@ -26,7 +26,19 @@
 
       <%= form.text_field :investor_id, hidden: true if disabled %>
     </div>
-
+    
+    <% if current_user.has_cached_role?(:rm) %>
+      <div class="form-group">
+        <%= form.label :investor_name %>
+        <%= form.text_field :investor_name, class: "form-control"  %>
+      </div>
+      <div class="form-group">
+        <%= form.label :investor_email %>
+        <%= form.text_field :investor_email, class: "form-control"  %>
+      </div>
+    <% end %>
+    
+    
     <% if expression_of_interest.investor %>
     <div class="form-group">
       <%= form.label :investor_signatory_id %>

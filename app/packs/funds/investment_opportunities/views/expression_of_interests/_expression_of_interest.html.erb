@@ -25,7 +25,9 @@
   <td>
     <%= link_to  t_common(:show) , expression_of_interest , {class: "btn btn-outline-primary" }%>
     <% label = expression_of_interest.approved ?  "UnApprove" : "Approve" %>
-    <%= button_to label , approve_expression_of_interest_path(expression_of_interest), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(expression_of_interest).approve? %>
+
+    <% disabled = expression_of_interest.investor_kyc.nil? && expression_of_interest.user.has_cached_role?(:rm) %>
+    <%= button_to label , approve_expression_of_interest_path(expression_of_interest), method: :patch, class: "btn btn-outline-success", disabled:, form_class: "deleteButton" if policy(expression_of_interest).approve? %>
 
   </td>
 </tr>

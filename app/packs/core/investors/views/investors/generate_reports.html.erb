@@ -46,7 +46,7 @@
           <div class="col-md-3">
             <div class="form-group">
               <%= form.label :period %>
-              <%= form.select :period, ["Month", "Quarter", "Semi Annual", "Annual"], {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
+              <%= form.select :period, KpiReport::PERIODS, {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
               <small class="form-text text-muted">Select the KPI Report Period.</small>
             </div>
           </div>

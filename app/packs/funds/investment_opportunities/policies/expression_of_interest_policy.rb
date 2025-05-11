@@ -5,13 +5,14 @@ class ExpressionOfInterestPolicy < IoBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor?
+      permissioned_investor? ||
+      permissioned_rm?
   end
 
   def create?
     belongs_to_entity?(user, record) ||
       permissioned_employee?(:create) ||
-      permissioned_investor?
+      permissioned_rm? || permissioned_investor?
   end
 
   def new?
@@ -36,7 +37,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def approve?
-    update?
+    update? && user.has_cached_role?(:approver)
   end
 
   def allocate?

@@ -36,6 +36,7 @@ Scenario Outline: Create new document for an investment_opportunity
 Scenario Outline: Create new interest for an investment_opportunity
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
+  Given the user has role "approver"
   Given there is an investment_opportunity "<investment_opportunity>"
   Given there is an existing investor "" with "1" users
   Given the investors are added to the investment_opportunity
@@ -69,3 +70,24 @@ Scenario Outline: Preview for an investment_opportunity
   Examples:
     |entity                                 |investment_opportunity                  |msg	|
     |entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=Test IO|opportunity was successfully created|
+
+
+Scenario Outline: Create new interest for an investment_opportunity from RM and approve
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_inv_opportunities=true"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is an investment_opportunity "<investment_opportunity>"
+  Given there is an existing investor "category=RM" with "1" users
+  Given the investor users have the role "rm"
+  Given the investors are added to the investment_opportunity
+  When the RM create an EOI "<eoi>" and the corresponding kyc ""
+  And the investment_opportunity eoi amount should be "0"
+  And when the EOI is approved
+  And the investment_opportunity eoi amount should be "1000000"
+  And a new investor should be created from the EOI
+
+
+  Examples:
+  	|investment_opportunity                  |eoi	|
+  	|min_ticket_size_cents=1000000|investor_name=InvForRM;investor_email=invforrm@gmail.com;amount_cents=1000000|
+    |min_ticket_size_cents=1000000|investor_name=InvForRM;investor_email=invforrm@gmail.com;amount_cents=1000000|

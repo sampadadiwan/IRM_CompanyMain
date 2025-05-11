@@ -1353,3 +1353,10 @@ iframe {
   margin-left: 2px;
 }
 
+button:disabled {
+  color: lightgray !important; /* or use #6c757d for Bootstrap-like muted text */
+  border-color: lightgray !important;
+  cursor: not-allowed; /* Optional: change the cursor */
+  opacity: 0.65 !important;        /* Optional: consistent with Bootstrap style */
+  pointer-events: auto !important; /* ensure the cursor change still applies */
+}
