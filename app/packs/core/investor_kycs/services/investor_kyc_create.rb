@@ -16,6 +16,7 @@ class InvestorKycCreate < InvestorKycAction
   end
 
   # This method is used to save the investor_kyc to the associated owner like capital_commitment or expression_of_interest
+  # rubocop:disable Rails/SkipsModelValidations
   def associate_with_owner(ctx, investor_kyc:, **)
     if ctx[:owner_id].present? && ctx[:owner_type].present?
       owner = ctx[:owner_type].constantize.find(ctx[:owner_id])
@@ -23,4 +24,5 @@ class InvestorKycCreate < InvestorKycAction
     end
     true
   end
+  # rubocop:enable Rails/SkipsModelValidations
 end

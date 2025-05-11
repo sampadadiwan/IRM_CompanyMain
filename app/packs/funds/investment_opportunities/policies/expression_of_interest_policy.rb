@@ -5,7 +5,8 @@ class ExpressionOfInterestPolicy < IoBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor?
+      permissioned_investor? ||
+      permissioned_rm?
   end
 
   def create?
