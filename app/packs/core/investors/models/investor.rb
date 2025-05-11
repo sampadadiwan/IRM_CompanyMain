@@ -14,6 +14,9 @@ class Investor < ApplicationRecord
   # This is to be set if we want the investor name to be different from the investor_entity name
   attr_accessor :force_different_name
 
+  # Any description of the investor
+  has_rich_text :description
+
   belongs_to :investor_entity, class_name: "Entity"
   has_many :kpi_reports, through: :investor_entity
   # These are uploaded by the fund for its own portfolio_companies

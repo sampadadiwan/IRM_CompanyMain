@@ -3,7 +3,7 @@ class ExpressionOfInterestsController < ApplicationController
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
-    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, :user)
+    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, user: [:roles])
     @expression_of_interests = @expression_of_interests.where(investment_opportunity_id: params[:investment_opportunity_id]) if params[:investment_opportunity_id].present?
   end
 
@@ -65,8 +65,12 @@ class ExpressionOfInterestsController < ApplicationController
   end
 
   def approve
-    @expression_of_interest.approved = !@expression_of_interest.approved
-    @expression_of_interest.save
+    if !@expression_of_interest.approved
+      result = EoiApprove.wtf?(expression_of_interest: @expression_of_interest)
+    else
+      result = EoiUnapprove.wtf?(expression_of_interest: @expression_of_interest)
+    end
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
