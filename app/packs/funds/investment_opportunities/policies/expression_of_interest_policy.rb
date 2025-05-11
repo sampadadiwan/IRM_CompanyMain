@@ -20,8 +20,8 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_investor?
+    !record.approved &&
+      (permissioned_employee?(:update) || permissioned_investor?)
   end
 
   def edit?
@@ -37,7 +37,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def approve?
-    update? && user.has_cached_role?(:approver)
+    (permissioned_employee?(:update) || permissioned_investor?) && user.has_cached_role?(:approver)
   end
 
   def allocate?

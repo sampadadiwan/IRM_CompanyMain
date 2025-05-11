@@ -1,4 +1,4 @@
-# EOIs are used to express interest in an investment opportunity. They can be created by investors and are associated with a specific investment opportunity. The EOI includes details such as the amount, allocation percentage, and whether it has been approved. 
+# EOIs are used to express interest in an investment opportunity. They can be created by investors and are associated with a specific investment opportunity. The EOI includes details such as the amount, allocation percentage, and whether it has been approved.
 
 # The EOI can be created by RMs for their clients. The difference is when the EOI is approved the RMs client will be converted to the Funds investor, and the KYC associated with the EOI will be repointed to the new Investor. See EoiApprove
 
@@ -9,7 +9,7 @@ class ExpressionOfInterest < ApplicationRecord
   # === Associations ===
   belongs_to :entity
   belongs_to :user
-  belongs_to :investor               # Can be an end investor or RM
+  belongs_to :investor # Can be an end investor or RM
   belongs_to :eoi_entity, class_name: "Entity"
   belongs_to :investment_opportunity
   belongs_to :investor_kyc, optional: true
@@ -55,13 +55,9 @@ class ExpressionOfInterest < ApplicationRecord
 
   # Ensure amount is within the allowed range for the opportunity
   def check_amount
-    if amount < investment_opportunity.min_ticket_size
-      errors.add(:amount, "Should be greater than #{investment_opportunity.min_ticket_size}")
-    end
+    errors.add(:amount, "Should be greater than #{investment_opportunity.min_ticket_size}") if amount < investment_opportunity.min_ticket_size
 
-    if amount > investment_opportunity.fund_raise_amount
-      errors.add(:amount, "Should be less than #{investment_opportunity.fund_raise_amount}")
-    end
+    errors.add(:amount, "Should be less than #{investment_opportunity.fund_raise_amount}") if amount > investment_opportunity.fund_raise_amount
   end
 
   # === Callback Methods ===

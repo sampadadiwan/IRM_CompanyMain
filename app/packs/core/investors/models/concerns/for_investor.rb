@@ -85,6 +85,8 @@ module ForInvestor
       # Ensure the investor access is approved
       join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
 
+      join_clause = join_clause.where("#{self.table_name}.user_id" => user.id) unless user.has_cached_role?(:company_admin)
+
       join_clause
     }
 
