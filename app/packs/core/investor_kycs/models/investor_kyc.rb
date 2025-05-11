@@ -45,13 +45,18 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :investor
   belongs_to :entity
+  # These are the capital_commitments that are linked to this KYC
   has_many :capital_commitments
+
   has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
   has_many :capital_remittance_payments, through: :capital_commitments
   has_many :capital_distribution_payments, through: :capital_commitments
   has_many :account_entries, through: :capital_commitments
   has_many :fund_units, through: :capital_commitments
+
+  # These are the expression_of_interests that are linked to this KYC
+  has_many :expression_of_interests
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 

@@ -67,13 +67,9 @@
         <div id="eoi-tab" class="tab-pane fade">
           <div id="eois" class="associated_entity">
 
-            <%= link_to expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
-                                    all: true),
-                                    class: "load_data_link",
-                                    data: { turbo_frame: 'expression_of_interests_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "expression_of_interests_list", target: "_top" do %>
+            <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
+                                    all: true)  do %>
+              <%= render "/layouts/loading" %>
             <% end %>
 
           </div>

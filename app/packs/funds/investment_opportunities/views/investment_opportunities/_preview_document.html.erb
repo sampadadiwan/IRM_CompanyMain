@@ -1,26 +1,3 @@
-<!-- div class="card">
-    <div class="card-body">
-        <div class="d-flex align-items-start">
-        <div class="bg-info-subtle text-info d-inline-block px-4 py-3 rounded">
-            <i class="ti ti-download text-secondary display-6"></i>
-        </div>
-
-        </div>
-        <div class="mt-5">
-        <h4 class="card-title"><%= document.name %></h4>
-        <div class="progress mt-4 bg-light">
-            <div class="progress-bar text-bg-info" style="width: 50%; height: 6px;" role="progressbar">
-            <span class="sr-only">50% Complete</span>
-            </div>
-        </div>
-        <div class="d-flex align-items-center mt-2 ">
-            <span><%= document.text %></span>
-        </div>
-        </div>
-    </div>
-</div -->
-
-
 <div class="card rounded-3 card-hover">
     <% url = document.orignal ? document.file.url(response_content_disposition: "attachment; filename=#{document.name_with_extension}") : document_path(document) %>
     <a href="<%=url%>" class="stretched-link"></a>

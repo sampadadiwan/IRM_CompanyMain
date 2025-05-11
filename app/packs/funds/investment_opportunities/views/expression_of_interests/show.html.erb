@@ -149,6 +149,8 @@
       <%= link_to  t_common(:edit) , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-outline-primary" } %> 
       <%= button_to t_common(:delete) , @expression_of_interest, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+
+      <%= link_to  "New KYC" , new_investor_kyc_path(owner_id: @expression_of_interest, owner_type: "ExpressionOfInterest", "investor_kyc[investor_id]": @expression_of_interest.investor_id, "investor_kyc[entity_id]": @expression_of_interest.entity_id), {class: "btn btn-outline-primary" } if @expression_of_interest.investor_kyc.nil? %>
     <% end %>
 
     <%= button_to "Generate Documents", 

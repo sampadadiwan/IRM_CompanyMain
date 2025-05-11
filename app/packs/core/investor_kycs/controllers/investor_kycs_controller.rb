@@ -108,7 +108,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else

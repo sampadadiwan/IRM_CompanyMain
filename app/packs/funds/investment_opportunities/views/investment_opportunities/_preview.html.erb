@@ -17,10 +17,22 @@
 
 <div class="row">
     <% investment_opportunity.documents.each do |doc| %>
-        <div class="col"><%= render "/investment_opportunities/preview_document", document: doc %></div>
+        <div class="col-md-3"><%= render "/investment_opportunities/preview_document", document: doc %></div>
     <% end %>
 </div>
 
 <div class="align-items-center text-center">
     <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} if current_user %>
 </div>
+
+<% if current_user.has_cached_role?(:rm) %>
+
+    <div id="eois" class="associated_entity">
+
+        <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
+                                all: true)  do %>
+            <%= render "/layouts/loading" %>
+        <% end %>
+
+    </div>
+<% end %>

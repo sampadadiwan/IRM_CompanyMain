@@ -41,6 +41,10 @@
         <div class="card-body">
 
             <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+            <!-- Sometimes we want to create a kyc and associate it with a commitment or EOI, this is the owner, see InvestorKycCreate.associate_with_owner -->
+            <%= form.text_field :owner_id, class: "form-control", hidden: true, value: params[:owner_id], name: :owner_id  %>
+            <%= form.text_field :owner_type, class: "form-control", hidden: true, value: params[:owner_type], name: :owner_type  %>
+
             <% if investor_kyc.investor_id.present? %>
               <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
             <% else %>

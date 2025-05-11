@@ -36,7 +36,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def approve?
-    update?
+    update? && user.has_cached_role?(:approver)
   end
 
   def allocate?
