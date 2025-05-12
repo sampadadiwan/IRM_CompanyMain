@@ -28,9 +28,10 @@ class ImportUpload < ApplicationRecord
               "EXCHANGE_RATE" => "/sample_uploads/exchange_rates.xlsx",
               "ALLOCATION" => "/sample_uploads/allocations.xlsx",
               "Fund_RATIO_SAMPLE" => "/sample_uploads/fund_ratios.xlsx",
-              "INVESTMENT_INSTRUMENT_SAMPLE" => "/sample_uploads/investment_instruments.xlsx" }.freeze
+              "INVESTMENT_INSTRUMENT_SAMPLE" => "/sample_uploads/investment_instruments.xlsx",
+              "INVESTMENT_SAMPLE" => "/sample_uploads/investments.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 

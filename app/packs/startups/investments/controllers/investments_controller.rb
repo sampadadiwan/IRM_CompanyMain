@@ -5,12 +5,22 @@ class InvestmentsController < ApplicationController
   def index
     @q = Investment.ransack(params[:q])
     @investments = policy_scope(@q.result).includes(:portfolio_company)
-    @investments = @investments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    @investments = @investments.where(investment_type: params[:investment_type]) if params[:investment_type].present?
-    @investments = @investments.where(investor_name: params[:investor_name]) if params[:investor_name].present?
-    @investments = @investments.where(category: params[:category]) if params[:category].present?
-    @investments = @investments.where(funding_round: params[:funding_round]) if params[:funding_round].present?
+    @investments = filter_params(
+      @investments,
+      :portfolio_company_id,
+      :investment_type,
+      :investor_name,
+      :category,
+      :funding_round,
+      :import_upload_id
+    )
+
     @investments = @investments.page(params[:page]) if params[:ag].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+    end
   end
 
   # GET /investments/1
@@ -58,11 +68,12 @@ class InvestmentsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_investment
     @investment = Investment.find(params[:id])
+
     authorize @investment
   end
 
   # Only allow a list of trusted parameters through.
   def investment_params
-    params.require(:investment).permit(:portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :price, :investment_date, :notes, :currency)
+    params.require(:investment).permit(:portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :price, :investment_date, :notes, :currency, properties: {})
   end
 end
