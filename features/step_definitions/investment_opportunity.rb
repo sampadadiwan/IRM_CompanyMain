@@ -109,7 +109,7 @@
     click_on "Interests"
     click_on "New Interest"
     fill_in('expression_of_interest_amount', with: @expression_of_interest.amount.to_i)
-    select(@expression_of_interest.investor.investor_name, from: "expression_of_interest_investor_id")
+    # select(@expression_of_interest.investor.investor_name, from: "expression_of_interest_investor_id")
     find('trix-editor').click.set(@expression_of_interest.details.to_plain_text)
     #sleep(2)
     click_on("Save")

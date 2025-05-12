@@ -5,12 +5,11 @@ class EoiUnapprove < EoiAction
   left :handle_errors, Output(:failure) => End(:failure)
 
   def unapprove(_ctx, expression_of_interest:, **)
-    expression_of_interest.approved = false   
-    true 
+    expression_of_interest.approved = false
+    true
   end
 
-  
-  def repoint_investor_kyc_to_rm(ctx, expression_of_interest:, **)
+  def repoint_investor_kyc_to_rm(_ctx, expression_of_interest:, **)
     # We only want to repoint the investor_kyc if the user is a relationship manager, as they can create ROIs for their clients. Here the eoi is being un approved, so in approve the kyc has been pointed to the investor
     # and now we need to point it back to the relationship manager. the investor_id in the expression_of_interest is always the RM if created by an RM
     if expression_of_interest.user.has_cached_role?(:rm) && expression_of_interest.investor_kyc.present?

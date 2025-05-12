@@ -65,10 +65,10 @@ class ExpressionOfInterestsController < ApplicationController
   end
 
   def approve
-    if !@expression_of_interest.approved
-      result = EoiApprove.wtf?(expression_of_interest: @expression_of_interest)
+    if @expression_of_interest.approved
+      EoiUnapprove.wtf?(expression_of_interest: @expression_of_interest)
     else
-      result = EoiUnapprove.wtf?(expression_of_interest: @expression_of_interest)
+      EoiApprove.wtf?(expression_of_interest: @expression_of_interest)
     end
 
     respond_to do |format|
