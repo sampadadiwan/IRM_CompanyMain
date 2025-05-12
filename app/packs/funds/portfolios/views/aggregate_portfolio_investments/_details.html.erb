@@ -15,7 +15,7 @@
 
   <div class="tab-content">
     <div id="portfolio-investments-tab" class="tab-pane fade in show active">
-      <div id="portfolio_investments" class="associated_entity">
+      <div id="portfolio_investments_div" class="associated_entity">
         <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(aggregate_portfolio_investment_id: @aggregate_portfolio_investment.id, fund_id: @aggregate_portfolio_investment.fund_id) do %>
           <span>Loading...</span>
         <% end %>
