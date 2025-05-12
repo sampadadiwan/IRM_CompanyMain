@@ -9,9 +9,6 @@
     A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %>.
   </p>
   <p>
-    <%= @capital_remittance.capital_call.notes&.html_safe %>
-  </p>
-  <p>
     Please refer to the attached notice for further details or click on the link below.
   </p>
 <% end %>

@@ -18,6 +18,11 @@ class CapitalRemittanceMailer < ApplicationMailer
       pw_protect_attach_file(doc, @custom_notification)
     end
 
+    @capital_remittance.documents.not_generated.each do |doc|
+      # This attaches the file which is not generated
+      attach_doc(doc)
+    end
+
     send_mail(subject:)
   end
 

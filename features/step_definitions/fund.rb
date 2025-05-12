@@ -736,6 +736,12 @@ Then('user {string} have {string} access to his own capital remittances') do |tr
   end
 end
 
+Given('the remittance have a document {string} from {string} attached') do |name, path|
+  CapitalRemittance.all.each do |remittance|
+    Document.create(entity_id: remittance.entity_id, owner: remittance, name: name, file: File.open(path, "rb"), user_id: @user.id)
+  end
+end
+
 
 Given('the fund has {string} capital distribution') do |count|
   (1..count.to_i).each do |i|
@@ -901,7 +907,7 @@ Then('the capital distribution must reflect the payments') do
   @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
 end
 
-Then('the investors must receive email with subject {string}') do |subject|
+Then('the investors must receive email with subject {string} with the document {string} attached') do |subject, document_name|
   #sleep((2)
   Investor.all.each do |inv|
     if inv.emails.present?
@@ -922,6 +928,14 @@ Then('the investors must receive email with subject {string}') do |subject|
           puts " Checking cc email #{@cc_email} for #{email}"
           expect(current_email.cc).to include @cc_email
         end
+
+        # ✅ Check for attachment
+        if document_name.present?
+          puts "Checking for attachment #{document_name} for #{email}"
+          attachment_filenames = current_email.attachments.map(&:filename)
+          expect(attachment_filenames).to include(document_name), "Expected attachment #{document_name}, but got #{attachment_filenames.inspect}"
+        end
+
       end
     end
   end
@@ -1292,10 +1306,14 @@ end
 Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
+    click_on("Actions")
     click_on("Generate Documents")
+    click_on("Proceed")
     # sleep(1)
-    # expect(page).to have_content("Documentation generation started")
-    # sleep(20)
+    cc.capital_remittances.each_with_index do |cr, count|
+      sleep(4)
+      expect(page).to have_content("#{count + 1}: Generated #{@call_template.name} for #{cr}")
+    end
     expect(page).to have_content("generated successfully")
   end
 end
