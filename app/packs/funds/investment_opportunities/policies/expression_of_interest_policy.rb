@@ -28,8 +28,9 @@ class ExpressionOfInterestPolicy < IoBasePolicy
     update?
   end
 
+  # For now we are disabling this
   def generate_documentation?
-    update? && !record.esign_completed
+    false && update? && !record.esign_completed
   end
 
   def destroy?

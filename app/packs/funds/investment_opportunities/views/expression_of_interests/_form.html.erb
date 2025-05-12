@@ -48,7 +48,7 @@
         <% investor_kycs = expression_of_interest.investor ? expression_of_interest.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
         
         <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
-        <span class="text-muted">Select the KYC for this investor</span>
+        <span class="text-muted">Select pre existing KYC or create on the next page.</span>
       </div>        
     
     <% end %>
