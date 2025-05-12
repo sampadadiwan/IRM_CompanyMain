@@ -1,4 +1,6 @@
 class Investment < ApplicationRecord
+  include WithCustomField
+
   CATEGORIES = %w[Founder Self Other Employee].sort.freeze
   TYPES = %w[Equity Convertible].freeze
 

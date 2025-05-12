@@ -279,3 +279,82 @@ Then('I should be able to see only my investments for each entity') do
   end
 end
 
+Given('I go to the portfolio company page') do
+  @portfolio_company ||= Investor.all.portfolio_company.last
+  visit(investor_path(@portfolio_company))
+end
+
+Given('I go to the captable of the portfolio company') do
+ click_on("Misc")
+ click_on("CapTable")
+end
+
+Given('I upload investments file {string}') do |string|
+  @import_file = string
+  first(:link_or_button, "Upload").click
+  fill_in('import_upload_name', with: "Test Upload #{@import_file}")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  # sleep(2)
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  binding.pry if ImportUpload.last.failed_row_count > 0
+  ImportUpload.last.failed_row_count.should == 0
+end
+
+Then('{string} Investments should be created for the portfolio company with expected details') do |count|
+  @portfolio_company.reload
+  expect(@portfolio_company.investments.count).to eq(count.to_i)
+
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  investments = @portfolio_company.investments.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = investments[idx-1]
+    puts "Checking import of #{cc.investor_name}"
+    cc.category.should == user_data["Category"].strip
+    cc.currency.should == user_data["Currency"]
+    cc.investor_name.should == user_data["Investor Name"]
+    cc.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
+    cc.investment_type.should == user_data["Investment Type"]
+    cc.funding_round.should == user_data["Funding Round"]
+    cc.quantity.should == user_data["Quantity"].to_i
+    cc.price.cents.should == user_data["Price"].to_i * 100.0
+    cc.import_upload_id.should == ImportUpload.last.id
+  end
+end
+
+Then('Investments should have the updated data from {string}') do |file_name|
+  @import_file = file_name
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  investments = @portfolio_company.investments.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = investments[idx-1]
+    puts "Checking import of #{cc.investor_name}"
+    cc.category.should == user_data["Category"].strip
+    cc.currency.should == user_data["Currency"]
+    cc.investor_name.should == user_data["Investor Name"]
+    cc.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
+    cc.investment_type.should == user_data["Investment Type"]
+    cc.funding_round.should == user_data["Funding Round"]
+    cc.quantity.should == user_data["Quantity"].to_i
+    cc.price.cents.should == user_data["Price"].to_i * 100.0
+    cc.import_upload_id.should == ImportUpload.last.id
+  end
+end

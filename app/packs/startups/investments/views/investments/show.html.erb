@@ -88,6 +88,9 @@
         <%= @investment.notes %>
       </td>
     </tr>
+
+    <%= display_custom_fields(@investment) if current_user %>
+    
   </table>
   <div class="associated_entity">
     <% if policy(@investment).update? %>

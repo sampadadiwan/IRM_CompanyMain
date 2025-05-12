@@ -1,6 +1,24 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Investments</h1>
-  <%= link_to "New Investment", new_investment_path, {class: "btn btn-outline-primary ti ti-plus"}  %>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= link_to "New Investment", new_investment_path, {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
+    <%= link_to new_import_upload_path(
+                  "import_upload[import_type]": "Investment",
+                  "sample_upload": "INVESTMENT_SAMPLE"),
+                class: "btn btn-outline-success d-inline-flex align-items-center" do %>
+      <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+    <% end %>
+
+    <%
+      data_source ||= investments_path(params: params.to_unsafe_h, format: :xlsx)
+      xl_link = download_xl_link(data_source)
+    %>
+
+    <%= link_to xl_link, class: "btn btn-outline-success", data: { turbo: false } do %>
+      <i class="ti ti-download"></i> <%= t_common(:download) %>
+    <% end %>
+  </div>
 </div>
 
 <%= render "/layouts/filter", associations: [:portfolio_company] %>
