@@ -861,7 +861,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_154511) do
     t.boolean "show_details", default: false
     t.boolean "password_protect_attachment", default: false
     t.string "attachment_password"
-    t.boolean "no_link", default: false
+    t.boolean "show_details_link", default: false
     t.string "email_method", limit: 100
     t.datetime "deleted_at"
     t.boolean "enabled", default: true
