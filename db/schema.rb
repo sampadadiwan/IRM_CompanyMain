@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_12_044034) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1922,7 +1922,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_044034) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "import_upload_id"
+    t.json "json_fields"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
+    t.index ["form_type_id"], name: "index_investments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
   end
 
@@ -3319,6 +3322,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_044034) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investments", "form_types"
   add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
