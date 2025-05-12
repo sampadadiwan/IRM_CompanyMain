@@ -63,6 +63,8 @@
       <%= form.text_area :notes, class: "form-control"  %>
     </div>
 
+    <%= custom_form_fields(investment, form) %>
+
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
     </div>
