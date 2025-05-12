@@ -114,11 +114,12 @@ Scenario Outline: Create new capital call
   And Given import file "account_entries.xlsx" for "AccountEntry"
   When I create a new capital call "<call>"
   Then I should see the capital call details
-  Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
-  Then when the capital call is approved
   Then the corresponding remittances should be created
   Then I should see the remittances
-  And the investors must receive email with subject "<subject>"
+  Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
+  Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
+  Then when the capital call is approved  
+  And the investors must receive email with subject "<subject>" with the document "Sample.pdf" attached
   And the capital call collected amount should be "0"
   When I mark the remittances as paid
   Then I should see the remittances
@@ -127,10 +128,11 @@ Scenario Outline: Create new capital call
   Then I should see the remittances
   And the capital call collected amount should be "<collected_amount>"
   And the remittance rollups should be correct
-  Given each investor has a "verified" kyc linked to the commitment
+  # Given each investor has a "verified" kyc linked to the commitment
+  # Given the fund has capital call template
   # And when the capital call docs are generated
   # Then the generated doc must be attached to the capital remittances
-
+  
 
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount | subject |
@@ -154,7 +156,7 @@ Scenario Outline: Create new capital distrbution
   And I should be able to see the capital distrbution payments
   And when the capital distrbution payments are marked as paid
   Then the capital distribution must reflect the payments
-  And the investors must receive email with subject "Capital Distribution"
+  And the investors must receive email with subject "Capital Distribution" with the document "" attached
 
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
