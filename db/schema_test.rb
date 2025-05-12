@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_10_154511) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_12_044034) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -861,7 +861,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_154511) do
     t.boolean "show_details", default: false
     t.boolean "password_protect_attachment", default: false
     t.string "attachment_password"
-    t.boolean "no_link", default: false
+    t.boolean "show_details_link", default: true
     t.string "email_method", limit: 100
     t.datetime "deleted_at"
     t.boolean "enabled", default: true
@@ -1501,9 +1501,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_10_154511) do
     t.boolean "latest", default: false
     t.bigint "import_upload_id"
     t.string "scenario", limit: 40, default: "Default"
+    t.bigint "form_type_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
+    t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"

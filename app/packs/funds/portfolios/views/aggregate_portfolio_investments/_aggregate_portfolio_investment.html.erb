@@ -4,8 +4,42 @@
   <%= render RansackTableRow.new(model: aggregate_portfolio_investment, columns:) %>
 
   <td>
-    <%= link_to  t_common(:show), aggregate_portfolio_investment , {class: "btn btn-outline-primary ti ti-eye"} if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) || aggregate_portfolio_investment.show_portfolio %>
-    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success ti ti-plus"} if policy(aggregate_portfolio_investment).add_valuation? %>
+    <div class="btn-group">
+      <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ti ti-settings me-2"></i> Actions
+      </button>
+      <ul class="dropdown-menu">
+        <% if belongs_to_entity_id?(current_user, aggregate_portfolio_investment.entity_id) || aggregate_portfolio_investment.show_portfolio %>
+          <li>
+            <%= link_to t_common(:show), aggregate_portfolio_investment, class: "dropdown-item d-flex align-items-center ti ti-eye" %>
+          </li>
+        <% end %>
+
+        <% if policy(aggregate_portfolio_investment).add_valuation? %>
+          <li>
+            <%= link_to "Add Valuation",
+                        new_valuation_path(
+                          "valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id,
+                          "valuation[owner_type]": "Investor",
+                          "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id
+                        ),
+                        class: "dropdown-item d-flex align-items-center ti ti-currency-dollar" %>
+          </li>
+        <% end %>
+
+        <li>
+          <%= link_to "New Investment", new_portfolio_investment_path(
+                        "portfolio_investment[entity_id]": aggregate_portfolio_investment.entity_id,
+                        "portfolio_investment[fund_id]": aggregate_portfolio_investment.fund_id,
+                        "portfolio_investment[aggregate_portfolio_investment_id]": aggregate_portfolio_investment.id,
+                        "portfolio_investment[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id,
+                        "portfolio_investment[portfolio_company_id]": aggregate_portfolio_investment.portfolio_company_id),
+                      class: "dropdown-item d-flex align-items-center ti ti-plus",
+                      data: { turbo: false } %>
+        </li>
+      </ul>
+    </div>
+
   </td>
 
 </tr>
