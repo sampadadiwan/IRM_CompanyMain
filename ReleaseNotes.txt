@@ -1,3 +1,22 @@
+V9.0.39
+#####################################
+6ad4d66db Fixed commitment update
+1674fd9e0 (origin/export-visible-pi-ae-fix) Fixed export visible for AEs and PIs
+9497e6de7 Disable generate docs for EOI
+4db9de0f0 Updated investments import
+9bc35d4d9 Added better btns to APi row, Add New Investment
+70a20a262 renames no_link to show_details_link for CustomNotifications
+cff3f67d0 Better test for EOI approval
+a14a87375 Added better Approve/Unapprove service
+6b2c0be95 Fixed policy to show rms the EOI they should be able to see
+ddc50713f Better support for creating KYC from EOI
+72034b636 Changed EOI to enable RMs
+e48c94ff7 Allow 0 dollar commitments to be updated with commitment amount
+635b0c08e Removed datatables
+c1906e600 Fixed import_uploads/show for new ransack tables
+66fd2b823 Fix fund Ratio Search
+16647b47a Review changes for kpi report and offers
+
 V9.0.37
 #####################################
 ea3d23447 Spec to add account entry for a commitment

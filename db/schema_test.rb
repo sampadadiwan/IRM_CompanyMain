@@ -1521,7 +1521,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.datetime "updated_at", null: false
     t.date "start_date"
     t.date "end_date"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
+    t.index ["form_type_id"], name: "index_fund_reports_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
