@@ -27,6 +27,15 @@ class CapitalRemittance < ApplicationRecord
     "Payment Date" => "payment_date"
   }.freeze
 
+  FOR_COMMITMENT_COLUMNS = {
+    "Capital Call" => "capital_call_name",
+    "Status" => "status",
+    "Verified" => "verified",
+    "Due Amount" => "due_amount",
+    "Collected Amount" => "collected_amount",
+    "Payment Date" => "payment_date"
+  }.freeze
+
   update_index('capital_remittance') { self if index_record? }
 
   belongs_to :entity

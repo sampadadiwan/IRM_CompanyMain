@@ -138,6 +138,8 @@ class CapitalRemittancesController < ApplicationController
     result = CapitalRemittanceVerify.call(capital_remittance: @capital_remittance)
     default_columns_map = if current_user.curr_role == "investor"
                             CapitalRemittance::INVESTOR_STANDARD_COLUMNS
+                          elsif params[:for_commitment].present?
+                            CapitalRemittance::FOR_COMMITMENT_COLUMNS
                           else
                             CapitalRemittance::STANDARD_COLUMNS
                           end
