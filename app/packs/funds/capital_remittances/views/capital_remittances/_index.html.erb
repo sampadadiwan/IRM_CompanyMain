@@ -93,6 +93,8 @@
     <% capital_remittances_frame ||= "capital_remittances_frame" 
         default_columns_map = if current_user.curr_role == "investor"
             CapitalRemittance::INVESTOR_STANDARD_COLUMNS
+          elsif params[:for_commitment].present?
+            CapitalRemittance::FOR_COMMITMENT_COLUMNS
           else
             CapitalRemittance::STANDARD_COLUMNS
           end
