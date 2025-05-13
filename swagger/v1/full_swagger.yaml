@@ -1,0 +1,1818 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+- BearerAuth: []
+paths:
+  "/account_entries/delete_all.json":
+    post:
+      summary: delete_all account_entry
+      responses:
+        '200':
+          description: successful
+  "/account_entries/adhoc.json":
+    get:
+      summary: adhoc account_entry
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: adhoc account_entry
+      responses:
+        '200':
+          description: successful
+  "/account_entries.json":
+    get:
+      summary: list account_entries
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create account_entry
+      responses:
+        '200':
+          description: successful
+  "/account_entries/new.json":
+    get:
+      summary: new account_entry
+      responses:
+        '200':
+          description: successful
+  "/account_entries/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit account_entry
+      responses:
+        '200':
+          description: successful
+  "/account_entries/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show account_entry
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update account_entry
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update account_entry
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete account_entry
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investments/{id}.json/toggle_show_portfolio":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: toggle_show_portfolio aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investments.json":
+    get:
+      summary: list aggregate_portfolio_investments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investments/new.json":
+    get:
+      summary: new aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investments/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investments/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investment_snapshots.json":
+    get:
+      summary: list aggregate_portfolio_investments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investment_snapshots/new.json":
+    get:
+      summary: new aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investment_snapshots/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/aggregate_portfolio_investment_snapshots/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete aggregate_portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/search.json":
+    get:
+      summary: search capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/reminder":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: reminder capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/approve":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: approve capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/generate_docs":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_docs capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/allocate_units":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: allocate_units capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/recompute_fees":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: recompute_fees capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls.json":
+    get:
+      summary: list capital_calls
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/new.json":
+    get:
+      summary: new capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_calls/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_call
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_call
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_call
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_call
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/generate_documentation":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_documentation capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/generate_soa":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_soa capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/generate_soa_form":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: generate_soa_form capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/generate_esign_link":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_esign_link capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/search.json":
+    get:
+      summary: search capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/report":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: report capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/documents.json":
+    get:
+      summary: documents capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/transfer_fund_units":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: transfer_fund_units capital_commitment
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: transfer_fund_units capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments.json":
+    get:
+      summary: list capital_commitments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/new.json":
+    get:
+      summary: new capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_commitments/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_commitment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_commitment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_commitment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_commitment
+      responses:
+        '200':
+          description: successful
+  "/capital_distribution_payments/search.json":
+    get:
+      summary: search capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_distribution_payments.json":
+    get:
+      summary: list capital_distribution_payments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_distribution_payments/new.json":
+    get:
+      summary: new capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_distribution_payments/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_distribution_payments/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_distribution_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/{id}.json/approve":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: approve capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/{id}.json/redeem_units":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: redeem_units capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/{id}.json/payments_completed":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: payments_completed capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions.json":
+    get:
+      summary: list capital_distributions
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/new.json":
+    get:
+      summary: new capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_distributions/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_distribution
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_distribution
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_distribution
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_distribution
+      responses:
+        '200':
+          description: successful
+  "/capital_remittance_payments.json":
+    get:
+      summary: list capital_remittance_payments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_remittance_payments/new.json":
+    get:
+      summary: new capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_remittance_payments/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_remittance_payments/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_remittance_payment
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/{id}.json/verify":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: verify capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/search.json":
+    get:
+      summary: search capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/{id}.json/generate_docs":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_docs capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/{id}.json/send_notification":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: send_notification capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/bulk_actions.json":
+    post:
+      summary: bulk_actions capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances.json":
+    get:
+      summary: list capital_remittances
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/new.json":
+    get:
+      summary: new capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/capital_remittances/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show capital_remittance
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update capital_remittance
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update capital_remittance
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete capital_remittance
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/send_for_esign":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: send_for_esign document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/force_send_for_esign":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: force_send_for_esign document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/cancel_esign":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: cancel_esign document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/resend_for_esign":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: resend_for_esign document
+      responses:
+        '200':
+          description: successful
+  "/documents/send_all_for_esign.json":
+    patch:
+      summary: send_all_for_esign document
+      responses:
+        '200':
+          description: successful
+  "/documents/signature_progress.json":
+    post:
+      summary: signature_progress document
+      responses:
+        '200':
+          description: successful
+  "/documents/download.json":
+    post:
+      summary: download document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/fetch_esign_updates":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: fetch_esign_updates document
+      responses:
+        '200':
+          description: successful
+  "/documents/search.json":
+    get:
+      summary: search document
+      responses:
+        '200':
+          description: successful
+  "/documents/investor.json":
+    get:
+      summary: investor document
+      responses:
+        '200':
+          description: successful
+  "/documents/folder.json":
+    get:
+      summary: folder document
+      responses:
+        '200':
+          description: successful
+  "/documents/owner.json":
+    get:
+      summary: owner document
+      responses:
+        '200':
+          description: successful
+  "/documents/approve.json":
+    get:
+      summary: approve document
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: approve document
+      responses:
+        '200':
+          description: successful
+  "/documents/bulk_actions.json":
+    post:
+      summary: bulk_actions document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/send_document_notification":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: send_document_notification document
+      responses:
+        '200':
+          description: successful
+  "/documents.json":
+    get:
+      summary: list documents
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create document
+      responses:
+        '200':
+          description: successful
+  "/documents/new.json":
+    get:
+      summary: new document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit document
+      responses:
+        '200':
+          description: successful
+  "/documents/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show document
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update document
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update document
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete document
+      responses:
+        '200':
+          description: successful
+  "/fund_ratios/generate.json":
+    get:
+      summary: generate fund_ratio
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: generate fund_ratio
+      responses:
+        '200':
+          description: successful
+  "/fund_ratios.json":
+    get:
+      summary: list fund_ratios
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create fund_ratio
+      responses:
+        '200':
+          description: successful
+  "/fund_ratios/new.json":
+    get:
+      summary: new fund_ratio
+      responses:
+        '200':
+          description: successful
+  "/fund_ratios/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit fund_ratio
+      responses:
+        '200':
+          description: successful
+  "/fund_ratios/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show fund_ratio
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update fund_ratio
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update fund_ratio
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete fund_ratio
+      responses:
+        '200':
+          description: successful
+  "/fund_unit_settings.json":
+    get:
+      summary: list fund_unit_settings
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create fund_unit_setting
+      responses:
+        '200':
+          description: successful
+  "/fund_unit_settings/new.json":
+    get:
+      summary: new fund_unit_setting
+      responses:
+        '200':
+          description: successful
+  "/fund_unit_settings/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit fund_unit_setting
+      responses:
+        '200':
+          description: successful
+  "/fund_unit_settings/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show fund_unit_setting
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update fund_unit_setting
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update fund_unit_setting
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete fund_unit_setting
+      responses:
+        '200':
+          description: successful
+  "/fund_units.json":
+    get:
+      summary: list fund_units
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create fund_unit
+      responses:
+        '200':
+          description: successful
+  "/fund_units/new.json":
+    get:
+      summary: new fund_unit
+      responses:
+        '200':
+          description: successful
+  "/fund_units/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit fund_unit
+      responses:
+        '200':
+          description: successful
+  "/fund_units/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show fund_unit
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update fund_unit
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update fund_unit
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete fund_unit
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/last":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: last fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/report":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: report fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/generate_fund_ratios":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: generate_fund_ratios fund
+      responses:
+        '200':
+          description: successful
+    get:
+      summary: generate_fund_ratios fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/allocate":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: allocate fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/generate_documentation":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: generate_documentation fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/allocate_form":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: allocate_form fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/copy_formulas":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: copy_formulas fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/export":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: export fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/check_access_rights":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: check_access_rights fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/delete_all":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    delete:
+      summary: delete_all fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/dashboard":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: dashboard fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/generate_tracking_numbers":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    post:
+      summary: generate_tracking_numbers fund
+      responses:
+        '200':
+          description: successful
+  "/funds.json":
+    get:
+      summary: list funds
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create fund
+      responses:
+        '200':
+          description: successful
+  "/funds/new.json":
+    get:
+      summary: new fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit fund
+      responses:
+        '200':
+          description: successful
+  "/funds/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show fund
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update fund
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update fund
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete fund
+      responses:
+        '200':
+          description: successful
+  "/fund_snapshots.json":
+    get:
+      summary: list funds
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create fund
+      responses:
+        '200':
+          description: successful
+  "/fund_snapshots/new.json":
+    get:
+      summary: new fund
+      responses:
+        '200':
+          description: successful
+  "/fund_snapshots/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit fund
+      responses:
+        '200':
+          description: successful
+  "/fund_snapshots/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show fund
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update fund
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update fund
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete fund
+      responses:
+        '200':
+          description: successful
+  "/investors/search.json":
+    get:
+      summary: search investor
+      responses:
+        '200':
+          description: successful
+  "/investors/merge.json":
+    get:
+      summary: merge investor
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: merge investor
+      responses:
+        '200':
+          description: successful
+  "/investors/{id}.json/dashboard":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: dashboard investor
+      responses:
+        '200':
+          description: successful
+  "/investors/{id}.json/generate_reports":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: generate_reports investor
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: generate_reports investor
+      responses:
+        '200':
+          description: successful
+  "/investors/{id}.json/portfolio_investments_report":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: portfolio_investments_report investor
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: portfolio_investments_report investor
+      responses:
+        '200':
+          description: successful
+  "/investors/portfolio_investments_report_all.json":
+    get:
+      summary: portfolio_investments_report_all investor
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: portfolio_investments_report_all investor
+      responses:
+        '200':
+          description: successful
+  "/investors.json":
+    get:
+      summary: list investors
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create investor
+      responses:
+        '200':
+          description: successful
+  "/investors/new.json":
+    get:
+      summary: new investor
+      responses:
+        '200':
+          description: successful
+  "/investors/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit investor
+      responses:
+        '200':
+          description: successful
+  "/investors/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show investor
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update investor
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update investor
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete investor
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investments/base_amount_form.json":
+    get:
+      summary: base_amount_form portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investments.json":
+    get:
+      summary: list portfolio_investments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investments/new.json":
+    get:
+      summary: new portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investments/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investments/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show portfolio_investment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update portfolio_investment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update portfolio_investment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investment_snapshots.json":
+    get:
+      summary: list portfolio_investments
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investment_snapshots/new.json":
+    get:
+      summary: new portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investment_snapshots/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/portfolio_investment_snapshots/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show portfolio_investment
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update portfolio_investment
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update portfolio_investment
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete portfolio_investment
+      responses:
+        '200':
+          description: successful
+  "/valuations/value_bridge.json":
+    post:
+      summary: value_bridge valuation
+      responses:
+        '200':
+          description: successful
+    get:
+      summary: value_bridge valuation
+      responses:
+        '200':
+          description: successful
+  "/valuations.json":
+    get:
+      summary: list valuations
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create valuation
+      responses:
+        '200':
+          description: successful
+  "/valuations/new.json":
+    get:
+      summary: new valuation
+      responses:
+        '200':
+          description: successful
+  "/valuations/{id}.json/edit":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: edit valuation
+      responses:
+        '200':
+          description: successful
+  "/valuations/{id}.json":
+    parameters:
+    - name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+    get:
+      summary: show valuation
+      responses:
+        '200':
+          description: successful
+    patch:
+      summary: update valuation
+      responses:
+        '200':
+          description: successful
+    put:
+      summary: update valuation
+      responses:
+        '200':
+          description: successful
+    delete:
+      summary: delete valuation
+      responses:
+        '200':
+          description: successful
+servers:
+- url: https://app.caphive.com
+  description: Production server
+- url: https://dev.altconnects.com
+  description: Staging server
+- url: http://localhost:3001
+  description: Local server

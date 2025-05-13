@@ -41,8 +41,8 @@ gem "stimulus-rails"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
-# gem 'rswag-api'
-# gem 'rswag-ui'
+gem 'rswag-api'
+gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
 gem "redis"
@@ -168,6 +168,9 @@ group :development, :test do
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
+
+  gem 'rspec-rails'
+  gem 'rswag-specs'
 end
 
 gem 'awesome_print'
@@ -220,7 +223,6 @@ group :test do
   gem 'capybara-email'
   gem 'cucumber-rails', require: false
   gem 'database_cleaner-active_record'
-  gem 'rspec-rails'
 
   gem 'simplecov', require: false, group: :test
   gem 'sqlite3'

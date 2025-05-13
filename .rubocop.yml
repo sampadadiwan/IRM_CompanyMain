@@ -3,7 +3,6 @@
 plugins:
   - rubocop-performance
   - rubocop-rails
-  - rubocop-rspec
 
 Style/SafeNavigationChainLength:
   Enabled: false
@@ -47,6 +46,7 @@ AllCops:
     - "bin/**/*"
     - "test/factories.rb"
     - "config/deploy.rb"
+    - "spec/**/*"
 
 Rails/FilePath:
   Exclude:

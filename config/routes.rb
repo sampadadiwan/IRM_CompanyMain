@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  mount Rswag::Ui::Engine => '/api-docs'
+  mount Rswag::Api::Engine => '/api-docs'
+
   resources :portfolio_reports
   resources :excused_investors
   resources :investments
@@ -15,8 +18,6 @@ Rails.application.routes.draw do
   resources :ai_rules
   resources :rm_mappings
   resources :key_biz_metrics
-  # mount Rswag::Ui::Engine => '/api-docs'
-  # mount Rswag::Api::Engine => '/api-docs'
   mount ActionCable.server => '/cable'
   resources :support_client_mappings
   draw :admin
