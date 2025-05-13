@@ -54,7 +54,7 @@
               <%= button_to download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id),
                             method: :post,
                             class: "dropdown-item d-flex align-items-center",
-                            data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup" } do %>
+                            data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } do %>
                 <i class="ti ti-download"></i> <%= t_common(:download) %> ZIP
               <% end %>
             <% else %>
