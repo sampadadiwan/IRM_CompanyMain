@@ -1,5 +1,4 @@
 class Folder < ApplicationRecord
-
   include Trackable.new
   has_ancestry orphan_strategy: :destroy, touch: true
 
@@ -54,7 +53,7 @@ class Folder < ApplicationRecord
     end
 
     # If we have an owner for the parent and none for the child
-    if parent.owner && owner.nil? 
+    if parent.owner && owner.nil?
       self.owner = parent.owner
       self.private = parent.private
       save

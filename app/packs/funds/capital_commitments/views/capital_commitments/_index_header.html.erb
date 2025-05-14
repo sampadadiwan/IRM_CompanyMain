@@ -23,7 +23,12 @@
 
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
+                
 
+                <%= link_to "View Generated Documents", documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:commitments_fund_id, :eq, fund.id], [:owner_type, :eq, "CapitalCommitment"], [:owner_tag, :cont, "Generated"]])), class: "dropdown-item ti ti-search" %>
+
+                <div class="dropdown-divider"></div>
+                
                 <%= button_to generate_documentation_fund_path(fund),
                                 method: :patch,
                                 class: "dropdown-item d-flex align-items-center",
