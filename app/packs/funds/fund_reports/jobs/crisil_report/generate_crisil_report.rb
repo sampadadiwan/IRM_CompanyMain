@@ -70,7 +70,7 @@ class GenerateCrisilReport < Trailblazer::Operation
   end
 
   def report_folder(fund)
-    fund.document_folder.children.where(name: "Reports").first
+    fund.document_folder.children.private_folders.where(name: "Reports").first
   end
 
   def save_and_upload_report(ctx, fund_id:, user_id:, report_name:, start_date:, end_date:, excel:, **)

@@ -26,6 +26,7 @@ class Folder < ApplicationRecord
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }
   scope :for_entity, ->(entity) { where("folders.entity_id=?", entity.id).order("full_path asc") }
+  scope :private_folders, -> { where("folders.private=?", true) }
 
   def set_defaults
     if parent
@@ -55,6 +56,7 @@ class Folder < ApplicationRecord
     # If we have an owner for the parent and none for the child
     if parent.owner && owner.nil? 
       self.owner = parent.owner
+      self.private = parent.private
       save
     end
   end

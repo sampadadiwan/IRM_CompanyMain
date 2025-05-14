@@ -36,7 +36,7 @@ class SebiReportJob < ApplicationJob
   # rubocop:enable Metrics/ParameterLists
 
   def report_folder(fund)
-    fund.document_folder.children.where(name: "Reports").first
+    fund.document_folder.children.private_folders.where(name: "Reports").first
   end
 
   def generate_sebi_report(fund_id, start_date, end_date, user_id)
