@@ -42,7 +42,7 @@ class CustomNotification < ApplicationRecord
   end
 
   def show_link
-    !show_details_link
+    show_details_link
   end
 
   def email_methods
