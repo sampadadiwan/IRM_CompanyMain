@@ -1,5 +1,4 @@
 wb = xlsx_package.workbook
-@investments = @investments
 
 form_type, custom_field_names, custom_headers = get_form_type("Investment")
 
