@@ -40,18 +40,31 @@ class ValuationsController < ApplicationController
     valuations = []
     saved_all = true
     # We need to create a valuation for each investment instrument
-    Valuation.transaction do
-      params[:investment_instrument_ids].each do |investment_instrument_id|
-        next if investment_instrument_id.blank?
+    if request.format.html?
 
+      Valuation.transaction do
+        params[:investment_instrument_ids].each do |investment_instrument_id|
+          next if investment_instrument_id.blank?
+
+          @valuation = Valuation.new(valuation_params)
+          @valuation.investment_instrument_id = investment_instrument_id
+          @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
+          @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+          authorize @valuation
+          saved_all &&= @valuation.save
+          valuations << @valuation
+          break unless saved_all
+        end
+      end
+
+    elsif request.format.json?
+      Valuation.transaction do
         @valuation = Valuation.new(valuation_params)
-        @valuation.investment_instrument_id = investment_instrument_id
         @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
         @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
         authorize @valuation
-        saved_all &&= @valuation.save
-        valuations << @valuation
-        break unless saved_all
+        saved_all = @valuation.save
+        valuations << @valuation      
       end
     end
 
