@@ -5,9 +5,9 @@
 %>        
 
 <% 
-    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
+    xl_data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
 
-    xl_link = download_xl_link(data_source) 
+    xl_link = download_xl_link(xl_data_source) 
     lazy_load_data ||= false 
 
     col_params = { }
@@ -87,7 +87,8 @@
     
   </div>
 
-  
+  <% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q)) %>
+  <%=render SearchComponent.new(data_source: data_source, turbo_frame: "account_entries_frame") %>
 
   <div class="table-responsive">
 
