@@ -43,7 +43,8 @@ class CapitalCallJob < ApplicationJob
         cr.payment_date = @capital_call.due_date if cr.verified
         # Skip the counter culture updates to avoid deadlocks
         CapitalRemittance.skip_counter_culture_updates do
-          CapitalRemittanceCreate.call(capital_remittance: cr)
+          result = CapitalRemittanceCreate.call(capital_remittance: cr)
+          Rails.logger.error { "Error creating CapitalRemittance for #{capital_commitment.investor_name} id #{capital_commitment.id}, #{cr.errors.full_messages}" } if result.failure?
         end
       end
     end
