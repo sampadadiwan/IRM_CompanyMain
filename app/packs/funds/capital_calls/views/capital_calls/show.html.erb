@@ -29,6 +29,8 @@
                      msg: "This will generate a notification to your clients, if enabled. Please note only approved call notices will be attached to the email."} do %>
             Approve
           <% end %>
+
+          <div class="dropdown-divider"></div>
         <% end %>
 
         <% if policy(@capital_call).generate_docs? %>
@@ -40,6 +42,7 @@
 
           <%= link_to "View Generated Documents", documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id], [:owner_tag, :cont, "Generated"]])), class: "dropdown-item ti ti-search" %>
 
+          <div class="dropdown-divider"></div>
         <% end %>
 
         <% if policy(@capital_call).allocate_units? %>
