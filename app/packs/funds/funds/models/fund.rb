@@ -82,6 +82,10 @@ class Fund < ApplicationRecord
            :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
            with_currency: ->(f) { f.currency }
 
+  def private_folder_names
+    ["Reports", "Private Documents"]
+  end
+
   def pending_call_amount
     call_amount - collected_amount
   end

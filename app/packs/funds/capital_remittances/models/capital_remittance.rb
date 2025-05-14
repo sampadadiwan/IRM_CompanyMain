@@ -173,7 +173,7 @@ class CapitalRemittance < ApplicationRecord
 
     else
       # If the remittance is not verified, set the status to "Pending"
-      self.status = "Pending"                    
+      self.status = "Pending"
     end
   end
 

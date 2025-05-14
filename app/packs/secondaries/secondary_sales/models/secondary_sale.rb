@@ -64,6 +64,10 @@ class SecondarySale < ApplicationRecord
     self.manage_interests = true if id.nil?
   end
 
+  def private_folder_names
+    ["Reports", "Private Documents"]
+  end
+
   def active?
     Time.zone.today.between?(start_date, end_date)
   end
