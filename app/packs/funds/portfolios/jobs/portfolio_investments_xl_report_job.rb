@@ -12,8 +12,8 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
   # Ensure the reports folder is created with the owner set to nil
   def get_reports_folder(model)
     entity = model.respond_to?(:entity) ? model.entity : model
-    reports_folder = model.document_folder.children.where(name: "Reports", entity:, allow_nil_owner: true).first
-    reports_folder ||= model.document_folder.children.create!(name: "Reports", entity:, allow_nil_owner: true)
+    reports_folder = model.document_folder.children.where(name: "Reports", entity:, private: true).first
+    reports_folder ||= model.document_folder.children.create!(name: "Reports", entity:, private: true)
     reports_folder
   end
 

@@ -45,6 +45,19 @@
 
     <% end %>
 
+    <% if @folder.private %>
+
+      <tr>
+        <td>
+          Private
+        </td>
+        <td>
+          <%= display_boolean @folder.private %>
+        </td>
+      </tr>
+
+    <% end %>
+
     <% if belongs_to_entity_id?(current_user, @folder.entity_id) %>
       <tr>
           <td>

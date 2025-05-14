@@ -5,7 +5,7 @@ class AddDefaultFoldersToFund < ActiveRecord::Migration[8.0]
       puts "Creating default folders for fund: #{fund.name}"
       # Create default folders for each fund
       FOLDERS.each do |name|
-        fund.document_folder.children.create!(name:, entity_id: fund.entity_id, allow_nil_owner: true) if fund.document_folder.children.where(name:, entity_id: fund.entity_id).empty?
+        fund.document_folder.children.create!(name:, entity_id: fund.entity_id, private: true) if fund.document_folder.children.where(name:, entity_id: fund.entity_id).empty?
       end
     end
   end

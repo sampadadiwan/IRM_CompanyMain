@@ -1,6 +1,4 @@
 class Folder < ApplicationRecord
-  # In some cases we want to allow the owner to be nil, for such folders set allow_nil_owner to true before creation. See set_parent_permissions
-  attr_accessor :allow_nil_owner
 
   include Trackable.new
   has_ancestry orphan_strategy: :destroy, touch: true
@@ -55,7 +53,7 @@ class Folder < ApplicationRecord
     end
 
     # If we have an owner for the parent and none for the child
-    if parent.owner && owner.nil? && allow_nil_owner.blank?
+    if parent.owner && owner.nil? 
       self.owner = parent.owner
       save
     end

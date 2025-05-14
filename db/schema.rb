@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_14_130332) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_14_143208) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1405,6 +1405,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_130332) do
     t.boolean "printing", default: false
     t.boolean "orignal", default: false
     t.boolean "knowledge_base", default: false
+    t.boolean "private", default: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
