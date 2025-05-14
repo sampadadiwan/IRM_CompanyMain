@@ -171,6 +171,10 @@ class CapitalRemittance < ApplicationRecord
                     else
                       capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
                     end
+
+    else
+      # If the remittance is not verified, set the status to "Pending"
+      self.status = "Pending"                    
     end
   end
 
