@@ -1,26 +1,6 @@
 module WithEmailPreview
   extend ActiveSupport::Concern
-
-  def resolve_mailer_class(resource)
-    base = resource.class.name
-    base = "InvestorKyc" if %w[IndividualKyc NonIndividualKyc].include?(base)
-    base = "Approval" if base == "ApprovalResponse"
-
-    candidates = [
-      "#{base}Mailer",
-      "#{base}sMailer",
-      "#{base}NotificationMailer",
-      "#{base}NotificationsMailer"
-    ]
-
-    candidates.each do |class_name|
-      klass = class_name.safe_constantize
-      return klass if klass
-    end
-
-    raise NameError, "Mailer class not found for #{base}"
-  end
-
+  
   def preview
     # Get the resource name from the controller (e.g., "users" -> "user")
     resource_name = controller_name.singularize
@@ -75,4 +55,27 @@ module WithEmailPreview
     @exception_message = e.message
     render "/layouts/email_preview", layout: true
   end
+
+  private
+
+  def resolve_mailer_class(resource)
+    base = resource.class.name
+    base = "InvestorKyc" if %w[IndividualKyc NonIndividualKyc].include?(base)
+    base = "Approval" if base == "ApprovalResponse"
+
+    candidates = [
+      "#{base}Mailer",
+      "#{base}sMailer",
+      "#{base}NotificationMailer",
+      "#{base}NotificationsMailer"
+    ]
+
+    candidates.each do |class_name|
+      klass = class_name.safe_constantize
+      return klass if klass
+    end
+
+    raise NameError, "Mailer class not found for #{base}"
+  end
+
 end
