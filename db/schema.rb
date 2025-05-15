@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -193,6 +193,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -1405,6 +1406,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.boolean "printing", default: false
     t.boolean "orignal", default: false
     t.boolean "knowledge_base", default: false
+    t.boolean "private", default: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
@@ -2467,6 +2469,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "deleted_at"
     t.date "investment_date"
+    t.decimal "sale_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
     t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"
@@ -2938,12 +2942,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
+  create_table "task_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "for_class", limit: 40, null: false
+    t.string "tag_list", limit: 100, null: false
+    t.text "details"
+    t.integer "due_in_days", default: 1
+    t.string "action_link"
+    t.string "help_link"
+    t.integer "sequence"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_task_templates_on_entity_id"
+    t.index ["for_class"], name: "index_task_templates_on_for_class"
+  end
+
   create_table "tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "details"
     t.bigint "entity_id", null: false
     t.bigint "for_entity_id"
     t.boolean "completed", default: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "owner_type"
@@ -2954,10 +2973,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
     t.string "tags", limit: 50
     t.text "response"
     t.boolean "for_support", default: false
+    t.bigint "task_template_id"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
+    t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
@@ -3446,8 +3467,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_074618) do
   add_foreign_key "support_client_mappings", "entities"
   add_foreign_key "support_client_mappings", "users"
   add_foreign_key "taggings", "tags"
+  add_foreign_key "task_templates", "entities"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"
+  add_foreign_key "tasks", "task_templates"
   add_foreign_key "tasks", "users"
   add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"

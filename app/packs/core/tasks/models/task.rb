@@ -2,11 +2,14 @@ class Task < ApplicationRecord
   update_index('task') { self if index_record? }
   include WithCustomField
 
+  attr_accessor :action_link, :help_link
+
   belongs_to :entity
   belongs_to :for_entity, class_name: "Entity", optional: true
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
+  belongs_to :task_template, optional: true
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 

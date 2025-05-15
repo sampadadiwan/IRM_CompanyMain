@@ -159,16 +159,19 @@ class CapitalRemittance < ApplicationRecord
   #
   # @raise [RuntimeError] if the fund's remittance generation basis is unknown.
   def set_status
-    considered_due_amount = folio_due_amount
+    # Change the status only if the remittance is verified
+    if verified
+      considered_due_amount = folio_due_amount
 
-    # Set the status based on the considered due amount and the capital call's due date
-    self.status = if considered_due_amount.to_f.abs <= 10
-                    "Paid"
-                  elsif considered_due_amount.to_f <= -10
-                    "Overpaid"
-                  else
-                    capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
-                  end
+      # Set the status based on the considered due amount and the capital call's due date
+      self.status = if considered_due_amount.to_f.abs <= 10
+                      "Paid"
+                    elsif considered_due_amount.to_f <= -10
+                      "Overpaid"
+                    else
+                      capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
+                    end
+    end
   end
 
   def net_call_amount

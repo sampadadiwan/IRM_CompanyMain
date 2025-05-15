@@ -1,43 +1,30 @@
 require 'swagger_helper'
 
 RSpec.describe 'valuations', type: :request do
+  let(:user) { 
+    entity = FactoryBot.create(:entity, entity_type: "Investment Fund")
+    FactoryBot.create(:user, entity:) 
+  }
 
-  path '/valuations/value_bridge.json' do
 
-    post('value_bridge valuation') do
-      response(200, 'successful') do
+  let(:access_token) { 
+    token = user.access_tokens.new(
+      access_token: SecureRandom.hex(32),
+      refresh_token: SecureRandom.hex(32),
+      expires_in: 2.hours.to_i
+    )
+    token.save!  # This should now work
+    token.access_token
+   }
 
-        after do |example|
-          example.metadata[:response][:content] = {
-            'application/json' => {
-              example: JSON.parse(response.body, symbolize_names: true)
-            }
-          }
-        end
-        run_test!
-      end
-    end
-
-    get('value_bridge valuation') do
-      response(200, 'successful') do
-
-        after do |example|
-          example.metadata[:response][:content] = {
-            'application/json' => {
-              example: JSON.parse(response.body, symbolize_names: true)
-            }
-          }
-        end
-        run_test!
-      end
-    end
-  end
+  
 
   path '/valuations.json' do
-
     get('list valuations') do
-      response(200, 'successful') do
+      security [BearerAuth: []]
+      parameter name: :Authorization, in: :header, type: :string, required: true
 
+      response(200, 'successful') do
         after do |example|
           example.metadata[:response][:content] = {
             'application/json' => {
@@ -50,8 +37,21 @@ RSpec.describe 'valuations', type: :request do
     end
 
     post('create valuation') do
-      response(200, 'successful') do
+      security [BearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
 
+      parameter name: :Authorization, in: :header, type: :string, required: true
+
+      parameter name: :valuation, in: :body, required: true, schema: {
+        type: :object,
+        additionalProperties: true
+      }
+
+      let(:Authorization) { "Bearer #{access_token}" }
+      let(:valuation) { {valuation: FactoryBot.build(:valuation).as_json} }
+
+      response(200, 'successful') do
         after do |example|
           example.metadata[:response][:content] = {
             'application/json' => {

@@ -1,7 +1,7 @@
 class CapitalCommitmentAction < Trailblazer::Operation
   def set_orig_amounts(_ctx, capital_commitment:, **)
     if capital_commitment.orig_folio_committed_amount_cents.zero?
-      capital_commitment.set_orig_amounts 
+      capital_commitment.set_orig_amounts
     else
       true
     end

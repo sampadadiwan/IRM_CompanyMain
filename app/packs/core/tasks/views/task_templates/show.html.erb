@@ -1,0 +1,74 @@
+<%= render FormCard.new(title: "#{@task_template}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        For Class
+      </td>
+      <td>
+        <%= @task_template.for_class %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Tag List
+      </td>
+      <td>
+        <%= @task_template.tag_list %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @task_template.details %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Due In Days
+      </td>
+      <td>
+        <%= @task_template.due_in_days %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Action Link
+      </td>
+      <td>
+        <%= @task_template.action_link %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Help Link
+      </td>
+      <td>
+        <%= @task_template.help_link %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Sequence
+      </td>
+      <td>
+        <%= @task_template.sequence %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @task_template.entity_id %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@task_template).update? %>
+      <%= link_to "Edit", edit_task_template_path(@task_template), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @task_template, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

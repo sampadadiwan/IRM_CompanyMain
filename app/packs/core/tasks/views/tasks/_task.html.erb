@@ -24,7 +24,7 @@
     <%= display_boolean(task.completed) %>
   </td>
   <td>
-    <%= task.user.full_name %>
+    <%= task.user&.full_name %>
   </td>
   <td>
     <%= l task.created_at %>

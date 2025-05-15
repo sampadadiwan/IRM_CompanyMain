@@ -6,6 +6,7 @@ class CapitalCommitment < ApplicationRecord
   include Memoized
   include CommitmentAccountEntry
   include CommitmentDocuments
+  include WithNextSteps
   include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
 
   include ForInvestor

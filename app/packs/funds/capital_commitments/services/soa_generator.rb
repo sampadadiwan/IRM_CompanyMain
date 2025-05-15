@@ -173,13 +173,13 @@ class SoaGenerator
   def portfolio_company_allocations(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
     fund = capital_commitment.fund
     entries = capital_commitment.account_entries
-                                .where(parent_type: "AggregatePortfolioInvestment",
+                                .where(parent_type: ["AggregatePortfolioInvestment", "PortfolioInvestment"],
                                        entry_type: entry_types, reporting_date: start_date..end_date)
                                 .includes(parent: :portfolio_company)
 
     # This is used to group the entries by portfolio company
     # The entry.name is in the format "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}" see AllocateAggregatePortfolios. Extract the formula name from the ae name, as we want to group by that
-    grouped = entries.group_by { |entry| [entry.parent.portfolio_company.investor_name, entry.name.split(":").last.strip, entry.entry_type] }
+    grouped = entries.group_by { |entry| [entry.parent.portfolio_company.investor_name, entry.name.strip, entry.entry_type] }
 
     # Now we need to calculate the total amount allocated to each portfolio company
     result = grouped.transform_values do |group|

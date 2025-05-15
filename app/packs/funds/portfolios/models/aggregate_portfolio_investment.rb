@@ -27,7 +27,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # Define monetized fields using fund's currency
   monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents,
            :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents,
-           :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents,
+           :fmv_cents, :cost_of_remaining_cents, :portfolio_income_cents, :ex_expenses_amount_cents,
            with_currency: ->(i) { i.fund.currency }
 
   # Validations for length restrictions
@@ -112,7 +112,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.instrument_currency_fmv_cents = buys.sum(&:instrument_currency_fmv_cents)
     api.instrument_currency_cost_of_remaining_cents = buys.sum(&:instrument_currency_cost_of_remaining_cents)
     api.instrument_currency_unrealized_gain_cents = buys.sum(&:instrument_currency_unrealized_gain_cents)
-
+    api.portfolio_income_cents = portfolio_cashflows.where(payment_date: ..end_date).sum(:amount_cents)
     api.freeze
   end
 

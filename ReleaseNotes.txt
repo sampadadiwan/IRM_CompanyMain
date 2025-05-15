@@ -1,3 +1,10 @@
+V9.0.40
+#####################################
+7a5ea16d5 Fix for download doc zipfile
+c4365cd42 Use for commitment columns for remittances, fixed verify under commitment (#836)
+9ea59ef93 Apis for TN (#835)
+cc9a58cbb Sync test schema
+
 V9.0.39
 #####################################
 6ad4d66db Fixed commitment update

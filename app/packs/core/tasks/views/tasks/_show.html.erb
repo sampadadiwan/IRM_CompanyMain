@@ -13,7 +13,7 @@
             Details
           </td>
           <td>
-            <%= task.details.html_safe if task.details %>
+            <%=raw task.details.html_safe if task.details %>
           </td>
         </tr>
 
