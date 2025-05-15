@@ -1,0 +1,52 @@
+<%= render FormCard.new(title: "Task Templates : #{task_template.presence || 'New'}") do %>
+  <%= form_with(model: task_template, validate: true) do |form| %>
+    <% if task_template.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(task_template.errors.count, "error") %> prohibited this task_template from being saved:</h2>
+        <ul>
+          <% task_template.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :for_class %>
+      <%= form.select :for_class, ["CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalDistribution", "IndividualKyc", "NonIndividualKyc"], {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tag_list %>
+      <%= form.text_field :tag_list, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :details %>
+      <%= form.textarea :details, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :due_in_days %>
+      <%= form.number_field :due_in_days, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :action_link %>
+      <%= form.text_field :action_link, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :help_link %>
+      <%= form.text_field :help_link, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :sequence %>
+      <%= form.number_field :sequence, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :entity_id %>
+      <%= form.text_field :entity_id, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

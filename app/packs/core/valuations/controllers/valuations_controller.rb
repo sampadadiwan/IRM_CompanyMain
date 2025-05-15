@@ -38,7 +38,7 @@ class ValuationsController < ApplicationController
   def create_vals
     valuations = []
     saved_all = true
-
+    # We need to create a valuation for each investment instrument
     if request.format.html?
 
       Valuation.transaction do

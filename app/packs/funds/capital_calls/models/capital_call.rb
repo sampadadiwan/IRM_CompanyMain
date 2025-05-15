@@ -1,6 +1,7 @@
 class CapitalCall < ApplicationRecord
   include WithCustomField
   include WithFolder
+  include WithNextSteps
   include Trackable.new
 
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fees other_fees])

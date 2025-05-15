@@ -9,8 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-
-ActiveRecord::Schema[8.0].define(version: 2025_05_14_143208) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -194,6 +193,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_143208) do
     t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -2942,7 +2942,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_143208) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
-  create_table "tasks", force: :cascade do |t|
+  create_table "task_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "for_class", limit: 40, null: false
+    t.string "tag_list", limit: 100, null: false
+    t.text "details"
+    t.integer "due_in_days", default: 1
+    t.string "action_link"
+    t.string "help_link"
+    t.integer "sequence"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_task_templates_on_entity_id"
+    t.index ["for_class"], name: "index_task_templates_on_for_class"
+  end
+
+  create_table "tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "details"
     t.bigint "entity_id", null: false
     t.bigint "for_entity_id"

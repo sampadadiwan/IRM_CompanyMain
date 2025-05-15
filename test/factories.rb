@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :task_template do
+    for_class { ["CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalDistribution", "IndividualKyc", "NonIndividualKyc"].sample }
+    tag_list { ["show", "edit", "delete", "list", "approve"].sample }
+    details { Faker::Company.catch_phrase }
+    due_in_days { rand(3) + 1 }
+    action_link { "/tasks" }
+    help_link { "/tasks" }
+  end
+
   factory :portfolio_report_extract do
     entity { nil }
     portfolio_report { nil }

@@ -8,6 +8,8 @@ module PortfolioInvestmentCounters
       ["portfolio_investments.quantity < ?", 0] => nil
     }
 
+    counter_culture :aggregate_portfolio_investment, column_name: 'ex_expenses_amount_cents', delta_column: 'ex_expenses_amount_cents'
+
     counter_culture :aggregate_portfolio_investment, column_name: 'transfer_amount_cents', delta_column: 'transfer_amount_cents'
     counter_culture :aggregate_portfolio_investment, column_name: 'transfer_quantity', delta_column: 'transfer_quantity'
 

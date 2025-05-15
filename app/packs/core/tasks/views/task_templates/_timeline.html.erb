@@ -1,0 +1,29 @@
+<div class="card w-100 pb-5">
+  <div class="card-body">
+    <div class="mb-4">
+      <h4 class="card-title fw-semibold"><%= title %></h4>
+      <p class="card-subtitle">Next Steps</p>
+    </div>
+    <% colors = ["primary", "success", "warning", "danger", "info"].freeze %>
+    <ul class="timeline-widget mb-0 position-relative mb-n5">
+      <% tasks.each_with_index do |task, idx| %>
+        <li class="timeline-item d-flex position-relative overflow-hidden">
+            <div class="timeline-time flex-shrink-0 text-end"><small class="text-muted"><%=l task.created_at.to_date %></small></div>
+            <div class="timeline-badge-wrap d-flex flex-column align-items-center">
+            <span class="timeline-badge border-2 border border-<%= colors[idx % 5] %> flex-shrink-0 my-8"></span>
+            <span class="timeline-badge-border d-block flex-shrink-0"></span>
+            </div>
+            <div class="timeline-desc fs-3 text-dark mt-n1">
+                <%= task.details %>
+                <div>
+                <%= link_to "Do It", task.action_link, class: "mb-1 badge bg-primary-subtle text-primary" %>
+                <%= link_to "Help", task.help_link, class: "mb-1 badge bg-success-subtle text-success" %>
+                </div>
+            </div>
+        </li>
+      <% end %>
+      
+    </ul>    
+  </div>
+</div>
+<%= paginate(tasks) %>

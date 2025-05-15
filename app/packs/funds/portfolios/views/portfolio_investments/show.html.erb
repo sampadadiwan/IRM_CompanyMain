@@ -94,7 +94,7 @@
       <% if @portfolio_investment.amount_cents != @portfolio_investment.ex_expenses_amount_cents %>
       <tr>
         <td>
-          Amount (Exluding Expenses)
+          Amount (Excluding Expenses)
         </td>
         <td>
           <%= money_to_currency @portfolio_investment.ex_expenses_amount, params %>

@@ -1,0 +1,10 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Task Templates</h1>
+  <%= link_to "New Task Template", new_task_template_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<% q ||= nil %>
+
+<div class="table-responsive" data-controller="datatable">
+  <%= render RansackTable.new(TaskTemplate, q: q, entity: current_user.entity, current_user: current_user, records: @task_templates, turbo_frame: "task_templates_frame", referrer: request.referrer) %>
+</div>

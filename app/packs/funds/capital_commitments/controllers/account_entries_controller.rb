@@ -99,7 +99,10 @@ class AccountEntriesController < ApplicationController
     else
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-      @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
+      if params[:all].blank?
+        page = params[:page] || 1
+        @account_entries = @account_entries.page(page).per(params[:per_page] || 10)
+      end
       @template = "index"
     end
   end

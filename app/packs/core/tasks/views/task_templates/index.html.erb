@@ -1,0 +1,8 @@
+<%= turbo_frame_tag "task_templates_frame", target: "_top" do %>
+    <%= render "/layouts/filter", associations: [] %>
+    <% if params[:timeline].present? %>
+        <%= render "/task_templates/timeline", tasks: @task_templates, q: @q, lazy_load_data: false, title: "Templates" %>
+    <% else %>
+        <%= render "/task_templates/index", task_templates: @task_templates, q: @q, lazy_load_data: false %>
+    <% end %>
+<% end %>

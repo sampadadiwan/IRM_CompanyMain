@@ -1,0 +1,33 @@
+require 'rails_helper'
+
+RSpec.describe "task_templates/new", type: :view do
+  before(:each) do
+    assign(:task_template, TaskTemplate.new(
+      details: "MyText",
+      due_in_days: 1,
+      action_link: "MyString",
+      help_link: "MyString",
+      sequence: 1,
+      entity: nil
+    ))
+  end
+
+  it "renders new task_template form" do
+    render
+
+    assert_select "form[action=?][method=?]", task_templates_path, "post" do
+
+      assert_select "textarea[name=?]", "task_template[details]"
+
+      assert_select "input[name=?]", "task_template[due_in_days]"
+
+      assert_select "input[name=?]", "task_template[action_link]"
+
+      assert_select "input[name=?]", "task_template[help_link]"
+
+      assert_select "input[name=?]", "task_template[sequence]"
+
+      assert_select "input[name=?]", "task_template[entity_id]"
+    end
+  end
+end
