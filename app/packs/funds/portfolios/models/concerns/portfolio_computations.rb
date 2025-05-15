@@ -147,34 +147,52 @@ module PortfolioComputations
     amount_cents / quantity.abs
   end
 
-  ##########################################################
-  ####### Allocation of Realized Gain to Commitments #######
-  ##########################################################
+  ############################################################################
+  ####### Allocation of Gain, Cost Of Sold, Sale Amount to Commitments #######
+  ############################################################################
 
-  # Allocate realized gain proportionally based on account entry value on date of original buy
-  def allocation_of_realized_gain_cents(end_date, account_entry_name, capital_commitment)
-    calculate_realized_gain(
-      end_date: end_date,
-      account_entry_name: account_entry_name,
-      capital_commitment: capital_commitment
-    ) { |pa| pa.bought_pi.investment_date }
-  end
-
-  # Same as above, but based on custom `proforma_date` in JSON field (Pravega-specific)
-  def allocation_of_realized_gain_cents_proforma(end_date, account_entry_name, capital_commitment)
-    calculate_realized_gain(
+  # Generic method to allocate a specific attribute (e.g., gain, cost_of_sold, sale_amount) in cents
+  # Proportionally distributes the attribute value based on the account entry amount as of a specific date
+  def allocation_of_attribute_cents(attribute_name, end_date, account_entry_name, capital_commitment, proforma: false)
+    allocated_cents_for(
+      attribute_name: attribute_name,
       end_date: end_date,
       account_entry_name: account_entry_name,
       capital_commitment: capital_commitment,
-      proforma: true
-    ) { |pa| pa.bought_pi.custom_fields.proforma_date }
+      proforma: proforma
+    ) do |pa|
+      # Determine the correct attribution date based on proforma mode
+      proforma ? pa.bought_pi.custom_fields.proforma_date : pa.bought_pi.investment_date
+    end
   end
 
-  # Shared helper to compute gain allocations, customizable by date field
-  def calculate_realized_gain(end_date:, account_entry_name:, capital_commitment:, proforma: false)
-    realized_gain = 0
+  # --- Specific Aliases for Readability and Backward Compatibility ---
 
-    # Choose attribution scope based on mode
+  # Calculates allocation based on custom proforma date and `gain` field
+  def allocation_of_realized_gain_cents(end_date, account_entry_name, capital_commitment, proforma: false)
+    allocation_of_attribute_cents(:gain, end_date, account_entry_name, capital_commitment, proforma:)
+  end
+
+  # Calculates allocation based on actual investment date and `cost_of_sold` field
+  def allocation_of_cost_of_sold_cents(end_date, account_entry_name, capital_commitment, proforma: false)
+    allocation_of_attribute_cents(:cost_of_sold, end_date, account_entry_name, capital_commitment, proforma:)
+  end
+
+  # Calculates allocation based on actual investment date and `sale_amount` field
+  def allocation_of_sale_amount_cents(end_date, account_entry_name, capital_commitment, proforma: false)
+    allocation_of_attribute_cents(:sale_amount, end_date, account_entry_name, capital_commitment, proforma:)
+  end
+
+  # --- Core Method for Attribute Allocation ---
+  # account_entry_name: The name of the account entry to match against, such as InvestableCapitalPercentage or ForiegnInvesableCapitalPercentage. This is the basis of allocation
+  # attribute_name: The name of the attribute to be allocated, such as gain, cost_of_sold, or sale_amount
+  # end_date: The date for which the InvestableCapitalPercentage or ForiegnInvesableCapitalPercentage is retrived from the AccountEntries
+  # proforma: Boolean flag to indicate whether to use proforma date or investment date for filtering
+  def allocated_cents_for(attribute_name:, end_date:, account_entry_name:, capital_commitment:, proforma:)
+    total = 0
+
+    # Step 1: Filter portfolio attributions up to the end_date
+    # The date field used depends on whether proforma mode is on
     scope = if proforma
               portfolio_attributions
                 .joins(:bought_pi)
@@ -185,20 +203,32 @@ module PortfolioComputations
                 .where(portfolio_investments: { investment_date: ..end_date })
             end
 
+    # Step 2: Iterate through each attribution and compute allocation
     scope.each do |pa|
+      # Yield gives us either proforma_date or investment_date
       reporting_date = yield(pa)
 
+      # Find the most recent account entry *before or on* the reporting_date
       ae = capital_commitment.account_entries
                              .where(name: account_entry_name, reporting_date: ..reporting_date)
                              .order(reporting_date: :desc)
                              .first
 
-      Rails.logger.debug { "pa.id = #{pa.id} gain cents = #{pa.gain.cents} percentage = #{ae.amount_cents / 100}" }
+      next unless ae # Skip if no matching account entry
 
-      realized_gain += pa.gain.cents * ae.amount_cents / 100
+      # Fetch the attribute value (e.g., gain, cost_of_sold) in cents from the attribution
+      value_cents = pa.public_send(attribute_name).cents
+
+      # Debug log for troubleshooting and auditing
+      Rails.logger.debug do
+        "pa.id=#{pa.id}, #{attribute_name}=#{value_cents}, ae.amount_cents=#{ae.amount_cents}"
+      end
+
+      # Proportional allocation: attribute value * allocation percentage (represented by ae.amount_cents / 100)
+      total += value_cents * ae.amount_cents / 100
     end
 
-    realized_gain
+    total
   end
 
   ##########################################################

@@ -11,10 +11,10 @@ class DocumentPolicy < ApplicationPolicy
     record.public_visibility ||
       (
         user.enable_documents && belongs_to_entity?(user, record) &&
-        (user.has_cached_role?(:company_admin) || (record.owner.present? && owner_policy.show?))
+        (user.has_cached_role?(:company_admin) || (record.owner.present? && owner_policy.show? && !record.folder.private))
       ) ||
       (user.enable_documents && show_investor? && !user.investor_advisor?) ||
-      (record.owner.present? && owner_policy.show? && not_generated_or_approved)
+      (record.owner.present? && owner_policy.show? && !record.folder.private && not_generated_or_approved)
   end
 
   def not_generated_or_approved

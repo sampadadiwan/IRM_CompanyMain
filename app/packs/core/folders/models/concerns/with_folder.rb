@@ -54,6 +54,13 @@ module WithFolder
 
         document_folder.owner = self
         document_folder.save
+
+        if respond_to?(:private_folder_names)
+          private_folder_names.each do |private_folder_name|
+            # Create these folders, but with owner as nil so no one can see the docs except the entity
+            document_folder.children.create(name: private_folder_name, entity_id: entity_id, private: true)
+          end
+        end
       end
 
       folder

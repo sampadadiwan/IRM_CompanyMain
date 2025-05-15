@@ -4,9 +4,9 @@ class PortfolioAttribution < ApplicationRecord
   belongs_to :fund
   belongs_to :sold_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment"
   belongs_to :bought_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment", touch: true
-  before_save :compute_cost_of_sold_cents
+  before_save :compute_amounts
 
-  monetize :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :cost_of_sold_cents, :gain_cents, :sale_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   after_commit :update_cost_of_sold, unless: :destroyed?
 
@@ -22,18 +22,12 @@ class PortfolioAttribution < ApplicationRecord
     PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload)
   end
 
-  def compute_cost_of_sold_cents
+  def compute_amounts
     self.cost_of_sold_cents = quantity * bought_pi.cost_cents
+    self.gain_cents = (sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs
+    self.sale_amount_cents = sold_pi.price_per_share_cents * quantity.abs
   end
 
   # This is so that the bought_pi net_quantity is updated
   after_destroy_commit ->(pa) { PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload) unless pa.destroyed? }
-
-  def gain
-    Money.new((sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs, fund.currency)
-  end
-
-  def to_s
-    "#{sold_pi} #{quantity}"
-  end
 end

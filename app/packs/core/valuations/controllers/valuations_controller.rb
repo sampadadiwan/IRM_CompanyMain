@@ -35,8 +35,7 @@ class ValuationsController < ApplicationController
     setup_custom_fields(@valuation)
   end
 
-  # POST /valuations or /valuations.json
-  def create
+  def create_vals
     valuations = []
     saved_all = true
     # We need to create a valuation for each investment instrument
@@ -67,6 +66,14 @@ class ValuationsController < ApplicationController
         valuations << @valuation
       end
     end
+
+    [valuations, saved_all]
+  end
+
+  # POST /valuations or /valuations.json
+  def create
+    # We need to create a valuation for each investment instrument
+    _, saved_all = create_vals
 
     respond_to do |format|
       if saved_all

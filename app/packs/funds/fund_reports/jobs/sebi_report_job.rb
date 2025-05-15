@@ -35,6 +35,10 @@ class SebiReportJob < ApplicationJob
   end
   # rubocop:enable Metrics/ParameterLists
 
+  def report_folder(fund)
+    fund.document_folder.children.private_folders.where(name: "Reports").first
+  end
+
   def generate_sebi_report(fund_id, start_date, end_date, user_id)
     FileUtils.cp(Rails.public_path.join('sample_uploads/SEBI report.xls'), Rails.root.join("tmp/sebi_report.xls"))
     excel = Spreadsheet.open(Rails.root.join("tmp/sebi_report.xls").to_s)
@@ -54,7 +58,7 @@ class SebiReportJob < ApplicationJob
       report_name = "SEBI Report #{start_date} to #{end_date}"
       ActiveRecord::Base.transaction do
         Document.where(name: report_name, entity_id: fund.entity_id).destroy_all if Document.exists?(name: report_name, entity_id: fund.entity_id)
-        Document.create!(entity_id: fund.entity_id, owner: fund, name: "SEBI Report #{start_date} to #{end_date}", file:, folder: fund.document_folder, user: User.find(user_id), orignal: true, download: true)
+        Document.create!(entity_id: fund.entity_id, owner: fund, name: "SEBI Report #{start_date} to #{end_date}", file:, folder: report_folder(fund), user: User.find(user_id), orignal: true, download: true)
       end
     rescue StandardError => e
       UserAlert.new(message: "SEBI Report Generation Failed: #{e.message}", user_id:, level: "danger").broadcast if user_id.present?
@@ -79,7 +83,7 @@ class SebiReportJob < ApplicationJob
       report_name = "#{report_name} #{start_date} to #{end_date}"
       ActiveRecord::Base.transaction do
         Document.where(name: report_name, entity_id: fund.entity_id).destroy_all if Document.exists?(name: report_name, entity_id: fund.entity_id)
-        Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: fund.document_folder, user: User.find(user_id), orignal: true, download: true)
+        Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: report_folder(fund), user: User.find(user_id), orignal: true, download: true)
       end
     rescue StandardError => e
       UserAlert.new(message: "#{report_name} Excel Generation Failed: #{e.message}", user_id:, level: "danger").broadcast if user_id.present?

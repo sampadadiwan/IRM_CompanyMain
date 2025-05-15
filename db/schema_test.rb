@@ -9,7 +9,6 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-
 ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
@@ -202,6 +201,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
+    t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
   create_table "ai_checks", force: :cascade do |t|
@@ -1140,6 +1140,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.string "email", limit: 60
     t.bigint "document_id"
     t.datetime "deleted_at"
+    t.integer "remind_in", default: 0
     t.index ["deleted_at"], name: "index_e_signatures_on_deleted_at"
     t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
@@ -1405,6 +1406,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.boolean "printing", default: false
     t.boolean "orignal", default: false
     t.boolean "knowledge_base", default: false
+    t.boolean "private", default: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
@@ -1433,6 +1435,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.string "condition_state", limit: 5, default: "show"
     t.boolean "internal", default: false
     t.string "js_events"
+    t.boolean "regulatory_field", default: false
+    t.text "regulation_type"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
@@ -2208,6 +2212,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.bigint "owner_id"
     t.string "period", limit: 12, default: "Quarter"
     t.datetime "deleted_at"
+    t.text "analysis"
     t.index ["deleted_at"], name: "index_kpi_reports_on_deleted_at"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
@@ -2463,6 +2468,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "deleted_at"
     t.date "investment_date"
+    t.decimal "sale_amount_cents", precision: 20, scale: 2, default: 0.0
+    t.decimal "gain_cents", precision: 20, scale: 2, default: 0.0
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
     t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"
@@ -2558,7 +2565,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "conversion_date"
-    t.decimal "capital_expense_cents", precision: 20, scale: 2
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
     t.bigint "orignal_id"
@@ -2578,6 +2584,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
+    t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
   end
 
   create_table "portfolio_report_extracts", force: :cascade do |t|
@@ -3219,6 +3226,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
+  add_foreign_key "chats", "entities"
+  add_foreign_key "chats", "users"
   add_foreign_key "ci_profiles", "entities"
   add_foreign_key "ci_profiles", "funds"
   add_foreign_key "ci_track_records", "entities"
@@ -3289,9 +3298,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   add_foreign_key "fund_formulas", "funds"
   add_foreign_key "fund_ratios", "capital_commitments"
   add_foreign_key "fund_ratios", "entities"
+  add_foreign_key "fund_ratios", "form_types"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "fund_reports", "entities"
+  add_foreign_key "fund_reports", "form_types"
   add_foreign_key "fund_reports", "funds"
   add_foreign_key "fund_sebi_infos", "entities"
   add_foreign_key "fund_sebi_infos", "funds"
@@ -3330,7 +3341,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
-  
+  add_foreign_key "investments", "form_types"
   add_foreign_key "investments", "investors", column: "portfolio_company_id"
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
@@ -3372,6 +3383,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
+  add_foreign_key "messages", "chats"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
@@ -3456,6 +3468,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"
   add_foreign_key "tasks", "users"
+  add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"
   add_foreign_key "users", "form_types"

@@ -157,7 +157,6 @@ class CapitalRemittance < ApplicationRecord
   # - If the capital call's due date is in the future, the status is set to "Pending".
   # - Otherwise, the status is set to "Overdue".
   #
-  # @raise [RuntimeError] if the fund's remittance generation basis is unknown.
   def set_status
     # Change the status only if the remittance is verified
     if verified
@@ -171,6 +170,10 @@ class CapitalRemittance < ApplicationRecord
                     else
                       capital_call.due_date > Time.zone.today ? "Pending" : "Overdue"
                     end
+
+    else
+      # If the remittance is not verified, set the status to "Pending"
+      self.status = "Pending"
     end
   end
 

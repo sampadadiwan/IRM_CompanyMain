@@ -68,6 +68,30 @@ class Document < ApplicationRecord
   scope :generated, -> { where(owner_tag: "Generated") }
   scope :not_generated, -> { where(from_template_id: nil) }
 
+  # Find the documents for capital_remittances for a given capital_call_id
+  ransacker :capital_call_id do
+    Arel.sql <<-SQL.squish
+      (SELECT capital_remittances.capital_call_id
+      FROM capital_remittances
+      WHERE capital_remittances.id = documents.owner_id
+        AND documents.owner_type = 'CapitalRemittance'
+      LIMIT 1)
+    SQL
+  end
+
+  # Find the documents whose owner is a CapitalCommitment, and that commitment belongs to a given fund_id
+  ransacker :commitments_fund_id do
+    Arel.sql(<<-SQL.squish)
+      (
+        SELECT capital_commitments.fund_id
+        FROM capital_commitments
+        WHERE capital_commitments.id = documents.owner_id
+          AND documents.owner_type = 'CapitalCommitment'
+        LIMIT 1
+      )
+    SQL
+  end
+
   def to_s
     name
   end
@@ -238,7 +262,7 @@ class Document < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list].sort
+    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list capital_call_id commitments_fund_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

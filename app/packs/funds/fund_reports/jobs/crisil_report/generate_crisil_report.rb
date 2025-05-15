@@ -69,6 +69,10 @@ class GenerateCrisilReport < Trailblazer::Operation
     FileUtils.cp(Rails.public_path.join(template_path), file_path)
   end
 
+  def report_folder(fund)
+    fund.document_folder.children.private_folders.where(name: "Reports").first
+  end
+
   def save_and_upload_report(ctx, fund_id:, user_id:, report_name:, start_date:, end_date:, excel:, **)
     return unless excel || report_name.delete(" ").casecmp?("CRISILReport")
 
@@ -81,7 +85,7 @@ class GenerateCrisilReport < Trailblazer::Operation
       # Delete all old reports with the same name - basically the reports of the same type that were generated for the same time period
       Document.where(name: report_name, entity_id: fund.entity_id).destroy_all if Document.exists?(name: report_name, entity_id: fund.entity_id)
       # Create a new Docment with the new report excel file
-      Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: fund.document_folder, user: User.find(user_id), orignal: true, download: true)
+      Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: report_folder(fund), user: User.find(user_id), orignal: true, download: true)
     end
   rescue StandardError => e
     ctx[:errors] = e.message

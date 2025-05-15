@@ -8,6 +8,15 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
     end
   end
 
+  # Get the reports folder under the entity or fund or portfolio_company
+  # Ensure the reports folder is created with the owner set to nil
+  def get_reports_folder(model)
+    entity = model.respond_to?(:entity) ? model.entity : model
+    reports_folder = model.document_folder.children.private_folders.where(name: "Reports", entity:).first
+    reports_folder ||= model.document_folder.children.create!(name: "Reports", entity:, private: true)
+    reports_folder
+  end
+
   # rubocop:disable Rails/OutputSafety
   def generate(as_of, user_id, portfolio_company_id: nil, fund_id: nil)
     user = User.find(user_id)
@@ -36,13 +45,17 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
 
     # Save it as a document
     if portfolio_company_id.present?
-      report_doc = portfolio_company.documents.build(name: "Portfolio Investments Report - #{portfolio_company.investor_name} - #{as_of}", user_id: user_id, entity_id: portfolio_company.entity_id, orignal: true, owner_tag: "Generated")
+      # Get the reports folder under the fund
+      reports_folder = get_reports_folder(portfolio_company)
+      report_doc = portfolio_company.documents.build(name: "Portfolio Investments Report - #{portfolio_company.investor_name} - #{as_of}", user_id: user_id, entity_id: portfolio_company.entity_id, orignal: true, owner_tag: "Generated", folder: reports_folder)
     elsif fund_id.present?
-      report_doc = fund.documents.build(name: "Portfolio Investments Report - #{fund.name} - #{as_of}", user_id: user_id, entity_id: fund.entity_id, orignal: true, owner_tag: "Generated")
+      # Get the reports folder under the fund
+      reports_folder = get_reports_folder(fund)
+      report_doc = fund.documents.build(name: "Portfolio Investments Report - #{fund.name} - #{as_of}", user_id: user_id, entity_id: fund.entity_id, orignal: true, owner_tag: "Generated", folder: reports_folder)
     else
-      folder = entity.root_folder.children.where(name: "tmp").first
-      folder ||= entity.root_folder.children.create!(name: "tmp", entity_id: entity.id)
-      report_doc = folder.documents.build(name: "Portfolio Investments Report - All - #{as_of}", user_id: user_id, entity_id: entity.id, orignal: true, owner_tag: "Generated", folder: folder)
+      # Get the reports folder under the entity
+      reports_folder = get_reports_folder(entity)
+      report_doc = folder.documents.build(name: "Portfolio Investments Report - All - #{as_of}", user_id: user_id, entity_id: entity.id, orignal: true, owner_tag: "Generated", folder: reports_folder)
     end
 
     report_doc.file = File.open(file_name, "rb")
