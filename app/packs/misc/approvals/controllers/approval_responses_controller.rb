@@ -1,6 +1,6 @@
 class ApprovalResponsesController < ApplicationController
   before_action :authenticate_user!, except: %w[email_response]
-  before_action :set_approval_response, only: %i[show edit update destroy approve]
+  before_action :set_approval_response, only: %i[show edit update destroy approve preview]
   after_action :verify_authorized, except: %i[index search email_response]
 
   # GET /approval_responses or /approval_responses.json

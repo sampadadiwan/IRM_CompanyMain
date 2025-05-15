@@ -87,6 +87,10 @@ class InvestorKycPolicy < ApplicationPolicy
     record.investor.investor_entity_id == user.entity_id && record.verified
   end
 
+  def preview?
+    permissioned_employee?(:investor_kyc_read)
+  end
+
   def edit?
     update?
   end

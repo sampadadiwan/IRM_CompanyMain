@@ -37,7 +37,7 @@
                   msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
                 } do %>
       <i class="ti ti-message-2"></i>Updates Required
-    <% end %>
+    <% end %>    
   <% end %>
 
   <% if current_user.curr_role != "investor" %>
@@ -98,6 +98,25 @@
         </div>
       </div>
     </div>
+
+    <% if policy(@investor_kyc).preview? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-settings"></i> Preview Notifications
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "Preview KYC Verified Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "notify_kyc_verified"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+            <%= link_to "Preview KYC Required Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "notify_kyc_required"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+            <%= link_to "Preview KYC Required Reminder Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "kyc_required_reminder"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
   <% end %>
 
 </div>

@@ -65,6 +65,9 @@ class ApplicationController < ActionController::Base
 
   def resolve_mailer_class(resource)
     base = resource.class.name
+    base = "InvestorKyc" if %w[IndividualKyc NonIndividualKyc].include?(base)
+    base = "Approval" if base == "ApprovalResponse"
+
     candidates = [
       "#{base}Mailer",
       "#{base}sMailer",
@@ -83,6 +86,8 @@ class ApplicationController < ActionController::Base
   def preview
     # Get the resource name from the controller (e.g., "users" -> "user")
     resource_name = controller_name.singularize
+    resource_name = "investor_kyc" if %w[individual_kyc non_individual_kyc].include?(resource_name)
+
     # Build the instance variable name (e.g., "@user")
     instance_var = "@#{resource_name}"
     # Fetch the resource instance variable
