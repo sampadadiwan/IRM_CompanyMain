@@ -1,3 +1,17 @@
+V9.0.41
+#####################################
+7f682b569 Task list (#838)
+63e09ac73 Added better ransacker for Document to enable Call Generated Docs search
+6573fe885 Added private folders
+8d6a27b63 Added better reports_folder to SEBI and Crisil reports
+4a764fa59 Added private folders to fund and sale
+2d2d8eaaa Removed XL view
+1472d63e1 Now status defaults to Pending
+bbd1ce0d3 Fixed bug in show details link in custom notifications
+5ce55c71e Added per page and searchbox for AEs (#837)
+9e15fed82 Added Allocation of Gain, Cost Of Sold, Sale Amount to Commitments
+4c56050fe Now CR status changes only if verified
+
 V9.0.40
 #####################################
 7a5ea16d5 Fix for download doc zipfile
