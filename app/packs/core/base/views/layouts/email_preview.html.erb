@@ -1,0 +1,19 @@
+<% if @html_body %>
+  <div class="email-preview">
+    To: <%= @investor_access.email %>
+    <%= raw @html_body %>
+    <% if @attachments.any? %>
+      <ul>
+        <% @attachments.each_with_index do |attachment, index| %>
+          <li>
+            <%= attachment.filename %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% else %>
+  <div class="alert alert-warning">
+    <%= @error_message %>
+  </div>
+<% end %>

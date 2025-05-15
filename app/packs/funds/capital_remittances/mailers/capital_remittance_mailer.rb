@@ -6,12 +6,12 @@ class CapitalRemittanceMailer < ApplicationMailer
   def set_remittance
     @capital_remittance = CapitalRemittance.find params[:capital_remittance_id]
     @capital_call = @capital_remittance.capital_call
-    @custom_notification = @capital_call.custom_notification(@notification.params[:email_method])
+    email_method = params[:email_method] || @notification.params[:email_method]
+    @custom_notification = @capital_call.custom_notification(email_method)
     @additional_ccs = @capital_remittance.capital_commitment.cc
   end
 
-  def notify_capital_remittance
-    subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
+  def attach_all_files
     # Check for attachments
     @capital_remittance.documents.generated.approved.each do |doc|
       # This password protects the file if required and attachs it
@@ -22,6 +22,12 @@ class CapitalRemittanceMailer < ApplicationMailer
       # This attaches the file which is not generated
       attach_doc(doc)
     end
+  end
+
+  def notify_capital_remittance
+    subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
+
+    attach_all_files
 
     send_mail(subject:)
   end
@@ -29,15 +35,8 @@ class CapitalRemittanceMailer < ApplicationMailer
   def reminder_capital_remittance
     subject = "Reminder: #{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
 
-    # Check for attachments
-    @capital_remittance.documents.generated.each do |doc|
-      file = if @custom_notification&.password_protect_attachment
-               password_protect_attachment(doc, @capital_remittance, @custom_notification)
-             else
-               doc.file
-             end
-      attachments["#{doc.name}.pdf"] = file.read
-    end
+    attach_all_files
+
     send_mail(subject:)
   end
 end

@@ -6,19 +6,12 @@
         <%= f.text_field :position, class: "form-control" %>
     </div>
 
-    <% if @form_type.name == 'KpiReport' %>
-        <div class="form-group col-md-2">
-            <% x = f.object.name.to_s.titleize %>
-            <%= f.label :name %>
-            <%= f.select :name, KpiReport.custom_fields, {selected: x}, class: "form-control" %>
-        </div>
-    <% else %>
-        <div class="form-group col-md-2">
-            <%= f.label :name %>
-            <%= f.text_field :name, class: "form-control", disabled: (f.object.id.present? && params[:debug].blank?) %>
-            <small class="form-text text-muted">Name of the field.</small>
-        </div>
-    <% end %>
+    
+    <div class="form-group col-md-2">
+        <%= f.label :name %>
+        <%= f.text_field :name, class: "form-control", disabled: (f.object.id.present? && params[:debug].blank?) %>
+        <small class="form-text text-muted">Name of the field.</small>
+    </div>
     
     <% 
         field_types =  %w[TextField NumberField DateField TextArea CheckBox Radio Select DataList MultiSelect Money File Header GridColumns] 

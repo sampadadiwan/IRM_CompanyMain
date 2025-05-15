@@ -173,7 +173,7 @@ class SoaGenerator
   def portfolio_company_allocations(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
     fund = capital_commitment.fund
     entries = capital_commitment.account_entries
-                                .where(parent_type: ["AggregatePortfolioInvestment", "PortfolioInvestment"],
+                                .where(parent_type: %w[AggregatePortfolioInvestment PortfolioInvestment],
                                        entry_type: entry_types, reporting_date: start_date..end_date)
                                 .includes(parent: :portfolio_company)
 

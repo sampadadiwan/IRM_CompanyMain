@@ -16,6 +16,10 @@ class CapitalRemittancePolicy < FundBasePolicy
     update?
   end
 
+  def preview?
+    update?
+  end
+
   def verify?
     update?
   end

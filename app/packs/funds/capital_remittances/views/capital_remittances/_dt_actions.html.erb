@@ -30,6 +30,15 @@
         <i class="ti ti-cash"></i>New Payment
       <% end %>
 
+      <% if policy(capital_remittance).preview? %>
+        
+        <div class="dropdown-divider"></div>
+
+        <%= link_to "Preview Notification", preview_capital_remittance_path(capital_remittance.id, email_method: "notify_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+        <%= link_to "Preview Reminder", preview_capital_remittance_path(capital_remittance.id, email_method: "reminder_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+      <% end %>  
     </div>
   </div>
 

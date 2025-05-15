@@ -20,6 +20,10 @@ class CapitalDistributionPaymentPolicy < FundBasePolicy
     update?
   end
 
+  def preview?
+    update?
+  end
+
   def destroy?
     permissioned_employee?(:destroy)
   end

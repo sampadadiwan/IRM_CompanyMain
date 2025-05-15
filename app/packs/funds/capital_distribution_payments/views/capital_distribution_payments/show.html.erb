@@ -14,6 +14,10 @@
                 data: { action: "click->confirm#popup", turbo: false } do %>
       <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
+    
+        
+    <%= link_to "Preview Notification", preview_capital_distribution_payment_path(@capital_distribution_payment.id, email_method: "send_notification"), target: "_blank", class: "btn btn-outline-success ti ti-mail" %>
+
   <% end %>
 </div>
 
