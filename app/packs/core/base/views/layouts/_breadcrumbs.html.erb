@@ -29,7 +29,7 @@
                 <i class="ti ti-calendar"></i>
               <% end %>
 
-              <% if ["capital_calls", "investor_kycs", "approvals", "capital_commitments", "capital_distributions"].include? controller_name %>
+              <% if TaskTemplate::FOR_CLASS.include? controller_name.singularize.camelize %>
               <a class="fs-5 btn mb-1 btn-primary rounded-circle round d-inline-flex align-items-center justify-content-center" data-bs-toggle="offcanvas" href="#help_slide_out" role="button" aria-controls="help_slide_out" title="Show Help">
                 <i class="ti ti-question-mark"></i>
               </a>

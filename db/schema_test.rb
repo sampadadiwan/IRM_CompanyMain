@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_16_135250) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -438,7 +438,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
-  create_table "call_fees", force: :cascade do |t|
+  create_table "blogs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "title"
+    t.string "tag_list", limit: 100
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "call_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", limit: 50
     t.date "start_date"
     t.date "end_date"
@@ -2949,7 +2956,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_15_101450) do
     t.integer "due_in_days", default: 1
     t.string "action_link"
     t.string "help_link"
-    t.integer "sequence"
+    t.integer "position"
     t.bigint "entity_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

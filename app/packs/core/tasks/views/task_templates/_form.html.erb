@@ -13,7 +13,7 @@
 
     <div class="form-group">
       <%= form.label :for_class %>
-      <%= form.select :for_class, ["CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalDistribution", "IndividualKyc", "NonIndividualKyc"], {}, class: "form-control"  %>
+      <%= form.select :for_class, TaskTemplate::FOR_CLASS, {}, class: "form-control"  %>
     </div>
 
     <div class="form-group">
