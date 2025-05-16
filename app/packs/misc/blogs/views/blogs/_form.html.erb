@@ -1,0 +1,29 @@
+<%= render FormCard.new(title: "Blogs : #{blog.presence || 'New'}") do %>
+  <%= form_with(model: blog, validate: true) do |form| %>
+    <% if blog.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(blog.errors.count, "error") %> prohibited this blog from being saved:</h2>
+        <ul>
+          <% blog.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div class="form-group">
+      <%= form.label :title %>
+      <%= form.text_field :title, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :tag_list %>
+      <%= form.text_field :tag_list, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :content %>
+      <%= form.rich_textarea :content, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

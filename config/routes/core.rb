@@ -12,11 +12,18 @@ resources :reminders
 resources :favorites
 
 resources :permissions
+
+resources :task_templates do
+  post 'generate', on: :collection
+end
+
 resources :tasks do
   get 'search', on: :collection
   patch 'completed', on: :member
 end
+
 resources :form_custom_fields
+
 resources :form_types do
   get 'clone', on: :member
   patch 'rename_fcf', on: :member

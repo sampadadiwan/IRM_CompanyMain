@@ -5,10 +5,10 @@ module WithNextSteps
     has_many :tasks, as: :owner, dependent: :destroy
   end
 
-  def generate_next_steps(save_step: true)
+  def generate_next_steps(tag_list: nil, save_step: true)
     # This method should be overridden in the including class
     # It should return an array of next step objects
-    next_steps_list = task_templates
+    next_steps_list = task_templates(tag_list)
     next_step_tasks = []
     return unless next_steps_list
 
@@ -29,7 +29,12 @@ module WithNextSteps
 
   private
 
-  def task_templates
-    TaskTemplate.where(for_class: self.class.name)
+  def task_templates(tag_list)
+    templates = TaskTemplate.where(for_class: self.class.name)
+    if tag_list
+      tag_list = tag_list.split(",").map(&:strip)
+      templates = templates.where(tag_list:)
+    end
+    templates
   end
 end

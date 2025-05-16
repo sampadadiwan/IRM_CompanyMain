@@ -12,6 +12,10 @@ class TaskTemplatePolicy < ApplicationPolicy
     true
   end
 
+  def generate?
+    true
+  end
+
   def show?
     true # support?
   end

@@ -1339,8 +1339,12 @@ iframe {
   }
 }
 
-.dropdown-item.ti::before, .btn.ti::before, .dropdown-item .ti, .btn .ti {
+.badge.ti, .dropdown-item.ti::before, .btn.ti::before, .dropdown-item .ti, .btn .ti {
   margin-right: 0.2rem !important;
+}
+
+.breadcrumbs .ti {
+  margin-right: 0.0rem !important;
 }
 
 .sort-icons {
@@ -1359,4 +1363,11 @@ button:disabled {
   cursor: not-allowed; /* Optional: change the cursor */
   opacity: 0.65 !important;        /* Optional: consistent with Bootstrap style */
   pointer-events: auto !important; /* ensure the cursor change still applies */
+}
+
+#help_slide_out {
+  min-width: 40%;
+  button.badge {
+    border: 0px !important;
+  } 
 }

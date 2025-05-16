@@ -1,5 +1,6 @@
 class TaskTemplate < ApplicationRecord
   belongs_to :entity, optional: true
+  acts_as_list scope: %i[for_class entity_id]
 
   validates :details, :for_class, presence: true
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -7,6 +8,7 @@ class TaskTemplate < ApplicationRecord
   STANDARD_COLUMNS = { "For" => "for_class",
                        "Tags" => "tag_list",
                        "Details" => "details",
+                       "#" => "position",
                        "Due In Days" => "due_in_days",
                        "Action" => "action_link",
                        "Help" => "help_link" }.freeze

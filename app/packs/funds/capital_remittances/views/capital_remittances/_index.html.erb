@@ -24,7 +24,7 @@
 
       <% if capital_call %>
         <% if policy(capital_call).reminder? %>
-          <%= button_to reminder_capital_call_path(id: capital_call.id),
+          <%= button_to reminder_capital_call_path(id: capital_call.id), id: "capital_remittances_capital_call_reminder_btn",
               class: "btn btn-outline-primary", data: {
                 action: "click->confirm#popup", turbo: false,
                 msg: "Send reminder for pending payments?", method: "post"
@@ -41,7 +41,7 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-              <%= link_to xl_link, class: "dropdown-item" do %>
+              <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "dropdown-item" do %>
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
 
@@ -53,7 +53,7 @@
                     "import_upload[owner_type]": "CapitalCall",
                     "import_upload[import_type]": "CapitalRemittance",
                     "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"
-                  ),
+                  ), id: "capital_remittances_upload_remittances_btn",
                   class: "dropdown-item #{disabled}" do %>
                   <i class="ti ti-upload"></i> <%= t_common(:upload) %> Remittances
                 <% end %>
@@ -63,7 +63,7 @@
                     "import_upload[owner_type]": "CapitalCall",
                     "import_upload[import_type]": "CapitalRemittancePayment",
                     "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"
-                  ),
+                  ), id: "capital_remittances_upload_payments_btn",
                   class: "dropdown-item" do %>
                   <i class="ti ti-cash"></i> <%= t_common(:upload) %> Payments
                 <% end %>
@@ -76,7 +76,7 @@
         <%= render "capital_remittances/filter", data_source: data_source %>
 
       <% else %>
-        <%= link_to xl_link, class: "btn btn-outline-primary" do %>
+        <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "btn btn-outline-primary" do %>
           <i class="ti ti-download"></i> <%= t_common(:download) %>
         <% end %>
 

@@ -5,6 +5,14 @@ class TaskTemplatesController < ApplicationController
   def index
     @q = TaskTemplate.ransack(params[:q])
     @task_templates = policy_scope(@q.result).page(params[:page])
+
+    @task_templates = @task_templates.order(:for_class, position: :asc) if params[:sort].blank?
+  end
+
+  def generate
+    @model = params[:for_class].constantize.find(params[:for_class_id])
+    authorize @model, :update?
+    @model.generate_next_steps(tag_list: params[:tag_list], save_step: true)
   end
 
   # GET /task_templates/1
@@ -58,6 +66,6 @@ class TaskTemplatesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_template_params
-    params.require(:task_template).permit(:details, :for_class, :tag_list, :due_in_days, :action_link, :help_link, :sequence, :entity_id)
+    params.require(:task_template).permit(:details, :for_class, :tag_list, :due_in_days, :action_link, :help_link, :position, :entity_id)
   end
 end

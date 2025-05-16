@@ -3,7 +3,7 @@
 pin "application", preload: true
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "trix"
-pin "@rails/actiontext", to: "actiontext.js"
+pin "@rails/actiontext", to: "@rails--actiontext.js" # @8.0.200
 pin "chartkick", to: "chartkick.js"
 pin "@rails/activestorage", to: "activestorage.esm.js"
 

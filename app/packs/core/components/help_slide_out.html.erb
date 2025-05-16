@@ -1,24 +1,21 @@
 <!-- #TODO - refactor to use turbo to load the help teext specific to the model -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="help_slide_out" aria-labelledby="help_slide_outLabel">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="help_slide_outLabel">Help</h5>
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
-    <table class="table datatable">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% help_text.each do |help_item| %>
-          <tr>
-            <td><%= link_to help_item.title, help_item.link %></td>
-            <td><%= help_item.description %></td>
-          </tr>
-        <% end %>
-    </table>    
+    
+    <% if @class_name && @id %>
+    
+      <%= turbo_frame_tag "tasks_frame", target: "_top", loading: :lazy, 
+          src: tasks_path(owner_id: @id, owner_type: @class_name, timeline: true, for_class: @class_name, for_class_id: @id, tag_list: controller.action_name) do %>
+        <%= render "/layouts/loading" %>
+      <% end %> 
+    
+    <% end %>    
+
+    <div class="text-center alert alert-info">
+      Contact support at support@caphive.com
+    </div>
   </div>
 </div>

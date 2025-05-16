@@ -11,14 +11,9 @@ class TasksController < ApplicationController
 
     @tasks = with_owner_access(@tasks, raise_error: false)
 
-    @tasks = @tasks.where(completed: false) if params[:completed].blank?
-    @tasks = @tasks.where(for_support: true) if params[:for_support].present?
-    # Hack to filter by for_entity_id for documents
-    @tasks = @tasks.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    @tasks = @tasks.where(for_entity_id: params[:for_entity_id]) if params[:for_entity_id].present?
-    @tasks = @tasks.where(assigned_to_id: params[:assigned_to_id]) if params[:assigned_to_id].present?
+    @tasks = filter_params(@tasks, :completed, :for_support, :entity_id, :for_entity_id, :assigned_to_id, :owner_id, :owner_type)
 
-    @tasks = @tasks.includes(:for_entity, :user).page(params[:page])
+    @tasks = @tasks.includes(:for_entity, :user, :task_template).page(params[:page])
   end
 
   def search
@@ -103,12 +98,15 @@ class TasksController < ApplicationController
     authorize @task
     @task.completed = !@task.completed
 
+    partial = params[:timeline].present? ? "tasks/timeline_task" : "tasks/task"
     respond_to do |format|
       if @task.save
         format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace(@task)
-          ]
+          render turbo_stream: turbo_stream.replace(
+            @task,
+            partial: partial,
+            locals: { task: @task }
+          )
         end
       end
     end

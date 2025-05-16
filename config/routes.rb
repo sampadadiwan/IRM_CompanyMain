@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  resources :task_templates
+  resources :blogs
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
 
@@ -19,7 +19,9 @@ Rails.application.routes.draw do
   resources :ai_rules
   resources :rm_mappings
   resources :key_biz_metrics
+
   mount ActionCable.server => '/cable'
+
   resources :support_client_mappings
   draw :admin
   draw :fund

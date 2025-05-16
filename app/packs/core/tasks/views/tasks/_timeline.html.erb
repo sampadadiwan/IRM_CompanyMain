@@ -1,0 +1,18 @@
+<div class="card w-100 pb-5">
+  <div class="card-body">
+    <div class="mb-4">
+      <p class="card-subtitle">Next Steps</p>
+    </div>
+    <ul class="timeline-widget mb-0 position-relative mb-n5">
+      <% tasks.each_with_index do |task, idx| %>
+        <%= render "tasks/timeline_task", task: task %>
+      <% end %>      
+    </ul>    
+
+    <% if tasks.empty? && params[:for_class].present? && TaskTemplate.where(for_class: params[:for_class], tag_list: params[:tag_list]).present? %>
+      <div class="text-center alert alert-info">
+        <%= button_to "Generate Next Steps", generate_task_templates_path(for_class: params[:for_class], for_class_id: params[:for_class_id], tag_list: params[:tag_list]), method: :post, class: "btn btn-outline-primary ti ti-generate" %>
+      </div>
+    <% end %>
+  </div>
+</div>

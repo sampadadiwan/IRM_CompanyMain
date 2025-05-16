@@ -1,0 +1,28 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Blogs</h1>
+  <%= link_to "New Blog", new_blog_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="blogs" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Title
+        </th>
+        <th>
+          Tag List
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @blogs.each do |blog| %>
+      <%= render blog %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>

@@ -1,0 +1,39 @@
+<% 
+    color = task.completed? ? "success" : "primary" 
+%>
+
+<li id="<%= dom_id task %>" class="timeline-item d-flex position-relative overflow-hidden">
+    <div class="timeline-time flex-shrink-0 text-end"><small class="text-muted"><%=l task.due_date if task.due_date %></small></div>
+    
+    <div class="timeline-badge-wrap d-flex flex-column align-items-center">
+        <span class="timeline-badge border-2 border border-<%= color %> flex-shrink-0 my-8"></span>
+        <span class="timeline-badge-border d-block flex-shrink-0"></span>
+    </div>
+
+    <div class="timeline-desc fs-3 text-dark mt-n1">
+        <%= task.details.html_safe %>
+        <% if task.task_template.present? %>                  
+        <div>                  
+            <% if task.completed? %>
+                <span class="mb-1 badge bg-success-subtle text-success ti ti-check">Complete</span>
+            <% else %>
+
+                <%= link_to "Do Action", "#", 
+                    data: {
+                        controller: "click-action", 
+                        action: "click->click-action#perform", 
+                        click_action_selector_value: task.task_template.action_link,
+                        click_action_close_offcanvas_value: true
+                    }, 
+                    class: "mb-1 badge bg-primary-subtle text-primary" if task.task_template.action_link.present? %>
+
+                <%= button_to "Completed", completed_task_path(task, timeline: true), method: :patch, class: "mb-1 badge bg-danger-subtle text-danger", form_class: "deleteButton" %>                    
+
+            <% end %>
+
+            <%= link_to "Help", task.task_template.help_link, class: "mb-1 badge bg-success-subtle text-info", target: "_blank" if task.task_template.help_link.present? %>
+
+        </div>
+        <% end %>
+    </div>
+</li>

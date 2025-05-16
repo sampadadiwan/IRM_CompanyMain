@@ -1,6 +1,6 @@
 module WithEmailPreview
   extend ActiveSupport::Concern
-  
+
   def preview
     # Get the resource name from the controller (e.g., "users" -> "user")
     resource_name = controller_name.singularize
@@ -77,5 +77,4 @@ module WithEmailPreview
 
     raise NameError, "Mailer class not found for #{base}"
   end
-
 end

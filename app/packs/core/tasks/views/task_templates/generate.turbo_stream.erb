@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "tasks_frame" do %>
+  <%= render partial: "tasks/timeline", locals: { tasks: @model.reload.tasks } %>
+<% end %>

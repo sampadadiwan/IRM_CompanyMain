@@ -1,5 +1,5 @@
 class DashboardWidget < ApplicationRecord
-  acts_as_list scope: %i[owner dashboard_name]
+  acts_as_list scope: %i[owner dashboard_name entity_id]
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
 

@@ -1,7 +1,8 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import "@hotwired/turbo-rails"
-import "trix"
 import "@rails/actiontext"
+import "@rails/activestorage"
+import "trix"
 import "controllers"
 import "channels"
 import "chartkick"
@@ -23,13 +24,18 @@ Highcharts.setOptions({
   }
 });
 
-// https://github.com/basecamp/trix/issues/624
-addEventListener("trix-initialize", event => {
-  const { toolbarElement } = event.target;
-  const inputElement = toolbarElement.querySelector("input[name=href]");
-  inputElement.type = "text";
-  inputElement.pattern = "(https?://|/).+";
+document.addEventListener("turbo:load", () => {
+  document.querySelectorAll("action-text-attachment").forEach(el => {
+    if (!el.querySelector("img") && el.hasAttribute("url")) {
+      const img = document.createElement("img")
+      img.src = el.getAttribute("url")
+      img.width = el.getAttribute("width")
+      img.height = el.getAttribute("height")
+      el.querySelector("figure")?.prepend(img)
+    }
+  })
 });
+
 
 // Handle select2 on turbolinks
 $(document).on('turbo:before-cache', function() {

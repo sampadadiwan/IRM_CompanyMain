@@ -2,7 +2,7 @@ class CapitalRemittanceVerify < CapitalRemittanceAction
   step :setup_call_fees
   step :set_call_amount
   step :toggle_verify
-  step :set_status  
+  step :set_status
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
   step :payment_received_notification
