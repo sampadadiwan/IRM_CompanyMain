@@ -1,5 +1,5 @@
 class CapitalDistributionPaymentsController < ApplicationController
-  before_action :set_capital_distribution_payment, only: %i[show edit update destroy]
+  before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview]
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index

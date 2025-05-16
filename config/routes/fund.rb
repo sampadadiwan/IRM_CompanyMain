@@ -61,18 +61,22 @@ resources :capital_remittance_payments
 
 resources :capital_distribution_payments do
   get 'search', on: :collection
+  get "preview", on: :member
 end
+
 resources :capital_distributions do
   post 'approve', on: :member
   patch 'redeem_units', on: :member
   patch 'payments_completed', on: :member
 end
+
 resources :capital_remittances do
   patch 'verify', on: :member
   get 'search', on: :collection
   patch 'generate_docs', on: :member
   patch 'send_notification', on: :member
   post 'bulk_actions', on: :collection
+  get "preview", on: :member
 end
 resources :capital_calls do
   get 'search', on: :collection

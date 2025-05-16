@@ -36,6 +36,10 @@ class ApprovalResponsePolicy < ApprovalBasePolicy
     update?
   end
 
+  def preview?
+    permissioned_employee?
+  end
+
   def destroy?
     false
   end

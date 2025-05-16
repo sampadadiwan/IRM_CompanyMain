@@ -30,6 +30,7 @@ resources :exchange_rates
 resources :approval_responses do
   patch 'approve', on: :member
   get 'email_response', on: :member
+  get 'preview', on: :member
 end
 resources :approvals do
   patch 'approve', on: :member
@@ -40,6 +41,7 @@ end
 resources :individual_kycs, controller: "investor_kycs", type: "IndividualKyc"
 resources :non_individual_kycs, controller: "investor_kycs", type: "NonIndividualKyc"
 resources :investor_kycs do
+  get 'preview', on: :member
   get 'search', on: :collection
   put 'toggle_verified', on: :member
   patch 'send_notification', on: :member

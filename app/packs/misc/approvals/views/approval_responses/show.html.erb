@@ -14,6 +14,24 @@
         <i class="ti ti-trash"></i> <%= t_common(:delete) %>
       <% end %>
     <% end %>
+
+    <% if policy(@approval_response).preview? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-settings"></i> Preview Notifications
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "Preview New Notification", preview_approval_response_path(@approval_response.id, email_method: "notify_new_approval"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+            <%= link_to "Preview Reminder Notification", preview_approval_response_path(@approval_response.id, email_method: "approval_reminder"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+          </div>
+        </div>
+      </div>
+    <% end %>
+
   </div>
 
 <% end %>

@@ -1,5 +1,5 @@
 class CapitalRemittancesController < ApplicationController
-  before_action :set_capital_remittance, only: %i[show edit update destroy verify generate_docs allocate_units send_notification]
+  before_action :set_capital_remittance, only: %i[show edit update destroy verify generate_docs allocate_units send_notification preview]
 
   # GET /capital_remittances or /capital_remittances.json
   def index

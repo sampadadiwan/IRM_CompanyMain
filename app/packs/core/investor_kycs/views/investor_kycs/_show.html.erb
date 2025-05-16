@@ -1,5 +1,8 @@
-<% pan_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
-<% ifsc_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Bank Routing number") %>
+<% 
+  reg_env = current_user ? current_user.entity.entity_setting.regulatory_env : ""
+  pan_label = Labels.get(reg_env, "Tax ID") 
+  ifsc_label = Labels.get(reg_env, "Bank Routing number") 
+%>
 <%= render ToggleCard.new(title: "KYC #{investor_kyc.full_name}", css_class: "show_inv_entities") do %>
 
   <table class="table table-bordered dataTable">
@@ -56,7 +59,7 @@
       </td>
     </tr>
 
-    <% if policy(@investor_kyc).validate_docs_with_ai? %>
+    <% if current_user && policy(@investor_kyc).validate_docs_with_ai? %>
     <tr>
       <td>
         Document Data Validated
