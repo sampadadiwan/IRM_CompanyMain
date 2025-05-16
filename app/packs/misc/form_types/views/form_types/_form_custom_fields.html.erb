@@ -6,13 +6,12 @@
         <%= f.text_field :position, class: "form-control" %>
     </div>
 
-    
     <div class="form-group col-md-2">
         <%= f.label :name %>
         <%= f.text_field :name, class: "form-control", disabled: (f.object.id.present? && params[:debug].blank?) %>
         <small class="form-text text-muted">Name of the field.</small>
     </div>
-    
+
     <% 
         field_types =  %w[TextField NumberField DateField TextArea CheckBox Radio Select DataList MultiSelect Money File Header GridColumns] 
         field_types.concat(%w[Calculation]) if current_user.support? || Rails.env.local?
