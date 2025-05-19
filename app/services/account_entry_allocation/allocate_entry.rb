@@ -6,7 +6,10 @@ module AccountEntryAllocation
     step :allocate_entry
 
     def allocate_entry(ctx, **)
+      # This is the sum of the account entries to allocate
       fund_account_entry = ctx[:fund_account_entry]
+      # This is the original account entries that were summed
+      individual_account_entries = ctx[:individual_account_entries]
       fund_formula       = ctx[:fund_formula]
       end_date           = ctx[:end_date]
       sample             = ctx[:sample]

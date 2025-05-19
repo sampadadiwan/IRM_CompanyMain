@@ -4,7 +4,7 @@ class TaskTemplate < ApplicationRecord
 
   validates :details, :for_class, presence: true
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  FOR_CLASS = ["CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalDistribution", "IndividualKyc", "NonIndividualKyc", "Offer", "Interest"].freeze
+  FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest].freeze
 
   STANDARD_COLUMNS = { "For" => "for_class",
                        "Tags" => "tag_list",

@@ -23,9 +23,13 @@ module AccountEntryAllocation
       when "GenerateCustomField"
         AccountEntryAllocation::GenerateCustomFields.call(ctx)
       when "AllocateAccountEntry", "AllocateAccountEntry-Name"
-        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "name"))
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: true))
+      when "AllocateAccountEntryIndividual-Name"
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: false))
       when "AllocateAccountEntry-EntryType"
-        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type"))
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: true))
+      when "AllocateAccountEntryIndividual-EntryType"
+        AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: false))
       when "AllocateMasterFundAccountEntry"
         AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name"))
       when "CumulateAccountEntry"

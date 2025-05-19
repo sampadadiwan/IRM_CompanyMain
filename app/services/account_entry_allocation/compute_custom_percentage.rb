@@ -13,7 +13,7 @@ module AccountEntryAllocation
       fund_formula  = ctx[:fund_formula]
       commitment_cache = ctx[:commitment_cache]
 
-      field_name = fund_formula.formula
+      field_name = fund_formula.name.gsub("Percentage", "").strip
       total = 0
       count = 0
       cc_map = {}
@@ -47,9 +47,11 @@ module AccountEntryAllocation
       # Second pass, create new entries
       bulk_records = []
       fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
-        percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
-        ae = AccountEntry.new(
+        Rails.logger.debug "ComputeCustomPercentage: #{field_name} Percentage, #{capital_commitment.id}, #{cc_map[capital_commitment.id]["amount_cents"]} / #{total} = #{(100.0 * cc_map[capital_commitment.id]["amount_cents"] / total).round(2)}" if total.positive?
+
+        percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
+        account_entry = AccountEntry.new(
           name: "#{field_name} Percentage",
           entry_type: cc_map[capital_commitment.id]["entry_type"],
           entity_id: fund.entity_id,
@@ -64,19 +66,22 @@ module AccountEntryAllocation
           fund_formula: fund_formula
         )
 
-        ae.validate!
-        ae.run_callbacks(:save)
-        ae_attributes = ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
-        ae_attributes[:created_at] = Time.zone.now
-        ae_attributes[:updated_at] = Time.zone.now
-        bulk_records << ae_attributes
+        begin
+          create_instance_variables(ctx)
+          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
+        rescue StandardError => e
+          raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+        end
 
-        commitment_cache.add_to_computed_fields_cache(capital_commitment, ae)
+        # end
+
+        # printer = RubyProf::CallStackPrinter.new(result)
+        # File.open("tmp/ruby_prof_callstack_#{Time.zone.now}.html", "w") do |file|
+        #   printer.print(file)
+        # end
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
-
-      ctx[:bulk_insert_records] = (ctx[:bulk_insert_records] || []) + bulk_records
       true
     end
   end

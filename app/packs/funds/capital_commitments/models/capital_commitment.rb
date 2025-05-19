@@ -332,4 +332,28 @@ class CapitalCommitment < ApplicationRecord
   def tracking_exchange_rate_date
     commitment_date
   end
+
+  def amounts_and_multipliers(individual_account_entries, basis_code: nil)
+    # Calculate multipliers for each account entry based on the given basis_code
+    multipliers = individual_account_entries.map do |ae|
+      # Get the raw code from the account entry's custom fields (e.g., "UDR 1")
+      code = ae.custom_fields.send(basis_code)
+
+      # Convert the code into a normalized snake_case key (e.g., "udr_1")
+      key = FormCustomField.to_name(code) if code
+
+      # Safely fetch and convert the corresponding multiplier from custom_fields
+      begin
+        custom_fields[key].to_d
+      rescue StandardError
+        0
+      end
+    end
+
+    # Collect all amount_cents values from the account entries
+    amounts = individual_account_entries.map(&:amount_cents)
+
+    # Return both arrays as a tuple: [multipliers, amounts]
+    [multipliers, amounts]
+  end
 end
