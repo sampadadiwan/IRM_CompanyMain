@@ -1,3 +1,13 @@
+V9.0.42
+#####################################
+91cf5dc35 Better support for TaskTemplate types
+40ac8032a Task list (#841)
+2b79b60b2 Refactored ApplicationController to use concerns
+043c7d4ba Added better toggle_verify for remittance
+28b90d2b2 Added preview action for KYC and Approval
+c79ec81cc Fixed migration break
+f6faf07cc Added preview action for controller
+
 V9.0.41
 #####################################
 7f682b569 Task list (#838)
