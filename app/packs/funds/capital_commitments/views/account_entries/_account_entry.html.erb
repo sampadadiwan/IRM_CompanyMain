@@ -2,5 +2,6 @@
   <%= render RansackTableRow.new(model: account_entry, columns:) %>
   <td>
     <%= link_to  t_common(:show), account_entry , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= link_to  t_common(:edit), edit_account_entry_path(account_entry) , {class: "btn btn-outline-success ti ti-edit"} if policy(account_entry).edit? %>
   </td>
 </tr>

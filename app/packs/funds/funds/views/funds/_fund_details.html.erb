@@ -9,7 +9,7 @@
 
       <% if fund.entity_id == current_user.entity_id %>
         <% unless false && fund.cat3? %>
-          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
+          <a id="capital_calls_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">
             <%= t('funds.fund_details.calls') %>
           </a>

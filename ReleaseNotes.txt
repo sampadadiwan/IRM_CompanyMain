@@ -1,3 +1,13 @@
+V9.0.44
+#####################################
+2b32efcea (HEAD -> main, tag: V9.0.44, origin/main, origin/HEAD) Merge pull request #846 from ausangshukla/ae-name-uniqueness-fix
+56becace8 Merge pull request #845 from ausangshukla/dist-payment-uploads-index-fix
+6c0ea8b42  typo fix
+da75353fe Update Ae upload parent validation to check parent's fund
+b09b35507 Account entry uniqueness takes parent into account
+bc0009edd  Dist payments index now works on import upload show page
+f2901b251 Added new cols to AE smaple uploads
+
 V9.0.42
 #####################################
 91cf5dc35 Better support for TaskTemplate types
