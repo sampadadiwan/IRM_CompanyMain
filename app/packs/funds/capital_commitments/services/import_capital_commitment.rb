@@ -94,6 +94,14 @@ class ImportCapitalCommitment < ImportUtil
   def post_process(ctx, import_upload:, **)
     super
     # Recompute the percentages
+    # Find one capital commitment per fund
+    import_upload.reload
+    import_upload.imported_data
+                 .group_by(&:fund_id)
+                 .each_value do |ccs_of_fund|
+      # Pick one cc from this fund to trigger compute_percentage for the whole fund
+      ccs_of_fund.first&.compute_percentage
+    end
     last_cc = import_upload.reload.imported_data.last
     last_cc&.compute_percentage
     # Create remittances if required
