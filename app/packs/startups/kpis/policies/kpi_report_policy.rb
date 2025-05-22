@@ -1,14 +1,14 @@
 class KpiReportPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
-      scope.for_user(user)
-      # if user.curr_role == "investor"
-      #   # Get the kpi reports as investor and uploader of kpi reports (investors can also upload kpi reports)
-      #   scope.for_both(user)
-      # else
-      #   # Get the kpi reports as uploader of kpi reports
-      #   scope.for_user(user)
-      # end
+      # scope.for_user(user)
+      if user.curr_role == "investor"
+        # Get the kpi reports as investor and uploader of kpi reports (investors can also upload kpi reports)
+        scope.for_investor(user)
+      else
+        # Get the kpi reports as uploader of kpi reports
+        scope.for_user(user)
+      end
     end
   end
 
