@@ -47,8 +47,7 @@ module AccountEntryAllocation
       # Second pass, create new entries
       bulk_records = []
       fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
-
-        Rails.logger.debug "ComputeCustomPercentage: #{field_name} Percentage, #{capital_commitment.id}, #{cc_map[capital_commitment.id]["amount_cents"]} / #{total} = #{(100.0 * cc_map[capital_commitment.id]["amount_cents"] / total).round(2)}" if total.positive?
+        Rails.logger.debug { "ComputeCustomPercentage: #{field_name} Percentage, #{capital_commitment.id}, #{cc_map[capital_commitment.id]['amount_cents']} / #{total} = #{(100.0 * cc_map[capital_commitment.id]['amount_cents'] / total).round(2)}" } if total.positive?
 
         percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
         account_entry = AccountEntry.new(

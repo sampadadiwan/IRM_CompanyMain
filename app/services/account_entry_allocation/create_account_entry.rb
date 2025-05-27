@@ -48,7 +48,7 @@ module AccountEntryAllocation
       account_entry.capital_commitment = capital_commitment
       account_entry.folio_id = capital_commitment&.folio_id
 
-      account_entry.parent          = parent
+      account_entry.parent ||= parent
       account_entry.generated       = true
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
