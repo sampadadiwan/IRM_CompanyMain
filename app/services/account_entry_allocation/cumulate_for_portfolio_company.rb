@@ -55,7 +55,7 @@ module AccountEntryAllocation
           account_entries = capital_commitment.account_entries
           attributes = create_cumulative_ae_attributes(
             account_entries, portfolio_company, fund, fund_formula,
-            start_date, end_date, allocation_run_id
+            start_date, end_date, allocation_run_id, capital_commitment: capital_commitment
           )
           records_for_company << attributes
         end
@@ -70,7 +70,7 @@ module AccountEntryAllocation
       records_for_company
     end
 
-    def create_cumulative_ae_attributes(account_entries, portfolio_company, fund, fund_formula, start_date, end_date, allocation_run_id)
+    def create_cumulative_ae_attributes(account_entries, portfolio_company, fund, fund_formula, start_date, end_date, allocation_run_id, capital_commitment: nil)
       cumulative_ae = build_cumulative_account_entry(
         portfolio_company, fund, fund_formula, end_date, allocation_run_id
       )
@@ -80,7 +80,7 @@ module AccountEntryAllocation
 
       parent_type, name_or_entry_type = fund_formula.formula.split(',').map(&:strip)
 
-      account_entries_query = if name_or_entry_type.downcase == "entrytype"
+      account_entries_query = if name_or_entry_type&.downcase == "entrytype"
                                 account_entries.where(entry_type: fund_formula.name)
                               else
                                 # default is name
@@ -95,7 +95,10 @@ module AccountEntryAllocation
 
       cumulative_ae.amount_cents = amount_cents
       cumulative_ae.rule_for = "reporting"
-
+      if capital_commitment.present?
+        cumulative_ae.capital_commitment_id = capital_commitment.id
+        cumulative_ae.folio_id = capital_commitment.folio_id
+      end
       cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
     end
 

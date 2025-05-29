@@ -48,7 +48,7 @@ module AccountEntryAllocation
       when "GeneratePortfolioNumbersForFund"
         AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
       when "CumulateForPortfolioCompany"
-        AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx)
+        AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx.merge(for_folios: false))
       when "CumulateForPortfolioCompany-Folio"
         AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx.merge(for_folios: true))
       end
