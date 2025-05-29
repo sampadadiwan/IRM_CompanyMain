@@ -49,6 +49,8 @@ module AccountEntryAllocation
         AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
       when "CumulateForPortfolioCompany"
         AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx)
+      when "CumulateForPortfolioCompany-Folio"
+        AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx.merge(for_folios: true))
       end
 
       # After the formula method sets up bulk_insert_records, do a bulk insert
