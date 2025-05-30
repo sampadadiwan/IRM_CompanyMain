@@ -3,34 +3,40 @@ class SoaGenerator
   include DocumentGeneratorBase
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
-  # fund document template - the document are we using as  template for generation
+  # fund document template - the document are we using as template for generation
   def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
     Rails.logger.debug { "SoaGenerator #{capital_commitment.id}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
-    if capital_commitment.investor_kyc
-      # Download the fund document template file
-      fund_doc_template.file.download do |tempfile|
-        fund_doc_template_path = tempfile.path
+    begin
+      if capital_commitment.investor_kyc
+        # Download the fund document template file
+        fund_doc_template.file.download do |tempfile|
+          fund_doc_template_path = tempfile.path
 
-        # Create a working directory for the capital commitment
-        create_working_dir(capital_commitment)
+          # Create a working directory for the capital commitment
+          create_working_dir(capital_commitment)
 
-        # Generate the SOA document
-        generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+          # Generate the SOA document
+          generate(capital_commitment, start_date, end_date, fund_doc_template_path)
 
-        # Upload the generated document
-        upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
+          # Upload the generated document
+          upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
 
-        # Notify the user if user_id is provided
-        notify(fund_doc_template, capital_commitment, user_id) if user_id
-      ensure
-        # Cleanup temporary files and directories
-        cleanup
+          # Notify the user if user_id is provided
+          notify(fund_doc_template, capital_commitment, user_id) if user_id
+        ensure
+          # Cleanup temporary files and directories
+          cleanup
+        end
+      else
+        msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
+        send_notification(msg, user_id) if user_id
+        Rails.logger.error msg
       end
-    else
-      msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
-      send_notification(msg, user_id) if user_id
-      Rails.logger.debug msg
+    rescue StandardError => e
+      Rails.logger.error { "Error during SOA generation: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      send_notification("SOA generation failed due to an error: #{e.message}", user_id) if user_id
     end
   end
 
@@ -64,7 +70,7 @@ class SoaGenerator
 
     committed_folio_amounts_before_start_date = Money.new(capital_commitment.committed_amount_cents_before(start_date), folio_currency)
     committed_folio_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), folio_currency)
-    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_amounts_before_start_date
+    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_folio_amounts_before_start_date
 
     @context = {
       date: Time.zone.today.strftime("%d %B %Y"),
@@ -79,78 +85,45 @@ class SoaGenerator
                                                       before_end_date: committed_amounts_before_end_date,
                                                       between_dates: committed_amounts_between_dates
                                                     )),
-
       committed_folio_amounts: TemplateDecorator.decorate(OpenStruct.new(
                                                             before_start_date: committed_folio_amounts_before_start_date,
                                                             before_end_date: committed_folio_amounts_before_end_date,
                                                             between_dates: committed_folio_amounts_between_dates
                                                           )),
-
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
-
       commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
-      commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..).where(as_of: ..end_date)),
-      commitment_adjustments_before_end_date: TemplateDecorator.decorate_collection(adjustments.where(as_of: ..end_date)),
-
+      commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..end_date)),
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
-      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
-      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
-
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..end_date)),
       capital_remittance_payments: TemplateDecorator.decorate_collection(remittance_payments),
-      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: ..end_date)),
-
+      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..end_date)),
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, fund_currency)),
-      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), fund_currency)),
-      remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), fund_currency)),
-
-      remittance_folio_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, folio_currency)),
-      remittance_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), folio_currency)),
-      remittance_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), folio_currency)),
-
+      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..end_date), fund_currency)),
       remittance_payments_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, fund_currency)),
-      remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date), fund_currency)),
-      remittance_payments_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), fund_currency)),
-
-      remittance_payments_folio_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, folio_currency)),
-      remittance_payments_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date), folio_currency)),
-      remittance_payments_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), folio_currency)),
-
+      remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..end_date), fund_currency)),
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
-      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
-
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..end_date)),
       distribution_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, fund_currency)),
-      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), fund_currency)),
-      distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), fund_currency)),
-
-      distribution_folio_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, folio_currency)),
-      distribution_folio_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), folio_currency)),
-      distribution_folio_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), folio_currency)),
-
+      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..end_date), fund_currency)),
       account_entries: TemplateDecorator.new(account_entries),
-      account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
-      account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
-
+      account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..end_date)),
       fund_account_entries: TemplateDecorator.new(fund_account_entries),
-      fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
-      fund_account_entries_before_end_date: TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date)),
-
+      fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..end_date)),
       fund_ratios: TemplateDecorator.decorate_collection(fund_ratios),
-      fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
-      fund_ratios_before_end_date: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: ..end_date)),
-
+      fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..end_date)),
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
-
       commitment_amount_words: amount_in_words,
-
       portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),
       portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date))
     }
 
     @context
+  rescue StandardError => e
+    Rails.logger.error { "Error during context preparation: #{e.message}" }
+    Rails.logger.error { e.backtrace.join("\n") }
+    raise e
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
@@ -213,6 +186,23 @@ class SoaGenerator
     entries.each do |entry|
       portfolio_company_name = entry.parent.investor_name
       ae_key = entry.name.strip.parameterize.underscore
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      portfolio_company_entry[ae_key] = entry.amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    fund_entries = capital_commitment.fund.account_entries.cumulative
+                                     .where(parent_type: %w[Investor],
+                                            entry_type: entry_types,
+                                            reporting_date: start_date..end_date, capital_commitment_id: nil, folio_id: nil)
+                                     .includes(parent: :portfolio_company)
+
+    fund_entries.each do |entry|
+      portfolio_company_name = entry.parent.investor_name
+      ae_key = "fund_#{entry.name.strip.parameterize.underscore}"
 
       portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
       portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
