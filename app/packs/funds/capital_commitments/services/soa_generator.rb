@@ -146,7 +146,8 @@ class SoaGenerator
 
       commitment_amount_words: amount_in_words,
 
-      portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date))
+      portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),
+      portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date))
     }
 
     @context
@@ -194,6 +195,29 @@ class SoaGenerator
       portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
       # The ae_name is in the format "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}" see AllocateAggregatePortfolios. Extract the formula name from the ae_name
       portfolio_company_entry[ae_name.parameterize.underscore] = amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    portfolio_company_entries_map.values
+  end
+
+  def portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
+    entries = capital_commitment.account_entries.cumulative
+                                .where(parent_type: %w[Investor],
+                                       entry_type: entry_types,
+                                       reporting_date: start_date..end_date)
+                                .includes(parent: :portfolio_company)
+
+    portfolio_company_entries_map = {}
+
+    entries.each do |entry|
+      portfolio_company_name = entry.parent.investor_name
+      ae_key = entry.name.strip.parameterize.underscore
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      portfolio_company_entry[ae_key] = entry.amount
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
