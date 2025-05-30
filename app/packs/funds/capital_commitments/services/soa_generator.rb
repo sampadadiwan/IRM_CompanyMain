@@ -7,36 +7,30 @@ class SoaGenerator
   def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
     Rails.logger.debug { "SoaGenerator #{capital_commitment.id}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
-    begin
-      if capital_commitment.investor_kyc
-        # Download the fund document template file
-        fund_doc_template.file.download do |tempfile|
-          fund_doc_template_path = tempfile.path
+    if capital_commitment.investor_kyc
+      # Download the fund document template file
+      fund_doc_template.file.download do |tempfile|
+        fund_doc_template_path = tempfile.path
 
-          # Create a working directory for the capital commitment
-          create_working_dir(capital_commitment)
+        # Create a working directory for the capital commitment
+        create_working_dir(capital_commitment)
 
-          # Generate the SOA document
-          generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+        # Generate the SOA document
+        generate(capital_commitment, start_date, end_date, fund_doc_template_path)
 
-          # Upload the generated document
-          upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
+        # Upload the generated document
+        upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
 
-          # Notify the user if user_id is provided
-          notify(fund_doc_template, capital_commitment, user_id) if user_id
-        ensure
-          # Cleanup temporary files and directories
-          cleanup
-        end
-      else
-        msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
-        send_notification(msg, user_id) if user_id
-        Rails.logger.error msg
+        # Notify the user if user_id is provided
+        notify(fund_doc_template, capital_commitment, user_id) if user_id
+      ensure
+        # Cleanup temporary files and directories
+        cleanup
       end
-    rescue StandardError => e
-      Rails.logger.error { "Error during SOA generation: #{e.message}" }
-      Rails.logger.error { e.backtrace.join("\n") }
-      send_notification("SOA generation failed due to an error: #{e.message}", user_id) if user_id
+    else
+      msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
+      send_notification(msg, user_id) if user_id
+      Rails.logger.error msg
     end
   end
 
@@ -120,10 +114,6 @@ class SoaGenerator
     }
 
     @context
-  rescue StandardError => e
-    Rails.logger.error { "Error during context preparation: #{e.message}" }
-    Rails.logger.error { e.backtrace.join("\n") }
-    raise e
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
