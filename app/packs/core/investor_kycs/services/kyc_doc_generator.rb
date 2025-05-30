@@ -137,7 +137,8 @@ class KycDocGenerator
 
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date))
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
+      portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date))
     }
 
     if fund_id.present?
@@ -239,6 +240,26 @@ class KycDocGenerator
         context["reporting_fund_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
       end
     end
+  end
+
+  def portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, entry_type: "Portfolio Allocation")
+    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", entry_type: entry_type).where(parent_type: "Investor").includes(parent: :portfolio_company)
+
+    first_commitment = investor_kyc.capital_commitments.first
+    portfolio_company_entries_map = {}
+
+    raes.group_by { |ae| [ae.name, ae.parent.investor_name] }.each do |ae_name_investor_name, aes|
+      portfolio_company_name = ae_name_investor_name[1]
+      ae_key = ae_name_investor_name[0].strip.parameterize.underscore
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      total_amount_cents = aes.sum(&:amount_cents)
+      portfolio_company_entry[ae_key] = Money.new(total_amount_cents, first_commitment.fund.currency)
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+    portfolio_company_entries_map.values
   end
 
   def generate_custom_fields(context, investor_kyc)
