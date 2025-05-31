@@ -87,26 +87,59 @@ class SoaGenerator
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
+
       commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
       commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..end_date)),
+      commitment_adjustments_before_end_date: TemplateDecorator.decorate_collection(adjustments.where(as_of: ..end_date)),
+
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..end_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
+
       capital_remittance_payments: TemplateDecorator.decorate_collection(remittance_payments),
       capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..end_date)),
+      capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: ..end_date)),
+
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, fund_currency)),
       remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..end_date), fund_currency)),
+      remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), fund_currency)),
+
+      remittance_folio_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, folio_currency)),
+      remittance_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..end_date), folio_currency)),
+      remittance_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), folio_currency)),
+
       remittance_payments_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, fund_currency)),
       remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..end_date), fund_currency)),
+      remittance_payments_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), fund_currency)),
+
+      remittance_payments_folio_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, folio_currency)),
+      remittance_payments_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date), folio_currency)),
+      remittance_payments_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), folio_currency)),
+
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..end_date)),
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
+
       distribution_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, fund_currency)),
       distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..end_date), fund_currency)),
+      distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), fund_currency)),
+
+      distribution_folio_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, folio_currency)),
+      distribution_folio_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), folio_currency)),
+      distribution_folio_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), folio_currency)),
+
       account_entries: TemplateDecorator.new(account_entries),
       account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..end_date)),
+      account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
+
       fund_account_entries: TemplateDecorator.new(fund_account_entries),
       fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..end_date)),
+      fund_account_entries_before_end_date: TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date)),
+
       fund_ratios: TemplateDecorator.decorate_collection(fund_ratios),
       fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..end_date)),
+      fund_ratios_before_end_date: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: ..end_date)),
+
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
       commitment_amount_words: amount_in_words,
       portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),

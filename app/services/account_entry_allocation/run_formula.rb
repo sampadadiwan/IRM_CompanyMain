@@ -48,8 +48,10 @@ module AccountEntryAllocation
       when "GeneratePortfolioNumbersForFund"
         AccountEntryAllocation::GeneratePortfolioNumbersForFund.call(ctx)
       when "CumulateForPortfolioCompany"
+        # Calculates a 'cumulative' value for each portfolio company at the fund level by aggregating amounts from account entries by matching the account entry name with the formula name
         AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx.merge(for_folios: false))
       when "CumulateForPortfolioCompany-Folio"
+        # Calculates a 'cumulative' value for each portfolio company at the folio level by aggregating amounts from account entries by matching the account entry name with the formula name
         AccountEntryAllocation::CumulateForPortfolioCompany.call(ctx.merge(for_folios: true))
       end
 
