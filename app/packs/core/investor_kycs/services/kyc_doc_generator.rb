@@ -137,7 +137,8 @@ class KycDocGenerator
 
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
       capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date))
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
+      portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, fund_id))
     }
 
     if fund_id.present?
@@ -239,6 +240,49 @@ class KycDocGenerator
         context["reporting_fund_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
       end
     end
+  end
+
+  def portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
+    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", entry_type: entry_types).where(parent_type: "Investor").includes(parent: :portfolio_company)
+
+    raes = raes.where(fund_id: fund_id) if fund_id.present?
+
+    first_commitment = investor_kyc.capital_commitments.first
+    first_commitment = investor_kyc.capital_commitments.where(fund_id: fund_id).first if fund_id.present?
+    portfolio_company_entries_map = {}
+
+    raes.group_by { |ae| [ae.name, ae.parent.investor_name] }.each do |ae_name_investor_name, aes|
+      portfolio_company_name = ae_name_investor_name[1]
+      ae_key = ae_name_investor_name[0].strip.parameterize.underscore
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      total_amount_cents = aes.sum(&:amount_cents)
+      portfolio_company_entry[ae_key] = Money.new(total_amount_cents, first_commitment.fund.currency)
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    fund_entries = first_commitment.fund.account_entries.cumulative
+                                   .where(parent_type: %w[Investor],
+                                          entry_type: entry_types,
+                                          reporting_date: start_date..end_date, capital_commitment_id: nil, folio_id: nil)
+                                   .includes(parent: :portfolio_company)
+
+    fund_entries = fund_entries.where(fund_id: fund_id) if fund_id.present?
+
+    fund_entries.each do |entry|
+      portfolio_company_name = entry.parent.investor_name
+      ae_key = "fund_#{entry.name.strip.parameterize.underscore}"
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      portfolio_company_entry[ae_key] = entry.amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    portfolio_company_entries_map.values
   end
 
   def generate_custom_fields(context, investor_kyc)

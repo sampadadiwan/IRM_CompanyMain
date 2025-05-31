@@ -102,9 +102,9 @@ class CapitalCommitment < ApplicationRecord
   validates :commitment_date, presence: true, if: proc { |c| c.new_record? }
   validates_uniqueness_of :folio_id, scope: :fund_id
 
-  validates :unit_type, length: { maximum: 25 }
+  validates :unit_type, :folio_id, length: { maximum: 40 }
   validates :folio_currency, length: { maximum: 5 }
-  validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
+  validates :virtual_bank_account, length: { maximum: 20 }
   normalizes :unit_type, with: ->(unit_type) { unit_type.strip.squeeze(" ") }
   validate :allowed_unit_type
   validate :allowed_feeder_fund, if: proc { |c| c.feeder_fund_id.present? }

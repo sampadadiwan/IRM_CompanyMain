@@ -3,7 +3,7 @@ class SoaGenerator
   include DocumentGeneratorBase
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
-  # fund document template - the document are we using as  template for generation
+  # fund document template - the document are we using as template for generation
   def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
     Rails.logger.debug { "SoaGenerator #{capital_commitment.id}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
@@ -30,7 +30,7 @@ class SoaGenerator
     else
       msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
       send_notification(msg, user_id) if user_id
-      Rails.logger.debug msg
+      Rails.logger.error msg
     end
   end
 
@@ -64,7 +64,7 @@ class SoaGenerator
 
     committed_folio_amounts_before_start_date = Money.new(capital_commitment.committed_amount_cents_before(start_date), folio_currency)
     committed_folio_amounts_before_end_date = Money.new(capital_commitment.committed_amount_cents_before(end_date), folio_currency)
-    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_amounts_before_start_date
+    committed_folio_amounts_between_dates = committed_folio_amounts_before_end_date - committed_folio_amounts_before_start_date
 
     @context = {
       date: Time.zone.today.strftime("%d %B %Y"),
@@ -79,39 +79,37 @@ class SoaGenerator
                                                       before_end_date: committed_amounts_before_end_date,
                                                       between_dates: committed_amounts_between_dates
                                                     )),
-
       committed_folio_amounts: TemplateDecorator.decorate(OpenStruct.new(
                                                             before_start_date: committed_folio_amounts_before_start_date,
                                                             before_end_date: committed_folio_amounts_before_end_date,
                                                             between_dates: committed_folio_amounts_between_dates
                                                           )),
-
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
 
       commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
-      commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..).where(as_of: ..end_date)),
+      commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..end_date)),
       commitment_adjustments_before_end_date: TemplateDecorator.decorate_collection(adjustments.where(as_of: ..end_date)),
 
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
-      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
 
       capital_remittance_payments: TemplateDecorator.decorate_collection(remittance_payments),
-      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..end_date)),
       capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: ..end_date)),
 
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, fund_currency)),
-      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), fund_currency)),
+      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..end_date), fund_currency)),
       remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), fund_currency)),
 
       remittance_folio_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, folio_currency)),
-      remittance_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), folio_currency)),
+      remittance_folio_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..end_date), folio_currency)),
       remittance_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), folio_currency)),
 
       remittance_payments_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, fund_currency)),
-      remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date), fund_currency)),
+      remittance_payments_amounts_between_dates: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: start_date..end_date), fund_currency)),
       remittance_payments_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), fund_currency)),
 
       remittance_payments_folio_amounts: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments, folio_currency)),
@@ -119,11 +117,11 @@ class SoaGenerator
       remittance_payments_folio_amounts_before_end_date: TemplateDecorator.decorate(remittance_payments_amounts(remittance_payments.where(payment_date: ..end_date), folio_currency)),
 
       capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
-      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..end_date)),
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
 
       distribution_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, fund_currency)),
-      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), fund_currency)),
+      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..end_date), fund_currency)),
       distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), fund_currency)),
 
       distribution_folio_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, folio_currency)),
@@ -131,22 +129,21 @@ class SoaGenerator
       distribution_folio_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), folio_currency)),
 
       account_entries: TemplateDecorator.new(account_entries),
-      account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..end_date)),
       account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
 
       fund_account_entries: TemplateDecorator.new(fund_account_entries),
-      fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      fund_account_entries_between_dates: TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..end_date)),
       fund_account_entries_before_end_date: TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date)),
 
       fund_ratios: TemplateDecorator.decorate_collection(fund_ratios),
-      fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
+      fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..end_date)),
       fund_ratios_before_end_date: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: ..end_date)),
 
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
-
       commitment_amount_words: amount_in_words,
-
-      portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date))
+      portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),
+      portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date))
     }
 
     @context
@@ -194,6 +191,46 @@ class SoaGenerator
       portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
       # The ae_name is in the format "#{orig_api.portfolio_company_name}-#{orig_api.investment_instrument}: #{fund_formula.name}" see AllocateAggregatePortfolios. Extract the formula name from the ae_name
       portfolio_company_entry[ae_name.parameterize.underscore] = amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    portfolio_company_entries_map.values
+  end
+
+  def portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
+    entries = capital_commitment.account_entries.cumulative
+                                .where(parent_type: %w[Investor],
+                                       entry_type: entry_types,
+                                       reporting_date: start_date..end_date)
+                                .includes(parent: :portfolio_company)
+
+    portfolio_company_entries_map = {}
+
+    entries.each do |entry|
+      portfolio_company_name = entry.parent.investor_name
+      ae_key = entry.name.strip.parameterize.underscore
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      portfolio_company_entry[ae_key] = entry.amount
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
+
+    fund_entries = capital_commitment.fund.account_entries.cumulative
+                                     .where(parent_type: %w[Investor],
+                                            entry_type: entry_types,
+                                            reporting_date: start_date..end_date, capital_commitment_id: nil, folio_id: nil)
+                                     .includes(parent: :portfolio_company)
+
+    fund_entries.each do |entry|
+      portfolio_company_name = entry.parent.investor_name
+      ae_key = "fund_#{entry.name.strip.parameterize.underscore}"
+
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+
+      portfolio_company_entry[ae_key] = entry.amount
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
