@@ -20,7 +20,7 @@ class CapitalRemittancesController < ApplicationController
   def fetch_rows
     @q = CapitalRemittance.ransack(params[:q])
 
-    @capital_remittances = policy_scope(@q.result).includes(:fund, :capital_call, :entity, capital_commitment: :fund)
+    @capital_remittances = policy_scope(@q.result).includes(:fund, :investor, :capital_call, :entity, capital_commitment: :fund)
 
     @capital_remittances = @capital_remittances.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
