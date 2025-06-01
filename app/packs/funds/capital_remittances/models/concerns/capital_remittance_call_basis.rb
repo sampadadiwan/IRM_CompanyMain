@@ -76,8 +76,9 @@ module CapitalRemittanceCallBasis
     self.computed_amount_cents = call_amount_cents - capital_fee_cents
 
     # Calculate the percentage of the committed folio amount that is being called.
-    self.percentage = (folio_call_amount_cents / capital_commitment.folio_committed_amount_cents) * 100.0
-
+    self.percentage = [(folio_call_amount_cents / capital_commitment.folio_committed_amount_cents) * 100.0, 100.0].min
+    # if percentage is less than -100 then limit to -100.0
+    self.percentage = -100.0 if percentage < -100.0
     logger.error "call_basis_upload: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
                   folio_call_amount_cents = #{folio_call_amount_cents} \

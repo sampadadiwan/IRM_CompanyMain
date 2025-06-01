@@ -42,7 +42,7 @@ class CapitalDistributionPayment < ApplicationRecord
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id
 
-  validates :folio_id, length: { maximum: 20 }
+  validates :folio_id, length: { maximum: 40 }
   validates :investor_name, length: { maximum: 255 }
 
   counter_culture :capital_distribution,
