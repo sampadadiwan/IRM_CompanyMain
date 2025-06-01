@@ -66,7 +66,7 @@ class CapitalRemittance < ApplicationRecord
   validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
 
   validates :status, length: { maximum: 10 }
-  validates :folio_id, length: { maximum: 20 }
+  validates :folio_id, length: { maximum: 40 }
   validates :investor_name, length: { maximum: 255 }
 
   include CapitalRemittanceCounters
