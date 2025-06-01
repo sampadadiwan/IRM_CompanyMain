@@ -7,7 +7,7 @@ class FundUnit < ApplicationRecord
   belongs_to :investor
   belongs_to :owner, polymorphic: true, optional: true
 
-  validates :unit_type, length: { maximum: 25 }
+  validates :unit_type, length: { maximum: 40 }
   validates :owner_type, length: { maximum: 255 }
 
   monetize :total_premium_cents, :amount_cents, :price_cents, :premium_cents, with_currency: ->(i) { i.fund.currency }
