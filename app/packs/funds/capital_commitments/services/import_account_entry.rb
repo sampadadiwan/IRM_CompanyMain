@@ -27,18 +27,20 @@ class ImportAccountEntry < ImportUtil
   end
 
   def save_account_entry(user_data, import_upload, custom_field_headers)
-    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id = get_fields(user_data, import_upload)
+    folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id = get_fields(user_data, import_upload)
 
     if fund
 
       # Note this could be an entry for a commitment or for a fund (i.e no commitment)
-      account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:, fund:, capital_commitment:, investor:, reporting_date:, entry_type:, rule_for:, name:, amount_cents: fund_amount_cents, folio_amount_cents:, parent_type:, parent_id:)
+      account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:, fund:, capital_commitment:, investor:, reporting_date:, entry_type:, rule_for:, name:, amount_cents: fund_amount_cents, folio_amount_cents:, parent_type:, parent_id:, ref_id:)
 
       if account_entry.new_record? && account_entry.valid?
 
         validate_parent_presence(account_entry)
         account_entry.notes = user_data["Notes"]
         account_entry.import_upload_id = import_upload.id
+
+        custom_field_headers.delete("Ref Id")
         setup_custom_fields(user_data, account_entry, custom_field_headers)
 
         account_entry.save!
@@ -65,6 +67,7 @@ class ImportAccountEntry < ImportUtil
     rule_for = user_data["Rule For"]&.downcase
     parent_type = user_data["Parent Type"]
     parent_id = user_data["Parent Id"]
+    ref_id = user_data["Ref Id"].to_i
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
@@ -73,7 +76,7 @@ class ImportAccountEntry < ImportUtil
     investor = capital_commitment&.investor
     raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
 
-    [folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id]
+    [folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id]
   end
 
   def validate_parent_presence(account_entry)

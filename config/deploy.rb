@@ -185,6 +185,18 @@ end
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
 # E.x bundle exec cap staging IRM:setup
 namespace :IRM do
+
+  desc 'Truncate all log files in the logs/ directory (including root-owned files)'
+  task :truncate_logs do
+    on roles(:app) do
+      within release_path do
+        # This will find all files under log/ and truncate them with sudo
+        execute :sudo, "find #{release_path}/log/*.log -type f -exec truncate -s 0 {} \\;"
+      end
+    end
+  end
+
+
   def configure_logrotate
     logrotate_config_path = "/home/ubuntu/IRM/shared/log/logrotate.conf"
     upload! StringIO.new(File.read('./config/deploy/logrotate.conf')), logrotate_config_path
