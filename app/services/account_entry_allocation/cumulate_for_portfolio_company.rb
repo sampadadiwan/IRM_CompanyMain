@@ -18,7 +18,7 @@ module AccountEntryAllocation
       # - "AggregatePortfolioInvestment"
       # - "PortfolioInvestment, name"
       # - "AggregatePortfolioInvestment, entrytype"
-      case fund_formula.formula.strip
+      case parent_type
       when "PortfolioInvestment"
         fund.portfolio_investments.where(portfolio_company_id: portfolio_company.id).pluck(:id).uniq
       when "AggregatePortfolioInvestment"

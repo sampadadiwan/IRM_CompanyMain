@@ -15,7 +15,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
@@ -34,13 +34,14 @@ class ImportPortfolioInvestment < ImportUtil
     end
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
-      portfolio_company_name:, investment_date:, ex_expenses_base_amount_cents:, quantity:, investment_instrument:, fund:, entity_id: fund.entity_id
+      portfolio_company_name:, investment_date:, ex_expenses_base_amount_cents:, quantity:, investment_instrument:, fund:, entity_id: fund.entity_id, ref_id:
     )
 
     if portfolio_investment.new_record?
 
       Rails.logger.debug user_data
 
+      custom_field_headers.delete("Ref Id")
       # Save the PortfolioInvestment
       setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
       portfolio_investment.notes = user_data["Notes"]
@@ -72,8 +73,9 @@ class ImportPortfolioInvestment < ImportUtil
     instrument = user_data["Instrument"]
     investment_domicile = user_data["Investment Domicile"]
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
+    ref_id = user_data["Ref Id"].to_i
 
-    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund]
+    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id]
   end
 
   def defer_counter_culture_updates
