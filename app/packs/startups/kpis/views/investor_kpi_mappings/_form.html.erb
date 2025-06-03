@@ -26,6 +26,13 @@
     <%= form.text_field :standard_kpi_name, class: "form-control"  %>
   </div>
 
+  <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#investor_kpi_mapping_category">
+    <%= form.label :category %>
+    <%= form.select :category, InvestorKpiMapping::CATEGORIES, {include_blank: true}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
+    <%= form.text_field :category, class: "form-control", disabled: true, id: "other_name", hidden: true %>
+  </div>
+
+
   <div class="form-group">
     <%= form.label :show_in_report %>
     <%= form.check_box :show_in_report, class: "form-check-input"  %>

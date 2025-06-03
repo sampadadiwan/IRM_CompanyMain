@@ -4,6 +4,8 @@ class InvestorKpiMapping < ApplicationRecord
 
   has_one :investor_entity, class_name: "Entity", through: :investor
   has_many :kpis, through: :investor_entity
+  CATEGORIES = ["Balance Sheet", "Income Statement", "Cashflow Statement", "Operational Metrics", "Other"].freeze
+  validates :category, length: { maximum: 40 }, allow_blank: true
 
   scope :show_in_report, -> { where(show_in_report: true) }
 
@@ -19,7 +21,7 @@ class InvestorKpiMapping < ApplicationRecord
   end
 
   def self.create_from(entity, kpi_report)
-    investor = if kpi_report.portfolio_company_id.present?
+    investor = if kpi_report && kpi_report.portfolio_company_id.present?
                  kpi_report.portfolio_company
                else
                  entity.investors.where(investor_entity_id: kpi_report.entity_id).first

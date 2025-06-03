@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_06_02_122028) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1998,6 +1998,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_02_122028) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "show_in_report", default: false
+    t.string "category", limit: 40
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
     t.index ["investor_id"], name: "index_investor_kpi_mappings_on_investor_id"
     t.index ["reported_kpi_name"], name: "index_investor_kpi_mappings_on_reported_kpi_name"
@@ -2584,6 +2585,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_02_122028) do
     t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "ref_id", default: 0, null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["conversion_date"], name: "index_portfolio_investments_on_conversion_date"

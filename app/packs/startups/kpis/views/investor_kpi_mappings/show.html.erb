@@ -1,58 +1,66 @@
 <%= render FormCard.new(title: "KpiMapping #{@investor_kpi_mapping.reported_kpi_name}") do %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Investor
-    </td>
-    <td>
-      <%= link_to @investor_kpi_mapping.investor, investor_path(@investor_kpi_mapping.investor, tab: "kpi-mappings-tab") %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Reported Kpi Name
-    </td>
-    <td>
-      <%= @investor_kpi_mapping.reported_kpi_name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Standard Kpi Name
-    </td>
-    <td>
-      <%= @investor_kpi_mapping.standard_kpi_name %>
-    </td>
-  </tr>
-   <tr>
-    <td>
-      Show In Report
-    </td>
-    <td>
-      <%= display_boolean @investor_kpi_mapping.show_in_report %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Lower Threshhold
-    </td>
-    <td>
-      <%= @investor_kpi_mapping.lower_threshold %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Upper Threshold
-    </td>
-    <td>
-      <%= @investor_kpi_mapping.upper_threshold %>
-    </td>
-  </tr>
-</table>
-<div>
-  <% if policy(@investor_kpi_mapping).edit? %>
-    <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %> 
-    <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-  <% end %>
-</div>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to @investor_kpi_mapping.investor, investor_path(@investor_kpi_mapping.investor, tab: "kpi-mappings-tab") %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Reported Kpi Name
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.reported_kpi_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Standard Kpi Name
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.standard_kpi_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Category
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.category %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Show In Report
+      </td>
+      <td>
+        <%= display_boolean @investor_kpi_mapping.show_in_report %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Lower Threshhold
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.lower_threshold %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Upper Threshold
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.upper_threshold %>
+      </td>
+    </tr>
+  </table>
+  <div>
+    <% if policy(@investor_kpi_mapping).edit? %>
+      <%= link_to  t_common(:edit), edit_investor_kpi_mapping_path(@investor_kpi_mapping), {class: "btn btn-outline-primary"} %>
+      <%= button_to t_common(:delete), @investor_kpi_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
 <% end %>

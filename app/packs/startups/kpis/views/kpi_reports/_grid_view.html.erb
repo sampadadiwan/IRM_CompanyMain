@@ -7,16 +7,10 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h4 mb-0 text-800">
         KPIs: 
-        <% if params[:entity_id].present? %>
-            <% if current_user.curr_role_investor? %>
-                <% 
-                    @entity = Entity.find(params[:entity_id])                 
-                    investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first                     
-                %>
-            <% else %>
-                <% investor ||= Investor.where(id: params[:portfolio_company_id]).first %>                
-            <% end %>
-            <%=  investor ? link_to(investor) : @entity.name %>
+                
+        <% if params[:portfolio_company_id].present? %>
+            <% investor = Investor.where(id: params[:portfolio_company_id]).first %>
+            <%=  investor ? link_to(investor) : @entity.name %>        
         <% end %>
     </h1>
 
@@ -63,9 +57,16 @@
         # Get the mappings for the investor
         investor = kpi_reports[0].investor_for(current_user.entity_id)
         investor_kpi_mappings = investor ? investor.investor_kpi_mappings.show_in_report : []
-    else
+    elsif ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
         # Create dummy mappings for the startup, which has all the kpi names
+        investor_kpi_mappings = investor.investor_kpi_mappings 
+    else
         investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name)}
+    end
+
+    # Filter investor_kpi_mappings based on the category if provided
+    if params[:category].present?
+        investor_kpi_mappings = investor_kpi_mappings.select{|ikm| ikm.category == params[:category]}
     end
 %>
 
@@ -74,6 +75,7 @@
         <thead>
             <tr>
                 <th>KPI</th>
+                <th>Category</th>
                 <% kpi_reports.each do |kpi_report| %>
                     <th>
                         <%= l kpi_report.as_of %>
@@ -90,20 +92,11 @@
             </tr>
         </thead>
         <tbody>
-            <% if params[:entity_id].blank? %>
-                <tr>
-                    <td> Entity </td>
-                    <% kpi_reports.each do |kpi_report| %>            
-                        <td>
-                            <%= kpi_report.for_name %>
-                            <small class="mb-1 badge rounded-pill bg-success-subtle text-success"><%= kpi_report.tag_list if kpi_report.tag_list %></small>
-                        </td>
-                    <% end %>
-                </tr>
-            <% end %>
+            
 
             <tr>
                 <td>Period</td>
+                <td></td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
                             <%= kpi_report.period %>
@@ -114,7 +107,11 @@
             <% investor_kpi_mappings.each do |ikm| %>            
                 <tr>
                     <td>
-                        <%= ikm.standard_kpi_name %>
+                        <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
+                    </td>
+
+                    <td>
+                        <%= ikm.category %>
                     </td>
                     
                     <% kpi_reports.each do |kpi_report| %>  

@@ -1,10 +1,11 @@
 <% 
   @portfolio_company ||= nil 
+  portfolio_company_id = params[:portfolio_company_id].presence || @portfolio_company&.id
   model ||= current_user
 %>
 <%= form_with(model: model, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
     
-  <input name="portfolio_company_id" value="<%= @portfolio_company&.id %>" hidden="hidden">
+  <input name="portfolio_company_id" value="<%= portfolio_company_id %>" hidden="hidden">
   <input name="grid_view" value="true" hidden="hidden">
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
@@ -17,6 +18,11 @@
   <div class="form-group col-md-1">    
     <% period = params[:period].presence %>
     <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control", name: "period" %>        
+  </div>
+
+  <div class="form-group col-md-1">    
+    <% category = params[:category].presence %>
+    <%= form.select :category, InvestorKpiMapping::CATEGORIES, {selected: category, include_blank: true}, class: "form-control", name: "category" %>        
   </div>
 
   <div class="form-group col-md-1">    

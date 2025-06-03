@@ -22,10 +22,9 @@ Scenario Outline: Import Kpis - as company
   
 
 @import
-Scenario Outline: Import Kpis - as investor
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+Scenario Outline: Import Kpis - as fund
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given the user has curr role "investor"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   And Given I upload a kpis file for the portfolio company
   Then I should see the "Import in progress"
