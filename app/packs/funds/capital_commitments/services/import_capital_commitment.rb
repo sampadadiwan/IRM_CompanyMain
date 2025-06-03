@@ -28,9 +28,9 @@ class ImportCapitalCommitment < ImportUtil
       end
     elsif capital_commitment.nil?
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
-      capital_commitment.folio_committed_amount = user_data["Committed Amount (Folio Currency)"].to_d
+      capital_commitment.orig_folio_committed_amount = user_data["Committed Amount (Folio Currency)"].to_d
       # This could be blank, in which case it will be converted from the folio currency to the fund currency
-      capital_commitment.committed_amount = user_data["Committed Amount (Fund Currency)"].to_d
+      capital_commitment.orig_committed_amount = user_data["Committed Amount (Fund Currency)"].to_d
       # Save the capital commitment
       save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
     # No update, and we dont have a pre-existing capital_commitment

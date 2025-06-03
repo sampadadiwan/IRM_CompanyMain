@@ -1,5 +1,5 @@
 Feature: Capital Calls
-  Adjustments to capital commitments
+  Calls to capital commitments
 
 Scenario Outline: Create a capital call
   Given there is a user "<user>" for an entity "<entity>"
@@ -7,8 +7,8 @@ Scenario Outline: Create a capital call
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing investor "name=Investor 1"
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
   When I create a Capital Call with percentage of commitment
   Given it should create Capital Remittances according to the close percentage
 
@@ -22,8 +22,8 @@ Scenario Outline: Create a capital call with Upload call basis
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing investor "name=Investor 1"
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
   When I create a Capital Call with upload call basis
   Given it should create a Capital Call with given data
 
@@ -37,8 +37,8 @@ Scenario Outline: Create a capital call with Upload call basis
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing investor "name=Investor 1"
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
   When I create a Capital Call with investable call basis
   Given it should create a Investable Capital Call with given data
 
@@ -53,10 +53,10 @@ Scenario Outline: Generate fund units from capital call
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
-  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000" for the last investor
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
@@ -96,4 +96,4 @@ Scenario Outline: Generate fund units from capital call with phased remittance p
 
 Examples:
   | commitment                     | call                 | paid_percentage1         | paid_percentage2         |
-  | folio_committed_amount_cents=100000000 | percentage_called=20 | 50 | 50 |
+  | orig_folio_committed_amount_cents=100000000 | percentage_called=20 | 50 | 50 |

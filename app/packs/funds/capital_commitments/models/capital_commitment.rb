@@ -95,7 +95,7 @@ class CapitalCommitment < ApplicationRecord
            :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
            with_currency: ->(i) { i.fund.currency }
 
-  validates :folio_committed_amount_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :folio_committed_amount_cents, :orig_folio_committed_amount_cents, numericality: { greater_than_or_equal_to: 0 }
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, presence: true
@@ -158,21 +158,21 @@ class CapitalCommitment < ApplicationRecord
     capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.custom_fields.hurdle_rate.to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
   end
 
-  # This is only excuted once when the commitment is created, to setup the orig amounts
+  # This is only excuted to setup the orig amounts
   # orig_committed_amount is the committed amount in the fund currency when the commitment is setup
   # committed_amount is the committed amount in the fund currency after all adjustments
+  # Note this will be called on update also, as now we allow update of amounts for 0$ commitments
+  # Sets the original committed amounts for the capital commitment record.
+  #
   def set_orig_amounts
-    self.orig_folio_committed_amount_cents = folio_committed_amount_cents if orig_folio_committed_amount_cents.zero?
+    # self.orig_folio_committed_amount_cents = folio_committed_amount_cents - adjustment_folio_amount_cents if folio_committed_amount_cents.positive? && orig_folio_committed_amount_cents.zero?
+
+    # binding.pry if orig_folio_committed_amount_cents != 0
 
     if orig_committed_amount_cents.zero?
-      self.orig_committed_amount_cents = if committed_amount_cents.positive?
-                                           # Sometimes we receive the committed amount in the fund currency, in which case we dont need to convert it
-                                           committed_amount_cents
-                                         else
-                                           # If the committed amount is not set, then we need to convert the folio committed amount to the fund currency
-                                           convert_currency(folio_currency, fund.currency,
-                                                            orig_folio_committed_amount_cents, commitment_date)
-                                         end
+      self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency,
+                                                          orig_folio_committed_amount_cents, commitment_date)
+
     end
   end
 

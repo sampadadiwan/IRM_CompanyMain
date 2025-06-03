@@ -23,8 +23,8 @@ Scenario Outline: Create new approval for Fund
   Given there is an existing investor "" with "1" users
   Given there is an existing investor "" with "1" users
   Given the investors are added to the fund
-  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
-  Given there are capital commitments of "folio_committed_amount_cents=200000000" from each investor
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "orig_folio_committed_amount_cents=200000000" from each investor
   When I create a new approval "<approval>" for the fund
   Then I should see the "<msg>"
   And an approval should be created

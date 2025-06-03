@@ -224,6 +224,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:feeder_fund_id, :entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :virtual_bank_account, :folio_currency, :is_feeder_fund, :folio_committed_amount, :esign_emails, :commitment_date, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_commitment).permit(:feeder_fund_id, :entity_id, :investor_id, :fund_id, :orig_folio_committed_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :virtual_bank_account, :folio_currency, :is_feeder_fund, :folio_committed_amount, :esign_emails, :commitment_date, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

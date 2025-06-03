@@ -87,10 +87,10 @@ Scenario Outline: Create new commitment after capital call
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
-  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000" for the last investor
   Given the investors are added to the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
@@ -147,7 +147,7 @@ Scenario Outline: Create new capital distrbution
   Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
-  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
   And Given the commitments have a cc "advisor@gmail.com"
   When I create a new capital distribution "cost_of_investment_cents=10000000;"
   Then I should see the capital distrbution details

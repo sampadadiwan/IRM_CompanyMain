@@ -183,14 +183,14 @@
   end
 
   When('I add a capital commitment {string} for investor {string}') do |amount, investor_name|
-    @new_capital_commitment = FactoryBot.build(:capital_commitment, investor_name: investor_name, folio_committed_amount_cents: (amount.to_d * 100), fund: @fund)
+    @new_capital_commitment = FactoryBot.build(:capital_commitment, investor_name: investor_name, orig_folio_committed_amount_cents: (amount.to_d * 100), fund: @fund)
     @new_capital_commitment.fund_close ||= "First Close"
 
     visit(fund_url(@fund))
     click_on("Commitments")
     click_on("New Commitment")
     select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
-    fill_in('capital_commitment_folio_committed_amount', with: @new_capital_commitment.folio_committed_amount)
+    fill_in('capital_commitment_orig_folio_committed_amount', with: @new_capital_commitment.orig_folio_committed_amount.to_d)
     if @fund.capital_commitments.count > 0
       select(@new_capital_commitment.fund_close, from: "capital_commitment_fund_close")
     else
@@ -217,7 +217,7 @@
     @capital_commitment = CapitalCommitment.last
     @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
     @capital_commitment.unit_type.should == @new_capital_commitment.unit_type
-    @capital_commitment.folio_committed_amount_cents.should == @new_capital_commitment.folio_committed_amount_cents
+    @capital_commitment.orig_folio_committed_amount_cents.should == @new_capital_commitment.orig_folio_committed_amount_cents
 
     expect(page).to have_content(@capital_commitment.investor_name)
     expect(page).to have_content(@capital_commitment.entity.name)
@@ -334,7 +334,6 @@
   Then('the corresponding remittances should be created') do
 
     @capital_call = CapitalCall.last
-
     if @capital_call.call_basis != "Upload"
       @capital_call.capital_remittances.count.should == @fund.capital_commitments.count
     end
@@ -1022,6 +1021,7 @@ Then('the capital commitments must have the data in the sheet') do
     exchange_rate = cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, cc.commitment_date)
     puts "Using exchange_rate #{exchange_rate}"
     committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * exchange_rate.rate) : cc.folio_committed_amount_cents
+    binding.pry if cc.committed_amount_cents != committed
     cc.committed_amount_cents.should == committed
   end
 end
@@ -1911,12 +1911,29 @@ Then('the investors must have access rights to the fund') do
   end
 end
 
+When('the capital commitment is resaved') do
+  CapitalCommitmentUpdate.wtf?(capital_commitment: @capital_commitment).success?.should == true
+  @capital_commitment.reload
+end
+
+
+
+Then('when the adjustment is destroyed') do
+  AdjustmentDestroy.wtf?(commitment_adjustment: @commitment_adjustment).success?.should == true
+end
 
 When('a commitment adjustment {string} is created') do |args|
   @commitment_adjustment = CommitmentAdjustment.new(entity: @entity, capital_commitment: @capital_commitment, fund: @fund, as_of: Date.today, reason: "Test Adjustment")
   key_values(@commitment_adjustment, args)
   AdjustmentCreate.wtf?(commitment_adjustment: @commitment_adjustment)
 end
+
+Then('the capital commitment should have a orig commitment amount {string}') do |orig_committed_amount|
+  @capital_commitment.reload
+  puts "Checking orig_committed_amount  #{@capital_commitment.orig_committed_amount}"
+  @capital_commitment.orig_committed_amount.should == orig_committed_amount.to_i
+end
+
 
 Then('the capital commitment should have a committed amount {string}') do |committed_amount_cents|
   @capital_commitment.reload

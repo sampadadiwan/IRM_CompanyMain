@@ -55,11 +55,16 @@ class CommitmentAdjustmentsController < ApplicationController
 
   # DELETE /commitment_adjustments/1 or /commitment_adjustments/1.json
   def destroy
-    @commitment_adjustment.destroy
-
+    result = AdjustmentDestroy.call(commitment_adjustment: @commitment_adjustment)
     respond_to do |format|
-      format.html { redirect_to capital_commitment_url(@commitment_adjustment.capital_commitment), notice: "Commitment adjustment was successfully destroyed." }
-      format.json { head :no_content }
+      if result.success?
+        format.html { redirect_to capital_commitment_url(@commitment_adjustment.capital_commitment), notice: "Commitment adjustment was successfully destroyed." }
+        format.json { head :no_content }
+      else
+        logger.error "Error destroying commitment adjustment: #{result[:errors]}"
+        format.html { redirect_to capital_commitment_url(@commitment_adjustment.capital_commitment), alert: result[:errors] }
+        format.json { render json: @commitment_adjustment.errors, status: :unprocessable_entity }
+      end
     end
   end
 

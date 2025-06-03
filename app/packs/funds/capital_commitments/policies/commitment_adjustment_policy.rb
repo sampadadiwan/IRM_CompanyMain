@@ -32,6 +32,8 @@ class CommitmentAdjustmentPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    # Only allow destroy if the record is not with owner_type of CapitalRemittance and the user has permission to destroy
+    # For CapitalRemittance, we handle the destroy manually as the adjustment results in a CapitalRemittancePayment (see AdjustmentCreate) that is liked to this adjustment only by notes field. And hence has to be deleted manually
+    permissioned_employee?(:destroy) && record.owner_type != "CapitalRemittance"
   end
 end

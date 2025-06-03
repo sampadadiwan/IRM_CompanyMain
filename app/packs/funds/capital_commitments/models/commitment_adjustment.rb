@@ -67,18 +67,18 @@ class CommitmentAdjustment < ApplicationRecord
                                        execute_after_commit: true
 
   # Roll up arrear amount to owner for "Arrear" type
-  counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_amount_cents' : nil },
+  counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? && r.owner_type == "CapitalRemittance" ? 'arrear_amount_cents' : nil },
                           delta_column: 'amount_cents',
                           column_names: {
-                            ["commitment_adjustments.adjustment_type in (?)", ADJUST_ARREAR_TYPES] => 'arrear_amount_cents'
+                            ["commitment_adjustments.owner_type=? and commitment_adjustments.adjustment_type in (?)", "CapitalRemittance", ADJUST_ARREAR_TYPES] => 'arrear_amount_cents'
                           },
                           execute_after_commit: true
 
   # Roll up arrear folio amount to owner for "Arrear" type
-  counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_folio_amount_cents' : nil },
+  counter_culture :owner, column_name: proc { |r| r.update_arrear_amounts? && r.owner_type == "CapitalRemittance" ? 'arrear_folio_amount_cents' : nil },
                           delta_column: 'folio_amount_cents',
                           column_names: {
-                            ["commitment_adjustments.adjustment_type in (?)", ADJUST_ARREAR_TYPES] => 'arrear_folio_amount_cents'
+                            ["commitment_adjustments.owner_type=? and commitment_adjustments.adjustment_type in (?)", "CapitalRemittance", ADJUST_ARREAR_TYPES] => 'arrear_folio_amount_cents'
                           },
                           execute_after_commit: true
 

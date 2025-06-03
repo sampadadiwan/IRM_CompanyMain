@@ -6,8 +6,8 @@ Scenario Outline: Create a capital distribution
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing investor "name=Investor 1"
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR;fund_close=Second Close" for the last investor
   Given there is a AccountEntry for distribution "<income_account_entry>"
   Given there is a AccountEntry for distribution "<tax_account_entry>"
   Given there is a AccountEntry for distribution "<fv_account_entry>"
