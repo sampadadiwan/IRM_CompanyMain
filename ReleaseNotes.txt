@@ -5,6 +5,22 @@ de5141e3b Ae uniq ref (#851)
 aa3e29de1 Upgraded ruby
 b391afde2 Fixed alignment of twisty in show pages for mobile
 
+V9.0.48
+#####################################
+Limit capital remittance percentage to -100.0 also
+
+V9.0.47
+#####################################
+changes - 
+Increased folio id limit to 40 in CapitalRemittance,CapitalDistributionPayments,PortfolioInvestments,AccountEntries, name in FundUnitSettings, unit_type in FuntUnit
+limit capital remittance percentage to max 100.0 for call basis upload
+
+V9.0.46
+#####################################
+updated CumulateForPortfolioCompany to cumulate at folio level as well
+Updated soa and kyc generator to incorporate these cumulative account entries in portfolio_company_cumulative_folio_entries
+Updated commitment folio_id and unit_type limit to 40 characters
+
 V9.0.44
 #####################################
 2b32efcea (HEAD -> main, tag: V9.0.44, origin/main, origin/HEAD) Merge pull request #846 from ausangshukla/ae-name-uniqueness-fix

@@ -43,6 +43,7 @@ class PortfolioInvestment < ApplicationRecord
   validates :base_amount, :amount_cents, numericality: { greater_than_or_equal_to: 0 }
   validate  :sell_quantity_allowed
   validates :portfolio_company_name, length: { maximum: 100 }
+  validates :portfolio_company_name, uniqueness: { scope: %i[investment_date ex_expenses_base_amount_cents quantity investment_instrument_id fund_id entity_id ref_id] }
 
   ##########################################################
   ######################## CALLBACKS #######################

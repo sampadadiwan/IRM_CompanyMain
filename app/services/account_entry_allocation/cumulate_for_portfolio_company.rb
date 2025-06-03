@@ -65,6 +65,7 @@ module AccountEntryAllocation
     # For a given portfolio company, process and generate account entries for either:
     # - Each capital commitment (if `for_folios` is true)
     # - At the fund level otherwise
+    # rubocop:disable Metrics/ParameterLists
     def process_portfolio_company(portfolio_company, fund, fund_formula, start_date, end_date, for_folios, allocation_run_id)
       records_for_company = []
 
@@ -129,6 +130,7 @@ module AccountEntryAllocation
       # Return only the relevant attributes for bulk insert
       cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
     end
+    # rubocop:enable Metrics/ParameterLists
 
     # Creates a new AccountEntry instance for cumulative entry
     def build_cumulative_account_entry(portfolio_company, fund, fund_formula, end_date, allocation_run_id)
