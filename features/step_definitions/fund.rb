@@ -2289,6 +2289,7 @@ Given('Given import file {string} for {string}') do |file, type|
   iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
   ImportUploadJob.perform_now(iu.id)
   iu.reload
+  # binding.pry if iu.failed_row_count > 0
   iu.failed_row_count.should == 0
 end
 

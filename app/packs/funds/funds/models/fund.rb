@@ -16,6 +16,8 @@ class Fund < ApplicationRecord
     self if index_record?
   end
 
+  PORTFOLIO_COST_TYPES = %w[FIFO WTD_AVG].freeze
+
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
   belongs_to :trustee_signatory, class_name: "User", optional: true

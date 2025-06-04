@@ -16,3 +16,10 @@ Then("I search for Merger") do
     expect(page).to have_selector('tr', count: 1)
   end
 end
+
+Given('the api {string} is {string}') do |key, value|
+	api = AggregatePortfolioInvestment.last
+	puts "Checking #{key} is #{value}"
+	# binding.pry if api.send(key.to_sym).to_d != value.to_d
+	api.send(key.to_sym).to_d.should eq(value.to_d)
+end

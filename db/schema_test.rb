@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_03_141012) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -163,7 +163,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "portfolio_company_id", null: false
-    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
@@ -1729,6 +1729,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
     t.string "slug"
     t.integer "permissions", default: 0, null: false
     t.string "regulatory_env"
+    t.string "portfolio_cost_type", limit: 10, default: "FIFO", null: false
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2476,7 +2477,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
     t.bigint "fund_id", null: false
     t.bigint "sold_pi_id", null: false
     t.bigint "bought_pi_id", null: false
-    t.decimal "quantity", precision: 20, scale: 8, default: "0.0"
+    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
@@ -2543,15 +2544,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_03_035652) do
     t.string "portfolio_company_name", limit: 100
     t.date "investment_date"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.bigint "aggregate_portfolio_investment_id", null: false
-    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
-    t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_quantity", precision: 24, scale: 8, default: "0.0"
+    t.decimal "net_quantity", precision: 24, scale: 8, default: "0.0"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
     t.string "folio_id", limit: 40

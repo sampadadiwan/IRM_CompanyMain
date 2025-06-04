@@ -114,6 +114,42 @@ Scenario Outline: FIFO
     |quantity=-500       |3       |
     |quantity=-600       |3       |
 
+Scenario Outline: WTD AVG
+  Given there is a user "" for an entity "entity_type=Investment Fund;"
+  Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "name=Common Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there is a fund "name=Test fund;portfolio_cost_type=WTD_AVG" for the entity
+  Given there is a valuation "per_share_value_cents=10000;valuation_date=01/01/2022" for the portfolio company
+  Given there are "3" portfolio investments "quantity=200"
+  Given there are "1" portfolio investments "<sell>"
+  Then there must be "<attribution_count>" portfolio attributions created
+
+  Examples:
+    |sell                |attribution_count                |
+    |quantity=-200       |3       |
+    |quantity=-300       |3       |
+    |quantity=-400       |3       |
+    |quantity=-500       |3       |
+    |quantity=-600       |3       |
+
+
+Scenario Outline: Compute Gains
+  Given there is a user "" for an entity "entity_type=Investment Fund;currency=INR"
+  Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there is a fund "<Fund>" for the entity
+  And Given import file "valuations_pi_gains.xlsx" for "Valuation"
+  And Given import file "portfolio_investments_for_gains.xlsx" for "PortfolioInvestment"
+  And the api "cost_of_sold" is "<cost_of_sold>"
+  And the api "cost_of_remaining" is "<cost_of_remaining>"
+  And the api "gain" is "<gain>"
+  And the api "unrealized_gain" is "<unrealized_gain>"
+  
+  Examples:
+    |Fund                           |cost_of_sold | cost_of_remaining | gain | unrealized_gain |
+    |name=SAAS Fund;portfolio_cost_type=WTD_AVG;currency=INR|-8935714.29|864285.71|6264285.71|-359335.71|
+    |name=SAAS Fund;portfolio_cost_type=FIFO;currency=INR   |-8600000   | 1200000 | 6600000 | -695050 |
+    
 
 
 Scenario Outline: Stock Adjustment
