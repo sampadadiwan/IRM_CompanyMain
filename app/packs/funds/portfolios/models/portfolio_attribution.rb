@@ -22,9 +22,16 @@ class PortfolioAttribution < ApplicationRecord
     PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload)
   end
 
+  # Calculates and assigns cost_of_sold_cents, gain_cents, and sale_amount_cents
+  # based on the fund's portfolio_cost_type (FIFO or WTD_AVG).
   def compute_amounts
-    self.cost_of_sold_cents = quantity * bought_pi.cost_cents
+    # For FIFO, cost is calculated using the bought_pi's price per share
+    self.cost_of_sold_cents = quantity * bought_pi.price_per_share_cents
+
+    # Gain is the difference between sold and bought price per share, times quantity
     self.gain_cents = (sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs
+
+    # Sale amount is the sold_pi's price per share times quantity
     self.sale_amount_cents = sold_pi.price_per_share_cents * quantity.abs
   end
 

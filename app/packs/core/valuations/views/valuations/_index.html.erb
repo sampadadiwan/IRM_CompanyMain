@@ -24,6 +24,14 @@
                   "sample_upload": "VALUATION_SAMPLE"),
                   { class: "btn btn-outline-primary ti ti-upload"}   %>
 
+    <% 
+      data_source ||= valuations_path( params: params.to_unsafe_h, all: true, format: :xlsx)
+
+      xl_link = download_xl_link(data_source)
+    %>
+    
+    <%= link_to t_common(:export_all), xl_link, class: "btn btn-outline-primary ti ti-download", data: { turbo: false } %>
+                    
     </span>
   </div>
 

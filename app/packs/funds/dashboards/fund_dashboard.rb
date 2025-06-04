@@ -9,6 +9,7 @@ class FundDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
+    portfolio_cost_type: Field::Select.with_options(collection: Fund::PORTFOLIO_COST_TYPES),
     documents: Field::HasMany,
     valuations: Field::HasMany,
     capital_remittances: Field::HasMany,
@@ -50,6 +51,7 @@ class FundDashboard < Administrate::BaseDashboard
     id
     name
     editable_formulas
+    portfolio_cost_type
     committed_amount_cents
     details
     collected_amount_cents
@@ -76,6 +78,7 @@ class FundDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
 
     name
+    portfolio_cost_type
     editable_formulas
     committed_amount_cents
     details

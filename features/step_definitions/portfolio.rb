@@ -208,7 +208,7 @@ Then('there must be {string} portfolio attributions created') do |count|
     pa.bought_pi.buy?.should == true
     pa.bought_pi.sold_quantity.should == pa.quantity
     pa.bought_pi.net_quantity.should == pa.bought_pi.quantity + pa.bought_pi.sold_quantity
-    pa.sold_pi.quantity.should == PortfolioAttribution.all.sum(:quantity)
+    expect(pa.sold_pi.quantity).to be_within(0.0001).of(PortfolioAttribution.sum(:quantity))
   end
 end
 

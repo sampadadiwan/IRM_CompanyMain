@@ -110,7 +110,7 @@
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :orig_folio_committed_amount, "Folio Committed Amount" %> <span class="formatted_currency"></span>
-        <%= form.number_field :orig_folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record? && capital_commitment.folio_committed_amount_cents > 0  %>
+        <%= form.number_field :orig_folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record? && capital_commitment.folio_committed_amount_cents > 0 && capital_commitment.orig_folio_committed_amount_cents > 0  %>
 
         <% unless capital_commitment.new_record? %>
           <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": capital_commitment.id) %></small>

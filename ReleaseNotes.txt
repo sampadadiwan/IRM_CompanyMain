@@ -1,3 +1,10 @@
+V9.0.50
+#####################################
+ae8c69c20 Added PI uniqueness validation using ref id, updated release notes, rubocop fix (#854)
+5669afcb6 Adjustment delete (#855)
+115646483 Archived migrations
+da7adaf4e Kpi category (#853)
+
 V9.0.49
 #####################################
 4b8c6521b Update to Ref Id for consistency, update import (#852)
