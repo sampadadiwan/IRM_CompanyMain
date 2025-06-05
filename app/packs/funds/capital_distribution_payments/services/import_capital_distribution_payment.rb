@@ -27,7 +27,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment.import_upload_id = import_upload.id
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.percentage = capital_commitment.percentage
-      capital_distribution_payment.income = user_data["Income"]
+      capital_distribution_payment.income = user_data["Income"].to_d
       capital_distribution_payment.reinvestment = user_data["Reinvestment"]
       capital_distribution_payment.cost_of_investment = user_data["Face Value For Redemption"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"

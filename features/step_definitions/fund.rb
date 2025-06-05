@@ -2507,3 +2507,30 @@ Then('There should be {string} fund units created with data in the {string} shee
     end
   end
 end
+
+
+When('I edit the remittance payment with convert_to_fund_currency {string}') do |string|
+  @convert_to_fund_currency = string == "true"
+  @target_remittance_payment = CapitalRemittancePayment.where(convert_to_fund_currency: @convert_to_fund_currency).first
+  visit(edit_capital_remittance_payment_path(@target_remittance_payment))
+  @amount = @target_remittance_payment.amount.to_f
+  @folio_amount = @target_remittance_payment.folio_amount.to_f * 5
+  fill_in("capital_remittance_payment_folio_amount", with: @folio_amount) if @convert_to_fund_currency
+  fill_in("capital_remittance_payment_notes", with: "Test edit remittance payment")
+  click_on("Save")
+  expect(page).to have_content("Capital remittance payment was successfully updated")
+end
+
+Then('the capital remittance payment amount is recomputed') do
+  @target_remittance_payment.reload
+  puts "Checking remittance payment amount #{@target_remittance_payment.amount} against folio amount #{@target_remittance_payment.folio_amount}"
+  expect(@target_remittance_payment.folio_amount.to_f).to eq(@folio_amount)
+  expect(@target_remittance_payment.amount.to_f).not_to eq(@amount)
+end
+
+Then('the capital remittance payment amount is not recomputed') do
+  @target_remittance_payment.reload
+  puts "Checking remittance payment amount #{@target_remittance_payment.amount} against folio amount #{@target_remittance_payment.folio_amount}"
+  expect(@target_remittance_payment.folio_amount.to_f).not_to eq(@folio_amount)
+  expect(@target_remittance_payment.amount.to_f).to eq(@amount)
+end

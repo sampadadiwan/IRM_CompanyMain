@@ -211,3 +211,22 @@ Scenario Outline: Import Fund Formulas
   Then I should see the "Import in progress"
   Then There should be "9" fund formulas created
   And the fund formulas must have the data in the sheet
+
+
+@import
+Scenario Outline: Update Imported capital remittance payments
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And Given I upload "capital_calls_no_remittances.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "3" capital calls created
+  And Given I upload "capital_remittance_payments_multi_currency.xlsx" file for the remittances of the capital call
+  Then There should be "5" remittance payments created
+  And the capital remittance payments must have the data in the sheet
+  When I edit the remittance payment with convert_to_fund_currency "false"
+  Then the capital remittance payment amount is not recomputed
+  When I edit the remittance payment with convert_to_fund_currency "true"
+  Then the capital remittance payment amount is recomputed 

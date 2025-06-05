@@ -28,9 +28,10 @@ class CapitalRemittancePaymentsController < ApplicationController
   # POST /capital_remittance_payments or /capital_remittance_payments.json
   def create
     @capital_remittance_payment = CapitalRemittancePayment.new(capital_remittance_payment_params)
+    result = CapitalRemittancePaymentCreate.call(capital_remittance_payment: @capital_remittance_payment)
     authorize(@capital_remittance_payment)
     respond_to do |format|
-      if @capital_remittance_payment.save
+      if result.success?
         format.html { redirect_to capital_remittance_payment_url(@capital_remittance_payment), notice: "Capital remittance payment was successfully created." }
         format.json { render :show, status: :created, location: @capital_remittance_payment }
       else
@@ -42,8 +43,10 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # PATCH/PUT /capital_remittance_payments/1 or /capital_remittance_payments/1.json
   def update
+    @capital_remittance_payment.assign_attributes(capital_remittance_payment_params)
+    result = CapitalRemittancePaymentUpdate.call(capital_remittance_payment: @capital_remittance_payment)
     respond_to do |format|
-      if @capital_remittance_payment.update(capital_remittance_payment_params)
+      if result.success?
         format.html { redirect_to capital_remittance_payment_url(@capital_remittance_payment), notice: "Capital remittance payment was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_remittance_payment }
       else
@@ -55,7 +58,7 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # DELETE /capital_remittance_payments/1 or /capital_remittance_payments/1.json
   def destroy
-    @capital_remittance_payment.destroy
+    CapitalRemittancePaymentDestroy.call(capital_remittance_payment: @capital_remittance_payment)
 
     respond_to do |format|
       format.html { redirect_to capital_remittance_url(@capital_remittance_payment.capital_remittance), notice: "Capital remittance payment was successfully destroyed." }
