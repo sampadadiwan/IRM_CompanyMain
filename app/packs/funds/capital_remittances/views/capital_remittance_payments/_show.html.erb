@@ -52,7 +52,7 @@
 
           <tr>
             <td>
-              Amount
+              Tracking Amount
             </td>
             <td>
               <%= money_to_currency capital_remittance_payment.tracking_amount, params %>
@@ -115,6 +115,17 @@
           </td>
           <td>
             <%= link_to capital_remittance_payment.exchange_rate %>
+          </td>
+        </tr>
+      <% end %>
+
+      <% if params[:debug].present? %>
+        <tr>
+          <td>
+            Convert to Fund Currency
+          </td>
+          <td>
+          <%= display_boolean capital_remittance_payment.convert_to_fund_currency %>
           </td>
         </tr>
       <% end %>

@@ -34,7 +34,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
     # Make the capital_remittance
-    fund, _, _, _, capital_remittance, folio_amount_cents, _, _, update_only = inputs
+    fund, _, _, _, capital_remittance, folio_amount_cents, _, _, _, update_only = inputs
     capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
                                                                 folio_amount_cents:,
@@ -64,18 +64,27 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
-    fund, _, _, _, capital_remittance, folio_amount_cents, _, amount_cents, = inputs
+    fund, _, _, _, capital_remittance, folio_amount_cents, _, amount_cents, convert_to_fund_currency, = inputs
     capital_remittance_payment.assign_attributes(entity_id: fund.entity_id, fund:,
                                                  capital_remittance:,
                                                  folio_amount_cents:,
                                                  amount_cents:,
                                                  notes: user_data["Notes"],
                                                  reference_no: user_data["Reference No"],
-                                                 payment_date: user_data["Payment Date"])
+                                                 payment_date: user_data["Payment Date"],
+                                                 convert_to_fund_currency:)
 
     setup_custom_fields(user_data, capital_remittance_payment, custom_field_headers)
 
-    capital_remittance_payment.save!
+    result = if capital_remittance_payment.new_record?
+               CapitalRemittancePaymentCreate.call(capital_remittance_payment:)
+             else
+               CapitalRemittancePaymentUpdate.call(capital_remittance_payment:)
+             end
+
+    raise result[:errors] unless result.success?
+
+    result.success?
   end
 
   def inputs(import_upload, user_data)
@@ -109,7 +118,10 @@ class ImportCapitalRemittancePayment < ImportUtil
     folio_currency = user_data["Currency"]
     update_only = user_data["Update Only"]
 
-    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, amount_cents, update_only]
+    convert_to_fund_currency = true
+    convert_to_fund_currency = false if user_data["Amount (Folio Currency)"].present? && user_data["Amount (Fund Currency)"].present?
+
+    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, amount_cents, convert_to_fund_currency, update_only]
   end
 
   def defer_counter_culture_updates
