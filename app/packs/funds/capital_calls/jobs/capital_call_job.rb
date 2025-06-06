@@ -63,7 +63,10 @@ class CapitalCallJob < ApplicationJob
 
       # skip the counter culture updates to avoid deadlocks
       CapitalRemittancePayment.skip_counter_culture_updates do
-        CapitalRemittancePayment.create(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
+        crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
+
+        result = CapitalRemittancePaymentCreate.call(capital_remittance_payment: crp)
+        Rails.logger.error { "Error creating CapitalRemittancePayment for CapitalRemitttance - Investor #{cr.investor_name} - Commitment id #{cr.capital_commitment_id}, #{cr.errors.full_messages}" } if result.failure?
       end
     end
 
