@@ -1,3 +1,8 @@
+V9.0.52
+#####################################
+0a6fdafee (origin/main, origin/HEAD) Spec fixed 050625 (#858)
+e2d5b699e Added convert to fund currency to CRP, added specs (#857)
+
 V9.0.50
 #####################################
 ae8c69c20 Added PI uniqueness validation using ref id, updated release notes, rubocop fix (#854)
