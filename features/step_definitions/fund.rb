@@ -2301,14 +2301,16 @@ Given('remittances are paid {string} and verified') do |paid_percentage|
     folio_amount_cents = cr.folio_call_amount_cents * (paid_percentage.to_d / 100)
 
     # Create a new payment for the capital remittance
-    crp = cr.capital_remittance_payments.create!(
+    crp = cr.capital_remittance_payments.new(
       fund_id: cr.fund_id,
       entity_id: cr.entity_id,
       folio_amount_cents: folio_amount_cents,
       payment_date: cr.remittance_date
     )
 
-    # Store the latest payment amount for the remittance
+    result = CapitalRemittancePaymentCreate.wtf?(capital_remittance_payment: crp)
+    
+    # Store the latest   payment amount for the remittance
     @latest_payment[cr.id] = crp.amount_cents
 
     # Verify the capital remittance after the payment
