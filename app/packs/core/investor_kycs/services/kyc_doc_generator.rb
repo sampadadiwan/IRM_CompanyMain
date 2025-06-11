@@ -142,6 +142,7 @@ class KycDocGenerator
     }
 
     if fund_id.present?
+      context[:fund] = TemplateDecorator.decorate(Fund.find(fund_id))
       fund_account_entries = AccountEntry.fund_entries.where(fund_id: fund_id)
       context[:fund_account_entries] = TemplateDecorator.new(fund_account_entries)
       context[:fund_account_entries_between_dates] = TemplateDecorator.new(fund_account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date))
@@ -245,7 +246,7 @@ class KycDocGenerator
   def portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
     return OpenStruct.new if fund_id.blank?
 
-    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", entry_type: entry_types).where(parent_type: "Investor").includes(parent: :portfolio_company, fund_id: fund_id)
+    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).where(parent_type: "Investor").includes(parent: :portfolio_company)
 
     first_commitment = investor_kyc.capital_commitments.where(fund_id: fund_id).first
     portfolio_company_entries_map = {}
@@ -279,7 +280,7 @@ class KycDocGenerator
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
-    portfolio_company_entries_map.values
+    portfolio_company_entries_map.keys.sort.map { |k| portfolio_company_entries_map[k] }
   end
 
   def generate_custom_fields(context, investor_kyc)

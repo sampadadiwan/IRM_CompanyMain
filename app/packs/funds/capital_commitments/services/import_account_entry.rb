@@ -86,8 +86,7 @@ class ImportAccountEntry < ImportUtil
       raise "Parent Type not present"
     elsif account_entry.parent_type.present? && account_entry.parent_id.present?
       raise "Parent not found" if account_entry.parent.nil?
-      raise "Invalid Parent Type" if account_entry.parent_type.to_s == "Investor"
-      raise "Parent does not belong to Fund" unless account_entry.parent.fund_id == account_entry.fund_id
+      raise "Parent does not belong to Fund" if account_entry.parent_type.to_s != "Investor" && account_entry.parent.fund_id != account_entry.fund_id
     end
   end
 end
