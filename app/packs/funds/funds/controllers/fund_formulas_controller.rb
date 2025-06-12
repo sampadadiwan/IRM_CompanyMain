@@ -106,9 +106,9 @@ class FundFormulasController < ApplicationController
   def fund_formula_params
     if current_user.support?
       # Only support can change the formula
-      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :formula, :generate_ytd_qtly, :explain, :is_template, tag_list: [])
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :formula, :meta_data, :generate_ytd_qtly, :explain, :is_template, tag_list: [])
     else
-      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :generate_ytd_qtly, :explain, tag_list: [])
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :meta_data, :generate_ytd_qtly, :explain, tag_list: [])
     end
   end
 end

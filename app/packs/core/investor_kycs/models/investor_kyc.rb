@@ -69,6 +69,8 @@ class InvestorKyc < ApplicationRecord
   scope :agreement_overcalled, -> { where('agreement_committed_amount_cents <= call_amount_cents') }
 
   scope :verified, -> { where(verified: true) }
+  scope :completed, -> { where(completed_by_investor: true) }
+  scope :not_completed, -> { where(completed_by_investor: false) }
   scope :unverified, -> { where(verified: false) }
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
@@ -244,7 +246,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed json_fields created_at].sort
+    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified completed_by_investor expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed json_fields created_at].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

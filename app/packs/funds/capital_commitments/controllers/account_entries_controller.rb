@@ -28,7 +28,9 @@ class AccountEntriesController < ApplicationController
       :entry_type,
       :folio_id,
       :unit_type,
-      :cumulative
+      :cumulative,
+      :parent_id,
+      :parent_type
     )
 
     # Step 2: Special case - only fund-level accounts (no capital commitment)

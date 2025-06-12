@@ -34,6 +34,9 @@ module AccountEntryAllocation
         # Delete existing fund account entries for the formulas
         fund_account_entries.joins(:fund_formula).merge(formulas).delete_all
 
+        # Ensure that the portfolio_investments are up to date before running formulas. As this may compute the expenses for the portfolio investments
+        fund.resave_portfolio_investments
+
         ctx[:formula_count] = formulas.count
 
         formulas.each_with_index do |fund_formula, index|
@@ -63,27 +66,34 @@ module AccountEntryAllocation
           raise e
         end
 
-        time_taken = ((Time.zone.now - run_start_time)).to_i
-        msg = "Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds"
+        # Display generated links post run
+        display_generated_links(ctx, fund:, start_date:, end_date:, user_id:, run_start_time:)
 
-        entry_types = [
-          ['', 'View Account Entries'],
-          ['Expense', 'View Expenses'],
-          ['Portfolio Allocation', 'View Portfolio Allocation']
-        ]
-
-        links_html = entry_types.map do |entry_type, label|
-          query_params = ransack_query_params_multiple([
-                                                         ['allocation_run_id', :eq, ctx[:allocation_run_id]],
-                                                         [:entry_type, :eq, entry_type]
-                                                       ])
-          ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
-        end.join
-
-        notify("#{msg}<br>#{links_html}", :success, user_id)
+        # If we reach here, all formulas ran successfully
         allocation_run&.update_column(:status, "Success")
       end
       true
+    end
+
+    def display_generated_links(ctx, fund:, start_date:, end_date:, user_id:, run_start_time:)
+      time_taken = ((Time.zone.now - run_start_time)).to_i
+      msg = "Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds"
+
+      entry_types = [
+        ['', 'View Account Entries'],
+        ['Expense', 'View Expenses'],
+        ['Portfolio Allocation', 'View Portfolio Allocation']
+      ]
+
+      links_html = entry_types.map do |entry_type, label|
+        query_params = ransack_query_params_multiple([
+                                                       ['allocation_run_id', :eq, ctx[:allocation_run_id]],
+                                                       [:entry_type, :eq, entry_type]
+                                                     ])
+        ActionController::Base.helpers.link_to(label, account_entries_path(fund_id: fund.id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
+      end.join
+
+      notify("#{msg}<br>#{links_html}", :success, user_id)
     end
 
     # rubocop:disable Lint/RescueException

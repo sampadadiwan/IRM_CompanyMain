@@ -1,6 +1,8 @@
 class InvestorKycAction < Trailblazer::Operation
   def save(ctx, investor_kyc:, **)
     validate = ctx[:investor_user]
+    # If the KYC is verified, then its also completed by the investor
+    investor_kyc.completed_by_investor = investor_kyc.verified if investor_kyc.verified
     investor_kyc.save(validate:)
   end
 

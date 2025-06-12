@@ -120,6 +120,7 @@ Scenario Outline: Create new capital call
   Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
   Then when the capital call is approved  
   And the investors must receive email with subject "<subject>" with the document "Sample.pdf" attached
+  And the remittances must be marked with notification sent
   And the capital call collected amount should be "0"
   When I mark the remittances as paid
   Then I should see the remittances
@@ -136,8 +137,8 @@ Scenario Outline: Create new capital call
 
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount | subject |
-  	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 3520000 | This is a capital call for Fund 1 |
-    |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
+  	|entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 3520000 | This is a capital call for Fund 1 |
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
 
 
 Scenario Outline: Create new capital distrbution

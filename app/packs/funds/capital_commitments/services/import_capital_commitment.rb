@@ -15,7 +15,7 @@ class ImportCapitalCommitment < ImportUtil
     raise "Investor not found" unless investor
 
     update_only = user_data["Update Only"]
-    folio_id, _, _, folio_currency, = get_params(user_data)
+    folio_id, _, _, folio_currency, = get_params(user_data, import_upload)
     capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
 
     if update_only == "Yes"
@@ -42,16 +42,18 @@ class ImportCapitalCommitment < ImportUtil
   end
 
   def save_kyc(fund, capital_commitment, import_upload, investor, user_data, custom_field_headers)
-    _, unit_type, commitment_date, _, onboarding_completed = get_params(user_data)
+    _, unit_type, commitment_date, _, onboarding_completed, feeder_fund = get_params(user_data, import_upload)
+
     capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_date:,
                                          onboarding_completed:, imported: true, investor:,
                                          investor_name: investor.investor_name, unit_type:,
+                                         feeder_fund_id: feeder_fund&.id, is_feeder_fund: feeder_fund.present?,
                                          import_upload_id: import_upload.id, notes: user_data["Notes"],
                                          esign_emails: user_data["Investor Signatory Emails"])
 
     get_kyc(user_data, investor, fund, capital_commitment)
 
-    setup_custom_fields(user_data, capital_commitment, custom_field_headers)
+    setup_custom_fields(user_data, capital_commitment, custom_field_headers - ["Feeder Fund"])
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
     result = if capital_commitment.new_record?
@@ -60,7 +62,10 @@ class ImportCapitalCommitment < ImportUtil
                CapitalCommitmentUpdate.call(capital_commitment:, import_upload:)
              end
 
-    raise result[:errors] unless result.success?
+    unless result.success?
+      Rails.logger.debug { "CapitalCommitment import result: #{result[:errors]}" }
+      raise result[:errors]
+    end
 
     result.success?
   end
@@ -81,14 +86,20 @@ class ImportCapitalCommitment < ImportUtil
     end
   end
 
-  def get_params(user_data)
+  def get_params(user_data, import_upload)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
     commitment_date = user_data["Commitment Date"].presence
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
+    feeder_fund_name = user_data["Feeder Fund"].presence
+    feed_fund = nil
+    if feeder_fund_name.present?
+      feed_fund = import_upload.entity.funds.where(name: feeder_fund_name).first
+      raise "Feeder Fund not found" unless feed_fund
+    end
 
-    [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed]
+    [folio_id, unit_type, commitment_date, folio_currency, onboarding_completed, feed_fund]
   end
 
   def post_process(ctx, import_upload:, **)

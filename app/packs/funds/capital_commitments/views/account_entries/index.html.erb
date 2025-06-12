@@ -1,6 +1,6 @@
 
 
-<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series], pivot: params[:pivot], group_by: params[:group_by], hide_parent: params[:hide_parent], hide_commitment: params[:hide_commitment], parent_in_key: params[:parent_in_key]} %>
+<%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series], pivot: params[:pivot], group_by: params[:group_by], hide_parent: params[:hide_parent], hide_commitment: params[:hide_commitment], parent_in_key: params[:parent_in_key]} %>
 
 <%= render ReportingComponent.new do %>
   <%= turbo_frame_tag "account_entries_frame", target: "_top" do %>

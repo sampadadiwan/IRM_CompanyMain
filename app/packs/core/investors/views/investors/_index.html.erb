@@ -2,6 +2,7 @@
   lazy_load_data ||= false
   import_upload_id ||= params[:import_upload_id]
   title ||= params[:title]
+  data_source ||= investors_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true)
 %>
 
 
@@ -39,7 +40,7 @@
 
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <%= link_to investors_path(format: "xlsx", all: true),
+          <%= link_to download_xl_link(data_source),
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
             <i class="ti ti-download"></i> <%= t_common(:download) %>

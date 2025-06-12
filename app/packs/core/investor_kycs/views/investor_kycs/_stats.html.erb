@@ -1,10 +1,11 @@
 <% cache_if(current_user != nil, cache_key("kyc_stats"), expires_in: 5.day) do %>
   <% kyc_types = {
-      verified: { path: investor_kycs_path(verified: true), subtitle: "Verified", progress_bar_color: "success", icon: "ti ti-check" },
-      unverified: { path: investor_kycs_path(verified: false), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" },
-      expired: { path: investor_kycs_path(expired: true), subtitle: "Expired", progress_bar_color: "danger", icon: "ti ti-x" },
-      individual: { path: investor_kycs_path(kyc_type: :individual), subtitle: "Individual", progress_bar_color: "primary", icon: "ti ti-user" },
-      non_individual: { path: investor_kycs_path(kyc_type: :non_individual), subtitle: "Non Individual", progress_bar_color: "secondary", icon: "ti ti-building" }
+      verified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, true)), subtitle: "Verified", progress_bar_color: "success", icon: "ti ti-check" },
+      unverified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, false)), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" },
+      completed: { path: investor_kycs_path(q: ransack_query_params("completed_by_investor", :eq, true)), subtitle: "Completed", progress_bar_color: "info", icon: "ti ti-circle-dashed-check" },
+      expired: { path: investor_kycs_path(q: ransack_query_params("expiry_date", :lt, Date.today)), subtitle: "Expired", progress_bar_color: "danger", icon: "ti ti-x" },
+      individual: { path: investor_kycs_path(q: ransack_query_params("kyc_type", :eq, "Individual")), subtitle: "Individual", progress_bar_color: "primary", icon: "ti ti-user" },
+      non_individual: { path: investor_kycs_path(q: ransack_query_params("kyc_type", :eq, "Non Individual")), subtitle: "Non Individual", progress_bar_color: "secondary", icon: "ti ti-building" }
     }
   %>
 

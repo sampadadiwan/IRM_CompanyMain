@@ -203,6 +203,7 @@ class PortfolioInvestment < ApplicationRecord
   ##########################################################
 
   # Sums up all form custom fields tagged as 'Expense'
+  # rubocop:disable Security/Eval
   def expense_cents
     expense_fields = form_custom_fields.where(meta_data: "Expense").pluck(:name)
 
@@ -213,9 +214,13 @@ class PortfolioInvestment < ApplicationRecord
       nil
     end.sum * 100
 
+    # Now add up all the account entries tagged as 'Expense' for this investment
+    total += eval(entity.entity_setting.portflio_expense_account_entry_filter).sum(:amount_cents) if entity.entity_setting.portflio_expense_account_entry_filter.present?
+
     # Negative if sell, positive if buy
     buy? ? total : -total
   end
+  # rubocop:enable Security/Eval
 
   ##########################################################
   ################ SNAPSHOT & TEMPORAL HELPERS #############

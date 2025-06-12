@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_06_06_055537) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_12_033855) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1256,6 +1256,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_06_055537) do
     t.string "mailbox", limit: 30
     t.integer "notification_retention_months", default: 2
     t.string "value_bridge_cols"
+    t.string "portflio_expense_account_entry_filter"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
@@ -1491,6 +1492,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_06_055537) do
     t.string "tag_list"
     t.boolean "is_template", default: false
     t.boolean "generate_ytd_qtly", default: false
+    t.text "meta_data"
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
@@ -2065,6 +2067,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_06_055537) do
     t.boolean "all_docs_valid", default: false
     t.boolean "compliant", default: false
     t.string "aml_status"
+    t.boolean "completed_by_investor", default: false
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"

@@ -2,7 +2,7 @@ class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable.new
 
-  TYPES = %w[AllocateMasterFundAccountEntry AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund CumulateForPortfolioCompany CumulateForPortfolioCompany-Folio].sort.freeze
+  TYPES = %w[AllocateMasterFundAccountEntry AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio].sort.freeze
 
   belongs_to :fund, optional: true, touch: true
   belongs_to :entity, optional: true
@@ -112,5 +112,18 @@ class FundFormula < ApplicationRecord
     node.children.each do |child|
       find_expressions(child, expressions) if child.is_a?(Parser::AST::Node)
     end
+  end
+
+  def meta_data_hash
+    @mdh ||= meta_data.split(";").to_h { |pair| pair.split("=") } if meta_data
+    @mdh
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name entry_type description].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund].sort
   end
 end

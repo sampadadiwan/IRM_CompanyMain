@@ -270,4 +270,13 @@ class Fund < ApplicationRecord
   def as_of(as_of_date)
     FundAsOf.new(self, as_of_date)
   end
+
+  def resave_portfolio_investments
+    # Need to resave the PortfolioInvestments after running all formulas. This is cause some of the PI expenses are computed in the formulas and they change the total expense_cents for a PI see PortfolioInvestment.expense_cents()
+    if entity.entity_setting.portflio_expense_account_entry_filter.present?
+      PortfolioInvestment.where(fund_id: id).find_each do |portfolio_investment|
+        PortfolioInvestmentUpdate.wtf?(portfolio_investment: portfolio_investment)
+      end
+    end
+  end
 end

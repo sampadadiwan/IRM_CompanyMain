@@ -9,6 +9,7 @@ class ImportAccountEntry < ImportUtil
   def initialize(**)
     super
     @account_entries = []
+    @funds = Set.new
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
@@ -72,6 +73,8 @@ class ImportAccountEntry < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
 
+    @funds.add(fund)
+
     capital_commitment = investor_name.present? ? fund.capital_commitments.where(investor_name:, folio_id:).first : nil
     investor = capital_commitment&.investor
     raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
@@ -88,5 +91,15 @@ class ImportAccountEntry < ImportUtil
       raise "Parent not found" if account_entry.parent.nil?
       raise "Parent does not belong to Fund" if account_entry.parent_type.to_s != "Investor" && account_entry.parent.fund_id != account_entry.fund_id
     end
+  end
+
+  def post_process(_ctx, import_upload:, **)
+    super
+    # For each fund, resave the portfolio investments to ensure they are up to date with the latest expense entries
+    @funds.each do |fund|
+      Rails.logger.debug { "Resaving portfolio investments for fund #{fund.name}" }
+      fund.resave_portfolio_investments
+    end
+    true
   end
 end

@@ -411,6 +411,13 @@
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
   end
 
+
+  Then('the remittances must be marked with notification sent') do
+    @capital_call.capital_remittances.each do |remittance|
+      remittance.notification_sent.should == true
+    end
+  end
+
   When('I mark the remittances as paid') do
 
     @capital_call.capital_remittances.each do |remittance|

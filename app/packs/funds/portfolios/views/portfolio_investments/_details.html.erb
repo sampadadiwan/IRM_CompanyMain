@@ -6,6 +6,9 @@
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-attributions-tab"
           data-action="click->tabdetails#loadData">Attribution</a>
+
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
+          data-action="click->tabdetails#loadData">Account Entries</a>
   </nav>
   
   <div class="tab-content" data-controller="datatable">
@@ -19,6 +22,15 @@
     <div id="portfolio-attributions-tab" class="tab-pane fade in">
       <div id="portfolio_attributions" class="associated_entity">
         <%= render "/portfolio_attributions/index", portfolio_attributions: portfolio_investment.portfolio_attributions %>
+      </div>
+    </div>
+
+
+    <div id="account-entries-tab" class="tab-pane fade">
+      <div id="account_entries" class="associated_entity">
+        <%= turbo_frame_tag "account_entries_frame", loading: :lazy, target: "_top", src: account_entries_path(parent_type: "PortfolioInvestment", parent_id: portfolio_investment.id) do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
       </div>
     </div>
 

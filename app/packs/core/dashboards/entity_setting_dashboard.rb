@@ -47,7 +47,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     regulatory_env: Field::String,
     formula_tag_list: Field::String,
     value_bridge_cols: Field::String,
-    test_account: Field::BooleanEmoji
+    test_account: Field::BooleanEmoji,
+    portflio_expense_account_entry_filter: Field::String
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -116,6 +117,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     formula_tag_list
     custom_flags
     value_bridge_cols
+    portflio_expense_account_entry_filter
     created_at
     updated_at
   ].freeze
@@ -158,6 +160,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     append_to_commitment_agreement
     formula_tag_list
     value_bridge_cols
+    portflio_expense_account_entry_filter
     custom_flags
   ].freeze
 

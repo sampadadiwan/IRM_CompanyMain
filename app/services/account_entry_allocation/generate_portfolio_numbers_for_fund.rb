@@ -55,6 +55,7 @@ module AccountEntryAllocation
               reporting_date: end_date,
               period: "As of #{end_date}",
               generated: true,
+              cumulative: true,
               fund_formula: fund_formula
             )
 

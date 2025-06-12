@@ -227,8 +227,13 @@
             <div class="form-group">
               <%= form.label :send_kyc_form_to_user, "Send Notification to User to Update KYC"%>
               <%= form.check_box :send_kyc_form_to_user, class: "form-check-input"  %>
-            </div>
+            </div>            
           <% end %>
+
+          <div class="form-group">
+            <%= form.label :completed_by_investor, "I confirm the all details provided are complete to the best of my knowledge."%>
+            <%= form.check_box :completed_by_investor, class: "form-check-input"  %>
+          </div>
 
           <div class="form-group">
             <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>

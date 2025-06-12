@@ -25,6 +25,22 @@ class AccountEntry < ApplicationRecord
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
 
+  scope :for_aggregate_portfolio_investments, lambda {
+    joins("INNER JOIN aggregate_portfolio_investments ON account_entries.parent_id = aggregate_portfolio_investments.id AND account_entries.parent_type = 'AggregatePortfolioInvestment'")
+  }
+
+  scope :for_portfolio_investments, lambda {
+    joins("INNER JOIN portfolio_investments ON account_entries.parent_id = portfolio_investments.id AND account_entries.parent_type = 'PortfolioInvestment'")
+  }
+
+  # Optional: Add a scope that filters by a field too
+  scope :for_api_portfolio_company, lambda { |portfolio_company_id|
+    where(aggregate_portfolio_investments: { portfolio_company_id: portfolio_company_id })
+  }
+
+  scope :for_pi_portfolio_company, lambda { |portfolio_company_id|
+    where(portfolio_investments: { portfolio_company_id: portfolio_company_id })
+  }
   # Account entries come in 2 flavours, they are either accounting entries or reporting entries.
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
 
@@ -114,7 +130,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_commitment fund investor allocation_run]
+    %w[capital_commitment fund investor allocation_run fund_formula].sort
   end
 
   def template_field_name
