@@ -119,13 +119,13 @@ class KycDocGenerator
       agreement_unit_setting: TemplateDecorator.new(investor_kyc.agreement_unit_setting),
 
       capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
-      amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil, fund_id)),
+      fund_amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil, fund_id)),
 
       capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
-      amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_between_dates, currency, start_date, end_date, fund_id)),
+      fund_amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_between_dates, currency, start_date, end_date, fund_id)),
 
       capital_commitments_before_end_date: TemplateDecorator.decorate_collection(capital_commitments_before_end_date),
-      amounts_before_end_date: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_before_end_date, currency, nil, end_date, fund_id)),
+      fund_amounts_before_end_date: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_before_end_date, currency, nil, end_date, fund_id)),
 
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
