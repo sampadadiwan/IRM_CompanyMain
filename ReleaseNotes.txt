@@ -1,10 +1,18 @@
-V9.0.51
+V9.0.52
 #####################################
-97780abda (origin/main, origin/HEAD) Pi wtd avg cost (#856)
+46e01d480 Allocate master fund account entry by name (#863)
+5b2ccadb4 updated amounts to fund_amounts in kyc doc gen (#862)
+7e1248d73 Formula refactor (#861)
+0667c9881 Fund in kyc doc gen (#859)
+
 V9.0.52
 #####################################
 0a6fdafee (origin/main, origin/HEAD) Spec fixed 050625 (#858)
 e2d5b699e Added convert to fund currency to CRP, added specs (#857)
+
+V9.0.51
+#####################################
+97780abda (origin/main, origin/HEAD) Pi wtd avg cost (#856)
 
 V9.0.50
 #####################################

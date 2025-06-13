@@ -41,7 +41,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.bigint "fund_id", null: false
     t.bigint "investor_id"
     t.bigint "form_type_id"
-    t.string "folio_id", limit: 20
+    t.string "folio_id", limit: 40
     t.date "reporting_date"
     t.string "entry_type", limit: 50
     # Very important to have this NOCASE, else tests start failing
@@ -1724,6 +1724,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.string "tracking_currency", limit: 3
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"   
     t.date "snapshot_date"
@@ -1766,7 +1767,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
   end
-
  
   create_table "import_uploads", force: :cascade do |t|
     t.string "name"
@@ -2008,8 +2008,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.index ["reported_kpi_name"], name: "index_investor_kpi_mappings_on_reported_kpi_name"
     t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
   end
-
- 
 
   create_table "investor_kycs", force: :cascade do |t|
     t.bigint "investor_id", null: false
@@ -2539,7 +2537,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.index ["portfolio_company_id"], name: "idx_on_portfolio_company_id_b8c50ead10"
   end
 
-
   create_table "portfolio_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -2590,6 +2587,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_12_154722) do
     t.decimal "instrument_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "reference_id", default: 0, null: false
     t.bigint "ref_id", default: 0, null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
