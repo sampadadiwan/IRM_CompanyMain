@@ -42,7 +42,7 @@ module AccountEntryAllocation
       true
     end
 
-    def allocate_master_fund_account_entries(ctx, fund:, fund_formula:, start_date:, end_date:, name_or_entry_type:, **)
+    def allocate_master_fund_account_entries(ctx, fund:, fund_formula:, start_date:, end_date:, name_or_entry_type:, grouped:, **)
       commitment_cache = ctx[:commitment_cache]
       sample        = ctx[:sample]
       user_id       = ctx[:user_id]
@@ -50,32 +50,72 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
       # Get the master fund account entries for the given fund formula, grouped by folio_id
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ? and account_entries.name = ?", fund.id, fund_formula.name).where(reporting_date: start_date..end_date)
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ?", fund.id).where(reporting_date: start_date..end_date)
+      feeder_fund_account_entries = fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ?", fund.id).where(reporting_date: start_date..end_date)
+
+      if name_or_entry_type == "name"
+        # Filter by name if name_or_entry_type is "name"
+        master_fund_account_entries = master_fund_account_entries.where(name: fund_formula.name)
+        feeder_fund_account_entries = feeder_fund_account_entries.where(name: fund_formula.name)
+      elsif name_or_entry_type == "entry_type"
+        # Filter by entry_type if name_or_entry_type is "entry_type", but the catch is use the fund_formula.name as the value for filtering. Be clear about this.
+        master_fund_account_entries = master_fund_account_entries.where(entry_type: fund_formula.name)
+        feeder_fund_account_entries = feeder_fund_account_entries.where(entry_type: fund_formula.name)
+      else
+        raise "Invalid name_or_entry_type: #{name_or_entry_type}"
+      end
 
       # This may be used inside the fund formula
       master_fund_account_entries_by_folio = master_fund_account_entries.group_by(&:folio_id).transform_values { |entries| entries.sum(&:amount_cents) }
+      exchange_rate = ctx[:exchange_rate]
 
       Rails.logger.debug { "master_fund_account_entries_by_folio has #{master_fund_account_entries_by_folio.length} entries" }
 
       fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" }
 
-        master_aggregate_entry, feeder_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
-        exchange_rate = ctx[:exchange_rate]
+        if grouped
+          # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
+          master_aggregate_entry, feeder_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
+          commitment_cache.computed_fields_cache(capital_commitment, start_date)          
+          # We need to pass an account_entry into the CreateAccountEntry operation
+          account_entry = feeder_aggregate_entry.dup
+          begin
+            create_instance_variables(ctx)
+            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
+          rescue StandardError => e
+            raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+          end
+        else
+          # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund          
 
-        # We need to pass an account_entry into the CreateAccountEntry operation
-        account_entry = feeder_aggregate_entry.dup
+          # Loop and process
+          (master_fund_account_entries + feeder_fund_account_entries).each do |account_entry|
 
-        Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name} with feeder amount #{feeder_aggregate_entry.amount_cents} and master amount #{master_aggregate_entry.amount_cents}" }
+            # Create a new AccountEntry for the feeder fund.
+            feeder_account_entry = account_entry.dup
+            feeder_account_entry.assign_attributes(
+              name: fund_formula.name,
+              reporting_date: end_date,
+              cumulative: false,
+              rule_for: fund_formula.rule_for,
+              fund_id: fund_formula.fund_id,
+              entity_id: fund_formula.entity_id,
+              entry_type: fund_formula.entry_type
+            )
 
-        begin
-          create_instance_variables(ctx)
-          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
-        rescue StandardError => e
-          raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+            begin
+              Rails.logger.debug { "Processing account entry #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" }
+
+              create_instance_variables(ctx)
+              AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_account_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
+            rescue StandardError => e
+              raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+            end
+          end
         end
 
+        
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
 

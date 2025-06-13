@@ -285,13 +285,13 @@ class Investor < ApplicationRecord
 
   def add_to_user_access_rights_cache(access_right)
     approved_users.each do |user|
-      user.cache_access_rights(access_right, for_entity_id: investor_entity_id) unless user.has_cached_role?(:investor_advisor)
+      user.cache_access_rights(access_right, for_entity_id: investor_entity_id) #unless user.has_cached_role?(:investor_advisor)
     end
   end
 
   def remove_from_user_access_rights_cache(access_right)
     approved_users.each do |user|
-      user.remove_access_rights_cache(access_right, for_entity_id: investor_entity_id) unless user.has_cached_role?(:investor_advisor)
+      user.remove_access_rights_cache(access_right, for_entity_id: investor_entity_id) #unless user.has_cached_role?(:investor_advisor)
     end
   end
 end
