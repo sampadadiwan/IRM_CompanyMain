@@ -68,6 +68,7 @@ resources :capital_distributions do
   post 'approve', on: :member
   patch 'redeem_units', on: :member
   patch 'payments_completed', on: :member
+  get 'add_pis_to_capital_distribution', on: :collection
 end
 
 resources :capital_remittances do

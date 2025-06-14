@@ -1,0 +1,17 @@
+<% capital_distribution ||= @capital_distribution %>
+<turbo-frame id="income_and_redemption_div" target="_top">
+    <div class="form-group" id="capital_distributions_income">
+        <label for="capital_distribution_income">Income</label> <span class="formatted_currency"></span>
+        <input class="form-control" data-action="input-&gt;currencyformat#format" type="number" value="<%=capital_distribution.income.to_d%>" name="capital_distribution[income]" id="capital_distribution_income" data-validate="true">
+        <small class="text-muted">Income from sale of portfolio to be distributed</small>
+    </div>
+
+    <div class="form-group" id="capital_distributions_cost_of_investment">
+        <label for="capital_distribution_cost_of_investment">Face Value For Redemption</label> <span class="formatted_currency"></span>
+        <input class="form-control" data-action="input-&gt;currencyformat#format" type="number" value="<%=capital_distribution.cost_of_investment.to_d%>" name="capital_distribution[cost_of_investment]" id="capital_distribution_cost_of_investment" data-validate="true">
+
+        <small class="small_text">
+        Units are redeemed based on the cost of investments above and unit price specified below
+        </small>
+    </div>
+</turbo-frame>

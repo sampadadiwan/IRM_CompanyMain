@@ -9,6 +9,20 @@ class CapitalDistributionsController < ApplicationController
     @capital_distributions = @capital_distributions.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
+  # This action is used only to update the form for CD with dynamic Income (Gain from PIs) and Face Value For Redemption (Cost of PIs), and is triggered when a user selected a PI to be included in the distribution
+  def add_pis_to_capital_distribution
+    @capital_distribution = CapitalDistribution.new(fund_id: params[:fund_id], entity_id: params[:entity_id])
+    authorize @capital_distribution
+
+    @capital_distribution.income_cents = 0
+    @capital_distribution.cost_of_investment_cents = 0
+
+    @capital_distribution.fund.portfolio_investments.sells.where(id: params[:portfolio_investment_ids].split(",")).find_each do |pi|
+      @capital_distribution.income_cents += pi.gain_cents
+      @capital_distribution.cost_of_investment_cents += pi.amount_cents
+    end
+  end
+
   # GET /capital_distributions/1 or /capital_distributions/1.json
   def show; end
 
@@ -32,8 +46,9 @@ class CapitalDistributionsController < ApplicationController
   def create
     @capital_distribution = CapitalDistribution.new(capital_distribution_params)
     authorize @capital_distribution
+    result = CapitalDistributionCreate.call(capital_distribution: @capital_distribution, portfolio_investment_ids: params[:portfolio_investment_ids])
     respond_to do |format|
-      if @capital_distribution.save
+      if result.success?
         format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully created." }
         format.json { render :show, status: :created, location: @capital_distribution }
       else
@@ -58,10 +73,10 @@ class CapitalDistributionsController < ApplicationController
 
   # DELETE /capital_distributions/1 or /capital_distributions/1.json
   def destroy
-    @capital_distribution.destroy
+    CapitalDistributionDestroy.call(capital_distribution: @capital_distribution)
 
     respond_to do |format|
-      format.html { redirect_to capital_distributions_url, notice: "Capital distribution was successfully destroyed." }
+      format.html { redirect_to fund_url(@capital_distribution.fund), notice: "Capital distribution was successfully destroyed." }
       format.json { head :no_content }
     end
   end

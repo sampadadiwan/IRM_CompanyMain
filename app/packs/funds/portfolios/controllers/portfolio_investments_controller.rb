@@ -25,7 +25,8 @@ class PortfolioInvestmentsController < ApplicationController
       :portfolio_company_id,
       :import_upload_id,
       :investment_instrument_id,
-      :aggregate_portfolio_investment_id
+      :aggregate_portfolio_investment_id,
+      :capital_distribution_id
     )
 
     # Step 4: Perform any additional search refinements using custom logic

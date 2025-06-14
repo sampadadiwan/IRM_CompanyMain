@@ -11,6 +11,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     create?
   end
 
+  def add_pis_to_capital_distribution?
+    create?
+  end
+
   def update?
     permissioned_employee?(:update)
   end

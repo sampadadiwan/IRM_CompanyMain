@@ -177,6 +177,7 @@ Metrics/CyclomaticComplexity:
     - "app/packs/secondaries/offers/services/offer_search_service.rb"
     - "app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb"
     - "app/packs/funds/capital_remittances/services/import_capital_remittance_payment.rb"
+    - "app/services/account_entry_allocation/run_formula.rb"
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
@@ -273,6 +274,7 @@ Metrics/BlockLength:
     - "**/index.xlsx.axlsx"
     - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
+    - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
   AllowedMethods:
     - context
     - describe

@@ -248,6 +248,16 @@
 
       <%= display_custom_fields(@portfolio_investment) if current_user %>
 
+      <% if @portfolio_investment.capital_distribution.present? %>
+      <tr>
+        <td>
+          Linked Capital Distribution
+        </td>
+        <td>
+          <%= link_to @portfolio_investment.capital_distribution %>
+        </td>
+      </tr>
+      <% end %>
     </table>
   </div>
 </div>

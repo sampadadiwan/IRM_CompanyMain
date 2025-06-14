@@ -50,8 +50,8 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
       # Get the master fund account entries for the given fund formula, grouped by folio_id
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ?", fund.id).where(reporting_date: start_date..end_date)
-      feeder_fund_account_entries = fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where("funds.id = ?", fund.id).where(reporting_date: start_date..end_date)
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date)
+      feeder_fund_account_entries = fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date)
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
@@ -77,7 +77,7 @@ module AccountEntryAllocation
         if grouped
           # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
           master_aggregate_entry, feeder_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
-          commitment_cache.computed_fields_cache(capital_commitment, start_date)          
+          commitment_cache.computed_fields_cache(capital_commitment, start_date)
           # We need to pass an account_entry into the CreateAccountEntry operation
           account_entry = feeder_aggregate_entry.dup
           begin
@@ -87,11 +87,10 @@ module AccountEntryAllocation
             raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
           end
         else
-          # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund          
+          # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
 
           # Loop and process
           (master_fund_account_entries + feeder_fund_account_entries).each do |account_entry|
-
             # Create a new AccountEntry for the feeder fund.
             feeder_account_entry = account_entry.dup
             feeder_account_entry.assign_attributes(
@@ -115,7 +114,6 @@ module AccountEntryAllocation
           end
         end
 
-        
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
 

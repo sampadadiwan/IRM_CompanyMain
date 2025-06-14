@@ -29,7 +29,9 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :investment_instrument
   belongs_to :fund, -> { with_snapshots } # Loads fund snapshot if enabled
   belongs_to :aggregate_portfolio_investment, -> { with_snapshots }
-
+  # This is the capital distribution that this PI is linked to, when sold, and proceeds are distributed
+  belongs_to :capital_distribution, optional: true
+  # Valuations
   has_many :valuations, through: :portfolio_company
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
@@ -79,7 +81,27 @@ class PortfolioInvestment < ApplicationRecord
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
   scope :conversions, -> { where.not(conversion_date: nil) }
+  scope :distributed, -> { where.not(capital_distribution_id: nil) }
+  scope :not_distributed, -> { where(capital_distribution_id: nil) }
 
+  # Returns all portfolio investments for a given fund
+  scope :for_fund, ->(fund_id) { where(fund_id:) }
+
+  # Returns all portfolio investments for a given portfolio company
+  scope :for_portfolio_company, ->(pc_id) { where(portfolio_company_id: pc_id) }
+
+  # Returns all portfolio investments for a given investment instrument
+  scope :for_investment_instrument, ->(inst_id) { where(investment_instrument_id: inst_id) }
+
+  # Returns all portfolio investments for a given entity
+  scope :for_entity, ->(entity_id) { where(entity_id:) }
+
+  # Returns all portfolio investments as of a specific date
+  scope :as_of, lambda { |date|
+    where(investment_date: ..date)
+      .where("conversion_date IS NULL OR conversion_date <= ?", date)
+      .order(investment_date: :asc)
+  }
   # Ensures conversion_date doesn't affect snapshots as_of past date
   scope :before, lambda { |date|
     where(investment_date: ..date)

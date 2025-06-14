@@ -34,7 +34,7 @@ module AccountEntryAllocation
               fund_account_entry.amount = individual_account_entries.sum(&:amount)
             end
 
-            Rails.logger.debug { "allocate_account_entries: Allocating #{fund_account_entry}" }
+            Rails.logger.debug { "allocate_account_entries: Allocating id: #{fund_account_entry.id}, #{fund_account_entry}" }
 
             sub_ctx = ctx.merge(fund_account_entry:, individual_account_entries:)
             AccountEntryAllocation::AllocateEntry.call(sub_ctx)
@@ -42,7 +42,7 @@ module AccountEntryAllocation
         else
           # If we are not grouping, we can just allocate each account entry
           account_entries.each do |fund_account_entry|
-            Rails.logger.debug { "allocate_account_entries: Allocating #{fund_account_entry}" }
+            Rails.logger.debug { "allocate_account_entries: Allocating id: #{fund_account_entry.id}, #{fund_account_entry}" }
 
             sub_ctx = ctx.merge(fund_account_entry: fund_account_entry)
             AccountEntryAllocation::AllocateEntry.call(sub_ctx)

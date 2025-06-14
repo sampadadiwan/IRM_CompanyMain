@@ -30,20 +30,17 @@
           <%= form.label :distribution_on %>
           <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, { class: "form-control", disabled:, data: { action: "change->capital-distribution#distribution_on_changed" } } %>
         </div>
+
+        <div data-controller="add-pis-to-capital-distribution" >
           
-        <div class="form-group" id="capital_distributions_income">
-          <%= form.label :income %> <span class="formatted_currency"></span>
-          <%= form.number_field :income, class: "form-control", disabled:, data: {action: "input->currencyformat#format"}   %>
-          <small class="text-muted">Income from sale of portfolio to be distributed</small>
-        </div>
+          <div class="form-group pool">
+            <%= form.label :portfolio_investment_ids, "Sold Investments" %>
+            <%= form.select :portfolio_investment_ids, capital_distribution.fund.portfolio_investments.sells.not_distributed.map{|pi| [pi.to_s, pi.id]}, {include_hidden: false}, { class: "form-control select2", multiple: true, disabled:, name: "portfolio_investment_ids[]", data: { action: "change->add-pis-to-capital-distribution#add_pis" } } %>
+          </div>
 
-        <div class="form-group" id="capital_distributions_cost_of_investment">
-          <%= form.label :cost_of_investment, "Face Value For Redemption" %> <span class="formatted_currency"></span>
-          <%= form.number_field :cost_of_investment, class: "form-control", disabled:, data: {action: "input->currencyformat#format"}   %>
+            
+          <%= render "/capital_distributions/income_and_redemption_fields", form:, capital_distribution:, disabled: %>
 
-          <small class="small_text">
-            Units are redeemed based on the cost of investments above and unit price specified below
-          </small>
         </div>
 
         <div class="form-group" id="capital_distributions_reinvestment">

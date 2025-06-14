@@ -8,6 +8,12 @@
         Tasks
       </a>
 
+      <% if capital_distribution.portfolio_investments.present? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
+          <%= t('investor_details_nav.portfolio_investments') %>
+        </a>
+      <% end %>
+
     </nav>
 
     <div class="tab-content" data-controller="datatable">
@@ -30,6 +36,15 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
+            <% end %>
+          </div>
+        </div>
+
+
+        <div id="portfolio-investments-tab" class="tab-pane fade in show active">
+          <div id="portfolio_investments_div" class="associated_entity">
+            <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(capital_distribution_id: capital_distribution.id, fund_id: capital_distribution.fund_id) do %>
+              <span>Loading...</span>
             <% end %>
           </div>
         </div>

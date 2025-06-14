@@ -30,13 +30,13 @@ module AccountEntryAllocation
         AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: true))
       when "AllocateAccountEntryIndividual-EntryType"
         AccountEntryAllocation::AllocateAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: false))
-      
+
       when "AllocateMasterFundAccountEntry-Name"
-        AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: true))      
+        AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: true))
       when "AllocateMasterFundAccountEntry-EntryType"
         AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: true))
       when "AllocateMasterFundAccountEntryIndividual-Name"
-        AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: false))      
+        AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "name", grouped: false))
       when "AllocateMasterFundAccountEntryIndividual-EntryType"
         AccountEntryAllocation::AllocateMasterFundAccountEntries.call(ctx.merge(name_or_entry_type: "entry_type", grouped: false))
 
