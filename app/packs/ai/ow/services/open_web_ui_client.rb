@@ -69,8 +69,10 @@ class OpenWebUiUsers
     @client = client
   end
 
-  def get_users(skip: nil, limit: nil)
-    @client.get('/users/', { skip: skip, limit: limit })
+  def get_users(skip: nil, limit: nil, query: nil)
+    params = { skip: skip, limit: limit }
+    params[:query] = query if query.present?
+    @client.get('/users/', params)
   end
 
   def get_user(user_id)

@@ -71,6 +71,7 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
   # To support ngrok
   config.hosts << /[a-z0-9\-]+\.ngrok-free\.app/
+  config.hosts << "host.docker.internal"
 
   Bullet.enable = true
   Bullet.alert = true

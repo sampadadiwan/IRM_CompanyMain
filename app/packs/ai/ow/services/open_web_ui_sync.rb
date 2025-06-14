@@ -21,7 +21,7 @@ class OpenWebUiSync
 
     openwebui_id =
       case @syncable.class.name
-      when "User" then sync_user(@syncable)
+      when "User" then check_and_sync_existing_user(@syncable)
       when "Entity" then sync_group(@syncable)
       when "Document" then sync_document(@syncable)
       when "KpiReport", "Folder" then sync_knowledge(@syncable)
@@ -49,8 +49,6 @@ class OpenWebUiSync
     @sync_record.destroy
   end
 
-  private
-
   def sync_group(entity)
     group_sync_record = SyncRecord.find_by(syncable: entity)
     return group_sync_record.openwebui_id if group_sync_record && group_sync_record.openwebui_id.present?
@@ -58,6 +56,27 @@ class OpenWebUiSync
     Rails.logger.debug { "Creating group #{entity.name}" }
     response = @groups_api.create_group({ name: entity.name, description: DESCRIPTION })
     response[:id]
+  end
+
+  def check_and_sync_existing_user(user)
+    Rails.logger.debug { "Checking for existing user #{user.email} in OpenWebUI" }
+    # Use the query parameter to search for users by email
+    response = @users_api.get_users(query: user.email)
+    openwebui_users = response[:users] # Adjust based on actual API response structure
+    existing_openwebui_user = openwebui_users.find { |ow_user| ow_user[:email] == user.email }
+
+    if existing_openwebui_user
+      Rails.logger.debug { "Found existing user #{user.email} in OpenWebUI with ID #{existing_openwebui_user[:id]}" }
+      # Create a SyncRecord for the existing user
+      SyncRecord.create!(syncable: user, openwebui_id: existing_openwebui_user[:id], synced_at: Time.current)
+      true
+    else
+      Rails.logger.debug { "No existing user found for #{user.email}, created a new user in OpenWebUI" }
+      sync_user(user)
+    end
+  rescue StandardError => e
+    Rails.logger.error { "Error checking for existing user #{user.email} in OpenWebUI: #{e.message}" }
+    false
   end
 
   def sync_user(user)

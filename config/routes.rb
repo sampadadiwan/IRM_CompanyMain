@@ -64,4 +64,7 @@ Rails.application.routes.draw do
   end
 
   get 'ai', to: 'ow#index'
+
+  use_doorkeeper_openid_connect
+  use_doorkeeper
 end
