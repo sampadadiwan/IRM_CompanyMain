@@ -84,6 +84,10 @@ class OwSyncJob < ApplicationJob
       docker run -d --name open-webui -p #{ow_port}:8080 --add-host=localhost:host-gateway \
       -v open-webui:/app/backend/data \
       -e WEBUI_URL="#{ENV['OPEN_WEB_UI_URL']}" \
+      -e WEBUI_SESSION_COOKIE_SAME_SITE="none" \
+      -e WEBUI_SESSION_COOKIE_SECURE="true" \
+      -e WEBUI_AUTH_COOKIE_SAME_SITE="none" \
+      -e WEBUI_AUTH_COOKIE_SECURE="true" \
       -e WEBUI_AUTH="true" \
       -e ENABLE_LOGIN_FORM="true" \
       -e ENABLE_SIGNUP="false" \
