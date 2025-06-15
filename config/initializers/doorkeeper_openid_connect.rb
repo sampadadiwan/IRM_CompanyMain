@@ -1,5 +1,5 @@
 Doorkeeper::OpenidConnect.configure do
-  issuer 'http://localhost:3001'
+  issuer ENV["BASE_URL"]
 
   signing_key Rails.application.credentials.oidc_private_key
 

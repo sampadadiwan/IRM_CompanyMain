@@ -66,4 +66,41 @@ class OwSyncJob < ApplicationJob
       OpenWebUiSync.new(document, access_token).sync
     end
   end
+
+  def self.ow_docker_cmd
+    doorkeeper_app = Doorkeeper::Application.find_by(name: "OpenWebUI")
+    doorkeeper_app ||= Doorkeeper::Application.create!(name: "OpenWebUI",
+                  redirect_uri: "#{ENV['OPEN_WEB_UI_URL']}/oauth/oidc/callback", # match where OpenWebUI runs
+                  scopes: "openid email profile")
+
+    doorkeeper_app.update_column(:redirect_uri, "#{ENV['OPEN_WEB_UI_URL']}/oauth/oidc/callback")
+
+    ow_url = ENV['OPEN_WEB_UI_URL']
+    # Get the port number from the URL if it exists, otherwise default to 80
+    ow_port = ow_url.match(/:(\d+)/) ? ow_url.match(/:(\d+)/)[1] : 80
+                  
+
+    docker_cmd = <<~TEXT
+      docker run -d --name open-webui -p #{ow_port}:8080 --add-host=localhost:host-gateway \
+      -v open-webui:/app/backend/data \
+      -e WEBUI_URL="#{ENV['OPEN_WEB_UI_URL']}" \
+      -e WEBUI_AUTH="true" \
+      -e ENABLE_LOGIN_FORM="true" \
+      -e ENABLE_SIGNUP="false" \
+      -e ENABLE_OAUTH_SIGNUP="true" \
+      -e OAUTH_CLIENT_ID="#{doorkeeper_app.uid}" \
+      -e OAUTH_CLIENT_SECRET="#{doorkeeper_app.secret}" \
+      -e OPENID_PROVIDER_URL="#{ENV['BASE_URL']}/.well-known/openid-configuration" \
+      -e OAUTH_PROVIDER_NAME="CapHive" \
+      -e OAUTH_SCOPES="openid email profile" \
+      -e DEFAULT_USER_ROLE="user" \
+      -e ENABLE_PERSISTENT_CONFIG="false" \
+      -e OPENAI_API_KEY="#{Rails.application.credentials['OPENAI_API_KEY']}" \
+      -e OAUTH_REDIRECT_URI="#{doorkeeper_app.redirect_uri}" \
+      ghcr.io/open-webui/open-webui:main
+    TEXT
+                
+
+    docker_cmd.strip
+  end
 end

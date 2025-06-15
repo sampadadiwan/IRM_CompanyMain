@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 # In the console you can run the following to create an OAuth application for OpenWebUI:
-# Doorkeeper::Application.create!(name: "OpenWebUI",
-# redirect_uri: "#{ENV['OPEN_WEB_UI_URL']}/oauth/oidc/callback", # match where OpenWebUI runs
-# scopes: "openid email profile")
-
-# docker run -d --name open-webui -p 3000:8080 --add-host=localhost:host-gateway -v open-webui:/app/backend/data -e WEBUI_URL="http://localhost:3000" -e WEBUI_AUTH="true" -e ENABLE_LOGIN_FORM="true" -e ENABLE_OAUTH_SIGNUP="true" -e OAUTH_CLIENT_ID="VgRJpSTD-SYK8-5sQSImqTtkhXO4N1oLNqXvY8DZnkI" -e OAUTH_CLIENT_SECRET="29Tm7YByg-AptEP_ZL-mI-sd80RDbbIadUldeFbNZmI" -e OPENID_PROVIDER_URL="http://localhost:3001/.well-known/openid-configuration" -e OAUTH_PROVIDER_NAME="MySaaS" -e OAUTH_SCOPES="openid email profile" -e OPENAI_API_KEY=ADD_YOUR_KEY_HERE -e OAUTH_REDIRECT_URI="http://localhost:3000/oauth/oidc/callback" ghcr.io/open-webui/open-webui:main
+# OwSyncJob.ow_docker_cmd
+# This will return the docker cmd to run to setup OW UI to use OICD with CapHive
 
 Doorkeeper.configure do
   # Change the ORM that doorkeeper will use (requires ORM extensions installed).
