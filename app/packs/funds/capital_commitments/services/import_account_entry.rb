@@ -1,5 +1,5 @@
 class ImportAccountEntry < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Rule For", "Parent Type", "Parent Id", "Cumulative"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Rule For", "Parent Type", "Parent Id"].freeze
   attr_accessor :account_entries
 
   def standard_headers
@@ -42,6 +42,7 @@ class ImportAccountEntry < ImportUtil
         account_entry.import_upload_id = import_upload.id
 
         custom_field_headers.delete("Ref Id")
+        custom_field_headers.delete("Cumulative") 
         setup_custom_fields(user_data, account_entry, custom_field_headers)
 
         account_entry.save!
