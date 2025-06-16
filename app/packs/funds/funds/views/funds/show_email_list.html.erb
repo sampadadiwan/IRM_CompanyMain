@@ -26,19 +26,23 @@
 <% if @commitments_wo_access_rights.present? %>
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"> Fund Investors without Access Rights</h3>
+        <h3 class="card-title"> Folios / Fund Investors without Access Rights</h3>
     </div>
     <div class="card-body">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Investor Name</th>                    
+                    <th>Folio</th>
+                    <th>Investor Name</th>  
+                    <th>Access Rights</th>                 
                 </tr>
             </thead>
             <tbody>
                 <% @commitments_wo_access_rights.each do |capital_commitment| %>
                     <tr>
+                        <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
                         <td><%= link_to capital_commitment.investor %></td>
+                        <td><%= link_to "Grant", fund_path(capital_commitment.fund_id, tab: "access-rights-tab"), class: "btn btn-outline-primary" %>
                     </tr>
                 <% end %>
             </tbody>
@@ -50,18 +54,20 @@
 <% if @commitment_wo_investor_accesses.present? %>
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"> Fund Investors without Investor Access </h3>
+        <h3 class="card-title"> Folios / Fund Investors without Investor Access </h3>
     </div>
     <div class="card-body">
         <table class="table table-striped">
             <thead>
                 <tr>
+                    <th>Folio</th>
                     <th>Investor Name</th>
                 </tr>
             </thead>
             <tbody>
                 <% @commitment_wo_investor_accesses.each do |capital_commitment| %>
                     <tr>
+                        <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
                         <td><%= link_to capital_commitment.investor %></td>
                     </tr>
                 <% end %>

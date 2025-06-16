@@ -213,9 +213,9 @@ class FundsController < ApplicationController
     # This is the commitments that do not have investor access for the investor in this fund
     @commitment_wo_investor_accesses = @fund.capital_commitments.where(investor_id: @fund.investors.without_investor_accesses.select(:id)).includes(:investor)
     # This is the investor accesses that are not approved
-    @unapproved_investor_accesses = @fund.investor_accesses.unapproved.includes(:user, :granter)
+    @unapproved_investor_accesses = @fund.investor_accesses.unapproved.includes(:user, :granter).uniq
     # This is the investor accesses that are email disabled
-    @email_disabled_investor_accesses = @fund.investor_accesses.email_disabled.includes(:user, :granter)
+    @email_disabled_investor_accesses = @fund.investor_accesses.email_disabled.includes(:user, :granter).uniq
   end
 
   private
