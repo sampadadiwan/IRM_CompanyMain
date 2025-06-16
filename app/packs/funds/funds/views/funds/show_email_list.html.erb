@@ -70,3 +70,16 @@
     </div>
 </div>
 <% end %>
+
+<% if @unapproved_investor_accesses.blank? && @email_disabled_investor_accesses.blank? && @commitments_wo_access_rights.blank? && @commitment_wo_investor_accesses.blank? %>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"> No Errors </h3>
+    </div>
+    <div class="card-body">
+        <p>All fund investors will be sent notifications.</p>
+    </div>
+</div>
+
+<% end %>
