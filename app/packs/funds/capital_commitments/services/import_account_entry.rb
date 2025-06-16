@@ -42,7 +42,7 @@ class ImportAccountEntry < ImportUtil
         account_entry.import_upload_id = import_upload.id
 
         custom_field_headers.delete("Ref Id")
-        custom_field_headers.delete("Cumulative") 
+        custom_field_headers.delete("Cumulative")
         setup_custom_fields(user_data, account_entry, custom_field_headers)
 
         account_entry.save!

@@ -95,6 +95,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def show_email_list?
+    update?
+  end
+
   def delete_all?
     user.has_cached_role?(:company_admin) && permissioned_employee?(:update)
   end

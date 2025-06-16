@@ -57,6 +57,8 @@ class Fund < ApplicationRecord
   has_many :commitment_adjustments, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :investor_kycs, through: :capital_commitments
+  has_many :committed_investors, through: :capital_commitments, source: :investor
+  has_many :investor_accesses, through: :committed_investors
 
   has_many :fund_formulas, dependent: :destroy
 

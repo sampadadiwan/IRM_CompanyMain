@@ -1,0 +1,72 @@
+
+
+<% if @unapproved_investor_accesses.present? %>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"> Unapproved Investor Access </h3>
+    </div>
+    <div class="card-body">
+        <%= render "/investor_accesses/table", investor_accesses: @unapproved_investor_accesses %>
+    </div>
+</div>
+<% end %>
+
+<% if @email_disabled_investor_accesses.present? %>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"> Email Disabled Investor Access </h3>
+    </div>
+    <div class="card-body">
+        <%= render "/investor_accesses/table", investor_accesses: @email_disabled_investor_accesses %>
+    </div>
+</div>
+<% end %> 
+
+
+<% if @commitments_wo_access_rights.present? %>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"> Fund Investors without Access Rights</h3>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Investor Name</th>                    
+                </tr>
+            </thead>
+            <tbody>
+                <% @commitments_wo_access_rights.each do |capital_commitment| %>
+                    <tr>
+                        <td><%= link_to capital_commitment.investor %></td>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% end %>
+
+<% if @commitment_wo_investor_accesses.present? %>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"> Fund Investors without Investor Access </h3>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Investor Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @commitment_wo_investor_accesses.each do |capital_commitment| %>
+                    <tr>
+                        <td><%= link_to capital_commitment.investor %></td>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% end %>

@@ -52,6 +52,10 @@ class InvestorAccess < ApplicationRecord
     where("investor_accesses.email_enabled=?", true)
   }
 
+  scope :email_disabled, lambda {
+    where("investor_accesses.email_enabled=?", false)
+  }
+
   scope :approved_for, lambda { |user, entity|
                          where("investor_accesses.user_id=? and investor_accesses.entity_id=? and investor_accesses.approved=?", user.id, entity.id, true)
                        }
@@ -126,7 +130,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at email first_name granted_by last_name phone whatsapp_enabled].sort
+    %w[approved created_at email first_name granted_by last_name phone whatsapp_enabled email_enabled].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

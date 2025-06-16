@@ -108,6 +108,7 @@ class Investor < ApplicationRecord
   scope :not_portfolio_companies, -> { where.not(category: "Portfolio Company") }
   scope :not_advisors, -> { where.not(category: "Investor Advisor") }
   scope :not_rms, -> { where.not(category: "RM") }
+  scope :without_investor_accesses, -> { where(investor_access_count: 0) }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
   scope :not_interacted, ->(no_of_days) { where(last_interaction_date: ...(Time.zone.today - no_of_days.days)) }

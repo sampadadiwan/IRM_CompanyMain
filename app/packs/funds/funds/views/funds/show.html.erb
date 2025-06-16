@@ -294,6 +294,11 @@ commands = [
                         <% end %>
                       </li>
                       <li>
+                        <%= link_to show_email_list_fund_path(@fund), class: "dropdown-item" do %>
+                          <i class="ti ti-lock-access"></i>Show Email List
+                        <% end %>
+                      </li>
+                      <li>
                         <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton" do %>
                           <i class="ti ti-barcode"></i>Generate Tracking Numbers
                         <% end %>

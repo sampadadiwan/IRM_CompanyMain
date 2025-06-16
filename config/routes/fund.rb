@@ -114,6 +114,7 @@ resources :funds do
   delete 'delete_all', on: :member
   get 'dashboard', on: :member
   post 'generate_tracking_numbers', on: :member
+  get 'show_email_list', on: :member
 end
 
 resources :fund_snapshots, controller: "funds", defaults: { snapshot: true }

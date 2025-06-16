@@ -70,20 +70,19 @@ class OwSyncJob < ApplicationJob
   def self.ow_docker_cmd
     doorkeeper_app = Doorkeeper::Application.find_by(name: "OpenWebUI")
     doorkeeper_app ||= Doorkeeper::Application.create!(name: "OpenWebUI",
-                  redirect_uri: "#{ENV['OPEN_WEB_UI_URL']}/oauth/oidc/callback", # match where OpenWebUI runs
-                  scopes: "openid email profile")
+                                                       redirect_uri: "#{ENV.fetch('OPEN_WEB_UI_URL', nil)}/oauth/oidc/callback", # match where OpenWebUI runs
+                                                       scopes: "openid email profile")
 
-    doorkeeper_app.update_column(:redirect_uri, "#{ENV['OPEN_WEB_UI_URL']}/oauth/oidc/callback")
+    doorkeeper_app.update_column(:redirect_uri, "#{ENV.fetch('OPEN_WEB_UI_URL', nil)}/oauth/oidc/callback")
 
-    ow_url = ENV['OPEN_WEB_UI_URL']
+    ow_url = ENV.fetch('OPEN_WEB_UI_URL', nil)
     # Get the port number from the URL if it exists, otherwise default to 80
-    ow_port = ow_url.match(/:(\d+)/) ? ow_url.match(/:(\d+)/)[1] : 80
-                  
+    ow_port = /:(\d+)/.match?(ow_url) ? ow_url.match(/:(\d+)/)[1] : 80
 
     docker_cmd = <<~TEXT
       docker run -d --name open-webui -p #{ow_port}:8080 --add-host=localhost:host-gateway \
       -v open-webui:/app/backend/data \
-      -e WEBUI_URL="#{ENV['OPEN_WEB_UI_URL']}" \
+      -e WEBUI_URL="#{ENV.fetch('OPEN_WEB_UI_URL', nil)}" \
       -e WEBUI_SESSION_COOKIE_SAME_SITE="none" \
       -e WEBUI_SESSION_COOKIE_SECURE="true" \
       -e WEBUI_AUTH_COOKIE_SAME_SITE="none" \
@@ -94,7 +93,7 @@ class OwSyncJob < ApplicationJob
       -e ENABLE_OAUTH_SIGNUP="true" \
       -e OAUTH_CLIENT_ID="#{doorkeeper_app.uid}" \
       -e OAUTH_CLIENT_SECRET="#{doorkeeper_app.secret}" \
-      -e OPENID_PROVIDER_URL="#{ENV['BASE_URL']}/.well-known/openid-configuration" \
+      -e OPENID_PROVIDER_URL="#{ENV.fetch('BASE_URL', nil)}/.well-known/openid-configuration" \
       -e OAUTH_PROVIDER_NAME="CapHive" \
       -e OAUTH_SCOPES="openid email profile" \
       -e DEFAULT_USER_ROLE="user" \
@@ -103,7 +102,6 @@ class OwSyncJob < ApplicationJob
       -e OAUTH_REDIRECT_URI="#{doorkeeper_app.redirect_uri}" \
       ghcr.io/open-webui/open-webui:main
     TEXT
-                
 
     docker_cmd.strip
   end

@@ -1,5 +1,5 @@
 Doorkeeper::OpenidConnect.configure do
-  issuer ENV["BASE_URL"]
+  issuer ENV.fetch("BASE_URL", nil)
 
   signing_key Rails.application.credentials.oidc_private_key
 
@@ -14,9 +14,8 @@ Doorkeeper::OpenidConnect.configure do
     User.find_by(id: access_token.resource_owner_id)
   end
 
-  discovery_url_options do |request|
-
-    base_url = ENV["BASE_URL"]
+  discovery_url_options do |_request|
+    base_url = ENV.fetch("BASE_URL", nil)
     # set the protocol based on the base_url protocol
     protocol = base_url.start_with?("https") ? :https : :http
     {
@@ -25,9 +24,8 @@ Doorkeeper::OpenidConnect.configure do
       revocation: { protocol: }, # Or :http
       introspection: { protocol: }, # Or :http
       userinfo: { protocol: }, # Or :http
-      jwks: { protocol: }, # Or :http
+      jwks: { protocol: } # Or :http
     }
-    
   end
 
   auth_time_from_resource_owner do |resource_owner|

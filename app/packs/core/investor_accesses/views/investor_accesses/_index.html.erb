@@ -39,56 +39,10 @@
 </div>
   
 
-<%= turbo_frame_tag "new_investor_access" do %>
-<% end %>
+
 
 <div class="table-responsive" data-controller="datatable">
 
-    <table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
-        <thead>
-            <tr>
-                <% if params[:show_investor_name].present? %>
-                    <th>
-                        Stakeholder
-                    </th>
-                <% end %>
-                <th>
-                    User
-                </th>
-                <th>
-                    Type
-                </th>
-                <th>
-                    Email
-                </th>
-                <th>
-                    Email Enabled
-                </th>
-                <th>
-                    Phone
-                </th>
-                <th>
-                    WhatsApp Enabled (Entity)
-                </th>
-                <th>
-                    WhatsApp Enabled (User)
-                </th>
-                <th>
-                    Approved
-                </th>
-                <th>
-                    Granted By
-                </th>
-
-                <th>
-                </tr>
-            </tr>
-        </thead>
-        <tbody id="investor_accesses_table_body">
-            <% investor_accesses.each do |investor_access| %>
-                <%= render "/investor_accesses/investor_access", investor_access: %>
-            <% end %>
-        </tbody>
-    </table>
+    <%= render "/investor_accesses/table", investor_accesses: investor_accesses %>
 
 </div>
