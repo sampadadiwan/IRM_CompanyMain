@@ -1,0 +1,10 @@
+<tr id="<%= dom_id doc_share %>">
+  <td><%= doc_share.email %></td>
+  <td><%= display_boolean doc_share.email_sent %></td>
+  <td><%= l doc_share.viewed_at if doc_share.viewed_at %></td>
+  <td><%= doc_share.view_count %></td>
+  <td>
+    <%= link_to "Show", doc_share, class: "btn btn-outline-info" %>
+    <%= link_to "Edit", edit_doc_share_path(doc_share), class: "btn btn-outline-primary" %>
+  </td>
+</tr>

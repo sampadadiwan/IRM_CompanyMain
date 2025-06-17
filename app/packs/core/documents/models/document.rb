@@ -22,6 +22,7 @@ class Document < ApplicationRecord
   has_many :e_signatures, dependent: :destroy
   has_one :esign_log, dependent: :destroy
   has_many :viewed_bies, as: :owner, dependent: :destroy
+  has_many :doc_shares, dependent: :destroy
   belongs_to :user
 
   belongs_to :entity
@@ -37,6 +38,7 @@ class Document < ApplicationRecord
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
   # counter_culture :entity
   # counter_culture :folder
+  # counter_culture :doc_shares # Uncomment if doc_shares_count column is added to documents table
 
   has_rich_text :text
 

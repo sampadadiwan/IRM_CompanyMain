@@ -1,0 +1,29 @@
+<%= render FormCard.new(title: "Doc Share: #{doc_share.email.presence || 'New'}") do %>
+  <%= form_with(model: doc_share, validate: false, format: :html) do |form| %>
+    <% if doc_share.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(doc_share.errors.count, "error") %> prohibited this doc_share from being saved:</h2>
+
+        <ul>
+          <% doc_share.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :email %>
+      <%= form.text_field :email, class: "form-control", required: true %>
+      <span class="form-text text-muted">
+        The email address to share the document with. Multiple emails can be separated by commas.
+      </span>
+    </div>
+
+    <%= form.hidden_field :document_id, class: "form-control" %>
+   
+    <div class="form-group">
+      <%= form.submit "Share", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+<% end %>

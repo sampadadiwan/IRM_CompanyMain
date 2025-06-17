@@ -1,3 +1,4 @@
+<% @doc_share ||= nil %>
 <div id="pdf_viewer" data-controller="pdf" class="card">
 
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
@@ -5,6 +6,8 @@
 
    <% if current_user %>
       <input id="viewer_watermark" value="<%= current_user.entity.name %>" hidden="hidden" />
+   <% elsif @doc_share.present? %>
+      <input id="viewer_watermark" value="<%= @doc_share.email %>" hidden="hidden" />
    <% end %>
 
    <div class="card-header d-none d-sm-block">

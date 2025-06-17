@@ -140,6 +140,9 @@ Then(/^the user receives an email with "([^"]*)" in the subject$/) do |subject|
   open_email(@user.email)
   expect(current_email.subject).to include subject
 end
+Then('the email body should contain {string}') do |body_content|
+  expect(current_email.body).to include(body_content)
+end
 
 Then('the investor receives an email with {string} in the subject') do |subject|
   user = InvestorAccess.includes(:user).first.user

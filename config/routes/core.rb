@@ -147,6 +147,12 @@ resources :documents do
   post 'approve', on: :collection
   post 'bulk_actions', on: :collection
   patch 'send_document_notification', on: :member
+  post 'share_by_email', on: :member # New route for sharing documents by email
+end
+
+# Top-level route for viewing shared documents
+resources :doc_shares do
+  get 'view', on: :collection
 end
 
 resources :entities do

@@ -1,3 +1,16 @@
+V9.0.56
+#####################################
+e1503ee5d Changed cumulative field for AccountEntry to be not mandatory for import
+
+V9.0.55
+#####################################
+3487f2ca1 Added oidc key to staging
+7aa7ce4a6 Backup
+0f4a4fa79 Added cumulative column
+94f6c8b13 Added ability to generate docker cmd for OW Ui
+60c74b910 OIDC - OW UI login with CAphive (#866)
+2e1e4acf3 Distributio of pis (#864)
+
 V9.0.52
 #####################################
 46e01d480 Allocate master fund account entry by name (#863)

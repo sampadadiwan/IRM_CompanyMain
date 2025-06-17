@@ -14,6 +14,7 @@
 /db/wal-g/*
 
 ~*.docx
+mcp.json
 
 /.aider.tags.cache.v3
 .aider*
@@ -83,3 +84,23 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Added by Task Master AI
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+# Environment variables
+.env
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific

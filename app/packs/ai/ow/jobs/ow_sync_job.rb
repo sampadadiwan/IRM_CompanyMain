@@ -67,6 +67,7 @@ class OwSyncJob < ApplicationJob
     end
   end
 
+  # rubocop:disable Rails/SkipsModelValidations
   def self.ow_docker_cmd
     doorkeeper_app = Doorkeeper::Application.find_by(name: "OpenWebUI")
     doorkeeper_app ||= Doorkeeper::Application.create!(name: "OpenWebUI",
@@ -80,13 +81,11 @@ class OwSyncJob < ApplicationJob
     ow_port = /:(\d+)/.match?(ow_url) ? ow_url.match(/:(\d+)/)[1] : 80
 
     docker_cmd = <<~TEXT
-      docker run -d --name open-webui -p #{ow_port}:8080 --add-host=localhost:host-gateway \
+      docker run --rm -d --name open-webui -p #{ow_port}:8080 --add-host=localhost:host-gateway \
       -v open-webui:/app/backend/data \
-      -e WEBUI_URL="#{ENV.fetch('OPEN_WEB_UI_URL', nil)}" \
       -e WEBUI_SESSION_COOKIE_SAME_SITE="none" \
-      -e WEBUI_SESSION_COOKIE_SECURE="true" \
       -e WEBUI_AUTH_COOKIE_SAME_SITE="none" \
-      -e WEBUI_AUTH_COOKIE_SECURE="true" \
+      -e WEBUI_URL="#{ENV.fetch('OPEN_WEB_UI_URL', nil)}" \
       -e WEBUI_AUTH="true" \
       -e ENABLE_LOGIN_FORM="true" \
       -e ENABLE_SIGNUP="false" \
@@ -105,4 +104,5 @@ class OwSyncJob < ApplicationJob
 
     docker_cmd.strip
   end
+  # rubocop:enable Rails/SkipsModelValidations
 end

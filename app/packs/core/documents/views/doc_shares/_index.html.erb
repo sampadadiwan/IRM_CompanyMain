@@ -1,0 +1,28 @@
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Doc Shares
+      </h6>
+      <span>
+        <%= link_to "New", new_doc_share_path(document_id: document.id), class: "btn btn-outline-primary" if document %>  
+      </span>
+    </div>
+    
+    <div class="table-responsive" data-controller="datatable">
+        <table class="table table-bordered dataTable jqDataTable">
+            <thead>
+            <tr>
+                <th>Email</th>
+                <th>Email Sent</th>
+                <th>Viewed At</th>
+                <th>View Count</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <% doc_shares.each do |doc_share| %>
+                <%= render doc_share %>
+            <% end %>
+            </tbody>
+        </table>
+      </div>
+

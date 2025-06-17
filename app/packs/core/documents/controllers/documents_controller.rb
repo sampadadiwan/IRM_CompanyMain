@@ -281,6 +281,17 @@ class DocumentsController < ApplicationController
     redirect_to document_url(@document), alert: e.message
   end
 
+  def share_by_email
+    authorize @document, :share_by_email? # Authorize the action
+    result = DocShareCreationService.wtf?(document: @document, emails: document_params[:emails], user_id: current_user.id)
+
+    if result.success?
+      redirect_to document_url(@document), notice: "Document shared successfully with selected emails."
+    else
+      redirect_to document_url(@document), alert: "Failed to share document: #{result.errors}"
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -348,7 +359,7 @@ class DocumentsController < ApplicationController
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved, :approved_by_id,
-                                     :tag_list, :folder_id, :file, :force_esign_order, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
+                                     :tag_list, :folder_id, :file, :force_esign_order, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy], emails: [])
   end
 end
 # rubocop:enable Metrics/ClassLength

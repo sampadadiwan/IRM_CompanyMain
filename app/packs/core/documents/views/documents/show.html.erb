@@ -46,7 +46,7 @@
                   <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
                   <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
 
-                  <% if @document.entity_id == current_user&.entity_id %>
+               <% if @document.entity_id == current_user&.entity_id %>
 
                   <tr>
                      <td>
@@ -134,7 +134,7 @@
 
                   <%= display_custom_fields(@document) if current_user %>
 
-                  <% end %>
+               <% end %>
 
                   <% if @document.text.present? %>
                   <tr>

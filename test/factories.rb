@@ -680,6 +680,12 @@ FactoryBot.define do
 
 
 
+  factory :folder do
+    name { Faker::File.dir }
+    entity { Entity.all.sample }
+    folder_type { :regular }
+  end
+
   factory :document do
     name { "Fact Sheet,Cap Table,Latest Financials,Conversion Stats,Deal Sheet".split(",").sample }
     text { Faker::Company.catch_phrase }
@@ -814,6 +820,12 @@ FactoryBot.define do
         ])
       end
     end
+  end
 
+  factory :doc_share do
+    document {Document.first} # Ensure a document is created and associated
+    email { Faker::Internet.email }
+    email_sent { false }
+    view_count { 0 }
   end
 end
