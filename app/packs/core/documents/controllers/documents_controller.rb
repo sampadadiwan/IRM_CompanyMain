@@ -34,11 +34,8 @@ class DocumentsController < ApplicationController
 
       @documents = if @folder.entity_id == current_user.entity_id
                      policy_scope(Document)
-                   elsif Pundit.policy(current_user, @folder).show? || (@folder.owner && Pundit.policy(current_user, @folder.owner).show?) || Folder.for_investor(current_user, @entity).where(id: @folder.id).present?
-                     # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
-                     Document.for_investor(current_user, @folder.entity).not_template
                    else
-                     Document.none
+                     Document.for_investor(current_user, @folder.entity).not_template
                    end
 
       @documents = if params[:no_folders].present? || (params[:show_root_docs].presence && current_user.has_cached_role?(:company_admin) && current_user.entity_id == @entity.id)
