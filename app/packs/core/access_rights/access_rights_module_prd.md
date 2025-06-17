@@ -50,12 +50,56 @@ The Access Rights module is a core component responsible for managing and enforc
     *   `get_cached_access_rights_permissions`: Retrieves cached permissions for a specific entity, owner type, and owner ID.
     *   `get_cached_ids`: Retrieves cached owner IDs for a given entity and owner type, or all IDs for an owner type across all entities.
 
+### 3.4 `ForInvestor` Concern (`app/packs/core/investors/models/concerns/for_investor.rb`)
+
+The `ForInvestor` concern is a critical component for enforcing data access based on user roles and granted permissions. It defines dynamic ActiveRecord scopes that filter records to ensure users only interact with data they are authorized to see. This concern is included in various models that represent or are associated with investor-related data.
+
+#### 3.4.1 `parent_class_type` Method
+
+*   **Purpose:** This class method dynamically determines the primary "parent" model type (e.g., `Fund`, `InvestmentOpportunity`, `SecondarySale`) for a given model. Access rights are typically defined at the level of these parent entities, and this method ensures that the correct table is joined for access checks.
+*   **Mechanism:** It contains a mapping of various models (e.g., `CapitalCommitment`, `ExpressionOfInterest`, `Offer`) to their respective parent classes. If a model is not explicitly mapped, it defaults to itself as the parent. This allows for flexible and accurate join conditions in the access scopes.
+
+#### 3.4.2 Access Scopes
+
+The concern provides four distinct scopes, each designed to filter records according to specific user roles and their associated access rights:
+
+*   **`scope :for_company_admin, lambda { |user| ... }`**
+    *   **Functionality:** Grants broad access to Company Administrators.
+    *   **Logic:** Filters records based on the `entity_id` of the `parent_class_type`. If the user's entity is a "Group Company", it includes records from all child entities. Otherwise, it restricts to the user's specific entity. This scope does not rely on explicit `AccessRight` or `InvestorAccess` records, as Company Admins inherently have full control within their designated entity hierarchy.
+
+*   **`scope :for_employee, lambda { |user| ... }`**
+    *   **Functionality:** Provides access for regular employees.
+    *   **Logic:** Filters records by the `entity_id` (similar to company admin) and, crucially, by a list of `cached_ids` retrieved from the user's `AccessRightsCache`. These `cached_ids` represent the specific parent entities (e.g., Funds, Deals) for which the employee has been explicitly granted access rights. This ensures that employees only view data they are authorized for, leveraging the performance benefits of the caching mechanism.
+
+*   **`scope :for_rm, lambda { |user| ... }` (Relationship Manager)**
+    *   **Functionality:** Manages access for Relationship Managers.
+    *   **Logic:** This is the most complex scope, dynamically constructing database joins based on whether the current model has direct `access_rights` or an `investor` association. It applies filters using `AccessRight.access_filter_for_rm` (for models with investor association) or `AccessRight.access_filter` (for others), and further restricts by the RM's `entity_id` via `rm_mappings` or `investors` tables. Additionally, it merges `InvestorAccess.approved_for_user` to ensure that the underlying investor access is approved, and may filter by `user_id` for records directly created by the RM.
+
+*   **`scope :for_investor, lambda { |user| ... }`**
+    *   **Functionality:** Controls access for Investors and Investor Advisors.
+    *   **Logic:** Determines the appropriate `AccessRight` filter (`investor_granted_access_filter` for advisors, `access_filter` for direct investors). It dynamically joins tables to reach the `AccessRight` and `Investor` models. Records are filtered by the `investors.investor_entity_id` (linking to the investor's entity) and are further restricted by merging `InvestorAccess.approved_for_user`, which is essential for validating the investor's overall access to the relevant entities.
+
+#### 3.4.3 `model_with_access_rights` Method
+
+*   **Purpose:** This instance method returns the specific parent model instance (e.g., a `Fund` object for a `CapitalCommitment` record) that is responsible for holding the `access_rights` association.
+*   **Mechanism:** It uses a mapping similar to `parent_class_type` but operates on an instance, returning the associated object (e.g., `fund`, `investment_opportunity`, `secondary_sale`). This is useful for policy checks or other logic that needs to directly query or interact with the entity where access permissions are defined.
+
+#### 3.4.4 Integration Summary and `ApplicationPolicy` Usage
+
+The `ForInvestor` concern directly implements the granular access control and role-based logic outlined in this PRD. It ensures that data visibility is strictly enforced at the database query level, leveraging the `AccessRightsCache` for performance and integrating seamlessly with the `AccessRight` and `InvestorAccess` models to provide a robust and secure access control system.
+
+The `ApplicationPolicy` (`app/packs/core/base/policies/application_policy.rb`) further utilizes the `ForInvestor` concern's capabilities:
+
+*   **`policy_scope`:** In specific policies inheriting from `ApplicationPolicy`, the `policy_scope` method (via `Pundit.policy_scope!`) applies the relevant `ForInvestor` scopes (e.g., `for_company_admin`, `for_employee`) to filter collections of records at the database level based on the user's role and permissions.
+*   **`get_model_with_access_rights`:** This helper method within `ApplicationPolicy` directly calls `record.model_with_access_rights` (from `ForInvestor`) to identify the correct parent entity for access checks.
+*   **Permission Check Methods:** Methods like `permissioned_employee?`, `permissioned_investor?`, and `permissioned_rm?` in `ApplicationPolicy` use `get_model_with_access_rights` and `user.get_cached_access_rights_permissions` to perform runtime authorization checks against the user's cached access rights for the identified parent entity.
+
 ## 4. User Stories and Use Cases
 
 ### 4.1 Administrator/Company Admin
 
 *   **User Story:** As a Company Admin, I want to grant a new employee read-only access to specific fund documents so they can review them without making changes.
-    *   **Use Case:** The Company Admin navigates to the employee's profile, selects the "Access Rights" section, chooses the relevant fund documents, and assigns "read" permission.
+    *   **Use Case:** The Company Admin adds access rights to the fund, sale, document from the show page.
 *   **User Story:** As a Company Admin, I want to import a list of 50 new investors and automatically assign them read access to all public reports.
     *   **Use Case:** The Company Admin prepares a CSV file with investor IDs and report IDs, uses the bulk import feature, and verifies the successful assignment of access rights.
 
@@ -100,3 +144,6 @@ The Access Rights module is a core component responsible for managing and enforc
     *   Robust logging for access rights related events and errors.
 *   **Scalability:**
     *   The caching mechanism should be designed to handle a large number of users, entities, and access rights without significant performance degradation.
+
+    
+    
