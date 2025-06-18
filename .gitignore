@@ -14,6 +14,8 @@
 /db/wal-g/*
 
 ~*.docx
+.DS_Store
+DS_Store
 mcp.json
 
 /.aider.tags.cache.v3

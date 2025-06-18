@@ -39,4 +39,16 @@ class ImportExchangeRate < ImportUtil
       notes: user_data["Notes"]
     }
   end
+
+  def post_process(_ctx, import_upload:, **)
+    super
+
+    import_upload.imported_data.latest.each do |exchange_rate|
+      # Ensure other dependent PIs get updated with this new exchange rate
+      ExchangeRatePortfolioInvestmentJob.perform_now(exchange_rate.id)
+
+      ExchangeRateCommitmentAdjustmentJob.perform_later(exchange_rate.id) if exchange_rate.entity.customization_flags.enable_exchange_rate_commitment_adjustment?
+    end
+    true
+  end
 end

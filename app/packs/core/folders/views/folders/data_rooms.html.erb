@@ -17,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      <% current_user.entity.investee_entities.each do |entity| %>
+      <% current_user.entity.investee_entities.where_permissions(:enable_data_rooms).each do |entity| %>
         <% if entity.data_room_folder %>
         <tr>
             <td>

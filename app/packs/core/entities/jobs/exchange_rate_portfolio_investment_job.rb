@@ -6,7 +6,7 @@ class ExchangeRatePortfolioInvestmentJob < ApplicationJob
       @exchange_rate = ExchangeRate.find(id)
       # Find all the portfolio_investments that are in the same currency as the exchange rate
       portfolio_investments = @exchange_rate.entity.portfolio_investments
-      portfolio_investments = portfolio_investments.joins(:investment_instrument).where(investment_instruments: { currency: @exchange_rate.from })
+      portfolio_investments = portfolio_investments.joins(:investment_instrument, :fund).where(investment_instruments: { currency: @exchange_rate.from }).where(funds: { currency: @exchange_rate.to })
 
       count = portfolio_investments.count
 
