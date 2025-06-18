@@ -1,3 +1,16 @@
+V9.0.57
+#####################################
+de0a81a0c Updated AE bulk insert to insert in batches of 10k (#870)
+d4f30e352 Added document text to doc shares email
+2152e8c82 Now doc shares is visible ony if enabled_data_rooms
+20d016920 Data rooms (#868)
+ee77ce877 Changed the documents view to show for_investor if user does not belong to entity
+b1b6d9b27 Fixed uniq index in doc_share, bug with multiple emails
+ffafe7506 DocShares (#867)
+1f405d5b6 Added better message when all investors will be sent notification from a fund
+693e0eade Added better email_list for funds
+e1503ee5d (tag: V9.0.56) Changed cumulative field for AccountEntry to be not mandatory for import
+
 V9.0.56
 #####################################
 e1503ee5d Changed cumulative field for AccountEntry to be not mandatory for import
