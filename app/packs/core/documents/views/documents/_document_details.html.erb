@@ -21,10 +21,13 @@
             data-action="click->tabdetails#loadData">
           Viewed By
         </a>
+
+        <% if document.entity.enable_data_rooms %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#shares-tab"
             data-action="click->tabdetails#loadData">
           Shares
         </a>
+        <% end %>
       <% end %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
@@ -79,7 +82,7 @@
           </div>
         <% end %>
 
-        <% if document.entity_id == current_user&.entity_id %>
+        <% if document.entity_id == current_user&.entity_id && document.entity.enable_data_rooms %>
           <div id="shares-tab" class="tab-pane fade">
             <div id="doc_shares" class="associated_entity">
               <%= render "doc_shares/index", doc_shares: policy_scope(document.doc_shares), document:  %>
