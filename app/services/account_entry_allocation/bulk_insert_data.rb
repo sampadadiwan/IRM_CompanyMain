@@ -15,8 +15,13 @@ module AccountEntryAllocation
       bulk_records = ctx[:bulk_insert_records] || []
 
       if bulk_records.present?
-        # Insert the bulk records
-        AccountEntry.insert_all(bulk_records)
+        # Insert the bulk records in batches
+        # inserting all at once exceeds the max_allowed_packet of 64 mb and gives the error - Mysql2::Error::ConnectionError: Got a packet bigger than 'max_allowed_packet' bytes
+        # 10k AE records is around 12.5mb which avoids the error
+        bulk_records.each_slice(10_000) do |batch|
+          AccountEntry.insert_all(batch)
+        end
+
         # Calculate the number of existing records
         total_record_count   = fund.account_entries.generated.reload.count
         # Calculate the number of inserted records
