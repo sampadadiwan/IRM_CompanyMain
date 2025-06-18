@@ -25,6 +25,7 @@ class Entity < ApplicationRecord
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
   has_rich_text :details
+  belongs_to :root_folder, class_name: "Folder", optional: true
   belongs_to :parent_entity, class_name: "Entity", optional: true
   has_many :children, class_name: "Entity", foreign_key: "parent_entity_id", dependent: :destroy
 
@@ -64,7 +65,8 @@ class Entity < ApplicationRecord
 
   # List of investors where this entity is an investor
   has_many :investees, foreign_key: "investor_entity_id", class_name: "Investor", dependent: :destroy
-  has_many :investee_entities, through: :investees
+  has_many :investee_entities, through: :investees, source: :entity
+
   has_many :notes, dependent: :destroy
   has_many :folders, dependent: :destroy
   has_many :exchange_rates, dependent: :destroy
@@ -165,8 +167,8 @@ class Entity < ApplicationRecord
     investors.is_trust.first
   end
 
-  def root_folder
-    folders.where(level: 0).first
+  def data_room_folder
+    root_folder.children.where(name: "Data Room", level: 1).first
   end
 
   def advisor?(user)

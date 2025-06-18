@@ -1,11 +1,15 @@
 class FoldersController < ApplicationController
   before_action :set_folder, only: %i[show edit update destroy download generate_report generate_qna]
+  after_action :verify_authorized, except: %i[index data_rooms]
 
   # GET /folders or /folders.json
   def index
     @folders = policy_scope(Folder).order("full_path").includes(:parent)
     @folders = @folders.not_system if params[:all].blank?
   end
+
+  # Returns a list of data_rooms for the current user
+  def data_rooms; end
 
   # GET /folders/1 or /folders/1.json
   def show; end

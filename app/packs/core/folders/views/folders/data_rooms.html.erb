@@ -1,0 +1,32 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Data Rooms</h1>
+    <span>
+      
+    </span>
+</div>
+  
+<div data-controller="datatable">
+  
+  <table id="folders" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          <strong>Name</strong>
+        </th>
+        
+      </tr>
+    </thead>
+    <tbody>
+      <% current_user.entity.investee_entities.each do |entity| %>
+        <% if entity.data_room_folder %>
+        <tr>
+            <td>
+                <%= link_to entity.name, folder_documents_path(folder_id: entity.data_room_folder.id, entity_id: entity.id) %>
+            </td>
+        </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+
+</div>

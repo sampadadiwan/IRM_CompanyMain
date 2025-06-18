@@ -89,6 +89,7 @@ resources :folders do
   post 'generate_report', on: :member
   get 'generate_report', on: :member
   post 'generate_qna', on: :member
+  get 'data_rooms', on: :collection
 end
 
 resources :investor_accesses do

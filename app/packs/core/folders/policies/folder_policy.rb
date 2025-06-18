@@ -3,6 +3,10 @@ class FolderPolicy < ApplicationPolicy
     true
   end
 
+  def data_rooms?
+    true
+  end
+
   def show?
     if user.investor_advisor?
       belongs_to_entity?(user, record) && record.owner && Pundit.policy(user, record.owner).show?

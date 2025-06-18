@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_06_14_060913) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1081,6 +1081,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_060913) do
     t.index ["owner_type", "owner_id"], name: "index_doc_questions_on_owner"
   end
 
+  create_table "doc_shares", force: :cascade do |t|
+    t.string "email"
+    t.boolean "email_sent", default: false
+    t.datetime "viewed_at"
+    t.integer "view_count", default: 0
+    t.bigint "document_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_doc_shares_on_document_id"
+  end
+
   create_table "documents", force: :cascade do |t|
     t.string "name"
     t.string "visible_to", default: "--- []\n"
@@ -1197,10 +1208,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_060913) do
     t.integer "permissions"
     t.string "primary_email"
     t.integer "customization_flags", default: 0
+    t.bigint "root_folder_id"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
     t.index ["pan"], name: "index_entities_on_pan"
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
+    t.index ["root_folder_id"], name: "index_entities_on_root_folder_id"
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
 

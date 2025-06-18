@@ -480,19 +480,6 @@ Given('the fund has {string} capital distribution') do |count|
 end
 
 
-Then('user {string} have {string} access to his own fund') do |truefalse, accesses|
-
-  truefalse = "true" if truefalse == "yes"
-  truefalse = "false" if truefalse == "no"
-
-  puts "##### Checking #{ap @user} with roles #{ap @user.roles} access to funds with rights #{ap @fund.access_rights}"
-  accesses.split(",").each do |access|
-    acc = Pundit.policy(@user, @fund).send("#{access}?")
-    acc.to_s.should == truefalse
-  end
-end
-
-
 Given('the capital distributions are approved') do
   @fund.capital_distributions.each do |cc|
     cc.approved = true
@@ -1107,7 +1094,6 @@ Then('there should be correct units for the calls payment for each investor') do
     end
   end
 end
-
 
 Then('the corresponding distribution payments should be created') do
   CapitalDistributionPayment.count.should == CapitalCommitment.count
