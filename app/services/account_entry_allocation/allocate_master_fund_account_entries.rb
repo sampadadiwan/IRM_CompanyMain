@@ -50,8 +50,8 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
       # Get the master fund account entries for the given fund formula, grouped by folio_id
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.includes(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date).includes(:fund, :entity)
-      feeder_fund_account_entries = fund.account_entries.not_cumulative.includes(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date).includes(:fund, :entity)
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.where(reporting_date: start_date..end_date).includes(:fund, :entity, capital_commitment: :feeder_fund)
+      feeder_fund_account_entries = fund.account_entries.not_cumulative.where(reporting_date: start_date..end_date).includes(:fund, :entity, capital_commitment: :feeder_fund)
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
@@ -135,8 +135,9 @@ module AccountEntryAllocation
       master_fund = fund.master_fund
 
       # Fetch all account entries in the master fund allocated to commitments of the feeder fund
-      master_fund_account_entries = master_fund.account_entries.not_cumulative.includes(capital_commitment: :feeder_fund)
-                                               .where("funds.id = ? and account_entries.name = ?", fund.id, fund_formula.name)
+      master_fund_account_entries = master_fund.account_entries.not_cumulative
+                                               .includes(:fund, :entity, capital_commitment: :feeder_fund)
+                                               .where("account_entries.name = ?", fund_formula.name)
                                                .where(reporting_date: start_date..end_date)
 
       # Create a new AccountEntry object to aggregate the master fund account entries
