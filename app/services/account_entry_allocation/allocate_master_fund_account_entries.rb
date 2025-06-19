@@ -49,9 +49,16 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
-      # Get the master fund account entries for the given fund formula, grouped by folio_id
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.where(reporting_date: start_date..end_date).includes(:fund, :entity, capital_commitment: :feeder_fund)
-      feeder_fund_account_entries = fund.account_entries.not_cumulative.where(reporting_date: start_date..end_date).includes(:fund, :entity, capital_commitment: :feeder_fund)
+      # We need only the master_fund account entries of the commitments associated with the feeder fund, so inner join
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund)
+        .where(capital_commitments: {feeder_fund_id: fund.id})
+        .where(reporting_date: start_date..end_date)
+        .includes(:fund, :entity)
+
+      # We also need the feeder fund account entries to allocate
+      feeder_fund_account_entries = fund.account_entries.not_cumulative
+        .where(reporting_date: start_date..end_date)
+        .includes(:fund, :entity, capital_commitment: :feeder_fund)
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
