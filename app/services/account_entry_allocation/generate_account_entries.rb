@@ -60,6 +60,7 @@ module AccountEntryAllocation
         create_instance_variables(ctx)
         AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: nil, bdg:))
       rescue StandardError => e
+        Rails.logger.debug e.backtrace
         raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
       end
     end

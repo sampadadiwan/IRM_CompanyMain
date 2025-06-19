@@ -112,7 +112,7 @@ module AccountEntryAllocation
               raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
             end
 
-            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 500).zero? && (aidx + 1) > 100
+            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 500).zero? && (aidx + 1) > 500
           end
         end
 

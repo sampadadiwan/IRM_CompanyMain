@@ -14,7 +14,7 @@ class AccountEntryDeleteJob < ApplicationJob
       end
 
       message = "#{count} account entries were deleted by #{user.email}"
-      send_notification(message, user)
+      send_notification(message, user_id)
     end
   end
 end

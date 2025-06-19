@@ -5,7 +5,7 @@ module AccountEntryAllocation
   class AllocateEntry < AllocationBaseOperation
     step :allocate_entry
 
-    def allocate_entry(ctx, **)
+    def allocate_entry(ctx, parent:, **)
       # This is the sum of the account entries to allocate
       fund_account_entry = ctx[:fund_account_entry]
       # This is the original account entries that were summed
@@ -31,7 +31,7 @@ module AccountEntryAllocation
 
         begin
           create_instance_variables(ctx)
-          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: fund_account_entry.freeze, bdg: binding))
+          AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: parent, bdg: binding))
         rescue StandardError => e
           raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
         end

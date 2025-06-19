@@ -59,6 +59,7 @@ module AccountEntryAllocation
         entry_type: fund_formula.entry_type,
         generated: true,
         cumulative: true,
+        fund_formula: fund_formula,
         # Since this is a rollup, the rule_for is reporting
         rule_for: :reporting,
         amount_cents: sum_cents,

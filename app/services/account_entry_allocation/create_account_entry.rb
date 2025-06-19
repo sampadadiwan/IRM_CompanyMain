@@ -52,7 +52,7 @@ module AccountEntryAllocation
       account_entry.capital_commitment = capital_commitment
       account_entry.folio_id = capital_commitment&.folio_id
 
-      account_entry.parent = parent if account_entry.parent_id.nil? && account_entry.parent_id != parent.id
+      account_entry.parent = parent if account_entry.parent_id.nil? && account_entry.parent_id != parent&.id
       account_entry.generated       = true
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
@@ -68,7 +68,6 @@ module AccountEntryAllocation
       # account_entry.validate!
       account_entry.setup_defaults
       account_entry.run_callbacks(:save)
-      # account_entry.invoke_callbacks_for_import
 
       ae_attributes = account_entry.attributes.except("id", "created_at", "updated_at", "generated_deleted")
       ae_attributes[:created_at] = Time.zone.now
