@@ -6,7 +6,7 @@ class UserAlert < ApplicationRecord
   validates :level, length: { maximum: 8 }
 
   def broadcast
-    broadcast_replace_to [user, "user_alert"],
+    broadcast_replace_to "user_alert_#{user.id}",
                          partial: '/users/user_alert',
                          locals: { user_alert: self },
                          target: "user_alert",

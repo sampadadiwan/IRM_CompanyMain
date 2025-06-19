@@ -20,7 +20,7 @@ module AccountEntryAllocation
       # Sometimes the same fund formula is used to generate for multiple account entry names
       account_entry_names = fund_formula.meta_data_hash["account_entry_names"]&.split(",")&.map(&:strip) if fund_formula.meta_data_hash.present?
 
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
         fields = commitment_cache.computed_fields_cache(capital_commitment, start_date)
 

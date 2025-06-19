@@ -18,7 +18,7 @@ module AccountEntryAllocation
 
       portfolio_investments = fund.portfolio_investments.where(investment_date: ..end_date)
 
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments.each do |portfolio_investment|

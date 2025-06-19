@@ -45,10 +45,14 @@ module AccountEntryAllocation
       explain        = ctx[:explain]
       bulk_records   = ctx[:bulk_insert_records] || []
 
+      # This skips the with_custom_fields before_save callback, which is used to compute custom fields
+      account_entry.skip_cf_before_save = true
+      account_entry.form_type_id = ctx[:form_type_id]
+
       account_entry.capital_commitment = capital_commitment
       account_entry.folio_id = capital_commitment&.folio_id
 
-      account_entry.parent ||= parent
+      account_entry.parent = parent if account_entry.parent_id.nil?
       account_entry.generated       = true
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
@@ -61,8 +65,10 @@ module AccountEntryAllocation
       account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explain && fund_formula.explain
 
       # Validate and simulate save
-      account_entry.validate!
+      # account_entry.validate!
+      account_entry.setup_defaults
       account_entry.run_callbacks(:save)
+      # account_entry.invoke_callbacks_for_import
 
       ae_attributes = account_entry.attributes.except("id", "created_at", "updated_at", "generated_deleted")
       ae_attributes[:created_at] = Time.zone.now

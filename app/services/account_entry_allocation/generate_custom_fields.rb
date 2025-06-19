@@ -16,7 +16,7 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
 
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         # Possibly retrieve the relevant FundUnitSetting for each commitment
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 

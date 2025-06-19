@@ -57,4 +57,7 @@ Rails.application.configure do
   Bullet.console = true
   Bullet.rails_logger = true
   Bullet.add_footer = true
+  # config.logger = Logger.new(STDOUT)
+  config.log_level = :debug
+  config.active_record.verbose_query_logs = true
 end

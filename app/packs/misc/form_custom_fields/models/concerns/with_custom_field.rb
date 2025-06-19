@@ -3,6 +3,8 @@ module WithCustomField
 
   included do
     attr_accessor :cached_custom_fields
+    # This is used to skip the before_save callback, used when we are generating thousands of account_entries as this slows it down considerably
+    attr_accessor :skip_cf_before_save
 
     attribute :json_fields, :json, default: {}
     alias_attribute :properties, :json_fields
@@ -14,10 +16,10 @@ module WithCustomField
     has_many :form_custom_fields, through: :form_type
 
     # Ensure that the form type is set, if not already present
-    before_save :setup_form_type # , if: -> { respond_to?(:form_type_id) && form_type.blank? }
+    before_save :setup_form_type, if: -> { skip_cf_before_save != true }
 
     # This is done so that if there are any custom_fields which are calculations, then they are run and computed
-    before_save :perform_all_calculations, if: -> { form_custom_fields && form_custom_fields.calculations.present? }
+    before_save :perform_all_calculations, if: -> { skip_cf_before_save != true && form_custom_fields && form_custom_fields.calculations.present? }
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     if Rails.env.test?

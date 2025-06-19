@@ -35,7 +35,7 @@ module AccountEntryAllocation
         # We setup the as_of api here from the cache of apis
         api = as_of_apis[orig_api.id]
 
-        fund_formula.commitments(end_date, sample).each do |capital_commitment|
+        fund_formula.commitments(end_date, sample).includes(:entity, :fund).find_each do |capital_commitment|
           # This is used to generate instance variables from the cached computed values
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
 

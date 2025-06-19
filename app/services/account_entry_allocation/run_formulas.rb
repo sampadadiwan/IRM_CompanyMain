@@ -21,10 +21,13 @@ module AccountEntryAllocation
         start_date           = ctx[:start_date]
         end_date             = ctx[:end_date]
         run_start_time       = Time.zone.now
+
+        # Used to update the created account_entries. See CreateAccountEntry
+        ctx[:form_type_id]   = fund.entity.form_types.where(name: "AccountEntry").last
         ctx[:bulk_insert_records] = []
 
         # Get the enabled formulas
-        formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc)
+        formulas = FundFormula.enabled.where(fund_id: fund.id).order(sequence: :asc).includes(:fund, :entity)
         # Run only the formulas with the specified rule_for
         formulas = formulas.where(rule_for: rule_for) if rule_for.present?
         # Run only the formulas with the specified tags

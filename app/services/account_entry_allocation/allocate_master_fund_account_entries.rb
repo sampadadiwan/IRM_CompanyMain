@@ -50,8 +50,8 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
 
       # Get the master fund account entries for the given fund formula, grouped by folio_id
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date)
-      feeder_fund_account_entries = fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date)
+      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date).includes(:fund, :entity)
+      feeder_fund_account_entries = fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund).where(funds: { id: fund.id }).where(reporting_date: start_date..end_date).includes(:fund, :entity)
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
@@ -71,7 +71,7 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "master_fund_account_entries_by_folio has #{master_fund_account_entries_by_folio.length} entries" }
 
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" }
 
         if grouped
@@ -90,7 +90,7 @@ module AccountEntryAllocation
           # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
 
           # Loop and process
-          (master_fund_account_entries + feeder_fund_account_entries).each do |account_entry|
+          (master_fund_account_entries + feeder_fund_account_entries).each_with_index do |account_entry, aidx|
             # Create a new AccountEntry for the feeder fund.
             feeder_account_entry = account_entry.dup
             feeder_account_entry.assign_attributes(
@@ -111,6 +111,8 @@ module AccountEntryAllocation
             rescue StandardError => e
               raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
             end
+
+            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 500).zero? && (aidx + 1) > 100
           end
         end
 

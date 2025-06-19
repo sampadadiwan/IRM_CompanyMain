@@ -14,7 +14,7 @@ module AccountEntryAllocation
 
       bulk_records = []
 
-      fund_formula.commitments(end_date, sample).each do |capital_commitment|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).find_each do |capital_commitment|
         Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
         next unless fund_formula.roll_up
 

@@ -19,7 +19,7 @@ module AccountEntryAllocation
       cc_map = {}
 
       # First pass, gather sums
-      fund_formula.commitments(end_date, sample).each do |capital_commitment|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).find_each do |capital_commitment|
         # Get the last entry for the field_name before the end_date
         # This example might break if there's no record. Check for nil in a real app.
         last_ae = capital_commitment.account_entries
@@ -46,7 +46,7 @@ module AccountEntryAllocation
 
       # Second pass, create new entries
       bulk_records = []
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "ComputeCustomPercentage: #{field_name} Percentage, #{capital_commitment.id}, #{cc_map[capital_commitment.id]['amount_cents']} / #{total} = #{(100.0 * cc_map[capital_commitment.id]['amount_cents'] / total).round(2)}" } if total.positive?
 
         percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0

@@ -18,7 +18,7 @@ module AccountEntryAllocation
       start_date         = ctx[:start_date]
       fund_unit_settings = FundUnitSetting.where(fund_id: ctx[:fund].id).index_by(&:name)
 
-      fund_formula.commitments(end_date, sample).each_with_index do |capital_commitment, idx|
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Allocating #{fund_account_entry} to #{capital_commitment}" }
 
         # Possibly retrieve the relevant FundUnitSetting for each commitment

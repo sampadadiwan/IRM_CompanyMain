@@ -18,8 +18,8 @@ class AccountEntry < ApplicationRecord
   }.freeze
 
   belongs_to :capital_commitment, optional: true
-  belongs_to :entity
-  belongs_to :fund
+  belongs_to :entity, inverse_of: :account_entries
+  belongs_to :fund, inverse_of: :account_entries
   belongs_to :allocation_run, optional: true
   belongs_to :fund_formula, optional: true
   belongs_to :investor, optional: true
@@ -88,7 +88,7 @@ class AccountEntry < ApplicationRecord
   before_validation :setup_defaults
   def setup_defaults
     self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}"
-    self.parent_name = parent.to_s[0..254] if parent.present?
+    self.parent_name = parent.to_s[0..254] if self.parent_name.blank? && parent.present?
     self.commitment_name = capital_commitment.to_s[0..254] if capital_commitment.present?
   end
 

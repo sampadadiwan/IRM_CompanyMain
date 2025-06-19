@@ -102,7 +102,7 @@
       <div class="body-wrapper">
         <div class="container-fluid mw-100">
 
-          <%= turbo_stream_from current_user, "user_alert" if current_user %>
+          <%= turbo_stream_from "user_alert_#{current_user.id}" if current_user %>
           <div id="user_alert"></div>
 
           <%= render "/users/reset_password" if (current_user && current_user.reset_password?) %>

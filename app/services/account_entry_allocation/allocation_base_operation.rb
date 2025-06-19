@@ -33,7 +33,7 @@ module AccountEntryAllocation
     def safe_eval(eval_string, bdg)
       AccountEntry.transaction(requires_new: true) do
         Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
-        eval(eval_string, bdg)
+        eval(eval_string, bdg, __FILE__, __LINE__)
       rescue SkipRule => e
         msg = "AllocationBaseOperation: SkipRule in eval #{eval_string}: #{e.message}"
         Rails.logger.error msg
