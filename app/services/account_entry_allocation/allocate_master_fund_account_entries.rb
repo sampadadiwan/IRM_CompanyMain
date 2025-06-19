@@ -58,6 +58,7 @@ module AccountEntryAllocation
       # We also need the feeder fund account entries to allocate
       feeder_fund_account_entries = fund.account_entries.not_cumulative
         .where(reporting_date: start_date..end_date)
+        .where(capital_commitment_id: nil)  
         .includes(:fund, :entity, capital_commitment: :feeder_fund)
 
       if name_or_entry_type == "name"
