@@ -46,11 +46,11 @@ class FundFormula < ApplicationRecord
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok
   def commitments(end_date, sample)
-    if fund.custom_fields[:sample_commitment_ids_for_allocation].present?
-      cc = fund.capital_commitments.where(id: fund.custom_fields[:sample_commitment_ids_for_allocation].split(",").map(&:strip))
-    else
-      cc = fund.capital_commitments.where(commitment_date: ..end_date)
-    end
+    cc = if fund.custom_fields[:sample_commitment_ids_for_allocation].present?
+           fund.capital_commitments.where(id: fund.custom_fields[:sample_commitment_ids_for_allocation].split(",").map(&:strip))
+         else
+           fund.capital_commitments.where(commitment_date: ..end_date)
+         end
     logger.debug "Sampling 1 commitment" if sample
     sample ? cc.limit(3) : cc
   end

@@ -97,7 +97,6 @@ module AccountEntryAllocation
             parent = account_entry.parent_type == "AccountEntry" || account_entry.parent_type.nil? ? account_entry : account_entry.parent
 
             feeder_account_entry.assign_attributes(
-              reporting_date: end_date,
               cumulative: false,
               rule_for: fund_formula.rule_for,
               fund_id: fund_formula.fund_id,
