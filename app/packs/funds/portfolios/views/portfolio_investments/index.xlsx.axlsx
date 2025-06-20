@@ -4,7 +4,7 @@ form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers
 
 wb.add_worksheet(name: "PortfolioInvestment") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "Fund", "Portfolio Company", "Instrument", "Investment Date", "Quantity", "Instrument Currency", "Amount in Instrument Currency", "Fund Currency", "Amount", "Cost", "Cost Of Sold", "Cost of Remaining", "Transfer Amount", "FMV", "Realized Gain", "Unrealized Gain", "Sold Quantity", "Transfer Quantity", "Net Quantity Available", "Total Qty As Of Investment Date", "Notes"] + custom_headers + custom_calc_headers)
+  sheet.add_row(["Id", "Fund", "Portfolio Company", "Instrument", "Investment Date", "Quantity", "Instrument Currency", "Amount in Instrument Currency", "Fund Currency", "Amount", "Cost", "Cost Of Sold", "Cost of Remaining", "Transfer Amount", "FMV", "Realized Gain", "Unrealized Gain", "Sold Quantity", "Transfer Quantity", "Net Quantity Available", "Total Qty As Of Investment Date", "Ref Id", "Notes"] + custom_headers + custom_calc_headers)
 
   @portfolio_investments.each do |pi|
     custom_field_values = get_custom_values(pi, form_type, custom_field_names)
@@ -20,6 +20,6 @@ wb.add_worksheet(name: "PortfolioInvestment") do |sheet|
       gain = pi.gain
     end
 
-    sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.investment_instrument&.currency&.to_s, pi.base_amount.to_d, pi.fund.currency.to_s, pi.amount.to_d, pi.cost.to_d, pi.cost_of_sold.to_d, pi.cost_of_remaining.to_d, pi.transfer_amount.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.notes] + custom_field_values + custom_calc_values
+    sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_instrument, pi.investment_date, pi.quantity, pi.investment_instrument&.currency&.to_s, pi.base_amount.to_d, pi.fund.currency.to_s, pi.amount.to_d, pi.cost.to_d, pi.cost_of_sold.to_d, pi.cost_of_remaining.to_d, pi.transfer_amount.to_d, pi.fmv.to_d, gain.to_d, unrealized_gain.to_d, pi.sold_quantity, pi.transfer_quantity, net_qty, pi.quantity_as_of_date, pi.ref_id, pi.notes] + custom_field_values + custom_calc_values
   end
 end

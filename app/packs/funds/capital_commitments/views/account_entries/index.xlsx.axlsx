@@ -5,7 +5,7 @@ form_type, custom_field_names, custom_headers = get_form_type("AccountEntry")
 
 wb.add_worksheet(name: "AccountEntries") do |sheet|
   # Create the header row
-  headers = ["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Folio Currency", "Folio Amount", "Fund Currency", "Amount", "Cumulative", "Explanation", "Rule For", "Notes", "Parent", "Parent Type", "Parent Id"] + custom_headers
+  headers = ["Fund", "Investor", "Folio", "Reporting Date", "Period", "Entry Type", "Name", "Folio Currency", "Folio Amount", "Fund Currency", "Amount", "Cumulative", "Explanation", "Rule For", "Notes", "Parent", "Parent Type", "Parent Id", "Ref Id"] + custom_headers
 
   has_tracking_currency = false
   if params[:fund_id].present?
@@ -25,7 +25,7 @@ wb.add_worksheet(name: "AccountEntries") do |sheet|
     folio_amount = ae.name.include?("Percentage") ? ae.folio_amount_cents : ae.folio_amount.to_d
     custom_field_values = get_custom_values(ae, form_type, custom_field_names)
 
-    values = [ae.fund.name, ae.capital_commitment&.investor_name, ae.capital_commitment&.folio_id, ae.reporting_date&.strftime("%d-%m-%Y"), ae.period, ae.entry_type, ae.name, ae.capital_commitment&.folio_currency, folio_amount, ae.fund.currency, amount, cumulative, ae.explanation.join("\r"), ae.rule_for&.capitalize, ae.notes, ae.parent_name, ae.parent_type, ae.parent_id] + custom_field_values
+    values = [ae.fund.name, ae.capital_commitment&.investor_name, ae.capital_commitment&.folio_id, ae.reporting_date&.strftime("%d-%m-%Y"), ae.period, ae.entry_type, ae.name, ae.capital_commitment&.folio_currency, folio_amount, ae.fund.currency, amount, cumulative, ae.explanation.join("\r"), ae.rule_for&.capitalize, ae.notes, ae.parent_name, ae.parent_type, ae.parent_id, ae.ref_id] + custom_field_values
 
     # Add the tracking currency values only if required
     values << ae.tracking_amount.to_d if has_tracking_currency
