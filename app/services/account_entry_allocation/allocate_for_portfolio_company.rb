@@ -25,8 +25,14 @@ module AccountEntryAllocation
       allocation_run_id = ctx[:allocation_run_id]
 
       # Find all portfolio companies related to this fund through portfolio investments
+
+      fund_ids = if fund.master_fund_id.present?
+                   [fund.id, fund.master_fund_id]
+                 else
+                   [fund.id]
+                 end
       portfolio_companies = fund.entity.investors.joins(:portfolio_investments)
-                                .where(portfolio_investments: { fund_id: fund.id })
+                                .where(portfolio_investments: { fund_id: fund_ids })
                                 .where(portfolio_investments: { investment_date: ..end_date })
                                 .distinct
 

@@ -51,24 +51,16 @@ module AccountEntryAllocation
 
       # We need only the master_fund account entries of the commitments associated with the feeder fund, so inner join
       master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund)
-        .where(capital_commitments: {feeder_fund_id: fund.id})
-        .where(reporting_date: start_date..end_date)
-        .includes(:fund, :entity)
-
-      # We also need the feeder fund account entries to allocate
-      feeder_fund_account_entries = fund.account_entries.not_cumulative
-        .where(reporting_date: start_date..end_date)
-        .where(capital_commitment_id: nil)  
-        .includes(:fund, :entity, capital_commitment: :feeder_fund)
+                                        .where(capital_commitments: { feeder_fund_id: fund.id })
+                                        .where(reporting_date: start_date..end_date)
+                                        .includes(:fund, :entity)
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
         master_fund_account_entries = master_fund_account_entries.where(name: fund_formula.name)
-        feeder_fund_account_entries = feeder_fund_account_entries.where(name: fund_formula.name)
       elsif name_or_entry_type == "entry_type"
         # Filter by entry_type if name_or_entry_type is "entry_type", but the catch is use the fund_formula.name as the value for filtering. Be clear about this.
         master_fund_account_entries = master_fund_account_entries.where(entry_type: fund_formula.name)
-        feeder_fund_account_entries = feeder_fund_account_entries.where(entry_type: fund_formula.name)
       else
         raise "Invalid name_or_entry_type: #{name_or_entry_type}"
       end
@@ -84,10 +76,10 @@ module AccountEntryAllocation
 
         if grouped
           # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
-          master_aggregate_entry, feeder_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
+          master_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
           # We need to pass an account_entry into the CreateAccountEntry operation
-          account_entry = feeder_aggregate_entry.dup
+          account_entry = master_aggregate_entry
           begin
             create_instance_variables(ctx)
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
@@ -98,17 +90,19 @@ module AccountEntryAllocation
           # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
 
           # Loop and process
-          (master_fund_account_entries + feeder_fund_account_entries).each_with_index do |account_entry, aidx|
+          master_fund_account_entries.each_with_index do |account_entry, aidx|
             # Create a new AccountEntry for the feeder fund.
             feeder_account_entry = account_entry.dup
+
+            parent = account_entry.parent_type == "AccountEntry" || account_entry.parent_type.nil? ? account_entry : account_entry.parent
+
             feeder_account_entry.assign_attributes(
-              name: fund_formula.name,
               reporting_date: end_date,
               cumulative: false,
               rule_for: fund_formula.rule_for,
               fund_id: fund_formula.fund_id,
               entity_id: fund_formula.entity_id,
-              entry_type: fund_formula.entry_type
+              parent: parent
             )
 
             begin
@@ -145,12 +139,13 @@ module AccountEntryAllocation
       # Fetch all account entries in the master fund allocated to commitments of the feeder fund
       master_fund_account_entries = master_fund.account_entries.not_cumulative
                                                .includes(:fund, :entity, capital_commitment: :feeder_fund)
-                                               .where("account_entries.name = ?", fund_formula.name)
+                                               .where(account_entries: { name: fund_formula.name })
                                                .where(reporting_date: start_date..end_date)
 
       # Create a new AccountEntry object to aggregate the master fund account entries
       master_aggregate_entry = AccountEntry.new(
         name: fund_formula.name,
+        entry_type: fund_formula.entry_type,
         reporting_date: end_date,
         cumulative: false,
         rule_for: fund_formula.rule_for,
@@ -169,27 +164,8 @@ module AccountEntryAllocation
         master_aggregate_entry.amount_cents = 0
       end
 
-      # Aggregate the account entries in the feeder fund to be allocated to the commitments
-      feeder_account_entries = fund.account_entries.fund_entries.not_cumulative.where(
-        reporting_date: start_date..end_date,
-        name: fund_formula.name
-      )
-      feeder_amount_cents = feeder_account_entries.sum(:amount_cents)
-
-      feeder_aggregate_entry = AccountEntry.new(
-        name: fund_formula.name,
-        reporting_date: end_date,
-        cumulative: false,
-        rule_for: fund_formula.rule_for,
-        fund_id: fund_formula.fund_id,
-        entity_id: fund_formula.entity_id
-      )
-
-      # Add the feeder fund amount to the master fund aggregate amount
-      feeder_aggregate_entry.amount_cents = feeder_amount_cents
-      feeder_aggregate_entry.entry_type = fund_formula.entry_type
       # Return the aggregated account entry
-      [master_aggregate_entry, feeder_aggregate_entry]
+      master_aggregate_entry
     end
   end
 end
