@@ -5,7 +5,7 @@
     <span>  
       <button class="btn btn-outline-success" data-controller="export-xl"
         data-action="click->export-xl#export"
-        data-tableid="account_entries_pivot"
+        data-tableid="account_entries"
         data-filename="Account Entries">
         Export to Excel
       </button>
@@ -64,9 +64,9 @@
             <%
               value = @pivot.structured_data[[commitment_name, capital_commitment_id, parent_name, parent_type, parent_id]].dig(group, date) 
 
-              value = number_with_precision(value.to_d, precision: 2, delimiter: ',') if value && value.is_a?(Money)
+              display_value = number_with_precision(value.amount.to_d, precision: 2, delimiter: ',') if value&.amount.present?
             %>
-            <td><%= value || "-" %></td>
+            <td><%= link_to display_value, value || "-" %></td>
           <% end %>
         <% end %>
       </tr>

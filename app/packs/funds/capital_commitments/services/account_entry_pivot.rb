@@ -18,7 +18,7 @@ class AccountEntryPivot
               [entry.commitment_name, entry.capital_commitment_id, nil, nil, nil]
             end
       group = entry.public_send(@group_by_field)
-      @structured_data[key][group][entry.reporting_date] = entry.amount
+      @structured_data[key][group][entry.reporting_date] = entry
     end
 
     @rows = @structured_data.keys # array of [commitment_name, parent]
@@ -48,10 +48,10 @@ class AccountEntryPivot
       @groups.each do |group| # Iterate over each group
         @dates_by_group[group].each do |date| # Iterate over each date in the group
           # Retrieve the amount for the current row, group, and date
-          amount = @structured_data.dig(row, group, date)
+          entry_obj = @structured_data.dig(row, group, date)
           row_data[date] ||= 0 # Initialize the date key in row_data if not already present
           # Add the amount to the date key, converting to float and checking presence
-          row_data[date] += amount.to_f if amount.present?
+          row_data[date] += entry_obj.amount.to_f if entry_obj&.amount.present?
         end
       end
 
