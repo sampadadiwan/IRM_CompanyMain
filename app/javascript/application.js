@@ -17,6 +17,13 @@ import "vega-embed"
 
 window.dispatchEvent(new Event("vega:load"))
 
+import Highcharts from "highcharts"
+import "highcharts-more"
+import "highcharts/modules/exporting"
+import "highcharts/modules/offline-exporting"
+
+window.Highcharts = Highcharts
+
 Highcharts.setOptions({
   lang: {
     thousandsSep: ',',

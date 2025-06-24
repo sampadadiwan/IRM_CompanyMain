@@ -66,3 +66,8 @@ pin "jquery-browserify" # @1.8.1
 pin "@hotwired/stimulus", to: "stimulus.min.js"
 pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 pin "@hotwired/turbo-rails", to: "turbo.min.js"
+pin "highcharts",                         to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/highcharts.src.js"
+pin "highcharts-more",                    to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/highcharts-more.src.js"
+pin "highcharts/modules/exporting",       to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/exporting.src.js"
+pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/offline-exporting.src.js"
+

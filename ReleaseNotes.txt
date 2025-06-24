@@ -1,3 +1,11 @@
+V9.0.60
+#####################################
+45bb316c2 Xlsx template (#882)
+50038f3d9 IF IO sharable is expired after 7 days then doesnt give error and redirects with msg (#881)
+c8bdb94f8 Added better export of account entry pivot
+de886b0fa In AllocateMasterFundAccountEntries now the reporting_date is set to the master fund reporting_date
+e420aeb6e Added ref id in PI and AE excel download (#876)
+
 V9.0.57
 #####################################
 de0a81a0c Updated AE bulk insert to insert in batches of 10k (#870)
