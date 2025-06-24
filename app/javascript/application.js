@@ -24,6 +24,8 @@ Highcharts.setOptions({
   }
 });
 
+$('.select2').select2();
+
 document.addEventListener("turbo:load", () => {
   document.querySelectorAll("action-text-attachment").forEach(el => {
     if (!el.querySelector("img") && el.hasAttribute("url")) {

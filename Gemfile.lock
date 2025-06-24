@@ -305,7 +305,7 @@ GEM
     childprocess (5.1.0)
       logger (~> 1.5)
     chronic (0.10.2)
-    client_side_validations (22.3.1)
+    client_side_validations (22.3.0)
       js_regex (~> 3.7)
       rails (>= 6.1)
     cocoon (1.2.15)

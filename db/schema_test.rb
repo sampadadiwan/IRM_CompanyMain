@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_23_125057) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1121,7 +1121,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
     t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false, null: true
+    t.boolean "template", default: false, null: false
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"
@@ -2282,6 +2282,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
     t.json "response"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "request_data"
+    t.json "response_data"
+    t.string "PAN", limit: 10
+    t.string "name"
+    t.string "external_identifier"
+    t.datetime "birth_date"
+    t.string "status", limit: 20
+    t.string "phone", limit: 10
     t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
@@ -2785,6 +2793,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
     t.string "curr_role", limit: 10, default: "employee"
     t.string "model"
     t.text "metadata"
+    t.json "template"
+    t.text "template_xls_data"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
@@ -3358,6 +3368,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
   add_foreign_key "deals", "folders", column: "document_folder_id"
   add_foreign_key "deals", "form_types"
   add_foreign_key "doc_questions", "entities"
+  add_foreign_key "doc_shares", "documents"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
@@ -3366,6 +3377,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
   add_foreign_key "e_signatures", "documents"
   add_foreign_key "e_signatures", "entities"
   add_foreign_key "e_signatures", "users"
+  add_foreign_key "entities", "folders", column: "root_folder_id"
   add_foreign_key "entity_settings", "entities"
   add_foreign_key "esign_logs", "documents"
   add_foreign_key "esign_logs", "entities"
@@ -3483,6 +3495,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
   add_foreign_key "messages", "chats"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
+  add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
+  add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
+  add_foreign_key "oauth_openid_requests", "oauth_access_grants", column: "access_grant_id", on_delete: :cascade
   add_foreign_key "offers", "entities"
   add_foreign_key "offers", "folders", column: "document_folder_id"
   add_foreign_key "offers", "form_types"
@@ -3509,6 +3524,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_020614) do
   add_foreign_key "portfolio_company_kpi_extraction_mappings", "entities"
   add_foreign_key "portfolio_company_kpi_extraction_mappings", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "capital_commitments"
+  add_foreign_key "portfolio_investments", "capital_distributions"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "exchange_rates"
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"

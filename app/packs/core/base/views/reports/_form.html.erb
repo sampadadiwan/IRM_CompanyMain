@@ -41,6 +41,22 @@
   </div>
 
   <div class="form-group">
+    <% label = report.template_xls.blank? ? "Upload Sample Template" : link_to("Upload Sample Template: #{report.template_xls_name}", report.template_xls.url(response_content_disposition: "attachment; filename=#{report.template_xls_name}"), target: "_blank") %>
+
+    <%= render "layouts/single_upload", form: form, field_label: label, 
+                            for_model: "report", field_name: "template_xls", 
+                            model: report, allowed_types: ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"].freeze  %>
+
+  </div>
+
+  <% if params[:debug].present? %>
+  <div class="form-group">
+    <%= form.label :template %>
+    <%= form.text_area :template, class: "form-control", data: { controller: "json-formatter", json_formatter_target: "textarea" }  %>
+  </div>
+  <% end %>
+
+  <div class="form-group">
     <%= form.label :url %>
     <%= form.text_area :url, class: "form-control"  %>
   </div>

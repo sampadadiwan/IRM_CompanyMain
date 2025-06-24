@@ -60,6 +60,13 @@
               <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
             </button>
           </li>
+          <% if params[:report_id].present? && params[:custom_xls_report].present? %>
+            <li>
+              <%= link_to xl_link + "&custom_xls_report=true", class: "dropdown-item", data: { turbo: false } do %>
+                <i class="ti ti-file-spreadsheet"></i> Custom Report
+              <% end %>
+            </li>
+          <% end %>         
         </ul>
       </div>
 

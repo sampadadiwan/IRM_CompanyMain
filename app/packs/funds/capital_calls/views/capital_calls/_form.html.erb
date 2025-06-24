@@ -35,7 +35,7 @@
           closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
         %>
         <%= form.select :fund_closes, closes, { include_blank: false, include_hidden: false }, 
-                        class: "form-control select2 select2-multiple", multiple: "multiple" %>
+                        class: "form-control select2", multiple: "multiple" %>
       </div>
 
       <div id="close-percentages-container" class="field-group">

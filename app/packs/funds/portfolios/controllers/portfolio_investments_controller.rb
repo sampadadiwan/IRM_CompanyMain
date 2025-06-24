@@ -45,7 +45,7 @@ class PortfolioInvestmentsController < ApplicationController
     elsif params[:time_series].present?
       @fields = params[:fields].presence || %i[fmv quantity gain]
       @time_series = PortfolioInvestmentTimeSeries.new(@portfolio_investments, @fields).call
-    elsif params[:all].blank? && params[:ag].blank?
+    elsif params[:all].blank? && params[:ag].blank? && !request.format.xlsx?
       @portfolio_investments = @portfolio_investments.page(params[:page])
       @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
     end
@@ -54,8 +54,11 @@ class PortfolioInvestmentsController < ApplicationController
       format.html do
         render template
       end
+
       format.turbo_stream { render partial: 'portfolio_investments/index', locals: { portfolio_investments: @portfolio_investments } }
-      format.xlsx
+
+      format.xlsx { render_xlsx(@portfolio_investments) }
+
       format.json
     end
   end

@@ -74,7 +74,7 @@ module CommitmentAccountEntry
 
   def start_of_financial_year_date(end_date)
     # Some funds want to set the start of the financial year to Jan some to April, this allows for that.
-    month_offset_for_fy = fund.custom_fields.month_offset_for_fy&.to_i || 3
+    month_offset_for_fy = fund.custom_fields.month_offset_for_fy&.present ? fund.custom_fields.month_offset_for_fy.to_i : 3
     date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
     (date + month_offset_for_fy.months)
   end

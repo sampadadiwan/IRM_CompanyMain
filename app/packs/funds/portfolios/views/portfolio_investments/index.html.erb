@@ -1,4 +1,4 @@
-<%= render "/layouts/filter", associations: [:investment_instrument], include_template: "/portfolio_investments/group_filter", hidden_fields: {snapshot: params[:snapshot], time_series: params[:time_series]} %>        
+<%= render "/layouts/filter", associations: [:investment_instrument], include_template: "/portfolio_investments/group_filter", hidden_fields: {snapshot: params[:snapshot], time_series: params[:time_series], custom_xls_report: params[:custom_xls_report]} %>        
 <%= render ReportingComponent.new do %>
     <%= turbo_frame_tag "portfolio_investments_frame", target: "_top" do %>
         <% if params[:time_series].present? %>

@@ -79,6 +79,28 @@
   </tr>
   <% end %>
 
+  <% if @report.template && params[:debug].present? %>
+  <tr>
+    <td>
+      Template
+    </td>
+    <td>
+      <%= @report.template %>
+    </td>
+  </tr>
+  <% end %>
+
+  <% if @report.template_xls.present? %>
+  <tr>
+    <td>
+      Template XLS
+    </td>
+    <td>
+      <%= link_to @report.template_xls.metadata["filename"], @report.template_xls.url, class: "btn btn-outline-secondary" %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
   <% if policy(@report).edit? %>

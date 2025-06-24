@@ -3,8 +3,12 @@ class Report < ApplicationRecord
   belongs_to :entity, optional: true
   belongs_to :user
 
-  before_commit :add_report_id_to_url, unless: -> { destroyed? }
+  attribute :template, :json
+
+  after_save :add_report_id_to_url
   before_create :set_model
+
+  include FileUploader::Attachment(:template_xls)
 
   validates :name, :curr_role, presence: true
   validates :category, length: { maximum: 30 }
@@ -23,17 +27,20 @@ class Report < ApplicationRecord
       'Distribution Payments': "/capital_distribution_payments?filter=true" }
   end
 
+  # rubocop:disable Rails/SkipsModelValidations
   def add_report_id_to_url
-    id
     uri = URI.parse(url)
     return if uri.query.nil?
 
     query_params = CGI.parse(uri.query)
+    # return if query_params['report_id']&.first == id.to_s
+
     query_params['report_id'] = id.to_s
+    query_params['custom_xls_report'] = 'true' if template_xls.present? && metadata.present? && template.present?
     uri.query = URI.encode_www_form(query_params)
-    self.url = uri.to_s
-    save!
+    update_column(:url, uri.to_s)
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   def decode_url
     uri = URI.parse(url)
@@ -88,5 +95,39 @@ class Report < ApplicationRecord
     Rails.logger.debug { "Final URL: #{final_url}" }
 
     final_url
+  end
+
+  before_save :update_xls, if: :template_xls_changed?
+  def update_xls
+    if template_xls.present?
+      template_xls.download do |tmp_file|
+        json_data = XlsxToTemplate.convert(tmp_file.path)
+        self.template = json_data.to_json
+      end
+    end
+  end
+
+  def template_xls_name
+    template_xls.metadata["filename"] if template_xls.present?
+  end
+
+  def template_xls_mime_type
+    template_xls.metadata["mime_type"] if template_xls.present?
+  end
+
+  def generate_xls(records)
+    if template_xls.present? && template.present? && metadata.present?
+      XlsxFromTemplate.generate_and_save(template, records, metadata, file_path: Rails.root.join('tmp', "export_#{id}_#{Time.now.to_i}.xlsx"))
+    else
+      raise "Template XLS or template or metadata is not set for this report."
+    end
+  end
+
+  def stream_xls(records, filename: "report_#{id}_#{Time.now.to_i}.xlsx")
+    if template_xls.present? && template.present? && metadata.present?
+      XlsxFromTemplate.stream(template, records, metadata, filename: filename)
+    else
+      raise "Template XLS or template or metadata is not set for this report."
+    end
   end
 end

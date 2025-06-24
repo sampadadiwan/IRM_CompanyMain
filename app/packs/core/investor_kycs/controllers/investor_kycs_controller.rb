@@ -205,10 +205,11 @@ class InvestorKycsController < ApplicationController
     investor_user = current_user.curr_role_investor?
     verified_by_id = @investor_kyc.verified ? nil : current_user.id
     @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
+    status = @investor_kyc.verified ? "verified" : "unverified"
 
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
-        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully #{status}." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }

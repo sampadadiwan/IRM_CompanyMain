@@ -79,10 +79,10 @@ module AccountEntryAllocation
           master_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
           # We need to pass an account_entry into the CreateAccountEntry operation
-          account_entry = master_aggregate_entry
+          feeder_aggregate_entry = master_aggregate_entry
           begin
             create_instance_variables(ctx)
-            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
+            AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_aggregate_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
           rescue StandardError => e
             raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
           end

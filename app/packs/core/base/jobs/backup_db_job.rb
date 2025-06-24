@@ -12,7 +12,7 @@ class BackupDbJob < ApplicationJob
         # At 2 am once only
         if Time.zone.now.hour == 2
           # Restore the backup to the replica and check if the restore was successful
-          restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA], delete_after_restore: true)
+          # restore_db(host: Rails.application.credentials[:DB_HOST_REPLICA], delete_after_restore: true)
         end
       when "restore"
         # We restore the backup to the replica. In the future we should have a separate machine for testing the backup

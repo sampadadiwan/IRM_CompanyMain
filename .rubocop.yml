@@ -178,6 +178,8 @@ Metrics/CyclomaticComplexity:
     - "app/packs/secondaries/secondary_sales/models/concerns/secondary_sale_notifiers.rb"
     - "app/packs/funds/capital_remittances/services/import_capital_remittance_payment.rb"
     - "app/services/account_entry_allocation/run_formula.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
+    - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
