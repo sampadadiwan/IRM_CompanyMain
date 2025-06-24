@@ -28,4 +28,3 @@ document.documentElement.addEventListener('turbo:frame-load', function (e) {
 //     }
 // })
   
-import "./json_formatter_controller"
