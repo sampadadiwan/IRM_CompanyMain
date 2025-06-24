@@ -33,7 +33,7 @@ class InvestmentOpportunitiesController < ApplicationController
   # Called when advisors share a link to the IO, the IO is shared without a password
   def no_password_show
     @investment_opportunity = InvestmentOpportunity.find_signed(params[:signed_id], purpose: "shared_by_#{params[:shared_by]}")
-    if @investment_opportunity.shareable
+    if @investment_opportunity&.shareable
       render "show"
     else
       redirect_to root_path, alert: "You are not authorized to view this page"
