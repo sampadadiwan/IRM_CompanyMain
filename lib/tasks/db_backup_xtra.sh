@@ -1,225 +1,311 @@
 #!/usr/bin/env bash
-#
-# backup_db.sh – daily full / hourly incremental backups
-#                (no-Docker edition)
-#
-# Requires:
-#   • percona-xtrabackup-80   (xbstream & xtrabackup on PATH)
-#   • percona-server-80 (or upstream mysql-server 8.0/8.4)
-#   • awscli v1 or v2
-#   • rsync, lsof, jq (optional), util-linux (for flock), gzip
-#
-# ------------------------------------------------------------------
 set -euo pipefail
+IFS=$'\n\t'
 
-MODE=${1:-""}                                      # full | inc | restore
-TS=$(date +%F_%H-%M-%S)                            # 2025-06-24_14-00-00
+# Required ENV
+: "${AWS_ACCESS_KEY_ID:?}"
+: "${AWS_SECRET_ACCESS_KEY:?}"
+: "${AWS_REGION:?}"
+: "${BUCKET:?}"
+: "${MYSQL_USER:?}"
+: "${MYSQL_PASSWORD:?}"
+: "${MYSQL_HOST:=localhost}"
+: "${MYSQL_PORT:=3306}"
 
-# ── configurable bits ──────────────────────────────────────────────
-MYSQL_DATADIR=/var/lib/mysql                       # running instance
-BACKUP_ROOT=/srv/mysql-backups
-XB_BIN=/usr/bin/xtrabackup                         # point to host binary
-MYSQLD_BIN=/usr/sbin/mysqld
-MYSQL_BIN=/usr/bin/mysql
-DB_USER=root
-DB_PASS='Root1234$'
-DB_HOST=127.0.0.1
-DB_PORT=3306
-S3_BUCKET="${S3_BUCKET:-}"                         # export beforehand
-TMPDIR=${TMPDIR:-/tmp}
-PARALLEL=$(nproc --ignore=1 || echo 1)
-# ───────────────────────────────────────────────────────────────────
+MYSQL_TMPDIR="${MYSQL_TMPDIR:-/tmp}"
 
-################################################################################
-# sanity‐checks – bail early if something obvious is missing
-################################################################################
-need() { command -v "$1" >/dev/null 2>&1 || { echo "❌  Missing $1 – abort"; exit 9; }; }
-need awk; need rsync; need sed; need "$XB_BIN"; need aws
-[[ -x "$MYSQLD_BIN" ]] || { echo "❌  $MYSQLD_BIN not executable"; exit 9; }
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION MYSQL_PWD="$MYSQL_PASSWORD"
 
-[[ -z "$MODE" || ( "$MODE" != full && "$MODE" != inc && "$MODE" != restore ) ]] \
-  && { echo "Usage: $0 {full|inc|restore}"; exit 1; }
+XB_ARGS=(--storage=S3
+         --s3-bucket="${BUCKET}"
+         --s3-access-key="${AWS_ACCESS_KEY_ID}"
+         --s3-secret-key="${AWS_SECRET_ACCESS_KEY}"
+         --s3-region="${AWS_REGION}"
+         --max-retries=5 --max-backoff=120000 --parallel=4)
 
-[[ -z "$S3_BUCKET" && "$MODE" != restore ]] \
-  && { echo "Please export S3_BUCKET=your-bucket"; exit 2; }
+TIMESTAMP="$(date +%F)"
+FULL_NAME="${TIMESTAMP}-full"
+INCR_NAME="${TIMESTAMP}-incr-$(date +%H%M)"
+TMPDIR="${MYSQL_TMPDIR}/xb_$$"
+LAST_FULL="${TMPDIR}/last_full"
+STAGING_FULL="${TMPDIR}/staging_full"
+TEST_RESTORE="${TMPDIR}/test_restore"
+PRIMARY_RESTORE="${TMPDIR}/primary_restore"
 
-sudo chown -R "$USER":"$USER" "$BACKUP_ROOT"
+mkdir -p "$TMPDIR"
 
-#############################################
-# Return newest full_*/inc_* directory
-#############################################
-latest_dir() {
-  local newest
-  newest=$(sudo ls -1dt "${BACKUP_ROOT}"/{inc,full}_* 2>/dev/null | head -1 || true)
-  echo "$newest"
-}
-
-cleanup_local() {
-  echo "[INFO] Cleaning up old backups (keeping newest chain)…"
-  local keep; keep=$(latest_dir)
-  sudo find "${BACKUP_ROOT}" -maxdepth 1 -type d -name '*_*' \
-       ! -path "${keep}" -exec rm -rf {} +
-}
-
-run_xb() {         # wrapper around host xtrabackup
-  sudo "$XB_BIN" "$@"
-}
-
-prepare_merge() {  # $1 base  $2 [inc]
-  run_xb --prepare --apply-log-only --target-dir="$1" --parallel="$PARALLEL"
-  [[ -n "${2:-}" ]] && \
-    run_xb --prepare --target-dir="$1" --incremental-dir="$2" --parallel="$PARALLEL"
-}
-
-###############################################################################
-# crash_test – verify a prepared backup boots cleanly
-# Args: $1  path to prepared (–--prepare) backup directory
-# -----------------------------------------------------------------------------
-# • runs as root the whole time → no rsync “permission denied”
-# • skips #innodb_redo (safe – redo logs are regenerated on start-up)
-# • picks a random free port so it never collides with production MySQL
-# • waits ≤60 s for “ready for connections”, then shuts the test server down
-###############################################################################
-###############################################################################
-# crash_test – verify a prepared backup boots cleanly
-# Args: $1  prepared-backup directory (already --prepare’d)
-###############################################################################
-crash_test() {
-  local PREP_DIR="$1"
-  local TMP_DATA
-  TMP_DATA=$(mktemp -d "${TMPDIR:-/tmp}/xbtest-XXXX") || return 8
-
-  echo "[INFO] Crash-test mysqld – copying prepared backup (root → $TMP_DATA)…"
-  # Copy everything **except** bulky redo *files*,
-  # but still create the directory they live in.
-  sudo rsync -a --delete \
-       --exclude='#innodb_redo/ib_redo*' \
-       "$PREP_DIR"/ "$TMP_DATA"/
-
-  # Ensure the mandatory folder exists even if rsync excluded it
-  sudo mkdir -p "$TMP_DATA/#innodb_redo"
-
-  # Hand out ownership so mysqld (run with sudo) can access files
-  sudo chown -R mysql:mysql "$TMP_DATA"
-
-  # Launch throw-away server on a random free port
-  local TEST_PORT SOCKET PID_FILE ERR_LOG
-  TEST_PORT=$(shuf -i 3400-3999 -n1)
-  SOCKET="$TMP_DATA/mysql.sock"
-  PID_FILE="$TMP_DATA/mysqld.pid"
-  ERR_LOG="$TMP_DATA/error.log"
-
-  echo "[INFO] Launching temporary mysqld on port $TEST_PORT…"
-  sudo mysqld \
-       --datadir="$TMP_DATA" \
-       --socket="$SOCKET" \
-       --port="$TEST_PORT" \
-       --skip-grant-tables \
-       --pid-file="$PID_FILE" \
-       --log-error="$ERR_LOG" \
-       --daemonize
-
-  # wait ≤60 s for “ready for connections”
-  for _ in {1..60}; do
-      sudo grep -q "ready for connections" "$ERR_LOG" && break
-      sleep 1
+retry() {
+  local max=$1; shift; local cmd=("$@"); local n=0
+  until "${cmd[@]}"; do
+    ((n++)) || :
+    if (( n >= max )); then
+      echo "ERROR: '${cmd[*]}' failed after $n attempts" >&2; return 1
+    fi
+    echo "WARN: '${cmd[*]}' failed – retry $n/$max" >&2
+    sleep $((n * 5))
   done
+}
 
-  if ! sudo grep -q "ready for connections" "$ERR_LOG"; then
-      echo "[ERROR] Crash-test mysqld did not start – see $ERR_LOG"
-      sudo cat "$ERR_LOG" | sed 's/^/    /'
-      sudo kill "$(cat "$PID_FILE")" 2>/dev/null || true
-      sudo rm -rf "$TMP_DATA"
-      return 8
+# 1. Stream & prepare the full backup
+restore_full() {
+  local key=$1 dir=$2
+  echo "→ Restoring full backup '$key' to $dir"
+  rm -rf "$dir" && mkdir -p "$dir"
+  # Download and extract the full backup from S3.
+  # Note: The user running this script needs permissions to run xbcloud
+  # and write to the target directory. 'sudo' was removed to avoid
+  # assuming root privileges are available or necessary.
+  retry 3 xbcloud "${XB_ARGS[@]}" get "$key" | xbstream -x -C "$dir"
+
+  # Prepare the full backup. --apply-log-only is used because
+  # incremental backups will be applied on top of this.
+  xtrabackup --prepare --apply-log-only --target-dir="$dir"
+}
+
+# 2. Stream & apply an incremental onto staging
+apply_incremental() {
+  local key=$1 dir=$2
+  local incr_tmp_dir="${TMPDIR}/incr_stage_$$"
+  echo "→ Applying incremental '$key' → $dir (using temp dir $incr_tmp_dir)"
+
+  # Create a temporary directory for the incremental backup
+  rm -rf "$incr_tmp_dir" && mkdir -p "$incr_tmp_dir"
+
+  # Download and extract the incremental backup into its own temporary directory
+  # to avoid file conflicts with the base backup.
+  retry 3 xbcloud "${XB_ARGS[@]}" get "$key" \
+    | xbstream -x -C "$incr_tmp_dir"
+
+  # Apply the incremental logs to the staging directory using --incremental-dir.
+  # This is the correct way to merge the delta files.
+  # --apply-log-only is crucial here as we might apply more incrementals.
+  xtrabackup --prepare --apply-log-only --target-dir="$dir" --incremental-dir="$incr_tmp_dir"
+
+  # Clean up the temporary incremental directory
+  rm -rf "$incr_tmp_dir"
+}
+
+
+
+
+# 3. Final prepare (no apply-log-only)
+final_prepare() {
+  echo "→ Final prepare staging → $1"
+  xtrabackup --prepare --target-dir="$1"
+}
+
+get_all_incrs() {
+  aws s3api list-objects-v2 --bucket "$BUCKET" --delimiter '/' \
+    --query "CommonPrefixes[?contains(Prefix,'-incr-')].Prefix | sort(@)" \
+    --output text | tr '\t' '\n' | sed 's!/$!!'
+}
+
+get_latest_full() {
+  aws s3api list-objects-v2 --bucket "$BUCKET" --delimiter '/' \
+    --query "CommonPrefixes[?ends_with(Prefix,'-full/')].Prefix | sort(@) | [-1]" \
+    --output text | sed 's!/$!!'
+}
+
+restore_chain() {
+  local full_key
+  full_key=$(get_latest_full)
+  if [[ -z "$full_key" ]]; then
+    echo "ERROR: No full backup found." >&2
+    return 1
+  fi
+  echo "Found latest full backup: $full_key"
+
+  local all_incrs
+  all_incrs=($(get_all_incrs))
+  echo "Found ${#all_incrs[@]} total incremental backups."
+
+  local incr_chain=()
+  if (( ${#all_incrs[@]} > 0 )); then
+    for incr_key in "${all_incrs[@]}"; do
+      # This simple string comparison works because of the YYYY-MM-DD-incr-HHMM format
+      if [[ "$incr_key" > "$full_key" ]]; then
+        incr_chain+=("$incr_key")
+      fi
+    done
   fi
 
-  if [[ -z "${KEEP_TEST:-}" ]]; then
-    echo "[INFO] Crash-test passed – shutting down test server."
-    sudo mysqladmin --socket="$SOCKET" shutdown
-    sudo rm -rf "$TMP_DATA"
+  echo "Using full backup: $full_key"
+  if (( ${#incr_chain[@]} > 0 )); then
+    echo "Applying ${#incr_chain[@]} incremental backups from the chain:"
+    printf " - %s\n" "${incr_chain[@]}"
   else
-      echo "[INFO] Test server left running for manual checks."
+    echo "No incremental backups found to apply for this full backup."
+  fi
+
+  # 1. Restore full backup
+  restore_full "$full_key" "$LAST_FULL"
+
+  # 2. Copy to staging.
+  echo "→ Preparing staging directory by copying restored full backup"
+  rm -rf "$STAGING_FULL"
+  cp -a "$LAST_FULL" "$STAGING_FULL"
+
+  # 3. Apply all incrementals in the chain
+  for incr_key in "${incr_chain[@]}"; do
+    apply_incremental "$incr_key" "$STAGING_FULL"
+  done
+
+  # 4. Final prepare on the staged backup
+  final_prepare "$STAGING_FULL"
+
+  # 5. Copy prepared backup to final restore directory
+  echo "→ Copying prepared backup to final restore directory"
+  local restore_to_primary="$PRIMARY_RESTORE"
+  rm -rf "$restore_to_primary" && cp -a "$STAGING_FULL" "$restore_to_primary"
+  echo "Restore chain complete. Data is in $restore_to_primary"
+}
+
+validate_restore() {
+  local dir=$1
+  echo "→ Validating restore in $dir"
+  local sock="${dir}/mysql.sock"
+  # Use a non-standard port to avoid conflicts with a running instance
+  local port=3307
+  local pidfile="${dir}/mysql.pid"
+
+  # Start a temporary mysqld instance from the restored data.
+  # --skip-networking=1 is a security measure to prevent outside connections.
+  mysqld --no-defaults --datadir="$dir" --socket="$sock" --port="$port" --pid-file="$pidfile" --skip-networking=1 &
+  local pid=$!
+
+  # Wait for the server to start by pinging it.
+  local n=0
+  local max_wait=30
+  echo "  - Waiting for test server to start (PID: $pid)..."
+  # Note: Assumes the root user has no password or it's set in a .my.cnf readable by the user.
+  # For production, you'd need a more secure way to handle credentials.
+  until mysqladmin --socket="$sock" --user=root ping &>/dev/null; do
+    ((n++)) || :
+    if (( n >= max_wait )); then
+      echo "ERROR: Test MySQL server failed to start after $n seconds." >&2
+      kill "$pid" &>/dev/null || :
+      return 1
+    fi
+    sleep 1
+  done
+  echo "  ✓ Test server started successfully."
+
+  # Shutdown the test server and capture the exit code.
+  mysqladmin --socket="$sock" --user=root shutdown
+  wait "$pid"
+  return $?
+}
+
+restore_primary_datadir() {
+  local datadir
+  # Get the datadir from the running MySQL instance
+  datadir=$(mysql --user="$MYSQL_USER" -e "SELECT @@datadir;" -sN)
+  if [[ -z "$datadir" ]]; then
+    echo "ERROR: Could not determine MySQL datadir." >&2
+    exit 1
+  fi
+
+  echo "→ Restoring to primary data directory: $datadir"
+  echo "  - Source: $PRIMARY_RESTORE"
+  echo "WARNING: This is a destructive operation."
+
+  # This command will vary based on the OS (e.g., service mysql stop)
+  echo "  - Stopping MySQL service..."
+  systemctl stop mysql
+
+  echo "  - Backing up old datadir to ${datadir}.bak..."
+  mv "$datadir" "${datadir}.bak.$(date +%s)"
+
+  echo "  - Copying new data from $PRIMARY_RESTORE..."
+  cp -a "$PRIMARY_RESTORE" "$datadir"
+
+  echo "  - Setting permissions..."
+  chown -R mysql:mysql "$datadir"
+
+  echo "  - Starting MySQL service..."
+  systemctl start mysql
+
+  echo "  - Waiting for service to be up..."
+  sleep 10 # Simple wait, could be improved with a loop
+  if ! mysqladmin --user="$MYSQL_USER" ping; then
+      echo "ERROR: MySQL failed to start after restore." >&2
+      exit 1
   fi
 }
 
-
-###############################################################
-# Upload a backup directory to S3 (unchanged from your script)
-###############################################################
-upload_s3() {
-  local SRC_DIR="$1" KEY DEST TMP_LOG
-  KEY=$(basename "$SRC_DIR"); DEST="s3://${S3_BUCKET}/${KEY}/"
-  TMP_LOG="/tmp/${KEY}_upload_$(date +%s).log"
-  local AWS_VER MAJOR HR_FLAG=""; AWS_VER="$(aws --version 2>&1 | awk '{print $1}')"
-  MAJOR="$(echo "$AWS_VER" | cut -d'/' -f2 | cut -d'.' -f1)"; [[ $MAJOR == 2 ]] && HR_FLAG="--human-readable"
-  printf "\e[36m[%s] [INFO] Uploading %s ➜ %s\e[0m\n" "$(date '+%F %T')" "$SRC_DIR" "$DEST"
-  sudo -E aws s3 cp "$SRC_DIR" "$DEST" --recursive $HR_FLAG --only-show-errors | tee -a "$TMP_LOG"
-  local AWS_RC=${PIPESTATUS[0]}
-  sudo cp "$TMP_LOG" "${SRC_DIR}/upload_${KEY}.log"
-  (( AWS_RC == 0 )) \
-     && printf "\e[32m[%s] [SUCCESS] S3 upload finished\e[0m\n" "$(date '+%F %T')" \
-     || { printf "\e[31m[%s] [ERROR] S3 upload FAILED – see %s\e[0m\n" "$(date '+%F %T')" "$TMP_LOG"; exit 9; }
+full_backup() {
+    echo "→ Performing full backup to S3: $FULL_NAME"
+    # Stream the backup directly to xbcloud
+    xtrabackup --backup --user="$MYSQL_USER" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR" \
+      | xbcloud "${XB_ARGS[@]}" put "$FULL_NAME"
+    # Record the name of the last full backup for incrementals
+    echo "$FULL_NAME" > "$LAST_FULL"
 }
 
-###############################################################################
-# Restore newest full + incrementals from S3 and start mysqld on a free port
-###############################################################################
-restore_latest() {
-  : "${AWS_DEFAULT_REGION:=ap-south-1}"
-  printf '\e[36m[%s] Listing s3://%s\e[0m\n' "$(date '+%F %T')" "$S3_BUCKET"
-  mapfile -t KEYS < <(aws s3 ls "s3://$S3_BUCKET/" | awk '{print $NF}' | sed 's:/$::')
-  [[ ${#KEYS[@]} -eq 0 ]] && { echo "Bucket empty"; exit 5; }
-  FULL_KEY=$(printf '%s\n' "${KEYS[@]}" | grep '^full_' | sort | tail -1)
-  [[ -z $FULL_KEY ]] && { echo "No full_ backup on S3"; exit 6; }
-  INC_KEYS=$(printf '%s\n' "${KEYS[@]}" | grep '^inc_' | awk -v ts="${FULL_KEY#full_}" '$0 > ("inc_" ts)' | sort)
-  echo "Full backup     : $FULL_KEY"
-  [[ -n $INC_KEYS ]] && echo "Incrementals    : $INC_KEYS" || echo "Incrementals    : (none)"
-  FULL_DIR="${BACKUP_ROOT}/${FULL_KEY}"; sudo mkdir -p "$FULL_DIR"
-  echo "[INFO] Downloading full …"; sudo -E aws s3 cp "s3://$S3_BUCKET/$FULL_KEY" "$FULL_DIR" --recursive
-  for k in $INC_KEYS; do echo "[INFO] Downloading $k …"; sudo -E aws s3 cp "s3://$S3_BUCKET/$k" "${BACKUP_ROOT}/${k}" --recursive; done
-  sudo chmod -R u+rw "$FULL_DIR"; sudo mkdir -p "$FULL_DIR/#innodb_redo" && sudo chmod 700 "$FULL_DIR/#innodb_redo"
-  echo "[INFO] Preparing base (apply-log-only)"; run_xb --prepare --apply-log-only --target-dir="$FULL_DIR" --parallel="$PARALLEL"
-  for k in $INC_KEYS; do
-      echo "[INFO] Merging $k"; run_xb --prepare --apply-log-only --target-dir="$FULL_DIR" --incremental-dir="${BACKUP_ROOT}/${k}" --parallel="$PARALLEL"
-  done
-  echo "[INFO] Final prepare"; run_xb --prepare --target-dir="$FULL_DIR" --parallel="$PARALLEL"
-  echo "[INFO] Crash-test restored data"; crash_test "$FULL_DIR"
-  local RESTORE_PORT; RESTORE_PORT=$(shuf -i 3400-3999 -n1)
-  echo "[INFO] Launching mysqld on port $RESTORE_PORT (socket $FULL_DIR/mysql.sock)"
-  ( cd "$FULL_DIR" && sudo "$MYSQLD_BIN" \
-        --datadir="$FULL_DIR" --socket="$FULL_DIR/mysql.sock" \
-        --port="$RESTORE_PORT" --skip-grant-tables --pid-file="$FULL_DIR/mysqld.pid" & )
-  printf '\e[32m[%s] ✅  Restore complete – server listening on port %s (socket %s/mysql.sock)\e[0m\n' \
-         "$(date '+%F %T')" "$RESTORE_PORT" "$FULL_DIR"
+incr_backup() {
+    local last_full_name
+    if [[ ! -f "$LAST_FULL" ]]; then
+        echo "ERROR: Cannot perform incremental backup. No record of last full backup found." >&2
+        return 1
+    fi
+    last_full_name=$(<"$LAST_FULL")
+    echo "→ Performing incremental backup to S3: $INCR_NAME (base: $last_full_name)"
+    # The --incremental-basedir must point to the *data* of the last full backup.
+    # The current logic assumes the last full backup was restored to TMPDIR, which might not be true.
+    # For a standalone 'incr' command, we must first restore the base full backup.
+    restore_full "$last_full_name" "$TMPDIR/base"
+
+    xtrabackup --backup --user="$MYSQL_USER" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
+      --incremental-basedir="$TMPDIR/base" \
+      | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME"
 }
 
-###############################################################################
-# MAIN
-###############################################################################
-case "$MODE" in
-  full)
-    TARGET="${BACKUP_ROOT}/full_${TS}"
-    run_xb --backup \
-           --datadir="${MYSQL_DATADIR}" \
-           --target-dir="$TARGET" \
-           --host="${DB_HOST}" --port="${DB_PORT}" \
-           --user="${DB_USER}" --password="${DB_PASS}" \
-           --parallel="$PARALLEL"
-    sudo chmod -R a+rX "$TARGET"
-    upload_s3 "$TARGET"
-    ;;
-  inc)
-    BASE=$(latest_dir) || { echo "No base backup; run full first"; exit 4; }
-    TARGET="${BACKUP_ROOT}/inc_${TS}"
-    run_xb --backup \
-           --datadir="${MYSQL_DATADIR}" \
-           --target-dir="$TARGET" \
-           --incremental-basedir="$BASE" \
-           --host="${DB_HOST}" --port="${DB_PORT}" \
-           --user="${DB_USER}" --password="${DB_PASS}" \
-           --parallel="$PARALLEL"
-    upload_s3 "$TARGET"
-    cleanup_local
-    ;;
-  restore)  restore_latest ;;
-esac
+cleanup() {
+  echo "→ Cleaning up temporary directory: $TMPDIR"
+  rm -rf "$TMPDIR"
+}
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") <command>
+
+Commands:
+  full            Perform a full backup.
+  incr            Perform an incremental backup. Requires a previous full backup.
+  restore_test    Perform a full restore chain and validate it in a temporary instance.
+  restore_primary Perform a full restore chain and promote it to the primary data directory.
+EOF
+  exit 1
+}
+
+main() {
+  case "${1:-}" in
+    full)
+      full_backup
+      ;;
+    incr)
+      incr_backup
+      ;;
+    restore_test)
+      restore_chain
+      if validate_restore "$PRIMARY_RESTORE"; then
+        echo "✅ Test restore succeeded."
+      else
+        echo "❌ Test restore failed."
+        exit 1
+      fi
+      ;;
+    restore_primary)
+      restore_chain
+      restore_primary_datadir
+      echo "✅ Promote complete."
+      ;;
+    *)
+      usage
+      ;;
+  esac
+
+  cleanup
+}
+
+main "$@"
