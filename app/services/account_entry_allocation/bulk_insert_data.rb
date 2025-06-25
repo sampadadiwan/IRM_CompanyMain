@@ -5,14 +5,16 @@ module AccountEntryAllocation
   class BulkInsertData < AllocationBaseOperation
     step :bulk_insert_data
 
-    def bulk_insert_data(ctx, existing_record_count:, rollup_name:, rollup_entry_type:, **)
-      Rails.logger.debug { "bulk_insert_data: #{ctx}, #{existing_record_count}, #{rollup_name}, #{rollup_entry_type}" }
+    def bulk_insert_data(ctx, rollup_name:, rollup_entry_type:, **)
+      Rails.logger.debug { "bulk_insert_data: #{ctx}, #{rollup_name}, #{rollup_entry_type}" }
 
       fund          = ctx[:fund]
       fund_formula  = ctx[:fund_formula]
+      allocation_run_id = ctx[:allocation_run_id]
       ctx[:commitment_cache]
 
       bulk_records = ctx[:bulk_insert_records] || []
+      records_in_allocation_by_formula = fund.account_entries.generated.where(allocation_run_id:, fund_formula_id: fund_formula.id)
 
       if bulk_records.present?
         # Insert the bulk records in batches
@@ -23,9 +25,9 @@ module AccountEntryAllocation
         end
 
         # Calculate the number of existing records
-        total_record_count   = fund.account_entries.generated.reload.count
+        total_record_count   = records_in_allocation_by_formula.count
         # Calculate the number of inserted records
-        inserted_row_count   = total_record_count - existing_record_count
+        inserted_row_count   = total_record_count
         # Log the number of inserted records
         Rails.logger.debug { "#{fund_formula.name}: Inserted #{inserted_row_count} of #{bulk_records.length} records, total: #{total_record_count}" }
         # Raise an error if the number of inserted records does not match the expected count
@@ -36,7 +38,7 @@ module AccountEntryAllocation
 
       # Roll up the account entries if needed
       if fund_formula.roll_up
-        existing_record_count = fund.reload.account_entries.generated.count
+        existing_record_count = records_in_allocation_by_formula.count
         # Reset the array for new bulk insert records
         ctx[:bulk_insert_cumulative_records] = []
 
@@ -49,8 +51,9 @@ module AccountEntryAllocation
         if ctx[:bulk_insert_cumulative_records].present?
           AccountEntry.insert_all(ctx[:bulk_insert_cumulative_records])
 
+          new_record_count = records_in_allocation_by_formula.count ``
           # Calculate the number of inserted records ( -1 cause the cumulative_ae is already in the account_entries)
-          rollup_inserted_row_count = fund.reload.account_entries.generated.count - existing_record_count
+          rollup_inserted_row_count = new_record_count - existing_record_count
 
           # Calculate the expected number of inserted records
           bulk_insert_cumulative_records_length = ctx[:bulk_insert_cumulative_records].length

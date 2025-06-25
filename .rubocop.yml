@@ -180,6 +180,8 @@ Metrics/CyclomaticComplexity:
     - "app/services/account_entry_allocation/run_formula.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
     - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
+    - "app/packs/core/base/services/xlsx_from_template.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
@@ -189,6 +191,7 @@ Metrics/PerceivedComplexity:
     - "app/packs/core/uploaders/file_uploader.rb"
     - "app/packs/secondaries/offers/services/offer_search_service.rb"
     - "app/packs/core/base/decorators/template_decorator.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
 Metrics/ClassLength:
   Description: "Avoid classes longer than 200 lines of code."
   Max: 250
@@ -199,6 +202,7 @@ Metrics/ClassLength:
     - "app/packs/funds/capital_commitments/models/capital_commitment.rb"
     - "app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb"
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
 Metrics/ModuleLength:
   Description: "Avoid modules longer than 100 lines of code."
   Max: 200
@@ -254,6 +258,8 @@ Metrics/MethodLength:
     - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
     - "app/packs/funds/funds/jobs/fund_llm_report_job.rb"
     - "app/services/account_entry_allocation/*"
+    - "app/packs/core/base/services/xlsx_from_template.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
 
 Metrics/BlockNesting:
   Exclude:
@@ -277,6 +283,8 @@ Metrics/BlockLength:
     - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
     - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
+    - "app/packs/core/base/services/xlsx_from_template.rb"
+    - "app/packs/core/base/services/xlsx_to_template.rb"
   AllowedMethods:
     - context
     - describe

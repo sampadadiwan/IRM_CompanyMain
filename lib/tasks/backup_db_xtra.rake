@@ -6,6 +6,40 @@ require 'fileutils'
 
 namespace :xtrabackup do
 
+   desc "Run the xtrabackup script with environment variables set from Rails credentials and .env"
+  task generate_backup_script: :environment do 
+
+    # Path to the original and temporary script
+    original_script_path = Rails.root.join('lib', 'tasks', 'db_backup_xtra.sh')
+    temp_script_path = Rails.root.join('tmp', "db_backup_xtra_#{Rails.env}.sh")
+    puts "Generating backup script from #{original_script_path} to #{temp_script_path}"
+
+    # Read the original script content
+    script_content = File.read(original_script_path)
+
+    # Replace placeholders with credentials
+    script_content.gsub!('__BUCKET__', ENV["AWS_S3_BUCKET"] + "-backup-xtra")
+    script_content.gsub!('__AWS_REGION__', ENV["AWS_REGION"].to_s)
+    script_content.gsub!('__AWS_ACCESS_KEY_ID__', Rails.application.credentials.dig("AWS_ACCESS_KEY_ID").to_s)
+    script_content.gsub!('__AWS_SECRET_ACCESS_KEY__', Rails.application.credentials.dig("AWS_SECRET_ACCESS_KEY").to_s)
+    script_content.gsub!('__MYSQL_PASSWORD__', Rails.application.credentials.dig("DB_PASS").to_s)
+    script_content.gsub!('__MYSQL_USER__', Rails.application.credentials.dig("DB_USER").to_s)
+    script_content.gsub!('__DATABASE_NAME__', ActiveRecord::Base.connection.current_database)
+
+    # Write the modified content to a temporary script
+    File.write(temp_script_path, script_content)
+    FileUtils.chmod(0755, temp_script_path)
+
+    puts "Temporary script created at #{temp_script_path}"
+
+    # Execute the temporary script
+    # puts "Executing temporary script: #{temp_script_path} #{command}"
+    # system("#{temp_script_path} #{command}")
+
+    # # Clean up the temporary script
+    # FileUtils.rm(temp_script_path)
+  end
+
   desc "Prepare AWS ENV vars"
   task :setup_env do
     ENV["AWS_ACCESS_KEY_ID"]     = aws_access_key_id

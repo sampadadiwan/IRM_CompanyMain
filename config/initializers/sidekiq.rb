@@ -19,8 +19,6 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
     # Update the overdue status of remittances
     Sidekiq::Cron::Job.create(name: 'CapitalRemittanceStatusJob', cron: 'every day at 01:30', class: 'CapitalRemittanceStatusJob')
-    # Backup the DB snapshot to S3
-    Sidekiq::Cron::Job.create(name: 'BackupDbJob', cron: 'every 1 hour', class: 'BackupDbJob')
     # Check the S3 bucket for the backup
     Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob')
     # Cleanup the old logs for ESign
@@ -31,6 +29,8 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
 
     if Rails.env.production?
+      # Backup the DB snapshot to S3
+      Sidekiq::Cron::Job.create(name: 'BackupDbJob', cron: 'every 1 hour', class: 'BackupDbJob')
       # Check the health of the replication
       Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
     end

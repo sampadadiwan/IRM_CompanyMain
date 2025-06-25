@@ -70,4 +70,3 @@ pin "highcharts",                         to: "https://cdn.jsdelivr.net/npm/high
 pin "highcharts-more",                    to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/highcharts-more.src.js"
 pin "highcharts/modules/exporting",       to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/exporting.src.js"
 pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/offline-exporting.src.js"
-

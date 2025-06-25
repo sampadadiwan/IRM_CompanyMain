@@ -6,11 +6,28 @@ module AccountEntryAllocation
     step :run_formula
 
     def run_formula(ctx, **)
-      fund               = ctx[:fund]
-      fund_formula       = ctx[:fund_formula]
-      ctx[:bulk_insert_records] = []
+      # Call the internal method to run the formula, at max 3 times if there is a failure
+      (1..3).each do |attempt|
+        run_formula_internal(ctx)
+        return true
+      rescue ActiveRecord::DatabaseConnectionError => e
+        Rails.logger.error { "Attempt #{attempt} failed with error: #{e.message}" }
+        Rails.logger.error { e.backtrace.join("\n") }
+        if attempt == 3
+          raise e # Re-raise the error after 3 attempts
+        end
 
-      existing_record_count = fund.account_entries.generated.count
+        Rails.logger.debug { "Retrying in #{2**attempt} seconds..." }
+        sleep(2**attempt) # Exponential backoff before retrying
+      end
+      false # If all attempts fail, return false
+    end
+
+    def run_formula_internal(ctx, **)
+      ctx[:fund]
+      fund_formula = ctx[:fund_formula]
+      ctx[:allocation_run_id]
+      ctx[:bulk_insert_records] = []
 
       # Decide the "rollup name" and "rollup entry type"
       rollup_name = fund_formula.name
@@ -65,7 +82,6 @@ module AccountEntryAllocation
 
       # After the formula method sets up bulk_insert_records, do a bulk insert
       sub_ctx = ctx.merge(
-        existing_record_count: existing_record_count,
         rollup_name: rollup_name,
         rollup_entry_type: rollup_entry_type
       )

@@ -4,7 +4,7 @@
     </div>    
 
     <div class="card-body">        
-        <%= form_with(url: send_message_chat_path(@chat), method: :post, data: {turbo: true}) do |f| %>
+        <%= form_with(model: false, url: send_message_chat_path(@chat), method: :post, data: {turbo: true}) do |f| %>
             <div class="input-group">
                 <%= f.text_field :content, name: "user_content", class: "form-control", placeholder: "Ask your question here." %>  
                 <% if @chat.owner && @chat.owner.respond_to?(:documents) && @chat.owner.documents.present? %>

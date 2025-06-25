@@ -84,6 +84,7 @@ module AccountEntryAllocation
       # This is a placeholder for a quarterly account entry
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
+        ae.skip_cf_before_save = true
         ae.name = "Quarterly #{ae.name}"
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
@@ -99,6 +100,7 @@ module AccountEntryAllocation
       # This is a placeholder for a year-to-date account entry
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
+        ae.skip_cf_before_save = true
         ae.name = "YTD #{ae.name}"
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"
@@ -114,6 +116,7 @@ module AccountEntryAllocation
       # This is a placeholder for a since inception account entry
       if fund_formula.generate_ytd_qtly && !@skip_rule
         ae = account_entry.dup
+        ae.skip_cf_before_save = true
         ae.name = "Since Inception #{ae.name}"
         # Since this is a rollup, we set the rule_for to reporting
         ae.rule_for = "reporting"

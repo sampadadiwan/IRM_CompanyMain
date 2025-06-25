@@ -32,10 +32,23 @@ module AccountEntryAllocation
         formulas = formulas.where(rule_for: rule_for) if rule_for.present?
         # Run only the formulas with the specified tags
         formulas = formulas.with_tags(tag_list.split(",")) if tag_list.present?
+        formula_ids = formulas.pluck(:id)
 
         fund_account_entries = fund.account_entries.generated.where(reporting_date: start_date..end_date)
         # Delete existing fund account entries for the formulas
-        fund_account_entries.joins(:fund_formula).merge(formulas).delete_all
+        fund_account_entries = fund_account_entries.where(fund_formula_id: formula_ids)
+
+        batch_size = 20_000
+        count = fund_account_entries.count
+        idx = 1
+        loop do
+          Rails.logger.debug { "Deleting batch #{idx} of fund account entries: #{count}" }
+          deleted = fund_account_entries.limit(batch_size).delete_all
+          break if deleted.zero?
+
+          sleep(0.1) # Small pause to reduce contention
+          idx += 1
+        end
 
         # Ensure that the portfolio_investments are up to date before running formulas. As this may compute the expenses for the portfolio investments
         fund.resave_portfolio_investments
