@@ -1121,7 +1121,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_23_125057) do
     t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false, null: false
+    t.boolean "template", default: false, null: true
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"

@@ -1,3 +1,12 @@
+V9.0.61
+#####################################
+f61224b85 Fixed feeder_aggregate_entry in AllocateMasterFundAccountEntries
+87b855102 Xtrabackup (#883)
+c3ff98b96 Added db_backup_xtra.sh
+d679286db Fixed tests
+b9dbf120f BAckup
+84a2dd491 Added highcharts from other CDN
+
 V9.0.60
 #####################################
 45bb316c2 Xlsx template (#882)

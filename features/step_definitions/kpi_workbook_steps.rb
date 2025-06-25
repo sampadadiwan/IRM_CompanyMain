@@ -5,6 +5,7 @@ Given('the KPI workbook file {string} for a kpi report') do |workbook_file|  # S
   @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id,  as_of: Date.today)
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
+
   @document.save!
 end
 
