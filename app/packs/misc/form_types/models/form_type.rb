@@ -60,8 +60,6 @@ class FormType < ApplicationRecord
 
   def deep_clone(eid)
     # Check if entity already has this form type
-    old_ft = self
-
     ftd = dup
     ftd.entity_id = eid
     form_custom_fields.order(position: :asc).each do |fcf|
@@ -69,14 +67,6 @@ class FormType < ApplicationRecord
     end
     ftd.save!
 
-    # if old_ft.present?
-    #   # Change existing models to the new form type
-    #   cn = old_ft.name.constantize
-    #   cn = cn.with_deleted if cn.respond_to?(:with_deleted)
-    #   cn.where(form_type_id: old_ft.id).update_all(form_type_id: ftd.id)
-    #   # Delete the old form type
-    #   old_ft.destroy!
-    # end
     ftd
   end
 

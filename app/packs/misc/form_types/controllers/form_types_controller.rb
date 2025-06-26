@@ -11,8 +11,14 @@ class FormTypesController < ApplicationController
   def show; end
 
   def clone
-    @clone = @form_type.deep_clone(current_user.entity_id)
-    redirect_to form_type_path(@clone), notice: "Form type was successfully cloned."
+    if @form_type.entity_id == current_user.entity_id
+      redirect_to form_type_path(@form_type), alert: "Cannot clone form type in the same entity."
+    else
+      ActiveRecord::Base.connected_to(role: :writing) do
+        @clone = @form_type.deep_clone(current_user.entity_id)
+      end
+      redirect_to form_type_path(@clone), notice: "Form type was successfully cloned."
+    end
   end
 
   # GET /form_types/new
