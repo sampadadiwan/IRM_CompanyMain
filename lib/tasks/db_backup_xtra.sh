@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 IFS=$'\n\t'
 # TODO
 # 1. Restore from specific full & specific incremental, ensure the incremental is after full and allow for nil incr backups (i.e restore from full only)
@@ -25,13 +25,6 @@ IFS=$'\n\t'
 
 
 
-export BUCKET="__BUCKET__"
-export AWS_REGION="__AWS_REGION__"
-export AWS_ACCESS_KEY_ID="__AWS_ACCESS_KEY_ID__"
-export AWS_SECRET_ACCESS_KEY="__AWS_SECRET_ACCESS_KEY__"
-export MYSQL_PASSWORD="__MYSQL_PASSWORD__"
-export MYSQL_USER="__MYSQL_USER__"
-export DATABASE_NAME="__DATABASE_NAME__"
 
 # To setup these ENVs run on the prod box
 # RAILS_ENV=production rake xtrabackup:generate_backup_script 
@@ -44,6 +37,9 @@ export AWS_SECRET_ACCESS_KEY="__AWS_SECRET_ACCESS_KEY__"
 export MYSQL_PASSWORD="__MYSQL_PASSWORD__"
 export MYSQL_USER="__MYSQL_USER__"
 export DATABASE_NAME="__DATABASE_NAME__"
+
+
+
 
 # Required ENV
 : "${AWS_ACCESS_KEY_ID:?}"
@@ -372,37 +368,55 @@ full_backup() {
     # Stage the backup to a local file first to isolate issues.
     local backup_file="${TMPDIR}/${FULL_NAME}.xbstream"
     echo "  - Staging backup to local file: ${backup_file}"
-    sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR" > "${backup_file}"
+    sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR" --extra-lsndir=/tmp/lsndir > "${backup_file}"
 
     echo "  - Uploading staged backup to S3..."
     cat "${backup_file}" | xbcloud "${XB_ARGS[@]}" put "$FULL_NAME" 2>&1
 }
 
 incr_backup() {
-    local last_full_name
-    last_full_name=$(get_latest_full)
-    if [[ -z "$last_full_name" ]]; then
-        echo "ERROR: Cannot perform incremental backup. No full backup found in S3." >&2
-        return 1
+    local last_lsn=""
+    if sudo test -f /tmp/lsndir/xtrabackup_checkpoints; then
+        last_lsn=$(sudo grep '^to_lsn' /tmp/lsndir/xtrabackup_checkpoints | awk '{print $3}')
     fi
 
-    echo "→ Performing incremental backup to S3: $INCR_NAME (base: $last_full_name)"
-    # The --incremental-basedir must point to the *data* of the last full backup.
-    # For a standalone 'incr' command, we must first restore the base full backup.
-    restore_full "$last_full_name" "$TMPDIR/base"
+    if [[ -n "$last_lsn" ]]; then
+        echo "→ Performing incremental backup using LSN: $last_lsn"
+        local incr_backup_file="${TMPDIR}/${INCR_NAME}.xbstream"
+        echo "  - Staging incremental backup to local file: ${incr_backup_file}"
+        sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
+          --incremental-lsn="$last_lsn" --extra-lsndir=/tmp/lsndir > "${incr_backup_file}"
 
-    local incr_backup_file="${TMPDIR}/${INCR_NAME}.xbstream"
-    echo "  - Staging incremental backup to local file: ${incr_backup_file}"
-    sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
-      --incremental-basedir="$TMPDIR/base" > "${incr_backup_file}"
+        echo "  - Uploading staged incremental backup to S3..."
+        cat "${incr_backup_file}" | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME" 2>&1
+    else
+        echo "WARN: LSN not found or readable. Falling back to restoring full backup."
+        local last_full_name
+        last_full_name=$(get_latest_full)
+        if [[ -z "$last_full_name" ]]; then
+            echo "ERROR: Cannot perform incremental backup. No full backup found in S3." >&2
+            return 1
+        fi
 
-    echo "  - Uploading staged incremental backup to S3..."
-    cat "${incr_backup_file}" | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME" 2>&1
+        echo "→ Performing incremental backup to S3: $INCR_NAME (base: $last_full_name)"
+        # The --incremental-basedir must point to the *data* of the last full backup.
+        # For a standalone 'incr' command, we must first restore the base full backup.
+        restore_full "$last_full_name" "$TMPDIR/base"
+
+        local incr_backup_file="${TMPDIR}/${INCR_NAME}.xbstream"
+        echo "  - Staging incremental backup to local file: ${incr_backup_file}"
+        sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
+          --incremental-basedir="$TMPDIR/base" > "${incr_backup_file}"
+
+        echo "  - Uploading staged incremental backup to S3..."
+        cat "${incr_backup_file}" | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME" 2>&1
+    fi
 }
 
 cleanup() {
   echo "→ Cleaning up temporary directory: $TMPDIR"
   rm -rf "$TMPDIR"
+  sudo rm -rf /tmp/xb_*
 }
 
 usage() {
