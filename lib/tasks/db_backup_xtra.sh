@@ -1,6 +1,37 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 IFS=$'\n\t'
+# TODO
+# 1. Restore from specific full & specific incremental, ensure the incremental is after full and allow for nil incr backups (i.e restore from full only)
+# 2. Cleanup intermediate incr from S3 for > 30 days
+# 3. Check if there is a way to do incr without downloading the full backup
+# If not then no need to delete the full backup dir, during the day, reuse for every hourly incr
+
+# To setup these ENVs run on the prod box
+# RAILS_ENV=production rake xtrabackup:generate_backup_script 
+# This generates a file with all vars setup
+
+# This is the sequence to restore replica
+# PROD Primary DB
+# * ./db_backup.sh full
+# * ./db_backup.sh incr
+
+
+# PROD Replica DB
+# 	./db_backup.sh restore_primary
+
+# PROD App Server
+# 	RAILS_ENV=production bundle exec rake db:reset_replication
+
+
+
+export BUCKET="__BUCKET__"
+export AWS_REGION="__AWS_REGION__"
+export AWS_ACCESS_KEY_ID="__AWS_ACCESS_KEY_ID__"
+export AWS_SECRET_ACCESS_KEY="__AWS_SECRET_ACCESS_KEY__"
+export MYSQL_PASSWORD="__MYSQL_PASSWORD__"
+export MYSQL_USER="__MYSQL_USER__"
+export DATABASE_NAME="__DATABASE_NAME__"
 
 # To setup these ENVs run on the prod box
 # RAILS_ENV=production rake xtrabackup:generate_backup_script 
@@ -134,7 +165,7 @@ get_latest_full() {
     --output text | sed 's!/$!!'
 }
 
-restore_chain() {
+restore_latest_chain() {
   local full_key
   full_key=$(get_latest_full)
   if [[ -z "$full_key" ]]; then
@@ -152,6 +183,14 @@ restore_chain() {
     incr_chain+=("$latest_incr")
   fi
 
+  prepare_restore_from_keys "$full_key" "${incr_chain[@]}"
+}
+
+prepare_restore_from_keys() {
+  local full_key=$1
+  shift
+  local incr_chain=("$@")
+
   echo "========================================================================"
   echo "              RESTORING FROM THE FOLLOWING BACKUPS"
   echo "========================================================================"
@@ -162,7 +201,9 @@ restore_chain() {
 
   if (( ${#incr_chain[@]} > 0 )); then
     for incr in "${incr_chain[@]}"; do
-      printf "  %-15s %s\n" "INCREMENTAL" "$incr"
+      if [[ -n "$incr" ]]; then
+        printf "  %-15s %s\n" "INCREMENTAL" "$incr"
+      fi
     done
   else
     echo
@@ -175,9 +216,13 @@ restore_chain() {
   restore_full "$full_key" "$STAGING_FULL"
 
   # 2. Apply all incrementals in the chain
-  for incr_key in "${incr_chain[@]}"; do
-    apply_incremental "$incr_key" "$STAGING_FULL"
-  done
+  if (( ${#incr_chain[@]} > 0 )); then
+    for incr_key in "${incr_chain[@]}"; do
+      if [[ -n "$incr_key" ]]; then
+        apply_incremental "$incr_key" "$STAGING_FULL"
+      fi
+    done
+  fi
 
   # 4. Final prepare on the staged backup
   final_prepare "$STAGING_FULL"
@@ -259,6 +304,16 @@ validate_restore() {
   return $?
 }
 
+stop_mysql_server() {
+  echo "  - Stopping MySQL service..."
+  if sudo systemctl is-active --quiet mysql; then
+    sudo systemctl stop mysql
+    echo "✓ MySQL service stopped."
+  else
+    echo "✓ MySQL service is not running."
+  fi
+}
+
 restore_primary_datadir() {
   local datadir
   # Get the datadir by asking the mysqld binary for its configuration.
@@ -277,11 +332,6 @@ restore_primary_datadir() {
   echo "  - Backup size: $backup_size"
   echo "WARNING: This is a destructive operation and requires sudo."
 
-  # Privileged operations for stopping the service and replacing the datadir
-  # must be run with sudo.
-  echo "  - Stopping MySQL service..."
-  sudo systemctl stop mysql
-
   # To avoid 'mv' errors, construct a backup path that is explicitly a sibling of the datadir.
   local parent_dir
   parent_dir=$(dirname "$datadir")
@@ -289,13 +339,16 @@ restore_primary_datadir() {
   base_name=$(basename "$datadir")
   local backup_path="${parent_dir}/${base_name}.bak.$(date +%s)"
 
-  echo "  - Backing up old datadir to ${backup_path}..."
-  sudo mv "$datadir" "$backup_path"
+  # echo "  - Backing up old datadir to ${backup_path}..."
+  sudo rm -rf "$datadir"
 
-  echo "  - Copying new data from $PRIMARY_RESTORE..."
+  echo "  - Moving data from $PRIMARY_RESTORE..."
   # Recreate the original datadir for the new data and copy the contents.
   sudo mkdir -p "$datadir"
-  sudo cp -a "$PRIMARY_RESTORE/." "$datadir/"
+  
+  shopt -s dotglob nullglob
+  sudo mv "$PRIMARY_RESTORE"/* "$datadir"/
+  shopt -u dotglob nullglob
 
   echo "  - Setting permissions..."
   sudo chown -R mysql:mysql "$datadir"
@@ -357,10 +410,16 @@ usage() {
 Usage: $(basename "$0") <command>
 
 Commands:
-  full            Perform a full backup.
-  incr            Perform an incremental backup. Requires a previous full backup.
-  restore_test    Perform a full restore chain and validate it in a temporary instance.
-  restore_primary Perform a full restore chain and promote it to the primary data directory.
+  full                  Perform a full backup.
+  incr                  Perform an incremental backup. Requires a previous full backup.
+  restore_test          Perform a full restore chain from latest backups and validate it.
+  restore_primary       Perform a full restore chain from latest backups and promote it.
+  restore_from_test <full_key> [incr_key]
+                        Restore from a specific full and optional incremental backup and validate it.
+                        Use "nil" for incr_key to restore from full backup only.
+  restore_from_primary <full_key> [incr_key]
+                        Restore from a specific full and optional incremental backup and promote it.
+                        Use "nil" for incr_key to restore from full backup only.
 EOF
   exit 1
 }
@@ -374,7 +433,7 @@ main() {
       incr_backup
       ;;
     restore_test)
-      restore_chain
+      restore_latest_chain
       if validate_restore "$PRIMARY_RESTORE"; then
         echo "✅ Test restore succeeded."
       else
@@ -383,9 +442,43 @@ main() {
       fi
       ;;
     restore_primary)
-      restore_chain
+      stop_mysql_server
+      restore_latest_chain
       restore_primary_datadir
       echo "✅ Promote complete."
+      ;;
+    restore_from_test)
+      if [[ $# -lt 2 || $# -gt 3 ]]; then
+        echo "Usage: $0 restore_from_test <full_key> [incr_key]" >&2
+        exit 1
+      fi
+      local full_key=$2
+      local incr_key=${3:-}
+      if [[ "$incr_key" == "nil" ]]; then
+          incr_key=""
+      fi
+      prepare_restore_from_keys "$full_key" "$incr_key"
+      if validate_restore "$PRIMARY_RESTORE"; then
+        echo "✅ Test restore from specific backup succeeded."
+      else
+        echo "❌ Test restore from specific backup failed."
+        exit 1
+      fi
+      ;;
+    restore_from_primary)
+      if [[ $# -lt 2 || $# -gt 3 ]]; then
+        echo "Usage: $0 restore_from_primary <full_key> [incr_key]" >&2
+        exit 1
+      fi
+      local full_key=$2
+      local incr_key=${3:-}
+      if [[ "$incr_key" == "nil" ]]; then
+          incr_key=""
+      fi
+      stop_mysql_server
+      prepare_restore_from_keys "$full_key" "$incr_key"
+      restore_primary_datadir
+      echo "✅ Promote from specific backup complete."
       ;;
     *)
       usage

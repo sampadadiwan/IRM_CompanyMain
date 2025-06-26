@@ -7,6 +7,18 @@ include AwsUtils
 
 namespace :aws do  
 
+  task :grow_disk do 
+    # Run the following system cmds
+    puts "Growing disk..."
+    system("df -k /")
+    system("sudo lsblk")
+    system("sudo growpart /dev/nvme0n1 1")
+    system("sudo lsblk")
+    system("sudo resize2fs /dev/nvme0n1p1")
+    system("df -k /")
+    puts "Disk grown successfully."
+  end
+
   # This is the task that will be called whenever we need to do a complete DR into another region
   task :setup_infra, [:stack, :web_server_name, :db_server_name, :region] => [:environment] do |t, args|
     args.with_defaults(region: ENV["AWS_REGION"])

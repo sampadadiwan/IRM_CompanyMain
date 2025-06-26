@@ -95,6 +95,17 @@ locals {
     "sudo systemctl start mysql",
     "sudo systemctl enable mysql",
     "sudo service mysql restart",
+
+    # Install percona
+    curl -O https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
+    sudo apt install ./percona-release_latest.$(lsb_release -sc)_all.deb
+    sudo percona-release setup pxb-80
+    sudo apt update
+    sudo apt install percona-xtrabackup-80
+    sudo apt install lz4 zstd
+    sudo apt-get install awscli
+
+
   ]
 
   mysql_password_setup = [

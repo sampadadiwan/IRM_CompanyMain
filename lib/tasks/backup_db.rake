@@ -103,6 +103,22 @@ namespace :db do  desc "Backup database to AWS-S3"
       binlog_position = result.first['Position']
       puts "Current binary log file: #{binlog_file}, position: #{binlog_position}"
 
+      # Pause here user can enter the binlog_file and binlog_position manually if needed
+      # The /var/lib/mysql/xtrabackup_binlog_info in the replica (which is restored from the xtrabackup) will have the # binlog_file and binlog_position, use that and enter it manually here.
+      puts "Current values are: binlog_file=#{binlog_file}, binlog_position=#{binlog_position}"
+      
+      puts "If you used xtrabackup to restore the replica from S3, The /var/lib/mysql/xtrabackup_binlog_info in the replica (which is restored from the xtrabackup) will have the binlog_file and binlog_position, use that and enter it manually here."
+      
+      puts "Enter the binlog_file (or press Enter to use the current value):"
+      binlog_file_input = STDIN.gets.strip
+      binlog_file = binlog_file_input unless binlog_file_input.empty?
+      
+      puts "Enter the binlog_position (or press Enter to use the current value):"
+      binlog_position_input = STDIN.gets.strip
+      binlog_position = binlog_position_input.to_i unless binlog_position_input.empty?
+      
+      puts "Using binlog_file=#{binlog_file}, binlog_position=#{binlog_position}"
+
       # Create a new database on the destination
       destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
 
@@ -167,6 +183,24 @@ namespace :db do  desc "Backup database to AWS-S3"
     destination_password = Rails.application.credentials[:DB_PASS]
     destination_database = "IRM_#{Rails.env}"
     destination_port = 3306
+
+    # Connect to the source database
+    source_client = Mysql2::Client.new(
+      host: source_host,
+      username: source_user,
+      password: source_password,
+      database: source_database,
+      port: source_port
+    )
+
+    # Connect to the destination database
+    destination_client = Mysql2::Client.new(
+      host: destination_host,
+      username: destination_user,
+      password: destination_password,
+      port: destination_port
+    )
+
 
     # Get the current binary log file and position from the source
     result = source_client.query('SHOW MASTER STATUS')
