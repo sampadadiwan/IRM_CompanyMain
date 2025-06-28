@@ -14,10 +14,24 @@
                 data: { action: "click->confirm#popup", turbo: false } do %>
       <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
-    
-        
-    <%= link_to "Preview Notification", preview_capital_distribution_payment_path(@capital_distribution_payment.id, email_method: "send_notification"), target: "_blank", class: "btn btn-outline-success ti ti-mail" %>
 
+    <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <%= link_to "Preview Notification", preview_capital_distribution_payment_path(@capital_distribution_payment.id, email_method: "send_notification"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+                
+              <%= button_to "Generate Documents" ,
+                  generate_docs_capital_distribution_payment_path(@capital_distribution_payment),    
+                  method: :patch, class: "dropdown-item ti ti-file-text", 
+                  form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notice for this payment. Proceed?"} if policy(@capital_distribution_payment).generate_docs? %>
+            </div>
+        </div>
+    </div>
+        
   <% end %>
 </div>
 

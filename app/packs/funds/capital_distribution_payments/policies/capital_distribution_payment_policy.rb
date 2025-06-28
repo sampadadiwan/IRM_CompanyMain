@@ -31,4 +31,8 @@ class CapitalDistributionPaymentPolicy < FundBasePolicy
   def reminder?
     update?
   end
+
+  def generate_docs?
+    update?
+  end
 end

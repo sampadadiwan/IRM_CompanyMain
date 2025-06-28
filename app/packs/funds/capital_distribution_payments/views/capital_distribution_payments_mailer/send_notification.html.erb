@@ -1,11 +1,25 @@
-<h3>Dear <%= @capital_distribution_payment.investor_name %></h3>
+<% if @custom_notification %>
 
-<p>
-    A capital distribution has been made by the fund <%= @capital_distribution_payment.fund.name %> run by <%= @capital_distribution_payment.entity.name %>
-</p>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/capital_distribution_payments/show", capital_distribution_payment: @capital_distribution_payment, current_user: nil, params: {} if @custom_notification.show_details %>
+    <% end %>    
 
-<p>
-    <%= render "/capital_distribution_payments/show", capital_distribution_payment: @capital_distribution_payment, current_user: nil, params: {} %>
-</p>
+<% else %>
+
+    <h3>Dear <%= @capital_distribution_payment.investor_name %></h3>
+
+    <p>
+        A capital distribution has been made by the fund <%= @capital_distribution_payment.fund.name %> run by <%= @capital_distribution_payment.entity.name %>
+    </p>
+
+    <p>
+        Please refer to the attached notice for further details or click on the link below.
+    </p>
+
+    <p>
+        <%= render "/capital_distribution_payments/show", capital_distribution_payment: @capital_distribution_payment, current_user: nil, params: {} %>
+    </p>
+
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Distribution', capital_distribution_payment_url(@capital_distribution_payment, subdomain: @capital_distribution_payment.entity.sub_domain) %></p>

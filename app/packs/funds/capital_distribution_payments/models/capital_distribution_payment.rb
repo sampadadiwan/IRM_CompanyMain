@@ -116,7 +116,7 @@ class CapitalDistributionPayment < ApplicationRecord
         capital_distribution.approved && !capital_distribution.manual_generation
 
       investor.notification_users(fund).each do |user|
-        CapitalDistributionPaymentNotifier.with(record: self, entity_id:).deliver_later(user)
+        CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
       end
     end
   end

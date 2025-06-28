@@ -611,7 +611,7 @@ Then('the investors must receive email with subject {string} with the document {
         if document_name.present?
           puts "Checking for attachment #{document_name} for #{email}"
           attachment_filenames = current_email.attachments.map(&:filename)
-          expect(attachment_filenames).to include(document_name), "Expected attachment #{document_name}, but got #{attachment_filenames.inspect}"
+          expect(attachment_filenames.select{ |filename| filename.include?(document_name) || filename.downcase.include?(document_name.downcase)}).to be_present, "Expected attachment #{document_name}, but got #{attachment_filenames.inspect}"
         end
 
       end
@@ -2182,4 +2182,65 @@ Then('the capital remittance payment amount is not recomputed') do
   puts "Checking remittance payment amount #{@target_remittance_payment.amount} against folio amount #{@target_remittance_payment.folio_amount}"
   expect(@target_remittance_payment.folio_amount.to_f).not_to eq(@folio_amount)
   expect(@target_remittance_payment.amount.to_f).to eq(@amount)
+end
+
+
+Given('We Generate documents for the capital distribution') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  @capital_distribution_payments.each do |cdp|
+    unless cdp.capital_commitment&.investor_kyc&.verified
+      if cdp.capital_commitment.investor_kyc.present?
+        cdp.capital_commitment.investor_kyc.verified = true
+        res = cdp.capital_commitment.investor_kyc.save(validate: false)
+        puts "KYC for investor #{cdp.investor_name} verified: #{res}"
+      else
+          investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Date.today - 18.years)
+          res = investor_kyc.save(validate:false)
+          puts "KYC for investor #{cdp.investor_name} created and verified: #{res}"
+          cdp.capital_commitment.investor_kyc = investor_kyc
+          cdp.capital_commitment.save(validate: false)
+          puts "Capital Commitment #{cdp.capital_commitment.id} updated with KYC"
+      end
+    end
+  end
+  visit(capital_distribution_path(@capital_distribution))
+  click_on("Actions")
+  click_on("Generate Documents")
+  click_on("Proceed")
+  sleep 5
+end
+
+
+Given('The distribution payment documents are approved') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  @capital_distribution_payments.each do |cdp|
+    cdp.documents.each do |doc|
+      doc.approved = true
+      res = doc.save
+      puts "Document #{doc.id} approved: #{res}"
+    end
+  end
+end
+
+
+Then('Distribution notice should be generate for all distribution payments with verified KYC') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  @capital_distribution_payments.each do |cdp|
+    unless cdp.capital_commitment&.investor_kyc&.verified
+      puts "Skipping distribution payment #{cdp.id} for investor #{cdp.investor_name} as KYC is not verified"
+      next
+    end
+    cdp.documents.each do |doc|
+      puts "Checking document #{doc.name} for distribution payment #{cdp.id}"
+      expect(doc.name.include?("Distribution Template - #{cdp.investor_name}")).to be true 
+      doc.approved.should == true
+      doc.owner_type.should == "CapitalDistributionPayment"
+      doc.owner_id.should == cdp.id
+    end
+  end  
+end
+
+
+Given('there is a custom notification for the capital distribution with subject {string} with email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(entity: @capital_distribution.entity, subject: subject, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_distribution, email_method: "send_notification")
 end

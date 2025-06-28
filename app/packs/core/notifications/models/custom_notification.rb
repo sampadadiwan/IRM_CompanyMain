@@ -53,6 +53,8 @@ class CustomNotification < ApplicationRecord
                      elsif owner_type == "CapitalCall"
                        "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s) +
                          "CapitalRemittancePaymentMailer".constantize.instance_methods(false).map(&:to_s)
+                     elsif owner_type == "CapitalDistribution"
+                       "CapitalDistributionPaymentsMailer".constantize.instance_methods(false).map(&:to_s)
                      elsif owner
                        "#{owner.class.name}Mailer".constantize.instance_methods(false).map(&:to_s)
                      else

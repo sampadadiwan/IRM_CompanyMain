@@ -35,6 +35,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     record.unit_prices.present? && update?
   end
 
+  def generate_docs?
+    update?
+  end
+
   def edit?
     update?
   end

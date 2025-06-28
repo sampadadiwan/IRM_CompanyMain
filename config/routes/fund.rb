@@ -62,6 +62,7 @@ resources :capital_remittance_payments
 resources :capital_distribution_payments do
   get 'search', on: :collection
   get "preview", on: :member
+  patch 'generate_docs', on: :member
 end
 
 resources :capital_distributions do
@@ -69,6 +70,7 @@ resources :capital_distributions do
   patch 'redeem_units', on: :member
   patch 'payments_completed', on: :member
   get 'add_pis_to_capital_distribution', on: :collection
+  patch 'generate_docs', on: :member
 end
 
 resources :capital_remittances do
