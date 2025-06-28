@@ -2207,13 +2207,14 @@ Given('We Generate documents for the capital distribution') do
   click_on("Actions")
   click_on("Generate Documents")
   click_on("Proceed")
-  sleep 5
+  sleep 8
 end
 
 
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|
+    expect(cdp.documents.count).to be > 0
     cdp.documents.each do |doc|
       doc.approved = true
       res = doc.save

@@ -100,7 +100,7 @@
     </thead>
 
     <tbody id="access_rights_table_body">
-      <% @grouped_access_rights.each do |grouped_by, access_rights| %>
+      <% @paged_grouped_access_rights.each do |grouped_by, access_rights| %>
         <%= render "consolidated_access_rights_row", grouped_by: grouped_by, access_rights: access_rights, show_metadata: show_metadata %>
       <% end %>
     </tbody>
@@ -113,10 +113,10 @@
   Access rights work at the level of the stakeholder firm. To permission individuals from the stakeholder firms
   please setup Stakeholder Users under a Stakeholder
 </div>
-<% if @grouped_access_rights.present? %>
+<% if @paged_grouped_access_rights.present? %>
   <div class="d-flex justify-content-between align-items-center">
-      <%= raw pagy_info(@pagy) %>
-      <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")) %>
+      <%= raw pagy_info(@pagy, item_name: "access group") %>
+      <%= raw pagy_bootstrap_nav(@pagy, link_extra: "data-turbo-frame='#{frame}' data-remote='true'", params: request.query_parameters) %>
   </div>
 <% end %>
 <% end %>
