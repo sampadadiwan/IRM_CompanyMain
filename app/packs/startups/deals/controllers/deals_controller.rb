@@ -1,5 +1,6 @@
 class DealsController < ApplicationController
   include DealsHelper
+  require 'pagy/extras/array'
 
   before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]
   after_action :verify_authorized, except: %i[index search investor_deals]
@@ -51,7 +52,20 @@ class DealsController < ApplicationController
     @grouped_access_rights = get_grouped_access_rights(@access_rights)
 
     @grouped_access_rights = filter_by_owner(@grouped_access_rights, params[:access])
-    @pagy, @grouped_access_rights = pagy(@grouped_access_rights.to_a, limit: params[:per_page] || 10) if params[:all].blank?
+
+    if params[:all].blank?
+      data = @grouped_access_rights.to_a
+      per_page  = params[:per_page].to_i.nonzero? || 10
+      page      = params[:page].to_i.nonzero? || 1
+
+      @pagy     = Pagy.new(count: data.size, page: page, items: per_page, limit: per_page)
+      offset    = @pagy.offset
+      limit     = @pagy.respond_to?(:items) ? @pagy.items : @pagy.send(:vars)[:items]
+
+      @paged_grouped_access_rights = data.slice(offset, limit)
+    else
+      @paged_grouped_access_rights = @grouped_access_rights.to_a
+    end
   end
 
   # GET /deals/1 or /deals/1.json
