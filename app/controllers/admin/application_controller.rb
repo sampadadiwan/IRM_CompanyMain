@@ -7,6 +7,7 @@
 module Admin
   class ApplicationController < Administrate::ApplicationController
     include Administrate::Punditize
+    include Pagy::Backend
 
     helper all_helpers_from_path "app/packs/core/base/helpers"
 
@@ -18,6 +19,28 @@ module Admin
 
     rescue_from Pundit::NotAuthorizedError do |_exception|
       redirect_to root_path, alert: "Access Denied"
+    end
+
+    # Pagy-backed index for all Admin controllers
+    def index
+      search_term = params.dig(:search, :term)
+      resources = Administrate::Search.new(scoped_resource, dashboard_class, search_term).run
+
+      resources = apply_resource_filters(resources) if respond_to?(:apply_resource_filters)
+      resources = order.apply(resources)
+
+      @pagy, @resources = pagy(resources, page: params[:_page], items: 20)
+
+      # This builds the expected `page` object for the view
+      page = Administrate::Page::Collection.new(dashboard, order: order)
+
+      render :index, locals: {
+        resources: @resources,
+        search_term: search_term,
+        page: page,
+        pagy: @pagy,
+        show_search_bar: true # or false if you don't want the search bar
+      }
     end
   end
 end

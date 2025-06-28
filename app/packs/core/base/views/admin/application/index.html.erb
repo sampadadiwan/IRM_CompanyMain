@@ -62,5 +62,5 @@ It renders the `_table` partial to display details about the resources.
     table_title: "page-title"
   ) %>
 
-  <%= raw pagy_bootstrap_nav(@pagy, param_name: '_page') %>
+  <%= raw pagy_bootstrap_nav(@pagy, param_name: '_page') if @pagy %>
 </section>
