@@ -1,10 +1,9 @@
 class CapitalDistributionPaymentNotifier < BaseNotifier
+  # Add required params
+  required_param :email_method
+
   def mailer_name(_notification = nil)
     CapitalDistributionPaymentsMailer
-  end
-
-  def email_method(_notification = nil)
-    :send_notification
   end
 
   def email_data(notification)
@@ -20,11 +19,15 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
   notification_methods do
     def message
       @capital_distribution_payment = record
-      params[:msg] || "CapitalDistributionPayment: #{@capital_distribution_payment}"
+      @custom_notification = custom_notification
+      @custom_notification&.subject || params[:msg].presence || "CapitalDistributionPayment: #{@capital_distribution_payment}"
     end
 
     def custom_notification
-      nil
+      @capital_distribution_payment ||= record
+      @capital_distribution ||= @capital_distribution_payment.capital_distribution
+      @custom_notification ||= @capital_distribution.custom_notification(params[:email_method])
+      @custom_notification
     end
 
     def url

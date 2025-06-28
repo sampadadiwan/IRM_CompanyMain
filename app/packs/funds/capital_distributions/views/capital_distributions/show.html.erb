@@ -149,34 +149,53 @@
     <% end %>
   <% end %>
 
-  <% if policy(@capital_distribution).approve? %>
-    <%= button_to approve_capital_distribution_path(@capital_distribution), method: :post, class: "btn btn-outline-success", form_class: "deleteButton",
-        data: { action: "click->confirm#popup", turbo: false,
-                msg: "This will mark the distribution as approved. The notification will be triggered only when the payments are 'Mark Payments Completed'.",
-                method: :post } do %>
-      <i class="ti ti-check"></i>Approve
-    <% end %>
+  <% unless current_user.curr_role_investor? %>
+    <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+              <% if policy(@capital_distribution).approve? %>
+                <%= button_to approve_capital_distribution_path(@capital_distribution), method: :post, class: "dropdown-item", form_class: "deleteButton",
+                    data: { action: "click->confirm#popup", turbo: false,
+                            msg: "This will mark the distribution as approved. The notification will be triggered only when the payments are 'Mark Payments Completed'.",
+                            method: :post } do %>
+                  <i class="ti ti-check"></i>Approve
+                <% end %>
+              <% end %>
+
+              <% if policy(@capital_distribution).mark_payments_completed? %>
+                <%= button_to payments_completed_capital_distribution_path(@capital_distribution),
+                      method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                      data: { action: "click->confirm#popup", turbo: false,
+                              msg: "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.",
+                              method: :patch } do %>
+                  <i class="ti ti-check"></i>Mark Payments Completed
+                <% end %>
+              <% end %>
+
+              <% if policy(@capital_distribution).redeem_units? %>
+                <%= button_to redeem_units_capital_distribution_path(@capital_distribution),
+                      method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                      data: { action: "click->confirm#popup", turbo: false,
+                              msg: "This will compute the units to be redeemed against each commitment in this fund.",
+                              method: :patch } do %>
+                  <i class="ti ti-arrow-back-up"></i>Redeem Units
+                <% end %>
+              <% end %>
+                
+              <%= button_to "Generate Documents" , 
+                  generate_docs_capital_distribution_path(@capital_distribution),    
+                  method: :patch, class: "dropdown-item ti ti-files", 
+                  form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notices for all payments in this distribution. Proceed?"} if policy(@capital_distribution).generate_docs? %>
+            </div>
+        </div>
+    </div>
   <% end %>
 
-  <% if policy(@capital_distribution).mark_payments_completed? %>
-    <%= button_to payments_completed_capital_distribution_path(@capital_distribution),
-          method: :patch, class: "btn btn-outline-success", form_class: "deleteButton",
-          data: { action: "click->confirm#popup", turbo: false,
-                  msg: "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.",
-                  method: :patch } do %>
-      <i class="ti ti-check"></i>Mark Payments Completed
-    <% end %>
-  <% end %>
-
-  <% if policy(@capital_distribution).redeem_units? %>
-    <%= button_to redeem_units_capital_distribution_path(@capital_distribution),
-          method: :patch, class: "btn btn-outline-success", form_class: "deleteButton",
-          data: { action: "click->confirm#popup", turbo: false,
-                  msg: "This will compute the units to be redeemed against each commitment in this fund.",
-                  method: :patch } do %>
-      <i class="ti ti-arrow-back-up"></i>Redeem Units
-    <% end %>
-  <% end %>
 </div>
 
 

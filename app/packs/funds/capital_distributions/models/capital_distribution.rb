@@ -6,6 +6,7 @@ class CapitalDistribution < ApplicationRecord
   include RansackerAmounts.new(fields: %w[carry cost_of_investment distribution_amount fee gross_amount income reinvestment])
 
   include ForInvestor
+  include WithCustomNotifications
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
   enum :distribution_on, ["Commitment Percentage", "Investable Capital Percentage", "Upload"]
