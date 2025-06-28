@@ -22,11 +22,7 @@ class OffersController < ApplicationController
     @offers = policy_scope(@q.result).includes(:user, :investor, :secondary_sale)
     @offers = OfferSearchService.perform(@offers, current_user, params)
     @secondary_sale = SecondarySale.find(params[:secondary_sale_id]) if params[:secondary_sale_id].present?
-    unless request.format.xlsx? || params[:all] == 'true'
-      page = params[:page] || 1
-      @offers = @offers.page(page)
-      @offers = @offers.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @offers = pagy(@offers, limit: params[:per_page]) unless request.format.xlsx? || params[:all] == 'true'
     authorize(Offer)
     @offers
   end

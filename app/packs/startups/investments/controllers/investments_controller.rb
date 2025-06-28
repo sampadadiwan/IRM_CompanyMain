@@ -15,7 +15,7 @@ class InvestmentsController < ApplicationController
       :import_upload_id
     )
 
-    @investments = @investments.page(params[:page]) if params[:ag].blank?
+    @pagy, @investments = pagy(@investments) if params[:ag].blank?
 
     respond_to do |format|
       format.html

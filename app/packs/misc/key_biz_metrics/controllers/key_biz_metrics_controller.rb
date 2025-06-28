@@ -13,7 +13,7 @@ class KeyBizMetricsController < ApplicationController
 
     @key_biz_metrics = @key_biz_metrics.order(updated_at: :desc)
     page_size = params[:page_size].present? ? params[:page_size].to_i : 12
-    @key_biz_metrics = @key_biz_metrics.page(params[:page]).per(page_size)
+    @pagy, @key_biz_metrics = pagy(@key_biz_metrics, items: page_size)
   end
 
   # GET /key_biz_metrics/1

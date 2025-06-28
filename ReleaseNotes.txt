@@ -1,3 +1,12 @@
+V9.0.62
+#####################################
+2ae2a2c96 incr backup now stores lsn in a separate dir from full backup.
+0cb3d25dd Removed BackupDBJob and cron, now only use xtrabackup
+808907683 Now can clone a form type on get request - using role: :writing (#885)
+bdea42878 Better support for incr backup without full backup
+34098840d Xtrabackup (#886)
+a04609154 Fixed tests
+
 V9.0.61
 #####################################
 f61224b85 Fixed feeder_aggregate_entry in AllocateMasterFundAccountEntries

@@ -8,7 +8,10 @@
             <%= render "/interests/card", interest:  %>
         <% end %>
     </div>
-    <%= paginate @interests %>
+    <div class="d-flex justify-content-between align-items-center">
+        <%= raw pagy_info(@pagy) %>
+        <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="interests_frame" data-remote="true")) %>
+    </div>
 <% else %>
 
     <%= render "interests/index_header", secondary_sale: @secondary_sale, secondary_sale_id: %>
@@ -67,7 +70,10 @@
             </tbody>
         </table>
 
-        <%= paginate interests %>
+        <div class="d-flex justify-content-between align-items-center">
+            <%= raw pagy_info(@pagy) %>
+            <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="interests_frame" data-remote="true")) %>
+        </div>
     </div>
 
 <% end %>

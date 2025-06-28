@@ -47,7 +47,7 @@
                         documents = documents.page(params[:page]) if params[:all].blank?
                     %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
-                    <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>
+                    <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="documents_frame" data-remote="true")) if @pagy %>
                 <% end %>
             </div>
         </div>

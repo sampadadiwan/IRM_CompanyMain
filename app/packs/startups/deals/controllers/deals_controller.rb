@@ -1,5 +1,6 @@
 class DealsController < ApplicationController
   include DealsHelper
+
   before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
@@ -27,7 +28,7 @@ class DealsController < ApplicationController
 
   def investor_deals
     @deals = Deal.for_investor(current_user)
-    @deals = @deals.page params[:page]
+    @pagy, @deals = pagy(@deals)
     render "index"
   end
 
@@ -50,11 +51,7 @@ class DealsController < ApplicationController
     @grouped_access_rights = get_grouped_access_rights(@access_rights)
 
     @grouped_access_rights = filter_by_owner(@grouped_access_rights, params[:access])
-    if params[:all].blank?
-      @grouped_access_rights = Kaminari.paginate_array(@grouped_access_rights.to_a).page(params[:page])
-      params[:per_page] ||= 10
-      @grouped_access_rights = @grouped_access_rights.per(params[:per_page].to_i)
-    end
+    @pagy, @grouped_access_rights = pagy(@grouped_access_rights.to_a, limit: params[:per_page] || 10) if params[:all].blank?
   end
 
   # GET /deals/1 or /deals/1.json

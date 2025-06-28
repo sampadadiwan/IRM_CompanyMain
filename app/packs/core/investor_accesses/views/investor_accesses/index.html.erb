@@ -3,4 +3,4 @@
 <%= render ReportingComponent.new do %>
     <%= render "/investor_accesses/index", investor_accesses: @investor_accesses, investor: nil %>
 <% end %>
-<%= paginate @investor_accesses %>
+<%= raw pagy_bootstrap_nav(@pagy) %>

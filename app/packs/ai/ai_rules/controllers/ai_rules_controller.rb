@@ -5,7 +5,7 @@ class AiRulesController < ApplicationController
   def index
     @q = AiRule.ransack(params[:q])
     @ai_rules = policy_scope(@q.result)
-    @ai_rules = @ai_rules.page(params[:page]) unless params[:format] == "xlsx"
+    @pagy, @ai_rules = pagy(@ai_rules) unless params[:format] == "xlsx"
   end
 
   # GET /ai_rules/1

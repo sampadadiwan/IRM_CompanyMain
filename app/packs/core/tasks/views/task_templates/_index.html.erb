@@ -6,5 +6,5 @@
 <% q ||= nil %>
 
 <div class="table-responsive" data-controller="datatable">
-  <%= render RansackTable.new(TaskTemplate, q: q, entity: current_user.entity, current_user: current_user, records: @task_templates, turbo_frame: "task_templates_frame", referrer: request.referrer) %>
+  <%= render RansackTable.new(TaskTemplate, q: q, entity: current_user.entity, current_user: current_user, records: @task_templates, turbo_frame: "task_templates_frame", referrer: request.referrer, pagy: @pagy) %>
 </div>

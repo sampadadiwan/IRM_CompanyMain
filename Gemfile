@@ -70,7 +70,8 @@ gem "aws-sdk-s3", require: false
 # Elastic search client
 gem 'chewy'
 
-gem 'kaminari'
+# gem 'kaminari'
+gem "pagy"
 # gem 'paper_trail'
 
 # Charting gems

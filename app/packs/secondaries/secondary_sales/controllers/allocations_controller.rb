@@ -5,7 +5,7 @@ class AllocationsController < ApplicationController
   # GET /allocations
   def index
     fetch_rows
-    @allocations = @allocations.page(params[:page]) unless params[:format] == "xlsx"
+    @pagy, @allocations = pagy(@allocations) unless params[:format] == "xlsx"
 
     if params[:secondary_sale_id].present?
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])

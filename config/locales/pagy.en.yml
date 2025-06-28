@@ -1,0 +1,6 @@
+en:
+  pagy:
+    info:
+      no_items: ""
+      single_page: "Showing %{count} of %{count}"
+      multiple_pages: "Showing %{from}‑%{to} of %{count}"

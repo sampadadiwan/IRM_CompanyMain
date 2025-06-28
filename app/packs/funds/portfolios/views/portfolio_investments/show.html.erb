@@ -157,6 +157,15 @@
             <%= @portfolio_investment.net_quantity %>
           </td>
         </tr>
+
+        <tr>
+          <td>
+            Cost of Remaining
+          </td>
+          <td>
+            <%= @portfolio_investment.cost_of_remaining %>
+          </td>
+        </tr>
       <% end %>
 
       <% if @portfolio_investment.buy? %>
@@ -182,7 +191,7 @@
       <% if @portfolio_investment.sell? %>
       <tr>
         <td>
-          FIFO Cost of Sold
+          Cost of Sold
         </td>
         <td>
           <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
@@ -228,22 +237,22 @@
       </tr>
 
       <% if params[:debug].present? && @portfolio_investment.sell? %>
-      <tr>
-        <td>
-          Cost of Sold
-        </td>
-        <td>
-          <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Gain
-        </td>
-        <td>
-          <%= money_to_currency @portfolio_investment.gain, params %>
-        </td>
-      </tr>
+        <tr>
+          <td>
+            Cost of Sold
+          </td>
+          <td>
+            <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Gain
+          </td>
+          <td>
+            <%= money_to_currency @portfolio_investment.gain, params %>
+          </td>
+        </tr>
       <% end %>
 
       <%= display_custom_fields(@portfolio_investment) if current_user %>

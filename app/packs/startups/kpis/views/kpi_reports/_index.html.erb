@@ -29,7 +29,7 @@
     <% kpi_reports_frame ||= "kpi_reports_frame" %>
     <%=render SearchComponent.new(data_source: , turbo_frame: kpi_reports_frame) %>
 
-    <%= render RansackTable.new(KpiReport, q: q, current_user: current_user, records: kpi_reports, report_id: params["report_id"], turbo_frame: kpi_reports_frame, referrer: request.referrer) %>
+    <%= render RansackTable.new(KpiReport, q: q, current_user: current_user, records: kpi_reports, report_id: params["report_id"], turbo_frame: kpi_reports_frame, referrer: request.referrer, pagy: @pagy) %>
   </div>
 
 </div>

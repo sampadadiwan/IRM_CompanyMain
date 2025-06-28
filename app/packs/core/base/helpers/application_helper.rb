@@ -1,4 +1,7 @@
 module ApplicationHelper
+  include Pagy::Backend
+  include Pagy::Frontend
+
   def t_common(key)
     t("common.#{key}")
   end

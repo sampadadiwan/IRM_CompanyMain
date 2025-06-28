@@ -25,7 +25,7 @@ class InterestsController < ApplicationController
 
     @interests = @interests.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    @interests = @interests.page(params[:page]) unless request.format.xlsx? || params[:all].present?
+    @pagy, @interests = pagy(@interests) unless request.format.xlsx? || params[:all].present?
 
     if params[:secondary_sale_id].present?
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])

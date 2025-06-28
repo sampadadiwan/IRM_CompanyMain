@@ -9,7 +9,7 @@ class KycDatasController < ApplicationController
     @kyc_datas = @kyc_datas.where(investor_kyc_id: params[:investor_kyc_id])
 
     @kyc_datas = @kyc_datas.where(source: params[:source]) if params[:source].present?
-    @kyc_datas = @kyc_datas.page(params[:page]) if params[:all].blank?
+    @pagy, @kyc_datas = pagy(@kyc_datas) if params[:all].blank?
     respond_to do |format|
       format.html
       format.turbo_stream
@@ -26,8 +26,7 @@ class KycDatasController < ApplicationController
       @kyc_datas = KycData.filter(terms: { entity_id: entity_ids })
                           .query(query_string: { fields: KycDataIndex::SEARCH_FIELDS,
                                                  query:, default_operator: 'and' })
-                          .page(params[:page])
-                          .objects
+      @pagy, @kyc_datas = pagy(@kyc_datas.page(params[:page]).objects)
 
       render "index"
     else

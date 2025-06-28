@@ -4,6 +4,6 @@
         <%= render "/tasks/timeline", tasks: @tasks, q: @q, lazy_load_data: false %>
     <% else %>
         <%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity, search: @search %>
-    <% end %>
-    <%= paginate @tasks, data: {turbo_frame: "tasks_frame"} %>
+    <% end %>    
+    <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="tasks_frame" data-remote="true")) %>
 <% end %>

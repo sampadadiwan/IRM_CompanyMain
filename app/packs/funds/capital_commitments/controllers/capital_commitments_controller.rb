@@ -33,8 +33,7 @@ class CapitalCommitmentsController < ApplicationController
 
     # Step 5: Apply pagination unless 'all' records requested
     elsif params[:all].blank?
-      @capital_commitments = @capital_commitments.page(params[:page])
-      @capital_commitments = @capital_commitments.per(params[:per_page].to_i) if params[:per_page].present?
+      @pagy, @capital_commitments = pagy(@capital_commitments, limit: params[:per_page])
     end
 
     # Step 6: Final response formatting

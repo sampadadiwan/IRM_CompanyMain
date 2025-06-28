@@ -32,9 +32,7 @@ class FundRatiosController < ApplicationController
       group_by_period = params[:group_by_period] || :quarter
       @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
     elsif params[:all].blank? && params[:condensed].blank?
-      page = params[:page] || 1
-      @fund_ratios = @fund_ratios.page(page)
-      @fund_ratios = @fund_ratios.per(params[:per_page].to_i) if params[:per_page].present?
+      @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page])
     end
 
     # Step 6: Render appropriate format

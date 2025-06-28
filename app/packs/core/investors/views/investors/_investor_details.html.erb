@@ -144,6 +144,7 @@
 
         <div id="investors-tab" class="tab-pane fade show active">
           <div id="investor_accesses" class="associated_entity">
+            <% params[:investor_id] = investor.id %>
             <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user, :granter),
                 investor: investor, label: label %>
           </div>

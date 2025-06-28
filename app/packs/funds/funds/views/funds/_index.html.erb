@@ -9,7 +9,7 @@
         <%= render "/funds/card", fund: fund %>
     <% end %>
 
-    <%= paginate funds %>
+    <%= raw pagy_bootstrap_nav(@pagy) %>
   <% end %>
 <% else %>  
   <div class="d-sm-flex align-items-center justify-content-between mb-4">

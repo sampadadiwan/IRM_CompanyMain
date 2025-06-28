@@ -8,10 +8,7 @@ class InvestorsController < ApplicationController
     @investors = policy_scope(@q.result)
     authorize(Investor)
     @investors = InvestorSearch.search(@investors, params, current_user)
-    if params[:all].blank?
-      @investors = @investors.page(params[:page])
-      @investors = @investors.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:all].blank?
     respond_to do |format|
       format.html
       format.turbo_stream

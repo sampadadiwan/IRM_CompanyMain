@@ -39,7 +39,7 @@ Feature: View Shared Document
     Given a document named "Email Test Document" exists for "Test Entity"
     And a doc share exists for "Email Test Document" with email "recipient@example.com"
     Then the doc share email address receives an email with "Email Test Document" in the subject
-    And the email body should contain "A document has been shared with you. You can view it by clicking on the link below"
+    And the email body should contain "A document Email Test Document has been shared with you"
     And when I click on the link in the email "View Document"
     Then I should be able to view the document "Email Test Document"
     And the doc share's view count should be 1

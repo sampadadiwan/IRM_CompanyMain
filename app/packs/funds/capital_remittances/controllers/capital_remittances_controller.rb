@@ -4,11 +4,7 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     fetch_rows
-    if params[:all].blank?
-      page = params[:page] || 1
-      @capital_remittances = @capital_remittances.page(page)
-      @capital_remittances = @capital_remittances.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @capital_remittances = pagy(@capital_remittances, limit: params[:per_page]) if params[:all].blank?
 
     respond_to do |format|
       format.html

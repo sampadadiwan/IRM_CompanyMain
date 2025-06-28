@@ -18,11 +18,7 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :documents)
 
     @offers = OfferSearchService.perform(@offers, current_user, params)
-    if !request.format.xlsx? && params[:all].blank?
-      page = params[:page] || 1
-      @offers = @offers.page(page)
-      @offers = @offers.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @offers = pagy(@offers, limit: params[:per_page]) if !request.format.xlsx? && params[:all].blank?
 
     if params[:report]
       render "/offers/#{params[:report]}"
@@ -49,7 +45,7 @@ class SecondarySalesController < ApplicationController
     @interests = @interests.where(signature_data: nil) if params[:signature] == 'false'
     @interests = @interests.where(final_agreement: false) if params[:final_agreement] == 'false'
 
-    @interests = @interests.page(params[:page]) unless request.format.xlsx?
+    @pagy, @interests = pagy(@interests) unless request.format.xlsx?
 
     if params[:report]
       render "/interests/#{params[:report]}"

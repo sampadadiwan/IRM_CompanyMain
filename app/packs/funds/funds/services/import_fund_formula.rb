@@ -2,7 +2,7 @@ class ImportFundFormula < ImportUtil
   # FundFormula does not have a custom_field model
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Sequence", "Name", "Description", "Rule Type", "Rule For", "Formula", "Entry Type", "Rollup", "Enabled", "Tag List", "Generate Ytd, Quarterly, Since Inception Numbers"].freeze
+  STANDARD_HEADERS = ["Sequence", "Name", "Description", "Rule Type", "Rule For", "Formula", "Entry Type", "Rollup", "Enabled", "Tag List", "Generate Ytd, Quarterly, Since Inception Numbers", "Metadata"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -22,9 +22,10 @@ class ImportFundFormula < ImportUtil
     rule_for = row_data["Rule For"]
     tag_list = row_data["Tag List"]
     roll_up = row_data["Rollup"]&.downcase == "yes"
+    meta_data = row_data["Metadata"]
     generate_ytd_qtly = row_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes"
 
-    fund_formula = fund.fund_formulas.find_or_initialize_by(entity_id: fund.entity_id, name:, description:, formula:, entry_type:, rule_for:, rule_type:, generate_ytd_qtly:)
+    fund_formula = fund.fund_formulas.find_or_initialize_by(entity_id: fund.entity_id, name:, description:, formula:, entry_type:, rule_for:, rule_type:, generate_ytd_qtly:, meta_data:)
 
     if fund_formula.id.present?
       raise "FundFormula #{fund_formula.id} already exists"

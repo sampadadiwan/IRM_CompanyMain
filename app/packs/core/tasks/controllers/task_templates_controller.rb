@@ -4,9 +4,10 @@ class TaskTemplatesController < ApplicationController
   # GET /task_templates
   def index
     @q = TaskTemplate.ransack(params[:q])
-    @task_templates = policy_scope(@q.result).page(params[:page])
+    @task_templates = policy_scope(@q.result)
 
     @task_templates = @task_templates.order(:for_class, position: :asc) if params[:sort].blank?
+    @pagy, @task_templates = pagy(@task_templates)
   end
 
   def generate

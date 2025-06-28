@@ -5,7 +5,7 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets
   def index
     @q = DashboardWidget.ransack(params[:q])
-    @dashboard_widgets = policy_scope(@q.result).includes(:owner).page(params[:page])
+    @pagy, @dashboard_widgets = pagy(policy_scope(@q.result).includes(:owner))
   end
 
   def metadata_help

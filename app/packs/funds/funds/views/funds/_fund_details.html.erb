@@ -178,13 +178,12 @@
         <!-- For the portfolio and fund ratios, use the master_fund if its present as in the feeder fund we want to see the master_fund portfolio and ratios p-->
         <%
           fund_id = fund.master_fund.present? ?  fund.master_fund_id : fund.id
-          fund_or_master = fund.master_fund.present? ? fund.master_fund : fund
         %>
 
         <% if fund.entity.permissions.enable_fund_portfolios? %>
           <div id="portfolio-investments-tab" class="tab-pane fade">
             <div id="portfolio_investments" class="associated_entity">
-              <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund_or_master, dashboard_name: "Portfolio Dashboard") do %>
+              <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard") do %>
 
                 <%= render "/layouts/loading" %>
 

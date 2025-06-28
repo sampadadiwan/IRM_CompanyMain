@@ -56,5 +56,5 @@
 
         <%=render SearchComponent.new(data_source: capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: distribution_payments_frame) %>
 
-        <%= render RansackTable.new(CapitalDistributionPayment, q: @q, default_columns_map:, current_user: current_user, records: capital_distribution_payments, report_id: params["report_id"], turbo_frame: distribution_payments_frame, referrer: request.referrer) %>
+        <%= render RansackTable.new(CapitalDistributionPayment, q: @q, default_columns_map:, current_user: current_user, records: capital_distribution_payments, report_id: params["report_id"], turbo_frame: distribution_payments_frame, referrer: request.referrer, pagy: @pagy) %>
   </div>

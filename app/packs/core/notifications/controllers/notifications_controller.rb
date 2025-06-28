@@ -22,7 +22,7 @@ class NotificationsController < ApplicationController
       current_user.touch # This is to bust the topbar cache which shows new notifications
     end
 
-    @notifications = @notifications.includes(:event).order(id: :desc).page(params[:page])
+    @pagy, @notifications = pagy(@notifications.includes(:event).order(id: :desc))
   end
 
   # GET /notifications/1 or /notifications/1.json

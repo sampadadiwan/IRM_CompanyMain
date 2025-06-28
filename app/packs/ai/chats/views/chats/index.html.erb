@@ -35,7 +35,7 @@
       <% end %>
     </tbody>
   </table>
-  <%= paginate @chats %>
+  <%= raw pagy_bootstrap_nav(@pagy) %>
 </div>
 
 <% end %>
