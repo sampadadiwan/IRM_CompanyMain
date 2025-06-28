@@ -22,11 +22,7 @@ class KpiReportsController < ApplicationController
     @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type, :entity_id)
     @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
 
-    if params[:all].blank? && !request.format.xlsx?
-      page = params[:page] || 1
-      @kpi_reports = @kpi_reports.page(page)
-      @kpi_reports = @kpi_reports.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @kpi_reports = pagy(@kpi_reports, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?
 
     # Add back the sort field so UI can reflect the current sort if sorted by entity_name
     @q.sorts = sort_query if sort_query.present?

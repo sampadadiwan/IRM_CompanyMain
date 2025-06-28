@@ -4,7 +4,7 @@
 <table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
         <thead>
             <tr>
-                <% if params[:show_investor_name].present? %>
+                <% if params[:investor_id].blank? %>
                     <th>
                         Stakeholder
                     </th>

@@ -32,8 +32,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
       @time_series = AggregatePortfolioInvestmentTimeSeries.new(@aggregate_portfolio_investments, @fields).call
     elsif params[:all].blank?
       # If not requesting all, apply pagination
-      @aggregate_portfolio_investments = @aggregate_portfolio_investments.page(params[:page])
-      @aggregate_portfolio_investments = @aggregate_portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
+      @pagy, @aggregate_portfolio_investments = pagy(@aggregate_portfolio_investments, limit: params[:per_page])
     end
 
     # Step 6: Additional view flag for showing fund names

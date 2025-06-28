@@ -10,7 +10,7 @@ class StockConversionsController < ApplicationController
   # GET /stock_conversions or /stock_conversions.json
   def index
     @stock_conversions = apply_scopes(policy_scope(StockConversion)).includes(:fund, :from_instrument, :to_instrument, to_portfolio_investment: :investment_instrument, from_portfolio_investment: :investment_instrument)
-    @stock_conversions = @stock_conversions.page(params[:page])
+    @pagy, @stock_conversions = pagy(@stock_conversions)
   end
 
   # GET /stock_conversions/1 or /stock_conversions/1.json

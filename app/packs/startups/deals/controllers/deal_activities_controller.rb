@@ -1,5 +1,6 @@
 class DealActivitiesController < ApplicationController
   include DealInvestorsHelper
+
   before_action :set_deal_activity, only: %w[show update destroy edit update_sequence toggle_completed perform_activity_action]
   skip_before_action :verify_authenticity_token, only: %i[update_sequence perform_activity_action update_sequences], raise: false
   after_action :verify_authorized, except: %w[update_sequences]
@@ -19,7 +20,7 @@ class DealActivitiesController < ApplicationController
                        else
                          @deal_activities.where.not(deal_investor_id: nil).order(sequence: :asc)
                        end
-    @deal_activities = @deal_activities.page params[:page] if params[:all].blank?
+    @pagy, @deal_activities = pagy(@deal_activities) if params[:all].blank?
   end
 
   def search

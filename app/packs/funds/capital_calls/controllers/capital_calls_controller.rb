@@ -15,11 +15,7 @@ class CapitalCallsController < ApplicationController
     @capital_calls = @capital_calls.order(:call_date) if params[:order].blank?
     @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
-    if params[:all].blank?
-      page = params[:page] || 1
-      @capital_calls = @capital_calls.page(page)
-      @capital_calls = @capital_calls.per(params[:per_page] || 10)
-    end
+    @pagy, @capital_calls = pagy(@capital_calls, limit: params[:per_page] || 10) if params[:all].blank?
 
     respond_to do |format|
       format.xlsx

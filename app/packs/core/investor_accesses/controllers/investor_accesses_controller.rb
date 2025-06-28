@@ -11,7 +11,7 @@ class InvestorAccessesController < ApplicationController
     @investor_accesses = @investor_accesses.where(approved: params[:approved]) if params[:approved].present?
     @investor_accesses = @investor_accesses.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @investor_accesses = @investor_accesses.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @investor_accesses = @investor_accesses.page(params[:page]) if params[:all].blank?
+    @pagy, @investor_accesses = pagy(@investor_accesses) if params[:all].blank?
   end
 
   def search

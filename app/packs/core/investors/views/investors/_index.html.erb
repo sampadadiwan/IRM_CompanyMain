@@ -87,5 +87,5 @@
 <% investors_frame = "investors_frame" %>
 <%=render SearchComponent.new(data_source: investors_path( params: params.to_unsafe_h, import_upload_id:), turbo_frame: investors_frame) %>
 <div class="table-responsive">
-  <%= render RansackTable.new(Investor, q: @q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer) %>    
+  <%= render RansackTable.new(Investor, q: @q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer, pagy: @pagy) %>    
 </div>

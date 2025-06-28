@@ -46,8 +46,7 @@ class PortfolioInvestmentsController < ApplicationController
       @fields = params[:fields].presence || %i[fmv quantity gain]
       @time_series = PortfolioInvestmentTimeSeries.new(@portfolio_investments, @fields).call
     elsif params[:all].blank? && params[:ag].blank? && !request.format.xlsx?
-      @portfolio_investments = @portfolio_investments.page(params[:page])
-      @portfolio_investments = @portfolio_investments.per(params[:per_page].to_i) if params[:per_page].present?
+      @pagy, @portfolio_investments = pagy(@portfolio_investments, limit: params[:per_page])
     end
 
     respond_to do |format|

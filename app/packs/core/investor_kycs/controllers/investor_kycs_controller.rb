@@ -32,10 +32,7 @@ class InvestorKycsController < ApplicationController
 
     @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
 
-    if params[:all].blank?
-      @investor_kycs = @investor_kycs.page(params[:page])
-      @investor_kycs = @investor_kycs.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @investor_kycs = pagy(@investor_kycs, limit: params[:per_page]) if params[:all].blank?
 
     @investor_kycs
   end

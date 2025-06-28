@@ -9,5 +9,5 @@
 <% q ||=nil %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: fund_ratios_frame) %>
 <div class="table-responsive">
-  <%= render RansackTable.new(FundRatio, q: q, current_user: current_user, records: fund_ratios, report_id: params["report_id"], turbo_frame: fund_ratios_frame, referrer: request.referrer) %>
+  <%= render RansackTable.new(FundRatio, q: q, current_user: current_user, records: fund_ratios, report_id: params["report_id"], turbo_frame: fund_ratios_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>

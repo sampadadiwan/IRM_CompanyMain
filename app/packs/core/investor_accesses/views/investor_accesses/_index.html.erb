@@ -25,6 +25,8 @@
             <% end %>
         <% end %>
 
+        <%= link_to "Filter", investor_accesses_path(filter: true), class: "btn btn-outline-primary ti ti-filter" %>
+
         <%= link_to new_import_upload_path(
                         "import_upload[import_type]": "InvestorAccess",
                         "sample_upload": "INVESTOR_ACCESS_SAMPLE"),
@@ -41,7 +43,7 @@
 
 
 
-<div class="table-responsive" data-controller="datatable">
+<div class="table-responsive">
 
     <%= render "/investor_accesses/table", investor_accesses: investor_accesses %>
 

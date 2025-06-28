@@ -6,7 +6,7 @@ class CustomNotificationsController < ApplicationController
     @q = CustomNotification.ransack(params[:q])
     @custom_notifications = policy_scope(@q.result)
     @custom_notifications = with_owner_access(@custom_notifications)
-    @custom_notifications = @custom_notifications.page(params[:page])
+    @pagy, @custom_notifications = pagy(@custom_notifications)
   end
 
   # GET /custom_notifications/1 or /custom_notifications/1.json

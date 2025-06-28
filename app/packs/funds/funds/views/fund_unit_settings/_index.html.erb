@@ -25,7 +25,7 @@
 
   <%=render SearchComponent.new(data_source: fund_unit_settings_path(params: params.to_unsafe_h), turbo_frame: fund_unit_settings_frame) %>
 
-  <%= render RansackTable.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame, referrer: request.referrer) %>
+  <%= render RansackTable.new(FundUnitSetting, q: @q, current_user: current_user, records: fund_unit_settings, turbo_frame: fund_unit_settings_frame, referrer: request.referrer, pagy: @pagy) %>
 
 </div>
 

@@ -13,7 +13,7 @@ class VideoKycsController < ApplicationController
 
     @video_kycs = @video_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
 
-    @video_kycs = @video_kycs.includes(:investor, :entity)
+    @pagy, @video_kycs = pagy(@video_kycs.includes(:investor, :entity))
   end
 
   def search
@@ -25,8 +25,7 @@ class VideoKycsController < ApplicationController
       @video_kycs = VideoKycIndex.filter(term: { entity_id: entity_ids })
                                  .query(query_string: { fields: VideoKycIndex::SEARCH_FIELDS,
                                                         query:, default_operator: 'and' })
-                                 .page(params[:page])
-                                 .objects
+      @pagy, @video_kycs = pagy(@video_kycs.page(params[:page]).objects)
 
       render "index"
     else

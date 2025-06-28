@@ -70,5 +70,5 @@
       <% end %>
     </tbody>
   </table>
-  <%= paginate @allocations.page(params[:page]) %>
+  <%= raw pagy_bootstrap_nav(@pagy) %>
 </div>

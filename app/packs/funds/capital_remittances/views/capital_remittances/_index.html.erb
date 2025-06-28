@@ -102,6 +102,6 @@
     %>
     <%=render SearchComponent.new(data_source: , turbo_frame: capital_remittances_frame) %>
 
-    <%= render RansackTable.new(CapitalRemittance, q: @q, default_columns_map:, current_user: current_user, records: capital_remittances, report_id: params["report_id"], turbo_frame: capital_remittances_frame, referrer: request.referrer) %>
+    <%= render RansackTable.new(CapitalRemittance, q: @q, default_columns_map:, current_user: current_user, records: capital_remittances, report_id: params["report_id"], turbo_frame: capital_remittances_frame, referrer: request.referrer, pagy: @pagy) %>
   </div>
 </div>

@@ -15,13 +15,13 @@
         <% if current_user.enable_funds %>
             <% title = link_to(t('entities.fm_dashboard2.funds'), funds_path) %>
             <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
-                <% funds = policy_scope(Fund).page(params[:page]) %>
+                <% @pagy, funds = pagy(policy_scope(Fund)) %>
 
                 <% funds.includes(:fund_ratios).each do |fund| %>
                     <%= render "/funds/card", fund: %>
                 <% end %>
 
-                <%= paginate funds %>
+                <%= raw pagy_bootstrap_nav(@pagy) %>
             <% end %>
 
         <% end %>

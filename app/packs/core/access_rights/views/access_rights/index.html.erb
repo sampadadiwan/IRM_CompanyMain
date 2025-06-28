@@ -2,5 +2,5 @@
 <% frame = params[:frame] || "access_rights_frame" %>
 <%= turbo_frame_tag frame, target: "_top" do %>              
     <%= render "/access_rights/index", access_rights: @access_rights, access_right: nil %>
-    <%= paginate @access_rights, data: {turbo_frame: 'access_rights_frame'} %>
+    <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="access_rights_frame" data-remote="true")) %>    
 <% end %>

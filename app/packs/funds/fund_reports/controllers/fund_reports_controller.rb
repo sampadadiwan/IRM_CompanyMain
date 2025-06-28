@@ -12,10 +12,7 @@ class FundReportsController < ApplicationController
       @fund = Fund.find(params[:fund_id])
       @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Fund Reports': nil }
     end
-    if params[:all].blank?
-      @fund_reports = @fund_reports.page(params[:page])
-      @fund_reports = @fund_reports.per(params[:per_page].to_i) if params[:per_page].present?
-    end
+    @pagy, @fund_reports = pagy(@fund_reports, limit: params[:per_page]) if params[:all].blank?
 
     respond_to do |format|
       format.html

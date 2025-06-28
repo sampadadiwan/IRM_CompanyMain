@@ -5,7 +5,7 @@ class TickerFeedsController < ApplicationController
   def index
     @q = TickerFeed.ransack(params[:q])
     @ticker_feeds = policy_scope(@q.result)
-    @ticker_feeds = @ticker_feeds.page(params[:page])
+    @pagy, @ticker_feeds = pagy(@ticker_feeds)
   end
 
   # GET /ticker_feeds/1

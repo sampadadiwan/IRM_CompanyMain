@@ -7,7 +7,7 @@ class ExcusedInvestorsController < ApplicationController
     @excused_investors = policy_scope(@q.result).includes(:portfolio_company, :aggregate_portfolio_investment, :portfolio_investment, :capital_commitment)
     @excused_investors = @excused_investors.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @excused_investors = @excused_investors.where(fund_id: params[:fund_id]) if params[:fund_id].present?
-    @excused_investors = @excused_investors.page(params[:page])
+    @pagy, @excused_investors = pagy(@excused_investors)
   end
 
   # GET /excused_investors/1

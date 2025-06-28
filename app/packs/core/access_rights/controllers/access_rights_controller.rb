@@ -28,7 +28,7 @@ class AccessRightsController < ApplicationController
     @access_rights = @access_rights.with_deleted if params[:with_deleted].present?
 
     # Step 5: Apply pagination
-    @access_rights = @access_rights.page(params[:page])
+    @pagy, @access_rights = pagy(@access_rights)
   end
 
   def search
@@ -57,7 +57,7 @@ class AccessRightsController < ApplicationController
                                                                 query:, default_operator: 'and' })
                        end
 
-      @access_rights = @access_rights.page(params[:page]).objects
+      @pagy, @access_rights = pagy(@access_rights.page(params[:page]).objects)
       render "index"
     else
       redirect_to access_rights_path(params.to_enum.to_h)

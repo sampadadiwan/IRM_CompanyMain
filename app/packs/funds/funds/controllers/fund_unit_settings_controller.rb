@@ -10,10 +10,7 @@ class FundUnitSettingsController < ApplicationController
     @fund_unit_settings = policy_scope(@q.result)
     @fund_unit_settings = @fund_unit_settings.where(fund_id: params[:fund_id]) if params[:fund_id]
     @fund_unit_settings = @fund_unit_settings.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    if params[:all].blank?
-      @fund_unit_settings = @fund_unit_settings.page(params[:page])
-      @fund_unit_settings = @fund_unit_settings.per((params[:per_page] || 10).to_i)
-    end
+    @pagy, @fund_unit_settings = pagy(@fund_unit_settings, limit: params[:per_page] || 10) if params[:all].blank?
     respond_to do |format|
       format.html
       format.turbo_stream { render partial: 'fund_unit_settings/index', locals: { fund_unit_settings: @fund_unit_settings } }

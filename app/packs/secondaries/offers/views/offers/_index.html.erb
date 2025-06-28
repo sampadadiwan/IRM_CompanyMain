@@ -59,7 +59,10 @@
             <%= render "/offers/card", offer: offer %>
         <% end %>
     </div>
-    <%= paginate @offers.page(params[:page]) %>
+    <div class="d-flex justify-content-between align-items-center">
+        <%= raw pagy_info(@pagy) %>
+        <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="offers_frame" data-remote="true")) %>
+    </div>
 <% else %>    
 
     <% 
@@ -80,7 +83,7 @@
     <div class="table-responsive">
         <%=render SearchComponent.new(data_source: , turbo_frame: offers_frame) %>
 
-        <%= render RansackTable.new(Offer, q: q, default_columns_map:, current_user: current_user, records: offers, report_id: params["report_id"], turbo_frame: offers_frame, referrer: request.referrer) %>
+        <%= render RansackTable.new(Offer, q: q, default_columns_map:, current_user: current_user, records: offers, report_id: params["report_id"], turbo_frame: offers_frame, referrer: request.referrer, pagy: @pagy) %>
     </div>
 
 <% end %>

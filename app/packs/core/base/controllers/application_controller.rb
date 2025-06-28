@@ -1,7 +1,8 @@
 class ApplicationController < ActionController::Base
   layout 'modernize'
-
+  include Pagy::Backend
   include Pundit::Authorization
+
   include WithAuthentication
   include WithFilterParams
   include WithBulkActions

@@ -1,7 +1,7 @@
 <tr id="<%= dom_id investor_access %>">
-  <% if params[:show_investor_name].present? %>
+  <% if params[:investor_id].blank? %>
     <td>
-      <%= investor_access.investor_name %>
+      <%= link_to investor_access.investor_name, investor_access.investor %>
     </td>
   <% end %>
   <td>

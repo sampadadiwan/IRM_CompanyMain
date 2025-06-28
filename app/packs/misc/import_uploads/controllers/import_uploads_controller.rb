@@ -6,7 +6,7 @@ class ImportUploadsController < ApplicationController
     authorize(ImportUpload)
     @q = ImportUpload.ransack(params[:q])
     @import_uploads = policy_scope(@q.result).includes(:user, :owner).order(id: :desc)
-    @import_uploads = @import_uploads.page(params[:page])
+    @pagy, @import_uploads = pagy(@import_uploads)
   end
 
   # GET /import_uploads/1 or /import_uploads/1.json

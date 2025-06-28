@@ -40,8 +40,10 @@
 
   </table>
   <% if notes.present? %>
-    <%= page_entries_info notes, entry_name: 'item' %>
-    <%= paginate notes, data: {turbo_frame: "notes_frame"} %>
+     <div class="d-flex justify-content-between align-items-center">
+            <%= raw pagy_info(@pagy) %>
+            <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="notes_frame" data-remote="true")) %>
+      </div>
   <% end %>
 
 </div>

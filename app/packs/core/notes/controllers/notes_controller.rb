@@ -24,7 +24,7 @@ class NotesController < ApplicationController
     @notes = @notes.where(investor_id: params[:investor_id]) if params[:investor_id]
 
     @notes = NoteSearch.perform(@notes, current_user, params)
-    @notes = @notes.with_all_rich_text.includes(:user, :investor).page params[:page]
+    @pagy, @notes = pagy(@notes.with_all_rich_text.includes(:user, :investor))
   end
 
   def search
@@ -32,8 +32,9 @@ class NotesController < ApplicationController
     if query.present?
       @notes = NoteIndex.filter(term: { entity_id: current_user.entity_id })
                         .query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
-                                               query:, default_operator: 'and' }).page params[:page]
+                                               query:, default_operator: 'and' })
 
+      @pagy, @notes = pagy(@notes.page(params[:page]))
       render "index"
     else
       redirect_to notes_path(request.parameters)

@@ -5,7 +5,7 @@ class AiChecksController < ApplicationController
   def index
     @q = AiCheck.ransack(params[:q])
 
-    @ai_checks = policy_scope(@q.result).page(params[:page])
+    @ai_checks = policy_scope(@q.result)
     @ai_checks = @ai_checks.where(parent_id: params[:parent_id]) if params[:parent_id].present?
     @ai_checks = @ai_checks.where(parent_type: params[:parent_type]) if params[:parent_type].present?
     @ai_checks = @ai_checks.where(owner_id: params[:owner_id]) if params[:owner_id].present?
@@ -19,7 +19,7 @@ class AiChecksController < ApplicationController
                    @ai_checks.includes(:ai_rule, :parent, :owner)
                  end
 
-    @ai_checks = @ai_checks.page(params[:page]) unless params[:format] == "xlsx"
+    @pagy, @ai_checks = pagy(@ai_checks) unless params[:format] == "xlsx"
   end
 
   def run_checks

@@ -101,9 +101,19 @@ class AccountEntriesController < ApplicationController
     else
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-      if params[:all].blank?
-        page = params[:page] || 1
-        @account_entries = @account_entries.page(page).per(params[:per_page] || 10)
+
+      folio_filter = @q.conditions.any? do |cond|
+        cond.attributes.any? { |attr| attr.name == 'folio_id' }
+      end
+
+      capital_commitment_filter = @q.conditions.any? do |cond|
+        cond.attributes.any? { |attr| attr.name == 'capital_commitment_id' }
+      end
+
+      if capital_commitment_filter || folio_filter
+        @pagy, @account_entries = pagy(@account_entries, limit: params[:per_page] || 10) if params[:all].blank?
+      elsif params[:all].blank?
+        @pagy, @account_entries = pagy_countless(@account_entries, limit: params[:per_page] || 10)
       end
       @template = "index"
     end

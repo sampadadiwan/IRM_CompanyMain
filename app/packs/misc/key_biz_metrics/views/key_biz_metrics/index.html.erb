@@ -10,7 +10,7 @@
   <%= render "/key_biz_metrics/index" %>
 <% end %>
 
-<%= paginate @key_biz_metrics %>
+<%= raw pagy_bootstrap_nav(@pagy) %>
 
 <% if params[:q].present? && 
       deep_locate(params, "name", "name") &&

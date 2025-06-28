@@ -73,12 +73,12 @@ Rails.application.configure do
   config.hosts << /[a-z0-9\-]+\.ngrok-free\.app/
   config.hosts << "host.docker.internal"
 
-  Bullet.enable = true
-  Bullet.alert = true
-  Bullet.bullet_logger = true
-  Bullet.console = true
-  Bullet.rails_logger = true
-  Bullet.add_footer = true
+  # Bullet.enable = true
+  # Bullet.alert = true
+  # Bullet.bullet_logger = true
+  # Bullet.console = true
+  # Bullet.rails_logger = true
+  # Bullet.add_footer = true
   config.log_level = :debug
   config.active_record.verbose_query_logs = true
 

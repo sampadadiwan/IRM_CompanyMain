@@ -699,6 +699,7 @@ GEM
       prism (>= 0.25.0)
       sorbet-runtime (>= 0.5.9914)
       zeitwerk (>= 2.6.1)
+    pagy (9.3.4)
     parallel (1.26.3)
     parallel_tests (5.1.0)
       parallel
@@ -1170,7 +1171,6 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   json2table
-  kaminari
   langchainrb
   letter_opener
   libreconv
@@ -1187,6 +1187,7 @@ DEPENDENCIES
   ostruct
   overcommit
   packs-rails
+  pagy
   parallel_tests
   paranoia
   parser

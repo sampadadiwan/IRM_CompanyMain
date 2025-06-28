@@ -13,7 +13,7 @@ class TasksController < ApplicationController
 
     @tasks = filter_params(@tasks, :completed, :for_support, :entity_id, :for_entity_id, :assigned_to_id, :owner_id, :owner_type)
 
-    @tasks = @tasks.includes(:for_entity, :user, :task_template).page(params[:page])
+    @pagy, @tasks = pagy(@tasks.includes(:for_entity, :user, :task_template))
   end
 
   def search
@@ -23,9 +23,9 @@ class TasksController < ApplicationController
       @tasks = TaskIndex.filter(term: { entity_id: current_user.entity_id })
                         .or(TaskIndex.filter(term: { for_entity_id: current_user.entity_id })
                       .query(query_string: { fields: TaskIndex::SEARCH_FIELDS,
-                                             query:, default_operator: 'and' }).page(params[:page]))
+                                             query:, default_operator: 'and' }))
 
-      @tasks = @tasks.page(params[:page]).objects
+      @pagy, @tasks = pagy(@tasks.page(params[:page]).objects)
       render "index"
     else
       redirect_to tasks_path(request.parameters)

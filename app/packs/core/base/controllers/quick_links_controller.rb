@@ -7,7 +7,7 @@ class QuickLinksController < ApplicationController
     @quick_links = @quick_links.where(tags: params[:tags]) if params[:tags].present?
     @quick_links = @quick_links.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @quick_links = @quick_links.where("name ILIKE ?", "%#{params[:search]}%") if params[:search].present?
-    @quick_links = @quick_links.order(entity_id: :desc).page(params[:page])
+    @pagy, @quick_links = pagy(@quick_links.order(entity_id: :desc))
   end
 
   # GET /quick_links/1 or /quick_links/1.json

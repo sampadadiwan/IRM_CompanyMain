@@ -83,7 +83,7 @@ class DocumentsController < ApplicationController
                                 .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
                                                        query:, default_operator: 'and' })
 
-      @documents = @documents.page(params[:page]).objects
+      @pagy, @documents = pagy(@documents.page(params[:page]).objects)
       # @no_folders = true
       render "index"
     else

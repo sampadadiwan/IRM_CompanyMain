@@ -1,4 +1,4 @@
 
 <%= render "layouts/filter", associations: [], hidden_fields: {all: params[:all], entity_id: params[:entity_id]} %>
 <%= render "/custom_notifications/index", custom_notifications: @custom_notifications %>
-<%= paginate @custom_notifications %>
+<%= raw pagy_bootstrap_nav(@pagy) %>

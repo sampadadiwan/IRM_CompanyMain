@@ -114,7 +114,9 @@
   please setup Stakeholder Users under a Stakeholder
 </div>
 <% if @grouped_access_rights.present? %>
-  <%= page_entries_info @grouped_access_rights, entry_name: 'item' %>
-  <%= paginate @grouped_access_rights, data: {turbo_frame: frame} %>
+  <div class="d-flex justify-content-between align-items-center">
+      <%= raw pagy_info(@pagy) %>
+      <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")) %>
+  </div>
 <% end %>
 <% end %>

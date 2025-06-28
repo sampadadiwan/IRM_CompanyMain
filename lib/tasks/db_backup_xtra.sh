@@ -146,13 +146,14 @@ get_all_incrs() {
     --output text | tr '\t' '\n' | sed 's!/$!!'
 }
 
-get_latest_incr_since_full() {
+get_all_incrs_since_full() {
   local full_key=$1
   get_all_incrs | while read -r incr_key; do
+    # The sort in get_all_incrs is lexical, which is correct for the timestamp format YYYY-MM-DD_HHMMSS
     if [[ "$incr_key" > "$full_key" ]]; then
       echo "$incr_key"
     fi
-  done | tail -n 1
+  done
 }
 
 get_latest_full() {
@@ -170,13 +171,16 @@ restore_latest_chain() {
   fi
   echo "Found latest full backup: $full_key"
 
-  local latest_incr
-  latest_incr=$(get_latest_incr_since_full "$full_key")
-
   local incr_chain=()
-  if [[ -n "$latest_incr" ]]; then
-    echo "Found latest incremental backup to apply: $latest_incr"
-    incr_chain+=("$latest_incr")
+  # Read all incremental backups since the full backup into the incr_chain array.
+  # The `mapfile` command (an alias for `readarray`) reads lines from standard
+  # input into an array variable. This is a robust way to handle command output.
+  mapfile -t incr_chain < <(get_all_incrs_since_full "$full_key")
+
+  if (( ${#incr_chain[@]} > 0 )); then
+    echo "Found incremental backup chain to apply:"
+    # Using printf is safer for printing array elements that might contain spaces.
+    printf "  - %s\n" "${incr_chain[@]}"
   fi
 
   prepare_restore_from_keys "$full_key" "${incr_chain[@]}"
@@ -385,7 +389,7 @@ incr_backup() {
         local incr_backup_file="${TMPDIR}/${INCR_NAME}.xbstream"
         echo "  - Staging incremental backup to local file: ${incr_backup_file}"
         sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
-          --incremental-lsn="$last_lsn" --extra-lsndir=/tmp/lsndir > "${incr_backup_file}"
+          --incremental-lsn="$last_lsn" --extra-lsndir=/tmp/lsndir-incr > "${incr_backup_file}"
 
         echo "  - Uploading staged incremental backup to S3..."
         cat "${incr_backup_file}" | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME" 2>&1

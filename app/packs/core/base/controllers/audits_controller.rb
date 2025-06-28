@@ -14,7 +14,7 @@ class AuditsController < ApplicationController
     @audits = if params[:format] == 'xlsx' && (params[:created_at_before].blank? || params[:created_at_after].blank?)
                 @audits.limit(1000)
               else
-                @audits.page params[:page]
+                @pagy, @audits = pagy(@audits)
               end
 
     respond_to do |format|

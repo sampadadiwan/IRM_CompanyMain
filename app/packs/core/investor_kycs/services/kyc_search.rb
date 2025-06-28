@@ -10,8 +10,6 @@ class KycSearch
     investor_kycs = investor_kycs.where(kyc_type: params[:kyc_type]) if params[:kyc_type].present?
 
     investor_kycs = investor_kycs.includes(:investor, :entity)
-    investor_kycs = investor_kycs.page(params[:page]) if params[:all].blank? && params[:search].blank?
-
     # The distinct clause is there because IAs can access only KYCs that belong to thier funds
     # See policy_scope - this query returns dups
     investor_kycs.distinct

@@ -167,5 +167,5 @@
         <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
 
 
-        <%= render RansackTable.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer) %>
+        <%= render RansackTable.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer, pagy: @pagy) %>
   </div>

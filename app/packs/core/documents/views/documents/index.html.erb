@@ -3,14 +3,16 @@
 <%= render ReportingComponent.new do %>
     <% if params[:no_folders].present? %>
         <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-            <% @documents = @documents.page(params[:page]) if params[:all].blank? %>
+            <% @pagy, @documents = pagy(@documents) if params[:all].blank? %>
 
             <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id]} %>
 
             <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
 
-            <%= paginate @documents, data: {turbo_frame: 'documents_frame'} %>
-            <span><%= page_entries_info @documents %></span>
+             <div class="d-flex justify-content-between align-items-center">
+                <%= raw pagy_info(@pagy) %>
+                <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="documents_frame" data-remote="true")) %>            
+            </div>
         <% end %>
     <% else %>
         <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity, current_user]) do %>
