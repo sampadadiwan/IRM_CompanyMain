@@ -51,7 +51,7 @@ module AccessRightsCache
   def cache_access_rights(access_right, save_by_default: true, for_entity_id: nil, investor_access: nil)
     investor_access ||= InvestorAccess.where(user_id: id, entity_id: access_right.entity_id).first
     # Initialize the cache
-    for_entity_id ||= access_right.entity_id
+    for_entity_id = access_right.entity_id if for_entity_id.blank? || access_right.user_id.present?
     self.access_rights_cache ||= {}
     self.access_rights_cache[for_entity_id] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type] ||= {}

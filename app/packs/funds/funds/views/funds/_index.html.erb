@@ -9,7 +9,10 @@
         <%= render "/funds/card", fund: fund %>
     <% end %>
 
-    <%= raw pagy_bootstrap_nav(@pagy) %>
+    <div class="d-flex justify-content-between align-items-center">
+        <%= raw pagy_info(@pagy) %>
+        <%= raw pagy_bootstrap_nav(@pagy) %>
+    </div>
   <% end %>
 <% else %>  
   <div class="d-sm-flex align-items-center justify-content-between mb-4">

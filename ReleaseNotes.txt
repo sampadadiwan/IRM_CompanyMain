@@ -1,3 +1,13 @@
+V9.0.63
+#####################################
+29aa6eba0 Admin show pagy fix (#893)
+79a94cc7d Merge branch 'main' of github.com:ausangshukla/IRM
+c1d756da2 Pagy specs fix for deal access rights (#892)
+744a8b3f2 Administrate now works with pagy (#891)
+40786ce57 Aml Report generation throws error on bad date format, also send one email for all errors (#890)
+9a3545464 Pagy (#888)
+ed556786f Added dist payment doc gen, attach files on payment complete noti (#884)
+
 V9.0.62
 #####################################
 2ae2a2c96 incr backup now stores lsn in a separate dir from full backup.
