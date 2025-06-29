@@ -171,16 +171,20 @@ restore_latest_chain() {
   fi
   echo "Found latest full backup: $full_key"
 
-  local incr_chain=()
-  # Read all incremental backups since the full backup into the incr_chain array.
+  local all_incrs=()
+  # Read all incremental backups since the full backup into the all_incrs array.
   # The `mapfile` command (an alias for `readarray`) reads lines from standard
   # input into an array variable. This is a robust way to handle command output.
-  mapfile -t incr_chain < <(get_all_incrs_since_full "$full_key")
+  mapfile -t all_incrs < <(get_all_incrs_since_full "$full_key")
 
-  if (( ${#incr_chain[@]} > 0 )); then
-    echo "Found incremental backup chain to apply:"
-    # Using printf is safer for printing array elements that might contain spaces.
+  local incr_chain=()
+  if (( ${#all_incrs[@]} > 0 )); then
+    # Use only the last incremental backup
+    incr_chain+=("${all_incrs[-1]}")
+    echo "Found latest incremental backup to apply:"
     printf "  - %s\n" "${incr_chain[@]}"
+  else
+    echo "No incremental backups found to apply."
   fi
 
   prepare_restore_from_keys "$full_key" "${incr_chain[@]}"
