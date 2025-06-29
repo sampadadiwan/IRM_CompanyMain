@@ -21,6 +21,19 @@
         <!-- Create document fields for this model. Note these are nested attributes -->
         <%= f.label field.name, document_name %> : <%= link_to "#{document.uploaded_file_name}", document.file.url(response_content_disposition: "attachment; filename=#{document.name_with_extension}"), target: "_blank" if document %>
         <% idx = rand(100000) %>
+
+        <% if field.info.present? %> 
+                <%= tag.i "",                                                     # empty <i> element
+                class:    "ti ti-info-triangle text-primary",
+                role:     "button",
+                tabindex: 0,
+                data: {
+                bs_toggle:    "tooltip",
+                bs_html:      true,                                   # ← allow HTML
+                bs_custom_class: "wide-tooltip",
+                bs_title:     field.info.body.to_html                # sanitised HTML
+                } %>
+        <% end %>
         
         <!-- This is the hidden field that is used to store the document id in case of updates -->
         <%= f.hidden_field field_id.to_sym, name: "#{for_model}[documents_attributes][#{idx}][file]",

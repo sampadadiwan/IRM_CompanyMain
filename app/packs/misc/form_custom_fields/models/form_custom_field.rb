@@ -14,6 +14,8 @@ class FormCustomField < ApplicationRecord
   validates :name, uniqueness: { scope: :form_type_id }
   validates :name, presence: true
 
+  has_rich_text :info
+
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select" }.freeze
 
   scope :writable, -> { where(read_only: false) }

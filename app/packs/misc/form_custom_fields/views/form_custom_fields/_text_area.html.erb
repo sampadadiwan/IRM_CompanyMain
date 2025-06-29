@@ -1,5 +1,17 @@
 <div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> >
     <%= f.label field.name, field.human_label %>
+    <% if field.info.present? %> 
+        <%= tag.i "",                                                     # empty <i> element
+         class:    "ti ti-info-triangle text-primary",
+         role:     "button",
+         tabindex: 0,
+         data: {
+           bs_toggle:    "tooltip",
+           bs_html:      true,                                   # ← allow HTML
+           bs_custom_class: "wide-tooltip",
+           bs_title:     field.info.body.to_html                # sanitised HTML
+         } %>
+   <% end %>
     <%= f.text_area field.name, class: "form-control custom_field", required: field.required, rows: field.meta_data %>
     <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

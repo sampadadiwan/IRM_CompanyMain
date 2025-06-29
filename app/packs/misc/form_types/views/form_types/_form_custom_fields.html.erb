@@ -85,6 +85,15 @@
     </div>
 
     <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
+        <div class="form-group col-md-12">
+            <%= f.label :info %>
+            <%= f.rich_text_area :info, class: "form-control" %>
+            <small class="form-text text-muted">Additional information about the field</small>
+        </div>
+    </div>
+    
+    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
+
         <div class="form-group col-md-2">
             <%= f.label :condition_on %>
             <%= f.text_field :condition_on, class: "form-control" %>

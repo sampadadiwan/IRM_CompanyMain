@@ -64,6 +64,6 @@ class FormCustomFieldsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def form_custom_field_params
-    params.require(:form_custom_field).permit(:name, :field_type, :required, :form_type_id)
+    params.require(:form_custom_field).permit(:name, :field_type, :required, :form_type_id, :info)
   end
 end

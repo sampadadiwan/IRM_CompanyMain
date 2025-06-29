@@ -1,3 +1,9 @@
+
+V9.0.64
+#####################################
+ada3e6fa0 Better management of advisor cached access rights
+
+
 V9.0.63
 #####################################
 29aa6eba0 Admin show pagy fix (#893)
