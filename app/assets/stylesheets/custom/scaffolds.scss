@@ -1374,9 +1374,9 @@ button:disabled {
 
 .wide-tooltip {                /* the class we passed above   */
   --bs-tooltip-max-width: 600px !important;
-  white-space: normal;              
   .tooltip-inner {        /* the element that holds the text     */
     text-align: left;                   /* override Bootstrap’s centre align   */
     white-space: normal;                /* keep wrapping behaviour             */
+    font-size: 0.9rem; /* adjust the font size as needed */
   }
 }
