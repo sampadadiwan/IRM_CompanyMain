@@ -19,20 +19,31 @@ from the associated resource class's dashboard.
 %>
 
 <% if field.resources.any? %>
-  <% order = field.order_from_params(params.fetch(field.name, {})) %>
-  <% page_number = params.fetch(field.name, {}).fetch(:page, nil) %>
+  <% field_name = field.name.to_s %>
+  <% order = field.order_from_params(params[field_name] || {}) %>
+  <% page_number = params.dig(field_name, "page") || 1 %>
+  <% total_count = field.data.count %> <!-- This is the real total -->
+
+  <%# Paginate using Pagy (requires controller to include Pagy::Backend) %>
+  <%#  pagy(...) thinks it's paginating a full collection, but it’s only seeing a .limit(5) result from field.resources — so it thinks there's only 1 page.%>
+  <%# %>
+  <% @pagy = Pagy.new(count: total_count, page: page_number.to_i, items: 5, page_param: "#{field_name}[page]", limit: 5) %>
+  <% paginated_resources = field.resources(page_number) %>
+
+  <% associated_dashboard_class = "#{field.associated_class.name}Dashboard".constantize %>
+  <% collection_presenter = Administrate::Page::Collection.new(associated_dashboard_class.new) %>
+
   <%= render(
     "collection",
-    collection_presenter: field.associated_collection(order),
+    collection_presenter: collection_presenter,
     collection_field_name: field.name,
     page: page,
-    resources: field.resources(page_number, order),
+    resources: paginated_resources,
     table_title: field.name,
   ) %>
-  <% if field.more_than_limit? %>
-    <%= raw pagy_bootstrap_nav(field.resources(page_number), param_name: "#{field.name}[page]") %>
-  <% end %>
 
+  <%= raw pagy_bootstrap_nav(@pagy, param_name: "#{field_name}[page]")  if @pagy  %>
+  
 <% else %>
   <%= t("administrate.fields.has_many.none", default: "–") %>
 <% end %>

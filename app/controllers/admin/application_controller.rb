@@ -13,6 +13,10 @@ module Admin
 
     before_action :authenticate_admin
 
+    def dashboard_class
+      "#{resource_class.name}Dashboard".constantize
+    end
+
     def authenticate_admin
       redirect_to '/', alert: 'Not authorized.' unless current_user&.has_role?(:super) || current_user&.has_role?(:support)
     end
@@ -23,8 +27,8 @@ module Admin
 
     # Pagy-backed index for all Admin controllers
     def index
-      search_term = params.dig(:search, :term)
-      resources = Administrate::Search.new(scoped_resource, dashboard_class, search_term).run
+      search_term = params[:search]
+      resources = Administrate::Search.new(scoped_resource, dashboard_class.new, search_term).run
 
       resources = apply_resource_filters(resources) if respond_to?(:apply_resource_filters)
       resources = order.apply(resources)

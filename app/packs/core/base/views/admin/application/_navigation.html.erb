@@ -37,7 +37,7 @@
 
             <ul aria-expanded="false" class="collapse first-level">
               <% resources.sort.each do |resource, route| %>
-                <% if accessible_action?(:index, model_from_resource(resource)) %>
+                <% if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="<%= resource_index_route(resource) %>">
                         <div class="round-16 d-flex align-items-center justify-content-center">
