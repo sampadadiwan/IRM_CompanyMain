@@ -1,0 +1,27 @@
+<%= render FormCard.new(title: "New") do %>
+  <%= form_with(model: chat, validate: false, format: :html) do |form| %>
+    <% if chat.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(chat.errors.count, "error") %> prohibited this chat from being saved:</h2>
+
+        <ul>
+          <% chat.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", required: true %>
+    </div>
+
+    <%= form.hidden_field :owner_id, class: "form-control" %>
+    <%= form.hidden_field :owner_type, class: "form-control" %>
+   
+    <div class="form-group">
+      <%= form.submit "Save", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+<% end %>

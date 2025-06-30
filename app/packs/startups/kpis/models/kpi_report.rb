@@ -40,6 +40,15 @@ class KpiReport < ApplicationRecord
     kpi_file = documents.where(name: "KPIs").first
     ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
   end
+  after_create_commit :convert_kpis_to_csv
+  def convert_kpis_to_csv
+    kpi_file = documents.where(name: "KPIs").first
+    if kpi_file.present?
+      ConvertKpiToCsvJob.perform_later(id, user_id, kpi_file.id)
+    else
+      Rails.logger.warn "No KPIs document found for KpiReport #{id}"
+    end
+  end
 
   def custom_kpis
     if form_type

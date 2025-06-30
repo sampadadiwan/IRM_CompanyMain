@@ -213,6 +213,10 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('pdf')
   end
 
+  def csv?
+    file&.mime_type&.include?('csv')
+  end
+
   def excel?
     file&.mime_type&.include?('spreadsheet')
   end

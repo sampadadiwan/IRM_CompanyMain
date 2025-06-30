@@ -13,7 +13,7 @@ class ChatsController < ApplicationController
 
   # GET /chats/new
   def new
-    @chat = Chat.new
+    @chat = Chat.new(chat_params)
     @chat.user_id = current_user.id
     @chat.entity_id = current_user.entity_id
     authorize @chat
@@ -27,6 +27,7 @@ class ChatsController < ApplicationController
     @chat = Chat.new(chat_params)
     @chat.user_id = current_user.id
     @chat.entity_id = current_user.entity_id
+    @chat.model_id = ENV["DEFAULT_CHAT_MODEL"] || "gemini-2.5-flash-preview-05-20"
     authorize @chat
     if @chat.save
       redirect_to @chat, notice: "Chat was successfully created."
@@ -64,6 +65,6 @@ class ChatsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def chat_params
-    params.require(:chat).permit(:name, :user_content)
+    params.require(:chat).permit(:name, :user_content, :owner_id, :owner_type, :model_id)
   end
 end

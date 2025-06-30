@@ -3,7 +3,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Chats</h1>
   <span>
-    <%= link_to "New Chat", new_chat_path(owner_id: params[:owner_id], owner_type: params[:owner_type]), {class: "btn btn-outline-primary"}  %>    
+    <%= link_to "New Chat", new_chat_path("chat[owner_id]": params[:owner_id], "chat[owner_type]": params[:owner_type]), {class: "btn btn-outline-primary"}  %>    
   </span>
 </div>
 
