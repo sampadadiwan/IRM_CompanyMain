@@ -12,7 +12,8 @@ Sidekiq.configure_server do |config|
   end
 
   unless Rails.env.local?
-    Sidekiq::Cron::Job.create(name: 'OpenWebSync', cron: 'every 5 minutes', class: 'OwSyncJob') if Rails.application.credentials["OPEN_WEB_UI_ACCESS_TOKEN"].present?
+    # Sidekiq::Cron::Job.create(name: 'OpenWebSync', cron: 'every 5 minutes', class: 'OwSyncJob') if Rails.application.credentials["OPEN_WEB_UI_ACCESS_TOKEN"].present?
+
     # Used to update the tracking currency for all funds
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')
     # Used to cleanup various models in the DB
@@ -20,7 +21,7 @@ Sidekiq.configure_server do |config|
     # Update the overdue status of remittances
     Sidekiq::Cron::Job.create(name: 'CapitalRemittanceStatusJob', cron: 'every day at 01:30', class: 'CapitalRemittanceStatusJob')
     # Check the S3 bucket for the backup
-    Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob')
+    Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob') if Rails.env.production?
     # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
 
