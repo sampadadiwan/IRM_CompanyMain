@@ -1,0 +1,59 @@
+<% 
+  widget_size ||= "col-md-12" 
+  name ||= nil 
+  args ||= {}
+  uri_params ||= {}
+%>
+
+
+<% portfolio_report_extract = @investor.portfolio_report_extracts.order(end_date: :desc).first %>
+
+<% if portfolio_report_extract.present? %>
+
+    <%= render(
+        WidgetCardComponent.new(
+            widget: widget,
+            args: args,
+            widget_size: widget.widget_size
+        )
+        ) do 
+    %>
+      
+    
+
+        <% secion_data = JSON.parse(portfolio_report_extract.data) %>
+
+        <!-- Create tabs for each section -->
+        <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+            <% secion_data.each_with_index do |(name, list_of_points), idx| %>
+                <a class="nav-link <%= idx == 0 ? 'active' : ''%>" data-bs-toggle="pill" data-bs-toggle="tab" href="#<%= name.gsub(" ", "").underscore %>-tab">
+                    <%= name %>
+                </a>
+            <% end %>
+        </nav>
+
+        <!-- Tab content -->
+        <div class="tab-content" data-controller="datatable">
+            <% secion_data.each_with_index do |(name, list_of_points), idx| %>
+                <div class="tab-pane fade show <%= idx == 0 ? 'active' : ''%>" id="<%= name.gsub(" ", "").underscore %>-tab">
+                    
+                        <% list_of_points.each do |point| %>
+                            <div class="hstack p-3 bg-hover-light-black position-relative border-bottom">
+                                <a class="" href="#">
+                                    <i class="ti ti-player-play fs-5"></i>
+                                </a>
+                                <div class="ms-3">
+                                    <%= point %>
+                                </div>
+                            </div>
+                        <% end %>
+                    
+                </div>
+            <% end %>
+        </div>
+
+    <% end %>
+        
+  
+<% end %>
+

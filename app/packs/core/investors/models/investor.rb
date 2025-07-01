@@ -22,6 +22,7 @@ class Investor < ApplicationRecord
   # These are uploaded by the fund for its own portfolio_companies
   has_many :portfolio_kpi_reports, class_name: "KpiReport", foreign_key: :portfolio_company_id
   has_many :portfolio_kpis, class_name: "Kpi", through: :portfolio_kpi_reports, source: :kpis
+  has_many :portfolio_report_extracts, dependent: :destroy, foreign_key: :portfolio_company_id
 
   belongs_to :entity, touch: true
   counter_culture :entity

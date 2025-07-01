@@ -79,25 +79,25 @@ class XlsxFromTemplate
   def process_column_styles
     @data['sheets']&.each do |sdata|
       sdata['columnHeaders']&.each do |c|
-        if c['row_styles'].present?
-          c['processed_row_style_indices'] = [] # Initialize array to store style indices
-          c['row_styles'].each do |rs|
-            font = rs['font']
-            fill = rs['fill']
-            alignment = rs['alignment']
-            opts = {}
-            opts[:b] = true if font['bold']
-            opts[:sz] = font['size'].to_i if font['size']
-            opts[:fg_color] = font['color'][2..] if font['color']
-            opts[:bg_color] = fill['fgColor'][2..] if fill['pattern'] == 'solid' && fill['fgColor']
-            opts[:alignment] = { horizontal: alignment['h']&.to_sym, wrap_text: alignment['wrap'] } if alignment
-            num = rs['numFmt']
-            opts[:format_code] = num if num.present? && num != 'General'
+        next if c['row_styles'].blank?
 
-            style_idx = @wb.styles.add_style(opts)
-            c['processed_row_style_indices'] << style_idx # Store the index
-            @format_map[num] = style_idx if opts[:format_code] # Also add to format_map if it has a format code
-          end
+        c['processed_row_style_indices'] = [] # Initialize array to store style indices
+        c['row_styles'].each do |rs|
+          font = rs['font']
+          fill = rs['fill']
+          alignment = rs['alignment']
+          opts = {}
+          opts[:b] = true if font['bold']
+          opts[:sz] = font['size'].to_i if font['size']
+          opts[:fg_color] = font['color'][2..] if font['color']
+          opts[:bg_color] = fill['fgColor'][2..] if fill['pattern'] == 'solid' && fill['fgColor']
+          opts[:alignment] = { horizontal: alignment['h']&.to_sym, wrap_text: alignment['wrap'] } if alignment
+          num = rs['numFmt']
+          opts[:format_code] = num if num.present? && num != 'General'
+
+          style_idx = @wb.styles.add_style(opts)
+          c['processed_row_style_indices'] << style_idx # Store the index
+          @format_map[num] = style_idx if opts[:format_code] # Also add to format_map if it has a format code
         end
       end
     end
@@ -143,10 +143,10 @@ class XlsxFromTemplate
           end
 
           values_for_row << if c['numFmt'].present? && c['numFmt'] != 'General' && val.respond_to?(:to_f)
-                               val.to_f # Pass as float
-                             else
-                               val # Pass as string or other inferred type
-                             end
+                              val.to_f # Pass as float
+                            else
+                              val # Pass as string or other inferred type
+                            end
         end
       end
 
