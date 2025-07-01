@@ -1,3 +1,10 @@
+V9.0.65
+#####################################
+224d7fa27 Removed failing staging jobs
+45ea3db37 Now Kpis are auto converted to csv for consumption in chat
+045b4abe9 Fixed the db restore, to use single incr backup
+1e59b4df3 Better font for tooltip in custom field
+7ff5e28c6 Added info to form custom fields
 
 V9.0.64
 #####################################

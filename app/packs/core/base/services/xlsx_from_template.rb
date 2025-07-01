@@ -35,6 +35,7 @@ class XlsxFromTemplate
     @format_map = {}
 
     load_styles
+    process_column_styles # New call
   end
 
   def call
@@ -74,6 +75,34 @@ class XlsxFromTemplate
     end
   end
 
+  # Processes row styles defined directly within columnHeaders and stores their indices.
+  def process_column_styles
+    @data['sheets']&.each do |sdata|
+      sdata['columnHeaders']&.each do |c|
+        if c['row_styles'].present?
+          c['processed_row_style_indices'] = [] # Initialize array to store style indices
+          c['row_styles'].each do |rs|
+            font = rs['font']
+            fill = rs['fill']
+            alignment = rs['alignment']
+            opts = {}
+            opts[:b] = true if font['bold']
+            opts[:sz] = font['size'].to_i if font['size']
+            opts[:fg_color] = font['color'][2..] if font['color']
+            opts[:bg_color] = fill['fgColor'][2..] if fill['pattern'] == 'solid' && fill['fgColor']
+            opts[:alignment] = { horizontal: alignment['h']&.to_sym, wrap_text: alignment['wrap'] } if alignment
+            num = rs['numFmt']
+            opts[:format_code] = num if num.present? && num != 'General'
+
+            style_idx = @wb.styles.add_style(opts)
+            c['processed_row_style_indices'] << style_idx # Store the index
+            @format_map[num] = style_idx if opts[:format_code] # Also add to format_map if it has a format code
+          end
+        end
+      end
+    end
+  end
+
   def add_headers(sheet, cols)
     names = cols.pluck('name')
     styles = cols.map { |c| @style_map[c['header_style_id']] }
@@ -94,8 +123,8 @@ class XlsxFromTemplate
 
       cols.each_with_index do |c, _col_idx|
         cell_style = nil
-        if c['row_style_ids'].present?
-          cell_style = @style_map[c['row_style_ids'][i % c['row_style_ids'].size]]
+        if c['processed_row_style_indices'].present? # Changed from row_style_ids
+          cell_style = c['processed_row_style_indices'][i % c['processed_row_style_indices'].size]
         elsif c['numFmt'].present?
           cell_style = @format_map[c['numFmt']]
         end
@@ -114,10 +143,10 @@ class XlsxFromTemplate
           end
 
           values_for_row << if c['numFmt'].present? && c['numFmt'] != 'General' && val.respond_to?(:to_f)
-                              val.to_f # Pass as float
-                            else
-                              val # Pass as string or other inferred type
-                            end
+                               val.to_f # Pass as float
+                             else
+                               val # Pass as string or other inferred type
+                             end
         end
       end
 
