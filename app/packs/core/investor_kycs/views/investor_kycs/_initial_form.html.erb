@@ -2,7 +2,7 @@
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   <div class="form-group">
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
+    <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control select2", required: true  %>
   </div>
 
   <div class="form-group">
