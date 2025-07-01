@@ -31,10 +31,9 @@
 
 
 <div class="associated_entity">
-  <% portfolio_investments = @portfolio_scenario.fund.portfolio_investments
+  <% @pagy, portfolio_investments = pagy(@portfolio_scenario.fund.portfolio_investments
                                   .includes(:aggregate_portfolio_investment, :fund)
-                                  .page(params[:page])
-                                  .per(params[:per_page] || 10) %>
+                                  .page(params[:page])) %>
 
   <%= render "portfolio_investments/index", portfolio_investments: portfolio_investments %>
 </div>

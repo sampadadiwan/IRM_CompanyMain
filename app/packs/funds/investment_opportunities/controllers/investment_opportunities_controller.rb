@@ -127,8 +127,9 @@ class InvestmentOpportunitiesController < ApplicationController
 
     @expression_of_interests = @expression_of_interests.where(approved: params[:approved] == "true") if params[:approved].present?
     @expression_of_interests = @expression_of_interests.where(verified: params[:verified]) if params[:verified].present?
-    @expression_of_interests = @expression_of_interests.includes(:user, :eoi_entity, :investment_opportunity, :entity).page(params[:page])
+    @expression_of_interests = @expression_of_interests.includes(:user, :eoi_entity, :investment_opportunity, :entity)
 
+    @pagy, @expression_of_interests = pagy(@expression_of_interests.page(params[:page]))
     render "finalize_allocation"
   end
 
