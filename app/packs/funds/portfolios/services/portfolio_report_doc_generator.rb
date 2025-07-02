@@ -75,16 +75,17 @@ class PortfolioReportDocGenerator
   include ActionView::Helpers::NumberHelper
 
   def grid_view_array(portfolio_company, end_date)
-    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: ..end_date).order(as_of: :asc)
+    kpi_reports = portfolio_company.portfolio_kpi_reports
+                                   .where(as_of: ..end_date)
+                                   .order(:as_of)
+
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
 
-    # Generate rows as OpenStructs with index keys
     rows = investor_kpi_mappings.map do |ikm|
-      row_data = { "header" => ikm.standard_kpi_name } # First column is the KPI name
+      row_data = { "header" => ikm.standard_kpi_name }
 
-      kpi_reports.each_with_index do |kr, _index|
-        kpi_hash = kr.kpis.index_by { |kpi| kpi.name.downcase }
-        kpi = kpi_hash[ikm.reported_kpi_name.downcase]
+      kpi_reports.each do |kr|
+        kpi = kr.kpis.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
 
         row_data[kr.label] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
@@ -92,8 +93,7 @@ class PortfolioReportDocGenerator
       OpenStruct.new(row_data)
     end
 
-    grid = rows
-    Rails.logger.debug grid
-    grid
+    Rails.logger.debug rows
+    rows
   end
 end

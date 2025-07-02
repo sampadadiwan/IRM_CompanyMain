@@ -11,17 +11,21 @@ end
 
 And('the target KPIs are {string}') do |target_kpis_string|
   # Split the comma-separated string into an array and store it
-  @target_kpis = target_kpis_string.split(',').map(&:strip)
+  target_kpis_string.split(',').map(&:strip).each do |kpi_name|
+    # Create a new InvestorKpiMapping for each KPI name
+    @portfolio_company.investor_kpi_mappings.create!(entity_id: @portfolio_company.entity_id, reported_kpi_name: kpi_name, standard_kpi_name: kpi_name + " Standard")
+  end
+  @portfolio_company.reload
 end
 
 When('the KpiWorkbookReader processes the file') do
   # Ensure previous steps have set the necessary variables
   expect(@workbook_file).not_to be_nil, "Workbook file path not set in Given step"
-  expect(@target_kpis).not_to be_nil, "Target KPIs not set in And step"
+  expect(@portfolio_company.investor_kpi_mappings).not_to be_nil, "Target KPIs not set in And step"
   puts "Step Definition Placeholder: Processing workbook file #{@workbook_file} with target KPIs: #{@target_kpis}"
   # Instantiate the reader and extract KPIs
   begin
-    reader = KpiWorkbookReader.new(@document, @target_kpis, @user, @portfolio_company)
+    reader = KpiWorkbookReader.new(@document, @portfolio_company.investor_kpi_mappings, @user, @portfolio_company)
     @extracted_kpis = reader.extract_kpis
     puts reader.error_msg
   rescue StandardError => e
@@ -41,11 +45,11 @@ Then('the extracted KPI data should be valid for the given workbook and targets 
   # This is where you'll compare @extracted_kpis with the expected data
   # for the specific @workbook_file.
   @extracted_kpis.keys.length.should eq(count.to_i)
-  Kpi.count.should eq(count.to_i * @target_kpis.length)
+  Kpi.count.should eq(count.to_i * @portfolio_company.investor_kpi_mappings.count)
   @extracted_kpis.each do |date, kpi_report|
     puts "Validating date: #{date} with entries: #{kpi_report.kpis.length}"
-    puts "Expected KPIs: #{@target_kpis} got #{kpi_report.kpis.map(&:name)}"
-    kpi_report.kpis.length.should eq(@target_kpis.length)
+    puts "Expected KPIs: #{@portfolio_company.investor_kpi_mappings.pluck(:standard_kpi_name)} got #{kpi_report.kpis.map(&:name)}"
+    kpi_report.kpis.length.should eq(@portfolio_company.investor_kpi_mappings.count)
   end
 end
 

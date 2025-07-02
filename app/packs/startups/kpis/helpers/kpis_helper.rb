@@ -1,12 +1,12 @@
 module KpisHelper
   def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    grouped_kpis = kpis.includes(:kpi_report, :entity, :owner).group_by { |k| [k.entity, k.owner, k.kpi_report.tag_list] }
+    grouped_kpis = kpis.includes(:kpi_report, :entity, :owner).group_by { |k| [k.portfolio_company, k.entity, k.kpi_report.tag_list] }
 
     data_map = []
-    grouped_kpis.each do |key, entity_kpis|
-      entity, owner, tags = key
-      entity_kpis.group_by(&:name).each_value do |kpis_by_name|
+    grouped_kpis.each do |key, portfolio_company_kpis|
+      portfolio_company, entity, tags = key
+      portfolio_company_kpis.group_by(&:name).each_value do |kpis_by_name|
         standard_kpi = get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first)
         data = []
         dates.each do |date|
@@ -14,7 +14,7 @@ module KpisHelper
           data << [date.strftime("%m/%y"), kpi&.value]
         end
 
-        label = owner&.name || entity.name
+        label = portfolio_company&.investor_name || entity.name
         label += " - #{tags}" if tags.present?
 
         data_map << { name: "#{label} - #{standard_kpi}", data: }
@@ -66,25 +66,26 @@ module KpisHelper
   include ActionView::Helpers::NumberHelper
 
   def grid_view_array(portfolio_company, end_date)
-    kpi_reports = portfolio_company.portfolio_kpi_reports.where(as_of: ..end_date).order(as_of: :asc)
+    kpi_reports = portfolio_company.portfolio_kpi_reports
+                                   .where(as_of: ..end_date)
+                                   .order(:as_of)
+
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
 
-    # Generate headers as OpenStruct with index keys
-    header_data = { "val_0" => 'KPI' }
-    kpi_reports.each_with_index do |kr, index|
-      header_data["val_#{index + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
+    # Build header row
+    header_data = { "val_0" => "KPI" }
+    kpi_reports.each_with_index do |kr, i|
+      header_data["val_#{i + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
     end
     headers = [OpenStruct.new(header_data)]
 
-    # Generate rows as OpenStructs with index keys
+    # Build data rows
     rows = investor_kpi_mappings.map do |ikm|
-      row_data = { "val_0" => ikm.standard_kpi_name } # First column is the KPI name
+      row_data = { "val_0" => ikm.standard_kpi_name }
 
-      kpi_reports.each_with_index do |kr, index|
-        kpi_hash = kr.kpis.index_by { |kpi| kpi.name.downcase }
-        kpi = kpi_hash[ikm.reported_kpi_name.downcase]
-
-        row_data["val_#{index + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
+      kpi_reports.each_with_index do |kr, i|
+        kpi = kr.kpis.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
+        row_data["val_#{i + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
       OpenStruct.new(row_data)

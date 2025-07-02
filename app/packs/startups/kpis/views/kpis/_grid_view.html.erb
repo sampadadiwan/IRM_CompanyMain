@@ -13,8 +13,8 @@
 
     <% 
         if current_user.curr_role == "investor" 
-            # group_by investor_entity_id and reported_kpi_name
-            investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor.investor_entity_id, ikm.reported_kpi_name] }
+            # group_by investor_entity_id and standard_kpi_name
+            investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor.investor_entity_id, ikm.standard_kpi_name] }
         else
             investor_kpi_mappings = nil
         end

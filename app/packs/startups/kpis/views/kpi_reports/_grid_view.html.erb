@@ -64,7 +64,7 @@
         # Create dummy mappings for the startup, which has all the kpi names
         investor_kpi_mappings = investor.investor_kpi_mappings 
     else
-        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name)}
+        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, standard_kpi_name: kpi_name)}
     end
 
     # Filter investor_kpi_mappings based on the category if provided
@@ -125,7 +125,7 @@
                         %>
                         
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
-                        <% kpi = kpis[ikm.reported_kpi_name.downcase].presence %>                        
+                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>                        
                         <td class="value_<%=kpi&.id%>">
                             <% if kpi %>
                                 <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
@@ -178,9 +178,9 @@
 
     <% if params[:chart].nil? || params[:chart] == "true" %>
         <% 
-            kpi_names = investor_kpi_mappings.collect(&:reported_kpi_name)
+            kpi_names = investor_kpi_mappings.collect(&:standard_kpi_name)
             kpis = Kpi.where(name: kpi_names, kpi_report_id: kpi_reports.pluck(:id))
-            kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor&.investor_entity_id, ikm.reported_kpi_name] }
+            kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor&.investor_entity_id, ikm.standard_kpi_name] }
         %>
         <div class="associated_entity">
             <div class="row">

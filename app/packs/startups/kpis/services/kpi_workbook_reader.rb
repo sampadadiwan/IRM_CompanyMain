@@ -30,11 +30,16 @@
 class KpiWorkbookReader
   attr_reader :error_msg
 
-  def initialize(document, target_kpis, user, portfolio_company)
+  def initialize(document, kpi_mappings, user, portfolio_company)
     @document = document
+    @kpi_mappings = kpi_mappings
+
+    # Index the @kpi_mappings by normalized KPI names for quick lookup
+    @kpi_name_to_kpi_mappings = @kpi_mappings.index_by { |mapping| normalize_kpi_name(mapping.reported_kpi_name) }
+
     Rails.logger.debug { "Document: #{@document.name}" }
-    # Normalize target KPI names for consistent matching
-    @target_kpis = target_kpis.map { |kpi| normalize_kpi_name(kpi) }
+    # Normalize reported_kpi_name for consistent matching
+    @target_kpis = kpi_mappings.map { |kpi_mapping| normalize_kpi_name(kpi_mapping.reported_kpi_name) }
     Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
     @user = user
 
@@ -207,7 +212,7 @@ class KpiWorkbookReader
   def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
     # Find or initialize a KPI entry for the given report and KPI name
     kpi = kpi_report.kpis.where(
-      name: raw_kpi_name,
+      name: @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)].standard_kpi_name,
       portfolio_company_id: @portfolio_company_id,
       entity_id: @portfolio_company&.entity_id
     ).first_or_initialize

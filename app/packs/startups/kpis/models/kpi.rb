@@ -8,7 +8,7 @@ class Kpi < ApplicationRecord
   # These are the investees, who will probably have investor_kpi_mappings for the kpis by this entity.
   has_many :investees, through: :entity
   # This is for ransack search only. For some reason crashes on single kpi instance
-  has_many :investor_kpi_mappings, -> { where("`investor_kpi_mappings`.`reported_kpi_name`=`kpis`.`name`") }, through: :investees
+  has_many :investor_kpi_mappings, -> { where("`investor_kpi_mappings`.`standard_kpi_name`=`kpis`.`name`") }, through: :investees
 
   belongs_to :kpi_report
 

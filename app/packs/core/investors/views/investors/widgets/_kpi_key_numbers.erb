@@ -1,8 +1,8 @@
 <% 
   if args[:kpis].present? 
         latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first 
-        kpi_mappings = @investor.investor_kpi_mappings.where(standard_kpi_name: args[:kpis].split(",").map(&:strip))
-        kpis = latest_kpi_report&.kpis.where(name: kpi_mappings.pluck(:reported_kpi_name)) || []
+        kpi_names = args[:kpis].split(",").map(&:strip)
+        kpis = latest_kpi_report&.kpis.where(name: kpi_names) || []
 
         if kpis.present?
 %>
