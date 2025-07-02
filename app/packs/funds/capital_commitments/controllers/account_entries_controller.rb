@@ -102,20 +102,24 @@ class AccountEntriesController < ApplicationController
       # Default rows view
       @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
 
-      folio_filter = @q.conditions.any? do |cond|
-        cond.attributes.any? { |attr| attr.name == 'folio_id' }
-      end
-
-      capital_commitment_filter = @q.conditions.any? do |cond|
-        cond.attributes.any? { |attr| attr.name == 'capital_commitment_id' }
-      end
-
-      if capital_commitment_filter || folio_filter
-        @pagy, @account_entries = pagy(@account_entries, limit: params[:per_page] || 10) if params[:all].blank?
-      elsif params[:all].blank?
-        @pagy, @account_entries = pagy_countless(@account_entries, limit: params[:per_page] || 10)
-      end
+      paginate
       @template = "index"
+    end
+  end
+
+  def paginate
+    folio_filter = @q.conditions.any? do |cond|
+      cond.attributes.any? { |attr| attr.name == 'folio_id' }
+    end
+
+    capital_commitment_filter = @q.conditions.any? do |cond|
+      cond.attributes.any? { |attr| attr.name == 'capital_commitment_id' }
+    end
+
+    if capital_commitment_filter || folio_filter
+      @pagy, @account_entries = pagy(@account_entries, limit: params[:per_page] || 10) if params[:all].blank?
+    elsif params[:all].blank?
+      @pagy, @account_entries = pagy_countless(@account_entries, limit: params[:per_page] || 10)
     end
   end
 

@@ -1,0 +1,49 @@
+<% 
+  if args[:kpis].present? 
+        latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first 
+        kpi_mappings = @investor.investor_kpi_mappings.where(standard_kpi_name: args[:kpis].split(",").map(&:strip))
+        kpis = latest_kpi_report&.kpis.where(name: kpi_mappings.pluck(:reported_kpi_name)) || []
+
+        if kpis.present?
+%>
+
+  <%= render(
+        WidgetCardComponent.new(
+          widget: widget,
+          args: args,
+          widget_size: widget.widget_size
+        )
+      ) do 
+  %>
+      
+      
+     
+
+      <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor]), expires_in: 5.day) do %>
+        <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
+
+        <% index = 0 %>
+        <% cards_data = [] %>
+        <% kpis.each do |kpi| %>
+          <% color = colors[index % colors.length]; index += 1 %>
+          <% cards_data << { path: nil, stat: kpi.display_value, subtitle: kpi.name, progress_bar_color: color, text_info: nil } %>
+        <% end %>
+
+        <div class="row">
+          <% cards_data.each do |card_data| %>
+            <%= render(NumberStatsComponent.new(
+                        path: card_data[:path],
+                        amount: card_data[:stat],
+                        subtitle: card_data[:subtitle],
+                        progress_bar_color: card_data[:progress_bar_color],
+                        text_info: card_data[:text_info]
+            )) %>
+          <% end %>
+        </div>
+      <% end %>
+
+  <% end %>
+<% 
+    end 
+  end
+%>

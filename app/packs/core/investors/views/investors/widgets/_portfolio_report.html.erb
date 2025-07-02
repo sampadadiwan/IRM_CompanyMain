@@ -8,7 +8,7 @@
 
 <% portfolio_report_extract = @investor.portfolio_report_extracts.order(end_date: :desc).first %>
 
-<% if portfolio_report_extract.present? %>
+<% if portfolio_report_extract.present? && portfolio_report_extract.data %>
 
     <%= render(
         WidgetCardComponent.new(

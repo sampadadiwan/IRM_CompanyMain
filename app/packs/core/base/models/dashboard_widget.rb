@@ -61,7 +61,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Value Bridge", path: "investors/widgets/value_bridge", size: "XL", metadata_help: "{instruments: 'All or Specified in stakeholder custom field called value_bridge_instruments', across: 'First Last or Last 2'}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Captable", path: "investments/widgets/captable", size: "XL", metadata_help: "{show_charts: true, show_investments: false, show_captable: true, self_by_funding_round: true, amount_by_funding_round: true, diluted_share_holdings: true, amount_by_investor: true, each_funding_round: false}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Company Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, other_report_args: '...' }"),
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Report", path: "investors/widgets/portfolio_report", size: "XL")
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Report", path: "investors/widgets/portfolio_report", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Key KPIs", path: "investors/widgets/kpi_key_numbers", size: "XL", metadata_help: "{kpis: 'csv of kpi names to show'}")
 
   ].freeze
 
