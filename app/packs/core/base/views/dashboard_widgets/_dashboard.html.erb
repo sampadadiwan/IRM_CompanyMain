@@ -3,10 +3,24 @@
     name ||= "Default"
 %>
 
+<nav class="dashboard-nav">
+    <ul class="nav nav-pills">
+        <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
+            <li class="nav-item">
+                <a class="nav-link btn btn-sm btn-outline-primary" href="#<%= "#{dashboard_widget.widget_name.parameterize}_#{dashboard_widget.position}" %>">
+                    <%= dashboard_widget.widget_name.titleize %>
+                </a>
+            </li>
+        <% end %>
+    </ul>
+</nav>
+
 <div class="row">    
     
     <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
-        <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
+        <div id="<%= "#{dashboard_widget.widget_name.parameterize}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
+            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
+        </div>
     <% end %>
 
     <% if params[:debug].present? %>

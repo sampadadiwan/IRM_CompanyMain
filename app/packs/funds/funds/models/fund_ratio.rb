@@ -17,6 +17,12 @@ class FundRatio < ApplicationRecord
     "Scenario" => "scenario"
   }.freeze
 
+  CONDENSED_COLUMNS = {
+    "Name" => "name",
+    "Display Value" => "display_value",
+    "On" => "end_date",
+  }.freeze
+
   validates :display_value, length: { maximum: 50 }
   validates :name, :owner_type, length: { maximum: 255 }
 
