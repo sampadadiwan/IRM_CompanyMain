@@ -42,6 +42,9 @@
                         "import_upload[owner_type]": "Investor",
                         "sample_upload": "KPIS_SAMPLE"), 
                         { class: "dropdown-item"} %> 
+
+
+                <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item" if investor %>
             </div>
         </div>
         </div>

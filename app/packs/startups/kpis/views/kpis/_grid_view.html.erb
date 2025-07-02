@@ -26,7 +26,7 @@
         <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
             <thead>
                 <tr>
-                    <th class="no-sort">Entity</th>
+                    <th class="no-sort">Portfolio Company</th>
                     <th class="no-sort">Tags</th>
                     <th class="no-sort">KPI</th>
                     <% dates.each do |as_of| %>
@@ -39,9 +39,9 @@
                     grouped_kpis.each do |key, kpis| 
                     entity_id, owner_id, tag_list = key
                 %>      
-                    <% kpis.group_by(&:name).each do |name, kpis| %>
+                    <% kpis.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, company_id), kpis| %>
                         <tr>
-                            <td><%= kpis.first.entity.name %></td>
+                            <td><%= kpis.first.portfolio_company&.investor_name %></td>
                             <% 
                                 kpi = kpis.first
                                 ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpi)

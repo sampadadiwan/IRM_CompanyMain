@@ -3,6 +3,7 @@
     name ||= "Default"
 %>
 
+<% unless dashboard_name == "Portfolio Dashboard" %>
 <nav class="dashboard-nav">
     <ul class="nav nav-pills">
         <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
@@ -14,6 +15,7 @@
         <% end %>
     </ul>
 </nav>
+<% end %>
 
 <div class="row">    
     
