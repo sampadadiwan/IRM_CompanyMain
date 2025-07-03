@@ -94,6 +94,7 @@ en:
       reports: Reports
     fm_dashboard_stats:
       commitments: Commitments
+      portfolio_companies: Portfolio
       funds: Funds
       opportunities: Opportunities
       stakeholders: Stakeholders

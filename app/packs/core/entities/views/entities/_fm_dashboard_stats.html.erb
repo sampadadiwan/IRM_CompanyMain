@@ -60,18 +60,18 @@
     </a>
   </div>
   <div class="col-lg-3 col-md-6">
-    <a href="<%=capital_commitments_path%>">
+    <a href="<%=investors_path(q: ransack_query_params(:category, :eq, "Portfolio Company"))%>">
     <div class="card">
       <div class="card-body">
         <div class="row">
           <div class="col-12">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <h3 class="fs-8"><%= policy_scope(current_user.entity.capital_commitments).count %></h3>
-                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.commitments') %> </h6>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investors.portfolio_companies).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.portfolio_companies') %> </h6>
               </div>
               <div class="ms-auto">
-                <span class="text-warning display-6"><i class="ti ti-lock"></i></span>
+                <span class="text-warning display-6"><i class="ti ti-chart-bar"></i></span>
               </div>
             </div>
           </div>
