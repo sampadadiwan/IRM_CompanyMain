@@ -30,7 +30,8 @@
 class KpiWorkbookReader
   attr_reader :error_msg
 
-  def initialize(document, kpi_mappings, user, portfolio_company)
+  def initialize(kpi_report, document, kpi_mappings, user, portfolio_company)
+    @kpi_report = kpi_report
     @document = document
     @kpi_mappings = kpi_mappings
 
@@ -50,6 +51,8 @@ class KpiWorkbookReader
     @results = {}
     # Initialize error messages array to store processing errors
     @error_msg = []
+    # Initialize a set to keep track of target KPIs found in the workbook
+    @found_kpis = Set.new
   end
 
   def extract_kpis
@@ -89,6 +92,8 @@ class KpiWorkbookReader
           next
         end
       end
+      # After processing all sheets, check for target KPIs that were not found
+      log_missing_target_kpis
     end
 
     # Return the extracted results
@@ -134,6 +139,9 @@ class KpiWorkbookReader
       kpi_name = normalize_kpi_name(raw_kpi_name)
       # Skip rows where the KPI name is not in the target list
       next unless @target_kpis.include?(kpi_name)
+
+      # Add the normalized KPI name to the set of found KPIs
+      @found_kpis.add(kpi_name)
 
       # Process the row to extract KPI values
       process_kpi_row(sheet, row, row_index, header, raw_kpi_name, kpi_name)
@@ -192,7 +200,8 @@ class KpiWorkbookReader
     key = parsed_period.to_s + period_type.to_s
     # Find or create a KPI report for the portfolio company and period
     @results[key] ||= KpiReport.where(
-      entity_id: @portfolio_company&.entity_id,
+      entity_id: @kpi_report.entity_id,
+      tag_list: @kpi_report.tag_list,
       as_of: parsed_period,
       period: period_type,
       portfolio_company_id: @portfolio_company_id
@@ -264,5 +273,23 @@ class KpiWorkbookReader
 
     # Return the column index (0-based) with the most non-empty values
     column_counts.max_by { |_, count| count }&.first || 0
+  end
+end
+
+# Checks for target KPIs that were not found in any sheet and logs errors
+def log_missing_target_kpis
+  # Determine which target KPIs were not found in the processed sheets
+  missing_kpis = @target_kpis - @found_kpis.to_a
+
+  if missing_kpis.any?
+    missing_kpis.each do |missing_kpi|
+      # Find the original reported KPI name for the missing normalized KPI
+      original_kpi_mapping = @kpi_mappings.find { |mapping| normalize_kpi_name(mapping.reported_kpi_name) == missing_kpi }
+      original_kpi_name = original_kpi_mapping&.reported_kpi_name || missing_kpi
+
+      msg = "Target KPI '#{original_kpi_name}' not found in any sheet of the KPI import file."
+      Rails.logger.error(msg)
+      @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+    end
   end
 end

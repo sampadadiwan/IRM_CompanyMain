@@ -17,7 +17,7 @@ class ImportKpiWorkbookJob < ApplicationJob
       # target_kpis = kpi_mappings.pluck(:reported_kpi_name)
 
       # Extract and save the kpis from the workbook
-      @kpi_reader = KpiWorkbookReader.new(kpi_file, kpi_mappings, user, portfolio_company)
+      @kpi_reader = KpiWorkbookReader.new(kpi_report, kpi_file, kpi_mappings, user, portfolio_company)
       @kpi_reader.extract_kpis
 
       if @kpi_reader.error_msg.present?

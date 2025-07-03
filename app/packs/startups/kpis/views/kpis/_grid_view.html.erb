@@ -7,7 +7,7 @@
         </h1>
 
         <span>
-            <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button> 
+            <button class="btn btn-outline-success ti ti-download", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button> 
         </span>    
     </div>
 
@@ -60,7 +60,8 @@
                                 <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
                                 <td>
                                     <% if kpi && kpi.value.present? %>
-                                        <%= link_to kpi.value, kpi  %><br>
+                                        <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
+                                        <br>
                                         <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                         <% if kpi.notes.present? %>
                                             <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>                                        

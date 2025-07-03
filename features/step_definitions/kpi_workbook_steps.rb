@@ -22,10 +22,11 @@ When('the KpiWorkbookReader processes the file') do
   # Ensure previous steps have set the necessary variables
   expect(@workbook_file).not_to be_nil, "Workbook file path not set in Given step"
   expect(@portfolio_company.investor_kpi_mappings).not_to be_nil, "Target KPIs not set in And step"
+  @kpi_report = KpiReport.new(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: "Actual")
   puts "Step Definition Placeholder: Processing workbook file #{@workbook_file} with target KPIs: #{@target_kpis}"
   # Instantiate the reader and extract KPIs
   begin
-    reader = KpiWorkbookReader.new(@document, @portfolio_company.investor_kpi_mappings, @user, @portfolio_company)
+    reader = KpiWorkbookReader.new(@kpi_report, @document, @portfolio_company.investor_kpi_mappings, @user, @portfolio_company)
     @extracted_kpis = reader.extract_kpis
     puts reader.error_msg
   rescue StandardError => e

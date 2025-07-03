@@ -60,4 +60,60 @@ class Kpi < ApplicationRecord
       end
     end
   end
+
+  # Method to find the tagged KPI
+  def find_tagged_kpi(tag_list)
+    Kpi.joins(:kpi_report)
+       .where(
+         name: name,
+         portfolio_company_id: portfolio_company_id,
+         'kpi_reports.as_of': kpi_report.as_of,
+         'kpi_reports.tag_list': tag_list # Match by tag_list
+       )
+       .first
+  end
+
+  # Helper method to determine RAG status from rules
+  def determine_rag_status_from_rules(ratio, rules_hash, comparison_type: 'ratio_rules')
+    return nil unless rules_hash.present? && rules_hash[comparison_type].present?
+
+    rules = rules_hash[comparison_type]
+
+    # Convert string keys to symbols for easier access if needed, or ensure consistency
+    # rules = rules.transform_keys(&:to_sym)
+
+    # Sort rules by min bound to ensure correct order of evaluation
+    sorted_rules = rules.values.sort_by { |r| r['min'] }
+
+    sorted_rules.each do |rule|
+      min_val = rule['min'] == '-Infinity' ? -Float::INFINITY : rule['min'].to_f
+      max_val = rule['max'] == 'Infinity' ? Float::INFINITY : rule['max'].to_f
+
+      if ratio >= min_val && ratio < max_val
+        # Find the key (rag_status name) that corresponds to this rule's values
+        return rules.key(rule)
+      end
+    end
+    nil # No matching status found
+  end
+
+  # Method to compute and set RAG status
+  def set_rag_status_from_ratio(tagged_kpi_tag_list)
+    tagged_kpi = find_tagged_kpi(tagged_kpi_tag_list)
+
+    # Find the InvestorKpiMapping for this KPI's standard name
+    # Kpi.name will match InvestorKpiMapping.standard_kpi_name
+    investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: name)
+
+    if tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value != 0 && investor_kpi_mapping&.rag_rules.present?
+      ratio = value.to_f / tagged_kpi.value
+      self.rag_status = determine_rag_status_from_rules(ratio, investor_kpi_mapping.rag_rules)
+    elsif tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value.zero?
+      # Handle division by zero: perhaps set to 'red' or a specific status for this case
+      self.rag_status = 'red' # Or 'N/A', 'undefined', based on business logic
+    else
+      self.rag_status = nil # Or a default status if tagged_kpi or rules are not found
+    end
+    save if changed? # Save the KPI if rag_status has been updated
+  end
 end

@@ -4,6 +4,8 @@ class KpiReport < ApplicationRecord
   include WithFolder
   include Trackable.new
 
+  attr_accessor :delete_kpis, :upload_new_kpis
+
   PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
   STANDARD_COLUMNS = {
@@ -35,11 +37,25 @@ class KpiReport < ApplicationRecord
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
   end
 
-  after_create_commit :import_kpis
+  after_commit :import_kpis
   def import_kpis
-    kpi_file = documents.where(name: "KPIs").first
-    ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
+    if %w[1 true].include?(delete_kpis)
+      self.delete_kpis = false
+      # Delete all existing kpis for this report
+      kpis.delete_all
+      Rails.logger.info "Deleted existing KPIs for KpiReport #{id}"
+    end
+
+    if %w[1 true].include?(upload_new_kpis)
+      self.upload_new_kpis = false
+      kpi_file = documents.where(name: "KPIs").first
+      ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
+    else
+      # If no new kpis are uploaded, we will not import any kpis
+      Rails.logger.info "skipping ImportKpiWorkbookJob for KpiReport #{id}"
+    end
   end
+
   after_create_commit :convert_kpis_to_csv
   def convert_kpis_to_csv
     kpi_file = documents.where(name: "KPIs").first

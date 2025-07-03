@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_03_120023) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2016,7 +2016,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.datetime "updated_at", null: false
     t.boolean "show_in_report", default: false
     t.string "category", limit: 40
+    t.bigint "form_type_id"
+    t.json "json_fields"
+    t.json "rag_rules"
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
+    t.index ["form_type_id"], name: "index_investor_kpi_mappings_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kpi_mappings_on_investor_id"
     t.index ["reported_kpi_name"], name: "index_investor_kpi_mappings_on_reported_kpi_name"
     t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
@@ -2268,6 +2272,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.bigint "portfolio_company_id"
     t.bigint "owner_id"
     t.string "source", limit: 100
+    t.text "rag_status"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
@@ -2390,7 +2395,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
-  create_table "oauth_access_grants", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "oauth_access_grants", force: :cascade do |t|
     t.bigint "resource_owner_id", null: false
     t.bigint "application_id", null: false
     t.string "token", null: false
@@ -2404,7 +2409,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.index ["token"], name: "index_oauth_access_grants_on_token", unique: true
   end
 
-  create_table "oauth_access_tokens", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "oauth_access_tokens", force: :cascade do |t|
     t.bigint "resource_owner_id"
     t.bigint "application_id", null: false
     t.string "token", null: false
@@ -2420,7 +2425,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
   end
 
-  create_table "oauth_applications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "oauth_applications", force: :cascade do |t|
     t.string "name", null: false
     t.string "uid", null: false
     t.string "secret", null: false
@@ -2432,13 +2437,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.index ["uid"], name: "index_oauth_applications_on_uid", unique: true
   end
 
-  create_table "oauth_openid_requests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "oauth_openid_requests", force: :cascade do |t|
     t.bigint "access_grant_id", null: false
     t.string "nonce", null: false
     t.index ["access_grant_id"], name: "index_oauth_openid_requests_on_access_grant_id"
   end
 
-  create_table "offers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "offers", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.bigint "secondary_sale_id", null: false
@@ -2589,21 +2594,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
     t.index ["investment_instrument_id"], name: "index_portfolio_cashflows_on_investment_instrument_id"
     t.index ["payment_date"], name: "index_portfolio_cashflows_on_payment_date"
     t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
-  end
-
-  create_table "portfolio_company_kpi_extraction_mappings", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.bigint "portfolio_company_id", null: false
-    t.string "metric_name", limit: 40
-    t.string "sheet_name", limit: 40
-    t.string "metric_label", limit: 40
-    t.integer "match_column"
-    t.string "header_regex"
-    t.json "json_rules"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_portfolio_company_kpi_extraction_mappings_on_entity_id"
-    t.index ["portfolio_company_id"], name: "idx_on_portfolio_company_id_b8c50ead10"
   end
 
   create_table "portfolio_investments", force: :cascade do |t|
@@ -3457,6 +3447,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
   add_foreign_key "investor_advisors", "users"
   add_foreign_key "investor_advisors", "users", column: "created_by_id"
   add_foreign_key "investor_kpi_mappings", "entities"
+  add_foreign_key "investor_kpi_mappings", "form_types"
   add_foreign_key "investor_kpi_mappings", "investors"
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
@@ -3520,9 +3511,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_02_151149) do
   add_foreign_key "portfolio_cashflows", "form_types"
   add_foreign_key "portfolio_cashflows", "funds"
   add_foreign_key "portfolio_cashflows", "investment_instruments"
-  add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
-  add_foreign_key "portfolio_company_kpi_extraction_mappings", "entities"
-  add_foreign_key "portfolio_company_kpi_extraction_mappings", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"  
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "capital_distributions"
   add_foreign_key "portfolio_investments", "entities"

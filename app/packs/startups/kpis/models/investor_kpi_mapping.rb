@@ -1,6 +1,10 @@
 class InvestorKpiMapping < ApplicationRecord
+  include WithCustomField
+
   belongs_to :entity
   belongs_to :investor
+
+  attribute :rag_rules, :json, default: {}
 
   has_one :investor_entity, class_name: "Entity", through: :investor
   has_many :kpis, through: :investor_entity

@@ -1,7 +1,9 @@
 <% 
   if args[:kpis].present? 
         latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first 
-        kpi_names = args[:kpis].split(",").map(&:strip)
+        # Get the kpi_names from custom fields or args
+        kpi_names = @investor.investor_kpi_mappings.show_in_report.pluck(:standard_kpi_name)
+        # Fetch the KPIs from the latest report
         kpis = latest_kpi_report&.kpis.where(name: kpi_names) || []
 
         if kpis.present?
@@ -15,9 +17,6 @@
         )
       ) do 
   %>
-      
-      
-     
 
       <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor]), expires_in: 5.day) do %>
         <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
@@ -26,7 +25,7 @@
         <% cards_data = [] %>
         <% kpis.each do |kpi| %>
           <% color = colors[index % colors.length]; index += 1 %>
-          <% cards_data << { path: nil, stat: kpi.display_value, subtitle: kpi.name, progress_bar_color: color, text_info: nil } %>
+          <% cards_data << { path: nil, stat: number_with_precision(kpi.value, precision: 2, delimiter: ','), subtitle: kpi.name, progress_bar_color: color, text_info: nil } %>
         <% end %>
 
         <div class="row">

@@ -17,10 +17,13 @@ class InvestorKpiMappingsController < ApplicationController
     @investor_kpi_mapping = InvestorKpiMapping.new(investor_kpi_mapping_params)
     @investor_kpi_mapping.entity_id = current_user.entity_id
     authorize @investor_kpi_mapping
+    setup_custom_fields(@investor_kpi_mapping)
   end
 
   # GET /investor_kpi_mappings/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@investor_kpi_mapping)
+  end
 
   # POST /investor_kpi_mappings or /investor_kpi_mappings.json
   def create
@@ -78,6 +81,6 @@ class InvestorKpiMappingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kpi_mapping_params
-    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :category, :standard_kpi_name, :lower_threshold, :upper_threshold, :show_in_report)
+    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :category, :standard_kpi_name, :lower_threshold, :upper_threshold, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
   end
 end

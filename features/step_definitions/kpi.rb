@@ -1,4 +1,5 @@
 
+
   Given('Given I upload a kpis file for the company') do
     visit(kpi_reports_path)
     click_on("Upload")
@@ -117,4 +118,34 @@ end
 
 When('I parse the period string {string} with fiscal start month {int}') do |date, fiscal_year_start_month|
   @parsed_date = KpiDateUtils.parse_period(date, fiscal_year_start_month:)
+end
+
+Given('a KpiReport {string} exists for the entity') do |args|
+  @kpi_report = KpiReport.new(entity: @entity, portfolio_company_id: @portfolio_company.id, user: @user)
+  key_values(@kpi_report, args)
+  @kpi_report.save!
+end
+
+Given('a KPI {string} exists for the kpi report') do |args|
+  @kpi = Kpi.new(kpi_report: @kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id)
+  key_values(@kpi, args)
+  @kpi.save!
+end
+
+
+
+Given('an Investor KPI Mapping for {string} with RAG rules:') do |kpi_name, rag_rules_json|
+  investor_kpi_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
+  investor_kpi_mapping.rag_rules = JSON.parse(rag_rules_json)
+  investor_kpi_mapping.save!
+end
+
+When('I compute the RAG status for KPI {string} with tagged KPI tag {string}') do |kpi_name, tagged_kpi_tag|
+  kpi = Kpi.find_by(name: kpi_name)
+  kpi.set_rag_status_from_ratio(tagged_kpi_tag)
+end
+
+Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_rag_status|
+  kpi = Kpi.find_by(name: kpi_name)
+  kpi.rag_status.should == expected_rag_status
 end

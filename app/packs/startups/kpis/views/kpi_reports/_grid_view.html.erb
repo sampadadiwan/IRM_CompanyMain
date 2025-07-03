@@ -21,18 +21,18 @@
 
         <div class="btn-group">
         <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle" type="button"
+            <button class="btn btn-outline-success dropdown-toggle ti ti-settings" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Actions
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item" if investor %>
+                <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item ti ti-plus" if investor %>
 
-                <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item" %>
+                <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report" %>
 
-                <button class="dropdown-item", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
+                <button class="dropdown-item ti ti-download", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
 
-                <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item" if kpi_reports.last %>
+                <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage" if kpi_reports.last %>
 
                 <%= link_to "Upload", 
                     new_import_upload_path(
@@ -41,10 +41,10 @@
                         "import_upload[owner_id]": params[:portfolio_company_id],
                         "import_upload[owner_type]": "Investor",
                         "sample_upload": "KPIS_SAMPLE"), 
-                        { class: "dropdown-item"} %> 
+                        { class: "dropdown-item ti ti-upload"} %> 
 
 
-                <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item" if investor %>
+                <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan" if investor %>
             </div>
         </div>
         </div>
@@ -145,6 +145,7 @@
 
             <tr>
                 <td>Documents</td>
+                <td></td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
                             <ul>
@@ -163,6 +164,7 @@
 
             <tr>
                 <td>Link</td>
+                <td></td>
                 <% kpi_reports.each do |kpi_report| %>                               
                         <td>
                             <small><%=  link_to kpi_report %></small>

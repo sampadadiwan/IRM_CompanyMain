@@ -49,6 +49,14 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :rag_rules %>
+    <%= form.text_area :rag_rules, class: "form-control", rows: 10 %>
+    <small class="form-text text-muted">Enter RAG rules as a JSON object. Example: `{"ratio_rules": {"red": {"min": -Infinity, "max": 0.7}, "amber": {"min": 0.7, "max": 0.9}, "green": {"min": 0.9, "max": Infinity}}}`</small>
+  </div>
+
+  <%= custom_form_fields(@investor_kpi_mapping, form) %>
+
+  <div class="form-group">
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
   </div>
 <% end %>
