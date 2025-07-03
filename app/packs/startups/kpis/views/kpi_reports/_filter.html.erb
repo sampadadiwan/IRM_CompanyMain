@@ -29,6 +29,9 @@
     <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag", name: "tag_list" %>        
   </div>
 
-  <%= form.submit "Filter", {class: "btn btn-outline-success", id: "submit"} %>
+  <%= button_tag type: :submit, class: "btn btn-outline-success", id: "submit" do %>
+    <i class="ti ti-filter"></i>
+    Filter
+  <% end %>
 
 <% end %>

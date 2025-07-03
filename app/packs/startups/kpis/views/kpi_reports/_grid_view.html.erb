@@ -16,12 +16,12 @@
 
     <span>
         <% if params[:q].blank? %>
-            <%= render "kpi_reports/filter", entity: @entity %> | 
+            <%= render "kpi_reports/filter", entity: @entity %> 
         <% end %>
 
         <div class="btn-group">
         <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle ti ti-settings" type="button"
+            <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Actions
             </button>
@@ -34,6 +34,7 @@
 
                 <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage" if kpi_reports.last %>
 
+                <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader -> 
                 <%= link_to "Upload", 
                     new_import_upload_path(
                         "import_upload[import_type]": "Kpi", 
@@ -41,7 +42,7 @@
                         "import_upload[owner_id]": params[:portfolio_company_id],
                         "import_upload[owner_type]": "Investor",
                         "sample_upload": "KPIS_SAMPLE"), 
-                        { class: "dropdown-item ti ti-upload"} %> 
+                        { class: "dropdown-item ti ti-upload"} if Rails.env.test? %> 
 
 
                 <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan" if investor %>
