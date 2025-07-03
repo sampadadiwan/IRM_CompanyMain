@@ -453,6 +453,7 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   click_on("Individual")
   #sleep(2)
   class_name = "individual_kyc" #@investor_kyc.type_from_kyc_type.underscore
+  select(@investor.investor_name, from: "#{class_name}_investor_id")
   fill_in("#{class_name}_birth_date", with: Date.today - 20.years)
   fill_in("#{class_name}_PAN", with: "PANNUMBER1")
   click_on("Next")
