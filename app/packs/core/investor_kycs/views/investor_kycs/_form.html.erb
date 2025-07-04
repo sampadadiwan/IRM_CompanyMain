@@ -124,23 +124,31 @@
         <div class="card-header"> 2. KYC Details </div>
         <div class="card-body">
 
+
+          <div class="form-group">
+            <%= form.label :permanent_address, "Permanent Address" %>
+            <%= form.text_area :address, class: "form-control"  %>
+            <small class="form-text text-muted">Address as per the address proof attached</small>
+          </div>
+
+
           <div class="form-group">
               <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
               <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
-              <small class="form-text text-muted"> Any one of: <%=address_proof_label%></small>
-
-          </div>
-
-          <div class="form-group">
-            <%= form.label :permanent_address, "Address" %>
-            <%= form.text_area :address, class: "form-control"  %>
-            <small class="form-text text-muted">Address as per the address proof attached</small>
+              <small class="form-text text-muted"> <%=address_proof_label%></small>
           </div>
 
           <div class="form-group">
             <%= form.label :correspondence_address %>
             <%= form.text_area :corr_address, class: "form-control"  %>
             <small class="form-text text-muted">If different from the address above.</small>
+          </div>
+
+
+          <div class="form-group">
+              <%= file_fields("Upload Correspondence Address Proof", investor_kyc, form, required: is_investor) %>
+              <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
+              <small class="form-text text-muted"> In case Correspondence Address is different from Permanent Address, please attach a valid government issued address proof.</small>
           </div>
 
           <div class="form-group">

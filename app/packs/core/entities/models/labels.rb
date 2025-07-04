@@ -3,10 +3,10 @@ class Labels
     SEBI: {
       'Tax ID': "PAN",
       'Bank Routing Number': "IFSC Code",
-      'Address Proof Documents': "PAN, Adhaar Card, Voter ID, Passport, Driving License"
+      'Address Proof Documents': "Any one of: Aadhar Card, Voter ID, Passport, Driving License, Other Govt ID"
     },
     DEFAULT: {
-      'Address Proof Documents': "Any valid address proof"
+      'Address Proof Documents': "Please attach a valid government issued address proof."
     }
   }.freeze
 
