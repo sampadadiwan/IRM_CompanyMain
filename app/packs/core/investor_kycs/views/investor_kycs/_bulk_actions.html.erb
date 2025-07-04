@@ -48,6 +48,13 @@
             class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :post}  if current_user.entity.entity_setting.bank_verification %>
 
+
+            <% msg = "This will try and extract information from documents into the KYC (based on rules which have been setup). Proceed?" %>
+            <%= button_to "Validate Document Data",
+            bulk_actions_investor_kycs_path("bulk_action": "ValidateDocsWithAi", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg:, action: "click->confirm#popup", method: :post}  if current_user.entity.enable_doc_llm_validation %>
+
         </div>
     </div>
 </div>

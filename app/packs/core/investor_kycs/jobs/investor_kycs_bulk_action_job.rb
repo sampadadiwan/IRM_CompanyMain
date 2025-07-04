@@ -43,6 +43,8 @@ class InvestorKycsBulkActionJob < BulkActionJob
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
     end
+    # Sleep to avoid overwhelming the LLM and rate limiting issues
+    sleep(2)
   end
 
   def generate_aml_report(investor_kyc, user_id)
