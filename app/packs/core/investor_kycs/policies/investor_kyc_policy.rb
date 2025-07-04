@@ -50,6 +50,10 @@ class InvestorKycPolicy < ApplicationPolicy
     permissioned_employee?
   end
 
+  def notify_kyc_required?
+    permissioned_employee?
+  end
+
   def send_kyc_reminder_to_all?
     user.enable_kycs && user.curr_role == "employee"
   end

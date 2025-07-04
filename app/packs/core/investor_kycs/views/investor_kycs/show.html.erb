@@ -49,6 +49,17 @@
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
+          <% if policy(@investor_kyc).notify_kyc_required? %>
+            <%= button_to notify_kyc_required_investor_kyc_path(@investor_kyc),
+                id: "investor_kyc_notify_kyc_required_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
+                data: {
+                  action: "click->confirm#popup", turbo: false, method: :post,
+                  msg: "This will generate a notification to all users associated with this investor"
+                } do %>
+              <i class="ti ti-bell"></i>Send KYC Required Notification
+            <% end %>
+          <% end %>
+
           <% if policy(@investor_kyc).send_kyc_reminder? %>
             <%= button_to send_kyc_reminder_investor_kyc_path(@investor_kyc),
                 id: "investor_kyc_send_kyc_reminder_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",

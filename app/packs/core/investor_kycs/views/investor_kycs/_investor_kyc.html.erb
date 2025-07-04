@@ -1,9 +1,13 @@
 <tr id="investor_kyc_<%= investor_kyc.id %>">
 
-    <%= render RansackTableRow.new(model: investor_kyc, columns:) %>
+  <%= render RansackTableRow.new(model: investor_kyc, columns:) %>
 
-    <td>
-      <%= link_to  t_common(:show), investor_kyc , {class: "btn btn-outline-primary ti ti-eye"}%>
-    </td>
+  <td>
+    <%= link_to  t_common(:show), investor_kyc , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= 
+      # We have the investor_kyc which is a decorated object, so we extract the object from it for policy checks
+      link_to  "Update KYC", edit_investor_kyc_path(investor_kyc) , {class: "btn btn-outline-success ti ti-edit"} if policy(investor_kyc.object).update? 
+    %>
+  </td>
 
-  </tr>
+</tr>

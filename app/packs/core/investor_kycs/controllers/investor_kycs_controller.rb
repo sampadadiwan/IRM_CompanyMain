@@ -1,7 +1,7 @@
 class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder send_notification validate_docs_with_ai preview]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview]
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   has_scope :uncalled, type: :boolean
@@ -122,6 +122,18 @@ class InvestorKycsController < ApplicationController
       redirect_to investor_kyc_url(@investor_kyc), notice: msg
     else
       msg = "KYC Reminder could not be sent as no user has been assigned to the investor."
+      redirect_to investor_kyc_url(@investor_kyc), alert: msg
+    end
+  end
+
+  def notify_kyc_required
+    if @investor_kyc.investor.approved_users.present?
+      @investor_kyc.send_kyc_form_to_user = true
+      @investor_kyc.send_kyc_form
+      msg = "KYC form sent successfully."
+      redirect_to investor_kyc_url(@investor_kyc), notice: msg
+    else
+      msg = "KYC form could not be sent as no user has been assigned to the investor."
       redirect_to investor_kyc_url(@investor_kyc), alert: msg
     end
   end

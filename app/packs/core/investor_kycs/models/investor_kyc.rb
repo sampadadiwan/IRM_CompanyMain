@@ -2,6 +2,7 @@ class InvestorKyc < ApplicationRecord
   STANDARD_COLUMNS = { "Investor" => "investor_name",
                        "Investing Entity" => "full_name",
                        "Type" => "kyc_type",
+                       "Completed" => "completed_by_investor",
                        "Kyc Verified" => "verified",
                        "Expired" => "expired" }.freeze
 
@@ -10,6 +11,7 @@ class InvestorKyc < ApplicationRecord
   INVESTOR_STANDARD_COLUMNS = { "Entity" => "entity_name",
                                 "Investing Entity" => "full_name",
                                 "Type" => "kyc_type",
+                                "Completed" => "completed_by_investor",
                                 "Kyc Verified" => "verified",
                                 "Expired" => "expired" }.freeze
   SEBI_REPORTING_FIELDS = {

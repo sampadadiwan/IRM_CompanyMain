@@ -31,6 +31,10 @@ class InvestorKycDecorator < ApplicationDecorator
     display_boolean(object.verified)
   end
 
+  def completed_by_investor
+    display_boolean(object.completed_by_investor)
+  end
+
   def dt_actions
     links = []
     links << h.link_to('Show', h.investor_kyc_path(object), class: "btn btn-outline-primary")
