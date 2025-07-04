@@ -146,7 +146,7 @@
 
 
           <div class="form-group">
-              <%= file_fields("Upload Correspondence Address Proof", investor_kyc, form, required: is_investor) %>
+              <%= file_fields("Upload Correspondence Address Proof", investor_kyc, form, required: false) %>
               <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
               <small class="form-text text-muted"> In case Correspondence Address is different from Permanent Address, please attach a valid government issued address proof.</small>
           </div>
