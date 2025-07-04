@@ -58,9 +58,9 @@ class AddSebiFields < SebiFieldsActions
     }
     if type == "Select"
       metadata = if cust_field_key == "investor_sub_category" && class_name.ends_with?("Kyc")
-                   class_name.constantize::SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.values.flatten.join(",")
+                   class_name.constantize::SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.values.flatten.join(',').to_s
                  else
-                   class_name.constantize::SELECT_FIELDS_OPTIONS.stringify_keys[cust_field_key].join(",")
+                   ",#{class_name.constantize::SELECT_FIELDS_OPTIONS.stringify_keys[cust_field_key].join(',')}"
                  end
       if cust_field_key == "investor_category" && class_name.ends_with?("Kyc")
         # app/javascript/controllers/form_custom_fields_controller.js initialize and updateSubcategories method manipulate dropdowns
