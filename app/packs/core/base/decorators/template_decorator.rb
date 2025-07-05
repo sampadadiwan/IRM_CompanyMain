@@ -1,28 +1,50 @@
 class TemplateDecorator < ApplicationDecorator
   include CurrencyHelper
 
-  METHODS_START_WITH = %w[where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_].freeze
+  METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)
     object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
   end
 
+  def custom_fields
+    TemplateDecorator.new(object.custom_fields)
+  end
+
   def method_missing(method_name, *args, &)
-    if method_name.to_s.starts_with?("where_")
+    # This is used in the template to hide/show sections based on sablon if
+    # compare_category_eq_LP:if
+    # The the category should be eq to LP for this to be true
+    if method_name.to_s.starts_with?("compare_")
+      params = method_name.to_s.gsub("compare_", "")
+      filter_field, filter_value = params.split("_eq_")
+      return send(filter_field)&.parameterize&.underscore == filter_value.downcase
+    elsif method_name.to_s.starts_with?("where_")
+      # This is used in the template to filter a collection based on a field
+      # for example where_investor_name_eq_John
+      # This will return a collection of objects where the investor_name is equal to John
       params = method_name.to_s.gsub("where_", "")
       filter_field, filter_value = params.split("_eq_")
       collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize)
       return TemplateDecorator.decorate_collection(collection)
 
     elsif method_name.to_s.starts_with?("money_")
+      # This is used in the template to format a money attribute
+      # for example money_investment_amount
       attr_name = method_name.to_s.gsub("money_", "")
       return money_to_currency(send(attr_name))
 
     elsif method_name.to_s.starts_with?("date_format_")
+      # This is used in the template to format a date attribute
+      # for example date_format_investment_date
+      # It will return the date in the format of "dd Month yyyy"
       attr_name = method_name.to_s.gsub("date_format_", "")
       return send(attr_name)&.strftime("%d %B %Y")
 
     elsif method_name.to_s.starts_with?("format_nd_")
+      # This is used in the template to format a number attribute without decimal places
+      # for example format_nd_investment_amount
+      # It will return the number with no decimal places and with a comma as a delimiter
       attr_name = method_name.to_s.gsub("format_nd_", "")
       return h.number_with_precision(send(attr_name).to_d, precision: 0, delimiter: ",")
 
