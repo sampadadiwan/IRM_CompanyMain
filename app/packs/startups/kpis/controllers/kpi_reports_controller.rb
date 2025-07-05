@@ -9,7 +9,7 @@ class KpiReportsController < ApplicationController
 
     @q = KpiReport.ransack(params[:q])
 
-    @kpi_reports = policy_scope(@q.result).includes(:entity)
+    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
 
     @kpi_reports = if params[:grid_view].present?
                      @kpi_reports.includes(:kpis, :documents, :owner)
