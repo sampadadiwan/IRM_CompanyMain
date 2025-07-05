@@ -138,8 +138,6 @@ class KpiWorkbookReader
       # Normalize the KPI name for consistent matching
       kpi_name = normalize_kpi_name(raw_kpi_name)
 
-      binding.pry if kpi_name.include?("revenue")
-
       # Skip rows where the KPI name is not in the target list
       next unless @target_kpis.include?(kpi_name)
 
