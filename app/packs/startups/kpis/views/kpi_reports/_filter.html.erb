@@ -13,7 +13,7 @@
   <div class="form-group col-md-1">    
     <% months = params[:months].presence %>
     <%= form.label :months, "Period in months" %>
-    <%= form.text_field :months, class: "form-control", value: months, style: "width: 50px;", name: "months" %>        
+    <%= form.text_field :months, class: "form-control", value: months, style: "width: 50px;", name: "months", value: 12 %>        
   </div>
 
   <div class="form-group col-md-1">    

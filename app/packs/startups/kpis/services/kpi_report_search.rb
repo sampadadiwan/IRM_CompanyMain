@@ -2,10 +2,9 @@ class KpiReportSearch
   def self.perform(kpi_reports, params)
     kpi_reports = kpi_reports.where(id: search_ids(kpi_reports, params)) if params[:search] && params[:search][:value].present?
 
-    if params[:months].present?
-      date = Time.zone.today - params[:months].to_i.months
-      kpi_reports = kpi_reports.where(as_of: date..)
-    end
+    month_param = params[:months].present? ? params[:months].to_i : 12
+    date = Time.zone.today - month_param.months
+    kpi_reports = kpi_reports.where(as_of: date..)
 
     if params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])
