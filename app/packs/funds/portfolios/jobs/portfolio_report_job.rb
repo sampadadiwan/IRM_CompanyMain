@@ -133,8 +133,8 @@ class PortfolioReportJob < LlmReportJob
       filtered_notes = notes
     end
 
-    # We only allow for PDF documents for now
-    filtered_documents = filtered_documents.select(&:pdf?)
+    # We only allow for PDF and CSV documents for now
+    filtered_documents = filtered_documents.select { |doc| doc.pdf? || doc.csv? }
 
     Rails.logger.debug { "Filtered Documents: #{filtered_documents.count}, #{filtered_documents.map(&:id)}" }
     Rails.logger.debug { "Filtered Notes: #{filtered_notes.count}, #{filtered_notes.map(&:id)}" }
