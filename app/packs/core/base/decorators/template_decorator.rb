@@ -17,8 +17,27 @@ class TemplateDecorator < ApplicationDecorator
     # The the category should be eq to LP for this to be true
     if method_name.to_s.starts_with?("compare_")
       params = method_name.to_s.gsub("compare_", "")
-      filter_field, filter_value = params.split("_eq_")
-      return send(filter_field)&.parameterize&.underscore == filter_value.downcase
+      if params.include?("_noteq_")
+        filter_field, filter_value = params.split("_noteq_")
+        return send(filter_field)&.parameterize&.underscore != filter_value.downcase
+      elsif params.include?("_eq_")
+        filter_field, filter_value = params.split("_eq_")
+        return send(filter_field)&.parameterize&.underscore == filter_value.downcase
+      elsif params.include?("_gt_")
+        filter_field, filter_value = params.split("_gt_")
+        return send(filter_field)&.parameterize&.underscore&.> filter_value.downcase
+      elsif params.include?("_gteq_")
+        filter_field, filter_value = params.split("_gteq_")
+        return send(filter_field)&.parameterize&.underscore&.>= filter_value.downcase
+      elsif params.include?("_lt_")
+        filter_field, filter_value = params.split("_lt_")
+        return send(filter_field)&.parameterize&.underscore&.< filter_value.downcase
+      elsif params.include?("_lteq_")
+        filter_field, filter_value = params.split("_lteq_")
+        return send(filter_field)&.parameterize&.underscore&.<= filter_value.downcase
+      else
+        raise ArgumentError, "Invalid comparison method name: #{method_name}"
+      end
     elsif method_name.to_s.starts_with?("where_")
       # This is used in the template to filter a collection based on a field
       # for example where_investor_name_eq_John
