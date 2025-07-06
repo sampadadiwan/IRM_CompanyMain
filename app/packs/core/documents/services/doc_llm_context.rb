@@ -16,10 +16,16 @@ class DocLlmContext < DocLlmBase
     documents.each do |document|
       # Download the document
       document.file.download do |file|
-        # Convert the file to HTML and concat it to the context
-        # `pdftohtml -s -noframes #{file.path} #{file.path}.html`
-        `pdftotext #{file.path} #{file.path}.txt`
-        ctx[:context] += "<#{document.name}>" + File.read("#{file.path}.txt") + "</#{document.name}>"
+        if document.pdf?
+          # Convert the file to HTML and concat it to the context
+          # `pdftohtml -s -noframes #{file.path} #{file.path}.html`
+          `pdftotext #{file.path} #{file.path}.txt`
+          ctx[:context] += "<#{document.name}>" + File.read("#{file.path}.txt") + "</#{document.name}>"
+        else
+          # For CSV files, we can just read the content and add it to the context
+          text_content = File.read(file.path)
+          ctx[:context] += "<#{document.name}> Content: #{text_content} </#{document.name}>"
+        end
       end
     end
 

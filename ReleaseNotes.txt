@@ -1,3 +1,16 @@
+V9.0.68
+#####################################
+a09e23f8f Fixed tests for Kpi default to 12 months
+d6279f3a0 Removed debug info from prod logs
+cd8f3e84c Added default of 12 months to kpi reports filter for grid view
+7a7f8b93f Now PortfolioReportJob takes both pdf and csv as input docs for generating the report
+3caefca5f Added no pagination for grid view for KpiReport
+42c4fbd8a Changed production logs to info only
+62a911943 Added noteq, lt, gt to TD
+5fc0a4780 Added compare_ to template decorator
+573558e7f Made the corr address proof not madatory
+f078565f2 Sync schema
+
 V9.0.66
 #####################################
 1d2660834 Added new portfolio_report widget to Portfolio Company Dashboard

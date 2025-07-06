@@ -3,10 +3,22 @@ class KpiReportSearch
     kpi_reports = kpi_reports.where(id: search_ids(kpi_reports, params)) if params[:search] && params[:search][:value].present?
 
     # Test cases have static data, hence we load all the kpi_reports, but in production we filter by months
-    month_param = params[:months].present? ? params[:months].to_i : 12
+    no_of_periods = params[:no_of_periods].present? ? params[:no_of_periods].to_i : 12
+    period = params[:period].presence || 'month'
 
-    if month_param.present? && !Rails.env.test?
-      date = Time.zone.today - month_param.months
+    if no_of_periods.present? && !Rails.env.test?
+
+      case period.downcase
+      when 'month'
+        delta = no_of_periods.months
+      when 'quarter'
+        delta = (no_of_periods * 3).months
+      when 'year', 'ytd'
+        delta = (no_of_periods * 12).months
+      when 'half year'
+        delta = (no_of_periods * 6).months
+      end
+      date = Time.zone.today - delta
       kpi_reports = kpi_reports.where(as_of: date..)
     end
 

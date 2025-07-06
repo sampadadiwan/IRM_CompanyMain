@@ -11,9 +11,9 @@
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
   <div class="form-group col-md-1">    
-    <% months = params[:months].presence || 12  unless Rails.env.test? %>
-    <%= form.label :months, "Period in months" %>
-    <%= form.text_field :months, class: "form-control", value: months, style: "width: 50px;", name: "months", value: months %>        
+    <% no_of_periods = params[:no_of_periods].presence || 12  unless Rails.env.test? %>
+    <%= form.label :no_of_periods, "No of Periods" %>
+    <%= form.text_field :no_of_periods, class: "form-control", style: "width: 50px;", name: "no_of_periods", value: no_of_periods %>        
   </div>
 
   <div class="form-group col-md-1">    
