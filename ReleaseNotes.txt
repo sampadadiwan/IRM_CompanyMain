@@ -1,3 +1,8 @@
+V9.0.69
+#####################################
+Misc fixes for valuations chart in widget
+602bf6d5e Added better period filter
+
 V9.0.68
 #####################################
 a09e23f8f Fixed tests for Kpi default to 12 months

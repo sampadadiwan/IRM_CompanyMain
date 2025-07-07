@@ -3,7 +3,7 @@
         # Get the kpi_names from custom fields or args
         kpi_names = @investor.investor_kpi_mappings.show_in_report.pluck(:standard_kpi_name)
         # Fetch the KPIs from the latest report
-        kpis = latest_kpi_report&.kpis.where(name: kpi_names) || []
+        kpis = latest_kpi_report.present? ? latest_kpi_report.kpis.where(name: kpi_names) : []
 
         if kpis.present?
 %>
