@@ -1,5 +1,4 @@
 <% 
-  if args[:kpis].present? 
         latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first 
         # Get the kpi_names from custom fields or args
         kpi_names = @investor.investor_kpi_mappings.show_in_report.pluck(:standard_kpi_name)
@@ -44,5 +43,4 @@
   <% end %>
 <% 
     end 
-  end
 %>

@@ -16,7 +16,7 @@ module ValuationsHelper
     end
 
     # Render line chart with multiple series
-    line_chart data_series, curve: false, library: {
+    line_chart data_series, id: "valuations-line-chart", curve: false, library: {
       plotOptions: { line: {
         dataLabels: {
           enabled: true,

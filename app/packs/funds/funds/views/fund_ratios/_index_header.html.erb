@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
-    Fund Ratios 
+    <%= params[:title].presence || "Fund Ratios" %>
     <%= link_to l(valuation.valuation_date), valuation if valuation %>
   </h1>
 
