@@ -18,6 +18,7 @@ export default class extends BaseAgGrid {
     console.log(`gridDivName: ${gridDivName}`);
     const customColumns = JSON.parse(document.getElementsByClassName(gridDivName)[0].dataset.customColumns);
 
+    const numericCols = [];
     let columnDefs = [];
     console.log(customColumns)
     customColumns.forEach((column) => {
@@ -28,6 +29,7 @@ export default class extends BaseAgGrid {
       } else if (data_type === "Date") {
           columnDefs.push(dateFormatColumn(controller, key, label));
       } else if (data_type === "Number" || data_type === "Decimal") {
+        numericCols.push(key);
         columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
       } else if (data_type === "Html" || data_type === "Boolean") {
         columnDefs.push(html_column(controller, key, label));
@@ -48,6 +50,7 @@ export default class extends BaseAgGrid {
       columnDefs[lastColIndex].flex = 1;
     }
 
+    this.numericColumns = numericCols;
     return columnDefs;
   }
 

@@ -181,6 +181,22 @@ export default class BaseAgGrid extends Controller {
         }
     }
 
+    // read obj["a.b.c"] safely
+    getByPath(obj, path) {
+        return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
+    }
+
+    // write obj["a.b.c"] = val
+    setByPath(obj, path, val) {
+        const keys = path.split('.');
+        const last = keys.pop();
+        const target = keys.reduce((o, k) => {
+            if (!o[k]) o[k] = {};
+            return o[k];
+        }, obj);
+        target[last] = val;
+    }
+
     loadData() {
         let source = $(this.tableNameValue).data('source')
         let restoreColumnState = this.restoreColumnState;
@@ -190,6 +206,23 @@ export default class BaseAgGrid extends Controller {
             .then(data => {
                 // load fetched data into grid
                 console.log(`loadData completed from ${source}`);
+                /* ② ---------- CLEAN JUST ONCE ---------- */
+                // This is to ensure fields sent back as strings are converted to numbers so we can display them correctly
+                if (Array.isArray(this.numericColumns) && this.numericColumns.length) {
+                    const cleanNumber = (v) =>
+                    v == null || v === "" ? null : Number(String(v).replace(/,/g, ""));
+            
+                    data.forEach(row => {
+                        this.numericColumns.forEach(col => {
+                            // Only touch it if it’s not already a number
+                            const raw = this.getByPath(row, col);
+                            if (typeof raw === "string") {
+                                this.setByPath(row, col, cleanNumber(raw));
+                            }
+                        });
+                    });
+                }
++               /* ② ------------------------------------ */
                 console.log(data);
                 this.gridOptions.api.setRowData(data);
                 // this.restoreColumnState(this.gridOptions);
