@@ -48,41 +48,60 @@ export default class extends Controller {
         }
     }
 
-    exportToExcel(type, tableElement, filename, fn, dl) {
+    /**
+     * Return a SheetJS cell object built from the cell’s text.
+     *  • Converts only *pure* numbers (digits, optional commas, decimals, minus sign).
+     *  • Leaves anything that contains letters untouched.
+     *  • Handles blanks and “-” placeholders.
+     */
+    buildCell(text, link) {
+        const raw = text.trim();
+
+        // treat empty or dash as blank
+        if (raw === "" || raw === "-") return { v: "" };
+
+        // quick sanity check: if the string has any letter, keep it as text
+        if (/[A-Za-z]/.test(raw)) return { v: raw };
+
+        // still here? looks numeric-ish – strip thousands separators & symbols
+        const cleaned = raw.replace(/[^0-9.\-]/g, "");
+        const num = cleaned ? Number(cleaned) : NaN;
+
+        if (!Number.isNaN(num)) {
+            const obj = { v: num, t: "n", z: "#,##0.00" };
+            if (link) obj.l = { Target: link.href };
+            return obj;
+        }
+
+        // fallback – leave as text
+        return { v: raw };
+    }
+
+
+    exportToExcel(type, tableElement, filename) {
         const ws = XLSX.utils.aoa_to_sheet([]);
-        let R = 0;
-        let maxC = 0;
+        let R = 0, maxC = 0;
 
-        for (let i = 0; i < tableElement.rows.length; i++) {
-            const row = tableElement.rows[i];
+        for (const row of tableElement.rows) {
             let C = 0;
-            for (let j = 0; j < row.cells.length; j++) {
-                const cell = row.cells[j];
-                const text = cell.innerText.trim();
-                const link = cell.querySelector('a');
-                const value = parseFloat(text);
-                const isNumber = !isNaN(value) && !text.includes(':'); // crude check to avoid time-like strings
-
-                const cellObj = isNumber ? { v: value, t: 'n' } : { v: text };
-                if (link && link.href) {
-                    cellObj.l = { Target: link.href };
-                }
-
-                const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-                ws[cellAddress] = cellObj;
-                C++;
+            for (const cell of row.cells) {
+            const text = cell.innerText;
+            const link = cell.querySelector("a");
+            ws[XLSX.utils.encode_cell({ r: R, c: C })] = this.buildCell(text, link);
+            C++;
             }
-            if (C > maxC) maxC = C;
+            maxC = Math.max(maxC, C);
             R++;
         }
 
-        ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: R - 1, c: maxC - 1 } });
+        ws["!ref"] = XLSX.utils.encode_range({
+            s: { r: 0, c: 0 },
+            e: { r: R - 1, c: maxC - 1 }
+        });
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-
-        return dl ?
-            XLSX.write(wb, { bookType: type, bookSST: true, type: 'base64' }) :
-            XLSX.writeFile(wb, fn || filename);
+        XLSX.writeFile(wb, filename);
     }
+
 }
