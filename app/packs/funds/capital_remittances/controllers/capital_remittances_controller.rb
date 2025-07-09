@@ -53,17 +53,21 @@ class CapitalRemittancesController < ApplicationController
     index_search.map(&:id)
   end
 
+  def allocate_units
+    fund_unit, msg = DefaultUnitAllocationEngine.new.allocate_remittance(@capital_remittance, @capital_remittance.capital_call.name)
+    if fund_unit&.persisted?
+      redirect_to capital_remittance_path(@capital_remittance), notice: "Fund units successfully created for remittance."
+    else
+      redirect_to capital_remittance_path(@capital_remittance), alert: "Failed to create fund units for remittance. #{msg.join(', ')}"
+    end
+  end
+
   # GET /capital_remittances/1 or /capital_remittances/1.json
   def show; end
 
   def generate_docs
     CapitalRemittanceDocJob.perform_later(@capital_remittance.capital_call_id, @capital_remittance.id, current_user.id)
     redirect_to capital_remittance_path(@capital_remittance), notice: "Documentation generation started, please check back in a few mins."
-  end
-
-  def allocate_units
-    FundUnitsJob.perform_later(@capital_remittance.id, "CapitalRemittance", "Allocation for remittance", current_user.id)
-    redirect_to capital_remittance_path(@capital_remittance), notice: "Allocation process started, please check back in a few mins."
   end
 
   def send_notification

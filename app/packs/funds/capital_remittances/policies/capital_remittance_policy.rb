@@ -13,7 +13,7 @@ class CapitalRemittancePolicy < FundBasePolicy
   end
 
   def allocate_units?
-    update?
+    record.verified && Pundit.policy(user, record.capital_call).allocate_units?
   end
 
   def preview?

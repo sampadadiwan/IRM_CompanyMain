@@ -4,38 +4,47 @@
   
 
   <div>
-    <%= link_to  t_common(:edit), edit_capital_remittance_path(@capital_remittance), {class: "btn btn-outline-primary" } if policy(@capital_remittance).update? %>    
+    <%= link_to  t_common(:edit), edit_capital_remittance_path(@capital_remittance), {class: "btn btn-outline-primary ti ti-edit" } if policy(@capital_remittance).update? %>    
 
-    <%= button_to t_common(:delete), @capital_remittance, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
+    <%= button_to t_common(:delete), @capital_remittance, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
 
     <% unless current_user.curr_role_investor? %>
     <div class="btn-group">
         <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle" type="button"
+            <button class="btn btn-outline-success dropdown-toggle ti ti-settings" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Actions
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
                 <% label = @capital_remittance.verified ? "Unverify" : "Verify" %> 
-                <% msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
+                <% 
+                    msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" 
+                    verified_icon = @capital_remittance.verified ? "ti ti-x" : "ti ti-check"
+                %> 
                 <%= button_to label, verify_capital_remittance_path(@capital_remittance), method: :patch, 
-                    class: "dropdown-item", form_class: "deleteButton", 
+                    class: "dropdown-item ti #{verified_icon}", form_class: "deleteButton", 
                     data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? %>
+
+                <%= button_to "Allocate Fund Units" , 
+                    allocate_units_capital_remittance_path(@capital_remittance),    
+                    method: :patch, class: "dropdown-item ti ti-box-multiple", 
+                    form_class: "deleteButton", data: {action: "click->confirm#popup", method: :post, msg: "This will allocate fund units for this remittance. Proceed?"} if policy(@capital_remittance).allocate_units? %>
+                
 
                 <%= button_to "Generate Documents" , 
                     generate_docs_capital_remittance_path(@capital_remittance),    
-                    method: :patch, class: "dropdown-item", 
+                    method: :patch, class: "dropdown-item ti ti-file-type-doc", 
                     form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the drawdown notice for this remittance. Proceed?"} if policy(@capital_remittance).generate_docs? %>
                 
                 <% label = @capital_remittance.notification_sent ? "Send Reminder" : "Send Notification" %>
                 <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
-                    class: "dropdown-item", form_class: "deleteButton", 
+                    class: "dropdown-item ti ti-mail", form_class: "deleteButton", 
                     data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
 
 
                 <% adjustment_params = {commitment_adjustment: {capital_commitment_id: @capital_remittance.capital_commitment_id, owner_id: @capital_remittance.id, owner_type: "CapitalRemittance", folio_amount: @capital_remittance.folio_due_amount, adjustment_type: "Arrear", reason: "Arreas from Remittance #{@capital_remittance.id}"}} %>
-                <%= link_to "Create Arrears Adjustment", new_commitment_adjustment_path(adjustment_params), class: "dropdown-item" if policy(@capital_remittance).update? %>
+                <%= link_to "Create Arrears Adjustment", new_commitment_adjustment_path(adjustment_params), class: "dropdown-item ti ti-edit" if policy(@capital_remittance).update? %>
             </div>
         </div>
     </div>

@@ -36,7 +36,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def allocate_units?
-    record.unit_prices.present? && update?
+    record.approved && record.unit_prices.present? && update?
   end
 
   def destroy?

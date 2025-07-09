@@ -18,6 +18,9 @@ class FundUnit < ApplicationRecord
   counter_culture :capital_commitment, column_name: 'total_units_premium_cents', delta_column: 'total_premium_cents'
   counter_culture :fund, column_name: 'total_units_premium_cents', delta_column: 'total_premium_cents'
 
+  scope :for_remittances, -> { where(owner_type: 'CapitalRemittance') }
+  scope :for_distributions, -> { where(owner_type: 'CapitalDistribution') }
+
   def to_s
     unit_type
   end

@@ -1,12 +1,16 @@
 class DeploymentNotificationWorker
   include Sidekiq::Worker
 
-  def perform(type)
+  def perform(type, msg: nil)
     case type
     when "before"
-      User.msg_todays_users("🚨 System going down for update. Downtime is 15 mins. #{Time.zone.now}", level: :danger)
+      msg ||= "🚨 System going down for update. Downtime is 15 mins. #{Time.zone.now}"
+      User.msg_todays_users(msg, level: :danger)
     when "after"
-      User.msg_todays_users("✅ System is back online. Thank you for your patience. #{Time.zone.now}", level: :success)
+      msg ||= "✅ System is back online. Thank you for your patience. #{Time.zone.now}"
+      User.msg_todays_users(msg, level: :success)
+    when "adhoc"
+      User.msg_todays_users(msg, level: :info) if msg.present?
     else
       Rails.logger.warn "Unknown deployment notification type: #{type}"
     end

@@ -4,11 +4,11 @@ class CapitalRemittancePaymentAction < Trailblazer::Operation
   end
 
   def handle_errors(ctx, capital_remittance_payment:, **)
-    unless capital_remittance_payment.valid?
+    unless capital_remittance_payment.errors.blank? && capital_remittance_payment.valid?
       ctx[:errors] = capital_remittance_payment.errors.full_messages.join(", ")
       Rails.logger.error "Capital remittance Payment errors: #{capital_remittance_payment.errors.full_messages}"
     end
-    capital_remittance_payment.valid?
+    capital_remittance_payment.errors.blank? && capital_remittance_payment.valid?
   end
 
   def set_amount(_ctx, capital_remittance_payment:, **)
@@ -17,6 +17,11 @@ class CapitalRemittancePaymentAction < Trailblazer::Operation
   end
 
   def destroy(_ctx, capital_remittance_payment:, **)
-    capital_remittance_payment.destroy
+    begin
+      capital_remittance_payment.destroy
+    rescue e
+      Rails.logger.error "Error destroying capital remittance payment: #{e.message}"
+    end
+    capital_remittance_payment.errors.blank?
   end
 end

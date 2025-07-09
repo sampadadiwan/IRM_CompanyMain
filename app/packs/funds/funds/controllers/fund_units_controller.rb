@@ -69,7 +69,7 @@ class FundUnitsController < ApplicationController
     @fund_unit.destroy
 
     respond_to do |format|
-      format.html { redirect_to fund_units_url, notice: "Fund unit was successfully destroyed." }
+      format.html { redirect_to @fund_unit.owner, notice: "Fund unit was successfully destroyed." }
       format.json { head :no_content }
     end
   end
