@@ -1,5 +1,6 @@
 class FundUnit < ApplicationRecord
   include ForInvestor
+  include Trackable.new
 
   belongs_to :entity
   belongs_to :fund
@@ -16,6 +17,7 @@ class FundUnit < ApplicationRecord
 
   counter_culture :capital_commitment, column_name: 'total_fund_units_quantity', delta_column: 'quantity'
   counter_culture :capital_commitment, column_name: 'total_units_premium_cents', delta_column: 'total_premium_cents'
+  counter_culture :capital_commitment, column_name: 'total_units_amount_cents', delta_column: 'amount_cents'
   counter_culture :fund, column_name: 'total_units_premium_cents', delta_column: 'total_premium_cents'
 
   scope :for_remittances, -> { where(owner_type: 'CapitalRemittance') }
@@ -25,9 +27,9 @@ class FundUnit < ApplicationRecord
     unit_type
   end
 
-  def amount_cents
-    quantity * (price_cents + premium_cents)
-  end
+  # def amount_cents
+  #   quantity * (price_cents + premium_cents)
+  # end
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[issue_date premium price quantity reason unit_type].sort

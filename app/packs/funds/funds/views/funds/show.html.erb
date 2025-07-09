@@ -147,6 +147,8 @@ commands = [
                 <i class="ti ti-chart-pie"></i>Portfolio Investment Report
               <% end %>
 
+              <%= link_to "Collected without Fund Units", capital_commitments_path(filter: true, fund_id: @fund.id, q: ransack_query_params("units_amount_minus_collected", :lt, 0)), class: "dropdown-item ti ti-x"%>
+
             </div>
           </div>
         </div>

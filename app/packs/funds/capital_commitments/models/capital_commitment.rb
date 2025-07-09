@@ -7,7 +7,7 @@ class CapitalCommitment < ApplicationRecord
   include CommitmentAccountEntry
   include CommitmentDocuments
   include WithNextSteps
-  include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
+  include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount total_units_amount])
 
   include ForInvestor
   include WithFriendlyId
@@ -91,8 +91,7 @@ class CapitalCommitment < ApplicationRecord
            with_currency: ->(i) { i.folio_currency.presence || i.fund.currency }
 
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
-           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :other_fee_cents,
-           :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
+           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :total_units_amount_cents,:other_fee_cents, :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
            with_currency: ->(i) { i.fund.currency }
 
   validates :folio_committed_amount_cents, :orig_folio_committed_amount_cents, numericality: { greater_than_or_equal_to: 0 }
@@ -113,6 +112,16 @@ class CapitalCommitment < ApplicationRecord
 
   # This is used to improve the performance of the formulas, in allocations
   memoize :get_account_entry, :cumulative_account_entry, :on_date, :quarterly, :since_inception
+
+  # This is used to compute the total units amount minus collected amount
+  # To generate a report where we have collected money but not generated corr units
+  # in such case units_amount_minus_collected < 0 from the search screen
+  ransacker :units_amount_minus_collected, formatter: proc { |v| v } do |parent|
+    Arel::Nodes::SqlLiteral.new(
+      "(#{parent.table.name}.total_units_amount_cents - #{parent.table.name}.collected_amount_cents)"
+    )
+  end
+
 
   counter_culture :fund,
                   column_name: 'committed_amount_cents',
@@ -296,7 +305,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency].sort
+    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency total_units_amount units_amount_minus_collected].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

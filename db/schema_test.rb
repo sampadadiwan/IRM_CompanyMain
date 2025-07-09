@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_07_04_113707) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_09_123407) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1662,7 +1662,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_04_113707) do
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.decimal "premium_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.boolean "gp_units", default: false
+    t.datetime "deleted_at"
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
+    t.index ["deleted_at"], name: "index_fund_units_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
     t.index ["investor_id"], name: "index_fund_units_on_investor_id"
