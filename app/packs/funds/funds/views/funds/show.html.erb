@@ -72,6 +72,9 @@ commands = [
                     <i class="ti ti-user-dollar"></i>Advisor Payouts
                   <% end %>
                 </li>
+                <li>
+                  <%= link_to "Collected without Fund Units", capital_commitments_path(filter: true, fund_id: @fund.id, q: ransack_query_params("units_amount_minus_collected", :lt, 0)), class: "dropdown-item ti ti-x"%>
+                </li>
               </ul>
             </li>
 
@@ -146,9 +149,7 @@ commands = [
               <%= link_to portfolio_investments_report_all_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
                 <i class="ti ti-chart-pie"></i>Portfolio Investment Report
               <% end %>
-
-              <%= link_to "Collected without Fund Units", capital_commitments_path(filter: true, fund_id: @fund.id, q: ransack_query_params("units_amount_minus_collected", :lt, 0)), class: "dropdown-item ti ti-x"%>
-
+              
             </div>
           </div>
         </div>

@@ -1,62 +1,56 @@
-
-
 <table class="table table-bordered dataTable">
-
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @payment.entity.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Amount
-        </td>
-        <td>
-          <%= @payment.amount %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Plan
-        </td>
-        <td>
-          <%= @payment.plan %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Discount
-        </td>
-        <td>
-          <%= @payment.discount %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Reference Number
-        </td>
-        <td>
-          <%= @payment.reference_number %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          User
-        </td>
-        <td>
-          <%= @payment.user.full_name %>
-        </td>    
-      </tr>
-    
-  
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @payment.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Amount
+    </td>
+    <td>
+      <%= @payment.amount %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Plan
+    </td>
+    <td>
+      <%= @payment.plan %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Discount
+    </td>
+    <td>
+      <%= @payment.discount %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Reference Number
+    </td>
+    <td>
+      <%= @payment.reference_number %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      User
+    </td>
+    <td>
+      <%= @payment.user.full_name %>
+    </td>
+  </tr>
 </table>
-
 <% if current_user.has_cached_role?(:super) %>
-<div>
-  <%= link_to  t_common(:edit), edit_payment_path(@payment), {class: "btn btn-outline-primary"} %> |
-  <%= button_to t_common(:delete), @payment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: false} %>
-</div>
+  <div>
+    <%= link_to  t_common(:edit), edit_payment_path(@payment), {class: "btn btn-outline-primary ti ti-eye"} %> |
+    <%= button_to t_common(:delete), @payment, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: false} %>
+  </div>
 <% end %>
