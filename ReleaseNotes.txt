@@ -1,3 +1,11 @@
+V9.0.71
+#####################################
+2b6cd9d90 Added icons to remittance payments
+e4aa71081 Fixed tests
+1f10991c2 Added units_amount_minus_collected to commitment to check for collected but not issued units
+65a75fa28 Added fund_units_before_end_date to SOA generator
+8345d5bdf Check remittance payment deletion (#904)
+
 V9.0.70
 #####################################
 668550ca1 KYC Perm address is copied to corr address unless corr add edited (#901)
