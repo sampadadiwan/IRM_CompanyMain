@@ -50,13 +50,17 @@ class KpiReport < ApplicationRecord
       self.upload_new_kpis = false
       kpi_file = documents.where(name: "KPIs").first
       ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
+
+      # Delete any prev csv files
+      documents.where(name: "KPIs.csv").delete_all
+      # Convert the kpis to csv
+      convert_kpis_to_csv
     else
       # If no new kpis are uploaded, we will not import any kpis
       Rails.logger.info "skipping ImportKpiWorkbookJob for KpiReport #{id}"
     end
   end
 
-  after_create_commit :convert_kpis_to_csv
   def convert_kpis_to_csv
     kpi_file = documents.where(name: "KPIs").first
     if kpi_file.present?

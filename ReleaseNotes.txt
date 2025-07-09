@@ -1,3 +1,12 @@
+V9.0.70
+#####################################
+668550ca1 KYC Perm address is copied to corr address unless corr add edited (#901)
+9cc8db637 Added better popup msg for deleting remittance payments
+d73941588 Fixed the ag_grid custom columns to convert strings to numbers
+df87d78e4 Fixed XL export
+f3ffd7b32 Added better pagy handling for AuditTrail
+af4697eda Fixed bug in key_kpis
+
 V9.0.69
 #####################################
 Misc fixes for valuations chart in widget
