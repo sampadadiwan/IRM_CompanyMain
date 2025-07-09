@@ -1090,6 +1090,7 @@ Then('there should be correct units for the calls payment for each investor') do
         amount_cents = capital_remittance.collected_amount_cents # - capital_remittance.allocated_unit_amount_cents
       end
 
+      fu.amount_cents.should == amount_cents
       fu.quantity.round(2).should == ( amount_cents / (fu.price_cents + fu.premium_cents)).round(2)
     end
   end

@@ -27,9 +27,10 @@ class FundUnit < ApplicationRecord
     unit_type
   end
 
-  # def amount_cents
-  #   quantity * (price_cents + premium_cents)
-  # end
+  before_save :calculate_amount_cents
+  def calculate_amount_cents
+    self.amount_cents = quantity * (price_cents + premium_cents)
+  end
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[issue_date premium price quantity reason unit_type].sort
