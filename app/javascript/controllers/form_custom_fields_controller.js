@@ -62,9 +62,27 @@ export default class extends Controller {
         let criteria = $(elem).attr("data-match-criteria")
         let data_match_value = $(elem).attr("data-match-value").toLowerCase();
         let matched = null;
-        if(fcf_change_value && criteria == "contains") {
+        if (fcf_change_value && criteria == "contains") {
             matched = (fcf_change_value.includes(data_match_value) || data_match_value.includes(fcf_change_value)) ? "matched" : "not-matched";
-        } else {
+        } else if (criteria == "gt" || criteria == "lt" || criteria == "gte" || criteria == "lte") {
+            const num_fcf_change_value = parseFloat(fcf_change_value);
+            const num_data_match_value = parseFloat(data_match_value);
+
+            if (!isNaN(num_fcf_change_value) && !isNaN(num_data_match_value)) {
+                if (criteria == "gt") {
+                    matched = num_fcf_change_value > num_data_match_value ? "matched" : "not-matched";
+                } else if (criteria == "lt") {
+                    matched = num_fcf_change_value < num_data_match_value ? "matched" : "not-matched";
+                } else if (criteria == "gte") {
+                    matched = num_fcf_change_value >= num_data_match_value ? "matched" : "not-matched";
+                } else { // criteria == "lte"
+                    matched = num_fcf_change_value <= num_data_match_value ? "matched" : "not-matched";
+                }
+            } else {
+                matched = "not-matched"; // Cannot compare non-numeric values
+            }
+        }
+        else {
             matched = data_match_value == fcf_change_value ? "matched" : "not-matched";
         }
 
@@ -75,10 +93,16 @@ export default class extends Controller {
 
         console.log(`switch_val = ${switch_val}`)
         switch( switch_val ) {
-            case "matched-eq-show": case "matched-contains-show": case "not-matched-not_eq-show":
+            case "matched-eq-show":
+            case "matched-contains-show":
+            case "not-matched-not_eq-show":
+            case "matched-gt-show":
+            case "matched-lt-show":
+            case "matched-gte-show":
+            case "matched-lte-show":
                 $(elem).show();
-                if(required_on_show) {
-                  this.require_form_elements(elem);
+                if (required_on_show) {
+                    this.require_form_elements(elem);
                 }
                 break;
             default:

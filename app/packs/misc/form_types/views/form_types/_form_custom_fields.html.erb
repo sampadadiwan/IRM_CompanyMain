@@ -102,7 +102,7 @@
 
         <div class="form-group col-md-2">
             <%= f.label :condition_criteria, "Criteria" %>
-            <%= f.select :condition_criteria, [:eq, :not_eq, :contains], {}, class: "form-control" %>
+            <%= f.select :condition_criteria, [:eq, :not_eq, :contains, :lt, :lte, :gt, :gte], {}, class: "form-control" %>
             <small class="form-text text-muted">Criteria to check for condition</small>
         </div>
 
