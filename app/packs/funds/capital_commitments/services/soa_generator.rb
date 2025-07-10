@@ -87,7 +87,7 @@ class SoaGenerator
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
-      fund_units_before_end_date: TemplateDecorator.decorate(capital_commitment.fund_units.where(issue_date: ..end_date)),
+      remittance_fund_units_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.fund_units.for_remittances.where(issue_date: ..end_date)),
 
       commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
       commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..end_date)),
