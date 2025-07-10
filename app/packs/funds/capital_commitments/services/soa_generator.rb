@@ -96,6 +96,7 @@ class SoaGenerator
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
+      capital_remittances_before_end_date_by_payment_date: TemplateDecorator.decorate_collection(remittances.where(payment_date: ..end_date)),
 
       capital_remittance_payments: TemplateDecorator.decorate_collection(remittance_payments),
       capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(remittance_payments.where(payment_date: start_date..end_date)),
