@@ -98,7 +98,7 @@ class CapitalCommitment < ApplicationRecord
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, :commitment_date, presence: true
-  validates :commitment_date, presence: true, if: proc { |c| c.new_record? }
+  # validates :commitment_date, presence: true, if: proc { |c| c.new_record? }
   validates_uniqueness_of :folio_id, scope: :fund_id
 
   validates :unit_type, :folio_id, length: { maximum: 40 }
