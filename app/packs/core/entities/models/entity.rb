@@ -51,7 +51,6 @@ class Entity < ApplicationRecord
 
   has_many :documents, dependent: :destroy
   has_many :doc_questions, dependent: :destroy
-  has_many :messages, dependent: :destroy
   has_many :tasks, dependent: :destroy
   has_many :form_types, dependent: :destroy
   has_many :approvals, dependent: :destroy
@@ -73,8 +72,6 @@ class Entity < ApplicationRecord
   has_many :fees, dependent: :destroy
   has_many :import_uploads, dependent: :destroy
 
-  has_many :investor_accesses, dependent: :destroy
-  has_many :investor_kycs, dependent: :destroy
   has_many :access_rights, dependent: :destroy
   has_many :investments, dependent: :destroy
 
@@ -93,6 +90,9 @@ class Entity < ApplicationRecord
   has_many :fund_reports, dependent: :destroy
   has_many :fund_formulas, dependent: :destroy
 
+  has_many :investor_accesses, dependent: :destroy
+  has_many :investor_kycs, dependent: :destroy
+  
   has_many :investment_opportunities, dependent: :destroy
   has_many :expression_of_interests, dependent: :destroy
   has_many :portfolio_investments
@@ -245,5 +245,85 @@ class Entity < ApplicationRecord
 
   def default_currency_units
     currency == "INR" ? "Crores" : "Million"
+  end
+
+  def nuclear_destroy
+    
+    # has_many associations
+    children.each(&:really_destroy!)
+    dashboard_widgets.each(&:really_destroy!)
+    support_client_mappings.each(&:really_destroy!)
+    kpi_reports.each(&:really_destroy!)
+    kpis.each(&:really_destroy!)
+    investor_kpi_mappings.each(&:really_destroy!)
+    deals.each(&:really_destroy!)
+    deal_investors.each(&:really_destroy!)
+    deal_activities.each(&:really_destroy!)
+    secondary_sales.each(&:really_destroy!)
+    interests_shown.each(&:really_destroy!)
+    interests.each(&:really_destroy!)
+    offers.each(&:really_destroy!)
+    valuations.each(&:really_destroy!)
+    investor_notices.each(&:really_destroy!)
+    documents.each(&:really_destroy!)
+    doc_questions.each(&:really_destroy!)
+    # messages.each(&:really_destroy!)
+    tasks.each(&:really_destroy!)
+    form_types.each(&:really_destroy!)
+    approvals.each(&:really_destroy!)
+    approval_responses.each(&:really_destroy!)
+    rm_mappings.each(&:really_destroy!)
+    investor_advisors.each(&:really_destroy!)
+
+    self.reload
+    
+    notes.each(&:really_destroy!)
+    exchange_rates.each(&:really_destroy!)
+    fees.each(&:really_destroy!)
+    import_uploads.each(&:destroy!)
+    investor_accesses.each(&:really_destroy!)
+    access_rights.each(&:really_destroy!)
+    investments.each(&:really_destroy!)
+    account_entries.each(&:really_destroy!)
+    capital_calls.each(&:really_destroy!)
+    call_fees.each(&:really_destroy!)
+    capital_commitments.each(&:really_destroy!)
+    capital_remittances.each(&:really_destroy!)
+    capital_remittance_payments.each(&:really_destroy!)
+    capital_distributions.each(&:really_destroy!)
+    capital_distribution_payments.each(&:really_destroy!)
+    commitment_adjustments.each(&:really_destroy!)
+    fund_ratios.each(&:really_destroy!)
+    fund_units.each(&:really_destroy!)
+    fund_reports.each(&:really_destroy!)
+    fund_formulas.each(&:really_destroy!)
+    funds.each(&:really_destroy!)
+    investment_opportunities.each(&:really_destroy!)
+    expression_of_interests.each(&:really_destroy!)
+    portfolio_investments.each(&:really_destroy!)
+    stock_conversions.each(&:really_destroy!)
+    portfolio_reports.each(&:really_destroy!)
+    investment_instruments.each(&:really_destroy!)
+    portfolio_cashflows.each(&:really_destroy!)
+    aggregate_portfolio_investments.each(&:really_destroy!)
+    ai_rules.each(&:really_destroy!)
+    ai_checks.each(&:really_destroy!)
+    noticed_events.each(&:really_destroy!)
+    # employees.reload.each(&:really_destroy!)
+
+    investor_kycs.each(&:really_destroy!)
+    investors.each(&:really_destroy!)
+    folders.where.not(id: root_folder_id).each(&:really_destroy!)
+
+
+
+    # belongs_to associations
+    # root_folder&.really_destroy!
+    # parent_entity&.really_destroy!
+
+    # has_one associations
+    entity_setting&.really_destroy!
+
+    destroy!
   end
 end
