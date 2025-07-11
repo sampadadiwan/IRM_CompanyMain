@@ -1,3 +1,9 @@
+V9.0.73
+#####################################
+8ea0b1e4c Fixed some tests
+925d76d55 Added fund_formula_id to rollups
+0ce682d9f fix for bulk insert
+
 V9.0.72
 #####################################
 03b8cafaf Added lt, gt for Custom Fields (#906)

@@ -15,7 +15,9 @@
     expect(page).to have_content "Investor Sub Category"
 
     class_name = "individual"
-
+    find('.select2-container', visible: true).click
+    find('li.select2-results__option', text: @investor_kyc.investor.investor_name).click
+    
     fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name)
     select(@investor_kyc.residency.titleize, from: "#{class_name}_kyc_residency")
     fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN)
@@ -61,6 +63,9 @@
     expect(page).not_to have_content "Investor Sub Category"
 
     class_name = "individual"
+    find('.select2-container', visible: true).click
+    find('li.select2-results__option', text: @investor_kyc.investor.investor_name).click
+
     fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name)
     select(@investor_kyc.residency.titleize, from: "#{class_name}_kyc_residency")
     fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN)
