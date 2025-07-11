@@ -1946,6 +1946,7 @@ Given('Given import file {string} for {string}') do |file, type|
   ImportUploadJob.perform_now(iu.id)
   iu.reload
   # binding.pry if iu.failed_row_count > 0
+  binding.pry if iu.failed_row_count > 0
   iu.failed_row_count.should == 0
 end
 

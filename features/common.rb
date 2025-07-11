@@ -178,7 +178,8 @@ When(/^I click "([^"]*)" in the side panel$/) do |arg1|
 end
 
 When('I click the tab {string}') do |args|
-  within(".nav") do
+  # Change this to the last .nav
+  within(all(".nav").last) do
     click_on(args)
   end
 end
