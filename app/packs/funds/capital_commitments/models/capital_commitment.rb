@@ -122,6 +122,12 @@ class CapitalCommitment < ApplicationRecord
     )
   end
 
+  # Ransacker to check if folio_currency is different from fund.currency
+  ransacker :foreign_currency_commitment, formatter: proc { |v| ActiveRecord::Type::Boolean.new.cast(v) } do |parent|
+    Arel::Nodes::SqlLiteral.new(
+      "CASE WHEN #{parent.table.name}.folio_currency != (SELECT funds.currency FROM funds WHERE funds.id = #{parent.table.name}.fund_id) THEN TRUE ELSE FALSE END"
+    )
+  end
 
   counter_culture :fund,
                   column_name: 'committed_amount_cents',
@@ -305,7 +311,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency total_units_amount units_amount_minus_collected].sort
+    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency total_units_amount units_amount_minus_collected foreign_currency_commitment].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

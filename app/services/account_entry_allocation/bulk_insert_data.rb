@@ -51,7 +51,7 @@ module AccountEntryAllocation
         if ctx[:bulk_insert_cumulative_records].present?
           AccountEntry.insert_all(ctx[:bulk_insert_cumulative_records])
 
-          new_record_count = records_in_allocation_by_formula.count ``
+          new_record_count = records_in_allocation_by_formula.count
           # Calculate the number of inserted records ( -1 cause the cumulative_ae is already in the account_entries)
           rollup_inserted_row_count = new_record_count - existing_record_count
 

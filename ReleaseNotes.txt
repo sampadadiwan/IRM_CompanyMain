@@ -1,3 +1,12 @@
+V9.0.72
+#####################################
+03b8cafaf Added lt, gt for Custom Fields (#906)
+7bd5a5dd1 Added capital_remittances_before_end_date_by_payment_date to soa generator
+fcc1f4218 Added destroy to entity to completely remove it
+a1d64146e compare_ in TD returns false if NoMethodError
+4386c6772 Made commitment_date mandatory for commitments
+a6a992501 Fixed units_amount_minus_collected
+
 V9.0.71
 #####################################
 2b6cd9d90 Added icons to remittance payments
