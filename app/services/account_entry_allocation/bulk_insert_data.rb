@@ -59,8 +59,6 @@ module AccountEntryAllocation
           bulk_insert_cumulative_records_length = ctx[:bulk_insert_cumulative_records].length
           Rails.logger.debug { "#{fund_formula.name}: Inserted #{rollup_inserted_row_count} roll_up records, expected #{bulk_insert_cumulative_records_length}" }
 
-          binding.pry if rollup_inserted_row_count != bulk_insert_cumulative_records_length
-
           # Raise an error if the number of inserted records does not match the expected count
           raise "Rollup inserts failed inserted #{rollup_inserted_row_count}, expected #{bulk_insert_cumulative_records_length} " if rollup_inserted_row_count != bulk_insert_cumulative_records_length
         else

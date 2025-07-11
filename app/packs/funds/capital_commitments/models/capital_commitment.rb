@@ -91,7 +91,7 @@ class CapitalCommitment < ApplicationRecord
            with_currency: ->(i) { i.folio_currency.presence || i.fund.currency }
 
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
-           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :total_units_amount_cents,:other_fee_cents, :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
+           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :total_units_amount_cents, :other_fee_cents, :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
            with_currency: ->(i) { i.fund.currency }
 
   validates :folio_committed_amount_cents, :orig_folio_committed_amount_cents, numericality: { greater_than_or_equal_to: 0 }

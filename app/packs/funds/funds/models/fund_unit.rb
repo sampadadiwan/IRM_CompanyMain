@@ -16,16 +16,16 @@ class FundUnit < ApplicationRecord
   counter_culture :owner, column_name: 'units_quantity', delta_column: 'quantity'
 
   counter_culture :capital_commitment, column_name: 'total_fund_units_quantity', delta_column: 'quantity'
-  
+
   counter_culture :capital_commitment, column_name: 'total_units_premium_cents', delta_column: 'total_premium_cents'
 
   # Rollup the total amount of all units for the capital commitment but only if the amount_cents is positive, ie dont rollup the distributions and transfer out. Used in CapitalCommitment.units_amount_minus_collected
-  counter_culture :capital_commitment, column_name: proc { |r| r.amount_cents.positive? ? 'total_units_amount_cents' : nil }, 
-                            delta_column: "amount_cents",
-                            column_names: {
-                              ["fund_units.amount_cents > 0"] => 'total_units_amount_cents'
-                            },
-                            execute_after_commit: true
+  counter_culture :capital_commitment, column_name: proc { |r| r.amount_cents.positive? ? 'total_units_amount_cents' : nil },
+                                       delta_column: "amount_cents",
+                                       column_names: {
+                                         ["fund_units.amount_cents > 0"] => 'total_units_amount_cents'
+                                       },
+                                       execute_after_commit: true
 
   counter_culture :fund, column_name: 'total_units_premium_cents', delta_column: "total_premium_cents"
 

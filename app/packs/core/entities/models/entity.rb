@@ -92,7 +92,7 @@ class Entity < ApplicationRecord
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investor_kycs, dependent: :destroy
-  
+
   has_many :investment_opportunities, dependent: :destroy
   has_many :expression_of_interests, dependent: :destroy
   has_many :portfolio_investments
@@ -248,7 +248,6 @@ class Entity < ApplicationRecord
   end
 
   def nuclear_destroy
-    
     # has_many associations
     children.each(&:really_destroy!)
     dashboard_widgets.each(&:really_destroy!)
@@ -275,8 +274,8 @@ class Entity < ApplicationRecord
     rm_mappings.each(&:really_destroy!)
     investor_advisors.each(&:really_destroy!)
 
-    self.reload
-    
+    reload
+
     notes.each(&:really_destroy!)
     exchange_rates.each(&:really_destroy!)
     fees.each(&:really_destroy!)
@@ -313,9 +312,7 @@ class Entity < ApplicationRecord
 
     investor_kycs.each(&:really_destroy!)
     investors.each(&:really_destroy!)
-    folders.where.not(id: root_folder_id).each(&:really_destroy!)
-
-
+    folders.where.not(id: root_folder_id).find_each(&:really_destroy!)
 
     # belongs_to associations
     # root_folder&.really_destroy!
