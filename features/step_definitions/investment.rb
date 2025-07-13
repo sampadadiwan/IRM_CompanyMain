@@ -299,7 +299,7 @@ Given('I upload investments file {string}') do |string|
   # sleep(2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  binding.pry if ImportUpload.last.failed_row_count > 0
+  # binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
 end
 

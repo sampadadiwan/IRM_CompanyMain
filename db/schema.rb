@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_09_123407) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_13_052552) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1149,7 +1149,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_09_123407) do
   create_table "e_signatures", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "user_id"
-    t.string "label", limit: 30
+    t.string "label", limit: 50
     t.string "signature_type", limit: 10
     t.integer "position"
     t.text "notes"

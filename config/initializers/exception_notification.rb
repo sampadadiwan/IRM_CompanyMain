@@ -17,4 +17,14 @@ if ENV['VULN_SCAN'].blank?
       exception_recipients: ENV.fetch('ERROR_EMAIL', nil)
     }
   end
+
+  # ExceptionMailer (or the newer exception_notification gem) is designed for Rack requests, so Sidekiq errors bypass it unless you attach a handler:
+  Sidekiq.configure_server do |config|
+    config.error_handlers << proc do |ex, ctx|
+      ExceptionNotifier.notify_exception(
+        ex,
+        data: ctx # job_class, args, jid, queue, etc.
+      )
+    end
+  end
 end

@@ -7,6 +7,8 @@ class ESignature < ApplicationRecord
   belongs_to :document
   acts_as_list scope: :document
 
+  validates :label, length: { maximum: 50 }
+
   # validates_presence_of :email, if: -> { !document.template }
   validates_format_of :email, with: URI::MailTo::EMAIL_REGEXP, multiline: true, if: -> { email.present? }
   validates_uniqueness_of :email, scope: :document_id, allow_blank: true, allow_nil: true, if: -> { email.present? }

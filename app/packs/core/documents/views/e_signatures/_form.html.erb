@@ -9,7 +9,7 @@
       <div class="form-group col">
         <%= f.label :label %>
         <% if labels %>
-          <%= f.text_field :label, list: 'label-list', class: "form-control" %>
+          <%= f.text_field :label, list: 'label-list', class: "form-control", maxlength: 50 %>
           <datalist id="label-list">
             <% labels.each do |label| %>
               <option value="<%= label %>"></option>

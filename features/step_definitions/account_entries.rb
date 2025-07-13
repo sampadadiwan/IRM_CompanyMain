@@ -105,7 +105,7 @@ Then('the account entries generated match the accoun entries in {string}') do |s
 		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:)
 	end
 
-	binding.pry if account_entry.nil?
+	# binding.pry if account_entry.nil?
 	account_entry.should_not be_nil, "Account entry not found for row #{idx + 1} with data: #{user_data.inspect}"
 
 	account_entry.parent_type = user_data["Parent Type"] if user_data["Parent Type"].present?
@@ -114,7 +114,7 @@ Then('the account entries generated match the accoun entries in {string}') do |s
 		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8))
 	else
-		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
+		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 
