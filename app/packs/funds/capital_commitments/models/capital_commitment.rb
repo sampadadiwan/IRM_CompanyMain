@@ -163,7 +163,7 @@ class CapitalCommitment < ApplicationRecord
     self.orig_folio_committed_amount_cents = amount_cents
     self.folio_committed_amount_cents = amount_cents
     save
-    self.compute_percentage
+    compute_percentage
   end
 
   def fund_unit_setting

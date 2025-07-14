@@ -282,7 +282,6 @@ class Fund < ApplicationRecord
     end
   end
 
-
   def check_percentage_calcs
     incorrect_percentage = []
     capital_commitments.each do |cc|
