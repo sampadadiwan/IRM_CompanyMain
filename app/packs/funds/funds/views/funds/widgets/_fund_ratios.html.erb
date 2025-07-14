@@ -7,6 +7,6 @@
     ) do %>
   
     <!-- This block becomes the `content` inside the component -->
-    <%= fund_ratios_line_chart(@fund, **widget.metadata_args) %>
+    <%= fund_ratios_line_chart(@fund, **widget.metadata_args, chart_id: "fund_ratios_chart_#{widget.position}") %>
   
 <% end %>
