@@ -3,15 +3,20 @@ Feature: Commitment Adjustments
 
 Scenario Outline: Create a commitment adjustment
   Given there is a user "" for an entity "entity_type=Investment Fund"
-  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
-  Given there is an existing investor "name=Investor 1"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given import file "investors.xlsx" for "Investor"  
+  And Given import file "capital_commitments_multi_currency.xlsx" for "CapitalCommitment"
+  Given there is an existing investor "name=Investor 007"
   Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor 
+  And the capital commitment percentages should be updated correctly
   When a commitment adjustment "<adjustment>" is created 
   Then the capital commitment should have a committed amount "<new_committed_amount_cents>"
   And the capital commitment should have a arrears amount "<new_arrears_amount_cents>"
+  And the capital commitment percentages should be updated correctly
   And when the adjustment is destroyed
   Then the capital commitment should have a committed amount "100000000"
   And the capital commitment should have a arrears amount "0"
+  And the capital commitment percentages should be updated correctly
   
 
     Examples:
@@ -24,17 +29,22 @@ Scenario Outline: Create a commitment adjustment
   
 Scenario Outline: Create a commitment adjustment for 0 dollar commitment
   Given there is a user "" for an entity "entity_type=Investment Fund"
-  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
-  Given there is an existing investor "name=Investor 1"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given import file "investors.xlsx" for "Investor"  
+  And Given import file "capital_commitments_multi_currency.xlsx" for "CapitalCommitment"
+  Given there is an existing investor "name=Investor 007"
   Given there is a capital commitment of "orig_folio_committed_amount_cents=0;folio_currency=INR" for the last investor 
+  And the capital commitment percentages should be updated correctly
   When a commitment adjustment "<adjustment>" is created 
   And the capital commitment is resaved
   Then the capital commitment should have a committed amount "<new_committed_amount_cents>"
   And the capital commitment should have a orig commitment amount "0" 
   And the capital commitment should have a arrears amount "<new_arrears_amount_cents>"
+  And the capital commitment percentages should be updated correctly
   And when the adjustment is destroyed
   Then the capital commitment should have a committed amount "0"
   And the capital commitment should have a arrears amount "0"
+  And the capital commitment percentages should be updated correctly
   
 
     Examples:
@@ -47,7 +57,7 @@ Scenario Outline: Create a commitment adjustment for 0 dollar commitment
 Scenario Outline: Create a commitment adjustment for a remittance
   Given there is a user "" for an entity "entity_type=Investment Fund"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
-  Given there is an existing investor "name=Investor 1"
+  Given there is an existing investor "name=Investor 007"
   Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor 
   Given there is a capital call "close_percentages={'First Close':'20'}"
   Given there are payments for each remittance

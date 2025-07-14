@@ -141,6 +141,10 @@
     puts @capital_commitment.to_json
   end
 
+  Then('the capital commitment percentages should be updated correctly') do
+    @capital_commitment.fund.reload.check_percentage_calcs.should == []
+  end
+
   Given('there is a capital call {string}') do |arg|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund, entity: @fund.entity)
     # Todo: Abhay Move this logic to env

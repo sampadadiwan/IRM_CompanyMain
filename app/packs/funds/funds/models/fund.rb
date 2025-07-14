@@ -281,4 +281,13 @@ class Fund < ApplicationRecord
       end
     end
   end
+
+
+  def check_percentage_calcs
+    incorrect_percentage = []
+    capital_commitments.each do |cc|
+      incorrect_percentage << cc if cc.percentage.round(4) != (100 * cc.committed_amount_cents / cc.fund.committed_amount_cents).round(4)
+    end
+    incorrect_percentage
+  end
 end
