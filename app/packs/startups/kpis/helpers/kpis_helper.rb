@@ -35,6 +35,18 @@ module KpisHelper
     }
   end
 
+  def display_kpi(kpi, investor_kpi_mapping)
+    if kpi.value.present?
+      value = number_with_delimiter(kpi.value.round(2))
+      percentage_value = kpi.value.round(4) * 100
+      if investor_kpi_mapping.present?
+        investor_kpi_mapping.data_type == "percentage" ? "#{percentage_value} %" : value
+      else
+        value
+      end
+    end
+  end
+
   def kpi_percentage_class(kpi, investor_kpi_mapping)
     css_class = if  investor_kpi_mapping&.lower_threshold&.positive? &&
                     kpi.percentage_change < investor_kpi_mapping.lower_threshold
@@ -49,7 +61,7 @@ module KpisHelper
 
   def get_invester_kpi_mapping(investor_kpi_mappings, kpi)
     if investor_kpi_mappings
-      mapping = investor_kpi_mappings[[kpi.entity_id, kpi&.name]]
+      mapping = investor_kpi_mappings[[kpi.portfolio_company_id, kpi&.name]]
       mapping.present? ? mapping[0] : nil
     end
   end

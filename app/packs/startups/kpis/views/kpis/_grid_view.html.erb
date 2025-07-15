@@ -12,15 +12,13 @@
     </div>
 
     <% 
-        if current_user.curr_role == "investor" 
-            # group_by investor_entity_id and standard_kpi_name
-            investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor.investor_entity_id, ikm.standard_kpi_name] }
-        else
-            investor_kpi_mappings = nil
-        end
+        # group_by investor_entity_id and standard_kpi_name
+        investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor_id, ikm.standard_kpi_name] }
+
         grouped_kpis = kpis.group_by{|k| [k.entity_id, k.owner_id, k.kpi_report.tag_list]}
         dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq         
     %>
+
 
     <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
         <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
@@ -60,7 +58,7 @@
                                 <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
                                 <td>
                                     <% if kpi && kpi.value.present? %>
-                                        <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
+                                        <%= display_kpi(kpi, ikm) %>
                                         <br>
                                         <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                         <% if kpi.notes.present? %>

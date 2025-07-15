@@ -182,6 +182,7 @@ Metrics/CyclomaticComplexity:
     - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
     - "app/packs/core/base/services/xlsx_from_template.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
+    - "app/packs/core/entities/models/entity.rb"
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
@@ -192,6 +193,7 @@ Metrics/PerceivedComplexity:
     - "app/packs/secondaries/offers/services/offer_search_service.rb"
     - "app/packs/core/base/decorators/template_decorator.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
+    - "app/packs/core/entities/models/entity.rb"
 Metrics/ClassLength:
   Description: "Avoid classes longer than 200 lines of code."
   Max: 250
@@ -203,6 +205,7 @@ Metrics/ClassLength:
     - "app/packs/core/investor_kycs/controllers/investor_kycs_controller.rb"
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
+    - "app/packs/core/entities/models/entity.rb"
 Metrics/ModuleLength:
   Description: "Avoid modules longer than 100 lines of code."
   Max: 200
@@ -260,6 +263,7 @@ Metrics/MethodLength:
     - "app/services/account_entry_allocation/*"
     - "app/packs/core/base/services/xlsx_from_template.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
+    - "app/packs/core/entities/models/entity.rb"
 
 Metrics/BlockNesting:
   Exclude:

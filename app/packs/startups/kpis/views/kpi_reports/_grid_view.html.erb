@@ -128,7 +128,7 @@
                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>                        
                         <td class="value_<%=kpi&.id%>">
                             <% if kpi %>
-                                <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
+                                <%= display_kpi(kpi, ikm) %>
                                 <br>
                                 <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                 <% if kpi.notes.present? %>
@@ -149,7 +149,7 @@
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
                             <ul>
-                            <% kpi_report.documents.each_with_index do |doc, idx| %>
+                            <% kpi_report.documents.filter{|d| !d.csv?}.each_with_index do |doc, idx| %>
                             <li>
                              <small>
                                 <%= idx + 1 %>. 
