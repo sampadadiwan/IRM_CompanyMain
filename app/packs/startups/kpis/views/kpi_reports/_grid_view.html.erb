@@ -9,7 +9,7 @@
                 
         <% if params[:portfolio_company_id].present? %>
             <% investor = Investor.where(id: params[:portfolio_company_id]).first %>
-            <%=  investor ? link_to(investor) : @entity.name %>        
+            <%=  investor ? link_to(investor.investor_name, investor) : @entity.name %>        
         <% end %>
     </h1>
 

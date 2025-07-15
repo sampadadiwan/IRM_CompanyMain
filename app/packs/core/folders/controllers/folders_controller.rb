@@ -1,5 +1,5 @@
 class FoldersController < ApplicationController
-  before_action :set_folder, only: %i[show edit update destroy download generate_report generate_qna]
+  before_action :set_folder, only: %i[show edit update destroy download generate_report]
   after_action :verify_authorized, except: %i[index data_rooms]
 
   # GET /folders or /folders.json
@@ -37,13 +37,6 @@ class FoldersController < ApplicationController
     else
       render "generate_report"
     end
-  end
-
-  def generate_qna
-    owner = @folder.owner
-    document_ids = @folder.documents.pluck(:id)
-    DocLlmQnaJob.perform_later(owner.class.name, owner.id, current_user.id, document_ids:)
-    redirect_to request.referer, notice: "QnA generation has been started. You will be notified when it is ready."
   end
 
   # GET /folders/1/edit

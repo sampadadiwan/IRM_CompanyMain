@@ -98,16 +98,7 @@
                           class: "dropdown-item d-flex align-items-center" do %>
                 <i class="ti ti-report"></i> Generate Report
               <% end %>
-            <% end %>
-
-            <% if @folder && policy(@folder).generate_qna? %>
-              <%= button_to generate_qna_folder_path(id: folder_id, report_type: @folder.owner.class.name),
-                            method: :post,
-                            class: "dropdown-item d-flex align-items-center",
-                            data: { action: "click->confirm#popup", msg: "This will send the documents in this folder to an external LLM to generate answer to the questions for this document name setup by you. Proceed?" } do %>
-                <i class="ti ti-question-mark"></i> Q&A
-              <% end %>
-            <% end %>
+            <% end %>            
 
             <div class="dropdown-divider"></div>
 

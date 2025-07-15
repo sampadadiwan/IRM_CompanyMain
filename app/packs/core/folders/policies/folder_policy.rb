@@ -35,10 +35,6 @@ class FolderPolicy < ApplicationPolicy
     update? && user.enable_user_llm_chat
   end
 
-  def generate_qna?
-    update? && user.enable_user_llm_chat
-  end
-
   def edit?
     update?
   end

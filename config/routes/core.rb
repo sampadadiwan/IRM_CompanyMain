@@ -89,7 +89,6 @@ resources :folders do
   get 'download', on: :member
   post 'generate_report', on: :member
   get 'generate_report', on: :member
-  post 'generate_qna', on: :member
   get 'data_rooms', on: :collection
 end
 

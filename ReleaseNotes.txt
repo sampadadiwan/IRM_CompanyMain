@@ -1,3 +1,10 @@
+V9.0.75
+#####################################
+2ac9764ee Fixed bug in persona change for My Investments
+337f752eb Added compute_percentage at end of manually_set_committed_amount
+9d43514fd Added percentage computation tests before and after adjustments
+a3b491252 Added uniq chart_id for fund_ratios_line_chart
+
 V9.0.73
 #####################################
 8ea0b1e4c Fixed some tests
