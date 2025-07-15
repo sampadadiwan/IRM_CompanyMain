@@ -1,7 +1,7 @@
 class TemplateDecorator < ApplicationDecorator
   include CurrencyHelper
 
-  METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_].freeze
+  METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_ doc_exists_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)
     object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
@@ -160,6 +160,12 @@ class TemplateDecorator < ApplicationDecorator
     elsif method_name.to_s.starts_with?("boolean_custom_field_")
       attr_name = method_name.to_s.gsub("boolean_custom_field_", "")
       return %w[true yes 1].include? custom_fields.send(attr_name).to_s.downcase
+    elsif method_name.to_s.starts_with?("doc_exists_")
+      doc_name_underscored = method_name.to_s.gsub("doc_exists_", "")
+      doc_name_humanized = doc_name_underscored.to_s.tr("_", " ").humanize
+      return false unless object.respond_to?(:documents)
+
+      return documents.exists?(name: doc_name_humanized)
     end
     super
   rescue StandardError => e
