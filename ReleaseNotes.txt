@@ -1,3 +1,9 @@
+V9.0.76
+#####################################
+93091a62b Kpi percentage (#909)
+2df5a0196 Added doc_exists_<name> to template decorator (#907)
+0016acd51 Removed folder doc_qna
+
 V9.0.75
 #####################################
 2ac9764ee Fixed bug in persona change for My Investments
