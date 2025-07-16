@@ -32,7 +32,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     upload_script(ip)
     run_remote_script(ip)
 
-    puts "[DbRestoreService] Restore completed for #{ip}"
+    Rails.logger.debug { "[DbRestoreService] Restore completed for #{ip}" }
 
     verify_timestamp # (ip)
     cleanup(ip)
@@ -43,15 +43,15 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
   def ensure_script_present!
     if File.exist?(LOCAL_SCRIPT_PATH)
-      puts "✓ Backup script already exists at #{LOCAL_SCRIPT_PATH}, skipping generation"
+      Rails.logger.debug { "✓ Backup script already exists at #{LOCAL_SCRIPT_PATH}, skipping generation" }
     else
-      puts "→ Backup script not found at #{LOCAL_SCRIPT_PATH}, generating..."
+      Rails.logger.debug { "→ Backup script not found at #{LOCAL_SCRIPT_PATH}, generating..." }
       generate_script!
     end
   end
 
   def generate_script!
-    puts "→ Generating dynamic backup script"
+    Rails.logger.debug "→ Generating dynamic backup script"
     Rake::Task.clear
     Rails.application.load_tasks
     Rake::Task['xtrabackup:generate_backup_script'].invoke
@@ -61,20 +61,19 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def find_or_launch_instance(instance_name)
     instance = find_instance(instance_name)
     if instance
-      puts "✓ Instance #{instance_name} found: #{instance.instance_id}"
-      ensure_running(instance)
+      Rails.logger.debug { "✓ Instance #{instance_name} found: #{instance.instance_id}" }
     else
-      puts "→ Instance #{instance_name} not found. Launching a new one..."
-      puts "Ensuring IAM role and policy are set up..."
+      Rails.logger.debug { "→ Instance #{instance_name} not found. Launching a new one..." }
+      Rails.logger.debug "Ensuring IAM role and policy are set up..."
       ensure_role_and_policy!
       instance = launch_new_instance(instance_name)
-      ensure_running(instance)
     end
+    ensure_running(instance)
     instance
   end
 
   def launch_new_instance(instance_name)
-    puts "→ Launching new instance with name #{instance_name}..."
+    Rails.logger.debug { "→ Launching new instance with name #{instance_name}..." }
 
     ami_id = find_latest_ami_id(AMI_NAME)
     raise "No AMI found with name #{AMI_NAME}" unless ami_id
@@ -110,7 +109,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     )
 
     new_instance = launch_response.instances.first
-    puts "✓ Launched new instance: #{new_instance.instance_id}"
+    Rails.logger.debug { "✓ Launched new instance: #{new_instance.instance_id}" }
     new_instance
   end
 
@@ -133,28 +132,28 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def stop_instance(instance)
-    return puts "→ No instance provided, skipping stop." unless instance
+    return Rails.logger.debug "→ No instance provided, skipping stop." unless instance
 
     instance_id = instance.instance_id
     instance = refresh_instance(instance_id)
-    return puts "✓ Instance #{instance_id} is already stopped." if instance.state.name == 'stopped'
-    return puts "→ Instance #{instance_id} is already stopping." if instance.state.name == 'stopping'
+    return Rails.logger.debug { "✓ Instance #{instance_id} is already stopped." } if instance.state.name == 'stopped'
+    return Rails.logger.debug { "→ Instance #{instance_id} is already stopping." } if instance.state.name == 'stopping'
 
-    puts "→ Stopping instance #{instance_id}..."
+    Rails.logger.debug { "→ Stopping instance #{instance_id}..." }
 
     ec2.stop_instances(instance_ids: [instance_id])
-    puts "→ Waiting for instance #{instance_id} to stop..."
+    Rails.logger.debug { "→ Waiting for instance #{instance_id} to stop..." }
 
     ec2.wait_until(:instance_stopped, instance_ids: [instance_id])
-    puts "✓ Instance #{instance_id} stopped"
+    Rails.logger.debug { "✓ Instance #{instance_id} stopped" }
   rescue Aws::EC2::Errors::InvalidInstanceIDNotFound => e
-    puts "✗ Error: Instance ID not found - #{e.message}"
+    Rails.logger.debug { "✗ Error: Instance ID not found - #{e.message}" }
     ExceptionNotifier.notify_exception(e, data: { instance_id: instance_id })
   rescue Aws::Waiters::Errors::WaiterFailed => e
-    puts "✗ Timeout: Instance #{instance_id} did not stop in expected time - #{e.message}"
+    Rails.logger.debug { "✗ Timeout: Instance #{instance_id} did not stop in expected time - #{e.message}" }
     ExceptionNotifier.notify_exception(e, data: { instance_id: instance_id })
   rescue StandardError => e
-    puts "✗ Unexpected error stopping instance #{instance_id}: #{e.message}"
+    Rails.logger.debug { "✗ Unexpected error stopping instance #{instance_id}: #{e.message}" }
     ExceptionNotifier.notify_exception(e, data: { instance_id: instance_id })
   end
 
@@ -178,13 +177,13 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def ensure_running(instance)
-    return puts "✓ Instance is running" if instance.state.name == 'running'
+    return Rails.logger.debug "✓ Instance is running" if instance.state.name == 'running'
 
-    puts "→ Starting instance #{instance.instance_id}..."
+    Rails.logger.debug { "→ Starting instance #{instance.instance_id}..." }
     ec2.start_instances(instance_ids: [instance.instance_id])
-    puts "→ Waiting for instance to pass status checks..."
+    Rails.logger.debug "→ Waiting for instance to pass status checks..."
     ec2.wait_until(:instance_status_ok, instance_ids: [instance.instance_id])
-    puts "✓ Instance is running"
+    Rails.logger.debug "✓ Instance is running"
   end
 
   def get_instance_ip(instance)
@@ -194,7 +193,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def upload_script(ip)
-    puts "→ Uploading script to #{ip}:#{REMOTE_SCRIPT_PATH}"
+    Rails.logger.debug { "→ Uploading script to #{ip}:#{REMOTE_SCRIPT_PATH}" }
     tmp_path = "/home/ubuntu/tmp/db_backup.sh"
     final_path = "/home/ubuntu/db_backup.sh"
 
@@ -213,16 +212,16 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def run_remote_script(ip)
-    puts "→ Running script on #{ip} (this may take a few minutes...)"
+    Rails.logger.debug { "→ Running script on #{ip} (this may take a few minutes...)" }
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
       output = ssh.exec!("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary")
       Rails.logger.info "[DbRestoreService] Output:\n#{output}"
-      puts output
+      Rails.logger.debug output
     end
   end
 
   def verify_timestamp
-    puts "→ Verifying timestamp from support user"
+    Rails.logger.debug "→ Verifying timestamp from support user"
 
     timestamp = fetch_timestamp
     return unless validate_timestamp_presence(timestamp)
@@ -239,7 +238,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
   def validate_timestamp_presence(timestamp)
     if timestamp.blank?
-      puts "✗ Failed: Empty timestamp"
+      Rails.logger.debug "✗ Failed: Empty timestamp"
       ExceptionNotifier.notify_exception(StandardError.new("DB Check FAILED: No timestamp found in last_name"))
       return false
     end
@@ -249,7 +248,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def parse_timestamp(timestamp)
     Time.zone.parse(timestamp)
   rescue ArgumentError
-    puts "✗ Failed: Invalid timestamp format '#{timestamp}'"
+    Rails.logger.debug { "✗ Failed: Invalid timestamp format '#{timestamp}'" }
     ExceptionNotifier.notify_exception(StandardError.new("DB Check FAILED: Invalid timestamp format: #{timestamp}"))
     nil
   end
@@ -260,19 +259,19 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     if diff.between?(0, VERIFICATION_THRESHOLD_SECONDS)
       msg = "✓ Timestamp '#{ts_time}' is recent (Δ #{diff.to_i}s)"
-      puts msg
+      Rails.logger.debug msg
       EntityMailer.with(subject: "DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg }).notify_info.deliver_now
       true
     else
       msg = "✗ Timestamp '#{ts_time}' is too old (Δ #{diff.to_i}s)"
-      puts msg
+      Rails.logger.debug msg
       ExceptionNotifier.notify_exception(StandardError.new("DB Check FAILED: #{msg}"))
       false
     end
   end
 
   def cleanup_remote_services(ip)
-    puts "→ Cleaning up remote services on #{ip}"
+    Rails.logger.debug { "→ Cleaning up remote services on #{ip}" }
 
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
       kill_elasticsearch_processes(ssh)
@@ -283,23 +282,23 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
       stop_and_disable_service(ssh, "docker")
     end
 
-    puts "✓ Remote services cleanup completed on #{ip}"
+    Rails.logger.debug { "✓ Remote services cleanup completed on #{ip}" }
   rescue StandardError => e
-    puts "✗ Remote services cleanup failed: #{e.message}"
+    Rails.logger.debug { "✗ Remote services cleanup failed: #{e.message}" }
     ExceptionNotifier.notify_exception(e, data: { ip: ip, action: 'cleanup_remote_services' })
   end
 
   def stop_and_disable_service(ssh, service)
-    puts "  → Stopping and disabling #{service}"
+    Rails.logger.debug { "  → Stopping and disabling #{service}" }
     ssh.exec!("sudo systemctl stop #{service} 2>/dev/null")
     ssh.exec!("sudo systemctl disable #{service} 2>/dev/null")
   end
 
   def stop_and_remove_docker_containers(ssh)
-    puts "  → Stopping and removing all Docker containers"
+    Rails.logger.debug "  → Stopping and removing all Docker containers"
     container_ids = ssh.exec!("sudo docker ps -aq").to_s.strip
     if container_ids.empty?
-      puts "    → No containers running"
+      Rails.logger.debug "    → No containers running"
     else
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker stop")
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker rm")
@@ -307,24 +306,24 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def kill_elasticsearch_processes(ssh)
-    puts "  → Killing Elasticsearch processes"
+    Rails.logger.debug "  → Killing Elasticsearch processes"
     pids = ssh.exec!("ps aux | grep '[e]lasticsearch' | awk '{print $2}'").to_s.split("\n")
     if pids.any?
-      puts "    → Killing PIDs: #{pids.join(', ')}"
+      Rails.logger.debug { "    → Killing PIDs: #{pids.join(', ')}" }
       ssh.exec!("sudo kill #{pids.join(' ')}")
     else
-      puts "    → No Elasticsearch processes found."
+      Rails.logger.debug "    → No Elasticsearch processes found."
     end
   end
 
   def cleanup(ip)
-    puts "→ Cleaning up /tmp/xb* on #{ip}"
+    Rails.logger.debug { "→ Cleaning up /tmp/xb* on #{ip}" }
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
       ssh.exec!("sudo rm -rf /tmp/xb*")
-      puts "✓ Cleanup successful"
+      Rails.logger.debug "✓ Cleanup successful"
     end
   rescue StandardError => e
-    puts "✗ Cleanup failed: #{e.message}"
+    Rails.logger.debug { "✗ Cleanup failed: #{e.message}" }
     ExceptionNotifier.notify_exception(StandardError.new("Cleanup failed on #{ip}: #{e.message}"))
   end
 
@@ -350,10 +349,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     policy_arn = "arn:aws:iam::#{account_id}:policy/#{policy_name}"
 
     iam.get_policy(policy_arn: policy_arn)
-    puts "✓ Policy exists"
+    Rails.logger.debug "✓ Policy exists"
     policy_arn
   rescue Aws::IAM::Errors::NoSuchEntity
-    puts "→ Creating policy #{policy_name}"
+    Rails.logger.debug { "→ Creating policy #{policy_name}" }
     resp = iam.create_policy(
       policy_name: policy_name,
       policy_document: JSON.pretty_generate(build_policy_document)
@@ -364,9 +363,9 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def find_or_create_role
     role_name = 'DbCheckInstanceRole'
     iam.get_role(role_name: role_name)
-    puts "✓ Role exists"
+    Rails.logger.debug "✓ Role exists"
   rescue Aws::IAM::Errors::NoSuchEntity
-    puts "→ Creating role #{role_name}"
+    Rails.logger.debug { "→ Creating role #{role_name}" }
     iam.create_role(
       role_name: role_name,
       assume_role_policy_document: JSON.pretty_generate(build_assume_policy)
@@ -378,9 +377,9 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     attached = iam.list_attached_role_policies(role_name: role_name)
                   .attached_policies.any? { |p| p.policy_arn == policy_arn }
 
-    return puts "✓ Policy already attached" if attached
+    return Rails.logger.debug "✓ Policy already attached" if attached
 
-    puts "→ Attaching policy"
+    Rails.logger.debug "→ Attaching policy"
     iam.attach_role_policy(role_name: role_name, policy_arn: policy_arn)
   end
 
