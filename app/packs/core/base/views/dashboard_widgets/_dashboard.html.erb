@@ -17,14 +17,17 @@
 
         <!-- Add a dropdown for reports -->
         <li class="nav-item dropdown">
+            
             <a class="nav-link btn btn-sm btn-outline-primary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Reports
             </a>
+
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <% Report.where("tag_list LIKE ?", "%#{dashboard_name}%").each do |report| %>
-                    <li><%= link_to report.name, report.url, class: "dropdown-item" %></li>
+                    <li><%= link_to report.name, report_url(dashboard_name, report), class: "dropdown-item" %></li>
                 <% end %>
             </ul>
+            
         </li>
 
         

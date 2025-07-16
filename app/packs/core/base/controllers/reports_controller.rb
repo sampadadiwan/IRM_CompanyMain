@@ -15,7 +15,7 @@ class ReportsController < ApplicationController
 
   # This is a special kind of report which has dynamic URL to allow params to be passed to a report
   def dynamic
-    @report_url = report.url_from(params)
+    @report_url = @report.url_from(params)
     redirect_to @report_url.to_s
   end
 

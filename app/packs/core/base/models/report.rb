@@ -42,6 +42,18 @@ class Report < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
+  # Adds parameters to the existing URL
+  # This method modifies the URL in place. Used in DashboardWidgetsHelper.
+  def add_params_to_url(params)
+    uri = URI.parse(url)
+    query_params = CGI.parse(uri.query || '')
+    params.each do |key, value|
+      query_params[key] = value.to_s
+    end
+    uri.query = URI.encode_www_form(query_params)
+    self.url = uri.to_s
+  end
+
   def decode_url
     uri = URI.parse(url)
     decoded_url = uri.path if uri.path

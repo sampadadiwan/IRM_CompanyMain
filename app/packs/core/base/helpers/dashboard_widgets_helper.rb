@@ -24,4 +24,13 @@ module DashboardWidgetsHelper
       dashboard_widgets.to_h
     end
   end
+
+  def report_url(dashboard_name, report)
+    case dashboard_name
+    when "Portfolio Company Dashboard"
+      dynamic_report_path(report, portfolio_company_id: @investor.id, investor_id: @investor.id, portfolio_company_name: @investor.investor_name)
+    else
+      report_path(report)
+    end
+  end
 end
