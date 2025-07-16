@@ -1,0 +1,7 @@
+<div>
+    <ol>
+        <% @msg.each do |k, v| %>
+            <li><%= k.to_s.humanize %>: <%= v %></li>            
+        <% end %>
+    </ol>
+</div>

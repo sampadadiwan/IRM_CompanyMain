@@ -38,4 +38,10 @@ class EntityMailer < ApplicationMailer
     subject = params[:subject].presence || "Errors"
     mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
   end
+
+  def notify_info
+    @msg = params[:msg]
+    subject = params[:subject].presence || "INFO"
+    mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
+  end
 end

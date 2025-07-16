@@ -66,6 +66,7 @@ gem 'exception_notification'
 gem 'sassc-rails'
 
 gem "aws-sdk-ec2", require: false
+gem 'aws-sdk-iam'
 gem "aws-sdk-s3", require: false
 # Elastic search client
 gem 'chewy'
@@ -147,6 +148,7 @@ gem "combine_pdf"
 
 gem "blazer"
 gem "net-pop", github: "ruby/net-pop"
+gem 'net-scp'
 gem 'net-smtp'
 gem 'net-ssh'
 gem 'public_activity'

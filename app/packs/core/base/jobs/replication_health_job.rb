@@ -38,4 +38,8 @@ class ReplicationHealthJob < ApplicationJob
   def user
     @user ||= User.joins(:roles).where(roles: { name: 'support' }).first
   end
+
+  def get_timestamp
+    user.json_fields["replication_health"]
+  end
 end
