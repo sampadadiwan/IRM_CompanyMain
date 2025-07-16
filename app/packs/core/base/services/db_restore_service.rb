@@ -280,6 +280,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
       stop_and_remove_docker_containers(ssh)
       stop_and_disable_service(ssh, "docker.socket")
       stop_and_disable_service(ssh, "docker")
+      clear_cron_jobs(ssh)
     end
 
     Rails.logger.debug { "✓ Remote services cleanup completed on #{ip}" }
@@ -314,6 +315,14 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     else
       Rails.logger.debug "    → No Elasticsearch processes found."
     end
+  end
+
+  def clear_cron_jobs(ssh)
+    Rails.logger.debug "  → Removing user-level cron jobs"
+    ssh.exec!("crontab -r || true")
+
+    Rails.logger.debug "  → Removing system-level cron jobs"
+    ssh.exec!("sudo rm -f /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.weekly/* /etc/cron.monthly/*")
   end
 
   def cleanup(ip)
