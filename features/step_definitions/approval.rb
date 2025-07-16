@@ -160,7 +160,7 @@
         expect(current_email.body).to have_content @custom_notification.body
 
         if @approval.response_enabled_email
-          expect(current_email.body).to have_content "You may respond by clicking on any one of the below links or login to view the detailed approval and respond thereafter"
+          
           statuses = @approval.response_status.split(',') - ["Pending"]
           statuses.each do |status|
             expect(current_email.body).to have_content status

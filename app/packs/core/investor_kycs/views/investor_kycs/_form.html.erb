@@ -45,25 +45,28 @@
             <%= form.text_field :owner_id, class: "form-control", hidden: true, value: params[:owner_id], name: :owner_id  %>
             <%= form.text_field :owner_type, class: "form-control", hidden: true, value: params[:owner_type], name: :owner_type  %>
 
-            <% if investor_kyc.investor_id.present? %>
-              <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-            <% else %>
-              <div class="form-group">
-                <%= form.label :investor_id, "Stakeholder" %>
-                <%= form.select :investor_id, investor_kyc.entity.investors.map { |i| [i.investor_name, i.id] }, { include_blank: true }, class: "form-control",
-                      data: {
-                        controller: "investor-kycs",
-                        investor_kycs_target: "select",
-                        action: "change->investor-kycs#investor_selected"
-                      } 
-                %>
-              </div>
-            <% end %>
+            <div data-controller="investor-kycs"> 
+            
+              <% if investor_kyc.investor_id.present? %>
+                <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+              <% else %>
+                <div class="form-group">
+                  <%= form.label :investor_id, "Stakeholder" %>
+                  <%= form.select :investor_id, investor_kyc.entity.investors.map { |i| [i.investor_name, i.id] }, { include_blank: true }, class: "form-control select2",
+                        data: {
+                          investor_kycs_target: "select",
+                          action: "change->investor-kycs#investor_selected"
+                        } 
+                  %>
+                </div>
+              <% end %>
 
-            <div class="form-group" data-controller="investor-kycs">
-              <%= form.label :kyc_type %>
-              <!-- Even though this is not a custom field, its class is set to custom_field to enable other custom_fields to be dependent on this -->
-              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control custom_field", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
+              <div class="form-group">
+                <%= form.label :kyc_type %>
+                <!-- Even though this is not a custom field, its class is set to custom_field to enable other custom_fields to be dependent on this -->
+                <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control custom_field", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
+              </div>
+
             </div>
 
             <div class="form-group">

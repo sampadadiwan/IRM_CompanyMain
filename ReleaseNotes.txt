@@ -1,3 +1,10 @@
+V9.0.77
+#####################################
+30f8469f1 Added better kyc js to set Investing Entity to name for Individual KYC
+21aedaccc Added Db restore and check task (#908)
+c7a22cd0f Dynamic report for Portfolio company dashboard
+e726ae02d Sync test schema
+
 V9.0.76
 #####################################
 93091a62b Kpi percentage (#909)

@@ -2,6 +2,7 @@
 import  ServerDatatableController from "controllers/server_datatable_controller"
 
 export default class extends ServerDatatableController {
+  static targets = ["select"]
 
   connect() {
     // Initialize Select2 on the <select> element
