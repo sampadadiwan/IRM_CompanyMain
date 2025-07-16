@@ -1,7 +1,6 @@
 <% if @approval.response_enabled_email %>
 <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
 <div>
-    <p>You may respond by clicking on any one of the below links or login to view the detailed approval and respond thereafter:</p>
     <% responses = @approval_response.approval.response_status.split(',') - ["Pending"] %>
     <% responses.each_with_index do |status, index| %>
         
