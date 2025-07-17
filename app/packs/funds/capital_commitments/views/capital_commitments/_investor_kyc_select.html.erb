@@ -1,7 +1,0 @@
-<%# This partial will be rendered by Turbo Stream, so it needs to be self-contained %>
-<select name="capital_commitment[investor_kyc_id]" id="capital_commitment_investor_kyc_id" class="form-control" data-commitmentselect-target="kycSelect" data-action="change->commitmentselect#kycChange">
-  <option value="">Select Investor KYC</option>
-  <% investor_kycs.each do |kyc| %>
-    <option value="<%= kyc.id %>"><%= kyc.full_name %></option>
-  <% end %>
-</select>

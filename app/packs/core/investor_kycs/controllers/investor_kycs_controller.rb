@@ -278,19 +278,6 @@ class InvestorKycsController < ApplicationController
     end
   end
 
-  def get_esign_emails
-    @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
-    authorize(@investor_kyc)
-
-    respond_to do |format|
-      format.json { render json: { esign_emails: @investor_kyc.esign_emails } }
-    end
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: "Investor KYC not found" }, status: :not_found
-  rescue Pundit::NotAuthorizedError
-    render json: { error: "Not authorized" }, status: :forbidden
-  end
-
   private
 
   # Use callbacks to share common setup or constraints between actions.

@@ -1,3 +1,3 @@
-<%= turbo_stream.update "investor_kyc_select_container" do %>
-  <%= render "capital_commitments/investor_kyc_select", investor_kycs: @investor_kycs %>
+<%= turbo_stream.update params[:target] do %>
+  <%= options_for_select @investor_kycs.map{|e| [e.full_name, e.id]} %>
 <% end %>

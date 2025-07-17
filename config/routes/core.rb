@@ -65,7 +65,6 @@ resources :investor_kycs do
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
   post 'validate_docs_with_ai', on: :member
-  get 'get_esign_emails', on: :collection
 end
 
 resources :aml_reports

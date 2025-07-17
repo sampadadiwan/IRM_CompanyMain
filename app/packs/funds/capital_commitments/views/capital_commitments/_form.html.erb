@@ -18,7 +18,7 @@
 
 
       <div data-controller="commitmentselect" data-commitmentselect-kyc-url-value="<%= investor_kycs_path %>" data-commitmentselect-employee-url-value="<%= investor_accesses_path %>"
-              data-commitmentselect-param-value="investor_id" data-commitmentselect-esign-url-value="<%= get_esign_emails_investor_kycs_path %>">
+              data-commitmentselect-param-value="investor_id">
 
         <div class="form-group">
           <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
@@ -43,17 +43,17 @@
           <small>Select the Feeder Fund only if this commitment is from a feeder fund</small>
         </div>
 
-        <div class="form-group" id="investor_kyc_select_container">
-          <%= form.label :investor_kyc %>
-          <%# Pass InvestorKyc objects directly %>
-          <% investor_kycs_collection = capital_commitment.investor ? capital_commitment.investor.investor_kycs : [] %>
-          <%= render "capital_commitments/investor_kyc_select", form: form, investor_kycs: investor_kycs_collection %>
+        <div class="form-group">
+          <%= form.label :esign_emails, "Investor Signatory Emails" %>
+          <%= form.text_field :esign_emails, class: "form-control" %>
+          <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
         </div>
 
         <div class="form-group">
-          <%= form.label :esign_emails, "Investor Signatory Emails" %>
-          <%= form.text_field :esign_emails, class: "form-control", data: { commitmentselect_target: "esignEmailsField" } %>
-          <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
+          <%= form.label :investor_kyc %>
+          <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
+
+          <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
         </div>
 
       </div>
