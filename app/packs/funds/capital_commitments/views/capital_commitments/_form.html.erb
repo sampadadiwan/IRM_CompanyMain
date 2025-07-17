@@ -23,7 +23,7 @@
         <div class="form-group">
           <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
           <%= form.label :investor_id %>
-          <%= form.select :investor_id, capital_commitment.fund.investors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
+          <%= form.select :investor_id, capital_commitment.entity.investors.not_portfolio_companies.not_advisors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
         </div>
 
         <div class="form-group">
