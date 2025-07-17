@@ -320,9 +320,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def clear_cron_jobs(ssh)
     Rails.logger.debug "  → Removing user-level cron jobs"
     ssh.exec!("crontab -r || true")
+    ssh.exec!("sudo crontab -r || true")
 
     Rails.logger.debug "  → Removing system-level cron jobs"
-    ssh.exec!("sudo rm -f /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.weekly/* /etc/cron.monthly/*")
+    ssh.exec!("sudo rm -f /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.weekly/* /etc/cron.monthly/* 2>/dev/null || true")
   end
 
   def cleanup(ip)
