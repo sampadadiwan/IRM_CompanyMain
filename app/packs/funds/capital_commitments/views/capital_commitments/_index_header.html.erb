@@ -68,6 +68,8 @@
             <i class="ti ti-upload"></i> <%= t_common(:upload) %>
             <% end %>
 
+        <% else %>
+            <%= link_to "New Commitment", funds_path(new_commitment: true), class: "btn btn-outline-success ti ti-plus" %>
         <% end %>
 
         <div class="btn-group">

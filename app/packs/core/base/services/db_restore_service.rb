@@ -354,8 +354,6 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def find_or_create_policy
-
-    
     policy_name = 'DbCheckInstancePolicy'
     account_id = iam.get_user.user.arn.split(':')[4]
     policy_arn = "arn:aws:iam::#{account_id}:policy/#{policy_name}"
@@ -372,7 +370,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     resp.policy.arn
   end
 
-  def find_or_create_role    
+  def find_or_create_role
     role_name = 'DbCheckInstanceRole'
     iam.get_role(role_name: role_name)
     Rails.logger.debug "✓ Role exists"

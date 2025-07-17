@@ -41,6 +41,13 @@
         <%= label %>
       </a>
 
+      <% if investor.entity.permissions.enable_kycs? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"
+            data-action="click->tabdetails#loadData">
+            <%= t('investor_details_nav.kyc') %>
+        </a>
+      <% end %>
+      
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
               data-action="click->tabdetails#loadData"><%= t('investor_details_nav.commitments') %></a>
@@ -59,12 +66,7 @@
           <%= t('investor_details_nav.tasks') %>
       </a>
 
-      <% if investor.entity.permissions.enable_kycs? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab"
-            data-action="click->tabdetails#loadData">
-            <%= t('investor_details_nav.kyc') %>
-        </a>
-      <% end %>
+      
 
     <% end %>
 

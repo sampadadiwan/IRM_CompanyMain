@@ -1,4 +1,4 @@
-  <%= render FormCard.new(title: "Capital Commitment : #{capital_commitment.folio_id.presence || 'New'}") do %>
+  <%= render FormCard.new(title: "Capital Commitment : #{capital_commitment.folio_id.presence || 'New'}" + " for " + capital_commitment.fund.name) do %>
 
     <%= form_with(model: capital_commitment, validate: true) do |form| %>
       <% if capital_commitment.errors.any? %>
