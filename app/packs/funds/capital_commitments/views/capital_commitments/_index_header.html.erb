@@ -69,7 +69,7 @@
             <% end %>
 
         <% else %>
-            <%= link_to "New Commitment", funds_path(new_commitment: true), class: "btn btn-outline-success ti ti-plus" %>
+            <%= link_to "New Commitment", funds_path(new_commitment: true, investor_id: params[:investor_id]), class: "btn btn-outline-success ti ti-plus" %>
         <% end %>
 
         <div class="btn-group">

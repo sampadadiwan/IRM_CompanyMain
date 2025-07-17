@@ -1,3 +1,13 @@
+V9.0.78
+#####################################
+f62ea3a01 Now investor dropdown for a commitment is from the entity investor, not fund investors
+220dbb09a Added better flows for new commitment from investor screen
+e2004d859 Added log output for the recovery process
+4668bfefd Minor fix to db_restore_service to create ami profile
+2d32ffefc Remove root users cron jobs too (#911)
+70ce6523e Db restore now clears all cron jobs on instance launch (#910)
+3093e8fdc Disabled DbRestoreJob
+
 V9.0.77
 #####################################
 30f8469f1 Added better kyc js to set Investing Entity to name for Individual KYC
