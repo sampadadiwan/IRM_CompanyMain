@@ -50,6 +50,9 @@ build {
     "source.amazon-ebs.ubuntu"
   ]
 
+  # Copy over the ssh keys to the prod/dev  server
+
+  
   provisioner "shell" {
     inline = [
       "export DEBIAN_FRONTEND='noninteractive'",

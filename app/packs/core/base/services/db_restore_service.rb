@@ -84,7 +84,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     launch_response = ec2.run_instances(
       image_id: ami_id,
-      instance_type: 't3.small',
+      instance_type: 't3.medium',
       min_count: 1,
       max_count: 1,
       key_name: key_name,
@@ -99,7 +99,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
           }
         }
       ],
-      iam_instance_profile: { name: 'DbCheckInstanceRole' },
+      iam_instance_profile: { name: 'DbCheckInstanceProfile' },
       tag_specifications: [
         {
           resource_type: 'instance',
@@ -354,6 +354,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def find_or_create_policy
+
+    
     policy_name = 'DbCheckInstancePolicy'
     account_id = iam.get_user.user.arn.split(':')[4]
     policy_arn = "arn:aws:iam::#{account_id}:policy/#{policy_name}"
@@ -370,7 +372,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     resp.policy.arn
   end
 
-  def find_or_create_role
+  def find_or_create_role    
     role_name = 'DbCheckInstanceRole'
     iam.get_role(role_name: role_name)
     Rails.logger.debug "✓ Role exists"
@@ -379,6 +381,14 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     iam.create_role(
       role_name: role_name,
       assume_role_policy_document: JSON.pretty_generate(build_assume_policy)
+    )
+    profile_name = "DbCheckInstanceProfile"
+    # create the instance profile
+    iam.create_instance_profile(instance_profile_name: profile_name)
+
+    iam.add_role_to_instance_profile(
+      instance_profile_name: profile_name,
+      role_name: role_name
     )
   end
 
