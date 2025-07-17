@@ -214,7 +214,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def run_remote_script(ip)
     Rails.logger.debug { "→ Running script on #{ip} (this may take a few minutes...)" }
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
-      output = ssh.exec!("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary")
+      output = ssh.exec!("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary > /tmp/db_restore_output.txt 2>&1")
       Rails.logger.info "[DbRestoreService] Output:\n#{output}"
       Rails.logger.debug output
     end
