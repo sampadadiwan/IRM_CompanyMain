@@ -1,5 +1,6 @@
 class KpiReportsController < ApplicationController
   before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze]
+  after_action :verify_authorized, except: %i[index search show_performance]
 
   # GET /kpi_reports or /kpi_reports.json
   def index
@@ -109,15 +110,20 @@ class KpiReportsController < ApplicationController
   def show_performance
     @as_of = params[:as_of].present? ? Date.parse(params[:as_of]) : Date.today.end_of_month
     @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)
-    authorize @kpi_report
 
-    @rows = PerformanceTableService.call(
-      kpi_report: @kpi_report,
-      portfolio_company_id: params[:portfolio_company_id],
-      as_of: @as_of,
-      metric_names: params[:metric_names]&.split # or fetch dynamically
-    )
+    if @kpi_report.present?
+      authorize @kpi_report
+
+      @rows = PerformanceTableService.call(
+        kpi_report: @kpi_report,
+        portfolio_company_id: params[:portfolio_company_id],
+        as_of: @as_of,
+        metric_names: params[:metric_names]&.split # or fetch dynamically
+      )
+    end
+
     render :performance_table
+
   end
 
   private

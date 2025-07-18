@@ -1,3 +1,8 @@
+V9.0.79
+#####################################
+d02e4b325 Performance table (#917)
+1aebe6df0 esign emails are auto filled when kyc is selected (#915)
+
 V9.0.78
 #####################################
 f62ea3a01 Now investor dropdown for a commitment is from the entity investor, not fund investors

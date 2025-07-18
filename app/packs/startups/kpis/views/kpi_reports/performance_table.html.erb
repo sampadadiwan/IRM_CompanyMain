@@ -1,7 +1,7 @@
-<%# frozen_string_literal: true %>
-<%# @rows is an array of MetricRow objects %>
-<%= content_tag :h3, "KPI Performance — as of #{@as_of.strftime('%d-%b-%Y')}" %>
 
+<%= content_tag :h3, "KPI Performance: #{@as_of.strftime('%d-%b-%Y')}" %>
+
+<% if @kpi_report.present? %>
 <table class="table table-bordered text-end align-middle">
   <thead class="table-dark">
     <tr>
@@ -53,3 +53,6 @@
     <% end %>
   </tbody>
 </table>
+<% else %>
+  <p class="text-muted">No KPI report found for the specified date.</p>
+<% end %>
