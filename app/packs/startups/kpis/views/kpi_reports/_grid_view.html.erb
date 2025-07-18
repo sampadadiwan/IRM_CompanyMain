@@ -102,7 +102,7 @@
                 <td></td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
-                            <%= kpi_report.period %>
+                            <%= link_to kpi_report.period, show_performance_kpi_reports_path(as_of: kpi_report.as_of, portfolio_company_id: kpi_report.portfolio_company_id), target: "_blank" %>
                         </td>                    
                 <% end %>
             </tr>

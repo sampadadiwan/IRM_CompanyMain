@@ -16,6 +16,10 @@ class KpiReportPolicy < KpiPolicyBase
     user.enable_kpis
   end
 
+  def show_performance?
+    show?
+  end
+
   def show?
     (user.enable_kpis &&
       ((belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?)) || permissioned_investor? || record.owner_id == user.entity_id

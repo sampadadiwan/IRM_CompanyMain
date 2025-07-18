@@ -1,0 +1,55 @@
+<%# frozen_string_literal: true %>
+<%# @rows is an array of MetricRow objects %>
+<%= content_tag :h3, "KPI Performance — as of #{@as_of.strftime('%d-%b-%Y')}" %>
+
+<table class="table table-bordered text-end align-middle">
+  <thead class="table-dark">
+    <tr>
+      <th rowspan="2" class="text-start">Metric</th>
+      <th colspan="4">Monthly</th>
+      <th colspan="3">Quarterly</th>
+      <th colspan="3">YTD</th>
+      <th colspan="3">TTM</th>
+    </tr>
+    <tr>
+      <th>Prev</th>
+      <th>Curr</th>
+      <th>Growth MoM</th>
+      <th>Growth 12Mo</th>
+      <th>Prev</th>
+      <th>Curr</th>
+      <th>Growth QoQ</th>
+      <th>Prev</th>
+      <th>Curr</th>
+      <th>vs&nbsp;PY</th>
+      <th>Prev</th>
+      <th>Curr</th>
+      <th>vs&nbsp;PY</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @rows.each do |r| %>
+      <tr>
+        <td class="text-start fw-semibold"><%= r.metric %></td>
+
+        <td><%= r.monthly_prev_kpi ? link_to(number_with_delimiter(r.monthly_prev_kpi.value, delimiter: ','), r.monthly_prev_kpi) : nil %></td>
+        <td><%= r.monthly_curr_kpi ? link_to(number_with_delimiter(r.monthly_curr_kpi.value, delimiter: ','), r.monthly_curr_kpi) : nil %></td>
+        <td><%= number_to_percentage(r.growth_monthly, precision: 1) if r.growth_monthly %></td>
+        <td><%= number_to_percentage(r.growth_monthly_py, precision: 1) if r.growth_monthly %></td>
+ 
+        <td><%= r.quarterly_prev_kpi ? number_with_delimiter(r.quarterly_prev_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= r.quarterly_curr_kpi ? number_with_delimiter(r.quarterly_curr_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= number_to_percentage(r.growth_quarterly, precision: 1) if r.growth_quarterly %></td>
+
+        <td><%= r.ytd_prev_kpi ? number_with_delimiter(r.ytd_prev_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= r.ytd_curr_kpi ? number_with_delimiter(r.ytd_curr_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= number_to_percentage(r.growth_ytd_py, precision: 1) if r.growth_ytd_py %></td>
+
+        <td><%= r.ttm_prev_kpi ? number_with_delimiter(r.ttm_prev_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= r.ttm_curr_kpi ? number_with_delimiter(r.ttm_curr_kpi.value, delimiter: ',') : nil %></td>
+        <td><%= number_to_percentage(r.growth_ttm_py, precision: 1) if r.growth_ttm_py %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

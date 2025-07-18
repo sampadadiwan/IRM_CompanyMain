@@ -19,6 +19,23 @@ class Kpi < ApplicationRecord
   validates :display_value, length: { maximum: 30 }
 
   scope :no_tag_list, -> { joins(:kpi_report).where('kpi_reports.tag_list': nil) }
+  # --- Generic filters -------------------------------------------------
+  scope :for_metric,  ->(name)  { where(name:) }
+  scope :for_company, ->(pc_id) { where(portfolio_company_id: pc_id) }
+
+  # Attach the parent report so date filters hit SQL, not Ruby.
+  scope :with_report, -> { joins(:kpi_report) }
+
+  # --- Time helpers ----------------------------------------------------
+  scope :for_date, lambda { |date|
+    with_report.where(kpi_reports: { as_of: date })
+  }
+
+  scope :in_date_range, lambda { |range|
+    with_report.where(kpi_reports: { as_of: range })
+  }
+
+  scope :monthly, -> { where(kpi_reports: { period: 'month' }) }
 
   def custom_form_field
     field = nil

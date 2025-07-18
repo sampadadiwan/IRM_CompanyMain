@@ -106,6 +106,20 @@ class KpiReportsController < ApplicationController
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
   end
 
+  def show_performance
+    @as_of = params[:as_of].present? ? Date.parse(params[:as_of]) : Date.today.end_of_month
+    @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)
+    authorize @kpi_report
+
+    @rows = PerformanceTableService.call(
+      kpi_report: @kpi_report,
+      portfolio_company_id: params[:portfolio_company_id],
+      as_of: @as_of,
+      metric_names: params[:metric_names]&.split # or fetch dynamically
+    )
+    render :performance_table
+  end
+
   private
 
   def extract_sorting_params
