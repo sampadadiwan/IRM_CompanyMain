@@ -95,6 +95,10 @@ class InvestorKycPolicy < ApplicationPolicy
     permissioned_employee?(:investor_kyc_read)
   end
 
+  def esign_emails?
+    permissioned_employee?(:investor_kyc_read)
+  end
+
   def edit?
     update?
   end

@@ -1,3 +1,4 @@
 <%= turbo_stream.update params[:target] do %>
-  <%= options_for_select @investor_kycs.map{|e| [e.full_name, e.id]} %>
+  <%= options_for_select(
+        [["Select Investor KYC", ""]] + @investor_kycs.map { |e| [e.full_name, e.id] }) %>
 <% end %>

@@ -1,0 +1,5 @@
+<% if params[:current_esign_emails_value].blank? %>
+  <%= turbo_stream.replace params[:target] do %>
+    <input class="form-control" data-commitmentselect-target="esignEmailsOutput" type="text" value="<%= @esign_emails %>" name="capital_commitment[esign_emails]" id="capital_commitment_esign_emails" data-validate="true">
+  <% end %>
+<% end %>

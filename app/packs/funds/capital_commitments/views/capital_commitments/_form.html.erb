@@ -18,10 +18,12 @@
 
 
       <div data-controller="commitmentselect" data-commitmentselect-kyc-url-value="<%= investor_kycs_path %>" data-commitmentselect-employee-url-value="<%= investor_accesses_path %>"
-              data-commitmentselect-param-value="investor_id">
+              data-commitmentselect-param-value="investor_id" data-commitmentselect-email-url-value="<%= esign_emails_investor_kycs_path %>"
+            data-commitmentselect-email-param-value="investor_kyc_id">
 
         <div class="form-group">
-          <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
+          <%# can also check if params have investor_id and assign to commitment then disable - but this scenario is not possible currently as new commitment button takes to funds path %>
+          <% disabled = capital_commitment.persisted? && capital_commitment.investor_id.present? ? "disabled" : nil %>
           <%= form.label :investor_id %>
           <%= form.select :investor_id, capital_commitment.entity.investors.not_portfolio_companies.not_advisors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
         </div>
@@ -42,18 +44,18 @@
           <%= form.select :feeder_fund_id, capital_commitment.entity.funds.feeder_funds.map{|f| [f.name, f.id]}, {include_blank: true}, class: "form-control"  %>
           <small>Select the Feeder Fund only if this commitment is from a feeder fund</small>
         </div>
-
-        <div class="form-group">
-          <%= form.label :esign_emails, "Investor Signatory Emails" %>
-          <%= form.text_field :esign_emails, class: "form-control" %>
-          <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
-        </div>
-
+        
         <div class="form-group">
           <%= form.label :investor_kyc %>
           <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
 
-          <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
+          <%= form.select :investor_kyc_id, investor_kycs, {include_blank: "Select Investor KYC"}, {class: 'form-control', data: { commitmentselect_target: "kycSelect", action: "change->commitmentselect#kyc_change"} } %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :esign_emails, "Investor Signatory Emails" %>
+          <%= form.text_field :esign_emails, class: "form-control", data: { commitmentselect_target: "esignEmailsOutput" } %>
+          <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
         </div>
 
       </div>

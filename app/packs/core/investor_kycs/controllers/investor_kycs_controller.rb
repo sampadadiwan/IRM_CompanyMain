@@ -40,6 +40,12 @@ class InvestorKycsController < ApplicationController
   # GET /investor_kycs/1 or /investor_kycs/1.json
   def show; end
 
+  def esign_emails
+    @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
+    authorize(@investor_kyc)
+    @esign_emails = params[:esign_emails].presence || @investor_kyc.esign_emails
+  end
+
   # This can be triggered for any resource which implements with_doc_questions concern
   def validate_docs_with_ai
     authorize(@investor_kyc)
