@@ -1,6 +1,6 @@
 
-<%= turbo_frame_tag "performance_table_frame" do %>
-  <div class="card">
+<%= turbo_frame_tag "performance_table_frame", target: "_top" do %>
+  <div class="card table-responsive">
     <div class="card-header">
       <%= content_tag :h3, "KPI Performance: #{@as_of.strftime('%d-%b-%Y')}", class: "card-title mb-0" %>
     </div>
