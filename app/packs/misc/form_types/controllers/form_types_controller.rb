@@ -75,6 +75,7 @@ class FormTypesController < ApplicationController
           end
         end
       end
+
       saved = allowed ? @form_type.update(form_type_params) : false
     rescue ActiveRecord::RecordNotUnique
       @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
@@ -128,7 +129,12 @@ class FormTypesController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_form_type
-    @form_type = FormType.find(params[:id])
+    @form_type = if params[:action] == "update"
+                   # This is to ensure that the form_custom_fields are loaded with all rich text fields to avoid n+1 queries
+                   FormType.includes(form_custom_fields: :rich_text_info).find(params[:id])
+                 else
+                   FormType.find(params[:id])
+                 end
     authorize(@form_type)
   end
 
