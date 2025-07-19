@@ -36,18 +36,23 @@
         <div class="tab-content" id="portfolioReportTabs">
             <% section_data.each_with_index do |(name, list_of_points), idx| %>
                 <div class="tab-pane fade show <%= idx == 0 ? 'active' : ''%>" id="<%= name.gsub(" ", "").underscore %>-tab">
-                    
-                    <% list_of_points.each do |point| %>
+                    <% if list_of_points %>
+                        <% list_of_points.each do |point| %>
+                            <div class="hstack p-3 position-relative border-bottom">                                
+                                <i class="ti ti-player-play fs-5"></i>                                
+                                <div class="ms-3">
+                                    <%= point %>
+                                </div>
+                            </div>
+                        <% end %>
+                    <% else %>
                         <div class="hstack p-3 position-relative border-bottom">
-                            
                             <i class="ti ti-player-play fs-5"></i>
-                            
                             <div class="ms-3">
-                                <%= point %>
+                                <span class="text-muted">No data available</span>
                             </div>
                         </div>
-                    <% end %>
-                    
+                    <% end %>                    
                 </div>
             <% end %>
         </div>
