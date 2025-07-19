@@ -17,18 +17,18 @@
               <th colspan="3">TTM</th>
             </tr>
             <tr>
-              <th><%= l @as_of.prev_month %></th>
+              <th><%= l @as_of.prev_month.end_of_month %></th>
               <th><%= l @as_of %></th>
               <th>Growth MoM</th>
               <th>Growth 12Mo</th>
-              <th>Prev</th>
-              <th>Curr</th>
+              <th>Previous</th>
+              <th>Current</th>
               <th>Growth QoQ</th>
-              <th>Prev</th>
-              <th>Curr</th>
+              <th>Previous</th>
+              <th>Current</th>
               <th>vs&nbsp;PY</th>
-              <th>Prev</th>
-              <th>Curr</th>
+              <th>Previous</th>
+              <th>Current</th>
               <th>vs&nbsp;PY</th>
             </tr>
           </thead>
@@ -61,6 +61,7 @@
       </div>
       <% else %>
         <p class="text-muted">No KPI report found for the specified date.</p>
+        <!-- Optionally, you can add a link to show for prev dates -->
       <% end %>
     </div>
   </div>
