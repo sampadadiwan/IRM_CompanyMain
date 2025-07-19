@@ -129,12 +129,8 @@ class FormTypesController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_form_type
-    @form_type = if params[:action] == "update"
-                   # This is to ensure that the form_custom_fields are loaded with all rich text fields to avoid n+1 queries
-                   FormType.includes(form_custom_fields: :rich_text_info).find(params[:id])
-                 else
-                   FormType.find(params[:id])
-                 end
+      # This is to ensure that the form_custom_fields are loaded with all rich text fields to avoid n+1 queries                 
+    @form_type = FormType.includes(form_custom_fields: :rich_text_info).find(params[:id])                 
     authorize(@form_type)
   end
 

@@ -1,3 +1,15 @@
+V9.0.80
+#####################################
+dfbcd9645 Better support for no performance data
+0533b0917 Better support for large forms updates
+06a372b20 Better formatting for performance report
+c07977243 nil check for portfolio_report
+c48659040 Show prev months kpi performance by default
+75cd0f089 Now handles MimeNegotiation::InvalidType for blacklists
+91128d624 Added Red/Green to growth numbers in Performance table
+7e6f9bf55 Fixed Performance table Turbo frame
+dc5967186 Added Kpi Performance table widget for portfolio company dashboard
+
 V9.0.79
 #####################################
 d02e4b325 Performance table (#917)
