@@ -1,7 +1,7 @@
 class LlmReportJob < ApplicationJob
   queue_as :low
 
-  def generate_report(doc_urls, template_url, output_file_name, additional_data: nil)
+  def generate_report(doc_urls, _template_url, output_file_name, additional_data: nil)
     # This is part of the xirr_py package
     # https://github.com/ausangshukla/xirr_py
     response = HTTParty.post(
@@ -10,10 +10,8 @@ class LlmReportJob < ApplicationJob
         'Content-Type' => 'application/json'
       },
       body: {
-        openai_api_key: Rails.application.credentials["OPENAI_API_KEY"],
-        anthropic_api_key: Rails.application.credentials["ANTHROPIC_API_KEY"],
+        gemini_api_key: Rails.application.credentials["GOOGLE_GEMINI_API_KEY"],
         file_urls: doc_urls,
-        template_html_url: template_url,
         additional_data: additional_data&.to_json,
         output_file_name:
       }.to_json

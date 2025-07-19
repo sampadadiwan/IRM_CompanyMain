@@ -60,8 +60,14 @@
         </table>
       </div>
       <% else %>
-        <p class="text-muted">No KPI report found for the specified date.</p>
+        <p class="text-muted">No KPI report found for the specified date. Try any of the dates below</p>
         <!-- Optionally, you can add a link to show for prev dates -->
+        <% (1..5).each do |i| %>
+
+        <div class="mb-2 d-inline-block">
+          <%= link_to "#{l (@as_of - i.month).end_of_month}", show_performance_kpi_reports_path(as_of: (@as_of - i.month).end_of_month, portfolio_company_id: params[:portfolio_company_id]), class: "mb-1 fs-5 badge rounded-pill  bg-primary-subtle text-primary"  %>
+        </div>
+        <% end %>
       <% end %>
     </div>
   </div>
