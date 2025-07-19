@@ -1,0 +1,13 @@
+<% uri = URI(show_performance_kpi_reports_path(portfolio_company_id: @investor.id)) %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do 
+%>
+    <%= turbo_frame_tag "performance_table_frame", target: "_top", src: "#{uri.to_s}" do %>             
+    <%end%>
+  
+<% end %>
