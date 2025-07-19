@@ -108,7 +108,7 @@ class KpiReportsController < ApplicationController
   end
 
   def show_performance
-    @as_of = params[:as_of].present? ? Date.parse(params[:as_of]) : Date.today.end_of_month
+    @as_of = params[:as_of].present? ? Date.parse(params[:as_of]) : Time.zone.today.end_of_month
     @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)
 
     if @kpi_report.present?
@@ -123,7 +123,6 @@ class KpiReportsController < ApplicationController
     end
 
     render :performance_table
-
   end
 
   private
