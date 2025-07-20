@@ -3,9 +3,7 @@
         <%= f.position %>
     </td>
     <td>
-        <%= f.name %>
-        <br>
-        <%= f.form_type.name.underscore%>.custom_fields.<%= f.name %>
+        <%= f.name %>        
     </td>
     <td>
         <%= f.human_label %>
@@ -18,6 +16,7 @@
         Read Only <%= display_boolean f.read_only %> <br>
         Metadata: <%= f.meta_data %> <br>
         Help Text: <%= f.help_text&.html_safe %> <br>
+        Template Field: <span class="text-muted"><%= f.form_type.name.underscore%>.custom_fields.<%= f.name %></span>
     </td>
     <td>
         <% if f.condition_on.present? %>
