@@ -16,7 +16,11 @@
         Read Only <%= display_boolean f.read_only %> <br>
         Metadata: <%= f.meta_data %> <br>
         Help Text: <%= f.help_text&.html_safe %> <br>
-        Template Field: <span class="text-muted"><%= f.form_type.name.underscore%>.custom_fields.<%= f.name %></span>
+        <% 
+            class_name = f.form_type.name.underscore 
+            class_name = "investor_kyc" if ["individual_kyc", "non_individual_kyc"].include?(class_name)    
+        %>
+        Template Field: <span class="text-muted"><%= class_name %>.custom_fields.<%= f.name %></span>
     </td>
     <td>
         <% if f.condition_on.present? %>
