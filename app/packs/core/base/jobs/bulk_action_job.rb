@@ -17,7 +17,6 @@ class BulkActionJob < ApplicationJob
       end
     end
 
-    # sleep(5)
     if @error_msg.present?
       msg = "#{bulk_action} completed for #{record_ids.count} records, with #{@error_msg.length} errors."
       send_notification("#{msg} Errors will be sent via email", user_id, :danger)

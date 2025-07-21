@@ -10,6 +10,7 @@ Scenario Outline: Dont Generate AML report and Bulk Generate Aml Report
   Given I create a new InvestorKyc "PAN=ABCD1234F;full_name=nil" to trigger aml report generation
   Then I should see the "Investor kyc was successfully saved."
   Then aml report is not generated for the investor kyc
+  And I update full name to nil for the KYC
   Given I create a new InvestorKyc "PAN=ABCFG1234;full_name=somegoodname" to trigger aml report generation
   Then I should see the "Investor kyc was successfully saved."
   Then aml report is not generated for the investor kyc

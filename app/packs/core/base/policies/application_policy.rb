@@ -146,7 +146,7 @@ class ApplicationPolicy
     end
   end
 
-  def permissioned_investor?(metadata = "none", owner: nil)
+  def permissioned_investor_non_advisor?(metadata = "none", owner: nil)
     # Is the user an investor
     if %w[investor].include?(user.curr_role) &&
        !belongs_to_entity?(user, record)
@@ -172,6 +172,44 @@ class ApplicationPolicy
     else
       # Not an investor
       false
+    end
+  end
+
+  def permissioned_investor_advisor?(metadata = "none", owner: nil, as_entity_id: nil)
+    # Is the user an investor
+    if user.has_cached_role?(:investor_advisor) && !belongs_to_entity?(user, record)
+
+      # Get the model to wich the access_rights are attached, for the policy record
+      # Example for an offer its the associated secondary_sale,
+      # for the commitment its the fund etc
+      # But for a sale its the sale itself, likewise for fund
+      model_with_access_rights = get_model_with_access_rights(owner:)
+
+      # Get the cached_permissions and metadata from the users access_rights_cache for the model_with_access_rights
+      cached_permissions = nil
+      entity_id = as_entity_id.presence || user.entity_id
+      # Here we check the access_rights_cache without an entity_id, so it scans thru all entities the user has access to
+      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+
+      # If the user has access rights for the record and the permission is nil or read or the user has the permission
+      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
+      Rails.logger.debug { "Permission metadata ok: #{permission_metadata_ok}, for user: #{user.email}, record: #{record.class.name}##{record.id}, metadata: #{metadata}" }
+      if model_with_access_rights == record
+        permission_metadata_ok
+      else
+        permission_metadata_ok && (as_entity_id.present? || record.investor.investor_entity_id == user.entity_id)
+      end
+    else
+      # Not an investor
+      false
+    end
+  end
+
+  def permissioned_investor?(metadata = "none", owner: nil, as_entity_id: nil)
+    if user.has_cached_role?(:investor_advisor)
+      permissioned_investor_advisor?(metadata, owner:, as_entity_id:)
+    else
+      permissioned_investor_non_advisor?(metadata, owner:)
     end
   end
 

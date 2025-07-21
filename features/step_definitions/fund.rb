@@ -929,6 +929,28 @@ Then('I should be able to see my capital distributions') do
   end
 end
 
+Then('all the investor advisors should be able to receive notifications for the folios they represent') do
+  InvestorAdvisor.all.each do |investor_advisor|
+    puts "Checking notifications for Investor Advisor #{investor_advisor.email}"
+    # For each investor access, check if the advisor is notified for each capital commitment
+    InvestorAccess.approved.where(email: investor_advisor.email).all.each do |investor_access|
+      investor = investor_access.investor
+
+      investor.capital_commitments.each do |cc|
+        investor.notification_users(cc).pluck(:email).include?(investor_advisor.email).should == true
+      end 
+
+      investor.capital_remittances.each do |cr|
+        investor.notification_users(cr).pluck(:email).include?(investor_advisor.email).should == true
+      end 
+
+      investor.capital_distribution_payments.each do |cdp|
+        investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
+      end 
+    end
+  end
+end
+
 
 
 Given('the fund has capital call template') do

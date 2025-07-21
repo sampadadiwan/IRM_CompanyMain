@@ -16,6 +16,12 @@ class Log404s
       status = 404
       headers = { 'Content-Type' => 'text/plain' }
       response = ['406 Not Acceptable']
+    rescue ActionController::BadRequest => e
+      Rails.logger.warn "Log404s middleware: BadRequest error caught - #{e.message}"
+      # Set status to 404 to trigger the 404 logging block, but return 400 to the client
+      status = 404
+      headers = { 'Content-Type' => 'text/plain' }
+      response = ['400 Bad Request']
     rescue => e
       Rails.logger.error "Log404s middleware error: #{e.class} - #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
