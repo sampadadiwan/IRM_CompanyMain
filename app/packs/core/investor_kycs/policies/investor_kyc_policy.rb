@@ -1,7 +1,11 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "investor"
+      if user.investor_advisor?
+        # We cant show them all the KYCs, only the ones for the funds they have been permissioned
+        fund_ids = Fund.for_investor(user).pluck(:id)
+        scope.joins(capital_commitments: :fund).where('funds.id': fund_ids)
+      elsif user.curr_role == "investor"
         # Give access to all the KYCs for the investor, where he has investor_accesses approved
         scope.joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
       elsif user.entity_type == "Group Company" || user.has_cached_role?(:company_admin)

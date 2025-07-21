@@ -1,3 +1,9 @@
+V9.0.81
+#####################################
+112d1b979 Fixed kyc class_name for form_types show page
+6aafbf48d Added better custom fields display for copying into doc templates
+3f1cfb0ad Now replication job runs in stage (Dummy)
+
 V9.0.80
 #####################################
 dfbcd9645 Better support for no performance data

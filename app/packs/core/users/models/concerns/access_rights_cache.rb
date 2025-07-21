@@ -29,9 +29,30 @@ module AccessRightsCache
 
   # Return the permissions which are cached
   def get_cached_access_rights_permissions(entity_id, owner_type, owner_id)
-    permissions, metadata = access_rights_cache.dig(entity_id, owner_type, owner_id)&.split(",")
-    self[:access_rights_cached_permissions] = permissions&.to_i
-    [self[:access_rights_cached_permissions], metadata&.strip]
+    cache = access_rights_cache
+
+    # Direct lookup if entity_id is provided
+    if entity_id
+      value = cache.dig(entity_id, owner_type, owner_id)
+      permissions, metadata = value&.split(",")
+      self[:access_rights_cached_permissions] = permissions&.to_i
+      return [self[:access_rights_cached_permissions], metadata&.strip]
+    end
+
+    # entity_id is nil: search across all entity_ids
+    cache.each_value do |types|
+      next unless types[owner_type]
+
+      value = types[owner_type][owner_id]
+      next unless value
+
+      permissions, metadata = value.split(",")
+      self[:access_rights_cached_permissions] = permissions.to_i
+      return [self[:access_rights_cached_permissions], metadata.strip]
+    end
+
+    # Not found
+    [nil, nil]
   end
 
   def get_cached_ids(entity_id, owner_type)

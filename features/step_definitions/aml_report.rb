@@ -161,3 +161,8 @@ Given('I create a new InvestorKyc {string} to trigger aml report generation') do
   expect(page).to have_content("successfully")
   sleep(2)
 end
+
+Then('I update full name to nil for the KYC') do
+  @last_kyc = InvestorKyc.last
+  @last_kyc.update_column(:full_name, nil)
+end

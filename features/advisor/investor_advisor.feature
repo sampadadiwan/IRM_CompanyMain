@@ -32,6 +32,7 @@ Scenario Outline: Import Investor Advisors
   Then I should be able to see my capital commitments
   Then I should be able to see my capital remittances
   Then I should be able to see my capital distributions
+  And all the investor advisors should be able to receive notifications for the folios they represent
 
 
 @import
