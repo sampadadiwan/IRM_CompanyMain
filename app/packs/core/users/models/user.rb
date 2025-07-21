@@ -131,12 +131,15 @@ class User < ApplicationRecord
       self.curr_role = :employee
     elsif ["Investor Advisor"].include?(entity.entity_type)
       Rails.logger.debug "Setting up investor advisor user"
-      add_role :employee
-      # Add this role to the user to ensure it is recognized as an advisor
-      add_role :investor_advisor
-      self.curr_role = :employee
       # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
       self.advisor_entity_id ||= entity_id
+      self.advisor_entity_roles ||= "employee,investor_advisor"
+
+      add_role :employee
+      self.curr_role = :employee
+      # Add this role to the user to ensure it is recognized as an advisor
+      add_role :investor_advisor
+      
       # Ensure that the advisor_entity_roles has the investor_advisor
       advisor_entity_roles_list = advisor_entity_roles.split(",").map(&:strip)
       unless advisor_entity_roles_list.include?("investor_advisor")
