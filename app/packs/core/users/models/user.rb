@@ -132,10 +132,17 @@ class User < ApplicationRecord
     elsif ["Investor Advisor"].include?(entity.entity_type)
       Rails.logger.debug "Setting up investor advisor user"
       add_role :employee
+      # Add this role to the user to ensure it is recognized as an advisor
       add_role :investor_advisor
       self.curr_role = :employee
       # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
-      self.advisor_entity_id = entity_id
+      self.advisor_entity_id ||= entity_id
+      # Ensure that the advisor_entity_roles has the investor_advisor
+      advisor_entity_roles_list = advisor_entity_roles.split(",").map(&:strip)
+      unless advisor_entity_roles_list.include?("investor_advisor")
+        advisor_entity_roles_list << "investor_advisor"
+        self.advisor_entity_roles = advisor_entity_roles_list.join(",")
+      end
     elsif entity.is_fund?
       Rails.logger.debug "Setting up fund user"
       add_role :employee
@@ -222,7 +229,7 @@ class User < ApplicationRecord
   # We only allow users to have the investor_advisor role if their advisor entity is of type "Investor Advisor"
   # This is a hard rule that cannot be overriden at this time
   def forbid_bad_role(role)
-    if advisor_entity.entity_type != "Investor Advisor" && role.name.to_s == "investor_advisor"
+    if advisor_entity&.entity_type != "Investor Advisor" && role.name.to_s == "investor_advisor"
       errors.add(:roles, "Cannot add investor_advisor role to a user whose 'advisor entity' is not an 'Investor Advisor'")
       throw :abort
     end
