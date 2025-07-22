@@ -4,7 +4,10 @@ class InvestorKycPolicy < ApplicationPolicy
       if user.investor_advisor?
         # We cant show them all the KYCs, only the ones for the funds they have been permissioned
         fund_ids = Fund.for_investor(user).pluck(:id)
-        scope.joins(capital_commitments: :fund).where('funds.id': fund_ids)
+        # Give access to all the KYCs for the investor, where he has investor_accesses approved
+        # And the investor belongs to the same investor_entity as the user
+        # and the fund is one of the funds they have been permissioned
+        scope.joins(:investor, capital_commitments: :fund).where('investors.investor_entity_id=? and funds.id=?', user.entity_id, fund_ids).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
       elsif user.curr_role == "investor"
         # Give access to all the KYCs for the investor, where he has investor_accesses approved
         scope.joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
