@@ -40,6 +40,7 @@
             <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.account_settings') %></span>
             </div>
         </a>
+        <% if UserPolicy.new(current_user, nil).index? %>
         <a href="<%= users_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-users"></i>
@@ -49,7 +50,8 @@
             <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.company_employees') %></span>
             </div>
         </a>
-        <% if current_user.enable_investor_advisors %>
+        <% end %>
+        <% if InvestorAdvisorPolicy.new(current_user, nil).index? %>
         <a href="<%= investor_advisors_path %>" class="py-8 px-7 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-user-check"></i>

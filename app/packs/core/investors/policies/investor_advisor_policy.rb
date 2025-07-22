@@ -6,7 +6,7 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def index?
-    user.enable_investor_advisors
+    user.enable_investor_advisors && !user.investor_advisor?
   end
 
   def show?

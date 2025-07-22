@@ -62,7 +62,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    ((user.entity_id == record.id) && user.has_cached_role?(:company_admin)) || support?
+    ((user.entity_id == record.id) && user.has_cached_role?(:company_admin) && !user.investor_advisor?) || support?
   end
 
   def edit?
