@@ -859,6 +859,38 @@ Given('my firm is an investor in the fund') do
   @fund.reload
 end
 
+Then('I should be able to see my investor kycs') do
+  @user.reload
+  
+  visible_kycs = []
+  invisible_kycs = []
+  InvestorKyc.all.includes(:investor).each do |kyc|
+    visit(investor_kyc_path(kyc))
+    @investor = kyc.investor
+
+    puts "checking kyc for #{@investor.investor_name}"
+
+    if Pundit.policy(@user, kyc).show?
+      puts "KYC #{kyc.investor.investor_name} Visible to #{@user.email}"
+      expect(page).to have_content(kyc.investor.investor_name) 
+      expect(page).to have_content(InvestorKyc.kyc_types[kyc.kyc_type])
+      expect(page).to have_content(kyc.bank_account_number)
+      expect(page).to have_content(kyc.full_name) if kyc.full_name.present?
+      visible_kycs << kyc
+    else
+      puts "KYC #{kyc.investor.investor_name} Not Visible to #{@user.email}"
+      expect(page).not_to have_content(@investor.investor_name)
+      expect(page).not_to have_content(InvestorKyc.kyc_types[kyc.kyc_type])
+      expect(page).not_to have_content(kyc.bank_account_number)
+      expect(page).not_to have_content(kyc.full_name) if kyc.full_name.present?
+      invisible_kycs << kyc
+    end
+  end
+
+  puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for User #{@user.email}"
+  puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for User #{@user.email}"
+
+end
 
 Then('I should be able to see my capital commitments') do
   @user.reload
@@ -873,12 +905,12 @@ Then('I should be able to see my capital commitments') do
       puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
 
       if cc.investor_id == @investor.id
-        puts "Visible"
+        puts "Commitment Visible"
         expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
         # expect(page).to have_content(cc.fund.name)
         expect(page).to have_content( money_to_currency(cc.committed_amount) )
       else
-        puts "Not Visible"
+        puts "Commitment Not Visible"
         expect(page).not_to have_content(cc.investor.investor_name)
       end
     end
@@ -890,12 +922,12 @@ Then('I should be able to see my capital remittances') do
   CapitalRemittance.all.each do |cc|
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
-      puts "Visible"
+      puts "Call Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.due_amount) )
       expect(page).to have_content( money_to_currency(cc.collected_amount) )
     else
-      puts "Not Visible"
+      puts "Call Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
     end
   end
@@ -917,13 +949,13 @@ Then('I should be able to see my capital distributions') do
   CapitalDistributionPayment.all.each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
-      puts "Visible"
+      puts "Distribution Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.net_payable) )
       expect(page).to have_content( money_to_currency(cc.gross_payable) )
       expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
     else
-      puts "Not Visible"
+      puts "Distribution Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
     end
   end
@@ -931,6 +963,9 @@ end
 
 Then('all the investor advisors should be able to receive notifications for the folios they represent') do
   InvestorAdvisor.all.each do |investor_advisor|
+    visible_kycs = []
+    invisible_kycs = []
+
     puts "Checking notifications for Investor Advisor #{investor_advisor.email}"
     # For each investor access, check if the advisor is notified for each capital commitment
     InvestorAccess.approved.where(email: investor_advisor.email).all.each do |investor_access|
@@ -950,18 +985,24 @@ Then('all the investor advisors should be able to receive notifications for the 
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
       end 
 
-      investor.investor_kycs.each do |kyc|        
+      
+      investor.investor_kycs.each do |kyc|      
         across_all_entities = true
         if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities)
           puts "Checking KYC notifications true"      
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
+          visible_kycs << kyc
         else
           puts "Checking KYC notifications false"
-          binding.pry if kyc.notification_users.pluck(:email).include?(investor_advisor.email)
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == false
+          invisible_kycs << kyc
         end
-      end
+      end      
     end
+
+    puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
+    puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"   
+
   end
 end
 

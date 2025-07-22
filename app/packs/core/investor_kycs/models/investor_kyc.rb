@@ -91,7 +91,7 @@ class InvestorKyc < ApplicationRecord
     else
       # Give access to all the KYCs for the investor, where he has investor_accesses approved
       # And the investor belongs to the same investor_entity as the user
-      # and the fund is one of the funds they have been permissioned      
+      # and the fund is one of the funds they have been permissioned
       joins(:investor, capital_commitments: :fund)
         .where('investors.investor_entity_id=? and funds.id in (?)', user.entity_id, fund_ids)
         .joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))

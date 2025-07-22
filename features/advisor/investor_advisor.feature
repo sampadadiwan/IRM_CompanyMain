@@ -25,6 +25,7 @@ Scenario Outline: Import Investor Advisors
   Then I should be able to see my capital commitments
   Then I should be able to see my capital remittances
   Then I should be able to see my capital distributions
+  Then I should be able to see my investor kycs
   Given I log out
   Given I log in with email "jeanice@hansen-inc.com"
   And I switch to becoming the advisor for "Investor 2"
@@ -33,6 +34,7 @@ Scenario Outline: Import Investor Advisors
   Then I should be able to see my capital commitments
   Then I should be able to see my capital remittances
   Then I should be able to see my capital distributions
+  Then I should be able to see my investor kycs
   And all the investor advisors should be able to receive notifications for the folios they represent
 
 
