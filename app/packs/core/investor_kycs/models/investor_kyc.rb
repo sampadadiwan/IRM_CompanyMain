@@ -81,13 +81,13 @@ class InvestorKyc < ApplicationRecord
     joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
   }
 
-  scope :for_investor_advisor, lambda { |user|
+  scope :for_investor_advisor, lambda { |user, across_all_entities = false|
     # We cant show them all the KYCs, only the ones for the funds they have been permissioned
-    fund_ids = Fund.for_investor(user).pluck(:id)
+    fund_ids = Fund.for_investor(user, across_all_entities).pluck(:id)
     # Give access to all the KYCs for the investor, where he has investor_accesses approved
     # And the investor belongs to the same investor_entity as the user
     # and the fund is one of the funds they have been permissioned
-    joins(:investor, capital_commitments: :fund).where('investors.investor_entity_id=? and funds.id=?', user.entity_id, fund_ids).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+    joins(:investor, capital_commitments: :fund).where('investors.investor_entity_id=? and funds.id in (?)', user.entity_id, fund_ids).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
   }
 
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
@@ -162,7 +162,8 @@ class InvestorKyc < ApplicationRecord
 
   def notification_users
     investor.notification_users.select do |user|
-      Pundit.policy(user, self).show?
+      Rails.logger.debug { "Checking user: #{user.id} for KYC: #{id}" }
+      InvestorKycPolicy.new(user, self).show?
     end
   end
 

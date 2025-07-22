@@ -91,7 +91,7 @@ module ForInvestor
     }
 
     # Some models have a belongs_to :investor association
-    scope :for_investor, lambda { |user|
+    scope :for_investor, lambda { |user, across_all_entities = false|
       filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
 
       join_clause = if instance_methods.include?(:access_rights)
@@ -118,7 +118,7 @@ module ForInvestor
                                .where("investors.investor_entity_id=?", user.entity_id)
 
       # Ensure the investor access is approved
-      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user, across_all_entities))
 
       join_clause
     }

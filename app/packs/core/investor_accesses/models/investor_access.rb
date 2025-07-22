@@ -28,8 +28,12 @@ class InvestorAccess < ApplicationRecord
                                ["investor_accesses.approved = ?", false] => 'unapproved_investor_access_count'
                              }
 
-  scope :approved_for_user, lambda { |user|
-    where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)
+  scope :approved_for_user, lambda { |user, across_all_entities = false|
+    if across_all_entities
+      where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
+    else
+      where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)
+    end
   }
 
   scope :approved, lambda {

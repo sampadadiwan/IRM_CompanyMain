@@ -30,7 +30,8 @@ class InvestorKycPolicy < ApplicationPolicy
     if permissioned_employee?(:investor_kyc_read)
       true
     elsif user.has_cached_role?(:investor_advisor)
-      InvestorKyc.for_investor_advisor(user).exists?(id: record.id)
+      across_all_entities = true
+      InvestorKyc.for_investor_advisor(user, across_all_entities).exists?(id: record.id)
     elsif !user.has_cached_role?(:investor_advisor)
       user.entity_id == record.investor&.investor_entity_id
     else
