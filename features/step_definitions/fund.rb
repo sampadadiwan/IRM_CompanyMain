@@ -935,18 +935,29 @@ Then('all the investor advisors should be able to receive notifications for the 
     # For each investor access, check if the advisor is notified for each capital commitment
     InvestorAccess.approved.where(email: investor_advisor.email).all.each do |investor_access|
       investor = investor_access.investor
-
+      puts "Checking commitments"
       investor.capital_commitments.each do |cc|
         investor.notification_users(cc).pluck(:email).include?(investor_advisor.email).should == true
       end 
 
+      puts "Checking remittances"
       investor.capital_remittances.each do |cr|
         investor.notification_users(cr).pluck(:email).include?(investor_advisor.email).should == true
       end 
 
+      puts "Checking distributions"
       investor.capital_distribution_payments.each do |cdp|
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
       end 
+
+      puts "Checking KYC notifications"
+      investor.investor_kycs.each do |kyc|        
+        if Pundit.policy(investor_advisor.user, kyc).show?
+          kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
+        else
+          kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == false
+        end
+      end
     end
   end
 end

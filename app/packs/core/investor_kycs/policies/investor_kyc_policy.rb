@@ -2,15 +2,10 @@ class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if user.investor_advisor?
-        # We cant show them all the KYCs, only the ones for the funds they have been permissioned
-        fund_ids = Fund.for_investor(user).pluck(:id)
-        # Give access to all the KYCs for the investor, where he has investor_accesses approved
-        # And the investor belongs to the same investor_entity as the user
-        # and the fund is one of the funds they have been permissioned
-        scope.joins(:investor, capital_commitments: :fund).where('investors.investor_entity_id=? and funds.id=?', user.entity_id, fund_ids).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+        scope.for_investor_advisor(user)
       elsif user.curr_role == "investor"
         # Give access to all the KYCs for the investor, where he has investor_accesses approved
-        scope.joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+        scope.for_investor(user)
       elsif user.entity_type == "Group Company" || user.has_cached_role?(:company_admin)
         scope.for_company_admin(user)
       elsif user.has_cached_role?(:employee)
@@ -32,8 +27,15 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def show?
-    permissioned_employee?(:investor_kyc_read) ||
+    if permissioned_employee?(:investor_kyc_read)
+      true
+    elsif user.has_cached_role?(:investor_advisor)
+      InvestorKyc.for_investor_advisor(user).exists?(id: record.id)
+    elsif !user.has_cached_role?(:investor_advisor)
       user.entity_id == record.investor&.investor_entity_id
+    else
+      false
+    end
   end
 
   def create?(emp_perm = :investor_kyc_create)

@@ -77,6 +77,19 @@ class InvestorKyc < ApplicationRecord
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 
+  scope :for_investor, lambda { |user|
+    joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+  }
+
+  scope :for_investor_advisor, lambda { |user|
+    # We cant show them all the KYCs, only the ones for the funds they have been permissioned
+    fund_ids = Fund.for_investor(user).pluck(:id)
+    # Give access to all the KYCs for the investor, where he has investor_accesses approved
+    # And the investor belongs to the same investor_entity as the user
+    # and the fund is one of the funds they have been permissioned
+    joins(:investor, capital_commitments: :fund).where('investors.investor_entity_id=? and funds.id=?', user.entity_id, fund_ids).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+  }
+
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
@@ -129,16 +142,27 @@ class InvestorKyc < ApplicationRecord
     if send_kyc_form_to_user || reminder
       email_method = :notify_kyc_required
       msg = "Kindly update your KYC details for #{entity.name} by clicking on the button below"
+
       if reminder
         email_method = :kyc_required_reminder
         msg = "Reminder to kindly update your KYC details for #{entity.name} by clicking on the button below."
       end
-      investor.notification_users.each do |user|
+
+      # Send notification to all the users who have access to this KYC
+      notification_users.each do |user|
         InvestorKycNotifier.with(record: self, entity_id:, email_method:, msg:, user_id: user.id).deliver_later(user)
       end
+
+      # Ensure the flag is set to false after sending the KYC form
       # rubocop:disable Rails/SkipsModelValidations
       update_column(:send_kyc_form_to_user, false)
       # rubocop:enable Rails/SkipsModelValidations
+    end
+  end
+
+  def notification_users
+    investor.notification_users.select do |user|
+      Pundit.policy(user, self).show?
     end
   end
 
