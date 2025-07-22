@@ -164,7 +164,9 @@ class InvestorKyc < ApplicationRecord
     across_all_entities = true
     investor.notification_users.select do |user|
       Rails.logger.debug { "Checking user: #{user.id} for KYC: #{id} across_all_entities: #{across_all_entities}" }
-      InvestorKycPolicy.new(user, self).show?(accesss_all_entities)
+      # Check if the user has access to this KYC
+      # For investor advisors, check if they have access to the kyc across all the entities they are advisors for
+      InvestorKycPolicy.new(user, self).show?(across_all_entities)
     end
   end
 
