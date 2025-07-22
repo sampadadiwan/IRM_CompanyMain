@@ -47,7 +47,7 @@
     %>
 
     <% if policy(investor_access).approve? %>
-      <%= button_to approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name]),
+      <%= button_to approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name], investor_id: params[:investor_id]),
                     method: :patch, class: btn_class, form_class: "deleteButton" do %>
         <i class="<%= icon_class %>"></i><%= label %>
       <% end %>
