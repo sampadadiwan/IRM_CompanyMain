@@ -950,11 +950,14 @@ Then('all the investor advisors should be able to receive notifications for the 
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
       end 
 
-      puts "Checking KYC notifications"
       investor.investor_kycs.each do |kyc|        
-        if Pundit.policy(investor_advisor.user, kyc).show?
+        across_all_entities = true
+        if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities)
+          puts "Checking KYC notifications true"      
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
         else
+          puts "Checking KYC notifications false"
+          binding.pry if kyc.notification_users.pluck(:email).include?(investor_advisor.email)
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == false
         end
       end

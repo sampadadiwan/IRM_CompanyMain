@@ -114,11 +114,13 @@ module ForInvestor
 
       Rails.logger.debug join_clause.to_sql
 
-      join_clause = join_clause.merge(filter)
-                               .where("investors.investor_entity_id=?", user.entity_id)
+      join_clause = join_clause.merge(filter).where("investors.investor_entity_id=?", user.entity_id) unless across_all_entities
 
       # Ensure the investor access is approved
       join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user, across_all_entities))
+
+      # If across_all_entities is true, we need to ensure the join is distinct to avoid duplicates
+      join_clause = join_clause.distinct if across_all_entities
 
       join_clause
     }

@@ -10,7 +10,7 @@ Scenario Outline: Import Investor Advisors
   And Given import file "investors.xlsx" for "Investor"
   And Given import file "investor_kycs.xlsx" for "InvestorKyc"
   And Given import file "investor_access.xlsx" for "InvestorAccess"
-  And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "capital_commitments_with_kycs.xlsx" for "CapitalCommitment"
   Given the fund has "1" capital call
   Given the capital calls are approved
   Given the fund has "1" capital distribution
