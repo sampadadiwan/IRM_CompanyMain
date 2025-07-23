@@ -29,7 +29,7 @@ class DocumentDownloadJob < ApplicationJob
           uploaded_document = upload(user, zip_file.path, folder:)
           # set expiry to 1 day
           download_link = "<a href='#{uploaded_document.file.url(expires_in: 60 * 60 * 24)}'><b>Download</b></a>"
-          msg = "#{download_link} the zip file. You will also be sent the download link for the documents in an email. Note the link will expire in 1 day."
+          msg = "#{download_link} the ZIP file. A download link has also been sent to your email. Please note that the link will expire in 1 day."
           DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
           send_notification(msg, user_id)
         end

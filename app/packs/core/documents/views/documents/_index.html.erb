@@ -62,7 +62,7 @@
                 <%= button_to download_folder_path(id: folder_id, back_to: request.original_url),
                               method: :get,
                               class: "dropdown-item d-flex align-items-center d-none d-sm-block",
-                              data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?" } do %>
+                              data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get } do %>
                   <i class="ti ti-download"></i> <%= t_common(:download) %> Folder
                 <% end %>
               <% end %>

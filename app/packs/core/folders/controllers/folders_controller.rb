@@ -22,7 +22,12 @@ class FoldersController < ApplicationController
 
   def download
     DocumentDownloadJob.perform_later(@folder.id, current_user.id)
-    redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
+    UserAlert.new(
+      user: current_user,
+      message: "You will be sent a download link for the documents in a few minutes.",
+      level: "info"
+    ).broadcast
+    head :ok
   end
 
   def generate_report
