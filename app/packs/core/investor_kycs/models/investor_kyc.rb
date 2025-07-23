@@ -81,20 +81,21 @@ class InvestorKyc < ApplicationRecord
     joins(:investor).where('investors.investor_entity_id': user.entity_id).joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
   }
 
-  scope :for_investor_advisor, lambda { |user, across_all_entities = false|
+  # Do not call this with a user who is not an investor_advisor
+  scope :for_investor_advisor, lambda { |user, across_all_entities: false|
     # We cant show them all the KYCs, only the ones for the funds they have been permissioned
-    fund_ids = Fund.for_investor(user, across_all_entities).distinct.pluck(:id)
-    if across_all_entities
-      joins(entity: :investor_accesses, capital_commitments: :fund)
+    fund_ids = Fund.for_investor(user, across_all_entities:).distinct.pluck(:id)
+    if across_all_entities && user.has_cached_role?(:investor_advisor)
+      joins(investor: :investor_accesses, capital_commitments: :fund)
         .where(funds: { id: fund_ids })
-        .merge(InvestorAccess.approved_for_user(user, across_all_entities)).distinct
+        .merge(InvestorAccess.approved_for_user(user, across_all_entities:)).distinct
     else
       # Give access to all the KYCs for the investor, where he has investor_accesses approved
       # And the investor belongs to the same investor_entity as the user
       # and the fund is one of the funds they have been permissioned
       joins(:investor, capital_commitments: :fund)
         .where('investors.investor_entity_id=? and funds.id in (?)', user.entity_id, fund_ids)
-        .joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+        .joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user)).distinct
     end
   }
 
@@ -169,12 +170,12 @@ class InvestorKyc < ApplicationRecord
   end
 
   def notification_users
-    across_all_entities = true
     investor.notification_users.select do |user|
-      Rails.logger.debug { "Checking user: #{user.id} for KYC: #{id} across_all_entities: #{across_all_entities}" }
       # Check if the user has access to this KYC
       # For investor advisors, check if they have access to the kyc across all the entities they are advisors for
-      InvestorKycPolicy.new(user, self).show?(across_all_entities)
+      across_all_entities = user.has_cached_role?(:investor_advisor)
+      Rails.logger.debug { "Checking user: #{user.id} for KYC: #{id} across_all_entities: #{across_all_entities}" }
+      InvestorKycPolicy.new(user, self).show?(across_all_entities:)
     end
   end
 

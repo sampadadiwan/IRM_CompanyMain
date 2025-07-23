@@ -986,9 +986,8 @@ Then('all the investor advisors should be able to receive notifications for the 
       end 
 
       
-      investor.investor_kycs.each do |kyc|      
-        across_all_entities = true
-        if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities)
+      investor.investor_kycs.each do |kyc|              
+        if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: true)
           puts "Checking KYC notifications true"      
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
           visible_kycs << kyc
@@ -1002,6 +1001,69 @@ Then('all the investor advisors should be able to receive notifications for the 
 
     puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
     puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"   
+
+  end
+end
+
+
+Then('all the investor advisors should be able to switch to the investors they represent and view their details') do
+  InvestorAdvisor.all.each do |investor_advisor|
+    puts "Switching to Investor Advisor #{investor_advisor.email} for entity #{investor_advisor.entity.name}"
+    investor_advisor.switch(investor_advisor.user)
+    investor_advisor.user.reload
+    
+    CapitalCommitment.all.each do |cc|
+      if Pundit.policy(investor_advisor.user, cc).show?
+        # All capital commitments should belong to the investor advisor's entity
+        cc.investor.investor_entity_id.should == investor_advisor.entity.id        
+        puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
+      end
+      if cc.investor.investor_entity_id != investor_advisor.entity.id    
+        # If the capital commitment does not belong to the investor advisor's entity, it should not be visible    
+        Pundit.policy(investor_advisor.user, cc).show?.should == false
+        puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
+      end
+    end
+
+    CapitalRemittance.all.each do |cr|
+      if Pundit.policy(investor_advisor.user, cr).show?
+        # All capital remittances should belong to the investor advisor's entity
+        cr.investor.investor_entity_id.should == investor_advisor.entity.id 
+        puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"       
+      end
+      if cr.investor.investor_entity_id != investor_advisor.entity.id    
+        # If the capital remittance does not belong to the investor advisor's entity, it should not be visible    
+        Pundit.policy(investor_advisor.user, cr).show?.should == false
+        puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
+      end
+    end
+
+    CapitalDistributionPayment.all.each do |cdp|
+      if Pundit.policy(investor_advisor.user, cdp).show?
+        # All capital distribution payments should belong to the investor advisor's entity
+        cdp.investor.investor_entity_id.should == investor_advisor.entity.id      
+        puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"  
+      end
+      if cdp.investor.investor_entity_id != investor_advisor.entity.id        
+        # If the capital distribution payment does not belong to the investor advisor's entity, it should not be visible
+        Pundit.policy(investor_advisor.user, cdp).show?.should == false
+        puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
+      end
+    end
+
+    InvestorKyc.all.each do |kyc|
+      if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false)
+        # All investor KYC should belong to the investor advisor's entity
+        kyc.investor.investor_entity_id.should == investor_advisor.entity.id     
+        puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"   
+      end
+      if kyc.investor.investor_entity_id != investor_advisor.entity.id        
+        # If the investor KYC does not belong to the investor advisor's entity, it should not be visible
+        Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false).should == false
+        puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
+      end
+    end
+
 
   end
 end
@@ -2289,8 +2351,9 @@ Given('We Generate documents for the capital distribution') do
   visit(capital_distribution_path(@capital_distribution))
   click_on("Actions")
   click_on("Generate Documents")
-  click_on("Proceed")
-  sleep 8
+  click_on("Proceed")  
+  sleep(5) # Wait for the job to complete
+  expect(page).to have_content("Documentation generation started")
 end
 
 

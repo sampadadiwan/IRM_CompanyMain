@@ -64,6 +64,8 @@ class User < ApplicationRecord
   # Only if this user is an employee of the entity
   belongs_to :entity
   belongs_to :advisor_entity, class_name: "Entity", optional: true
+  has_many :investor_advisors, dependent: :destroy
+  has_many :investor_advisor_investors, class_name: "Investor", through: :investor_advisors, source: :investors
 
   validates :first_name, :last_name, presence: true
 
@@ -78,8 +80,8 @@ class User < ApplicationRecord
 
   scope :support_users, -> { joins(:roles).where("roles.name =?", "support") }
   scope :super_users, -> { joins(:roles).where("roles.name =?", "super") }
-  scope :investor_advisors, -> { joins(:roles).where("roles.name =?", "investor_advisor") }
-  scope :not_investor_advisors, -> { where(advisor_entity_id: nil) }
+  scope :investor_advisor_roles, -> { joins(:roles).where("roles.name =?", "investor_advisor") }
+  scope :not_investor_advisor_roles, -> { where(advisor_entity_id: nil) }
 
   before_create :setup_defaults
   after_create :update_investor_access

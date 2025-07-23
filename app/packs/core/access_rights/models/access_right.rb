@@ -74,8 +74,17 @@ class AccessRight < ApplicationRecord
     where("access_rights.access_to_category='RM' OR access_rights.access_to_investor_id=rm_mappings.rm_id OR access_rights.user_id=?", user.id)
   }
 
-  scope :investor_granted_access_filter, lambda { |user|
-    where("access_rights.user_id=? and access_rights.entity_id=?", user.id, user.entity_id)
+  # This scope is used to filter access rights for investor advisors, who manage folios for investors.
+  # Investors grant access_rights to the Fund or Sale or Deal, to the investor advisor.
+  # Do not call this with a user who is not an investor_advisor
+  scope :investor_granted_access_filter, lambda { |user, across_all_entities: false|
+    if across_all_entities && user.has_cached_role?(:investor_advisor)
+      # This is used only in the case of sending emails, when the advisor is logged in as an investor, but emails need to be sent out irrespective of which investor they are currently switched into
+      where("access_rights.user_id=?", user.id)
+    else
+      # This kicks in when the investor advisor is logged in and switches to a specific investor
+      where("access_rights.user_id=? and access_rights.entity_id=?", user.id, user.entity_id)
+    end
   }
 
   validates :access_to_email, length: { maximum: 30 }

@@ -90,9 +90,18 @@ module ForInvestor
       join_clause
     }
 
-    # Some models have a belongs_to :investor association
-    scope :for_investor, lambda { |user, across_all_entities = false|
-      filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
+    # across_all_entities is used only by the investor_advisor and is used only in the case of sending emails, when the advisor is logged in as an investor, but emails need to be sent out irrespective of which investor they are currently switched into. For that we need to find all the funds the advisor has access to across all investors who have made him an advisor
+    scope :for_investor, lambda { |user, across_all_entities: false|
+      raise "across_all_entities should not be true for non investor_advisor users" if across_all_entities && !user.has_cached_role?(:investor_advisor)
+
+      filter = if user.investor_advisor? || (across_all_entities && user.has_cached_role?(:investor_advisor))
+                 # The user may be logged in as an investor_advisor? or may have the role investor_advisor, and we want the investor granted access_rights across_all_entities
+                 AccessRight.investor_granted_access_filter(user, across_all_entities:)
+               else
+                 # This will always be false for non-investor_advisor users
+                 across_all_entities = false
+                 AccessRight.access_filter(user)
+               end
 
       join_clause = if instance_methods.include?(:access_rights)
                       Rails.logger.debug { "######## for_investor has access_rights" }
@@ -114,14 +123,12 @@ module ForInvestor
 
       Rails.logger.debug join_clause.to_sql
 
-      join_clause = join_clause.merge(filter).where("investors.investor_entity_id=?", user.entity_id) unless across_all_entities
+      join_clause = join_clause.merge(filter)
+      # Limit the results to the investor's entity, unless across_all_entities
+      join_clause = join_clause.where("investors.investor_entity_id=?", user.entity_id) unless across_all_entities
 
       # Ensure the investor access is approved
-      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user, across_all_entities))
-
-      # If across_all_entities is true, we need to ensure the join is distinct to avoid duplicates
-      join_clause = join_clause.distinct if across_all_entities
-
+      join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user, across_all_entities:))
       join_clause
     }
   end

@@ -28,8 +28,8 @@ class InvestorAccess < ApplicationRecord
                                ["investor_accesses.approved = ?", false] => 'unapproved_investor_access_count'
                              }
 
-  scope :approved_for_user, lambda { |user, across_all_entities = false|
-    if across_all_entities
+  scope :approved_for_user, lambda { |user, across_all_entities: false|
+    if across_all_entities && user.has_cached_role?(:investor_advisor)
       where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true).distinct
     else
       where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)

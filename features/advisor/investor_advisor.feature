@@ -36,6 +36,7 @@ Scenario Outline: Import Investor Advisors
   Then I should be able to see my capital distributions
   Then I should be able to see my investor kycs
   And all the investor advisors should be able to receive notifications for the folios they represent
+  And all the investor advisors should be able to switch to the investors they represent and view their details
 
 
 @import

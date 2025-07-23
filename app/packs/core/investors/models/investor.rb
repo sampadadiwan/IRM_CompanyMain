@@ -29,6 +29,10 @@ class Investor < ApplicationRecord
 
   # The InvestorAccess attached to this investor
   has_many :investor_accesses, dependent: :destroy
+  has_many :investor_advisors,
+           through: :investor_entity,
+           source: :investor_advisors
+
   has_many :investor_kpi_mappings, dependent: :destroy
   has_many :approved_investor_accesses, -> { where approved: true }, class_name: 'InvestorAccess'
   # The users linked to the InvestorAccess

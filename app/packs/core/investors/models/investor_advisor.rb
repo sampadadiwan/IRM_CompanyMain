@@ -14,6 +14,11 @@ class InvestorAdvisor < ApplicationRecord
 
   belongs_to :entity
   belongs_to :user
+  has_many :investors,
+           primary_key: :entity_id,
+           foreign_key: :investor_entity_id,
+           class_name: "Investor"
+
   belongs_to :import_upload, optional: true
   belongs_to :created_by, class_name: "User", optional: true
 
