@@ -177,7 +177,7 @@ class ApplicationPolicy
 
   def permissioned_investor_advisor?(metadata = "none", owner: nil, as_entity_id: nil)
     # Is the user an investor
-    if user.has_cached_role?(:investor_advisor) && !belongs_to_entity?(user, record)
+    if user.has_cached_role?(:investor_advisor) # && !belongs_to_entity?(user, record)
 
       # Get the model to wich the access_rights are attached, for the policy record
       # Example for an offer its the associated secondary_sale,
