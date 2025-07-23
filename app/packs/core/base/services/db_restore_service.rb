@@ -26,31 +26,55 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   POLICY_NAME = "DbCheckInstancePolicy".freeze
   PROFILE_NAME = "DbCheckInstanceProfile".freeze
 
+  # Entry point for the service. Creates a new instance of the service and runs the restore process.
   def self.run!(instance_name: INSTANCE_NAME)
     new.run!(instance_name: instance_name)
   end
 
+  # Main method to orchestrate the DB restore process.
+  # 1. Ensures the backup script is present locally.
+  # 2. Finds or launches an EC2 instance for the restore process.
+  # 3. Retrieves the instance's IP address and ensures it's reachable.
+  # 4. Cleans up remote services on the instance to prepare for the restore.
+  # 5. Uploads the backup script to the instance.
+  # 6. Executes the backup script remotely.
+  # 7. Verifies the timestamp of the restored data to ensure it's recent.
+  # 8. Cleans up temporary files and stops the instance.
   def run!(instance_name: INSTANCE_NAME)
     total_start_time = Time.zone.now
     Rails.logger.debug { "[DbRestoreService] Starting DB restore process at #{total_start_time}" }
 
+    # Ensure the backup script is present locally.
     ensure_script_present!
+
+    # Find or launch the EC2 instance for the restore process.
     instance = find_or_launch_instance(instance_name)
 
+    # Retrieve the instance's IP address.
     ip = get_instance_ip(instance)
     raise "Instance has no reachable IP" unless ip
 
+    # Clean up remote services to prepare for the restore.
     cleanup_remote_services(ip)
+
+    # Upload the backup script to the instance.
     upload_script(ip)
+
+    # Execute the backup script remotely.
     script_start_time = Time.zone.now
     run_remote_script(ip)
     script_duration = Time.zone.now - script_start_time
 
     Rails.logger.debug { "[DbRestoreService] Restore completed for #{ip}" }
 
-    verify_timestamp # (ip)
+    # Verify the timestamp of the restored data.
+    verify_timestamp
+
+    # Clean up temporary files and stop the instance.
     cleanup(ip)
     stop_instance(instance)
+
+    # Log the total duration of the process.
     total_duration = Time.zone.now - total_start_time
     Rails.logger.debug { "[DbRestoreService] Script run duration: #{script_duration.round(2)} seconds" }
     Rails.logger.debug { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
@@ -58,6 +82,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
   private
 
+  # Ensures the backup script is present locally. If not, it generates the script using a Rake task.
   def ensure_script_present!
     if File.exist?(LOCAL_SCRIPT_PATH)
       Rails.logger.debug { "✓ Backup script already exists at #{LOCAL_SCRIPT_PATH}, skipping generation" }
@@ -67,6 +92,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Generates the backup script dynamically using a Rake task.
   def generate_script!
     Rails.logger.debug "→ Generating dynamic backup script"
     Rake::Task.clear
@@ -75,6 +101,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     raise "Backup script not generated" unless File.exist?(LOCAL_SCRIPT_PATH)
   end
 
+  # Finds an existing EC2 instance by name or launches a new one if none exists.
   def find_or_launch_instance(instance_name)
     instance = find_instance(instance_name)
     if instance
@@ -89,6 +116,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     instance
   end
 
+  # Launches a new EC2 instance with the specified parameters.
   def launch_new_instance(instance_name) # rubocop:disable Metrics/MethodLength
     Rails.logger.debug { "→ Launching new instance with name #{instance_name}..." }
 
@@ -98,7 +126,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     key_name = ENV.fetch('KEYNAME')
     key_name = "altx.dev" if key_name == "altxdev"
     subnet_id = ENV.fetch('PRIVATE_SUBNET_ID')
-    #  fetch db instance security group and assign it
+
+    # Fetch security group IDs from an existing DB instance.
     Rails.logger.debug "→ Fetching security group from existing DB instance..."
     og_db_instance = find_instance(AMI_NAME)
     db_security_group_ids = if og_db_instance
@@ -108,7 +137,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
                               []
                             end
 
-    # Base launch parameters
+    # Base launch parameters for the EC2 instance.
     launch_params = {
       image_id: ami_id,
       instance_type: og_db_instance&.instance_type || 't3.medium',
@@ -135,10 +164,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
       ]
     }
 
-    # Conditionally add security group IDs if present
+    # Add security group IDs if available.
     launch_params[:security_group_ids] = db_security_group_ids if db_security_group_ids.present?
 
-    # Launch instance
+    # Launch the EC2 instance.
     launch_response = ec2.run_instances(launch_params)
 
     new_instance = launch_response.instances.first
@@ -146,6 +175,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     new_instance
   end
 
+  # Finds the latest AMI ID matching the specified name.
   def find_latest_ami_id(ami_name)
     response = ec2.describe_images(
       filters: [
@@ -226,6 +256,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     inst&.public_ip_address || inst&.private_ip_address
   end
 
+  # Uploads the backup script to the EC2 instance.
   def upload_script(ip)
     Rails.logger.debug { "→ Uploading script to #{ip}:#{REMOTE_SCRIPT_PATH}" }
     tmp_path = "/home/ubuntu/tmp/db_backup.sh"
@@ -245,6 +276,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Executes the backup script on the EC2 instance.
   def run_remote_script(ip)
     Rails.logger.debug { "→ Running script on #{ip} (this may take a few minutes...)" }
     sanitized_ip = ip.tr('.', '_')
@@ -285,6 +317,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Verifies the timestamp of the restored data to ensure it's recent.
   def verify_timestamp
     Rails.logger.debug "→ Verifying timestamp from support user"
 
@@ -297,10 +330,12 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     validate_timestamp_freshness(ts_time)
   end
 
+  # Fetches the timestamp from the database.
   def fetch_timestamp
     ReplicationHealthJob.new.get_timestamp
   end
 
+  # Validates that the timestamp is present.
   def validate_timestamp_presence(timestamp)
     if timestamp.blank?
       Rails.logger.debug "✗ Failed: Empty timestamp"
@@ -310,6 +345,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     true
   end
 
+  # Parses the timestamp string into a Time object.
   def parse_timestamp(timestamp)
     Time.zone.parse(timestamp)
   rescue ArgumentError
@@ -318,6 +354,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     nil
   end
 
+  # Validates that the timestamp is within the allowed threshold.
   def validate_timestamp_freshness(ts_time)
     now = Time.zone.now
     diff = now - ts_time
@@ -335,6 +372,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Cleanup Services on the remote instance to free up memory for the restore process.
+  # This includes stopping services like Elasticsearch, Redis, Docker, and clearing cron jobs.
+  # It also drops the MySQL database to ensure a clean state for the restore.
+  # This method is idempotent and can be called multiple times without adverse effects.
   def cleanup_remote_services(ip)
     Rails.logger.debug { "→ Cleaning up remote services on #{ip}" }
 
@@ -356,12 +397,14 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     ExceptionNotifier.notify_exception(e, data: { ip: ip, action: 'cleanup_remote_services' })
   end
 
+  # Stops and disables a specified service on the remote instance.
   def stop_and_disable_service(ssh, service)
     Rails.logger.debug { "  → Stopping and disabling #{service}" }
     ssh.exec!("sudo systemctl stop #{service} 2>/dev/null")
     ssh.exec!("sudo systemctl disable #{service} 2>/dev/null")
   end
 
+  # Stops and removes all Docker containers on the remote instance.
   def stop_and_remove_docker_containers(ssh)
     Rails.logger.debug "  → Stopping and removing all Docker containers"
     container_ids = ssh.exec!("sudo docker ps -aq").to_s.strip
@@ -378,6 +421,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     ssh.exec!("sudo docker system prune -a --volumes -f || true")
   end
 
+  # Kills all Elasticsearch processes on the remote instance.
   def kill_elasticsearch_processes(ssh)
     Rails.logger.debug "  → Killing Elasticsearch processes"
     pids = ssh.exec!("ps aux | grep '[e]lasticsearch' | awk '{print $2}'").to_s.split("\n")
@@ -389,6 +433,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Clears all user-level and system-level cron jobs on the remote instance.
+  # This includes removing user-specific crontabs and system-wide cron directories.
   def clear_cron_jobs(ssh)
     Rails.logger.debug "  → Removing user-level cron jobs"
     ssh.exec!("crontab -r || true")
@@ -398,6 +444,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     ssh.exec!("sudo rm -f /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.weekly/* /etc/cron.monthly/* 2>/dev/null || true")
   end
 
+  # Drops the MySQL database used for the restore process.
   def drop_mysql_database(ssh)
     database_name = "IRM_#{Rails.env}"
     Rails.logger.debug { "  → Dropping MySQL database #{database_name} " }
@@ -408,6 +455,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     ExceptionNotifier.notify_exception(e, data: { action: 'drop_mysql_database', database_name: })
   end
 
+  # Cleans up temporary files on the remote instance after the restore process.
   def cleanup(ip)
     Rails.logger.debug { "→ Cleaning up /tmp/xb* on #{ip}" }
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
@@ -419,6 +467,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     ExceptionNotifier.notify_exception(StandardError.new("Cleanup failed on #{ip}: #{e.message}"))
   end
 
+  # Initializes the IAM client for AWS operations.
+  # This client is used to manage IAM roles, policies, and instance profiles.
   def iam
     @iam ||= Aws::IAM::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
@@ -429,6 +479,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     )
   end
 
+  # Ensures the IAM role and policy are set up for the EC2 instance.
   def ensure_role_and_policy!
     policy_arn = find_or_create_policy
     find_or_create_role
@@ -436,6 +487,11 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     find_or_create_profile
   end
 
+  # It checks if the instance profile exists, creates it if not, and attaches the role if it's not already attached.
+  # This is necessary for the EC2 instance to assume the role and access AWS resources.
+  # @return [nil] if the profile already exists or the role is attached, otherwise
+  # returns the result of attaching the role to the instance profile.
+  # @raise [Aws::IAM::Errors::NoSuchEntity] if the instance profile does not exist or if the role is not found.
   def find_or_create_profile
     # check if the profile exists
     begin
@@ -466,6 +522,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Finds or creates an IAM policy with the specified name and policy document.
   def find_or_create_policy
     account_id = iam.get_user.user.arn.split(':')[4]
     policy_arn = "arn:aws:iam::#{account_id}:policy/#{POLICY_NAME}"
@@ -482,6 +539,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     resp.policy.arn
   end
 
+  # Finds or creates an IAM role with the specified name and assume role policy document.
   def find_or_create_role
     iam.get_role(role_name: ROLE_NAME)
     Rails.logger.debug "✓ Role exists"
@@ -493,6 +551,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     )
   end
 
+  # Attaches the specified policy to the IAM role.
+  # It checks if the policy is already attached to avoid duplication.
   def attach_policy(policy_arn)
     attached = iam.list_attached_role_policies(role_name: ROLE_NAME)
                   .attached_policies.any? { |p| p.policy_arn == policy_arn }
@@ -503,6 +563,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     iam.attach_role_policy(role_name: ROLE_NAME, policy_arn: policy_arn)
   end
 
+  # Builds the policy document for the IAM role.
   def build_policy_document
     {
       Version: "2012-10-17",
@@ -531,6 +592,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     }
   end
 
+  # Builds the assume role policy document for the IAM role.
   def build_assume_policy
     {
       Version: "2012-10-17",
