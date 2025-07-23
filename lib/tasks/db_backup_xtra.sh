@@ -157,9 +157,15 @@ get_all_incrs_since_full() {
 }
 
 get_latest_full() {
-  aws s3api list-objects-v2 --bucket "$BUCKET" --delimiter '/' \
-    --query "CommonPrefixes[?ends_with(Prefix,'-full/')].Prefix | sort(@) | [-1]" \
-    --output text | sed 's!/$!!'
+  aws s3api list-objects-v2 \
+    --bucket "$BUCKET" \
+    --delimiter '/' \
+    --query "CommonPrefixes[?ends_with(Prefix, '-full/')].Prefix" \
+    --output text |
+    tr '\t' '\n' |
+    sed 's!/$!!' |
+    sort -V |
+    tail -n1
 }
 
 restore_latest_chain() {
