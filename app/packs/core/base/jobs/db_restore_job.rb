@@ -1,6 +1,7 @@
 # app/jobs/db_restore_job.rb
 class DbRestoreJob < ApplicationJob
-  queue_as :default
+  queue_as :db_restore
+  sidekiq_options retry: false
 
   def perform(instance_name: 'DbCheckInstance')
     DbRestoreService.run!(instance_name: instance_name)

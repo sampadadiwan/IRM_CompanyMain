@@ -11,17 +11,29 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   REGION = ENV.fetch("AWS_REGION")
   INSTANCE_NAME = 'DbCheckInstance'.freeze
   LOCAL_SCRIPT_PATH = Rails.root.join("tmp", "db_backup_xtra_#{Rails.env}.sh")
+  S3_BUCKET_NAME = if Rails.env.production?
+                     "arn:aws:s3:::docs.caphive.com.production-backup-xtra/*"
+                   else
+                     "arn:aws:s3:::docs.altx.com.staging-backup-xtra/*"
+                   end
+
   REMOTE_SCRIPT_PATH = '/home/ubuntu/db_backup.sh'.freeze
   KEY_PATH = "~/.ssh/#{ENV.fetch('KEYNAME')}.pem".freeze
   SSH_USER = 'ubuntu'.freeze
   VERIFICATION_THRESHOLD_SECONDS = 3600
   AMI_NAME = ENV.fetch("DB_RESTORE_AMI_NAME", "DB-Redis-ES").freeze
+  ROLE_NAME = "DbCheckInstanceRole".freeze
+  POLICY_NAME = "DbCheckInstancePolicy".freeze
+  PROFILE_NAME = "DbCheckInstanceProfile".freeze
 
   def self.run!(instance_name: INSTANCE_NAME)
     new.run!(instance_name: instance_name)
   end
 
   def run!(instance_name: INSTANCE_NAME)
+    total_start_time = Time.zone.now
+    Rails.logger.debug { "[DbRestoreService] Starting DB restore process at #{total_start_time}" }
+
     ensure_script_present!
     instance = find_or_launch_instance(instance_name)
 
@@ -30,13 +42,18 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     cleanup_remote_services(ip)
     upload_script(ip)
+    script_start_time = Time.zone.now
     run_remote_script(ip)
+    script_duration = Time.zone.now - script_start_time
 
     Rails.logger.debug { "[DbRestoreService] Restore completed for #{ip}" }
 
     verify_timestamp # (ip)
     cleanup(ip)
     stop_instance(instance)
+    total_duration = Time.zone.now - total_start_time
+    Rails.logger.debug { "[DbRestoreService] Script run duration: #{script_duration.round(2)} seconds" }
+    Rails.logger.debug { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
   end
 
   private
@@ -72,7 +89,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     instance
   end
 
-  def launch_new_instance(instance_name)
+  def launch_new_instance(instance_name) # rubocop:disable Metrics/MethodLength
     Rails.logger.debug { "→ Launching new instance with name #{instance_name}..." }
 
     ami_id = find_latest_ami_id(AMI_NAME)
@@ -81,10 +98,20 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     key_name = ENV.fetch('KEYNAME')
     key_name = "altx.dev" if key_name == "altxdev"
     subnet_id = ENV.fetch('PRIVATE_SUBNET_ID')
+    #  fetch db instance security group and assign it
+    Rails.logger.debug "→ Fetching security group from existing DB instance..."
+    og_db_instance = find_instance(AMI_NAME)
+    db_security_group_ids = if og_db_instance
+                              og_db_instance.security_groups.pluck(:group_id)
+                            else
+                              Rails.logger.error "❌ No existing DB instance found to fetch security group"
+                              []
+                            end
 
-    launch_response = ec2.run_instances(
+    # Base launch parameters
+    launch_params = {
       image_id: ami_id,
-      instance_type: 't3.medium',
+      instance_type: og_db_instance&.instance_type || 't3.medium',
       min_count: 1,
       max_count: 1,
       key_name: key_name,
@@ -99,14 +126,20 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
           }
         }
       ],
-      iam_instance_profile: { name: 'DbCheckInstanceProfile' },
+      iam_instance_profile: { name: PROFILE_NAME },
       tag_specifications: [
         {
           resource_type: 'instance',
           tags: [{ key: 'Name', value: instance_name }]
         }
       ]
-    )
+    }
+
+    # Conditionally add security group IDs if present
+    launch_params[:security_group_ids] = db_security_group_ids if db_security_group_ids.present?
+
+    # Launch instance
+    launch_response = ec2.run_instances(launch_params)
 
     new_instance = launch_response.instances.first
     Rails.logger.debug { "✓ Launched new instance: #{new_instance.instance_id}" }
@@ -177,10 +210,11 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def ensure_running(instance)
-    return Rails.logger.debug "✓ Instance is running" if instance.state.name == 'running'
+    if instance.state.name != 'running'
+      Rails.logger.debug { "→ Starting instance #{instance.instance_id}..." }
+      ec2.start_instances(instance_ids: [instance.instance_id])
+    end
 
-    Rails.logger.debug { "→ Starting instance #{instance.instance_id}..." }
-    ec2.start_instances(instance_ids: [instance.instance_id])
     Rails.logger.debug "→ Waiting for instance to pass status checks..."
     ec2.wait_until(:instance_status_ok, instance_ids: [instance.instance_id])
     Rails.logger.debug "✓ Instance is running"
@@ -213,10 +247,41 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
   def run_remote_script(ip)
     Rails.logger.debug { "→ Running script on #{ip} (this may take a few minutes...)" }
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
-      output = ssh.exec!("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary > /tmp/db_restore_output.txt 2>&1")
-      Rails.logger.info "[DbRestoreService] Output:\n#{output}"
-      Rails.logger.debug output
+    sanitized_ip = ip.tr('.', '_')
+    timestamp = Time.zone.now.strftime('%Y%m%d_%H%M%S')
+    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 1800) do |ssh|
+      File.open("log/db_restore_#{sanitized_ip}_#{timestamp}.log", "wb") do |f|
+        ssh.open_channel do |channel|
+          channel.exec("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary") do |_ch, success|
+            unless success
+              msg = "❌ Failed to execute command"
+              f.write msg
+              Rails.logger.error msg
+              ExceptionNotifier.notify_exception(StandardError.new(msg), data: { action: 'execute_restore_primary' })
+              next
+            end
+
+            channel.on_data do |_ch, data|
+              f.write data
+              Rails.logger.info("[DbRestoreService] STDOUT: #{data}")
+            end
+
+            channel.on_extended_data do |_ch, _type, data|
+              f.write data
+              Rails.logger.error("[DbRestoreService] STDERR: #{data}")
+            end
+
+            channel.on_request("exit-status") do |_ch, data|
+              exit_code = data.read_long
+              msg = "\n→ Script exited with status #{exit_code}"
+              f.write msg
+              Rails.logger.info msg
+            end
+          end
+        end
+
+        ssh.loop
+      end
     end
   end
 
@@ -281,6 +346,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
       stop_and_disable_service(ssh, "docker.socket")
       stop_and_disable_service(ssh, "docker")
       clear_cron_jobs(ssh)
+      Rails.logger.debug { "  → Dropping MySQL database on #{ip}" }
+      drop_mysql_database(ssh)
     end
 
     Rails.logger.debug { "✓ Remote services cleanup completed on #{ip}" }
@@ -301,9 +368,14 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     if container_ids.empty?
       Rails.logger.debug "    → No containers running"
     else
-      ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker stop")
-      ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker rm")
+      ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker stop  || true")
+      ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker rm -f || true")
     end
+    # Prune Docker system: removes unused images, containers, networks, and volumes
+    # This will remove all unused images, containers, networks, and volumes
+    # It will not remove running containers, so we ensure all are stopped first
+    Rails.logger.debug "  → Pruning Docker system"
+    ssh.exec!("sudo docker system prune -a --volumes -f || true")
   end
 
   def kill_elasticsearch_processes(ssh)
@@ -324,6 +396,16 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     Rails.logger.debug "  → Removing system-level cron jobs"
     ssh.exec!("sudo rm -f /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.weekly/* /etc/cron.monthly/* 2>/dev/null || true")
+  end
+
+  def drop_mysql_database(ssh)
+    database_name = "IRM_#{Rails.env}"
+    Rails.logger.debug { "  → Dropping MySQL database #{database_name} " }
+    ssh.exec!("mysql -u #{Rails.application.credentials['DB_USER']} -p#{Rails.application.credentials['DB_PASS']} -e 'DROP DATABASE IF EXISTS #{database_name};' 2>/dev/null || true")
+    Rails.logger.debug "    → Database dropped successfully"
+  rescue StandardError => e
+    Rails.logger.debug { "✗ Failed to drop database: #{e.message}" }
+    ExceptionNotifier.notify_exception(e, data: { action: 'drop_mysql_database', database_name: })
   end
 
   def cleanup(ip)
@@ -351,54 +433,74 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     policy_arn = find_or_create_policy
     find_or_create_role
     attach_policy(policy_arn)
+    find_or_create_profile
+  end
+
+  def find_or_create_profile
+    # check if the profile exists
+    begin
+      iam.get_instance_profile(instance_profile_name: PROFILE_NAME)
+      Rails.logger.debug "✓ Instance profile exists"
+    rescue Aws::IAM::Errors::NoSuchEntity
+      Rails.logger.debug { "→ Creating instance profile #{PROFILE_NAME}" }
+      iam.create_instance_profile(instance_profile_name: PROFILE_NAME)
+    end
+
+    # check if role is already attached
+    begin
+      iam.get_instance_profile(instance_profile_name: PROFILE_NAME)
+      roles = iam.list_instance_profiles_for_role(role_name: ROLE_NAME).instance_profiles
+      if roles.any? { |profile| profile.instance_profile_name == PROFILE_NAME }
+        Rails.logger.debug "✓ Role already attached to instance profile"
+        nil
+      else
+        Rails.logger.debug { "→ Attaching role #{ROLE_NAME} to instance profile #{PROFILE_NAME}" }
+        # Now attach the role to the instance profile
+        iam.add_role_to_instance_profile(
+          instance_profile_name: PROFILE_NAME,
+          role_name: ROLE_NAME
+        )
+      end
+    rescue Aws::IAM::Errors::NoSuchEntity
+      Rails.logger.debug { "→ Instance profile #{PROFILE_NAME} does not exist, creation failed" }
+    end
   end
 
   def find_or_create_policy
-    policy_name = 'DbCheckInstancePolicy'
     account_id = iam.get_user.user.arn.split(':')[4]
-    policy_arn = "arn:aws:iam::#{account_id}:policy/#{policy_name}"
+    policy_arn = "arn:aws:iam::#{account_id}:policy/#{POLICY_NAME}"
 
     iam.get_policy(policy_arn: policy_arn)
     Rails.logger.debug "✓ Policy exists"
     policy_arn
   rescue Aws::IAM::Errors::NoSuchEntity
-    Rails.logger.debug { "→ Creating policy #{policy_name}" }
+    Rails.logger.debug { "→ Creating policy #{POLICY_NAME}" }
     resp = iam.create_policy(
-      policy_name: policy_name,
+      policy_name: POLICY_NAME,
       policy_document: JSON.pretty_generate(build_policy_document)
     )
     resp.policy.arn
   end
 
   def find_or_create_role
-    role_name = 'DbCheckInstanceRole'
-    iam.get_role(role_name: role_name)
+    iam.get_role(role_name: ROLE_NAME)
     Rails.logger.debug "✓ Role exists"
   rescue Aws::IAM::Errors::NoSuchEntity
-    Rails.logger.debug { "→ Creating role #{role_name}" }
+    Rails.logger.debug { "→ Creating role #{ROLE_NAME}" }
     iam.create_role(
-      role_name: role_name,
+      role_name: ROLE_NAME,
       assume_role_policy_document: JSON.pretty_generate(build_assume_policy)
-    )
-    profile_name = "DbCheckInstanceProfile"
-    # create the instance profile
-    iam.create_instance_profile(instance_profile_name: profile_name)
-
-    iam.add_role_to_instance_profile(
-      instance_profile_name: profile_name,
-      role_name: role_name
     )
   end
 
   def attach_policy(policy_arn)
-    role_name = 'DbCheckInstanceRole'
-    attached = iam.list_attached_role_policies(role_name: role_name)
+    attached = iam.list_attached_role_policies(role_name: ROLE_NAME)
                   .attached_policies.any? { |p| p.policy_arn == policy_arn }
 
     return Rails.logger.debug "✓ Policy already attached" if attached
 
     Rails.logger.debug "→ Attaching policy"
-    iam.attach_role_policy(role_name: role_name, policy_arn: policy_arn)
+    iam.attach_role_policy(role_name: ROLE_NAME, policy_arn: policy_arn)
   end
 
   def build_policy_document
@@ -418,7 +520,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
           Sid: "VisualEditor1",
           Effect: "Allow",
           Action: "s3:GetObject",
-          Resource: "arn:aws:s3:::docs.altx.com.#{Rails.env}-backup-xtra/*"
+          Resource: S3_BUCKET_NAME
         },
         {
           Effect: "Allow",

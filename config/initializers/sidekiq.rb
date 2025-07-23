@@ -11,6 +11,12 @@ Sidekiq.configure_server do |config|
     cap.queues = %w[serial doc_gen ai_checks]
   end
 
+  # New capsule for db_restore jobs
+  config.capsule("db_restore") do |cap|
+    cap.concurrency = 1 # run only one restore job at a time
+    cap.queues = %w[db_restore]
+  end
+
   unless Rails.env.local?
     # Sidekiq::Cron::Job.create(name: 'OpenWebSync', cron: 'every 5 minutes', class: 'OwSyncJob') if Rails.application.credentials["OPEN_WEB_UI_ACCESS_TOKEN"].present?
 
