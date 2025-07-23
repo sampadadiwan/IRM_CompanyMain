@@ -137,17 +137,18 @@ class User < ApplicationRecord
       self.advisor_entity_id ||= entity_id
       self.advisor_entity_roles ||= "employee,investor_advisor"
 
-      add_role :employee
-      self.curr_role = :employee
-      # Add this role to the user to ensure it is recognized as an advisor
-      add_role :investor_advisor
-
       # Ensure that the advisor_entity_roles has the investor_advisor
       advisor_entity_roles_list = advisor_entity_roles.split(",").map(&:strip)
       unless advisor_entity_roles_list.include?("investor_advisor")
         advisor_entity_roles_list << "investor_advisor"
         self.advisor_entity_roles = advisor_entity_roles_list.join(",")
       end
+
+      # Set the curr_role to the first role in the advisor_entity_roles
+      self.curr_role = advisor_entity_roles_list[0]
+      # Add this role to the user to ensure it is recognized as an advisor
+      add_role :investor_advisor
+
     elsif entity.is_fund?
       Rails.logger.debug "Setting up fund user"
       add_role :employee

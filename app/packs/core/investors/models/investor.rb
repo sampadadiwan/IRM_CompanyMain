@@ -286,6 +286,7 @@ class Investor < ApplicationRecord
       approved_users.select do |user|
         if user.has_cached_role?(:investor_advisor)
           # This is done because investor_advisors can switch entities and may be logged in as a different entity
+          user.curr_role = "investor"
           Pundit.policy(user, model).permissioned_investor_advisor?(as_entity_id: investor_entity_id)
         else
           # For normal users, we check if they have show access to the model
