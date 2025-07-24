@@ -42,58 +42,58 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   # 8. Cleans up temporary files and stops the instance.
   def run!(instance_name: INSTANCE_NAME)
     total_start_time = Time.zone.now
-    Rails.logger.debug { "[DbRestoreService] Starting DB restore process at #{total_start_time}" }
+    Rails.logger.info { "[DbRestoreService] Starting DB restore process at #{total_start_time}" }
 
     # Ensure the backup script is present locally.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Ensure script present" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Ensure script present" }
     ensure_script_present!
-    Rails.logger.debug { "[DbRestoreService] End step: Ensure script present" }
+    Rails.logger.info { "[DbRestoreService] End step: Ensure script present" }
 
     # Find or launch the EC2 instance for the restore process.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Find or launch instance" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Find or launch instance" }
     instance = find_or_launch_instance(instance_name)
-    Rails.logger.debug { "[DbRestoreService] End step: Find or launch instance" }
+    Rails.logger.info { "[DbRestoreService] End step: Find or launch instance" }
 
     # Retrieve the instance's IP address.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Get instance IP" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Get instance IP" }
     ip = get_instance_ip(instance)
     raise "Instance has no reachable IP" unless ip
-    Rails.logger.debug { "[DbRestoreService] End step: Get instance IP" }
+    Rails.logger.info { "[DbRestoreService] End step: Get instance IP" }
 
     # Clean up remote services to prepare for the restore.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Cleanup remote services" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Cleanup remote services" }
     cleanup_remote_services(ip)
-    Rails.logger.debug { "[DbRestoreService] End step: Cleanup remote services" }
+    Rails.logger.info { "[DbRestoreService] End step: Cleanup remote services" }
 
     # Upload the backup script to the instance.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Upload script" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Upload script" }
     upload_script(ip)
-    Rails.logger.debug { "[DbRestoreService] End step: Upload script" }
+    Rails.logger.info { "[DbRestoreService] End step: Upload script" }
 
     # Execute the backup script remotely.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Run remote script" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Run remote script" }
     script_start_time = Time.zone.now
     run_remote_script(ip)
     script_duration = Time.zone.now - script_start_time
-    Rails.logger.debug { "[DbRestoreService] End step: Run remote script" }
+    Rails.logger.info { "[DbRestoreService] End step: Run remote script" }
 
-    Rails.logger.debug { "[DbRestoreService] Restore completed for #{ip}" }
+    Rails.logger.info { "[DbRestoreService] Restore completed for #{ip}" }
 
     # Verify the timestamp of the restored data.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Verify timestamp" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Verify timestamp" }
     verify_timestamp
-    Rails.logger.debug { "[DbRestoreService] End step: Verify timestamp" }
+    Rails.logger.info { "[DbRestoreService] End step: Verify timestamp" }
 
     # Clean up temporary files and stop the instance.
-    Rails.logger.debug { "[DbRestoreService] Starting step: Cleanup and stop instance" }
+    Rails.logger.info { "[DbRestoreService] Starting step: Cleanup and stop instance" }
     cleanup(ip)
     stop_instance(instance)
-    Rails.logger.debug { "[DbRestoreService] End step: Cleanup and stop instance" }
+    Rails.logger.info { "[DbRestoreService] End step: Cleanup and stop instance" }
 
     # Log the total duration of the process.
     total_duration = Time.zone.now - total_start_time
-    Rails.logger.debug { "[DbRestoreService] Script run duration: #{script_duration.round(2)} seconds" }
-    Rails.logger.debug { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
+    Rails.logger.info { "[DbRestoreService] Script run duration: #{script_duration.round(2)} seconds" }
+    Rails.logger.info { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
   end
 
   private
