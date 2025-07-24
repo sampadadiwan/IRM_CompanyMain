@@ -240,7 +240,7 @@ prepare_restore_from_keys() {
   # 5. Copy prepared backup to final restore directory
   echo "→ Copying prepared backup to final restore directory"
   local restore_to_primary="$PRIMARY_RESTORE"
-  rm -rf "$restore_to_primary" && cp -a "$STAGING_FULL" "$restore_to_primary"
+  rm -rf "$restore_to_primary" && mv "$STAGING_FULL" "$restore_to_primary"
   echo "Restore chain complete. Data is in $restore_to_primary"
 }
 
@@ -453,6 +453,7 @@ EOF
 }
 
 main() {
+  cleanup # Initialize: Clean up any previous temporary files
   case "${1:-}" in
     full)
       full_backup

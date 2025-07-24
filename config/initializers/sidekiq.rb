@@ -35,7 +35,7 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 31 3,12 *', class: 'FundSnapshotJob')
     Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
 
-    # Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 2 hours', class: 'DbRestoreJob')
+    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
 
     unless Rails.env.local?
       # Check the health of the replication

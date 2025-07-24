@@ -8,6 +8,6 @@ class DbRestoreJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.error("[DbRestoreJob] Failed: #{e.message}")
     # optionally notify via email, Slack, Sentry, etc.
-    ExceptionNotifier.notify_exception(e, data: { context: 'DbRestoreJob', instance_name: instance_name })
+    ExceptionNotifier.notify_exception(e, data: { env: Rails.env, context: 'DbRestoreJob', instance_name: instance_name })
   end
 end
