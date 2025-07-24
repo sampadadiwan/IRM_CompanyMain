@@ -58,6 +58,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     Rails.logger.info { "[DbRestoreService] Starting step: Get instance IP" }
     ip = get_instance_ip(instance)
     raise "Instance has no reachable IP" unless ip
+
     Rails.logger.info { "[DbRestoreService] End step: Get instance IP" }
 
     # Clean up remote services to prepare for the restore.
@@ -96,11 +97,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     Rails.logger.info { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
 
     if result
-      EntityMailer.with(subject: "#{Rails.env}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{total_duration/60} minutes" }).notify_info.deliver_now
+      EntityMailer.with(subject: "#{Rails.env}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{(total_duration / 60).round(1)} minutes" }).notify_info.deliver_now
     else
-      ExceptionNotifier.notify_exception(StandardError.new("#{Rails.env}: DB Check FAILED: #{msg}"))      
+      ExceptionNotifier.notify_exception(StandardError.new("#{Rails.env}: DB Check FAILED: #{msg}"))
     end
-      
   end
 
   private
@@ -315,18 +315,16 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
               ExceptionNotifier.notify_exception(StandardError.new(msg), data: { env: Rails.env, action: 'execute_restore_primary' })
               next
             end
-            
 
             channel.on_data do |_ch, data|
               f.write data
               Rails.logger.info("[DbRestoreService] STDOUT: #{data}")
             end
-            
+
             channel.on_extended_data do |_ch, _type, data|
               f.write data
               Rails.logger.error("[DbRestoreService] STDERR: #{data}")
             end
-
 
             channel.on_request("exit-status") do |_ch, data|
               exit_code = data.read_long
@@ -436,7 +434,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     else
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker stop  || true")
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker rm -f || true")
-      #sudo docker image prune -a
+      # sudo docker image prune -a
       ssh.exec!("sudo docker image prune -a -f || true")
     end
     # Prune Docker system: removes unused images, containers, networks, and volumes

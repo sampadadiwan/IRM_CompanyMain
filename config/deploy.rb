@@ -114,7 +114,6 @@ namespace :deploy do
   end
 
   before "deploy:updated", :ensure_rails_credentials
-  after  "deploy:updated", :cleanup
   before 'deploy:finished', 'sidekiq:restart'
   after  'deploy:finished', :ensure_permissions
 end
