@@ -146,7 +146,7 @@ class Document < ApplicationRecord
   end
 
   def resend_for_esign?
-    sent_for_esign && e_signatures.all? { |esign| esign.email.present? } && approved && RESEND_FOR_ESIGN_STATUSES.include?(esign_status&.downcase) && e_signatures.count.positive?
+    sent_for_esign && e_signatures.all? { |esign| esign.email.present? } && approved && RESEND_FOR_ESIGN_STATUSES.include?(esign_status&.downcase) && e_signatures.any?
   end
 
   def setup_folder
@@ -255,7 +255,7 @@ class Document < ApplicationRecord
   end
 
   def to_be_esigned?
-    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase) && e_signatures.count.positive?
+    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status&.downcase) && e_signatures.any?
   end
 
   def to_be_approved?

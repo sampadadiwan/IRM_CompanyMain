@@ -114,7 +114,7 @@ module UpdateInvestor
 
   def sole_investor?
     exclude_category = %w[Trust Founder Employee].include?(category)
-    Investor.where(investor_entity_id:).count == 1 && !exclude_category
+    Investor.where(investor_entity_id:).one? && !exclude_category
   end
 
   def change_investor_entity

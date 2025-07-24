@@ -32,7 +32,7 @@ class OfferRmPolicy < SaleBasePolicy
 
   def accept_spa?
     permissioned_rm? &&
-      (record.verified && !record.final_agreement) && rm_mapping.permissions.update?
+      record.verified && !record.final_agreement && rm_mapping.permissions.update?
   end
 
   def new?

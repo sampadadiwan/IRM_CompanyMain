@@ -137,8 +137,8 @@ class Offer < ApplicationRecord
 
     # We also add the secondary_sale templates headers and footers
     secondary_sale.documents.where(owner_tag: "Offer Template").find_each do |doc|
-      doc_list << ("#{doc.name} Header")
-      doc_list << ("#{doc.name} Footer")
+      doc_list << "#{doc.name} Header"
+      doc_list << "#{doc.name} Footer"
     end
 
     doc_list << "Other"

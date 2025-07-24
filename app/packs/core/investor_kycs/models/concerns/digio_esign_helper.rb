@@ -251,7 +251,7 @@ class DigioEsignHelper
 
   def check_and_update_document_status(document)
     unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
-    signature_completed(document) if unsigned_esigns.count.zero? && !document.esign_completed?
+    signature_completed(document) if unsigned_esigns.none? && !document.esign_completed?
   end
 
   def signature_completed(doc)

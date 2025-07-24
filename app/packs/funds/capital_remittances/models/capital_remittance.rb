@@ -214,7 +214,7 @@ class CapitalRemittance < ApplicationRecord
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def touch_investor
-    investor.investor_entity.touch if investor&.investor_entity
+    investor.investor_entity&.touch
     entity.touch
   end
   # rubocop:enable Rails/SkipsModelValidations

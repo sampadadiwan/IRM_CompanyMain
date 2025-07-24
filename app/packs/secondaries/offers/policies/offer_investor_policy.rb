@@ -32,7 +32,7 @@ class OfferInvestorPolicy < SaleBasePolicy
 
   def accept_spa?
     ((record.user_id == user.id) || (record.investor && record.investor.investor_entity_id == user.entity_id)) &&
-      (record.verified && !record.final_agreement)
+      record.verified && !record.final_agreement
   end
 
   def new?

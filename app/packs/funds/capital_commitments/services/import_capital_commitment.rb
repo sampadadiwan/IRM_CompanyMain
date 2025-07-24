@@ -117,7 +117,7 @@ class ImportCapitalCommitment < ImportUtil
     last_cc&.compute_percentage
     # Create remittances if required
     import_upload.imported_data.each do |capital_commitment|
-      CapitalCommitmentRemittanceJob.perform_now(capital_commitment.id) if capital_commitment.fund.capital_calls.count.positive?
+      CapitalCommitmentRemittanceJob.perform_now(capital_commitment.id) if capital_commitment.fund.capital_calls.any?
       # Grant access rights to the fund
       capital_commitment.grant_access_to_fund
     end

@@ -12,8 +12,9 @@ wb.add_worksheet(name: "IndividualKyc") do |sheet|
 
     bank_verified = cc.bank_verified ? "Yes" : "No"
     pan_verified = cc.pan_verified ? "Yes" : "No"
+    verified = cc.verified ? "Yes" : "No"
 
-    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.birth_date, cc.PAN, pan_verified, cc.address, cc.corr_address, cc.kyc_type, cc.residency, cc.bank_name, cc.bank_branch, cc.bank_account_number, bank_verified, cc.bank_account_type, cc.ifsc_code, cc.verified, cc.expiry_date, cc.expired?, cc.esign_emails, cc.agreement_committed_amount.to_f, cc.committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
+    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.birth_date, cc.PAN, pan_verified, cc.address, cc.corr_address, cc.kyc_type, cc.residency, cc.bank_name, cc.bank_branch, cc.bank_account_number, bank_verified, cc.bank_account_type, cc.ifsc_code, verified, cc.expiry_date, cc.expired?, cc.esign_emails, cc.agreement_committed_amount.to_f, cc.committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
   end
 end
 
@@ -29,7 +30,8 @@ wb.add_worksheet(name: "NonIndividualKyc") do |sheet|
 
     bank_verified = cc.bank_verified ? "Yes" : "No"
     pan_verified = cc.pan_verified ? "Yes" : "No"
+    verified = cc.verified ? "Yes" : "No"
 
-    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.birth_date, cc.PAN, pan_verified, cc.address, cc.corr_address, cc.kyc_type, cc.residency, cc.bank_name, cc.bank_branch, cc.bank_account_number, bank_verified, cc.bank_account_type, cc.ifsc_code, cc.verified, cc.expiry_date, cc.expired?, cc.esign_emails, cc.agreement_committed_amount.to_f, cc.committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
+    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.birth_date, cc.PAN, pan_verified, cc.address, cc.corr_address, cc.kyc_type, cc.residency, cc.bank_name, cc.bank_branch, cc.bank_account_number, bank_verified, cc.bank_account_type, cc.ifsc_code, verified, cc.expiry_date, cc.expired?, cc.esign_emails, cc.agreement_committed_amount.to_f, cc.committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
   end
 end

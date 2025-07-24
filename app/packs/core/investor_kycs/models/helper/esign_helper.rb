@@ -35,7 +35,7 @@ class EsignHelper
 
   def check_and_update_document_status(document)
     unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
-    helper.signature_completed(document) if unsigned_esigns.count.zero? && !document.esign_completed?
+    helper.signature_completed(document) if unsigned_esigns.none? && !document.esign_completed?
   end
 
   # handles automatic callbacks

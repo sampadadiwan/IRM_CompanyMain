@@ -39,7 +39,7 @@ class KpiReportsController < ApplicationController
   def show; end
 
   def analyze
-    @prev_kpi_report = KpiReport.where(entity_id: @kpi_report.entity_id, as_of: ..@kpi_report.as_of - 1.day).order(as_of: :asc).last
+    @prev_kpi_report = KpiReport.where(entity_id: @kpi_report.entity_id, as_of: ..(@kpi_report.as_of - 1.day)).order(as_of: :asc).last
     KpiAnalystJob.perform_later(@kpi_report.id, @prev_kpi_report&.id, current_user.id)
     redirect_to kpi_report_url(@kpi_report), notice: "Analysis started."
   end

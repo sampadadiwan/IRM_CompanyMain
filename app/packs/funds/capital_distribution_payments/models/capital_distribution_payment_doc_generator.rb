@@ -77,9 +77,9 @@ class CapitalDistributionPaymentDocGenerator
 
     {
       # Distribution Payments of type All, LP and GP prior to the dist_payment_date
-      fund_as_of_prior_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: ..dist_payment_date - 1.day)),
-      fund_as_of_prior_dist_payments_lp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: lp_ids, payment_date: ..dist_payment_date - 1.day)),
-      fund_as_of_prior_dist_payments_gp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: gp_ids, payment_date: ..dist_payment_date - 1.day)),
+      fund_as_of_prior_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: ..(dist_payment_date - 1.day))),
+      fund_as_of_prior_dist_payments_lp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: lp_ids, payment_date: ..(dist_payment_date - 1.day))),
+      fund_as_of_prior_dist_payments_gp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: gp_ids, payment_date: ..(dist_payment_date - 1.day))),
 
       # Distribution Payments of type All, LP and GP as on the dist_payment_date
       fund_as_of_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments),
@@ -103,7 +103,7 @@ class CapitalDistributionPaymentDocGenerator
       total_distribution_cash: Money.new(fund_as_of.capital_distribution_payments.sum("gross_payable_cents - reinvestment_with_fees_cents"), currency),
       total_reinvestment: Money.new(fund_as_of.capital_distribution_payments.sum(:reinvestment_with_fees_cents), currency),
       total_drawdowns: Money.new(fund_as_of.capital_remittances.sum(:call_amount_cents), currency),
-      total_undrawn_commitments: Money.new((fund_as_of.capital_commitments.sum(:committed_amount_cents) - fund_as_of.capital_remittances.sum(:call_amount_cents)), currency)
+      total_undrawn_commitments: Money.new(fund_as_of.capital_commitments.sum(:committed_amount_cents) - fund_as_of.capital_remittances.sum(:call_amount_cents), currency)
     }
   end
 

@@ -123,3 +123,48 @@
       end
     end
   end
+
+
+Given('Given I upload an investor kyc file for the fund') do
+  visit(investor_kycs_path)
+  click_on("Upload/Download")
+  click_on("Upload KYC Details")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/investor_kycs.xlsx"), make_visible: true)
+  #sleep((2)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  # sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
+end
+
+Then('the investor kycs must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/investor_kycs.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    kyc = investor_kycs[idx-1]
+    puts "Checking import of #{kyc.investor.investor_name}"
+    kyc.investor.investor_name.should == user_data["Investor"].strip
+    kyc.full_name.should == user_data["Investing Entity"]&.strip
+    kyc.PAN.should == user_data["Pan"]&.strip
+    kyc.address.should == user_data["Address"].strip
+    kyc.corr_address.should == user_data["Correspondence Address"]&.strip
+    InvestorKyc.kyc_types[kyc.kyc_type].should == user_data["Kyc Type"].strip
+    kyc.residency.should == user_data["Residency"]&.strip&.downcase
+    kyc.birth_date.to_date.should == user_data["Date Of Birth"].to_date
+    kyc.bank_name.should == user_data["Bank Name"].strip
+    kyc.bank_account_number.should == user_data["Bank Account Number"].to_s.strip
+    kyc.bank_account_type.should == user_data["Account Type"].strip
+    kyc.ifsc_code.should == user_data["Ifsc Code"].strip
+    kyc.verified.should == (user_data["Verified"]&.strip&.downcase == "yes" || user_data["Verified"]&.strip&.downcase == "true")    
+  end
+end

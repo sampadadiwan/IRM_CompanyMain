@@ -28,7 +28,9 @@ Rails/RenderInline:
   Enabled: false
 Style/OpenStructUse:
   Enabled: false
-Naming/PredicateName:
+Naming/PredicatePrefix:
+  Enabled: false
+Naming/PredicateMethod:
   Enabled: false
 Style/CombinableLoops:
   Exclude:

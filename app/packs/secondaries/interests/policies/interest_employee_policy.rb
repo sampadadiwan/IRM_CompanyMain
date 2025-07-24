@@ -36,7 +36,7 @@ class InterestEmployeePolicy < SaleBasePolicy
   end
 
   def update?
-    (permissioned_employee?(:update) && record.secondary_sale.manage_interests) && !record.verified
+    permissioned_employee?(:update) && record.secondary_sale.manage_interests && !record.verified
   end
 
   def accept_spa?

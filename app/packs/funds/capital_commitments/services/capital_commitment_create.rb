@@ -9,7 +9,7 @@ class CapitalCommitmentCreate < CapitalCommitmentAction
   step :create_remittance
 
   def create_remittance(ctx, capital_commitment:, **)
-    if capital_commitment.fund.capital_calls.count.positive? && ctx[:import_upload].blank?
+    if capital_commitment.fund.capital_calls.any? && ctx[:import_upload].blank?
       # If we have pre existing calls, then we need to generate the remittances for those.
       CapitalCommitmentRemittanceJob.perform_later(capital_commitment.id)
     end

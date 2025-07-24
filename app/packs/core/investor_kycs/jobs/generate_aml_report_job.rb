@@ -88,7 +88,7 @@ class GenerateAmlReportJob < ApplicationJob
   end
 
   def schedule_or_fetch_reports(all_aml_reports, investor_kyc_id, user_id)
-    if all_aml_reports.count > 1
+    if all_aml_reports.many?
       job_method = Rails.env.test? ? :perform_now : :perform_later
       GenerateAmlReportJob.send(job_method, investor_kyc_id, user_id, all_aml_report_ids: all_aml_reports.map(&:id))
     else

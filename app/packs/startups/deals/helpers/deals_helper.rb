@@ -89,7 +89,7 @@ module DealsHelper
     case access
     when "both"
       grouped_access_rights = grouped_access_rights.select do |_, access_rights|
-        access_rights.count > 1
+        access_rights.many?
       end
     when "deal"
       grouped_access_rights = grouped_access_rights.select do |_, access_rights|

@@ -90,45 +90,16 @@ Capybara.default_max_wait_time = 10 # or more
 
 
 Capybara.register_driver(:playwright) do |app|
-  driver = Capybara::Playwright::Driver.new(app, browser_type: :chromium, headless: ENV["BROWSER"].blank?, )    
+  driver = Capybara::Playwright::Driver.new(app, browser_type: :chromium, headless: ENV["BROWSER"].blank?, playwright_cli_executable_path: 'node_modules/.bin/playwright'
+)    
   driver
 end
 
 Capybara.default_max_wait_time = 15
 Capybara.default_driver = :playwright
+Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'
 
-# options = Selenium::WebDriver::Chrome::Options.new
-# options.add_argument('--ignore-certificate-errors')
-# options.add_argument('--disable-popup-blocking')
-# options.add_argument('--disable-translate')
-# options.add_argument('--disable-dev-shm-usage')
-# options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
-# options.add_argument('--window-size=1583,900')
-
-
-# if ENV['BROWSER'] == "true"
-#   Capybara.register_driver :selenium do |app|
-#     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-#   end
-#   Capybara.javascript_driver = :chrome #
-
-#   Capybara.configure do |config|
-#     config.default_max_wait_time = 10 # seconds
-#     config.default_driver        = :selenium #
-#   end
-# else
-#   options.add_argument('--headless')
-#   Capybara.register_driver :selenium_chrome_headless do |app|
-#     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-#   end
-#   Capybara.javascript_driver = :selenium_chrome_headless # :chrome #
-
-#   Capybara.configure do |config|
-#     config.default_max_wait_time = 10 # seconds
-#     config.default_driver        = :selenium_chrome_headless # :selenium #
-#   end
-# end
 
 
 

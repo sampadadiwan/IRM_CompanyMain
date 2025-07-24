@@ -4,7 +4,7 @@ class SecondarySaleCompanyAdminPolicy < SaleBasePolicy
   end
 
   def offer?
-    record.active? && (permissioned_employee?(:update) && record.manage_offers)
+    record.active? && permissioned_employee?(:update) && record.manage_offers
   end
 
   def owner?
@@ -24,7 +24,7 @@ class SecondarySaleCompanyAdminPolicy < SaleBasePolicy
   end
 
   def show_interest?
-    record.active? && (permissioned_employee?(:update) && record.manage_interests)
+    record.active? && permissioned_employee?(:update) && record.manage_interests
   end
 
   def see_private_docs?

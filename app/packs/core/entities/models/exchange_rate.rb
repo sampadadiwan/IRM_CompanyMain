@@ -43,7 +43,7 @@ class ExchangeRate < ApplicationRecord
 
     # Example usage:
     latest_rates.each do |(from, to), rate|
-      puts "#{from} to #{to} => #{rate.rate} (as_of #{rate.as_of})"
+      Rails.logger.debug "#{from} to #{to} => #{rate.rate} (as_of #{rate.as_of})"
     end
 
     latest_rates

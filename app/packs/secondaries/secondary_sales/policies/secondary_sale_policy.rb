@@ -1,5 +1,5 @@
 class SecondarySalePolicy < SaleBasePolicy
-  delegate :index?, :offer?, :owner?, :offers?, :interests?, :payments?, :show_interest?, :see_private_docs?, :show?, :report?, :create?, :new?, :update?, :generate_spa?, :send_notification?, :notify_allocations?, :download?, :allocate?, :approve_offers?, :short_list_interests?, :view_allocations?, :edit?, :destroy?, :buyer?, :seller?, to: :specific_policy
+  delegate :offer?, :owner?, :offers?, :interests?, :payments?, :show_interest?, :see_private_docs?, :show?, :report?, :create?, :new?, :update?, :generate_spa?, :send_notification?, :notify_allocations?, :download?, :allocate?, :approve_offers?, :short_list_interests?, :view_allocations?, :edit?, :destroy?, :buyer?, :seller?, to: :specific_policy
 
   def index?
     user.enable_secondary_sale

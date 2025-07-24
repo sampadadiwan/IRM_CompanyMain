@@ -1,3 +1,24 @@
+V9.0.82
+#####################################
+069fed891 Added comments ro DB Restore (#925)
+3ebb2760f fix document folder download, update msg (#922)
+7f1bed8b8 Now permissioned_investor_advisor does not check belongs_to_entity?
+8ac926774 Added better arrangement of the users advisor_entity_roles
+c953acec3 db restore service now assigns the SG from DB instance, measures time… (#912)
+0bf35a400 Fund for investor advisor (#924)
+4221c0010 Added better tests for IA kycs see
+878e08544 Additional fixes to the Kyc for_investor_advisor
+0e860405f Now added across_all_entities to for_investor
+e2603b4ea Check policy for advisors in top menu
+6bb4b01cb Added better scopes for kyc for_investor, for_investor_advisor
+d86a3b517 Removed check for capital_call.manual_generation for sending notifications
+b5fee759c Fixed bug with IAs kyc access
+3bc473cfb Fixed investor access partial, for turbo refresh
+454c0d79e Now by default add investor_advisor to advisor_entity_roles for IAs
+e511c4b11 Added forbid_bad_role ro use
+d70cfd5d6 Ia emails (#920)
+c0f8dc7a8 Defaults IAs email_enabled to true in import of IA
+
 V9.0.81
 #####################################
 112d1b979 Fixed kyc class_name for form_types show page

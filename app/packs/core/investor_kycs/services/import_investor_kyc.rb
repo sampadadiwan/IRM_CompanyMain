@@ -52,6 +52,9 @@ class ImportInvestorKyc < ImportUtil
   def save_kyc(investor_kyc, investor, user_data, custom_field_headers)
     kyc_type = user_data["Kyc Type"].presence || "Individual"
 
+    verified = %w[yes true].include?(user_data["Verified"]&.downcase)
+    send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)
+
     investor_kyc.assign_attributes(investor:, PAN: user_data["Pan"],
                                    agreement_committed_amount: user_data["Agreement Committed Amount"],
                                    agreement_unit_type: user_data["Agreement Unit Type"],
@@ -67,8 +70,8 @@ class ImportInvestorKyc < ImportUtil
                                    bank_account_number: user_data["Bank Account Number"]&.to_s,
                                    bank_account_type: user_data["Account Type"],
                                    ifsc_code: user_data["Ifsc Code"],
-                                   verified: user_data["Verified"] == "Yes",
-                                   send_kyc_form_to_user: user_data["Send Kyc Form To User"] == "Yes")
+                                   verified:,
+                                   send_kyc_form_to_user:)
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
     result = if investor_kyc.new_record?

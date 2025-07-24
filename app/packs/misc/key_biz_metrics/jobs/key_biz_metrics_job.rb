@@ -39,9 +39,9 @@ class KeyBizMetricsJob < ApplicationJob
     DATES.each_key do |key|
       for_date = key == :all ? (@run_date - 10.years) : @run_date.send(:"beginning_of_#{key}")
       if params.present?
-        query, value, display_value = send(name.to_s, for_date..@end_date + 1.day, params)
+        query, value, display_value = send(name.to_s, for_date..(@end_date + 1.day), params)
       else
-        query, value, display_value = send(name.to_s, for_date..@end_date + 1.day)
+        query, value, display_value = send(name.to_s, for_date..(@end_date + 1.day))
       end
 
       kbm = KeyBizMetric.find_or_initialize_by(name: label, metric_type: key.to_s.titleize, run_date: for_date)

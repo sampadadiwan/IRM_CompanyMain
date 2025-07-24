@@ -92,9 +92,9 @@ class CapitalRemittanceDocGenerator
       fund_as_of_remittances_gp: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: gp_ids)),
 
       # Remittances of type All, LP and GP prior to the remittance date
-      fund_as_of_prior_remittances: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: ..remittance_date - 1.day, capital_call_id: prior_calls.pluck(:id))),
-      fund_as_of_prior_remittances_lp: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: lp_ids, remittance_date: ..remittance_date - 1.day, capital_call_id: prior_calls.pluck(:id))),
-      fund_as_of_prior_remittances_gp: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: gp_ids, remittance_date: ..remittance_date - 1.day, capital_call_id: prior_calls.pluck(:id))),
+      fund_as_of_prior_remittances: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: ..(remittance_date - 1.day), capital_call_id: prior_calls.pluck(:id))),
+      fund_as_of_prior_remittances_lp: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: lp_ids, remittance_date: ..(remittance_date - 1.day), capital_call_id: prior_calls.pluck(:id))),
+      fund_as_of_prior_remittances_gp: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(capital_commitment_id: gp_ids, remittance_date: ..(remittance_date - 1.day), capital_call_id: prior_calls.pluck(:id))),
 
       # Remittances of type All, LP and GP Exactly On the remittance date
       fund_as_of_curr_remittances: TemplateDecorator.decorate(fund_as_of.capital_remittances.where(remittance_date: remittance_date, capital_call_id: capital_call_id)),
@@ -111,9 +111,9 @@ class CapitalRemittanceDocGenerator
 
     {
       # Distribution Payments of type All, LP and GP prior to the remittance date
-      fund_as_of_prior_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: ..remittance_date - 1.day)),
-      fund_as_of_prior_dist_payments_lp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: lp_ids, payment_date: ..remittance_date - 1.day)),
-      fund_as_of_prior_dist_payments_gp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: gp_ids, payment_date: ..remittance_date - 1.day)),
+      fund_as_of_prior_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(payment_date: ..(remittance_date - 1.day))),
+      fund_as_of_prior_dist_payments_lp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: lp_ids, payment_date: ..(remittance_date - 1.day))),
+      fund_as_of_prior_dist_payments_gp: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments.where(capital_commitment_id: gp_ids, payment_date: ..(remittance_date - 1.day))),
 
       # Distribution Payments of type All, LP and GP as on the remittance date
       fund_as_of_dist_payments: TemplateDecorator.decorate(fund_as_of.capital_distribution_payments),

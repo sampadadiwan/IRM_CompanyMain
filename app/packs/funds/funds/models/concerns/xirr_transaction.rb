@@ -27,7 +27,9 @@ class XirrTransaction
   # @param value [Numeric]
   # @return [Float]
   def amount=(value)
-    @amount = value.to_f || 0.0
+    @amount = value.to_f
+  rescue StandardError
+    @amount = 0.0
   end
 
   def notes=(value)

@@ -5,7 +5,7 @@ class AttributionService
 
   def setup_attribution
     # Allocate only sells, and make sure its not already been allocated
-    if @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.count.zero?
+    if @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.none?
       if @portfolio_investment.fund.portfolio_cost_type == "FIFO"
         Rails.logger.debug { "Allocating #{@portfolio_investment} using FIFO" }
         setup_attribution_fifo
@@ -17,13 +17,13 @@ class AttributionService
         raise "Unknown portfolio cost type: #{@portfolio_investment.fund.portfolio_cost_type}"
       end
     else
-      Rails.logger.debug { "Not allocating #{@portfolio_investment}. Already Allocated" } if @portfolio_investment.portfolio_attributions.count.zero?
+      Rails.logger.debug { "Not allocating #{@portfolio_investment}. Already Allocated" } if @portfolio_investment.portfolio_attributions.none?
       Rails.logger.debug { "Not allocating #{@portfolio_investment} because it's a buy" } if @portfolio_investment.buy?
     end
   end
 
   def setup_attribution_fifo
-    return unless @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.count.zero?
+    return unless @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.none?
 
     allocatable_quantity = @portfolio_investment.quantity.abs
     all_investments = @portfolio_investment.aggregate_portfolio_investment.portfolio_investments
@@ -52,7 +52,7 @@ class AttributionService
   end
 
   def setup_attribution_weighted_avg
-    return unless @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.count.zero?
+    return unless @portfolio_investment.sell? && @portfolio_investment.portfolio_attributions.none?
 
     sell_quantity = @portfolio_investment.quantity.abs
     all_investments = @portfolio_investment.aggregate_portfolio_investment.portfolio_investments

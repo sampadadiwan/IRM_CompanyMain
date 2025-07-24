@@ -31,8 +31,8 @@ class OfferCompanyAdminPolicy < SaleBasePolicy
   end
 
   def accept_spa?
-    (permissioned_employee?(:update) && record.secondary_sale.manage_offers) &&
-      (record.verified && !record.final_agreement)
+    permissioned_employee?(:update) && record.secondary_sale.manage_offers &&
+      record.verified && !record.final_agreement
   end
 
   def new?

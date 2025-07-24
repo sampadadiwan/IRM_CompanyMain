@@ -78,7 +78,7 @@ module AccessRightsCache
     self.access_rights_cache[for_entity_id][access_right.owner_type] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] ||= {}
     # Cache only if the user is an employee or has investor access
-    if curr_role == "employee" || investor_access.present?
+    if curr_role == "employee" || investor_access.present? || has_cached_role?(:investor_advisor)
       self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
       save_by_default ? save : false
     else
@@ -113,20 +113,18 @@ module AccessRightsCache
       end
     end
 
-    access_rights_to_add = []
+    # unless has_cached_role?(:investor_advisor)
 
-    unless has_cached_role?(:investor_advisor)
+    category = investor_access.investor.category
+    # Investor specific access_rights
+    access_rights_investor = AccessRight.where(entity_id: investor_access.entity_id, access_to_investor_id: investor_access.investor_id)
+    # category specific access_rights
+    access_rights_category = AccessRight.where(entity_id: investor_access.entity_id, access_to_category: category)
 
-      category = investor_access.investor.category
-      # Investor specific access_rights
-      access_rights_investor = AccessRight.where(entity_id: investor_access.entity_id, access_to_investor_id: investor_access.investor_id)
-      # category specific access_rights
-      access_rights_category = AccessRight.where(entity_id: investor_access.entity_id, access_to_category: category)
+    # Lets add/remove from cache
+    access_rights_to_add = access_rights_investor.or(access_rights_category)
 
-      # Lets add/remove from cache
-      access_rights_to_add = access_rights_investor.or(access_rights_category)
-
-    end
+    # end
 
     access_rights_to_add.each do |ar|
       if add
@@ -152,7 +150,7 @@ module AccessRightsCache
     elsif has_cached_role?(:investor) || has_cached_role?(:investor_advisor)
       # Add all the investor_access
       InvestorAccess.approved.where(user_id: id).find_each do |investor_access|
-        refresh_access_rights_cache(investor_access, add: true)
+        refresh_access_rights_cache(investor_access, add: investor_access.approved)
       end
     end
   end
