@@ -21,6 +21,10 @@ class UserPolicy < ApplicationPolicy
     true
   end
 
+  def search_by_email?
+    true
+  end
+
   def show?
     user.id == record.id || (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
   end

@@ -1,0 +1,59 @@
+<% investor_advisor ||= @investor_advisor %>
+<% investor_id ||= @investor.id || params[:investor_id] %>
+<% fund_id ||= @fund.id || params[:fund_id] %>
+<% back_to ||= @back_to || params[:back_to] %>
+<% advisor_entity_name ||= nil%>
+<% first_name ||= nil%>
+<% last_name ||= nil%>
+<%= render NewCard.new do %>
+
+    <%= render FormCard.new(title: "Investor Advisor : #{investor_advisor.email.presence || 'New'}") do %>
+
+    <%= form_with(model: investor_advisor, url: create_for_investor_investor_advisors_path, method: :post) do |form| %>
+        <% if investor_advisor.errors.any? %>
+        <div class="alert alert-danger">
+            <h2><%= pluralize(investor_advisor.errors.count, "error") %> prohibited this investor_advisor from being saved:</h2>
+
+            <ul>
+            <% investor_advisor.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+            <% end %>
+            </ul>
+        </div>
+        <% end %>
+
+        <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :user_id, hidden: true %>
+        <%= form.text_field :investor_id, value: investor_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :fund_id, value: fund_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :back_to, value: back_to, class: "form-control", hidden: true  %>
+
+        <div class="form-group">
+            <%= form.label :investor %>
+            <%= form.text_field :entity_name, class: "form-control", value: @entity&.name, disabled: true%>
+        </div>
+
+        <div class="form-group">
+            <%= form.label :advisor_email %>*
+            <%= form.text_field :email, class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+        <%= form.label :advisor_entity %>
+        <%= form.text_field :advisor_entity_name, value: advisor_entity_name, class: "form-control" %>
+        </div>
+        <div class="form-group">
+        <%= form.label :first_name %>
+        <%= form.text_field :first_name, value: first_name, class: "form-control" %>
+        </div>
+        <div class="form-group">
+        <%= form.label :last_name %>
+        <%= form.text_field :last_name, value: last_name, class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+        <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+        </div>
+    <% end %>
+    <% end %>
+<% end %>

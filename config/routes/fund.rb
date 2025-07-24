@@ -22,6 +22,8 @@ resources :commitment_adjustments
 
 resources :investor_advisors do
   post 'switch', on: :collection
+  get 'new_for_investor', on: :collection
+  post 'create_for_investor', on: :collection
 end
 
 resources :aggregate_portfolio_investments do

@@ -48,11 +48,6 @@ export default class extends Controller {
       let param = this.emailParamValue;
       let target = this.esignEmailsOutputTarget.id; // Get the actual ID of the target element
 
-      console.log(`event target: ${event.target}`);
-      console.log(`target: ${target}`);
-      console.log(`url: ${url}`);
-      console.log(`param: ${param}`);
-
       let baseUrl = url.split("?")[0];
       let params = new URLSearchParams(url.split("?")[1]);
 

@@ -40,6 +40,12 @@
 
           <div class="dropdown-divider"></div>
 
+          <%= link_to new_for_investor_investor_advisors_path(investor_id: @capital_commitment.investor_id, fund_id: @capital_commitment.fund_id, back_to: capital_commitment_path(@capital_commitment)), id: "capital_commitment_new_investor_advisor_btn", class: "dropdown-item" do %>
+            <i class="ti ti-plus"></i>Add Investor Advisor
+          <% end %>
+
+          <div class="dropdown-divider"></div>
+
           <% if policy(@capital_commitment).generate_documentation? %>
             <%= button_to generate_documentation_capital_commitment_path(@capital_commitment), id: "capital_commitment_generate_all_documents_btn",
                 method: :patch, class: "dropdown-item", form_class: "deleteButton",

@@ -18,8 +18,71 @@ class InvestorAdvisorsController < ApplicationController
     authorize(@investor_advisor)
   end
 
+  def new_for_investor
+    @investor = Investor.find_by(id: params[:investor_id])
+    if @investor.nil?
+      authorize({ investor_advisor: nil, investor: nil }, policy_class: InvestorAdvisorPolicy)
+      redirect_to funds_path, alert: "Investor not found."
+      return
+    end
+
+    @investor_advisor = InvestorAdvisor.new(entity_id: @investor.investor_entity_id)
+    @entity = @investor_advisor.entity
+    @fund = Fund.find_by(id: params[:fund_id])
+    authorize({ investor_advisor: @investor_advisor, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+    @back_to = params[:back_to] || fund_path(@fund)
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@fund.name}": fund_path(@fund),
+                      'New Investor Advisor': nil }
+
+    render :new_for_investor, locals: { investor_id: @investor.id, fund_id: @fund.id, back_to: @back_to }
+  end
+
   # GET /investor_advisors/1/edit
   def edit; end
+
+  def create_for_investor
+    @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
+    @investor = Investor.find(params[:investor_advisor][:investor_id])
+    @fund = Fund.find(params[:investor_advisor][:fund_id])
+    @entity = @investor.investor_entity
+    @investor_advisor.allowed_roles = ["investor"]
+    @investor_advisor.owner_name = @fund.name
+    @investor_advisor.permissions = @investor.investor_entity.permissions
+    @investor_advisor.extended_permissions = %i[investor_kyc_read investor_read]
+    @investor_advisor.created_by = current_user
+    # since this IA has entity that is investor's investor entity it will not pass this authorization
+    # authorize(@investor_advisor)
+    authorize({ investor_advisor: @investor_advisor, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+
+    ActiveRecord::Base.transaction do
+      @result = AddFolioInvestorAdvisor.wtf?(investor_advisor: @investor_advisor, investor: @investor, fund: @fund, params: params)
+      # alt is create default IA
+      unless @result.success?
+        raise ActiveRecord::Rollback # <-- rolls back the transaction without raising an exception outward
+      end
+    end
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@fund.name}": fund_path(@fund),
+                      'New Investor Advisor': nil }
+
+    @back_to = params[:investor_advisor][:back_to] || fund_path(@fund)
+    respond_to do |format|
+      if @result.success?
+        format.html { redirect_to @back_to, notice: "Investor advisor was successfully created." }
+        format.json { render :show, status: :created, location: @investor_advisor }
+      else
+        @investor_advisor = @result[:investor_advisor]
+        @investor_advisor.errors.add(:base, @result[:errors]) if @investor_advisor.errors.blank?
+
+        format.html do
+          render :new_for_investor, status: :unprocessable_entity, locals: { advisor_entity_name: params[:investor_advisor][:advisor_entity_name], first_name: params[:investor_advisor][:first_name], last_name: params[:investor_advisor][:last_name], back_to: @back_to, investor_id: @investor.id, fund_id: @fund.id }
+        end
+
+        format.json { render json: @investor_advisor.errors, status: :unprocessable_entity }
+      end
+    end
+  end
 
   # POST /investor_advisors or /investor_advisors.json
   def create

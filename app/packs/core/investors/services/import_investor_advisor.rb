@@ -36,28 +36,17 @@ class ImportInvestorAdvisor < ImportUtil
     user = User.find_by(email: user_data["Email"])
     return if user.present?
 
-    entity = Entity.find_by(name: user_data["Advisor Entity"])
-    entity = create_entity(user_data["Advisor Entity"], user_data["Email"]) if entity.nil?
-    create_user(user_data, entity)
-  end
+    entity_result = CreateInvestorAdvisorEntity.call(name: user_data["Advisor Entity"], primary_email: user_data["Email"])
+    raise "Error creating entity: #{entity_result[:errors]}" unless entity_result.success?
 
-  def create_entity(advisor_entity, primary_email)
-    entity = Entity.new(name: advisor_entity, primary_email:, entity_type: "Investor Advisor")
-    entity.save!
-    entity
-  end
+    entity = entity_result[:entity]
 
-  def create_user(user_data, entity)
-    raise "First name not present" if user_data["First Name"].blank?
-    raise "Last name not present" if user_data["Last Name"].blank?
-
-    password = SecureRandom.alphanumeric
-    user = User.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
-                    email: user_data["Email"], entity_id: entity.id, password:)
-    user.confirm
-    user.save!
-
-    user.add_role(:investor_advisor)
+    user_result = FetchOrCreateUser.call(email: user_data["Email"],
+                                         first_name: user_data["First Name"],
+                                         last_name: user_data["Last Name"],
+                                         entity_id: entity.id,
+                                         role: :investor_advisor)
+    raise "Error creating user: #{user_result[:errors]}" unless user_result.success?
   end
 
   def add_to_owner(user_data, import_upload, investor_advisor, investor)
@@ -80,13 +69,20 @@ class ImportInvestorAdvisor < ImportUtil
 
       if owner
         # Give the investor_advisor access rights as an investor_advisor to the Fund or SecondarySale
-        ar = AccessRight.create(entity_id: investor_advisor.entity_id, owner:, user_id: investor_advisor.user_id, access_type: owner.class.name, metadata: "investor_advisor")
-
-        Rails.logger.debug { "Error saving AccessRight: #{ar.errors}" } if ar.errors.present?
+        ar_result = CreateAccessRightForInvestorAdvisor.call(entity_id: investor_advisor.entity_id,
+                                                             owner: owner,
+                                                             user_id: investor_advisor.user_id,
+                                                             access_type: owner.class.name,
+                                                             metadata: "investor_advisor")
+        raise "Error creating AccessRight: #{ar_result[:errors]}" unless ar_result.success?
 
         # Give this user investor access in the investor
         user = investor_advisor.user
-        investor.investor_accesses.create!(email: user.email, first_name: user.first_name, last_name: user.last_name, email_enabled: true, approved: true, send_confirmation: false, entity_id: import_upload.entity_id, granted_by: import_upload.user_id) if investor.investor_accesses.where(email: user.email, entity_id: import_upload.entity_id).blank?
+        inv_access_result = CreateInvestorAccessForInvestorAdvisor.call(investor: investor,
+                                                                        user: user,
+                                                                        entity_id: import_upload.entity_id,
+                                                                        granted_by_user_id: import_upload.user_id)
+        raise "Error creating Investor Access: #{inv_access_result[:errors]}" unless inv_access_result.success?
 
       else
         Rails.logger.debug { "Specified #{user_data['Add To']} #{user_data['Name']} not found" }

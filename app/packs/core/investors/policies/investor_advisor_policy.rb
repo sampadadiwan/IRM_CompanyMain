@@ -25,6 +25,18 @@ class InvestorAdvisorPolicy < ApplicationPolicy
     create?
   end
 
+  def new_for_investor?
+    investor_advisor = record[:investor_advisor]
+    investor = record[:investor]
+    investor_advisor&.entity_id == investor&.investor_entity_id
+  end
+
+  def create_for_investor?
+    investor_advisor = record[:investor_advisor]
+    investor = record[:investor]
+    investor_advisor&.entity_id == investor&.investor_entity_id
+  end
+
   def update?
     create?
   end

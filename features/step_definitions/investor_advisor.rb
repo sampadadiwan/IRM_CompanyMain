@@ -57,3 +57,69 @@
     end
   end
   
+
+Given('I go to Add Investor Advisor page for commmitment') do
+  @capital_commitment ||= CapitalCommitment.first
+  visit(capital_commitment_path(@capital_commitment))
+  # click_on("Actions")
+  click_on("Actions", match: :first)
+# first(:button, 'Actions').click
+# first(:link, 'Actions').click
+
+  click_on("Add Investor Advisor")
+end
+
+Given('I fill IA form with details of a user that exists with role {string}') do |role|
+  email = Faker::Internet.email
+  entity_result = CreateInvestorAdvisorEntity.call(name: Faker::Company.name, primary_email: email)
+  expect(entity_result.success?).to be true
+  @entity = entity_result[:entity]
+  user_result = FetchOrCreateUser.call(
+      email: email,
+      first_name: Faker::Name.first_name,
+      last_name: Faker::Name.last_name,
+      entity_id: @entity.id,
+      role: role.strip.to_sym
+    )
+  expect(user_result.success?).to be true
+  @user = user_result[:user]
+  @user.roles.destroy_all
+  @user.add_role(role.strip.to_sym)
+  @user.reload
+  expect(@user.has_cached_role?(role.strip.to_sym)).to be true
+  fill_in('investor_advisor_email', with: @user.email)
+  p "Filling IA form with details of a user with role: #{role.strip} and email: #{@user.email}"
+  click_on("Save")
+end
+
+Then('Investor Advisor is successfully created') do
+  expect(page).to have_content("Investor advisor was successfully created.")
+end
+
+Given('I fill IA form with details of a user that is already an Investor Advisor for this fund') do
+  @investor_advisor ||= InvestorAdvisor.last
+  p "Filling IA form with details of an existing Investor Advisor: #{@investor_advisor.email}"
+  fill_in('investor_advisor_email', with: @investor_advisor.email)
+  click_on("Save")
+end
+
+Then('Investor Advisor creation fails with error {string}') do |string|
+  p "Checking Error Message: #{string}"
+  expect(page).to have_content(string)
+end
+
+Given('I fill IA form with details of a user that does not exist with details {string}') do |params|
+  fill_in('investor_advisor_email', with: Faker::Internet.email)
+  # advisor_entity_name,first_name,last_name
+  if params.include?("advisor_entity_name")
+    fill_in('investor_advisor_advisor_entity_name', with: Faker::Company.name)
+  end
+  if params.include?("first_name")
+    fill_in('investor_advisor_first_name', with: Faker::Name.first_name)
+  end
+  if params.include?("last_name")
+    fill_in('investor_advisor_last_name', with: Faker::Name.last_name)
+  end
+  p "Creating Investor Advisor with params: #{params}"
+  click_on("Save")
+end
