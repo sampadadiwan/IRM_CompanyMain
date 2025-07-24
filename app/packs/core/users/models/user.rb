@@ -53,7 +53,7 @@ class User < ApplicationRecord
   # Make all models searchable
   update_index('user') { self if index_record? }
 
-  rolify before_add: :forbid_bad_role
+  rolify #before_add: :forbid_bad_role
   accepts_nested_attributes_for :roles, allow_destroy: true
 
   # Include default devise modules. Others available are:
