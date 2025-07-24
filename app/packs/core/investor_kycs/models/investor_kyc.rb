@@ -85,6 +85,7 @@ class InvestorKyc < ApplicationRecord
   scope :for_investor_advisor, lambda { |user, across_all_entities: false|
     # We cant show them all the KYCs, only the ones for the funds they have been permissioned
     fund_ids = Fund.for_investor(user, across_all_entities:).distinct.pluck(:id)
+
     if across_all_entities && user.has_cached_role?(:investor_advisor)
       joins(investor: :investor_accesses, capital_commitments: :fund)
         .where(funds: { id: fund_ids })

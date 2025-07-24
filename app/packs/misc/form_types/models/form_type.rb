@@ -1,5 +1,6 @@
 class FormType < ApplicationRecord
   include WithGridViewPreferences
+
   belongs_to :entity
 
   validates :name, presence: true

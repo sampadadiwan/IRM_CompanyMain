@@ -1,5 +1,6 @@
 class PortfolioInvestmentsXlReportJob < ApplicationJob
   include Rails.application.routes.url_helpers
+
   queue_as :default
 
   def perform(as_of, user_id, portfolio_company_id: nil, fund_id: nil)

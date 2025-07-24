@@ -1,6 +1,7 @@
 class PortfolioReport < ApplicationRecord
   include ForInvestor
   include WithFolder
+
   belongs_to :entity
   has_many :portfolio_report_sections, dependent: :destroy
   has_many :portfolio_report_extracts, dependent: :destroy

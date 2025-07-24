@@ -1,5 +1,6 @@
 class InformationOnInvestmentsJob
   include CurrencyHelper
+
   TABLE_OFFSET = 3
 
   REPORT_NAME = "InformationOnInvestments".freeze

@@ -1,5 +1,6 @@
 class Report < ApplicationRecord
   include WithGridViewPreferences
+
   belongs_to :entity, optional: true
   belongs_to :user
 

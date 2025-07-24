@@ -7,6 +7,7 @@ class Fund < ApplicationRecord
   include WithApprovals
   include WithExchangeRate
   include WithIncomingEmail
+
   acts_as_favoritable
   include ForInvestor
   include WithCustomField

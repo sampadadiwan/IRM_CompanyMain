@@ -1,5 +1,6 @@
 class SupportClientMapping < ApplicationRecord
   include Trackable.new
+
   belongs_to :user
   belongs_to :entity
 

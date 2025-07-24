@@ -1,5 +1,6 @@
 class ExchangeRate < ApplicationRecord
   include WithFolder
+
   belongs_to :entity
 
   scope :latest, -> { where(latest: true).order(created_at: :asc) }

@@ -1,5 +1,6 @@
 class PortfolioAttribution < ApplicationRecord
   include Trackable.new
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :sold_pi, -> { unscope(where: :snapshot_date) }, class_name: "PortfolioInvestment"

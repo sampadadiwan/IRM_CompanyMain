@@ -1,6 +1,7 @@
 class CustomNotification < ApplicationRecord
   include Trackable.new
   include WithFolder
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true, touch: true
 

@@ -235,6 +235,7 @@ class Interest < ApplicationRecord
   end
 
   include RansackerAmounts.new(fields: %w[allocation_amount])
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[PAN address allocation_amount allocation_quantity amount bank_account_number buyer_entity_name city contact_name demat email entity_id ifsc_code quantity short_listed_status quantity price verified escrow_deposited created_at]
   end

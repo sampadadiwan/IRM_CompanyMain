@@ -1,5 +1,6 @@
 class DealsController < ApplicationController
   include DealsHelper
+
   require 'pagy/extras/array'
 
   before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]

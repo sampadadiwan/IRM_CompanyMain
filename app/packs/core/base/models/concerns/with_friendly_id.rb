@@ -3,6 +3,7 @@ module WithFriendlyId
 
   included do
     extend FriendlyId
+
     friendly_id :for_friendly_id, use: :slugged
     def to_param
       id

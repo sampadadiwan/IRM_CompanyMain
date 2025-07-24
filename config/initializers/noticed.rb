@@ -1,6 +1,7 @@
 # config/initializers/noticed.rb
 module EventExtensions
   extend ActiveSupport::Concern
+
   included do
     belongs_to :entity, optional: true
   end

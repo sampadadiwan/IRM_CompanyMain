@@ -2,6 +2,7 @@ class DocusignEsignHelper
   include HTTParty
   include ApiCreator
   include DocusignEsignUtils
+
   debug_output $stdout
   attr_accessor :debug
 

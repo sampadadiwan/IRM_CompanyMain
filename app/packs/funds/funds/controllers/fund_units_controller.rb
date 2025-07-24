@@ -1,5 +1,6 @@
 class FundUnitsController < ApplicationController
   include FundsHelper
+
   before_action :set_fund_unit, only: %i[show edit update destroy]
 
   # GET /fund_units or /fund_units.json

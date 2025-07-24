@@ -1,5 +1,6 @@
 class KycVerify
   include HTTParty
+
   debug_output $stdout
 
   BASE_URL = ENV.fetch("DIGIO_BASE_URL", nil)

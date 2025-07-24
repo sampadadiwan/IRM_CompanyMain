@@ -1,7 +1,7 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.investor_advisor?
+      if user.investor_advisor? && user.curr_role == "investor"
         scope.for_investor_advisor(user)
       elsif user.curr_role == "investor"
         # Give access to all the KYCs for the investor, where he has investor_accesses approved

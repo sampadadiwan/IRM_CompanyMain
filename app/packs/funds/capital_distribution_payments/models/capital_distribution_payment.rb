@@ -22,6 +22,7 @@ class CapitalDistributionPayment < ApplicationRecord
                                 "Completed" => "completed" }.freeze
 
   include ForInvestor
+
   update_index('capital_distribution_payment') { self if index_record? }
 
   belongs_to :fund, touch: true

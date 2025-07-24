@@ -3,6 +3,7 @@
 # while moving other attributes to EntitySetting
 class EntitySetting < ApplicationRecord
   include Trackable.new(associated_with: :entity)
+
   belongs_to :entity
 
   validate :validate_ckyc_enabled

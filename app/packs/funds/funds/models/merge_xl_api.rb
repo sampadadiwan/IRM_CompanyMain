@@ -7,6 +7,7 @@
 
 class MergeXlApi
   include HTTParty
+
   debug_output $stdout
   attr_accessor :debug # Rails.env.development?
 

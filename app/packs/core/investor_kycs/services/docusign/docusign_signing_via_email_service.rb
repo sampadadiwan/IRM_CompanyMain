@@ -4,6 +4,7 @@ require 'pdf-reader'
 
 class DocusignSigningViaEmailService
   include ApiCreator
+
   attr_reader :args, :doc
 
   def initialize(args, doc)
