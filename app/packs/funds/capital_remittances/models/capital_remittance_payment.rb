@@ -96,15 +96,20 @@ class CapitalRemittancePayment < ApplicationRecord
   before_destroy :check_units_before_deletion
   # This method is called before the payment is deleted, to check if we can delete the payment
   def check_units_before_deletion
+    # if units are already allocated then we cannot delete this payment
+    if units_already_allocated?
+      errors.add(:base, "Units have already been allocated for this payment. Please adjust the units before deleting the payment.")
+      throw(:abort) # THIS is what prevents the destroy
+    end
+  end
+
+  def units_already_allocated?
     # Add up the amount_cents of all fund units allocated for this remittance, note this is not a DB field, but a computed one
     fund_units_amount_cents = capital_remittance.fund_units.for_remittances.sum(&:amount_cents)
     collected_amount_cents_ex_this = capital_remittance.collected_amount_cents - amount_cents
     Rails.logger.debug { "Fund Units Amount Cents: #{fund_units_amount_cents}, Collected Amount Cents Excluding This Payment: #{collected_amount_cents_ex_this}" }
-    # If the fund units amount is greater than or equal to the collected amount minus this payment
-    # then we cannot delete this payment, as it would mean that units have already been allocated
-    if fund_units_amount_cents.positive? && fund_units_amount_cents > collected_amount_cents_ex_this
-      errors.add(:base, "Units have already been allocated for this payment. Please adjust the units before deleting the payment.")
-      throw(:abort) # THIS is what prevents the destroy
-    end
+
+    # If the fund units amount is greater than or equal to the collected amount minus this payment it means that units have already been allocated
+    fund_units_amount_cents.positive? && fund_units_amount_cents > collected_amount_cents_ex_this
   end
 end

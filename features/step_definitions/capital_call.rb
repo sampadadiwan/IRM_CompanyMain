@@ -107,3 +107,43 @@ And("error email for fund units already allocated should be sent") do
 	current_email = open_email(User.first.email)
 	expect(current_email).to have_content("Fund Units already allocated")
 end
+
+Given('I delete a remittance with no payments') do
+  CapitalRemittance.all.each do |cr|
+		if cr.capital_remittance_payments.blank?
+			@capital_remittance = cr
+			break
+		end						
+  end
+	visit capital_remittance_path(@capital_remittance)
+	click_on "Delete"
+	click_on "Proceed"
+end
+
+Then('the remittance is successfully deleted') do
+	expect(page).to have_content("Capital remittance was successfully destroyed")
+end
+
+Given('I delete a remittance having payments with allocated units') do
+	CapitalRemittance.all.each do |cr|
+		if cr.capital_remittance_payments.present?
+			 cr.capital_remittance_payments.each do |payment|
+				 if payment.units_already_allocated?
+					 puts "Found a remittance with allocated units: #{cr.id}"
+					 @capital_remittance = cr
+					 break
+				 end
+			 end
+		end
+	end
+	@user = User.first
+	@user.add_role(:company_admin)
+	visit capital_remittance_path(@capital_remittance)
+	click_on "Delete"
+	click_on "Proceed"
+end
+
+Then('I get the error {string}') do |string|
+	expect(page).to have_content(string)
+end
+

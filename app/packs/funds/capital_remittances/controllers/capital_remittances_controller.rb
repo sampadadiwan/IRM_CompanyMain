@@ -126,11 +126,22 @@ class CapitalRemittancesController < ApplicationController
 
   # DELETE /capital_remittances/1 or /capital_remittances/1.json
   def destroy
-    @capital_remittance.destroy
+    units_allocated_remittances_payments = []
+    @capital_remittance.capital_remittance_payments.each do |payment|
+      units_allocated_remittances_payments << payment if payment.units_already_allocated?
+    end
+    if units_allocated_remittances_payments.any?
+      links_html = units_allocated_remittances_payments.map do |payment|
+        ActionController::Base.helpers.link_to(payment.to_s, capital_remittance_payment_path(payment), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
+      end.join(", ")
 
-    respond_to do |format|
-      format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
-      format.json { head :no_content }
+      redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
+    else
+      @capital_remittance.destroy
+      respond_to do |format|
+        format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
+        format.json { head :no_content }
+      end
     end
   end
 
