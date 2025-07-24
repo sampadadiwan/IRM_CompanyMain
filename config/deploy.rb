@@ -79,6 +79,19 @@ namespace :deploy do
     end
   end
 
+  task :cleanup do
+    on roles(:app) do
+      within release_path do
+        # rm /home/ubuntu/IRM/current/tmp/db_backup_xtra_#{Rails.env}.sh only if it exists
+        if test("[ -f #{shared_path}/tmp/db_backup_xtra_#{fetch(:stage)}.sh ]")
+          execute :rm, "-f", "#{shared_path}/tmp/db_backup_xtra_#{fetch(:stage)}.sh"
+        else
+          info "File #{shared_path}/tmp/db_backup_xtra_#{fetch(:stage)}.sh does not exist, skipping removal."
+        end
+      end
+    end
+  end
+
   desc "Ensure permissions are set for nginx and puma"
   task :ensure_permissions do
     on roles(:app) do
@@ -101,6 +114,7 @@ namespace :deploy do
   end
 
   before "deploy:updated", :ensure_rails_credentials
+  after  "deploy:updated", :cleanup
   before 'deploy:finished', 'sidekiq:restart'
   after  'deploy:finished', :ensure_permissions
 end

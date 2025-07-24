@@ -74,14 +74,14 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     Rails.logger.info { "[DbRestoreService] Starting step: Run remote script" }
     script_start_time = Time.zone.now
     run_remote_script(ip)
-    script_duration = Time.zone.now - script_start_time
+    @script_duration = Time.zone.now - script_start_time
     Rails.logger.info { "[DbRestoreService] End step: Run remote script" }
 
     Rails.logger.info { "[DbRestoreService] Restore completed for #{ip}" }
 
     # Verify the timestamp of the restored data.
     Rails.logger.info { "[DbRestoreService] Starting step: Verify timestamp" }
-    verify_timestamp
+    result, msg = verify_timestamp
     Rails.logger.info { "[DbRestoreService] End step: Verify timestamp" }
 
     # Clean up temporary files and stop the instance.
@@ -92,8 +92,15 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     # Log the total duration of the process.
     total_duration = Time.zone.now - total_start_time
-    Rails.logger.info { "[DbRestoreService] Script run duration: #{script_duration.round(2)} seconds" }
+    Rails.logger.info { "[DbRestoreService] Script run duration: #{@script_duration.round(2)} seconds" }
     Rails.logger.info { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
+
+    if result
+      EntityMailer.with(subject: "#{Rails.env}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{total_duration/60} minutes" }).notify_info.deliver_now
+    else
+      ExceptionNotifier.notify_exception(StandardError.new("#{Rails.env}: DB Check FAILED: #{msg}"))      
+    end
+      
   end
 
   private
@@ -305,19 +312,21 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
               msg = "❌ Failed to execute command"
               f.write msg
               Rails.logger.error msg
-              ExceptionNotifier.notify_exception(StandardError.new(msg), data: { action: 'execute_restore_primary' })
+              ExceptionNotifier.notify_exception(StandardError.new(msg), data: { env: Rails.env, action: 'execute_restore_primary' })
               next
             end
+            
 
             channel.on_data do |_ch, data|
               f.write data
               Rails.logger.info("[DbRestoreService] STDOUT: #{data}")
             end
-
+            
             channel.on_extended_data do |_ch, _type, data|
               f.write data
               Rails.logger.error("[DbRestoreService] STDERR: #{data}")
             end
+
 
             channel.on_request("exit-status") do |_ch, data|
               exit_code = data.read_long
@@ -378,13 +387,11 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     if diff.between?(0, VERIFICATION_THRESHOLD_SECONDS)
       msg = "✓ Timestamp '#{ts_time}' is recent (Δ #{diff.to_i}s)"
       Rails.logger.debug msg
-      EntityMailer.with(subject: "DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg }).notify_info.deliver_now
-      true
+      [true, msg]
     else
       msg = "✗ Timestamp '#{ts_time}' is too old (Δ #{diff.to_i}s)"
       Rails.logger.debug msg
-      ExceptionNotifier.notify_exception(StandardError.new("DB Check FAILED: #{msg}"))
-      false
+      [false, msg]
     end
   end
 
@@ -429,6 +436,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     else
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker stop  || true")
       ssh.exec!("echo '#{container_ids}' | xargs -r sudo docker rm -f || true")
+      #sudo docker image prune -a
+      ssh.exec!("sudo docker image prune -a -f || true")
     end
     # Prune Docker system: removes unused images, containers, networks, and volumes
     # This will remove all unused images, containers, networks, and volumes
