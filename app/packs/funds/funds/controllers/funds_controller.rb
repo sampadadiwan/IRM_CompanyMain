@@ -208,14 +208,8 @@ class FundsController < ApplicationController
   end
 
   def show_email_list
-    # This is the commitments that do not have access rights for the investor in this fund
-    @commitments_wo_access_rights = @fund.capital_commitments.where.not(investor_id: @fund.access_rights.pluck(:access_to_investor_id)).includes(:investor)
-    # This is the commitments that do not have investor access for the investor in this fund
-    @commitment_wo_investor_accesses = @fund.capital_commitments.where(investor_id: @fund.investors.without_investor_accesses.select(:id)).includes(:investor)
-    # This is the investor accesses that are not approved
-    @unapproved_investor_accesses = @fund.investor_accesses.unapproved.includes(:user, :granter).uniq
-    # This is the investor accesses that are email disabled
-    @email_disabled_investor_accesses = @fund.investor_accesses.email_disabled.includes(:user, :granter).uniq
+    @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
+    @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id]) if params[:capital_distribution_id].present?
   end
 
   private

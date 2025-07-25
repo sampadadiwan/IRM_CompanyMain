@@ -22,11 +22,20 @@
         <i class="ti ti-settings"></i> <%= t_common(:actions) %>
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        
+        <% generated_docs_path = documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id], [:owner_tag, :cont, "Generated"]])) %>
 
         <% if policy(@capital_call).approve? %>
+
+          <% 
+            approval_msg = "This will generate a notification to your clients, if enabled. Please note only approved call notices will be attached to the email. 
+            <br> 
+            #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}
+            #{link_to 'View Generated Call Notices', generated_docs_path, class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"             
+          %>
           <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
               data: {action: "click->confirm#popup", turbo: false, method: :post,
-                     msg: "This will generate a notification to your clients, if enabled. Please note only approved call notices will be attached to the email."} do %>
+                     msg: approval_msg} do %>
             Approve
           <% end %>
 
@@ -40,7 +49,8 @@
             Generate Documents
           <% end %>
 
-          <%= link_to "View Generated Documents", documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id], [:owner_tag, :cont, "Generated"]])), id: "capital_call_view_generate_docs_btn", class: "dropdown-item ti ti-search" %>
+          
+          <%= link_to "View Generated Documents", generated_docs_path, id: "capital_call_view_generate_docs_btn", class: "dropdown-item ti ti-search" %>
 
           <div class="dropdown-divider"></div>
         <% end %>

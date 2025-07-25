@@ -168,10 +168,16 @@
               <% end %>
 
               <% if policy(@capital_distribution).mark_payments_completed? %>
+
+                <% 
+                  payments_completed_msg = "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.. 
+                  <br> 
+                  #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_distribution.fund, capital_distribution_id: @capital_distribution.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"             
+                %>
                 <%= button_to payments_completed_capital_distribution_path(@capital_distribution),
                       method: :patch, class: "dropdown-item", form_class: "deleteButton",
                       data: { action: "click->confirm#popup", turbo: false,
-                              msg: "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.",
+                              msg: payments_completed_msg,
                               method: :patch } do %>
                   <i class="ti ti-check"></i>Mark Payments Completed
                 <% end %>

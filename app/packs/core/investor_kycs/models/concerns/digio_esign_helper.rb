@@ -67,14 +67,14 @@ class DigioEsignHelper
       end
       msg = "Error sending #{doc.name} for eSigning - #{json_res['message']}"
       ExceptionNotifier.notify_exception(StandardError.new(msg))
-      logger.error msg
+      Rails.logger.error msg
       send_notification(msg, user_id, :danger)
     end
   rescue JSON::ParserError => e
     # 502 bad gateway response cannot be parsed
     msg = "Error sending #{doc.name} for eSigning - #{e.message}"
     ExceptionNotifier.notify_exception(StandardError.new(msg))
-    logger.error msg
+    Rails.logger.error msg
     send_notification(msg, user_id, :danger)
   end
 

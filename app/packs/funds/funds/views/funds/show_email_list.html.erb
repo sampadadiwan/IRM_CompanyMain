@@ -1,91 +1,233 @@
+<%
+    @fund ||= nil
+    @capital_call ||= nil
+    if @capital_call.present?
+        model = @capital_call
+    elsif @capital_distribution.present?
+        model = @capital_distribution
+    else
+        model = @fund
+    end
 
+    @results_map = email_list_for(model)
+%>
 
-<% if @unapproved_investor_accesses.present? %>
-<div class="card">
+  <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title"> Unapproved Investor Access </h3>
+      <h3 class="card-title">Email Statistics: <%= link_to model %></h3>
     </div>
-    <div class="card-body">
-        <%= render "/investor_accesses/table", investor_accesses: @unapproved_investor_accesses %>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Total</th>
+            <th>No Email</th>
+            <th>With Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Folios</td>
+            <td><%= @results_map[:no_of_folios] %></td>
+            <td>
+                <%= @results_map[:no_of_folios_no_email] %>
+                <%= tag.i "",                                                    
+                    class:    "ti ti-info-triangle text-primary",
+                    role:     "button",
+                    tabindex: 0,
+                    data: {
+                    bs_toggle:    "tooltip",
+                    bs_html:      true,                                  
+                    bs_custom_class: "wide-tooltip",
+                    bs_title:     "Folios without email access. This includes folios that do not have access rights or investor access."
+                    } 
+                %>
+            </td>
+            <td><%= @results_map[:no_of_folios_with_email] %></td>
+          </tr>
+          <tr>
+            <td>Investors</td>
+            <td><%= @results_map[:no_of_investors] %></td>
+            <td>
+                <%= @results_map[:no_of_investors_no_email] %>
+                <%= tag.i "",                                                    
+                    class:    "ti ti-info-triangle text-primary",
+                    role:     "button",
+                    tabindex: 0,
+                    data: {
+                    bs_toggle:    "tooltip",
+                    bs_html:      true,                                  
+                    bs_custom_class: "wide-tooltip",
+                    bs_title:     "Investors without email access. This includes investors with no investor access which can receive email."
+                    } 
+                %>
+            </td>
+            <td><%= @results_map[:no_of_investors_with_email] %></td>
+          </tr>
+          <tr>
+            <td>Users</td>
+            <td><%= @results_map[:no_of_users] %></td>
+            <td>
+                <%= @results_map[:no_of_users_no_email] %>
+                <%= tag.i "",                                                    
+                    class:    "ti ti-info-triangle text-primary",
+                    role:     "button",
+                    tabindex: 0,
+                    data: {
+                    bs_toggle:    "tooltip",
+                    bs_html:      true,                                  
+                    bs_custom_class: "wide-tooltip",
+                    bs_title:     "Users without email access. This includes user without approved investor access, email disabled, or advisors without access to the fund."
+                    } 
+                %>
+            </td>
+            <td><%= @results_map[:no_of_users_with_email] %></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-</div>
+  </div>
+
+
+
+<% 
+    if @results_map[:approved_investor_access].any?
+%>
+<nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+    <a class="nav-link active" id="disabled-list-tab" data-bs-toggle="tab" data-bs-target="#disabled-list" type="button" role="tab" aria-controls="disabled-list" aria-selected="true">Disabled List</a>
+    <a class="nav-link" id="other-issues-tab" data-bs-toggle="tab" data-bs-target="#other-issues" type="button" role="tab" aria-controls="other-issues" aria-selected="false">Approved Users</a>
+</nav>
+
 <% end %>
 
-<% if @email_disabled_investor_accesses.present? %>
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title"> Email Disabled Investor Access </h3>
-    </div>
-    <div class="card-body">
-        <%= render "/investor_accesses/table", investor_accesses: @email_disabled_investor_accesses %>
-    </div>
+<div class="tab-content" id="myTabContent" data-controller="datatable">
+  <div class="tab-pane fade show active" id="disabled-list" role="tabpanel" aria-labelledby="disabled-list-tab">
+
+    <%= render_number_stats_cards(@results_map, [
+        { path: "#unapproved-investors", key: :unapproved_investor_accesses, subtitle: "Unapproved Users", progress_bar_color: "danger", text_info: "user-x" },
+        { path: "#email-disabled", key: :email_disabled_investor_accesses, subtitle: "Email Disabled", progress_bar_color: "warning", text_info: "mailbox-off" },
+        { path: "#no-access-rights", key: :commitments_wo_access_rights, subtitle: "No Access Rights", progress_bar_color: "danger", text_info: "key-off" },
+        { path: "#no-investor-access", key: :commitment_wo_investor_accesses, subtitle: "No Investor Access", progress_bar_color: "warning", text_info: "cancel" },
+        
+    ]) %>
+    <% if @results_map[:unapproved_investor_accesses].present? %>
+        <div class="card" id="unapproved-investors">
+            <div class="card-header">
+                <h3 class="card-title"> Unapproved Users </h3>
+            </div>
+            <div class="card-body">
+                <%= render "/investor_accesses/table", investor_accesses: @results_map[:unapproved_investor_accesses], table_id: "unapproved_investor_accesses" %>
+            </div>
+        </div>
+    <% end %>
+
+    <% if @results_map[:email_disabled_investor_accesses].present? %>
+        <div class="card" id="email-disabled">
+            <div class="card-header">
+                <h3 class="card-title"> Email Disabled </h3>
+            </div>
+            <div class="card-body">
+                <%= render "/investor_accesses/table", investor_accesses: @results_map[:email_disabled_investor_accesses], table_id: "email_disabled_investor_accesses" %>
+            </div>
+        </div>
+    <% end %>     
+
+
+    <% if @results_map[:commitments_wo_access_rights].present? %>
+        <div class="card" id="no-access-rights">
+            <div class="card-header">
+                <h3 class="card-title"> Folios Access Rights</h3>
+            </div>
+            <div class="card-body">
+                <table class="table dataTable jqDataTable" id="commitments_wo_access_rights_table">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Investor Name</th>  
+                            <th>Access Rights</th>                 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @results_map[:commitments_wo_access_rights].each do |capital_commitment| %>
+                            <tr>
+                                <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
+                                <td><%= link_to capital_commitment.investor %></td>
+                                <td><%= link_to "Grant", fund_path(capital_commitment.fund_id, tab: "access-rights-tab"), class: "btn btn-outline-primary" %>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% end %>
+
+    <% if @results_map[:commitment_wo_investor_accesses].present? %>
+        <div class="card" id="no-investor-access">
+            <div class="card-header">
+                <h3 class="card-title"> Folios Investor Access </h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped" id="commitment_wo_investor_accesses_table">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Investor Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @results_map[:commitment_wo_investor_accesses].each do |capital_commitment| %>
+                            <tr>
+                                <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
+                                <td><%= link_to capital_commitment.investor %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% end %>
+
+    <% if @results_map[:unapproved_investor_accesses].blank? && @results_map[:email_disabled_investor_accesses].blank? && @results_map[:commitments_wo_access_rights].blank? && @results_map[:commitment_wo_investor_accesses].blank? %>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"> No Errors </h3>
+            </div>
+            <div class="card-body">
+                <p>All fund investors will be sent notifications.</p>
+            </div>
+        </div>
+
+    <% end %>
+  </div>
+  <div class="tab-pane fade" id="other-issues" role="tabpanel" aria-labelledby="other-issues-tab">
+
+    <%= render_number_stats_cards(@results_map, [
+        { path: "#approved-investors", key: :approved_investor_access_count, subtitle: "Approved Users", progress_bar_color: "success", text_info: "user-check" },        
+        { path: "#approved-advisors", key: :approved_investor_access_ia_count, subtitle: "Approved Advisors", progress_bar_color: "info", text_info: "tie" }        
+    ]) %>
+
+    <% if @results_map[:approved_investor_access].present? %>
+        <div class="card" id="approved-investors">
+            <div class="card-header">
+                <h3 class="card-title"> User List </h3>
+            </div>
+            <div class="card-body">
+                <%= render "/investor_accesses/table", investor_accesses: @results_map[:approved_investor_access], table_id: "approved_investor_access" %>
+            </div>
+        </div>
+    <% end %>
+    <% if @results_map[:approved_investor_access_ia].present? %>
+        <div class="card" id="approved-advisors">
+            <div class="card-header">
+                <h3 class="card-title"> Advisor List </h3>
+            </div>
+            <div class="card-body">
+                <%= render "/investor_accesses/table", investor_accesses: @results_map[:approved_investor_access_ia], table_id: "approved_investor_access" %>
+            </div>
+        </div>
+    <% end %>
+  </div>
 </div>
-<% end %> 
 
-
-<% if @commitments_wo_access_rights.present? %>
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title"> Folios / Fund Investors without Access Rights</h3>
-    </div>
-    <div class="card-body">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Folio</th>
-                    <th>Investor Name</th>  
-                    <th>Access Rights</th>                 
-                </tr>
-            </thead>
-            <tbody>
-                <% @commitments_wo_access_rights.each do |capital_commitment| %>
-                    <tr>
-                        <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
-                        <td><%= link_to capital_commitment.investor %></td>
-                        <td><%= link_to "Grant", fund_path(capital_commitment.fund_id, tab: "access-rights-tab"), class: "btn btn-outline-primary" %>
-                    </tr>
-                <% end %>
-            </tbody>
-        </table>
-    </div>
-</div>
-<% end %>
-
-<% if @commitment_wo_investor_accesses.present? %>
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title"> Folios / Fund Investors without Investor Access </h3>
-    </div>
-    <div class="card-body">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Folio</th>
-                    <th>Investor Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% @commitment_wo_investor_accesses.each do |capital_commitment| %>
-                    <tr>
-                        <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
-                        <td><%= link_to capital_commitment.investor %></td>
-                    </tr>
-                <% end %>
-            </tbody>
-        </table>
-    </div>
-</div>
-<% end %>
-
-<% if @unapproved_investor_accesses.blank? && @email_disabled_investor_accesses.blank? && @commitments_wo_access_rights.blank? && @commitment_wo_investor_accesses.blank? %>
-
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title"> No Errors </h3>
-    </div>
-    <div class="card-body">
-        <p>All fund investors will be sent notifications.</p>
-    </div>
-</div>
-
-<% end %>

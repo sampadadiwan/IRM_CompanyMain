@@ -1,0 +1,11 @@
+<div class="row">
+  <% cards_data.each do |card_data| %>
+    <%= render(NumberStatsComponent.new(
+                path: card_data[:path],
+                amount: card_data[:stat],
+                subtitle: card_data[:subtitle],
+                progress_bar_color: card_data[:progress_bar_color],
+                text_info: card_data[:text_info]
+    )) %>
+  <% end %>
+</div>

@@ -19,6 +19,8 @@ class CapitalDistribution < ApplicationRecord
   accepts_nested_attributes_for :distribution_fees, allow_destroy: true
 
   has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
+  has_many :capital_commitments, through: :capital_distribution_payments
+  has_many :investors, through: :capital_distribution_payments
   # These are the PIs whose sale gains were distributed via this CD
   has_many :portfolio_investments
 

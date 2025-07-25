@@ -28,6 +28,11 @@ class InvestorAccess < ApplicationRecord
                                ["investor_accesses.approved = ?", false] => 'unapproved_investor_access_count'
                              }
 
+  counter_culture :investor, column_name: proc { |model| model.approved && model.email_enabled ? 'will_receive_email' : nil },
+                             column_names: {
+                               ["investor_accesses.approved=? AND investor_accesses.email_enabled=?", true, true] => 'will_receive_email'
+                             }
+
   scope :approved_for_user, lambda { |user, across_all_entities: false|
     if across_all_entities && user.has_cached_role?(:investor_advisor)
       where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true).distinct

@@ -20,7 +20,7 @@ export default class extends Controller {
 
         this.deleteForm = event.target.closest("form");
 
-        $('#confirmModal #msg').text(msg);
+        $('#confirmModal #msg').html(msg);
         $('#confirmModal #title').text(title);
         $('#confirmModal #method').val(method);
         $('#confirmModal #submitForm').val(submitForm);

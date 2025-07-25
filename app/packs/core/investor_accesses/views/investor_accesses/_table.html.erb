@@ -1,7 +1,7 @@
 <%= turbo_frame_tag "new_investor_access" do %>
 <% end %>
-
-<table id="investor_accesses" class="table table-bordered  dataTable jqDataTable">
+<% table_id ||=  "investor_accesses" %>
+<table id="<%=table_id%>" class="table table-bordered  dataTable jqDataTable">
         <thead>
             <tr>
                 <% if params[:investor_id].blank? %>
