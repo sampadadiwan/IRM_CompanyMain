@@ -1,3 +1,19 @@
+V9.0.83
+#####################################
+f08779da0 Email list preview (#928)
+91f7ad0f4 Fixed KYCs for Fund Advisor
+098b8ea00 Upgraded gems
+f19ed4f94 Removed forbid_bad_role to remove bug for IA
+45468dd30 Reverted gems upgrade
+065b43a7f Gems upgrade 07 2025 (#927)
+13c1d5fe5 Ia commitment form (#916)
+24ddb3714 Now remittance deletion shows payment units error (#923)
+c56f93f14 Deployed DbRestore to pord
+e675b4d4e Now sends time take by db restore in the email
+67a45525b Added env to DbRestoreJob message
+b656fb12c Added better logging and cleanup for db_backup
+3f2a62e6a Updated method get_latest_full to fix sorting issue (#926)
+
 V9.0.82
 #####################################
 069fed891 Added comments ro DB Restore (#925)
