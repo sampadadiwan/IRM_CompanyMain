@@ -1,3 +1,20 @@
+/* Apply pointer cursor only to control cells containing the expand span */
+td[data-row-toggle-target="control"] .expand {
+  cursor: pointer;
+}
+
+/* Optionally: change pointer cursor on hover to make clickable area clearer */
+td[data-row-toggle-target="control"]:hover .expand {
+  cursor: pointer;
+}
+
+table.table-grey {
+  thead th {
+    background-color: #f8f9fa !important;
+    color: #212529;
+  }
+}
+
 table.dataTable>tbody>tr.child ul.dtr-details {
   width: 100%;
   li .dtr-title {
@@ -6,10 +23,10 @@ table.dataTable>tbody>tr.child ul.dtr-details {
 }
 
 table.dataTable {
-    border-spacing: 0;    
+    border-spacing: 0;
     border-radius: 8px;
     overflow:hidden;
-    padding: 1px 0px !important;    
+    padding: 1px 0px !important;
     width: 100% !important;
 
     td {
@@ -48,7 +65,7 @@ table.dataTable {
       color: white !important;
     }
     font-weight: 500;
-    vertical-align: top; 
+    vertical-align: top;
 }
 
 
@@ -56,7 +73,7 @@ table.dataTable {
   tbody tr:nth-child(even):hover td{
     background-color: unset !important;
   }
-  
+
   tbody tr:nth-child(odd):hover td {
       background-color: unset !important;
   }

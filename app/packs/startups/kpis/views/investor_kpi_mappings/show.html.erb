@@ -35,6 +35,28 @@
 
     <tr>
       <td>
+        Parent Kpi
+      </td>
+      <td>
+        <% if @investor_kpi_mapping.parent %>
+          <%= link_to @investor_kpi_mapping.parent.reported_kpi_name, investor_kpi_mapping_path(@investor_kpi_mapping.parent) %>
+        <% else %>
+          None
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Position
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.position %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
         Data Type
       </td>
       <td>

@@ -12,6 +12,14 @@ server "13.233.55.8", user: "ubuntu", roles: %w[primary app db web]
 set :rails_env, "staging"
 set :stage, :staging
 
+set :ssh_options, {
+  user: 'ubuntu',
+  keys: ['~/.ssh/altxdev.pem'],
+  forward_agent: true,
+  auth_methods: %w[publickey],
+  verify_host_key: :never
+}
+
 # role-based syntax
 # ==================
 

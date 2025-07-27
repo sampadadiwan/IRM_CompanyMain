@@ -7,6 +7,8 @@
 require 'cucumber/rails'
 require 'rspec/rails'
 require 'cucumber/rspec/doubles'
+require 'capybara'
+require 'capybara/playwright'
 
 require 'simplecov'
 SimpleCov.start
@@ -37,7 +39,7 @@ Cucumber::Rails::Database.autorun_database_cleaner = false
 # Remove/comment out the lines below if your app doesn't have a database.
 # For some databases (like MongoDB and CouchDB) you may need to use :truncation instead.
 
-# Drop emailbutler_messages caphive_agents admin_users impressions 
+# Drop emailbutler_messages caphive_agents admin_users impressions
 begin
   # These tables are excluded simply to make truncation faster. If you write tests which include these models then you should remove them from this list.
   DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments deal_docs share_transfers action_mailbox_inbound_emails admin_users allocation_runs audits call_fees caphive_agents devise_api_tokens document_chats emailbutler_messages favorites fees friendly_id_slugs key_biz_metrics permissions portfolio_scenarios quick_link_steps quick_links support_client_mappings whatsapp_logs]]
@@ -91,7 +93,7 @@ Capybara.default_max_wait_time = 10 # or more
 
 Capybara.register_driver(:playwright) do |app|
   driver = Capybara::Playwright::Driver.new(app, browser_type: :chromium, headless: ENV["BROWSER"].blank?, playwright_cli_executable_path: 'node_modules/.bin/playwright'
-)    
+)
   driver
 end
 

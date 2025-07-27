@@ -230,7 +230,8 @@ group :test do
   gem 'sqlite3'
   gem "webdrivers"
   # gem "selenium-webdriver"
-  gem "capybara-playwright-driver"
+  gem 'capybara-playwright-driver'
+  gem 'playwright-ruby-client', '1.50.1'
 end
 
 gem "marginalia"

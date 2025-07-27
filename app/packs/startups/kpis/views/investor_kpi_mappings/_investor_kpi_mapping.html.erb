@@ -1,5 +1,7 @@
 <tr id="<%= dom_id investor_kpi_mapping %>">
   <td>
+    <%= investor_kpi_mapping.position %>
+  <td>
     <%= investor_kpi_mapping.investor.investor_name %>
   </td>
   <td>
@@ -7,6 +9,9 @@
   </td>
   <td>
     <%= investor_kpi_mapping.standard_kpi_name %>
+  </td>
+  <td>
+    <%= investor_kpi_mapping.category %>
   </td>
   <td>
     <%= display_boolean investor_kpi_mapping.show_in_report %>

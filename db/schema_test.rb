@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_27_045536) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -561,7 +561,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_orig_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"    
+    t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "total_units_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["commitment_date"], name: "index_capital_commitments_on_commitment_date"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
@@ -842,7 +842,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.bigint "owner_id"
     t.string "adjustment_type", limit: 20, default: "Top Up", null: false
     t.datetime "deleted_at"
-    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"    
+    t.decimal "tracking_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_commitment_adjustments_on_deleted_at"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
@@ -1239,7 +1239,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
     t.string "fi_code"
-    t.string "sandbox_numbers"    
+    t.string "sandbox_numbers"
     t.string "kpi_doc_list"
     t.text "kyc_docs_note"
     t.string "stamp_paper_tags"
@@ -1743,7 +1743,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_co_invest_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_distribution_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"   
+    t.decimal "tracking_committed_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.date "snapshot_date"
     t.boolean "snapshot", default: false
     t.bigint "orignal_id"
@@ -1784,7 +1784,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
   end
- 
+
   create_table "import_uploads", force: :cascade do |t|
     t.string "name"
     t.bigint "entity_id", null: false
@@ -1936,7 +1936,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
-    t.index ["funding_round_id"], name: "index_investment_opportunities_on_funding_round_id"    
+    t.index ["funding_round_id"], name: "index_investment_opportunities_on_funding_round_id"
   end
 
   create_table "investments", force: :cascade do |t|
@@ -2024,6 +2024,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.json "json_fields"
     t.json "rag_rules"
     t.string "data_type", limit: 10, default: "numeric"
+    t.integer "position", default: 0
+    t.string "ancestry", collation: "BINARY"
+    t.integer "child_count", default: 0
+    t.index ["ancestry"], name: "index_investor_kpi_mappings_on_ancestry"
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kpi_mappings_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kpi_mappings_on_investor_id"
@@ -2515,7 +2519,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
     t.index ["document_folder_id"], name: "index_offers_on_document_folder_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["final_agreement_user_id"], name: "index_offers_on_final_agreement_user_id"
-    t.index ["form_type_id"], name: "index_offers_on_form_type_id"    
+    t.index ["form_type_id"], name: "index_offers_on_form_type_id"
     t.index ["interest_id"], name: "index_offers_on_interest_id"
     t.index ["investor_id"], name: "index_offers_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_offers_on_secondary_sale_id"
@@ -3517,7 +3521,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_25_055328) do
   add_foreign_key "portfolio_cashflows", "form_types"
   add_foreign_key "portfolio_cashflows", "funds"
   add_foreign_key "portfolio_cashflows", "investment_instruments"
-  add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"  
+  add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "capital_distributions"
   add_foreign_key "portfolio_investments", "entities"

@@ -1,8 +1,12 @@
 class InvestorKpiMapping < ApplicationRecord
   include WithCustomField
 
+  has_ancestry
+
   belongs_to :entity
   belongs_to :investor
+  acts_as_list scope: :investor, add_new_at: :bottom
+  default_scope { order(:position) }
 
   attribute :rag_rules, :json, default: {}
 
@@ -20,6 +24,11 @@ class InvestorKpiMapping < ApplicationRecord
     self.reported_kpi_name = reported_kpi_name.strip
     self.standard_kpi_name = reported_kpi_name if standard_kpi_name.blank?
     self.standard_kpi_name = standard_kpi_name.strip
+  end
+
+  after_commit :update_parent_child_count
+  def update_parent_child_count
+    parent&.update(child_count: parent.children.count)
   end
 
   def self.ransackable_attributes(_auth_object = nil)

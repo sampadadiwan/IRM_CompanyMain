@@ -104,7 +104,7 @@ end
 
 Then('I should see the KPI Report') do
   KpiReport.all.each do |kpi_report|
-    page.should have_content(kpi_report.as_of.strftime("%d/%m/%Y"))
+    page.should have_content(kpi_report.as_of.strftime("%b %Y"))
   end
 end
 

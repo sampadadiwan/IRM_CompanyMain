@@ -1,13 +1,13 @@
-<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true, chart: args[:chart])) %>
+<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true, chart: args[:chart], compound: args[:compound], no_actions: args[:no_actions], categories: args[:categories], period: args[:period])) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
         args: args,
         widget_size: widget.widget_size
       )
-    ) do 
+    ) do
 %>
-    <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: "#{uri.to_s}" do %>             
+    <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: "#{uri.to_s}" do %>
     <%end%>
-  
+
 <% end %>

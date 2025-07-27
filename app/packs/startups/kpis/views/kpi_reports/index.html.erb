@@ -3,6 +3,7 @@
 
 <%= render ReportingComponent.new do %>
     <% if params[:grid_view].present? %>
+        <% params[:period] ||= "Month" %>
         <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
             <%= render "/kpi_reports/grid_view", kpi_reports: @kpi_reports if @kpi_reports %>
         <% end %>

@@ -32,16 +32,16 @@
             <td><%= @results_map[:no_of_folios] %></td>
             <td>
                 <%= @results_map[:no_of_folios_no_email] %>
-                <%= tag.i "",                                                    
+                <%= tag.i "",
                     class:    "ti ti-info-triangle text-primary",
                     role:     "button",
                     tabindex: 0,
                     data: {
                     bs_toggle:    "tooltip",
-                    bs_html:      true,                                  
+                    bs_html:      true,
                     bs_custom_class: "wide-tooltip",
                     bs_title:     "Folios without email access. This includes folios that do not have access rights or investor access."
-                    } 
+                    }
                 %>
             </td>
             <td><%= @results_map[:no_of_folios_with_email] %></td>
@@ -51,16 +51,16 @@
             <td><%= @results_map[:no_of_investors] %></td>
             <td>
                 <%= @results_map[:no_of_investors_no_email] %>
-                <%= tag.i "",                                                    
+                <%= tag.i "",
                     class:    "ti ti-info-triangle text-primary",
                     role:     "button",
                     tabindex: 0,
                     data: {
                     bs_toggle:    "tooltip",
-                    bs_html:      true,                                  
+                    bs_html:      true,
                     bs_custom_class: "wide-tooltip",
                     bs_title:     "Investors without email access. This includes investors with no investor access which can receive email."
-                    } 
+                    }
                 %>
             </td>
             <td><%= @results_map[:no_of_investors_with_email] %></td>
@@ -70,16 +70,16 @@
             <td><%= @results_map[:no_of_users] %></td>
             <td>
                 <%= @results_map[:no_of_users_no_email] %>
-                <%= tag.i "",                                                    
+                <%= tag.i "",
                     class:    "ti ti-info-triangle text-primary",
                     role:     "button",
                     tabindex: 0,
                     data: {
                     bs_toggle:    "tooltip",
-                    bs_html:      true,                                  
+                    bs_html:      true,
                     bs_custom_class: "wide-tooltip",
                     bs_title:     "Users without email access. This includes user without approved investor access, email disabled, or advisors without access to the fund."
-                    } 
+                    }
                 %>
             </td>
             <td><%= @results_map[:no_of_users_with_email] %></td>
@@ -91,7 +91,7 @@
 
 
 
-<% 
+<%
     if @results_map[:approved_investor_access].any?
 %>
 <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
@@ -109,7 +109,7 @@
         { path: "#email-disabled", key: :email_disabled_investor_accesses, subtitle: "Email Disabled", progress_bar_color: "warning", text_info: "mailbox-off" },
         { path: "#no-access-rights", key: :commitments_wo_access_rights, subtitle: "No Access Rights", progress_bar_color: "danger", text_info: "key-off" },
         { path: "#no-investor-access", key: :commitment_wo_investor_accesses, subtitle: "No Investor Access", progress_bar_color: "warning", text_info: "cancel" },
-        
+
     ]) %>
     <% if @results_map[:unapproved_investor_accesses].present? %>
         <div class="card" id="unapproved-investors">
@@ -131,21 +131,21 @@
                 <%= render "/investor_accesses/table", investor_accesses: @results_map[:email_disabled_investor_accesses], table_id: "email_disabled_investor_accesses" %>
             </div>
         </div>
-    <% end %>     
+    <% end %>
 
 
     <% if @results_map[:commitments_wo_access_rights].present? %>
         <div class="card" id="no-access-rights">
             <div class="card-header">
-                <h3 class="card-title"> Folios Access Rights</h3>
+                <h3 class="card-title"> Folios: No Access Rights</h3>
             </div>
             <div class="card-body">
                 <table class="table dataTable jqDataTable" id="commitments_wo_access_rights_table">
                     <thead>
                         <tr>
                             <th>Folio</th>
-                            <th>Investor Name</th>  
-                            <th>Access Rights</th>                 
+                            <th>Investor Name</th>
+                            <th>Access Rights</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,14 +165,15 @@
     <% if @results_map[:commitment_wo_investor_accesses].present? %>
         <div class="card" id="no-investor-access">
             <div class="card-header">
-                <h3 class="card-title"> Folios Investor Access </h3>
+                <h3 class="card-title"> Folios: No Investor Access (No Users) </h3>
             </div>
             <div class="card-body">
-                <table class="table table-striped" id="commitment_wo_investor_accesses_table">
+                <table class="table dataTable jqDataTable" id="commitment_wo_investor_accesses_table datatable jqDataTable">
                     <thead>
                         <tr>
                             <th>Folio</th>
                             <th>Investor Name</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -180,6 +181,7 @@
                             <tr>
                                 <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
                                 <td><%= link_to capital_commitment.investor %></td>
+                                <td><%= link_to "Add User", capital_commitment.investor, class: "btn btn-outline-primary" %></td>
                             </tr>
                         <% end %>
                     </tbody>
@@ -204,8 +206,8 @@
   <div class="tab-pane fade" id="other-issues" role="tabpanel" aria-labelledby="other-issues-tab">
 
     <%= render_number_stats_cards(@results_map, [
-        { path: "#approved-investors", key: :approved_investor_access_count, subtitle: "Approved Users", progress_bar_color: "success", text_info: "user-check" },        
-        { path: "#approved-advisors", key: :approved_investor_access_ia_count, subtitle: "Approved Advisors", progress_bar_color: "info", text_info: "tie" }        
+        { path: "#approved-investors", key: :approved_investor_access_count, subtitle: "Approved Users", progress_bar_color: "success", text_info: "user-check" },
+        { path: "#approved-advisors", key: :approved_investor_access_ia_count, subtitle: "Approved Advisors", progress_bar_color: "info", text_info: "tie" }
     ]) %>
 
     <% if @results_map[:approved_investor_access].present? %>

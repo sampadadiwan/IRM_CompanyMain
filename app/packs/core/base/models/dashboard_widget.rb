@@ -53,7 +53,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Valuations", path: "investors/widgets/valuations", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{scenario: 'Default', condensed: true, chart: false, list: true, months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI' ....]}"),
 
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{chart: false}"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{chart: false, compound: false, period: 'Quarter', no_actions: false, categories: 'Balance Sheet, Income Statement'}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL", metadata_help: "{chart: false}"),
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),

@@ -1,0 +1,27 @@
+</div>
+
+    <% if params[:chart].nil? || params[:chart] == "true" %>
+        <% 
+            kpi_names = investor_kpi_mappings.collect(&:standard_kpi_name)
+            kpis = Kpi.where(name: kpi_names, kpi_report_id: kpi_reports.pluck(:id))
+            kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor&.investor_entity_id, ikm.standard_kpi_name] }
+        %>
+        <div class="associated_entity">
+            <div class="row">
+                <div class="col-lg-12 mb-4">
+
+                    <!-- Illustrations -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary"> <%= "KPIs" %> </h6>
+                        </div>
+                        <div class="card-body">
+                            <% id = params[:report_id] %>
+                            <%= multiple_entity_kpi_lines_by_date(kpis, id: "kpi_lines_#{id}", investor_kpi_mappings: kpi_mappings) %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% end %>
+</div>

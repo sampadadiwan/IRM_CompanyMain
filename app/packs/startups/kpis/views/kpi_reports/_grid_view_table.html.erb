@@ -1,0 +1,102 @@
+<div class="table-responsive" data-controller="datatable">
+    <table id="kpi_reports_grid" class="table table-bordered table-striped dataTable">
+        <thead>
+            <tr>
+                <th>KPI</th>
+                <th>Category</th>
+                <% kpi_reports.each do |kpi_report| %>
+                    <th>
+                        <%= kpi_report.as_of.strftime("%b-%Y") %>
+                        <span class="d-block">
+                        <% if kpi_report.tag_list.present? %>
+                            <small class="badge badge-pill bg-success-subtle text-success"><%= kpi_report.tag_list %></small>
+                        <% end %>
+                        <% if kpi_report.owner.present? %>
+                            <small class="badge badge-pill bg-info-subtle text-info"><%= kpi_report.owner %></small>
+                        <% end %>
+                        </span>
+                    </th>
+                <% end %>
+            </tr>
+        </thead>
+        <tbody>
+
+
+            <tr>
+                <td>Period</td>
+                <td></td>
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>
+                        <td>
+                            <%= link_to kpi_report.period, show_performance_kpi_reports_path(as_of: kpi_report.as_of, portfolio_company_id: kpi_report.portfolio_company_id), target: "_blank" %>
+                        </td>
+                <% end %>
+            </tr>
+
+            <% investor_kpi_mappings.each do |ikm| %>
+                <tr>
+                    <td>
+                        <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
+                    </td>
+
+                    <td>
+                        <%= ikm.category %>
+                    </td>
+
+                    <% kpi_reports.each do |kpi_report| %>
+                        <!-- Create a hash of the kpis with the name as the key -->
+                        <%
+                            kpis = kpi_report.kpis
+                            kpis = kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h
+                        %>
+
+                        <!-- Find the kpi with the name or an alias for the name and show its value-->
+                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
+                        <td class="value_<%=kpi&.id%>">
+                            <% if kpi %>
+                                <%= display_kpi(kpi, ikm) %>
+                                <br>
+                                <%= kpi_percentage_class(kpi, ikm).html_safe %>
+                                <% if kpi.notes.present? %>
+                                    <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                <% end %>
+                            <% else %>
+                                N/A
+                            <% end %>
+                        </td>
+                    <% end %>
+
+                </tr>
+            <% end %>
+
+            <tr>
+                <td>Documents</td>
+                <td></td>
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>
+                        <td>
+                            <ul>
+                            <% kpi_report.documents.filter{|d| !d.csv?}.each_with_index do |doc, idx| %>
+                            <li>
+                             <small>
+                                <%= idx + 1 %>.
+                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: "attachment; filename=#{doc.name_with_extension}"), target: "_blank" %>,
+                             </small>
+                            </li>
+                            <% end %>
+                            </ul>
+                        </td>
+                <% end %>
+            </tr>
+
+            <tr>
+                <td>Link</td>
+                <td></td>
+                <% kpi_reports.each do |kpi_report| %>
+                        <td>
+                            <small><%=  link_to kpi_report %></small>
+                        </td>
+                <% end %>
+            </tr>
+
+        </tbody>
+    </table>
+</div>
