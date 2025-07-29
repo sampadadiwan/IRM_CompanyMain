@@ -13,6 +13,14 @@ server "13.233.131.224", user: "ubuntu", roles: %w[app web] if ENV["LB"]
 set :rails_env, "production"
 set :stage, :production
 
+set :ssh_options, {
+  user: 'ubuntu',
+  keys: ['~/.ssh/caphive2.pem'],
+  forward_agent: true,
+  auth_methods: %w[publickey],
+  verify_host_key: :never
+}
+
 # role-based syntax
 # ==================
 

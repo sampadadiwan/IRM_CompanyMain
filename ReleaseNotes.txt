@@ -1,3 +1,8 @@
+V9.0.84
+#####################################
+94b54b436 Kpis screener (#929)
+4b0bfb2b1 Release notes
+
 V9.0.83
 #####################################
 f08779da0 Email list preview (#928)
@@ -257,7 +262,7 @@ Limit capital remittance percentage to -100.0 also
 
 V9.0.47
 #####################################
-changes - 
+changes -
 Increased folio id limit to 40 in CapitalRemittance,CapitalDistributionPayments,PortfolioInvestments,AccountEntries, name in FundUnitSettings, unit_type in FuntUnit
 limit capital remittance percentage to max 100.0 for call basis upload
 
@@ -1735,7 +1740,7 @@ f90165d8c Added created_at to kyc ransack
 V7.0.81
 #####################################
 80a808092 Allow user to edit premium for call
-774eba921 cc to support for errors emails 
+774eba921 cc to support for errors emails
 a0bea0324 Added commitment_type to cumulative AE
 5423feb4d Added advisor payouts fund formulas
 7768424b5 Added capability to capture computed capital / other fees audits in remittances
@@ -1743,7 +1748,7 @@ d2dcd803f Fixed investor view of IO
 603476a99 Use only actual portfolio cashflows for computations
 9905d65be Io changes to support features such as anonymous link etc
 6ff121283 Added required queues to sidekiq.rb
-873a7f45e Doc questions 
+873a7f45e Doc questions
 
 V7.0.77
 #####################################
@@ -1751,7 +1756,7 @@ V7.0.77
 Fixed WA messsages from custom notification
 
 
-V7.0.76    
+V7.0.76
 #####################################
 3ff5f3022 Fixed issues with really_destroy! for secondary
 cfd8793bd Validate unit_type length for commitments
@@ -1771,12 +1776,12 @@ a0ba88572 Counter cache folios in dashboard (#229)
 21a955c40 Added esign_emails to ransack
 14935661e Component usage (#228)
 
-V7.0.75    
+V7.0.75
 #####################################
 1. Sebi reports
 2. Fix for remittance payment status
 
-V7.0.72    
+V7.0.72
 #####################################
 1. Removed responsive grid for deals
 2. Changed url to show path instead of _url in notifiers - KYC whatsapp bug fix
@@ -1787,32 +1792,32 @@ V7.0.72
 7. SOA folder for commitment SOAs
 
 
-V7.0.71    
+V7.0.71
 #####################################
 1. Added latest flag to fund ratios
 2. Added PI and Fund Ratios to API downloads
 3. Better Fund Numbers screen
 
 
-V7.0.70    
+V7.0.70
 #####################################
 1. Custom calcs in templates
 2. Investor screen on mobile - bug fix
 3. Grids now mobile friendly
 
-V7.0.69    
+V7.0.69
 #####################################
 1. Moved uppy.js to inside caphive, file uploads should work inside Ambit now
 2. Fixed remittance other fee, now KYC should have correct due amounts for Sirius
 3. Dark theme for ag grid
-4. Login via email, now retains the subdomain of the fund/entity 
+4. Login via email, now retains the subdomain of the fund/entity
 5. Notifications lib Upgraded
 6. Offer docs upload with Orignal Format
 7. Login via email link remembers orignal location and redirects correctly
-8. CF can be renamed via debug=true 
+8. CF can be renamed via debug=true
 9. Added agreement_unit_type for Angel Funds
 
-V7.0.65    
+V7.0.65
 #####################################
 1. Enable portfolios for investors
 2. Increased bank name to 100 chars
@@ -1821,13 +1826,13 @@ V7.0.65
 5. Sorting of money cols for local data tables
 
 
-22/12/2023 - V7.0.25    
+22/12/2023 - V7.0.25
 #####################################
 1. Made boolean fields in documents mandatory with defaults
 2. Search documents for approval, email - bulk actions
 
 
-22/12/2023 - V7.0.22    
+22/12/2023 - V7.0.22
 #####################################
 1. Refactored esign code, multiple esing emails, no users required
 2. Added primary email to investor and entity
@@ -1835,7 +1840,7 @@ V7.0.65
 
 
 
-15/12/2023 - V7.0.20    
+15/12/2023 - V7.0.20
 #####################################
 1. Added labels for Custom fields
 2. Changing FCF name, causes data in models to changes
@@ -1846,14 +1851,14 @@ V7.0.65
 13/12/2023 - V7.0.19
 #####################################
 1. Enable selection of template name for commitment doc gen
-2. Enable download of documents uploaded for custom files 
+2. Enable download of documents uploaded for custom files
 3. Notification of KYC update to fund employees
 
 08/12/2023 - V7.0.17
 #####################################
 1. Custom form fields name lenght to 100
 2. Added other text field to esignatures
-3. 
+3.
 
 08/12/2023 - V7.0.13
 #####################################
@@ -1914,14 +1919,14 @@ V7.0.65
 
 #### Bugs
 1. Better remittance email messages
-2. Better templating for CDP, for Sirius 
+2. Better templating for CDP, for Sirius
 3. Fixed approvals for generated docs end dates
 4. Fixed issue with investor notice
 
 29/11/2023 - V7.0.6
 #####################################
 
-#### Delete All for Funds 
+#### Delete All for Funds
 1. Added delete all button for funds
 2. Minor fix for fund col in commitments filter view
 
