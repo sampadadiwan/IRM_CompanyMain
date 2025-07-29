@@ -18,9 +18,7 @@ class KpiReportsController < ApplicationController
                      @kpi_reports.includes(:user)
                    end
 
-    if params[:tag_list].blank?
-      @kpi_reports = @kpi_reports.where(tag_list: [nil, ""])
-    end
+    @kpi_reports = @kpi_reports.where(tag_list: [nil, ""]) if params[:tag_list].blank?
 
     @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
     @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
