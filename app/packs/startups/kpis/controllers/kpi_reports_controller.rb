@@ -112,6 +112,7 @@ class KpiReportsController < ApplicationController
   def show_performance
     @as_of = params[:as_of].present? ? Date.parse(params[:as_of]) : (Time.zone.today.end_of_month - 1.month)
     @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)
+    @portfolio_company = Investor.find(params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 
     if @kpi_report.present?
       authorize @kpi_report

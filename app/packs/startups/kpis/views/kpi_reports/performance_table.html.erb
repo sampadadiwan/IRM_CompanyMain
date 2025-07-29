@@ -1,8 +1,14 @@
 
-<%= turbo_frame_tag "performance_table_frame", target: "_top" do %>
+<%= turbo_frame_tag "performance_table_frame" do %>
   <div class="card table-responsive">
     <div class="card-header">
-      <%= content_tag :h3, "KPI Performance: #{@as_of.strftime('%d-%b-%Y')}", class: "card-title mb-0" %>
+      <%= form_with url: show_performance_kpi_reports_path(portfolio_company_id: params[:portfolio_company_id]), method: :get, data: { turbo_frame: "performance_table_frame" } do |f| %>
+        <div class="d-flex align-items-center">
+          <%= f.hidden_field :portfolio_company_id, value: params[:portfolio_company_id] %>
+          <%= f.label :as_of, "#{@portfolio_company&.name}  KPI Performance:", class: "card-title mb-0 me-2" %>
+          <%= f.select :as_of, options_for_select((6.months.ago.to_date..Date.current).map { |date| [date.end_of_month.strftime('%d-%b-%Y'), date.end_of_month] }.uniq.reverse, @as_of.end_of_month), {}, { onchange: "this.form.requestSubmit()", class: "form-select w-auto" } %>
+        </div>
+      <% end %>
     </div>
     <div class="card-body">
       <% if @kpi_report.present? %>
@@ -42,7 +48,7 @@
                 <td><%= r.monthly_curr_kpi ? link_to(number_with_delimiter(r.monthly_curr_kpi.value, delimiter: ','), r.monthly_curr_kpi) : nil %></td>
                 <td><%= content_tag(:span, number_to_percentage(r.growth_monthly, precision: 1), class: (r.growth_monthly.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly %></td>
                 <td><%= content_tag(:span, number_to_percentage(r.growth_monthly_py, precision: 1), class: (r.growth_monthly_py.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly_py %></td>
-         
+
                 <td><%= r.quarterly_prev_kpi ? number_with_delimiter(r.quarterly_prev_kpi.value, delimiter: ',') : nil %></td>
                 <td><%= r.quarterly_curr_kpi ? number_with_delimiter(r.quarterly_curr_kpi.value, delimiter: ',') : nil %></td>
                 <td><%= content_tag(:span, number_to_percentage(r.growth_quarterly, precision: 1), class: (r.growth_quarterly.negative? ? 'text-danger' : 'text-success')) if r.growth_quarterly %></td>

@@ -5,7 +5,7 @@
                 <th></th>
                 <% kpi_reports.each do |kpi_report| %>
                     <th>
-                        <%= link_to kpi_report.as_of.strftime("%b %Y"), show_performance_kpi_reports_path(kpi_report) %>
+                        <%= link_to kpi_report.as_of.strftime("%b %Y"), show_performance_kpi_reports_path(as_of: kpi_report:as_of) %>
                         <span class="d-block">
                         <% if kpi_report.tag_list.present? %>
                             <small class="badge badge-pill bg-success-subtle text-success"><%= kpi_report.tag_list %></small>
