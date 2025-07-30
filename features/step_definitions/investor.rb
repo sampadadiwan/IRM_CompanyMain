@@ -493,7 +493,6 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   sleep(4)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
-  select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
   fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
   click_on("Next")
@@ -681,7 +680,6 @@ end
 
 Then('I should see the investor kyc details on the details page') do
   expect(page).to have_content(@investor_kyc.entity.name)
-  expect(page).to have_content(@investor_kyc.residency.titleize)
   expect(page).to have_content(@investor_kyc.kyc_type.titleize)
   expect(page).to have_content(@investor_kyc.investor.investor_name)
   expect(page).to have_content(@investor_kyc.PAN)

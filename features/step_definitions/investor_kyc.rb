@@ -17,9 +17,8 @@
     class_name = "individual"
     find('.select2-container', visible: true).click
     find('li.select2-results__option', text: @investor_kyc.investor.investor_name).click
-    
+
     fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name)
-    select(@investor_kyc.residency.titleize, from: "#{class_name}_kyc_residency")
     fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN)
     fill_in("#{class_name}_kyc_birth_date", with: @investor_kyc.birth_date)
 
@@ -67,7 +66,6 @@
     find('li.select2-results__option', text: @investor_kyc.investor.investor_name).click
 
     fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name)
-    select(@investor_kyc.residency.titleize, from: "#{class_name}_kyc_residency")
     fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN)
     fill_in("#{class_name}_kyc_birth_date", with: @investor_kyc.birth_date)
 
@@ -159,12 +157,12 @@ investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
     kyc.address.should == user_data["Address"].strip
     kyc.corr_address.should == user_data["Correspondence Address"]&.strip
     InvestorKyc.kyc_types[kyc.kyc_type].should == user_data["Kyc Type"].strip
-    kyc.residency.should == user_data["Residency"]&.strip&.downcase
+    kyc.custom_fields["residency"].should == user_data["Residency"]&.strip
     kyc.birth_date.to_date.should == user_data["Date Of Birth"].to_date
     kyc.bank_name.should == user_data["Bank Name"].strip
     kyc.bank_account_number.should == user_data["Bank Account Number"].to_s.strip
     kyc.bank_account_type.should == user_data["Account Type"].strip
     kyc.ifsc_code.should == user_data["Ifsc Code"].strip
-    kyc.verified.should == (user_data["Verified"]&.strip&.downcase == "yes" || user_data["Verified"]&.strip&.downcase == "true")    
+    kyc.verified.should == (user_data["Verified"]&.strip&.downcase == "yes" || user_data["Verified"]&.strip&.downcase == "true")
   end
 end

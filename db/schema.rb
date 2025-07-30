@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_27_045536) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_30_070855) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1271,6 +1271,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_27_045536) do
     t.integer "notification_retention_months", default: 2
     t.string "value_bridge_cols"
     t.string "portflio_expense_account_entry_filter"
+    t.string "kyc_bank_account_types"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end

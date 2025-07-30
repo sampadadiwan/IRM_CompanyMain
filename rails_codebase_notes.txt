@@ -1,1 +1,0 @@
-I should take notes on what I find in the rails codebase for future reference.

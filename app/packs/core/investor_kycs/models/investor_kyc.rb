@@ -101,7 +101,6 @@ class InvestorKyc < ApplicationRecord
   }
 
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
-  enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
   include FileUploader::Attachment(:signature)
 
@@ -115,7 +114,6 @@ class InvestorKyc < ApplicationRecord
   validates :full_name, length: { maximum: 255 }
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
-  validates :residency, length: { maximum: 10 }
   validates :bank_name, length: { maximum: 100 }
 
   validate :birth_date_cannot_be_in_the_future

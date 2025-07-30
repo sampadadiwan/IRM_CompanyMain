@@ -1,5 +1,5 @@
 class ImportInvestorKyc < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type"].freeze
+  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type"].freeze
   # add them as standard fields above
 
   def standard_headers
@@ -64,7 +64,6 @@ class ImportInvestorKyc < ImportUtil
                                    birth_date: user_data["Date Of Birth"],
                                    kyc_type:,
                                    esign_emails: user_data["Investor Signatory Emails"],
-                                   residency: user_data["Residency"],
                                    bank_name: user_data["Bank Name"],
                                    bank_branch: user_data["Branch Name"],
                                    bank_account_number: user_data["Bank Account Number"]&.to_s,

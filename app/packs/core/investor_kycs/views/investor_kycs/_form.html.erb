@@ -45,8 +45,8 @@
             <%= form.text_field :owner_id, class: "form-control", hidden: true, value: params[:owner_id], name: :owner_id  %>
             <%= form.text_field :owner_type, class: "form-control", hidden: true, value: params[:owner_type], name: :owner_type  %>
 
-            <div data-controller="investor-kycs"> 
-            
+            <div data-controller="investor-kycs">
+
               <% if investor_kyc.investor_id.present? %>
                 <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
               <% else %>
@@ -56,7 +56,7 @@
                         data: {
                           investor_kycs_target: "select",
                           action: "change->investor-kycs#investor_selected"
-                        } 
+                        }
                   %>
                 </div>
               <% end %>
@@ -67,11 +67,6 @@
                 <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control custom_field", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
               </div>
 
-            </div>
-
-            <div class="form-group">
-              <%= form.label :residency %>
-              <%= form.select :residency, InvestorKyc.residencies.invert, {include_blank: false}, class: "form-control"  %>
             </div>
 
             <div class="form-group">
@@ -181,9 +176,15 @@
             <%= form.text_field :bank_branch, class: "form-control", maxlength: 40  %>
           </div>
 
+          <%
+            account_types = ["Savings Account", "Current Account ", "Non-Resident Ordinary (NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"]
+
+            account_types = @investor_kyc.entity.entity_setting.kyc_bank_account_types.split(",").map(&:strip) if @investor_kyc.entity.entity_setting.kyc_bank_account_types.present?
+          %>
+
           <div class="form-group">
             <%= form.label :bank_account_type, "Account Type" %>
-            <%= form.select :bank_account_type, ["Savings Account", "Current Account ", "Non-Resident Ordinary (NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"], {}, class: "form-control", maxlength: 40  %>
+            <%= form.select :bank_account_type, account_types, {}, class: "form-control", maxlength: 40  %>
           </div>
 
           <div class="form-group">
@@ -197,11 +198,6 @@
             <%= form.text_field :ifsc_code, class: "form-control", maxlength: 20 %>
           </div>
 
-
-          <div class="form-group">
-              <%= file_fields("Upload Cancelled Cheque / Bank Statement", investor_kyc, form, required: is_investor, meta_data: "Cheque") %>
-              <small class="form-text text-muted"></small>
-          </div>
 
           <%= custom_form_fields(investor_kyc, form, step: :two, required: is_investor) %>
 
@@ -253,7 +249,7 @@
             <div class="form-group">
               <%= form.label :send_kyc_form_to_user, "Send Notification to User to Update KYC"%>
               <%= form.check_box :send_kyc_form_to_user, class: "form-check-input"  %>
-            </div>            
+            </div>
           <% end %>
 
           <div class="form-group">

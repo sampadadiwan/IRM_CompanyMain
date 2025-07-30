@@ -142,7 +142,6 @@ Given('I create a new InvestorKyc {string} to trigger aml report generation') do
   #sleep(2)
   select(@temp_investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
   fill_in("#{class_name}_full_name", with: @temp_investor_kyc.full_name) unless @temp_investor_kyc.full_name.nil?
-  select(@temp_investor_kyc.residency.titleize, from: "#{class_name}_residency")
   fill_in("#{class_name}_PAN", with: @temp_investor_kyc.PAN)
   fill_in("#{class_name}_birth_date", with: @temp_investor_kyc.birth_date)
   click_on("Next")
