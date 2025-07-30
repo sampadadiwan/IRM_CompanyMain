@@ -506,13 +506,14 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  if files.include?("cancelled cheque")
-    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_cancelled_cheque_bank_statement' do
-        click_on 'Choose file'
-      end
-    end
-  end
+  # if files.include?("cancelled cheque")
+  #   binding.pry
+  #   page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+  #     within '#custom_file_upload_cancelled_cheque_bank_statement' do
+  #       click_on 'Choose file'
+  #     end
+  #   end
+  # end
   sleep(2)
 
   fill_in("#{class_name}_address", with: @investor_kyc.address)

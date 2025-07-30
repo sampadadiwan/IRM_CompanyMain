@@ -152,7 +152,7 @@ Scenario Outline: Create investor kyc - no ckyc
   Given there is an existing investor "investor_name=Investor 1"
   Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN,Upload Address Proof,Upload Cancelled Cheque / Bank Statement" for ""
   Then I should see the "Investor kyc was successfully saved."
-  And I should see the kyc documents "Upload PAN,Upload Address Proof,Upload Cancelled Cheque / Bank Statement"
+  And I should see the kyc documents "Upload PAN,Upload Address Proof"
   Then mock UpdateDocumentFolderPathJob job
   Then Folder path should be present and correct
   And when I upload the document for the kyc

@@ -1,3 +1,15 @@
+V9.0.85
+#####################################
+adfbe2002 Fixed bug in simple table kpi reports
+45a338977 Added doc size check for digio (#931)
+75747f06e Kyc std to cust fields (#932)
+1563702c7 Added import and download for investor kpi mappings (#930)
+dd533f429 Now check for nil if kpi mapping does not have category
+41ccfde4d Added date dropdown to kpi performance table
+db7b3cb18 Backup
+a2f74240c Added better prtfomance table links
+d969bb18d Better fix for taglist filter for kpis
+
 V9.0.84
 #####################################
 94b54b436 Kpis screener (#929)
