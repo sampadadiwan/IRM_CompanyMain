@@ -1,9 +1,9 @@
-<% 
+<%
   if params[:categories].present?
-    categories = params[:categories].downcase.split(",").map(&:strip)    
-    investor_kpi_mappings = investor_kpi_mappings.select{|ikm| categories.include?(ikm.category.downcase)} 
+    categories = params[:categories].downcase.split(",").map(&:strip)
+    investor_kpi_mappings = investor_kpi_mappings.select{|ikm| categories.include?(ikm.category&.downcase)}
   end
-  grouped_mappings = investor_kpi_mappings.group_by(&:category) 
+  grouped_mappings = investor_kpi_mappings.group_by(&:category)
 %>
 
 <% grouped_mappings.each do |category, mappings| %>

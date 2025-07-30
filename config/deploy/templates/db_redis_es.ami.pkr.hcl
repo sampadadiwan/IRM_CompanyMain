@@ -103,7 +103,11 @@ locals {
     sudo apt update
     sudo apt install percona-xtrabackup-80
     sudo apt install lz4 zstd
-    sudo apt-get install awscli
+    # sudo apt-get install awscli
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+
 
 
   ]
