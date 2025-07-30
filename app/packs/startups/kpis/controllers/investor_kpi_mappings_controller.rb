@@ -6,7 +6,12 @@ class InvestorKpiMappingsController < ApplicationController
   # GET /investor_kpi_mappings or /investor_kpi_mappings.json
   def index
     @investor_kpi_mappings = policy_scope(InvestorKpiMapping).includes(:investor)
-    @investor_kpi_mappings = @investor_kpi_mappings.where(investor_id: params[:investor_id]) if params[:investor_id].present?
+    @investor_kpi_mappings = filter_params(@investor_kpi_mappings, :investor_id, :import_upload_id)
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json
+    end
   end
 
   # GET /investor_kpi_mappings/1 or /investor_kpi_mappings/1.json

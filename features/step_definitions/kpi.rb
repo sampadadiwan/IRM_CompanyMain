@@ -149,3 +149,56 @@ Then('the KPI {string} should have RAG status {string}') do |kpi_name, expected_
   kpi = Kpi.find_by(name: kpi_name)
   kpi.rag_status.should == expected_rag_status
 end
+
+Given('KPI is enabled for the user') do
+  @user ||= User.first
+  @user.permissions.set(:enable_kpis)
+  @user.save!
+  @user.entity.permissions.set(:enable_kpis)
+  @user.entity.save!
+end
+
+Given('I upload an investor kpis mappings file for the company') do
+  visit(new_import_upload_path("import_upload[entity_id]": @entity.id, "import_upload[import_type]": "InvestorKpiMapping"))
+
+  fill_in('import_upload_name', with: "Test Upload")
+  # select("InvestorKpiMapping", from: "import_upload_import_type")
+  @import_file = "investor_kpi_mappings_test.xlsx"
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+end
+
+Then('There should be {string} Investor Kpi Mappings created') do |count|
+  expect(InvestorKpiMapping.count).to eq(count.to_i)
+end
+
+Then('the Investor Kpi Mappings must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  kpi_maps = InvestorKpiMapping.all
+  data.each_with_index do |row, idx|
+      next if idx.zero? # skip header row
+
+
+      # create hash from headers and cells
+      user_data = [headers, row].transpose.to_h
+      kpi_map = kpi_maps[idx-1]
+      puts "Checking import of #{kpi_map.standard_kpi_name}"
+
+      kpi_map.standard_kpi_name.should == user_data["Standard Kpi Name"].strip
+      kpi_map.reported_kpi_name.should == user_data["Reported Kpi Name"].strip
+      kpi_map.category.should == user_data["Category"].strip
+      kpi_map.data_type.should == user_data["Data Type"].strip.downcase
+      kpi_map.parent_id.should == user_data["Parent Id"].strip.to_i if user_data["Parent Id"].present?
+      kpi_map.position.should == user_data["Position"] if user_data["Position"].present?
+      kpi_map.show_in_report.should == (user_data["Show In Report"].to_s.downcase == "yes")
+      kpi_map.lower_threshold.should == user_data["Lower Threshold"] if user_data["Lower Threshold"].present?
+      kpi_map.upper_threshold.should == user_data["Upper Threshold"] if user_data["Upper Threshold"].present?
+  end
+end

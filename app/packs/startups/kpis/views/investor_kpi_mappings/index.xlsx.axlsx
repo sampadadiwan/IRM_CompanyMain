@@ -1,0 +1,20 @@
+wb = xlsx_package.workbook
+@investor_kpi_mappings = @investor_kpi_mappings
+form_type, custom_field_names, custom_headers = get_form_type("InvestorKPIMapping")
+
+wb.add_worksheet(name: "InvestorKPIMapping") do |sheet|
+  headers = ["Id", "Investor", "Reported Kpi Name", "Standard Kpi Name", "Category", "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report", "Lower Threshold", "Upper Threshold"] + custom_headers
+
+  # Create the header row
+  sheet.add_row(headers)
+
+  # Create entries for each item
+  @investor_kpi_mappings.each do |kpi_mapping|
+    custom_field_values = get_custom_values(kpi_mapping, form_type, custom_field_names)
+    show_in_report = kpi_mapping.show_in_report ? "Yes" : "No"
+
+    values = [kpi_mapping.id, kpi_mapping.investor.name, kpi_mapping.reported_kpi_name, kpi_mapping.standard_kpi_name, kpi_mapping.category, kpi_mapping.data_type, kpi_mapping.parent&.standard_kpi_name, kpi_mapping.position, show_in_report, kpi_mapping.lower_threshold, kpi_mapping.upper_threshold] + custom_field_values
+
+    sheet.add_row values
+  end
+end

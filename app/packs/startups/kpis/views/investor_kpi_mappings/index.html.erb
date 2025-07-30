@@ -1,15 +1,39 @@
 
 
-<%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top" do %>
+<%= turbo_frame_tag "investor_kpi_mappings_frame", target: "_top" do %>
+<%
+  import_upload_id ||= params[:import_upload_id]
+  investor_id ||= params[:investor_id]
+%>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investor Kpi Mappings</h1>
 
     <span>
-      <%= link_to "New Investor Kpi Mapping", new_investor_kpi_mapping_path("investor_kpi_mapping[investor_id]": params[:investor_id]), {class: "btn btn-outline-primary ti ti-plus"}  %>
+      <% 
+        xl_link = investor_kpi_mappings_path(investor_id: investor_id, import_upload_id: import_upload_id, format: :xlsx) 
+      %>
+      <%= link_to "New Investor Kpi Mapping", new_investor_kpi_mapping_path("investor_kpi_mapping[investor_id]": investor_id), {class: "btn btn-outline-primary ti ti-plus"} if  investor_id.present? %>
+      
+      <%= link_to xl_link, id: "investor_kpi_mappings_download_xl_btn", class: "btn btn-outline-primary" do %>
+          <i class="ti ti-download"></i> <%= t_common(:download) %>
+      <% end %>
 
-      <%= button_to "Generate From Last Report", generate_investor_kpi_mappings_path(investor_id: params[:investor_id]), {method: :post, class: "btn btn-outline-success ti ti-file-code-2"}  %>
-    </span>
+
+      <% if investor_id.present? %>
+        <%= link_to new_import_upload_path(
+                        "import_upload[import_type]": "InvestorKpiMapping",
+                        "sample_upload": "INVESTOR_KPI_MAPPING_SAMPLE"),
+                    class: "btn btn-outline-primary",
+                    id: "upload_investor_kpi_mappings",
+                    data: { turbo: false } do %>
+            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+        <% end %>
+
+      <%= button_to "Generate From Last Report", generate_investor_kpi_mappings_path(investor_id: investor_id), {method: :post, class: "btn btn-outline-success ti ti-file-code-2"}  %>
+
+      <% end %>
+  </span>
 
   </div>
   <div class="table-responsive" data-controller="datatable">

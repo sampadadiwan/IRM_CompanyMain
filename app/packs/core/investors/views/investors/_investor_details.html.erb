@@ -130,7 +130,7 @@
 
         <div id="kpi-mappings-tab" class="tab-pane fade">
           <div id="investor_kpi_mappings" class="associated_entity">
-            <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
+            <%= turbo_frame_tag "investor_kpi_mappings_frame", target: "_top", src: investor_kpi_mappings_path(investor_id: investor.id), loading: :lazy do %>
               <%= render "/layouts/loading" %>
             <% end %>
           </div>
