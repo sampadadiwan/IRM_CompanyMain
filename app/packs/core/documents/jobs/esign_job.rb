@@ -13,10 +13,10 @@ class EsignJob < ApplicationJob
 
   def process_document(doc, user_id = nil)
     result = EsignHelper.new(doc, user_id:).sign
-    if result[0]
-      send_notification("Document - #{doc.name} sent for eSigning", user_id, :info)
-    else
-      send_notification(result[1].to_s, user_id, :danger)
+    if result.success?
+      send_notification(result[:message], user_id, :success) if user_id.present?
+    elsif user_id.present?
+      send_notification(result[:errors], user_id, :danger)
     end
   end
 

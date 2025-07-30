@@ -4,6 +4,8 @@ require 'base64'
 class DigioEsignHelper
   include HTTParty
 
+  MAX_SIZE_MB = 25
+  MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
   debug_output $stdout
   attr_accessor :debug # Rails.env.development?
 
@@ -18,6 +20,26 @@ class DigioEsignHelper
   def sign(document, user_id)
     response = send_document_for_esign(document)
     update_document(response, document, user_id)
+  end
+
+  def validate_doc_size(document, user_id = nil)
+    # Document size should be less than 25MB
+    tmpfile = document.file.download
+    # Determine the size of the file
+    file_size = File.size(tmpfile.path)
+    tmpfile.close
+    # unlink deletes the tempfile
+    tmpfile.unlink
+
+    # Calculate the decoded (original) size in bytes
+    if file_size > MAX_SIZE_BYTES
+      msg = "❌ Document size #{(file_size / 1024.0 / 1024.0).round(2)} MB exceeds size limit of #{MAX_SIZE_MB} MB."
+      Rails.logger.error msg
+      UserAlert.new(message: msg, user_id: user_id, level: :danger).broadcast if user_id.present?
+      OpenStruct.new({ success: false, errors: msg })
+    else
+      OpenStruct.new({ success: true, message: "Document size is within the limit." })
+    end
   end
 
   def send_document_for_esign(document)
@@ -46,7 +68,7 @@ class DigioEsignHelper
     else
       EsignLog.create(entity_id: document.entity_id, document:, request_data: body.except(:file_data), response_data: response)
     end
-    Rails.logger.debug response
+
     response
   end
 
@@ -58,6 +80,7 @@ class DigioEsignHelper
     if response.success?
       doc.update(sent_for_esign: true, sent_for_esign_date: Time.zone.now, provider_doc_id: json_res["id"], esign_status: "requested")
       EsignUpdateJob.perform_later(doc.id, user_id) if doc.eligible_for_esign_update?
+      OpenStruct.new({ success: true, message: "Document - #{doc.name} sent for eSigning" })
     else
       doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: json_res["id"])
 
@@ -68,18 +91,18 @@ class DigioEsignHelper
       msg = "Error sending #{doc.name} for eSigning - #{json_res['message']}"
       ExceptionNotifier.notify_exception(StandardError.new(msg))
       Rails.logger.error msg
-      send_notification(msg, user_id, :danger)
+      OpenStruct.new({ success: false, errors: msg })
     end
   rescue JSON::ParserError => e
     # 502 bad gateway response cannot be parsed
     msg = "Error sending #{doc.name} for eSigning - #{e.message}"
     ExceptionNotifier.notify_exception(StandardError.new(msg))
     Rails.logger.error msg
-    send_notification(msg, user_id, :danger)
+    OpenStruct.new({ success: false, errors: msg })
   end
 
   def retrieve_signed(esign_doc_id, auth_token)
-    response = HTTParty.get(
+    HTTParty.get(
       "#{BASE_URL}/v2/client/document/#{esign_doc_id}",
       headers: {
         "authorization" => "Basic #{auth_token}",
@@ -87,9 +110,6 @@ class DigioEsignHelper
       },
       debug_output: @debug ? $stdout : nil
     )
-
-    Rails.logger.debug response
-    response
   end
 
   def download(esign_doc_id, auth_token)
@@ -157,16 +177,13 @@ class DigioEsignHelper
   end
 
   def hit_cancel_esign_api(provider_doc_id, auth_token)
-    response = HTTParty.post(
+    HTTParty.post(
       "#{BASE_URL}/v2/client/document/#{provider_doc_id}/cancel",
       headers: {
         "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       }
     )
-
-    Rails.logger.debug response
-    response
   end
 
   def cancel_esign(doc)
@@ -186,7 +203,7 @@ class DigioEsignHelper
         doc.update(esign_status: "cancelled")
       end
     else
-      e = StandardError.new("Error cancelling #{doc.name} - #{response}")
+      e = StandardError.new("Error cancelling #{doc.name}")
       Rails.logger.error e.message
     end
     if doc.esign_log.present?
@@ -324,7 +341,7 @@ class DigioEsignHelper
   end
 
   def signatures_failed(doc, response)
-    e = StandardError.new("Error getting status for #{doc.name} - #{response}")
+    e = StandardError.new("Error getting status for #{doc.name}")
     ExceptionNotifier.notify_exception(e)
     doc.update(esign_status: "failed")
     doc.e_signatures.each do |esign|
