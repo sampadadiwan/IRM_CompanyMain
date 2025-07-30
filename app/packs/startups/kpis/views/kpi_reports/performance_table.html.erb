@@ -6,7 +6,7 @@
         <div class="d-flex align-items-center">
           <%= f.hidden_field :portfolio_company_id, value: params[:portfolio_company_id] %>
           <%= f.label :as_of, "#{@portfolio_company&.name}  KPI Performance:", class: "card-title mb-0 me-2" %>
-          <%= f.select :as_of, options_for_select((6.months.ago.to_date..Date.current).map { |date| [date.end_of_month.strftime('%d-%b-%Y'), date.end_of_month] }.uniq.reverse, @as_of.end_of_month), {}, { onchange: "this.form.requestSubmit()", class: "form-select w-auto" } %>
+          <%= f.select :as_of, options_for_select((@as_of - 6.months..Date.current).map { |date| [date.end_of_month.strftime('%d-%b-%Y'), date.end_of_month] }.uniq.reverse, @as_of.end_of_month), {}, { onchange: "this.form.requestSubmit()", class: "form-select w-auto" } %>
         </div>
       <% end %>
     </div>
