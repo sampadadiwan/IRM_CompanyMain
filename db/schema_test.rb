@@ -2028,6 +2028,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_30_070855) do
     t.integer "position", default: 0
     t.string "ancestry", collation: "BINARY"
     t.integer "child_count", default: 0
+    t.bigint "import_upload_id"
     t.index ["ancestry"], name: "index_investor_kpi_mappings_on_ancestry"
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kpi_mappings_on_form_type_id"

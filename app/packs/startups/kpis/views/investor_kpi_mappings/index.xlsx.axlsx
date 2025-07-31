@@ -1,5 +1,4 @@
 wb = xlsx_package.workbook
-@investor_kpi_mappings = @investor_kpi_mappings
 form_type, custom_field_names, custom_headers = get_form_type("InvestorKPIMapping")
 
 wb.add_worksheet(name: "InvestorKPIMapping") do |sheet|
