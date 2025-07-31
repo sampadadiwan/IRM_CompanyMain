@@ -35,16 +35,23 @@ module KpisHelper
     }
   end
 
-  def display_kpi(kpi, investor_kpi_mapping)
-    if kpi.value.present?
-      value = number_with_delimiter(kpi.value.round(2))
-      percentage_value = kpi.value.round(4) * 100
-      if investor_kpi_mapping.present?
-        investor_kpi_mapping.data_type == "percentage" ? "#{percentage_value} %" : value
-      else
-        value
+  def display_kpi(kpi, investor_kpi_mapping, params: {})
+    return if kpi.value.blank?
+
+    value = number_with_delimiter(kpi.value.round(2))
+    percentage_value = (kpi.value.round(4) * 100)
+
+    result = value # Default result
+
+    if investor_kpi_mapping.present?
+      case investor_kpi_mapping.data_type
+      when "money"
+        result = params[:units].present? && params[:units] == "Common" ? kpi.common_size_value : money_to_currency(kpi.value, params)
+      when "percentage"
+        result = "#{percentage_value} %"
       end
     end
+    result
   end
 
   def kpi_percentage_class(kpi, investor_kpi_mapping)

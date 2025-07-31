@@ -222,4 +222,21 @@ class KpiReport < ApplicationRecord
       "#{period}-#{as_of.strftime('%m-%y')}"
     end
   end
+
+  after_commit :compute_common_size_kpi, on: %i[create update]
+
+  # rubocop:disable Rails/SkipsModelValidations
+  def compute_common_size_kpi
+    # This method computes the common size KPI for the report
+    ikm = portfolio_company&.investor_kpi_mappings&.where(base_for_common_size: true)&.last
+    common_size_kpi = kpis.where(name: ikm&.standard_kpi_name).first if ikm.present?
+
+    if common_size_kpi&.value.blank?
+      Rails.logger.warn "No common size KPI found or its value is missing for KpiReport #{id} with base_for_common_size set to true"
+      return
+    end
+
+    kpis.update_all("common_size_value = value / #{common_size_kpi.value.abs} * 100")
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 end

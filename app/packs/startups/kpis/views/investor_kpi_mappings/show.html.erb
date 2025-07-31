@@ -33,6 +33,17 @@
       </td>
     </tr>
 
+    <% if @investor_kpi_mapping.base_for_common_size %>
+      <tr>
+        <td>
+          Base For Common Size
+        </td>
+        <td>
+          <%= display_boolean @investor_kpi_mapping.base_for_common_size %>
+        </td>
+      </tr>
+    <% end %>
+
     <tr>
       <td>
         Parent Kpi
@@ -63,7 +74,7 @@
         <%= @investor_kpi_mapping.data_type.humanize %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Show In Report

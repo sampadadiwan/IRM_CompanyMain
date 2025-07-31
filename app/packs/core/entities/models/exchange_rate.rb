@@ -61,11 +61,14 @@ class ExchangeRate < ApplicationRecord
     bank
   end
 
-  def self.convert(from, to, amount, as_of, entity_id)
+  def self.convert(from, to, amount, as_of, entity_id, raise_missing_rate_error: false)
     if from == to
       amount
     else
       er = ExchangeRate.where(from:, to:, as_of: ..as_of, entity_id:).order(as_of: :desc).first
+
+      raise "Exchange rate not found for #{from} to #{to} as of #{as_of} for entity #{entity_id}" if er.nil? && raise_missing_rate_error
+
       er.present? ? er.rate * amount : nil
     end
   end

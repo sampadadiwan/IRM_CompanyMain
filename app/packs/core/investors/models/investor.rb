@@ -309,4 +309,17 @@ class Investor < ApplicationRecord
       user.remove_access_rights_cache(access_right, for_entity_id: investor_entity_id) # unless user.has_cached_role?(:investor_advisor)
     end
   end
+
+  def amount_invested
+    amount = 0
+
+    portfolio_investments.buys.each do |pi|
+      Rails.logger.debug { "Calculating amount invested for #{pi.investment_instrument.name} on #{pi.investment_date} from #{pi.fund.currency} to #{entity.currency}" }
+
+      bought_amount_cents = ExchangeRate.convert(pi.fund.currency, entity.currency, pi.amount_cents, pi.investment_date, entity_id, raise_missing_rate_error: true)
+      amount += bought_amount_cents
+    end
+
+    Money.new(amount, entity.currency)
+  end
 end

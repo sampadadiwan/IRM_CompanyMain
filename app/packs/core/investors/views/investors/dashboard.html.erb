@@ -1,5 +1,11 @@
 <%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
-    <%= render "/investors/show" %>
+
+    <%
+        widgets = dashboard_widgets("Portfolio Company Dashboard", current_user.entity_id, name: params[:name])
+        if widgets["Data Card"].blank?
+    %>
+        <%= render "/investors/show" %>
+    <% end %>
 
     <%= render "/dashboard_widgets/dashboard", dashboard_name: @dashboard_name, name: @name, uri_params: {owner_id: @investor.id, owner_type: "Investor"} %>
 

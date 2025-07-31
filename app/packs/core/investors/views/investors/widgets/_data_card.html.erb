@@ -1,0 +1,81 @@
+<%= render ToggleCard.new(title: @investor.investor_name, css_class: "show_investors_data_card", state: "show") do %>
+
+<table class="table table-bordered dataTable ">
+
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @investor.investor_name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Category
+      </td>
+      <td>
+        <%= @investor.category %>
+      </td>
+    </tr>
+
+    <% if @investor.custom_fields.sector.present? %>
+    <tr>
+      <td>
+        Sector
+      </td>
+      <td>
+        <%= @investor.custom_fields.sector %>
+      </td>
+    </tr>
+    <% end %>
+
+    <% last_investment = @investor.portfolio_investments.buys.order(created_at: :desc).first %>
+    <% if last_investment.present? %>
+    <tr>
+      <td>
+        Last Investment Date
+      </td>
+      <td>
+        <%= l last_investment.investment_date %>
+      </td>
+    </tr>
+    <% end %>
+
+
+    <tr>
+      <td>
+        Amount Invested
+      </td>
+      <td>
+        <%= money_to_currency(@investor.amount_invested) %>
+      </td>
+    </tr>
+
+    <% if @investor.custom_fields.exit_status.present? %>
+    <tr>
+      <td>
+        Exit Status
+      </td>
+      <td>
+        <%= @investor.custom_fields.exit_status %>
+      </td>
+    </tr>
+    <% end %>
+
+
+    <% if @investor.custom_fields.lead_partner.present? %>
+    <tr>
+      <td>
+        Lead Partner
+      </td>
+      <td>
+        <%= @investor.custom_fields.lead_partner %>
+      </td>
+    </tr>
+    <% end %>
+
+  </table>
+
+<% end %>

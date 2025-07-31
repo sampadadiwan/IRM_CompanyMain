@@ -49,7 +49,7 @@
                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                         <td class="value_<%=kpi&.id%>">
                             <% if kpi %>
-                                <%= display_kpi(kpi, ikm) %>
+                                <%= display_kpi(kpi, ikm, params: params) %>
                             <% else %>
                                 N/A
                             <% end %>

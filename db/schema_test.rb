@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_07_30_070855) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_31_044922) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2029,6 +2029,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_30_070855) do
     t.string "ancestry", collation: "BINARY"
     t.integer "child_count", default: 0
     t.bigint "import_upload_id"
+    t.boolean "base_for_common_size", default: false, null: false
     t.index ["ancestry"], name: "index_investor_kpi_mappings_on_ancestry"
     t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kpi_mappings_on_form_type_id"
@@ -2285,6 +2286,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_30_070855) do
     t.bigint "owner_id"
     t.string "source", limit: 100
     t.text "rag_status"
+    t.decimal "common_size_value", precision: 6, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"

@@ -34,7 +34,7 @@
 
   <div class="form-group">
     <%= form.label :data_type %>
-    <%= form.select :data_type, InvestorKpiMapping.data_types.keys.map { |type| [type.humanize, type] }, { include_blank: true }, class: "form-control" %>
+    <%= form.select :data_type, InvestorKpiMapping.data_types.keys.map { |type| [type.humanize, type] }, { include_blank: false }, class: "form-control" %>
   </div>
 
   <div class="form-group">
@@ -52,6 +52,13 @@
   <div class="form-group">
     <%= form.label :show_in_report %>
     <%= form.check_box :show_in_report, class: "form-check-input"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :base_for_common_size %>
+    <%= form.check_box :base_for_common_size, class: "form-check-input"  %>
+    <small class="form-text text-muted">Check this if this KPI should be used as a base for common size calculations.</small>
   </div>
 
   <div class="form-group">

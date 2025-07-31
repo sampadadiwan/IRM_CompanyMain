@@ -18,8 +18,8 @@ class KpiPolicy < KpiPolicyBase
   end
 
   def show?
-    (user.enable_kpis &&
-      (belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?) || permissioned_investor? || record.owner_id == user.entity_id
+    user.enable_kpis &&
+      (belongs_to_entity?(user, record) || permissioned_employee? || permissioned_investor?)
   end
 
   def create?
@@ -31,7 +31,7 @@ class KpiPolicy < KpiPolicyBase
   end
 
   def update?
-    create? || record.owner_id == user.entity_id
+    create?
   end
 
   def edit?

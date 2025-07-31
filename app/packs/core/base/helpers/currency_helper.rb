@@ -31,18 +31,19 @@ module CurrencyHelper
     cookies ||= view_cookies
     raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
 
-    if raw_units.present? && !ignore_units
+    Rails.logger.debug { "raw_units: #{raw_units}" }
 
-      units = case raw_units
-              when "Crores"
+    if raw_units.present? && !ignore_units
+      units = case raw_units.downcase
+              when "crores"
                 money /= 10_000_000
                 sanf = true
                 raw_units
-              when "Lakhs"
+              when "lakhs"
                 money /= 100_000
                 sanf = true
                 raw_units
-              when "Million"
+              when "million"
                 money /= 1_000_000
                 sanf = false
                 raw_units
@@ -50,8 +51,12 @@ module CurrencyHelper
 
       cookies[:currency_units] = units if cookies
     end
-
-    display(money, sanf, units)
+    if money.is_a?(Money)
+      display(money, sanf, units)
+    else
+      # Its just a number
+      number_with_delimiter(money.round(2))
+    end
   end
 
   def display(money, sanf, units)

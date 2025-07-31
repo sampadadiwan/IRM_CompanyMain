@@ -1,34 +1,40 @@
-<% 
-  @portfolio_company ||= nil 
+<%
+  @portfolio_company ||= nil
   portfolio_company_id = params[:portfolio_company_id].presence || @portfolio_company&.id
   model ||= current_user
 %>
 <%= form_with(model: model, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
-    
+
   <input name="portfolio_company_id" value="<%= portfolio_company_id %>" hidden="hidden">
   <input name="grid_view" value="true" hidden="hidden">
   <input name="compound" value="<%=params[:compound]%>" hidden="hidden">
   <input name="all" value="true" hidden="hidden">
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
-  <div class="form-group col-md-1">    
+  <div class="form-group col-md-1">
     <% no_of_periods = params[:no_of_periods].presence || 12  unless Rails.env.test? %>
     <%= form.label :no_of_periods, "No of Periods" %>
-    <%= form.text_field :no_of_periods, class: "form-control", style: "width: 50px;", name: "no_of_periods", value: no_of_periods %>        
+    <%= form.text_field :no_of_periods, class: "form-control", style: "width: 50px;", name: "no_of_periods", value: no_of_periods %>
   </div>
 
-  <div class="form-group col-md-1">    
+  <div class="form-group col-md-1">
     <% period = params[:period].presence %>
-    <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control", name: "period" %>        
+    <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control", name: "period" %>
   </div>
 
-  <div class="form-group col-md-1">    
+  <div class="form-group col-md-1">
     <% category = params[:category].presence %>
-    <%= form.select :category, InvestorKpiMapping::CATEGORIES, {selected: category, include_blank: true}, class: "form-control", name: "category" %>        
+    <%= form.select :category, InvestorKpiMapping::CATEGORIES, {selected: category, include_blank: true}, class: "form-control", name: "category" %>
   </div>
 
-  <div class="form-group col-md-1">    
-    <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag", name: "tag_list" %>        
+
+  <div class="form-group col-md-1">
+    <% units = params[:units].presence %>
+    <%= form.select :units, ["Crores", "Lakhs", "Million"], {selected: units, include_blank: true}, class: "form-control", name: "units" %>
+  </div>
+
+  <div class="form-group col-md-1">
+    <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag", name: "tag_list" %>
   </div>
 
   <%= button_tag type: :submit, class: "btn btn-outline-success", id: "submit" do %>

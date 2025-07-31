@@ -15,6 +15,7 @@ class KpisController < ApplicationController
   # GET /kpis/new
   def new
     @kpi = Kpi.new(kpi_params)
+    @kpi.entity_id = current_user.entity_id
     authorize @kpi
     setup_custom_fields(@kpi)
   end

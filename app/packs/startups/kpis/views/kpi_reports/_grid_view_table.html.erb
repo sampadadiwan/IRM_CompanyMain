@@ -53,7 +53,7 @@
                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                         <td class="value_<%=kpi&.id%>">
                             <% if kpi %>
-                                <%= display_kpi(kpi, ikm) %>
+                                <%= display_kpi(kpi, ikm, params: params) %>
                                 <br>
                                 <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                 <% if kpi.notes.present? %>

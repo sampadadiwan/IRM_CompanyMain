@@ -17,7 +17,7 @@ class InvestorKpiMapping < ApplicationRecord
 
   scope :show_in_report, -> { where(show_in_report: true) }
 
-  enum :data_type, { numeric: 'numeric', percentage: 'percentage' }
+  enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
 
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name
