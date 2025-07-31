@@ -45,6 +45,9 @@ class CapitalDistribution < ApplicationRecord
 
   def generate_distribution_payments
     if generate_payments
+      # if the distribution_on is "Upload", we do not generate payments as the payments are also uploaded
+      return if distribution_on_upload?
+
       Rails.logger.debug { "generate_distribution_payments called for #{id}" }
       CapitalDistributionJob.perform_later(id)
     else

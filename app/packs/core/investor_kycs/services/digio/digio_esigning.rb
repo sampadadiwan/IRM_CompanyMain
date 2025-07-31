@@ -30,7 +30,7 @@ class DigioEsigning < Trailblazer::Operation
     ctx[:update_doc_result].success?
   end
 
-  def handle_esign_errors(ctx, doc:, user_id:, **)
+  def handle_esign_errors(ctx, **)
     ctx[:errors] = ctx[:update_doc_result].errors if ctx[:update_doc_result].errors.present?
     false
   end
