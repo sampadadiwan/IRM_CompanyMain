@@ -1,6 +1,6 @@
-<% 
-  widget_size ||= "col-md-6" 
-  name ||= nil 
+<%
+  widget_size ||= "col-md-6"
+  name ||= nil
   args ||= {}
   uri_params ||= {}
   # The uris for the value bridges for each instrument
@@ -8,15 +8,16 @@
   # The list of instruments passed
   instrument_names = args[:instruments] || [] # names of the instrument
   across = args[:across] # "first last" or "last 2"
+  show_form = args[:show_form]
   # Get the list of instruments for the investor for which the value bridge is to be shown
-  
+
   if instrument_names == "All"
     # Get all the instruments for the investor
     investment_instruments = @investor.investment_instruments
   else
     # Get the instruments for the investor specified in the json_fields value_bridge_instruments
     instrument_names = @investor.json_fields["value_bridge_instruments"]&.split(",")
-    if instrument_names.present?      
+    if instrument_names.present?
       investment_instruments = @investor.investment_instruments.where(name: instrument_names)
     else
       # If no instruments are specified, show nothing
@@ -37,26 +38,26 @@
       final_valuation =   valuations.order(valuation_date: :desc).first
     end
     # Load the uri for the value bridge
-    uris << URI("/valuations/value_bridge?initial_valuation_id=#{initial_valuation.id}&final_valuation_id=#{final_valuation.id}") if initial_valuation && final_valuation
+    uris << URI("/valuations/value_bridge?portfolio_company_id=#{@investor.id}&show_form=#{show_form}&initial_valuation_id=#{initial_valuation.id}&final_valuation_id=#{final_valuation.id}") if initial_valuation && final_valuation
   end
 
 %>
 
   <% uris.each do |uri| %>
-      
+
       <%= render(
             WidgetCardComponent.new(
               widget: widget,
               args: args,
               widget_size: widget.widget_size
             )
-          ) do 
+          ) do
       %>
 
-        
-          <%= turbo_frame_tag "value_bridge_frame", target: "_top", src: "#{uri.to_s}" do %>            
+
+          <%= turbo_frame_tag "value_bridge_frame", target: "_top", src: "#{uri.to_s}" do %>
           <% end %>
-        
+
       <% end %>
 
   <% end %>

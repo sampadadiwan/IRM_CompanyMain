@@ -1,0 +1,27 @@
+<%= render FormCard.new(title: "Value Bridge") do %>
+    <%= form_with(model: Valuation.new(entity_id: current_user.entity_id), url: value_bridge_valuations_path, method: :get, data: {turbo_frame: "value_bridge_frame"}) do |form| %>
+
+        <% valuations =  @portfolio_company.valuations.order(id: :desc).map{|i| [i.to_extended_s, i.id]} %>
+
+        <%= form.hidden_field :portfolio_company_id, value: @portfolio_company.id, name: :portfolio_company_id %>
+        <%= form.hidden_field :show_form, value: params[:show_form], name: :show_form %>
+
+        <div class="row">
+          <div class="form-group col">
+            <%= form.label :initial_valuation_id, "Entry" %>
+            <%= form.select :initial_valuation_id, valuations, {selected: params[:initial_valuation_id]}, class: "form-control", name: :initial_valuation_id %>
+          </div>
+          <div class="form-group col">
+            <%= form.label :final_valuation_id, "Exit" %>
+            <%= form.select :final_valuation_id, valuations, {selected: params[:final_valuation_id]}, class: "form-control", name: :final_valuation_id %>
+          </div>
+        </div>
+
+        <div class="form-group">
+            <%= form.submit "Show", {class: "btn btn-outline-primary"}%>
+        </div>
+
+    <% end %>
+
+<% end %>
+

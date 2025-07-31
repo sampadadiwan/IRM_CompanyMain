@@ -31,8 +31,6 @@ module CurrencyHelper
     cookies ||= view_cookies
     raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
 
-    Rails.logger.debug { "raw_units: #{raw_units}" }
-
     if raw_units.present? && !ignore_units
       units = case raw_units.downcase
               when "crores"

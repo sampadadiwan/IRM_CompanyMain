@@ -1,80 +1,87 @@
 
 <%= turbo_frame_tag "value_bridge_frame" do %>
 
+<% if params[:show_form] == "true" %>
+  <%= render "valuations/value_bridge_form" %>
+<% else %>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h3 class="h5 mb-0 text-gray-800">Value Bridge for <%= link_to @initial_valuation.investment_instrument %> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h3>
+    </div>
+<% end %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Value Bridge for <%= link_to @initial_valuation.investment_instrument %> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h1>
-    
-    <span>
-    
-    </span>
-</div>
+<% if @bridge %>
+    <div class="table-responsive" data-controller="datatable">
+    <%
+        bridge_fields = ["Entry"] + @value_bridge_service.value_bridge_fields
+        waterfall_chart_data = []
+    %>
+    <table class="table table-bordered dataTable">
 
-<div class="table-responsive" data-controller="datatable">
-<% 
-    bridge_fields = ["Entry"] + @value_bridge_service.value_bridge_fields 
-    waterfall_chart_data = []
-%>
-<table class="table table-bordered dataTable">
-
-    <!-- Header row -->
-    <thead>
-    <tr>
-        <th>
-        </th>
-        <% bridge_fields.each_with_index do |bridge_field, idx| %>
-            <th>
-                <%= bridge_field %>
-            </th>
-            <% 
-                value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"] 
-                
-                if idx == 0
-                    color = "#212529"
-                else
-                    color = value && value > 0 ? "#198754" : "#dc3545"
-                end
-
-                waterfall_chart_data << { name: bridge_field, y: value, color: color } 
-            %>
-        <% end %>
-
-        <% waterfall_chart_data << { name: "Exit", y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
-    </tr>
-    </thead>
-
-    <!-- Body rows -->
-    <tbody>
-    <% @value_bridge_service.key_fields.each do |key| %>    
-        
+        <!-- Header row -->
+        <thead>
         <tr>
-            <td>
-                <span class="text-primary"><%= key %></span>
-            </td>
-            <% bridge_fields.each_with_index do |bridge_field, idx| %>    
-                <td>
-                    <% 
-                        bridge_field_name = FormCustomField.to_name(bridge_field) 
-                        key_name = FormCustomField.to_name(key)                        
-                    %>
-                    <%= @bridge[bridge_field].json_fields[key_name] %>
+            <th>
+            </th>
+            <% bridge_fields.each_with_index do |bridge_field, idx| %>
+                <th>
+                    <%= bridge_field %>
+                </th>
+                <%
+                    value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"]
 
-                </td>                
+                    if idx == 0
+                        color = "#212529"
+                    else
+                        color = value && value > 0 ? "#198754" : "#dc3545"
+                    end
+
+                    waterfall_chart_data << { name: bridge_field, y: value, color: color }
+                %>
             <% end %>
+
+            <% waterfall_chart_data << { name: "Exit", y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
         </tr>
-        
-    <% end %>
-    </tbody>
-</table>
+        </thead>
+
+        <!-- Body rows -->
+        <tbody>
+        <% @value_bridge_service.key_fields.each do |key| %>
+
+            <tr>
+                <td>
+                    <span class="text-primary"><%= key %></span>
+                </td>
+                <% bridge_fields.each_with_index do |bridge_field, idx| %>
+                    <td>
+                        <%
+                            bridge_field_name = FormCustomField.to_name(bridge_field)
+                            key_name = FormCustomField.to_name(key)
+                        %>
+                        <%= @bridge[bridge_field].json_fields[key_name] %>
+
+                    </td>
+                <% end %>
+            </tr>
+
+        <% end %>
+        </tbody>
+    </table>
 
 
-</div>
+    </div>
 
-<div class="associated_entity" data-controller="valuebridge">
-    <div id="waterfall-chart-<%= @initial_valuation.id %>-<%= @final_valuation.id %>" 
-        data-valuebridge-target="chart"
-        data-chart-values="<%= json_escape(waterfall_chart_data.map(&:to_h).to_json) %>
-"></div>
-</div>
+    <div class="associated_entity" data-controller="valuebridge">
+        <div id="waterfall-chart-<%= @initial_valuation.id %>-<%= @final_valuation.id %>"
+            data-valuebridge-target="chart"
+            data-chart-values="<%= json_escape(waterfall_chart_data.map(&:to_h).to_json) %>">
+        </div>
+    </div>
 
+<% else %>
+    <div class="alert alert-danger" role="alert">
+        No value bridge data available for this valuation pair.
+    </div>
+<% end %>
+
+<!-- End turbo_frame_tag -->
 <% end %>

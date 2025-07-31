@@ -1,3 +1,10 @@
+V9.0.86
+#####################################
+e16f3f2d5 Fixed 0 remittance bug, distribution basis upload payments gen bug, u… (#933)
+16443110c Common size, Crores/Lakhs dropdown, select for performance table (#934)
+d666cba70 Refactored methods to reduce size
+
+
 V9.0.85
 #####################################
 adfbe2002 Fixed bug in simple table kpi reports
