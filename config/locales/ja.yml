@@ -51,6 +51,7 @@ ja:
     show: 表示
     step: ステップ
     upload: アップロード
+    refetch: データを再取得
   date:
     formats:
       default: "%Y/%m/%d"
@@ -165,6 +166,9 @@ ja:
       format:
         format: "%u%n"
         unit: YEN
+  investor_kyc_actions:
+    complete_kyc_details: KYC情報を入力する
+    pending_verification: 確認待ち
   secondaries_actions:
     accept_spa_confirmation: SPAに同意することを確認してください
     accept_transaction_documents: 取引ドキュメントに同意する

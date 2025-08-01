@@ -72,7 +72,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def ckyc_or_kra_enabled?
-    record.entity.entity_setting.ckyc_or_kra_enabled?
+    record.entity.ckyc_or_kra_enabled?
   end
 
   def generate_new_aml_report?
@@ -80,15 +80,27 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def assign_kyc_data?
-    permissioned_employee?(:investor_kyc_update)
+    create?(:investor_kyc_update)
   end
 
   def compare_kyc_datas?
-    permissioned_employee?
+    create?(:investor_kyc_update)
+  end
+
+  def create_and_send_kyc_to_investor?
+    create?(:investor_kyc_create)
   end
 
   def generate_new_kyc_data?
-    permissioned_employee?(:investor_kyc_update)
+    create?(:investor_kyc_update)
+  end
+
+  def download_kra_data?
+    create?(:investor_kyc_update) && record.entity.permissions.enable_kra?
+  end
+
+  def fetch_ckyc_data?
+    create?(:investor_kyc_update) && record.entity.permissions.enable_ckyc?
   end
 
   def update?

@@ -1,7 +1,7 @@
 class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview download_kra_data fetch_ckyc_data assign_kyc_data]
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   has_scope :uncalled, type: :boolean
@@ -105,6 +105,13 @@ class InvestorKycsController < ApplicationController
       end
     end
     setup_custom_fields(@investor_kyc, type: @investor_kyc.type)
+
+    @form = "form"
+    # Show CKYC/KRA form if CKYC or KRA is enabled for the entity and the current user is not the owner of the kyc and the kyc does not have any ckyc or kra data
+    # This means the first time around after the investor is sent the KYC for completion they will see the CKYC/KRA form
+    @form = "initial_form" if @investor_kyc.entity.ckyc_or_kra_enabled? && current_user.entity_id != @investor_kyc.entity_id && @investor_kyc.ckyc_data.blank? && @investor_kyc.kra_data.blank?
+
+    render :edit, locals: { form: @form }
   end
 
   # POST /investor_kycs or /investor_kycs.json
@@ -164,39 +171,174 @@ class InvestorKycsController < ApplicationController
     redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."
   end
 
+  # This method handles both creating a new InvestorKyc or updating an existing one,
+  # validates its documents, and based on user actions, redirects to CKYC/KRA fetch steps or edit view.
   def compare_kyc_datas
-    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    # Load or initialize the InvestorKyc based on the presence of ID
+    @investor_kyc = if investor_kyc_params[:id].present?
+                      InvestorKyc.find(investor_kyc_params[:id])
+                    else
+                      InvestorKyc.new(investor_kyc_params)
+                    end
+
+    # Ensure current user is authorized to perform this action
     authorize(@investor_kyc)
-    respond_to do |format|
-      investor_user = current_user.curr_role_investor?
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
-        format.html do
-          if commit_param == "Continue without CKYC/KRA"
-            redirect_to edit_investor_kyc_path(@investor_kyc)
-          else
-            redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)
-          end
-        end
+
+    # Run service object to upsert (create or update) the InvestorKyc
+    result = InvestorKycUpserter.call(params: investor_kyc_params, current_user: current_user)
+    @investor_kyc = result.investor_kyc
+
+    # Broadcast an informational alert to the user
+    UserAlert.new(message: "Creating KYC...", user_id: current_user.id, level: "info").broadcast if current_user.present?
+
+    if result.success?
+      # Case when user opts to skip CKYC/KRA or PAN is not provided
+      if commit_param == "Continue without CKYC/KRA" || investor_kyc_params[:PAN].blank?
+        msg = "CKYC/KRA skipped"
+        msg += " as PAN is not provided." if investor_kyc_params[:PAN].blank?
+        redirect_to edit_investor_kyc_path(@investor_kyc), notice: msg
       else
+        # Determine if CKYC or KRA is enabled for this entity
+        ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc?
+        kra_enabled = @investor_kyc.entity.permissions.enable_kra?
+
+        # Redirect to appropriate data fetch flow
+        if kra_enabled
+          redirect_to download_kra_data_investor_kyc_path(id: @investor_kyc.id, phone: investor_kyc_params[:phone], back_to: params[:back_to])
+        elsif ckyc_enabled
+          redirect_to fetch_ckyc_data_investor_kyc_path(id: @investor_kyc.id, phone: investor_kyc_params[:phone], back_to: params[:back_to])
+        else
+          # Neither CKYC nor KRA enabled
+          back_to = params[:back_to] || edit_investor_kyc_path(@investor_kyc)
+          redirect_to back_to, notice: "CKYC/KRA not enabled for this entity."
+        end
+      end
+    else
+      # Render form with error messages
+      respond_to do |format|
         format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+        format.json { render json: result.errors, status: :unprocessable_entity }
       end
     end
   end
 
-  def assign_kyc_data
-    @investor_kyc = InvestorKyc.find(investor_kyc_params[:id])
+  # Step 1: KRA Data Fetch Flow
+  def download_kra_data
+    if @investor_kyc.birth_date.blank?
+      # KRA fetch requires DOB, show error if missing
+      kra_msg = "KRA Data could not be fetched as Date Of Birth is missing."
+      flash.now[:alert] = kra_msg
+      @kra_result = { success: false, message: kra_msg }
+    else
+      ActiveRecord::Base.connected_to(role: :writing) do
+        UserAlert.new(message: "Initialising KRA Data Object...", user_id: current_user.id, level: "info").broadcast if current_user.present?
+
+        # Create the KRA data object
+        @kra_data = CkycKraService.new.fetch_kra_data(@investor_kyc, phone: params[:phone], create: true)
+
+        # If object created, attempt to fetch actual KRA data
+        kra_success, kra_msg = if @kra_data.present?
+                                 UserAlert.new(message: "Fetching KRA Data...", user_id: current_user.id, level: "info").broadcast if current_user.present?
+                                 CkycKraService.new.get_kra_data(@kra_data)
+                               else
+                                 [false, "KRA Data creation Failed"]
+                               end
+        @kra_result = { success: kra_success, message: kra_msg }
+      end
+
+      # Show results to user
+      if @kra_result[:success]
+        flash.now[:notice] = @kra_result[:message]
+      else
+        flash.now[:alert] = @kra_result[:message]
+        @investor_kyc.errors.add(:base, @kra_result[:message])
+      end
+    end
+
+    @ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc?
+
+    # Render view with fetched KRA data and additional context
+    render :fetch_kra_data, locals: { kra_data: @kra_data, kra_result: @kra_result, ckyc_enabled: @ckyc_enabled, phone: params[:phone], back_to: params[:back_to] }
+  end
+
+  # Step 2: CKYC Data Fetch + OTP Trigger Flow
+  def fetch_ckyc_data
+    # Validate phone number before proceeding
+    if params[:phone].blank? || params[:phone].length != 10
+      redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id), alert: "Phone number is required to fetch CKYC data using OTP."
+    else
+      ActiveRecord::Base.connected_to(role: :writing) do
+        UserAlert.new(message: "Initialising CKYC Data Object...", user_id: current_user.id, level: "info").broadcast if current_user.present?
+
+        # Create CKYC data record for the investor
+        @ckyc_data = CkycKraService.new.fetch_ckyc_data(@investor_kyc, phone: params[:phone], create: true)
+
+        UserAlert.new(message: "Searching CKYC Data...", user_id: current_user.id, level: "info").broadcast if current_user.present?
+
+        # If data creation was successful, search CKYC and trigger OTP
+        @ckyc_success, @ckyc_msg, @request_id = if @ckyc_data.present?
+                                                  CkycKraService.new.search_ckyc_data_and_send_otp(@ckyc_data)
+                                                else
+                                                  [false, "CKYC data creation failed.", nil]
+                                                end
+      end
+
+      if @ckyc_success
+        # OTP sent successfully, render OTP input view
+        flash.now[:notice] = @ckyc_msg
+        render "kyc_datas/enter_ckyc_otp", locals: { ckyc_data: @ckyc_data, request_id: @request_id, back_to: compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id) }
+      else
+        # Error in fetching/sending OTP
+        redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id), alert: @ckyc_msg
+      end
+    end
+  end
+
+  # Used to create an InvestorKyc and send it to the investor for completion
+  def create_and_send_kyc_to_investor
+    @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+
+    # Check if the current role is an investor (affects KYC assignment)
+    investor_user = current_user.curr_role_investor?
+
+    # Validate attached documents before submission
+    @investor_kyc.documents.each(&:validate)
+
+    # Call service to persist and notify
+    result = InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, owner_id: params[:owner_id], owner_type: params[:owner_type])
+
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to request.referer, notice: "Investor KYC will be sent to investor" }
+        format.json { render :show, status: :created, location: @investor_kyc }
+      else
+        format.html do
+          flash.now[:alert] = "Investor KYC could not be created. #{result[:errors].join(', ')}"
+          render :new, status: :unprocessable_entity
+        end
+        format.json { render json: result[:errors], status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # Assigns a selected KYC data record to an InvestorKyc and updates it
+  def assign_kyc_data
     if investor_kyc_params[:kyc_data_id].present?
+      # Find and assign the selected KYC data
       @kyc_data = @investor_kyc.kyc_datas.find(investor_kyc_params[:kyc_data_id])
       @investor_kyc.assign_kyc_data(@kyc_data, current_user)
-    else
-      @investor_kyc.assign_attributes(investor_kyc_params)
-      # when CKYC/KRA data is selected once and user goes back then selects no data the images need to be removed (sending nil is not allowed in params)
-      @investor_kyc.remove_images
     end
+
+    # Determine if validation is required
+    # If user is investor and entity matches, we skip validations
+    skip_vaidation = current_user.curr_role_investor? && @investor_kyc.entity_id == current_user.entity_id
+
+    # Call service to update KYC
+    result = InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user: skip_vaidation)
+
     respond_to do |format|
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false).success?
+      if result.success?
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { render :edit, status: :unprocessable_entity }

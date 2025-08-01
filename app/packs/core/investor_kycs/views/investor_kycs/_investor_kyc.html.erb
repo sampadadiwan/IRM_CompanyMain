@@ -2,12 +2,25 @@
 
   <%= render RansackTableRow.new(model: investor_kyc, columns:) %>
 
-  <td>
-    <%= link_to  t_common(:show), investor_kyc , {class: "btn btn-outline-primary ti ti-eye"}%>
-    <%= 
+    <td>
+      <%= link_to  t_common(:show), investor_kyc , {class: "btn btn-outline-primary ti ti-eye"}%>
+      
+      <% if current_user.entity_id != investor_kyc.entity_id %>
+        <% if investor_kyc.completed_by_investor %>
+          <% if !investor_kyc.verified %>
+            <span class="badge bg-warning">
+                Pending Verification
+            </span>
+          <% end %>
+        <% else %>
+          <%= link_to  t('investor_kyc_actions.complete_kyc_details').html_safe, edit_investor_kyc_path(investor_kyc) , class: "btn btn-outline-warning ti ti-edit" %>
+        <% end %>
+      <% else %>
+      <%= 
       # We have the investor_kyc which is a decorated object, so we extract the object from it for policy checks
-      link_to  "Update KYC", edit_investor_kyc_path(investor_kyc) , {class: "btn btn-outline-success ti ti-edit"} if policy(investor_kyc.object).update? 
-    %>
-  </td>
+        link_to  "Update KYC", edit_investor_kyc_path(investor_kyc) , {class: "btn btn-outline-success ti ti-edit"} if policy(investor_kyc.object).update? 
+      %>
+      <% end %>
+    </td>
 
 </tr>

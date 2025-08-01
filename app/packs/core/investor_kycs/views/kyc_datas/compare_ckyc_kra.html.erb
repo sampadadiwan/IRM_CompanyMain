@@ -1,33 +1,43 @@
-
-
+<% ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc? %>
+<% kra_enabled = @investor_kyc.entity.permissions.enable_kra? %>
 <div>
   <div class="side-by-side-container">
-    <% if @ckyc_data.present? && @investor_kyc.entity.entity_setting.ckyc_enabled? %>
-      <div class="side-by-side-view" style="width:49%;margin:8px">
-          <%= render "/kyc_datas/show" , kyc_data: @ckyc_data %>
-      </div>
-    <% end %>
-    <% if @kra_data.present? && @investor_kyc.entity.entity_setting.kra_enabled? %>
+    <% if @kra_data.present? && kra_enabled %>
       <div class="side-by-side-view" style="width:49%;margin:8px">
           <%= render "/kyc_datas/show" , kyc_data: @kra_data %>
+      </div>
+    <% end %>
+    <% if @ckyc_data.present? && ckyc_enabled %>
+      <div class="side-by-side-view" style="width:49%;margin:8px">
+          <%= render "/kyc_datas/show" , kyc_data: @ckyc_data %>
       </div>
     <% end %>
   </div>
 
 <span>
-    <% if @investor_kyc.entity.entity_setting.ckyc_enabled? && @ckyc_data.present? %>
+    <% disabled = @investor_kyc.kyc_data_fields_populated && current_user.curr_role_investor? %>
+
+    <% if ckyc_enabled && @ckyc_data.present? %>
       <% if @ckyc_data&.full_name.present? %>
-      <%= button_to "Select CKYC Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id,"investor_kyc[id]": @investor_kyc.id, "investor_kyc[kyc_data_id]": @ckyc_data.id), method: :put, class: "btn  btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+        <%= button_to "Select CKYC Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id,"investor_kyc[id]": @investor_kyc.id, "investor_kyc[kyc_data_id]": @ckyc_data.id), method: :put, class: "btn  btn-outline-primary", disabled: disabled, title: (disabled ? "Fields are already populated" : nil) if policy(@investor_kyc).assign_kyc_data? %>
       <% else %>
-      <%= button_to "Refresh CKYC Data", generate_new_kyc_datas_path("investor_kyc_id": @investor_kyc.id, "source": "ckyc"), method: :post, class: "btn btn-primary" if policy(@investor_kyc).generate_new_kyc_data? %>
+        <% if policy(@ckyc_data).update? %>
+          <%= button_to refresh_kyc_data_path(@ckyc_data, back_to: compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)), id: "ckyc_data_refresh_btn", method: :put, class:"btn btn-outline-primary", data: { turbo: false } do %>
+            <i class="ti ti-reload"></i> Re-fetch CKYC Data
+          <% end %>
+        <% end %>
       <% end %>
     <% end %>
 
-    <% if @investor_kyc.entity.entity_setting.kra_enabled? && @kra_data.present?%>
+    <% if kra_enabled && @kra_data.present?%>
       <% if @kra_data&.full_name.present? %>
-      <%= button_to "Select KRA Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[kyc_data_id]": @kra_data.id), method: :put, class: "btn  btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+        <%= button_to "Select KRA Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[kyc_data_id]": @kra_data.id), method: :put, class: "btn  btn-outline-primary", disabled: disabled, title: (disabled ? "Fields are already populated" : nil) if policy(@investor_kyc).assign_kyc_data? %>
       <% else %>
-      <%= button_to "Refresh KRA Data", generate_new_kyc_datas_path("investor_kyc_id": @investor_kyc.id, "source": "kra"), method: :post, class: "btn btn-primary" if policy(@investor_kyc).generate_new_kyc_data? %>
+        <% if policy(@kra_data).update? %>
+          <%= button_to refresh_kyc_data_path(@kra_data, back_to: compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)), id: "kra_data_refresh_btn", method: :put, class:"btn btn-outline-primary", data: { turbo: false } do %>
+            <i class="ti ti-reload"></i> Re-fetch KRA Data
+          <% end %>
+        <% end %>
       <% end %>
     <% end %>
 <%= button_to "Continue without Selecting", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[full_name]": "", "investor_kyc[address]": "", "investor_kyc[corr_address]": ""), method: :put, class: "btn btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>

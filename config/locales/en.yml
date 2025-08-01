@@ -53,6 +53,7 @@ en:
     show: Show
     step: Step
     upload: Upload
+    refetch: Re-fetch
   date:
     formats:
       default: "%d/%m/%Y"
@@ -158,6 +159,9 @@ en:
       format:
         format: "%u%n"
         unit: INR
+  investor_kyc_actions:
+    complete_kyc_details: Complete KYC Details
+    pending_verification: Pending Verification
   secondaries_actions:
     accept_transaction_documents: Accept Transaction Documents
     accept_transaction_documents_button: Accept the Transaction Document(s) <br> %{accept_button}

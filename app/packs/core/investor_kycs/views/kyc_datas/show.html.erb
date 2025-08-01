@@ -1,3 +1,12 @@
 
-
 <%= render "kyc_datas/show", kyc_data: @kyc_data %>
+
+<% if policy(@kyc_data).update? %>
+<%= button_to refresh_kyc_data_path(@kyc_data), id: "kyc_data_refresh_btn", method: :put, class:"btn btn-outline-primary", data: { turbo: false } do %>
+    <i class="ti ti-reload"></i> <%= t_common(:refetch) %>
+    <% end %>
+<% end %>
+
+<%= link_to  t_common(:edit), edit_kyc_data_path(@kyc_data), {class: "btn btn-outline-secondary", data: { turbo: false }} %>
+
+<%= button_to t_common(:delete), kyc_data_path(id: @kyc_data, investor_kyc_id: @kyc_data.investor_kyc_id), method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kyc_data).destroy? %>

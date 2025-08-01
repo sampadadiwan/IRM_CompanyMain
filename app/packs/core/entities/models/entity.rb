@@ -151,6 +151,10 @@ class Entity < ApplicationRecord
     name
   end
 
+  def ckyc_or_kra_enabled?
+    permissions.enable_ckyc? || permissions.enable_kra?
+  end
+
   def scrub_defaults
     self.investor_categories = investor_categories.split(",").map(&:strip).join(",") if investor_categories
     self.instrument_types = instrument_types.split(",").map(&:strip).join(",") if instrument_types

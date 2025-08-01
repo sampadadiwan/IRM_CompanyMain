@@ -38,6 +38,17 @@
                 <i class="ti ti-building"></i> Non Individual
               <% end %>
 
+              <%= button_to create_and_send_kyc_to_investor_investor_kycs_path(
+                            "investor_kyc[investor_id]": @investor&.id,
+                            "investor_kyc[entity_id]": entity_id,
+                            "investor_kyc[kyc_type]": "Individual",
+                            "investor_kyc[send_kyc_form_to_user]": true), 
+                            method: :post,
+                          class: "dropdown-item d-flex align-items-center",
+                          form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} do %>
+                <i class="ti ti-mail-forward"></i>Send KYC to Stakeholder 
+              <% end %>
+
               <%= link_to investor_kycs_path(filter: true),
                           class: "dropdown-item d-flex align-items-center" do %>
                 <i class="ti ti-report"></i> Report

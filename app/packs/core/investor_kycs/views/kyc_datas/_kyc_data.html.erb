@@ -1,30 +1,20 @@
 <tr id="<%= dom_id kyc_data %>">
   <td>
-    <%= kyc_data.entity.name %>
+    <%= link_to kyc_data.investor_kyc, kyc_data.investor_kyc %>
   </td>
-  <td>
+   <td>
     <%= kyc_data.full_name %>
   </td>
   <td>
-    <%= kyc_data.email %>
+    <%= kyc_data.PAN %>
   </td>
   <td>
-    <%= kyc_data.phone %>
+    <%= kyc_data.birth_date&.strftime("%d/%m/%Y") %>
   </td>
   <td>
-    <%= kyc_data.source %>
+    <%= kyc_data.source&.upcase %>
   </td>
   <td>
-    <%= kyc_data.corr_address %>
-  </td>
-  <td>
-    <%= kyc_data.perm_address %>
-  </td>
-  <td>
-    <%= kyc_data.response %>
-  </td>
-
-  <td>
-    <%= link_to  t_common(:show) , kyc_data , {class: "btn btn-outline-primary" }%>
+    <%= link_to  t_common(:show) , kyc_data_path(kyc_data) , {class: "btn btn-outline-primary" }%>
   </td>
 </tr>

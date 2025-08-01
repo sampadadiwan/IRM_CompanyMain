@@ -1,5 +1,3 @@
-
-
-<% entity = @entity.present? ? @entity : (@investor_kyc.present? ? @investor_kyc.entity : current_user.entity ) if !entity.present? %>
-
-<%= render "/kyc_datas/index", kyc_datas: @kyc_datas, entity: entity, investor_kyc: nil  %>
+<%= turbo_frame_tag "kyc_datas_frame", target: "_top" do %>
+    <%= render "/kyc_datas/index", kyc_datas: @kyc_datas%>
+<% end %>

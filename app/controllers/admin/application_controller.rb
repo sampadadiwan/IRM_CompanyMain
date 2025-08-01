@@ -33,6 +33,8 @@ module Admin
       resources = apply_resource_filters(resources) if respond_to?(:apply_resource_filters)
       resources = order.apply(resources)
 
+      # Pagy’s internal logic is designed to fall back to Pagy::DEFAULT[:page_param] if the `page` parameter is nil
+      # Our administrate index view uses params[:page] so params[:_page] is nil here falling back to Pagy::DEFAULT[:page_param] ie :page
       @pagy, @resources = pagy(resources, page: params[:_page], items: 20)
 
       # This builds the expected `page` object for the view

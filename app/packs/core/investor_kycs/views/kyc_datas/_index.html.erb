@@ -1,31 +1,37 @@
-<% data_source ||= kyc_datas_path(investor_kyc_id: investor_kyc&.id, format: :json, all: true) %>
-<% lazy_load_data ||= false %>
 
+  <% investor_kyc_id ||= params[:investor_kyc_id] %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Kyc Data</h1>
+
+    <% if investor_kyc_id.present? && current_user.entity.ckyc_or_kra_enabled? %>
+    <span>
+        <%= link_to "New CKYC Data" , new_kyc_data_path("kyc_data[investor_kyc_id]": investor_kyc_id, "kyc_data[source]": "ckyc"), {class: "btn btn-outline-primary" } if current_user.entity.permissions.enable_ckyc? %>
+        <%= link_to "New KRA Data" , new_kyc_data_path("kyc_data[investor_kyc_id]": investor_kyc_id, "kyc_data[source]": "kra"), {class: "btn btn-outline-primary" } if current_user.entity.permissions.enable_kra? %>
+      </span>
+    <% end %>
   </div>
 
-  <div class="table-responsive" data-controller="kyc-datas"
-       data-kyc-datas-lazy-load-data-value=<%= lazy_load_data %>
-       data-kyc-datas-table-name-value="#kyc_datas">
+  <div class="table-responsive" >
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->kyc-datas#loadData"><span>Load Data</span></a>
-    <% end %>
 
-    <table id="kyc_datas" class="table table-bordered dataTable"
-           data-source="<%= data_source %>" style="width:100%" >
+    <table id="kyc_datas" class="table table-bordered dataTable" style="width:100%" >
 
       <thead>
         <tr>
           <th>
-            Investing Entity
+            Investor Kyc
+          </th>
+          <th>
+            Full Name
+          </th>
+          <th>
+            PAN
+          </th>
+          <th>
+            DOB
           </th>
           <th>
             Source
-          </th>
-          <th>
-            Created at
           </th>
           <th>
           </th>
@@ -33,6 +39,10 @@
       </thead>
 
       <tbody>
+
+        <% kyc_datas.each do |kyc_data| %>
+          <%=render "kyc_data", kyc_data: kyc_data %>
+        <% end %>
 
       </tbody>
     </table>

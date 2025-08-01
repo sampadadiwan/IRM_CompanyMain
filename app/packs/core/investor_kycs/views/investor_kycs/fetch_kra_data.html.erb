@@ -1,0 +1,68 @@
+<!-- If CKYC is disabled, KRA fetch was successful, and KRA data has a full_name, show the KRA data -->
+<% ckyc_phone_invalid = params[:phone].blank? || params[:phone].length != 10 %>
+<% kra_data_shown = (!@ckyc_enabled || ckyc_phone_invalid) && @kra_result[:success] && @kra_data&.full_name.present? %>
+<% if kra_data_shown %>
+  
+  <!-- Render a partial to display the KRA data -->
+  <%= render "/kyc_datas/show", kyc_data: @kra_data %>
+
+
+<% disabled = @investor_kyc.kyc_data_fields_populated %>
+  <!-- Show a button to assign KRA data to the investor KYC only if the user has permission -->
+  <%= button_to "Select KRA Data",
+        assign_kyc_data_investor_kyc_path(
+          id: @investor_kyc.id,
+          "investor_kyc[id]": @investor_kyc.id,
+          "investor_kyc[kyc_data_id]": @kra_data.id
+        ),
+        method: :put,
+        class: "btn btn-outline-primary",
+        disabled: disabled,
+        title: (disabled ? "Fields are already populated" : nil) if policy(@investor_kyc).assign_kyc_data? %>
+<% end %>
+
+<% unless kra_data_shown %>
+<div class="d-flex justify-content-center align-items-center flex-wrap gap-3 mt-4">
+<% end %>
+<!-- If KRA fetch failed and the user has update permission on KRA data, show a re-fetch button -->
+<% if !@kra_result[:success] && @kra_data.present? && policy(@kra_data).update? %>
+  <%= button_to "Re-fetch KRA Data",
+        download_kra_data_investor_kyc_path(
+          id: @investor_kyc.id,
+          phone: params[:phone]
+        ),
+        method: :get,
+        class: "btn btn-outline-primary ti ti-reload" %>
+<% end %>
+
+<!-- If CKYC is enabled, show a button to continue to the CKYC fetch step -->
+<% if @ckyc_enabled %>
+  <%= button_to fetch_ckyc_data_investor_kyc_path(id: @investor_kyc.id),
+      method: :get,
+      class: "btn btn-outline-primary",
+      disabled: ckyc_phone_invalid,
+      title: (ckyc_phone_invalid ? "Mobile No. is invalid" : nil),
+      data: { turbo: false } do %>
+
+    <%= hidden_field_tag :phone, params[:phone] %>
+    Continue to CKYC
+  <% end %>
+<% end %>
+
+
+
+<!-- Always show a 'Continue to Edit' button if the user has permission to assign KYC data -->
+<%= button_to "Continue to Edit",
+      assign_kyc_data_investor_kyc_path(
+        id: @investor_kyc.id,
+        "investor_kyc[id]": @investor_kyc.id,
+        "investor_kyc[full_name]": "",        # blank out these fields to allow editing
+        "investor_kyc[address]": "",
+        "investor_kyc[corr_address]": ""
+      ),
+      method: :put,
+      class: "btn btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+
+<% unless kra_data_shown %>
+</div>
+<% end %>

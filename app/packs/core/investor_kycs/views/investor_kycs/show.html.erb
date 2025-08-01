@@ -1,6 +1,10 @@
 
-
-<%= render "investor_kycs/show", investor_kyc: @investor_kyc %>
+ <% ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc?
+              ckyc_data = ckyc_enabled ? @investor_kyc.ckyc_data : nil
+  %>
+  <% kra_enabled = @investor_kyc.entity.permissions.enable_kra?
+            kra_data = kra_enabled ? @investor_kyc.kra_data : nil %>
+<%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
 <div>
 
@@ -94,6 +98,37 @@
             <% end %>
           <% end %>
 
+          <% if ckyc_enabled %>
+            <% if ckyc_data.present? %>
+              <%= link_to kyc_data_path(id: ckyc_data.id), class: "dropdown-item" do %>
+              <i class="ti ti-eye"></i> View CKYC Data
+              <% end %>
+            <% else %>
+              <%= link_to new_kyc_data_path("kyc_data[investor_kyc_id]": @investor_kyc.id, "kyc_data[PAN]": @investor_kyc.PAN, "kyc_data[birth_date]": @investor_kyc.birth_date, "kyc_data[source]": "ckyc"), class: "dropdown-item" do %>
+                <i class="ti ti-file-text"></i> Fetch CKYC Data
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <% if kra_enabled %>
+            <% if kra_data.present? %>
+              <%= link_to kyc_data_path(id: kra_data.id), class: "dropdown-item" do %>
+              <i class="ti ti-eye"></i> View KRA Data
+              <% end %>
+            <% else %>
+              <%= link_to new_kyc_data_path("kyc_data[investor_kyc_id]": @investor_kyc.id, "kyc_data[PAN]": @investor_kyc.PAN, "kyc_data[birth_date]": @investor_kyc.birth_date, "kyc_data[source]": "kra"), class: "dropdown-item" do%>
+                <i class="ti ti-file-text"></i> Fetch KRA Data
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <% if ckyc_enabled && kra_enabled %>
+            <%= link_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id), class: "dropdown-item" do%>
+            <i class="ti ti-file-text"></i> Assign CKYC/KRA Data
+            <% end %>
+          <% end %>
+
+
           <% if policy(@investor_kyc).generate_new_aml_report? %>
             <%= button_to generate_new_aml_report_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_new_aml_report_btn", method: :put, class: "dropdown-item" do %>
               <i class="ti ti-shield-lock"></i>Generate AML Report
@@ -128,6 +163,43 @@
       </div>
     <% end %>
 
+  <% else %>
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" id="kyc_actions"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="ti ti-settings"></i>KYC Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+          <% if ckyc_enabled %>
+            <% if ckyc_data.present? %>
+              <%= link_to kyc_data_path(id: ckyc_data.id), class: "dropdown-item" do %>
+              <i class="ti ti-eye"></i> View CKYC Data
+              <% end %>
+            <% else %>
+              <%= link_to new_kyc_data_path("kyc_data[investor_kyc_id]": @investor_kyc.id, "kyc_data[PAN]": @investor_kyc.PAN, "kyc_data[birth_date]": @investor_kyc.birth_date, "kyc_data[source]": "ckyc"), class: "dropdown-item" do %>
+                <i class="ti ti-file-text"></i> Fetch CKYC Data
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <% if kra_enabled %>
+            <% if kra_data.present? %>
+              <%= link_to kyc_data_path(id: kra_data.id), class: "dropdown-item" do %>
+              <i class="ti ti-eye"></i> View KRA Data
+              <% end %>
+            <% else %>
+              <%= link_to new_kyc_data_path("kyc_data[investor_kyc_id]": @investor_kyc.id, "kyc_data[PAN]": @investor_kyc.PAN, "kyc_data[birth_date]": @investor_kyc.birth_date, "kyc_data[source]": "kra"), class: "dropdown-item" do%>
+                <i class="ti ti-file-text"></i> Fetch KRA Data
+              <% end %>
+            <% end %>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
   <% end %>
 
 </div>

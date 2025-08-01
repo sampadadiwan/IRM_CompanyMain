@@ -1,6 +1,4 @@
-<div class="text-center">
-    <% form="form" %>
-</div>
+<% form="form" %>
 
 <% form="initial_form" if policy(@investor_kyc).ckyc_or_kra_enabled? %>
 <%= render form, investor_kyc: @investor_kyc %>

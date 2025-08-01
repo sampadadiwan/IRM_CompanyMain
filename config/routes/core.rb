@@ -65,6 +65,9 @@ resources :investor_kycs do
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
   post 'validate_docs_with_ai', on: :member
+  post 'create_and_send_kyc_to_investor', on: :collection
+  get "download_kra_data", on: :member
+  get "fetch_ckyc_data", on: :member
   get 'esign_emails', on: :collection
 end
 
@@ -72,7 +75,10 @@ resources :aml_reports
 
 resources :kyc_datas do
   get 'search', on: :collection
-  post 'generate_new', on: :collection
+  get 'fetch_ckyc_data', on: :collection
+  get 'send_ckyc_otp', on: :member
+  put 'download_ckyc_with_otp', on: :member
+  put 'refresh', on: :member
   get 'compare_ckyc_kra', on: :collection
 end
 

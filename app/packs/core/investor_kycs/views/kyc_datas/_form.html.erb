@@ -1,0 +1,82 @@
+<% kyc_data ||= @kyc_data %>
+<% turbo_frame_id ||= "kyc_data_form_#{kyc_data.id}" %>
+<%= turbo_frame_tag turbo_frame_id do%>
+    <%= render NewCard.new do%>
+        <% datatype = kyc_data.source&.upcase || "KYC" %>
+        <div class="card shadow mb-4 justify-content-md-center dynamic_form" data-controller="dynamic">
+            <div class="card-header py-3 d-flex align-items-center justify-content-between">
+                <h4 class="m-0 text-primary"> <%= "#{datatype} Data" %> </h4>
+            </div>
+            <div class="card-body">
+                <%
+                    path = kyc_datas_path
+                    method = :post
+                    if kyc_data.persisted?
+                        path = kyc_data_path(kyc_data)
+                        method = :put
+                    end
+                %>
+                
+                <%= form_with(
+                    model: kyc_data,
+                    url:path,
+                    method: method,
+                    validate: true,
+                    data: {turbo: false}
+                    ) do |form| %>
+
+                    <% if kyc_data.errors.any? %>
+                    <div class="alert alert-danger">
+                        <h2><%= pluralize(kyc_data.errors.count, "error") %> prohibited this kyc_data from being saved:</h2>
+
+                        <ul>
+                        <% kyc_data.errors.each do |error| %>
+                            <li><%= error.full_message %></li>
+                        <% end %>
+                        </ul>
+                    </div>
+                    <% end %>
+
+                    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+                    <%= form.text_field :investor_kyc_id, class: "form-control", hidden: true  %>
+                    <%= form.text_field :source, class: "form-control", hidden: true  %>
+                    <%= form.text_field :turbo_frame_id, value: turbo_frame_id, class: "form-control", hidden: true %>
+
+                    <div class="form-group">
+                        <%= form.label :investor_kyc_id %>
+                        <%= form.select :investor_kyc_id, kyc_data.entity.investor_kycs.map{|i| [i.investor_name, i.id]}, {selected: kyc_data.investor_kyc.investor_name}, class: "form-control select2", disabled: true  %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :PAN %>
+                        <%= form.text_field :PAN, class: "form-control"  %>
+                    </div>
+
+                    <% if kyc_data.kra? %>
+                    <div class="form-group">
+                        <%= form.label :date_of_birth %>
+                        <%= form.date_field :birth_date, class: "form-control"  %>
+                    </div>
+                    <small class="form-text text-muted"> Required for KRA </small>
+                    <% end %>
+
+                    <% if kyc_data.ckyc? %>
+                    <div class="form-group">
+                        <%= form.label :mobile_number %>
+                        <%= form.text_field :phone, class: "form-control"  %>
+                    </div>
+                    <small class="form-text text-muted"> Required to send CKYC OTP. Please enter mobile number without country code (it is assumed to be +91).</small>
+                    <% end %>
+
+
+                    <div class="form-group">
+                    <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+                    </div>
+                <% end %>
+
+            </div>
+        </div>
+    <%end%>
+<%end%>
+
+

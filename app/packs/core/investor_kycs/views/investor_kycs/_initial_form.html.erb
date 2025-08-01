@@ -1,22 +1,41 @@
-<%= form_for(@investor_kyc, url: compare_kyc_datas_investor_kycs_path, html: { data: {turbo: false} }) do |form| %>
+<%= form_for(@investor_kyc, url: compare_kyc_datas_investor_kycs_path, html: { data: {turbo: false} }, method: :post) do |form| %>
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <% options = {include_blank: true}%>
+
+  <% if @investor_kyc.persisted? %>
+  <%= form.text_field :id, class: "form-control", hidden: true, value: @investor_kyc.id %>
+  <% options = {selected: @investor_kyc.investor.investor_name} %>
+  <% end %>
+  <% disabled = current_user.curr_role_investor? %>
   <div class="form-group">
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control select2", required: true  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :date_of_birth %>
-    <%= form.date_field :birth_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group" hidden='hidden'>
-    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control", id: "kyc_type", hidden: true %>
+    <%= form.select :investor_id, @investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, options, class: "form-control select2", disabled: disabled , required: true %>
   </div>
 
   <div class="form-group">
     <%= form.label :PAN %>
     <%= form.text_field :PAN, class: "form-control"  %>
+  </div>
+
+  <% if @investor_kyc.entity.permissions.enable_kra? %>
+  <div class="form-group">
+    <%= form.label :date_of_birth %>
+    <%= form.date_field :birth_date, class: "form-control"  %>
+    <small class="form-text text-muted"> Required for KRA </small>
+  </div>
+  <% end %>
+
+  <% if @investor_kyc.entity.permissions.enable_ckyc? %>
+  <div class="form-group">
+    <%= form.label :mobile_number %>
+    <%= form.text_field :phone, class: "form-control" %>
+    <small class="form-text text-muted"> Required to send CKYC OTP. Please enter mobile number without country code (it is assumed to be +91).</small>
+  </div>
+  <% end %>
+
+
+  <div class="form-group" hidden='hidden'>
+    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control", id: "kyc_type", hidden: true %>
   </div>
 
   <div class="form-group">

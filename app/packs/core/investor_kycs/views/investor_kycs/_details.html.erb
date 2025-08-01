@@ -5,7 +5,7 @@
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
     <% @entity = @investor_kyc.entity%>
-    <% if current_user.entity.entity_setting.ckyc_or_kra_enabled? %>
+    <% if @entity.ckyc_or_kra_enabled? %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kyc-datas-tab"
         data-action="click->tabdetails#loadData">Kyc Data</a>
     <% end %>
@@ -39,10 +39,12 @@
         </div>
       </div>
 
-      <% if current_user.entity.entity_setting.ckyc_or_kra_enabled? %>
+      <% if @entity.ckyc_or_kra_enabled? %>
       <div id="kyc-datas-tab" class="tab-pane fade in show">
         <div id="kyc-datas" class="associated_entity">
-          <%= render partial: "/kyc_datas/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
+          <%= turbo_frame_tag "kyc_datas_frame", target: "_top", loading: :lazy, src: kyc_datas_path(investor_kyc_id: @investor_kyc.id) do %>
+            <%= render "/layouts/loading" %>
+          <% end %>
         </div>
       </div>
       <% end %>

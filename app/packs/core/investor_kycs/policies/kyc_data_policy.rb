@@ -1,32 +1,42 @@
 class KycDataPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %i[employee].include? user.curr_role.to_sym
-        scope.where(entity_id: user.entity_id)
-      else
-        scope.none
-      end
+      # Get all InvestorKycs the user is allowed to access
+      allowed_investor_kyc_ids = InvestorKycPolicy::Scope.new(user, InvestorKyc).resolve.select(:id)
+      scope.where(investor_kyc_id: allowed_investor_kyc_ids)
     end
   end
 
   def index?
-    true
+    user.enable_kycs
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    Pundit.policy(user, record.investor_kyc).show?
   end
 
   def create?
-    false
+    Pundit.policy(user, record.investor_kyc).create?
+  end
+
+  def refresh?
+    index?
   end
 
   def compare_ckyc_kra?
-    belongs_to_entity?(user, record)
+    index?
   end
 
-  def generate_new?
-    belongs_to_entity?(user, record)
+  def fetch_ckyc_data?
+    index?
+  end
+
+  def send_ckyc_otp?
+    index?
+  end
+
+  def download_ckyc_with_otp?
+    index?
   end
 
   def new?
@@ -34,14 +44,14 @@ class KycDataPolicy < ApplicationPolicy
   end
 
   def update?
-    false
+    create?
   end
 
   def edit?
-    false
+    create?
   end
 
   def destroy?
-    false
+    index? && record.status&.downcase != "success"
   end
 end

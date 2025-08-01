@@ -104,6 +104,8 @@ class InvestorKyc < ApplicationRecord
 
   include FileUploader::Attachment(:signature)
 
+  attr_accessor :phone
+
   belongs_to :verified_by, class_name: "User", optional: true
 
   validates :kyc_type, :address, :full_name, :birth_date, :PAN, :bank_name, :bank_branch, :bank_account_type, :bank_account_number, :ifsc_code, presence: true
@@ -115,6 +117,7 @@ class InvestorKyc < ApplicationRecord
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
   validates :bank_name, length: { maximum: 100 }
+  validates :phone, length: { is: 10 }, allow_blank: true
 
   validate :birth_date_cannot_be_in_the_future
   def birth_date_cannot_be_in_the_future
@@ -246,10 +249,6 @@ class InvestorKyc < ApplicationRecord
   end
 
   def assign_kyc_data(kyc_data, user)
-    unless self.PAN.casecmp?(kyc_data.pan&.to_s&.strip)
-      e = StandardError.new("PAN number does not match the KYC data")
-      errors.add(:PAN, "does not match the KYC data")
-    end
     self.full_name = kyc_data.full_name
     self.address = kyc_data.perm_address
     self.corr_address = kyc_data.corr_address
@@ -320,5 +319,17 @@ class InvestorKyc < ApplicationRecord
 
   def doc_questions
     entity.doc_questions.where(owner: entity, for_class: "InvestorKyc")
+  end
+
+  def ckyc_data
+    kyc_datas.ckyc.where(PAN: self.PAN).last
+  end
+
+  def kra_data
+    kyc_datas.kra.where(PAN: self.PAN).last
+  end
+
+  def kyc_data_fields_populated
+    full_name.present? || address.present? || corr_address.present?
   end
 end

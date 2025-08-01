@@ -1,9 +1,5 @@
-  <div class="inline-parent">
-    <div class="inline-child float-left">
-      <h1>Kyc Data - <%= kyc_data.full_name %> </h1>
-    </div>
-    <br>
-  </div>
+<% datatype = kyc_data.source&.upcase || "KYC" %>
+<%= render ToggleCard.new(title: "#{datatype} Data: #{kyc_data.full_name}", css_class: "show_inv_entities_#{datatype}") do %>
 
   <table class="table table-bordered dataTable">
     <tr>
@@ -15,13 +11,13 @@
       </td>
     </tr>
 
-    <% if kyc_data.investor_kyc.full_name.present? %>
+    
     <tr>
       <td>
-        Investor Kyc Name
+        Investor Kyc
       </td>
       <td>
-        <%= link_to kyc_data.investor_kyc.full_name, kyc_data.investor_kyc %>
+        <%= link_to kyc_data.investor_kyc.to_s, kyc_data.investor_kyc %>
         <br>
         <% if kyc_data.investor_kyc.verified %>
           <span class="badge bg-success">Verified</span>
@@ -30,7 +26,43 @@
         <% end %>
       </td>
     </tr>
-    <% end %>
+
+    <tr>
+      <td>
+        PAN
+      </td>
+      <td>
+        <%= kyc_data.PAN %>
+        <% if kyc_data.pan_match %>
+          <span class="badge bg-success">Match</span>
+        <% else %>
+          <span class="badge bg-warning">No Match</span>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        DOB
+      </td>
+      <td>
+        <%= kyc_data.birth_date&.strftime("%d/%m/%Y") %>
+        <% if kyc_data.birth_date_match %>
+          <span class="badge bg-success">Match</span>
+        <% else %>
+          <span class="badge bg-warning">No Match</span>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= kyc_data.status %>
+      </td>
+    </tr>
 
     <tr>
       <td>
@@ -38,6 +70,11 @@
       </td>
       <td>
         <%= kyc_data.full_name %>
+        <% if kyc_data.full_name_match %>
+          <span class="badge bg-success">Match</span>
+        <% else %>
+          <span class="badge bg-warning">No Match</span>
+        <% end %>
       </td>
     </tr>
 
@@ -50,6 +87,16 @@
         <%= kyc_data.ckyc_number %>
       </td>
     </tr>
+    <% else %>
+    <tr>
+      <td>
+          KRA status
+      </td>
+      <td>
+        <%= kyc_data.kra_status %>
+      </td>
+    </tr>
+
     <% end %>
 
     <tr>
@@ -76,6 +123,11 @@
       </td>
       <td>
         <%= kyc_data.corr_address %>
+        <% if kyc_data.corr_address_match %>
+          <span class="badge bg-success">Match</span>
+        <% else %>
+          <span class="badge bg-warning">No Match</span>
+        <% end %>
       </td>
     </tr>
 
@@ -85,6 +137,11 @@
       </td>
       <td>
         <%= kyc_data.perm_address %>
+        <% if kyc_data.address_match %>
+          <span class="badge bg-success">Match</span>
+        <% else %>
+          <span class="badge bg-warning">No Match</span>
+        <% end %>
       </td>
     </tr>
 
@@ -97,8 +154,58 @@
       </td>
     </tr>
 
+    <tr class="">
+        <td>
+            Created
+        </td>
+        <td>
+            <%= kyc_data.created_at.strftime("%d/%m/%Y %H:%M:%S") %>
+        </td>
+    </tr>
+    
+    <tr class="">
+        <td>
+            Updated
+        </td>
+        <td>
+            <%= kyc_data.updated_at.strftime("%d/%m/%Y %H:%M:%S") %>
+        </td>
+    </tr>
+
+
+    <% if params[:debug].present? %>
+
+      <tr>
+        <td>
+          Final Response
+        </td>
+        <td>
+           <%= Json2table.get_html_table(kyc_data.response, JsonTable::TABLE_OPTIONS).html_safe %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Request Data
+        </td>
+        <td>
+           <%= Json2table.get_html_table(kyc_data.request_data, JsonTable::TABLE_OPTIONS).html_safe %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Response Data
+        </td>
+        <td>
+          <%= Json2table.get_html_table(kyc_data.response_data, JsonTable::TABLE_OPTIONS).html_safe %>
+        </td>
+      </tr>
+      <% end %>
+
   </table>
 
+<% if kyc_data.ckyc? %>
 <div>
     <p>
     <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#imgCollapseResponse-<%= kyc_data.id %>" aria-expanded="false" aria-controls="imgCollapseResponse-<%= kyc_data.id %>">
@@ -135,7 +242,6 @@
     </div>
     <br>
 </div>
+<% end %>
 
-
-
-
+<% end %>
