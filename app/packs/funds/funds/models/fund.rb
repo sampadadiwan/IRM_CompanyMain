@@ -70,7 +70,7 @@ class Fund < ApplicationRecord
   validates :name, :currency, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
   # Unique name for the fund, unless its a snapshot
-  validates :name, uniqueness: { scope: :entity_id }, if: -> { !snapshot? }
+  validate :name_must_be_unique_for_non_snapshots, unless: :snapshot?
 
   validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
@@ -89,6 +89,13 @@ class Fund < ApplicationRecord
 
   def private_folder_names
     ["Reports", "Private Documents"]
+  end
+
+
+  def name_must_be_unique_for_non_snapshots
+    if Fund.where(name: name, entity_id: entity_id, snapshot: false).where.not(id: id).exists?
+      errors.add(:name, "must be unique for non-snapshot funds within the same entity")
+    end
   end
 
   def pending_call_amount

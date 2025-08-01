@@ -36,8 +36,8 @@ class ApplicationMailer < ActionMailer::Base
     @additional_ccs ||= params[:additional_ccs]
 
     if @entity.present?
-      # Ensure we pick te right from address
-      @from = from_email(@entity)
+      # Ensure we pick te right from address, sometimes funds like to send from an email specified in from_email. See Notifiers in funds
+      @from = params[:from_email].presence || from_email(@entity)
 
       unless @entity.entity_setting.sandbox
         setup_cc

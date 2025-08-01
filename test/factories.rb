@@ -541,6 +541,7 @@ FactoryBot.define do
     tag_list {  }
     unit_types {"Series A, Series B, Series C"}
     currency { ["INR"].sample }
+    json_fields { {from_email: "#{name.parameterize}@#{entity.name.parameterize}.com"} }
   end
 
 
@@ -567,6 +568,7 @@ FactoryBot.define do
     currency { entity.currency }
     tag_list { [IO_TAGS.sample, IO_TAGS.sample].join(",") }
     details { Faker::Company.catch_phrase  }
+    json_fields { {from_email: "#{company_name.parameterize}@#{entity.name.parameterize}.com"} }
   end
 
   factory :approval do

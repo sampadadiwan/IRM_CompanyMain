@@ -596,7 +596,7 @@ Then('the investors must receive email with subject {string} with the document {
       inv.emails.each do |email|
         puts "# checking email #{subject} sent for #{email} for investor #{inv}"
         open_email(email)
-
+        puts "from #{current_email.from}, to #{current_email.to}, subject #{current_email.subject}"
         @custom_notification ||= nil
         if @custom_notification.present?
           expect(current_email.subject).to include @custom_notification.subject
@@ -861,7 +861,7 @@ end
 
 Then('I should be able to see my investor kycs') do
   @user.reload
-  
+
   visible_kycs = []
   invisible_kycs = []
   InvestorKyc.all.includes(:investor).each do |kyc|
@@ -872,7 +872,7 @@ Then('I should be able to see my investor kycs') do
 
     if Pundit.policy(@user, kyc).show?
       puts "KYC #{kyc.investor.investor_name} Visible to #{@user.email}"
-      expect(page).to have_content(kyc.investor.investor_name) 
+      expect(page).to have_content(kyc.investor.investor_name)
       expect(page).to have_content(InvestorKyc.kyc_types[kyc.kyc_type])
       expect(page).to have_content(kyc.bank_account_number)
       expect(page).to have_content(kyc.full_name) if kyc.full_name.present?
@@ -973,22 +973,22 @@ Then('all the investor advisors should be able to receive notifications for the 
       puts "Checking commitments"
       investor.capital_commitments.each do |cc|
         investor.notification_users(cc).pluck(:email).include?(investor_advisor.email).should == true
-      end 
+      end
 
       puts "Checking remittances"
       investor.capital_remittances.each do |cr|
         investor.notification_users(cr).pluck(:email).include?(investor_advisor.email).should == true
-      end 
+      end
 
       puts "Checking distributions"
       investor.capital_distribution_payments.each do |cdp|
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
-      end 
+      end
 
-      
-      investor.investor_kycs.each do |kyc|              
+
+      investor.investor_kycs.each do |kyc|
         if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: true)
-          puts "Checking KYC notifications true"      
+          puts "Checking KYC notifications true"
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
           visible_kycs << kyc
         else
@@ -996,11 +996,11 @@ Then('all the investor advisors should be able to receive notifications for the 
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == false
           invisible_kycs << kyc
         end
-      end      
+      end
     end
 
     puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
-    puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"   
+    puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
 
   end
 end
@@ -1011,15 +1011,15 @@ Then('all the investor advisors should be able to switch to the investors they r
     puts "Switching to Investor Advisor #{investor_advisor.email} for entity #{investor_advisor.entity.name}"
     investor_advisor.switch(investor_advisor.user)
     investor_advisor.user.reload
-    
+
     CapitalCommitment.all.each do |cc|
       if Pundit.policy(investor_advisor.user, cc).show?
         # All capital commitments should belong to the investor advisor's entity
-        cc.investor.investor_entity_id.should == investor_advisor.entity.id        
+        cc.investor.investor_entity_id.should == investor_advisor.entity.id
         puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cc.investor.investor_entity_id != investor_advisor.entity.id    
-        # If the capital commitment does not belong to the investor advisor's entity, it should not be visible    
+      if cc.investor.investor_entity_id != investor_advisor.entity.id
+        # If the capital commitment does not belong to the investor advisor's entity, it should not be visible
         Pundit.policy(investor_advisor.user, cc).show?.should == false
         puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
@@ -1028,11 +1028,11 @@ Then('all the investor advisors should be able to switch to the investors they r
     CapitalRemittance.all.each do |cr|
       if Pundit.policy(investor_advisor.user, cr).show?
         # All capital remittances should belong to the investor advisor's entity
-        cr.investor.investor_entity_id.should == investor_advisor.entity.id 
-        puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"       
+        cr.investor.investor_entity_id.should == investor_advisor.entity.id
+        puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cr.investor.investor_entity_id != investor_advisor.entity.id    
-        # If the capital remittance does not belong to the investor advisor's entity, it should not be visible    
+      if cr.investor.investor_entity_id != investor_advisor.entity.id
+        # If the capital remittance does not belong to the investor advisor's entity, it should not be visible
         Pundit.policy(investor_advisor.user, cr).show?.should == false
         puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
@@ -1041,10 +1041,10 @@ Then('all the investor advisors should be able to switch to the investors they r
     CapitalDistributionPayment.all.each do |cdp|
       if Pundit.policy(investor_advisor.user, cdp).show?
         # All capital distribution payments should belong to the investor advisor's entity
-        cdp.investor.investor_entity_id.should == investor_advisor.entity.id      
-        puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"  
+        cdp.investor.investor_entity_id.should == investor_advisor.entity.id
+        puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cdp.investor.investor_entity_id != investor_advisor.entity.id        
+      if cdp.investor.investor_entity_id != investor_advisor.entity.id
         # If the capital distribution payment does not belong to the investor advisor's entity, it should not be visible
         Pundit.policy(investor_advisor.user, cdp).show?.should == false
         puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
@@ -1054,10 +1054,10 @@ Then('all the investor advisors should be able to switch to the investors they r
     InvestorKyc.all.each do |kyc|
       if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false)
         # All investor KYC should belong to the investor advisor's entity
-        kyc.investor.investor_entity_id.should == investor_advisor.entity.id     
-        puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"   
+        kyc.investor.investor_entity_id.should == investor_advisor.entity.id
+        puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if kyc.investor.investor_entity_id != investor_advisor.entity.id        
+      if kyc.investor.investor_entity_id != investor_advisor.entity.id
         # If the investor KYC does not belong to the investor advisor's entity, it should not be visible
         Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false).should == false
         puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
@@ -2109,7 +2109,7 @@ Given('remittances are paid {string} and verified') do |paid_percentage|
     )
 
     result = CapitalRemittancePaymentCreate.wtf?(capital_remittance_payment: crp)
-    
+
     # Store the latest   payment amount for the remittance
     @latest_payment[cr.id] = crp.amount_cents
 
@@ -2199,7 +2199,7 @@ Given ('the fund snapshot is created') do
   fs = Fund.with_snapshots.where(orignal_id: @fund.id, snapshot: true).first
   fs.should_not == nil
   fs.snapshot_date.should == Time.zone.today
-  
+
   @fund.aggregate_portfolio_investments.each do |api|
     AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id).count.should == 2
     puts "Checking aggregate portfolio investment snapshot for #{api.id}"
@@ -2213,7 +2213,7 @@ Given ('the fund snapshot is created') do
       pi_s = PortfolioInvestment.with_snapshots.where(orignal_id: pi.id, snapshot: true).first
       pi_s.should_not == nil
       pi_s.snapshot_date.should == Time.zone.today
-    end    
+    end
   end
 end
 
@@ -2351,7 +2351,7 @@ Given('We Generate documents for the capital distribution') do
   visit(capital_distribution_path(@capital_distribution))
   click_on("Actions")
   click_on("Generate Documents")
-  click_on("Proceed")  
+  click_on("Proceed")
   sleep(5) # Wait for the job to complete
   expect(page).to have_content("Documentation generation started")
 end
@@ -2379,12 +2379,12 @@ Then('Distribution notice should be generate for all distribution payments with 
     end
     cdp.documents.each do |doc|
       puts "Checking document #{doc.name} for distribution payment #{cdp.id}"
-      expect(doc.name.include?("Distribution Template - #{cdp.investor_name}")).to be true 
+      expect(doc.name.include?("Distribution Template - #{cdp.investor_name}")).to be true
       doc.approved.should == true
       doc.owner_type.should == "CapitalDistributionPayment"
       doc.owner_id.should == cdp.id
     end
-  end  
+  end
 end
 
 

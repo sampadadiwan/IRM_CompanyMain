@@ -12,6 +12,8 @@ class CapitalRemittancePaymentNotifier < BaseNotifier
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
       capital_remittance_payment_id: record.id,
+      fund_id: record.fund_id,
+      from_email: record.fund.custom_fields.from_email,
       additional_ccs: record.capital_remittance.capital_commitment.cc
     }
   end
