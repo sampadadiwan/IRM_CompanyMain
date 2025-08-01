@@ -27,14 +27,13 @@
                 <tr class="<%= row_class %>">
                     <td data-action="click->row-toggle#toggle" data-row-toggle-target="control">
                         <% if ikm.parent_id.present? %>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;
                             <i class="ti ti-chevron-right"></i>
-                        <% elsif ikm.child_count > 0 %>
-                            <span class="expand">+</span>
-                        <% else %>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         <% end %>
                         <%= ikm.standard_kpi_name %>
+                        <% if ikm.child_count > 0 %>
+                            <span class="expand">+</span>
+                        <% end %>
                     </td>
 
 

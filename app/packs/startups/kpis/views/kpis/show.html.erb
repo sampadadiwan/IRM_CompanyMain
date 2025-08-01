@@ -43,6 +43,18 @@
       <%= @kpi.value %>
     </td>
   </tr>
+
+  <% if @kpi.common_size_value %>
+  <tr>
+    <td>
+      Common Size Value
+    </td>
+    <td>
+      <%= @kpi.common_size_value %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Display Value
@@ -59,6 +71,16 @@
       <%= @kpi.percentage_change %> %
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Investor Kpi Mapping
+    </td>
+    <td>
+      <%= link_to @kpi.investor_kpi_mapping if @kpi.investor_kpi_mapping.present? %>
+    </td>
+  </tr>
+
   <tr>
     <td>
       Notes

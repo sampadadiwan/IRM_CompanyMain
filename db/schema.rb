@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_31_044922) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2287,8 +2287,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_31_044922) do
     t.string "source", limit: 100
     t.json "rag_status"
     t.decimal "common_size_value", precision: 6, scale: 2, default: "0.0"
+    t.bigint "investor_kpi_mapping_id"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
+    t.index ["investor_kpi_mapping_id"], name: "index_kpis_on_investor_kpi_mapping_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
     t.index ["owner_id"], name: "index_kpis_on_owner_id"
     t.index ["portfolio_company_id"], name: "index_kpis_on_portfolio_company_id"
@@ -3494,6 +3496,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_31_044922) do
   add_foreign_key "kpis", "entities"
   add_foreign_key "kpis", "entities", column: "owner_id"
   add_foreign_key "kpis", "form_types"
+  add_foreign_key "kpis", "investor_kpi_mappings"
   add_foreign_key "kpis", "investors", column: "portfolio_company_id"
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"

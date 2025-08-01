@@ -13,7 +13,7 @@
     <div class="card-body">
       <% if @kpi_report.present? %>
       <div class="table-responsive">
-        <table class="table table-bordered text-end align-middle">
+        <table class="table table-bordered text-end align-middle" data-controller="row-toggle">
           <thead class="table-dark">
             <tr>
               <th rowspan="2" class="text-start">Metric</th>
@@ -41,8 +41,18 @@
 
           <tbody>
             <% @rows.each do |r| %>
-              <tr>
-                <td class="text-start fw-semibold"><%= r.metric %></td>
+              <% row_class = r.investor_kpi_mapping.parent_id.blank? ? 'parent' : 'child' %>
+              <tr class="<%= row_class %>">
+                <td class="text-start fw-semibold" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
+                    <% if r.investor_kpi_mapping.parent_id.present? %>
+                        &nbsp;&nbsp;
+                        <i class="ti ti-chevron-right"></i>
+                    <% end %>
+                    <%= r.metric %>
+                    <% if r.investor_kpi_mapping.child_count > 0 %>
+                        <span class="expand">+</span>
+                    <% end %>
+                </td>
 
                 <td><%= r.monthly_prev_kpi ? link_to(number_with_delimiter(r.monthly_prev_kpi.value, delimiter: ','), r.monthly_prev_kpi) : nil %></td>
                 <td><%= r.monthly_curr_kpi ? link_to(number_with_delimiter(r.monthly_curr_kpi.value, delimiter: ','), r.monthly_curr_kpi) : nil %></td>

@@ -14,6 +14,7 @@ class PerformanceTableService
     :quarterly_curr_kpi, :quarterly_prev_kpi, :growth_quarterly,
     :ytd_curr_kpi, :ytd_prev_kpi, :growth_ytd_py,
     :ttm_curr_kpi, :ttm_prev_kpi, :growth_ttm_py,
+    :investor_kpi_mapping,
     keyword_init: true
   )
   # Represents a KPI value, primarily used for sums over periods.
@@ -48,15 +49,17 @@ class PerformanceTableService
   # @return [Array<MetricRow>] An array of MetricRow objects, each representing a row in the performance table.
   def call
     if metric_names.present?
-      metric_names.map { |name| build_row(name) }
+      @investor_kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.where(standard_kpi_name: metric_names).index_by(&:standard_kpi_name)
+      metric_names.map { |name| build_row(name, @investor_kpi_mappings[name]) }
     else
-      @kpi_report.kpis.map { |kpi| build_row(kpi.name) }
+      @investor_kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.index_by(&:standard_kpi_name)
+      @kpi_report.kpis.map { |kpi| build_row(kpi.name, @investor_kpi_mappings[kpi.name]) }
     end
   end
 
   private
 
-  attr_reader :metric_names, :as_of, :scope, :kpis_by_metric_and_date
+  attr_reader :metric_names, :as_of, :scope, :kpis_by_metric_and_date, :investor_kpi_mappings
 
   # --------------------------- Data Fetching --------------------------- #
   # Fetches all relevant KPIs for the specified metrics and date range.
@@ -83,7 +86,7 @@ class PerformanceTableService
   # and calculates their year-over-year growth rates.
   # @param metric_name [String] The name of the metric for which to build the row.
   # @return [MetricRow] A MetricRow object populated with KPI data and growth rates.
-  def build_row(metric_name)
+  def build_row(metric_name, investor_kpi_mapping)
     monthly_curr_kpi_obj = monthly_kpi(metric_name)
     monthly_prev_kpi_obj = monthly_kpi(metric_name, :prev_month)
 
@@ -110,7 +113,8 @@ class PerformanceTableService
       growth_ytd_py: growth(ytd_curr_kpi_obj&.value, ytd_prev_kpi_obj&.value),
       ttm_curr_kpi: ttm_curr_kpi_obj,
       ttm_prev_kpi: ttm_prev_kpi_obj,
-      growth_ttm_py: growth(ttm_curr_kpi_obj&.value, ttm_prev_kpi_obj&.value)
+      growth_ttm_py: growth(ttm_curr_kpi_obj&.value, ttm_prev_kpi_obj&.value),
+      investor_kpi_mapping: investor_kpi_mapping
     )
   end
 

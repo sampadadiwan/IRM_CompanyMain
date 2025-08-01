@@ -220,12 +220,16 @@ class KpiWorkbookReader
   # rubocop:disable Metrics/ParameterLists
   # Saves a KPI entry into the database
   def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
+    investor_kpi_mapping = @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)]
+
     # Find or initialize a KPI entry for the given report and KPI name
     kpi = kpi_report.kpis.where(
       name: @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)].standard_kpi_name,
       portfolio_company_id: @portfolio_company_id,
       entity_id: @portfolio_company&.entity_id
     ).first_or_initialize
+
+    kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row} #{col_index}" }
 

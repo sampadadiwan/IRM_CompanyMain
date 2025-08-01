@@ -28,6 +28,8 @@ class ImportKpi < ImportUtil
 
     entity_id = import_upload.entity_id
     kpi_report = setup_kpi_report(entity_id, portfolio_company, user_data, import_upload)
+    investor_kpi_mapping = InvestorKpiMapping.find_by(reported_kpi_name: name)
+    name = investor_kpi_mapping&.standard_kpi_name || name
 
     kpi = Kpi.where(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:).first
 
@@ -37,9 +39,10 @@ class ImportKpi < ImportUtil
     else
 
       Rails.logger.debug user_data
-
       kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:, portfolio_company:,
-                    kpi_report_id: kpi_report.id, import_upload_id: import_upload.id)
+                    kpi_report_id: kpi_report.id, import_upload_id: import_upload.id, investor_kpi_mapping:)
+
+      kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
       setup_custom_fields(user_data, kpi, custom_field_headers - ["Tag"])
 
       Rails.logger.debug { "Saving kpi with name '#{kpi.name}'" }

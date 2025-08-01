@@ -129,6 +129,7 @@ end
 Given('a KPI {string} exists for the kpi report') do |args|
   @kpi = Kpi.new(kpi_report: @kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id)
   key_values(@kpi, args)
+  @kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: @kpi.name, entity: @entity, investor: @portfolio_company)
   @kpi.save!
 end
 
@@ -142,6 +143,8 @@ end
 
 When('I compute the RAG status for KPI {string} with tagged KPI tag {string}') do |kpi_name, tagged_kpi_tag|
   kpi = Kpi.find_by(name: kpi_name)
+  # Re-assign investor_kpi_mapping to ensure it has the latest rag_rules
+  kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: kpi.name, entity: @entity, investor: @portfolio_company)
   kpi.set_rag_status_from_ratio(tagged_kpi_tag)
 end
 

@@ -7,10 +7,9 @@ class Kpi < ApplicationRecord
   belongs_to :portfolio_company, class_name: "Investor", optional: true
   # These are the investees, who will probably have investor_kpi_mappings for the kpis by this entity.
   has_many :investees, through: :entity
-  # This is for ransack search only. For some reason crashes on single kpi instance
-  has_many :investor_kpi_mappings, -> { where("`investor_kpi_mappings`.`standard_kpi_name`=`kpis`.`name`") }, through: :investees
 
   belongs_to :kpi_report
+  belongs_to :investor_kpi_mapping, optional: true
 
   validates :name, :value, presence: true
 
@@ -61,7 +60,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[kpi_report entity investor_kpi_mappings portfolio_company]
+    %w[kpi_report entity investor_kpi_mapping portfolio_company]
   end
 
   def kpis_for_entity
@@ -116,21 +115,26 @@ class Kpi < ApplicationRecord
 
   # Method to compute and set RAG status
   def set_rag_status_from_ratio(tagged_kpi_tag_list)
+    Rails.logger.debug { "--- set_rag_status_from_ratio called for KPI: #{name}, value: #{value}, report_as_of: #{kpi_report.as_of}, pc_id: #{portfolio_company_id}" }
+    Rails.logger.debug { "--- Looking for tagged KPI with tag: #{tagged_kpi_tag_list}" }
+
     tagged_kpi = find_tagged_kpi(tagged_kpi_tag_list)
 
-    # Find the InvestorKpiMapping for this KPI's standard name
-    # Kpi.name will match InvestorKpiMapping.standard_kpi_name
-    investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: name)
+    Rails.logger.debug { "--- Found tagged_kpi: #{tagged_kpi.present? ? tagged_kpi.to_s : 'nil'}" }
+    Rails.logger.debug { "--- tagged_kpi.value: #{tagged_kpi&.value}" }
+    Rails.logger.debug { "--- investor_kpi_mapping&.rag_rules.present?: #{investor_kpi_mapping&.rag_rules.present?}" }
 
     if tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value != 0 && investor_kpi_mapping&.rag_rules.present?
       ratio = value.to_f / tagged_kpi.value
       self.rag_status = determine_rag_status_from_rules(ratio, investor_kpi_mapping.rag_rules)
+      Rails.logger.debug { "--- RAG status determined: #{rag_status}" }
     elsif tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value.zero?
-      # Handle division by zero: perhaps set to 'red' or a specific status for this case
-      self.rag_status = 'red' # Or 'N/A', 'undefined', based on business logic
+      self.rag_status = 'red'
+      Rails.logger.debug "--- RAG status set to 'red' due to division by zero."
     else
-      self.rag_status = nil # Or a default status if tagged_kpi or rules are not found
+      self.rag_status = nil
+      Rails.logger.debug "--- RAG status set to nil (conditions not met)."
     end
-    save if changed? # Save the KPI if rag_status has been updated
+    save if changed?
   end
 end

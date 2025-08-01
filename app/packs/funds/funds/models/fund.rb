@@ -91,11 +91,8 @@ class Fund < ApplicationRecord
     ["Reports", "Private Documents"]
   end
 
-
   def name_must_be_unique_for_non_snapshots
-    if Fund.where(name: name, entity_id: entity_id, snapshot: false).where.not(id: id).exists?
-      errors.add(:name, "must be unique for non-snapshot funds within the same entity")
-    end
+    errors.add(:name, "must be unique for non-snapshot funds within the same entity") if Fund.where(name: name, entity_id: entity_id, snapshot: false).where.not(id: id).exists?
   end
 
   def pending_call_amount

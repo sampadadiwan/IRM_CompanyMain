@@ -229,7 +229,7 @@ class KpiReport < ApplicationRecord
   def compute_common_size_kpi
     # This method computes the common size KPI for the report
     ikm = portfolio_company&.investor_kpi_mappings&.where(base_for_common_size: true)&.last
-    common_size_kpi = kpis.where(name: ikm&.standard_kpi_name).first if ikm.present?
+    common_size_kpi = kpis.where(investor_kpi_mapping_id: ikm&.id).first
 
     if common_size_kpi&.value.blank?
       Rails.logger.warn "No common size KPI found or its value is missing for KpiReport #{id} with base_for_common_size set to true"
