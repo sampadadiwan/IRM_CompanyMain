@@ -10,7 +10,7 @@
         <%= @investor.investor_name %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Category
@@ -34,20 +34,23 @@
         <%= Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
       </td>
       <td>
-        <%= @investor.pan %>        
+        <%= @investor.pan %>
       </td>
     </tr>
 
-    <tr>
-      <td>
-        Investee Entity
-      </td>
-      <td>
-        <%= link_to @investor.entity.name, @investor.entity %>
-      </td>
-    </tr>
-    
+
     <% if params[:debug].present? %>
+
+
+      <tr>
+        <td>
+          Investee Entity
+        </td>
+        <td>
+          <%= link_to @investor.entity.name, @investor.entity %>
+        </td>
+      </tr>
+
       <tr>
         <td>
           Investor Entity
@@ -66,8 +69,8 @@
         <%= raw @investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if @investor.tag_list %>
       </td>
     </tr>
-    
-    
+
+
     <tr>
       <td>
         City
