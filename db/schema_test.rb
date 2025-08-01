@@ -1246,8 +1246,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.string "call_basis"
     t.integer "custom_flags", default: 0
     t.integer "email_delay_seconds", default: 0
-    t.boolean "ckyc_enabled", default: false
-    t.boolean "kra_enabled", default: false
     t.boolean "ckyc_kra_enabled"
     t.string "kpi_reminder_frequency", limit: 10
     t.integer "kpi_reminder_before"
@@ -2311,6 +2309,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.datetime "birth_date"
     t.string "status", limit: 20
     t.string "phone", limit: 10
+    t.integer "otp_resend_count", default: 0, null: false
+    t.datetime "otp_sent_at"
     t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
@@ -2665,6 +2665,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.bigint "reference_id", default: 0, null: false
     t.bigint "ref_id", default: 0, null: false
     t.bigint "capital_distribution_id"
+    t.json "excused_folio_ids", null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_portfolio_investments_on_capital_distribution_id"
@@ -3495,6 +3496,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
   add_foreign_key "kpis", "entities"
   add_foreign_key "kpis", "entities", column: "owner_id"
   add_foreign_key "kpis", "form_types"
+  add_foreign_key "kpis", "investor_kpi_mappings"
   add_foreign_key "kpis", "investors", column: "portfolio_company_id"
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"

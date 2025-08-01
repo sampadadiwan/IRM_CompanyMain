@@ -1206,7 +1206,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.string "pan", limit: 40
-    t.integer "permissions"
+    t.bigint "permissions"
     t.string "primary_email"
     t.integer "customization_flags", default: 0
     t.bigint "root_folder_id"
@@ -1246,8 +1246,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.string "call_basis"
     t.integer "custom_flags", default: 0
     t.integer "email_delay_seconds", default: 0
-    t.boolean "ckyc_enabled", default: false
-    t.boolean "kra_enabled", default: false
     t.boolean "ckyc_kra_enabled"
     t.string "kpi_reminder_frequency", limit: 10
     t.integer "kpi_reminder_before"
@@ -2311,6 +2309,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.datetime "birth_date"
     t.string "status", limit: 20
     t.string "phone", limit: 10
+    t.integer "otp_resend_count", default: 0, null: false
+    t.datetime "otp_sent_at"
     t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
