@@ -15,6 +15,8 @@ class CapitalCommitmentsController < ApplicationController
     # Step 2: Special filter for DataTables search
     @capital_commitments = @capital_commitments.where(id: search_ids) if params.dig(:search, :value).present?
 
+    @capital_commitments = @capital_commitments.where(id: params[:capital_commitment_ids]) if params[:capital_commitment_ids].present?
+
     # Step 3: Standard filters using helper
     @capital_commitments = filter_params(
       @capital_commitments,

@@ -255,6 +255,7 @@
         </tr>
       <% end %>
 
+
       <%= display_custom_fields(@portfolio_investment) if current_user %>
 
       <% if @portfolio_investment.capital_distribution.present? %>
@@ -275,7 +276,7 @@
 <% unless @portfolio_investment.snapshot %>
 
 <div>
-  
+
   <% if policy(@portfolio_investment).update? %>
     <%= link_to edit_portfolio_investment_path(@portfolio_investment), class: "btn btn-outline-primary" do %>
       <i class="ti ti-edit"></i> <%= t_common(:edit) %>

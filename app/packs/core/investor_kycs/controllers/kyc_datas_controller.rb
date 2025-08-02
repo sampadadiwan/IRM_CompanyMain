@@ -220,7 +220,6 @@ class KycDatasController < ApplicationController
 
   # Used to re-fetch CKYC or KRA data again based on existing KycData record
   def refresh
-    msg = ""
     back_to = params[:back_to] || kyc_data_path(@kyc_data)
 
     if @kyc_data.kra?

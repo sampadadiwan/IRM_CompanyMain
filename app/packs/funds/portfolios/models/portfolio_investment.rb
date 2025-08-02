@@ -41,6 +41,8 @@ class PortfolioInvestment < ApplicationRecord
   ######################## VALIDATIONS #####################
   ##########################################################
 
+  before_validation :normalize_excused_folio_ids
+
   validates :investment_date, :quantity, :amount_cents, presence: true
   validates :base_amount, :amount_cents, numericality: { greater_than_or_equal_to: 0 }
   validate  :sell_quantity_allowed
@@ -108,6 +110,12 @@ class PortfolioInvestment < ApplicationRecord
       .where("conversion_date IS NULL OR conversion_date <= ?", date)
   }
 
+  # Scope: contains **all** of the given folio IDs simultaneously (AND behavior)
+  scope :with_all_excused_folio_ids, lambda { |ids|
+    ids = Array(ids).map(&:to_i).uniq
+    where("JSON_CONTAINS(excused_folio_ids, ?)", ids.to_json)
+  }
+
   ##########################################################
   ###################### CONSTANTS #########################
   ##########################################################
@@ -129,6 +137,15 @@ class PortfolioInvestment < ApplicationRecord
   ##########################################################
   ####################### HELPERS ##########################
   ##########################################################
+
+  def normalize_excused_folio_ids
+    # ensures array of unique integers
+    self.excused_folio_ids = Array(excused_folio_ids).map(&:to_i).uniq
+  end
+
+  def excused_folio_ids?
+    excused_folio_ids.present?
+  end
 
   def buy?
     quantity.positive?

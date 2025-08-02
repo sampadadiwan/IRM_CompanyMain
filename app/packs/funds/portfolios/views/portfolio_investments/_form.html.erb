@@ -21,8 +21,8 @@
 
       <div class="form-group">
         <%= form.label :portfolio_company_id, "Portfolio Company" %>
-        <%= form.select :portfolio_company_id, 
-            portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, 
+        <%= form.select :portfolio_company_id,
+            portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true},
             class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path(fund_id: portfolio_investment.fund_id)}", "data-param": "portfolio_company_id" %>
 
         <small class="text-muted">
@@ -45,6 +45,7 @@
       </div>
     </div>
 
+
     <div class="form-group">
       <%= form.label :investment_date %>
       <%= form.date_field :investment_date, class: "form-control"  %>
@@ -64,13 +65,23 @@
     </div>
 
     <% end %>
-    
+
+    <div class="form-group">
+      <%= form.label :excused_folio_ids, "Excused Folios" %>
+      <%= form.select :excused_folio_ids,
+          portfolio_investment.fund.capital_commitments.order(investor_name: :asc).map{|i| ["#{i.investor_name} - #{i.folio_id}", i.id]},
+          { include_blank: true, include_hidden: false },
+          { class: "form-control select2",  multiple: true, data: { controller: "select" } } %>
+      <small class="text-muted">Select folios to be excused from this investment.</small>
+    </div>
+
     <%= custom_form_fields(portfolio_investment, form) %>
 
     <div class="form-group">
       <%= form.label :notes %>
       <%= form.text_area :notes, class: "form-control"  %>
     </div>
+
 
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

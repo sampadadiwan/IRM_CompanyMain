@@ -1,5 +1,5 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
-  
+
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
@@ -9,12 +9,15 @@
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
           data-action="click->tabdetails#loadData">Account Entries</a>
+    <% if portfolio_investment.excused_folio_ids? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab">Excused Folios</a>
+    <% end %>
   </nav>
-  
+
   <div class="tab-content" data-controller="datatable">
     <div id="docs-tab" class="tab-pane fade in show active">
       <div id="docs" class="associated_entity">
-        <%= render "/documents/index", documents: portfolio_investment.documents, owner: portfolio_investment, 
+        <%= render "/documents/index", documents: portfolio_investment.documents, owner: portfolio_investment,
                 entity: portfolio_investment.entity %>
       </div>
     </div>
@@ -33,6 +36,16 @@
         <% end %>
       </div>
     </div>
+
+    <% if portfolio_investment.excused_folio_ids? %>
+      <div id="commitments-tab" class="tab-pane fade">
+          <div id="commitments" class="associated_entity">
+              <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(fund_id: portfolio_investment.fund_id, capital_commitment_ids: portfolio_investment.excused_folio_ids, title: "Excused Folios") do %>
+                <%= render "/layouts/loading" %>
+              <% end %>
+          </div>
+      </div>
+    <% end %>
 
   </div>
 

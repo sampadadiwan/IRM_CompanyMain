@@ -24,7 +24,6 @@ class InvestorKycUpserter
       )
 
       # Return result using OpenStruct for uniform return structure
-      OpenStruct.new(success?: result.success?, investor_kyc: investor_kyc, errors: result[:errors])
     else
       # If ID is not present, we are creating a new KYC
       investor_kyc = InvestorKyc.new(params)
@@ -45,7 +44,7 @@ class InvestorKycUpserter
       )
 
       # Return result using OpenStruct
-      OpenStruct.new(success?: result.success?, investor_kyc: investor_kyc, errors: result[:errors])
     end
+    OpenStruct.new(success?: result.success?, investor_kyc: investor_kyc, errors: result[:errors])
   end
 end
