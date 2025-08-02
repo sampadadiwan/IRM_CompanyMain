@@ -92,11 +92,11 @@ module WithCustomField
   end
 
   def map_custom_fields
-    form_custom_fields.visible.index_by(&:name)
+    @map_custom_fields ||= form_custom_fields.visible.index_by(&:name)
   end
 
   def custom_calculations
-    form_custom_fields.calculations
+    @custom_calculations ||= form_custom_fields.calculations
   end
 
   def perform_custom_calculation(fcf)

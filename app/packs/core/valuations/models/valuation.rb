@@ -13,7 +13,7 @@ class Valuation < ApplicationRecord
 
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
-  validates_uniqueness_of :valuation_date, scope: %i[investment_instrument_id entity_id owner_id owner_type]
+  validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type] }
 
   # Ensure callback to the owner
   after_save :update_owner

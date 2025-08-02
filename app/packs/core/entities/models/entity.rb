@@ -129,6 +129,8 @@ class Entity < ApplicationRecord
   end
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
+  after_commit :deactivate_employees, if: :saved_change_to_enabled?
+
   def run_post_process
     result = SetupCompany.call(entity: self)
     if result.success?
@@ -141,6 +143,13 @@ class Entity < ApplicationRecord
       Rails.logger.error "Error in SetupStartup for #{name}"
       raise result[:errors]
     end
+  end
+
+  def deactivate_employees
+    return if enabled? # Only deactivate if entity is disabled
+
+    Rails.logger.info "Deactivating employees for entity #{id} - #{name}"
+    employees.update_all(active: false)
   end
 
   def update_kanban_permissions

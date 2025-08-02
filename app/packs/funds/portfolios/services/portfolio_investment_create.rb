@@ -64,7 +64,11 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
       entity_id = portfolio_investment.entity_id
       portfolio_investment.fund
 
-      last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(investment_instrument_id:, valuation_date: investment_date, entity_id:)
+      last_valuation = portfolio_investment.portfolio_company.valuations.find_or_initialize_by(
+        investment_instrument_id: investment_instrument_id,
+        valuation_date: investment_date,
+        entity_id: entity_id
+      )
 
       last_valuation.per_share_value_cents = base_cost_cents
       ctx[:valuation] = last_valuation

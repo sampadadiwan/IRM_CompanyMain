@@ -190,7 +190,7 @@ class PortfolioInvestment < ApplicationRecord
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
       self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(
-        fund_id:, portfolio_company_id:, entity:, investment_instrument_id:
+        fund_id: fund_id, portfolio_company_id: portfolio_company_id, entity_id: entity_id, investment_instrument_id: investment_instrument_id
       )
 
       aggregate_portfolio_investment.form_type = entity.form_types.where(name: "AggregatePortfolioInvestment").last

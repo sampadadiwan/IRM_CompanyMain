@@ -287,7 +287,7 @@ class User < ApplicationRecord
   end
 
   def active_for_authentication?
-    super && active && entity.active
+    super && active
   end
 
   def custom_dashboard
