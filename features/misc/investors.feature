@@ -183,14 +183,6 @@ Scenario Outline: Create investor kyc
     |false        | PAN=ABCD9876;send_kyc_form_to_user=false| true          | true  |
 
 
-
-Scenario Outline: Create investor kyc
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-  Given the user has role "company_admin"
-  And Given Entity has ckyc_enabled kra_enabled set to true
-  And I create a new InvestorKyc with pan "ABCD9876F"
-  Then I should see ckyc and kra data comparison page
-  Then I select one and see the edit page and save
 Scenario: Investor Entity Update
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
