@@ -1,3 +1,13 @@
+V9.0.87
+#####################################
+512e18a41 Pi excused investors (#940)
+1b1926088 Ckyc final (#903)
+ebc5d630c Hide entity name in investors show
+1a17f0dbb Cleanup of old files
+c91c2a6c1 Common size (#937)
+0f77bbdc5 Fund from email (#935)
+181cc072c Archived old migrations
+
 V9.0.86
 #####################################
 e16f3f2d5 Fixed 0 remittance bug, distribution basis upload payments gen bug, u… (#933)
