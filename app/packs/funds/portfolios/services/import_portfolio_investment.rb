@@ -1,5 +1,5 @@
 class ImportPortfolioInvestment < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)", "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes"].freeze
+  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)", "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes", "Excused Folio Ids"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -48,6 +48,12 @@ class ImportPortfolioInvestment < ImportUtil
       portfolio_investment.created_by_import = true
       portfolio_investment.import_upload_id = import_upload.id
       portfolio_investment.portfolio_company = portfolio_company
+      portfolio_investment.excused_folio_ids = if user_data["Excused Folio Ids"].present?
+                                                 folio_ids(fund, user_data)
+                                               else
+                                                 []
+                                               end
+
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
 
       result = PortfolioInvestmentCreate.call(portfolio_investment:)
@@ -58,6 +64,11 @@ class ImportPortfolioInvestment < ImportUtil
     else
       raise "PortfolioInvestment already exists"
     end
+  end
+
+  def folio_ids(fund, user_data)
+    folio_ids = user_data["Excused Folio Ids"].to_s.split(",").map(&:strip).compact_blank
+    fund.capital_commitments.where(folio_id: folio_ids).pluck(:id)
   end
 
   def create_custom_fields(ctx, import_upload:, custom_field_headers:, **)
