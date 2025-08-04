@@ -128,7 +128,6 @@ module CommitmentAccountEntry
     total_cac
   end
 
-
   # # Allocate FMV
   # CC, PI -> AE
 
@@ -143,11 +142,23 @@ module CommitmentAccountEntry
   # @param portfolio_investment [PortfolioInvestment] The portfolio investment object
   # @param start_date [Date] The start date for the calculation range
   # @param end_date [Date] The end date for the calculation range
-  # @param account_entry_name [String] The name of the account entry to filter by Ex Investable Capital Percentage
+  # @param account_entry_name [String] The name of the account entry to filter by Ex Investable Capital
   # @return [Float] The percentage of investable capital for the folio, excluding excused folios
   def excused_folio_percentage(portfolio_investment, start_date, end_date, account_entry_name)
     # Get the fund associated with the portfolio investment
     fund = portfolio_investment.fund
+
+    if portfolio_investment.excused_folio_ids.blank?
+      # If there are no excused folios, return 100% investable capital
+      fund.account_entries.generated.where(
+        name: "#{account_entry_name} Percentage",
+        reporting_date: start_date..end_date,
+        capital_commitment_id: id
+      ).last.amount_cents
+    elsif portfolio_investment.excused_folio_ids.present? && portfolio_investment.excused_folio_ids.include?(id)
+      # If this capital commitment is in the excused folios, return 0.0
+      return 0.0
+    end
 
     # Fetch all generated account entries for the fund within the date range and with the given name
     investable_capital_account_entries = fund.account_entries.generated.where(
@@ -156,34 +167,30 @@ module CommitmentAccountEntry
     )
 
     # Calculate the total investable capital (in cents) for all account entries in the range
-    total_investable_capital_cents = investable_capital_account_entries.sum(:amount_cents)
+    investable_capital_account_entries.sum(:amount_cents)
 
     # Get the IDs of folios that are excused from this portfolio investment
     excused_folio_ids = portfolio_investment.excused_folio_ids
 
     # Calculate the investable capital (in cents) excluding excused folios
     investable_capital_cents_without_excused_folios = investable_capital_account_entries
-      .where.not(capital_commitment_id: excused_folio_ids)
-      .sum(:amount_cents)
+                                                      .where.not(capital_commitment_id: excused_folio_ids)
+                                                      .sum(:amount_cents)
 
     # Find the account entry for this specific capital commitment (folio)
     # Order by reporting_date to ensure deterministic retrieval of the latest entry.
     folio_investable_capital = investable_capital_account_entries
-      .where(capital_commitment_id: capital_commitment.id)
-      .order(reporting_date: :desc)
-      .first
+                               .where(capital_commitment_id: id)
+                               .order(reporting_date: :desc)
+                               .first
 
     # If there is investable capital without excused folios, calculate the percentage for this folio
-    if investable_capital_cents_without_excused_folios > 0 && folio_investable_capital
-      folio_investable_capital_percentage_wo_excused_folios =
-        folio_investable_capital.amount_cents.to_f /
+    if investable_capital_cents_without_excused_folios.positive? && folio_investable_capital
+      folio_investable_capital.amount_cents.to_f /
         investable_capital_cents_without_excused_folios * 100
     else
       # If there is no investable capital or no entry for the folio, return 0.0
-      folio_investable_capital_percentage_wo_excused_folios = 0.0
+      0.0
     end
-
-    folio_investable_capital_percentage_wo_excused_folios
   end
-
 end
