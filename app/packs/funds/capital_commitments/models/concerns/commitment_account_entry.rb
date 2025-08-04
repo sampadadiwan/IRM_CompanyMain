@@ -59,17 +59,34 @@ module CommitmentAccountEntry
     cae.last || AccountEntry.new(name:, fund_id:, amount_cents: 0)
   end
 
-  def get_account_entry(name, date, raise_error: true)
-    ae = account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
-    raise "No Account Entry found for #{name} on #{date}" if ae.nil? && raise_error
+  def get_account_entry(name, date, parent: nil, raise_error: true)
+    ae = if parent
+           account_entries.where(name:, reporting_date: ..date, parent:).order(reporting_date: :desc).first
+         else
+           account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+         end
+
+    raise "No Account Entry found for name: #{name}, id: #{id}, parent: #{parent&.id} on date: #{date}" if ae.nil? && raise_error
 
     ae
   end
 
-  def get_account_entry_or_zero(name, date)
-    ae = get_account_entry(name, date, raise_error: false)
+  def get_account_entry_or_zero(name, date, parent: nil)
+    ae = if parent
+           get_account_entry(name, date, parent:, raise_error: false)
+         else
+           get_account_entry(name, date, raise_error: false)
+         end
     ae ||= AccountEntry.new(name:, entity_id:, fund_id:, amount_cents: 0)
     ae
+  end
+
+  def get_ic_account_entry(name, date, parent: nil, raise_error: true)
+    if parent.respond_to?(:excused_folio_ids) && parent.excused_folio_ids.present?
+      get_account_entry("#{name} Folio PI", date, parent:, raise_error:)
+    else
+      get_account_entry(name, date, parent: nil, raise_error:)
+    end
   end
 
   def start_of_financial_year_date(end_date)
