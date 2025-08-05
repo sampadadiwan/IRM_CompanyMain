@@ -49,10 +49,13 @@ class FormCustomField < ApplicationRecord
     end
   end
 
-  validate :condition_on_one_level, if: -> { condition_on.present? }
-  def condition_on_one_level
+  validate :condition_two_level_max, if: -> { condition_on.present? }
+  def condition_two_level_max
     parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
-    errors.add(:condition_on, "#{name} cannot be dependent on another conditional field") if parent_field.present? && parent_field.condition_on.present?
+    if parent_field.present? && parent_field.condition_on.present?
+      grandparent_field = form_type.form_custom_fields.find { |fcf| fcf.name == parent_field.condition_on }
+      errors.add(:condition_on, "#{name} cannot be dependent on a field that is itself dependent on another conditional field (more than two levels)") if grandparent_field.present? && grandparent_field.condition_on.present?
+    end
   end
 
   def initialize(*)

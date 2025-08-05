@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_05_042231) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1506,6 +1506,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.boolean "is_template", default: false
     t.boolean "generate_ytd_qtly", default: false
     t.text "meta_data"
+    t.text "ai_description"
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
@@ -2666,6 +2667,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_01_042947) do
     t.bigint "ref_id", default: 0, null: false
     t.bigint "capital_distribution_id"
     t.json "excused_folio_ids", null: false
+    t.boolean "proforma", default: false, null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_portfolio_investments_on_capital_distribution_id"
