@@ -49,6 +49,8 @@ class FormCustomField < ApplicationRecord
     end
   end
 
+  # This is to ensure that a field cannot be dependent on another field that is itself dependent on another conditional field
+  # This is to prevent a chain of dependencies that can lead to complex and unmanageable conditions.
   validate :condition_two_level_max, if: -> { condition_on.present? }
   def condition_two_level_max
     parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
