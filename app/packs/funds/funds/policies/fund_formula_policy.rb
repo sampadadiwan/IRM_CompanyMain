@@ -28,11 +28,6 @@ class FundFormulaPolicy < FundBasePolicy
     update?
   end
 
-  # Confirm who should have access
-  def generate_ai_descriptions?
-    user.enable_funds
-  end
-
   def destroy?
     update?
   end

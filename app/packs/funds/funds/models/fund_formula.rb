@@ -14,7 +14,6 @@ class FundFormula < ApplicationRecord
   scope :disabled, -> { where(enabled: false) }
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }
-  scope :without_ai_description, -> { where(ai_description: [nil, ""]) }
 
   validates :rule_type, :entry_type, length: { maximum: 50 }
   validates :name, length: { maximum: 125 }

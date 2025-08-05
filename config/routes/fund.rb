@@ -34,7 +34,6 @@ resources :aggregate_portfolio_investment_snapshots, controller: "aggregate_port
 
 resources :fund_formulas do
   patch "enable_formulas", on: :collection
-  get "generate_ai_descriptions", on: :collection
 end
 
 resources :fund_unit_settings

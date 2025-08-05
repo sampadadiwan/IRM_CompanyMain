@@ -7,8 +7,6 @@
 
       <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id], run_allocations: true), 
                       class: "btn btn-outline-success ti ti-run"  %> 
-      
-      <%= link_to "Generate AI Descriptions", generate_ai_descriptions_fund_formulas_path(fund_id: params[:fund_id]), {class: "btn btn-outline-info ti ti-robot-face"} if params[:fund_id].present? && policy(FundFormula).generate_ai_descriptions? %>
 
       <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx), 
                       class: "btn btn-outline-success ti ti-download"  %>      

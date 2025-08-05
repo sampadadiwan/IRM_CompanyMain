@@ -81,21 +81,6 @@ class FundFormulasController < ApplicationController
     end
   end
 
-  def generate_ai_descriptions
-    authorize(FundFormula)
-    fund = Fund.find_by(id: params[:fund_id])
-    if fund
-      GenerateAiDescriptionsJob.perform_later(fund.id, current_user.id)
-
-      respond_to do |format|
-        format.html { redirect_to fund_formulas_path(fund_id: fund.id), notice: "AI descriptions generation enqueued for #{fund.name}" }
-        format.json { head :no_content }
-      end
-    else
-      redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund not found with id #{params[:fund_id]}"
-    end
-  end
-
   # DELETE /fund_formulas/1 or /fund_formulas/1.json
   def destroy
     @fund_formula.destroy
