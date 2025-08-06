@@ -1,3 +1,10 @@
+
+V9.0.89
+#####################################
+5127d9546 Added condition_two_level_max for custom fields
+02fb178bd Added release note
+e1b5ef893 Formula ai descriptions (#944)
+
 V9.0.87
 #####################################
 512e18a41 Pi excused investors (#940)
