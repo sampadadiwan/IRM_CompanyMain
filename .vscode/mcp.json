@@ -8,7 +8,7 @@
                 "task-master-ai"
             ],
             "env": {
-                "GOOGLE_API_KEY": "AIzaSyDicqF--Om-5iR6DTXeRE5zF43wLlcnWB0"
+                "GOOGLE_API_KEY": ""
             },
             "type": "stdio"
         }
