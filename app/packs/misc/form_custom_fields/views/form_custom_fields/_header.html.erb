@@ -1,4 +1,4 @@
-<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
+<div class="form-group <%= field.form_class(current_user) %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
     <h4 class="card-title fw-semibold"><%= field.human_label %></h4>
 </div>
 <div class="divider"></div>

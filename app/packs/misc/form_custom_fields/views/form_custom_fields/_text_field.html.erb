@@ -1,6 +1,6 @@
-<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
-    <%= f.label field.name, field.human_label %> 
-    <% if field.info.present? %> 
+<div class="form-group <%= field.form_class(current_user) %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
+    <%= f.label field.name, field.human_label %>
+    <% if field.info.present? %>
         <%= tag.i "",                                                     # empty <i> element
          class:    "ti ti-info-triangle text-primary",
          role:     "button",
@@ -12,7 +12,7 @@
            bs_title:     field.info.body.to_html                # sanitised HTML
          } %>
    <% end %>
-   
+
     <%= f.text_field field.name, class: "form-control custom_field", required: field.required %>
     <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

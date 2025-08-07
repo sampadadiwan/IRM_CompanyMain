@@ -1,6 +1,6 @@
-<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
+<div class="form-group <%= field.form_class(current_user) %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
     <%= f.label field.name, field.human_label %>
-    <% if field.info.present? %> 
+    <% if field.info.present? %>
         <%= tag.i "",                                                     # empty <i> element
          class:    "ti ti-info-triangle text-primary",
          role:     "button",
@@ -15,7 +15,7 @@
    <br>
     <% field.meta_data.split(",").each do |option| %>
         <div class="form-check form-check-inline">
-            <%= f.radio_button field.name, option, required: field.required, class: "form-check-input" %> 
+            <%= f.radio_button field.name, option, required: field.required, class: "form-check-input" %>
             <%= f.label option, class: "form-check-label custom_field" %>
         </div>
     <% end %>

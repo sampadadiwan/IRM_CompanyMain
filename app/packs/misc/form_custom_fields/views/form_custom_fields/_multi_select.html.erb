@@ -1,6 +1,6 @@
-<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
+<div class="form-group <%= field.form_class(current_user) %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> >
     <%= f.label field.name, field.human_label %>
-    <% if field.info.present? %> 
+    <% if field.info.present? %>
         <%= tag.i "",                                                     # empty <i> element
          class:    "ti ti-info-triangle text-primary",
          role:     "button",

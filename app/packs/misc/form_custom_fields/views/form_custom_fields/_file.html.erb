@@ -1,20 +1,20 @@
-<% 
-    allowed_types ||= FileUploader::ALLOWED_TYPES 
+<%
+    allowed_types ||= FileUploader::ALLOWED_TYPES
     # This is the name of the model that the form is for where documents are being attached
     for_model = model.class.name.underscore
     # This is the name of the document, derived from the field name
     document_name = field.label.presence || field.name.humanize
-    
+
     field_id = FormCustomField.to_name(field.name)
     # This is the document, in case there is already a document attached with this name
     document = model.documents.where(name: document_name).first
     # The field is mandatory and the file has not yet been uploaded
-    required = field.required && document.nil? 
+    required = field.required && document.nil?
 %>
 
-<div id="custom_file_<%=field_id%>" class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> 
-    data-controller="single-upload" 
-    data-single-upload-types-value="<%= allowed_types.to_json %>" 
+<div id="custom_file_<%=field_id%>" class="form-group <%= field.form_class(current_user) %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %>
+    data-controller="single-upload"
+    data-single-upload-types-value="<%= allowed_types.to_json %>"
     data-single-upload-server-value="<%= upload_server %>">
 
     <div>
@@ -22,7 +22,7 @@
         <%= f.label field.name, document_name %> : <%= link_to "#{document.uploaded_file_name}", document.file.url(response_content_disposition: "attachment; filename=#{document.name_with_extension}"), target: "_blank" if document %>
         <% idx = rand(100000) %>
 
-        <% if field.info.present? %> 
+        <% if field.info.present? %>
                 <%= tag.i "",                                                     # empty <i> element
                 class:    "ti ti-info-triangle text-primary",
                 role:     "button",
@@ -34,16 +34,16 @@
                 bs_title:     field.info.body.to_html                # sanitised HTML
                 } %>
         <% end %>
-        
+
         <!-- This is the hidden field that is used to store the document id in case of updates -->
         <%= f.hidden_field field_id.to_sym, name: "#{for_model}[documents_attributes][#{idx}][file]",
-            data: { single_upload_target: "result" }, id: "id_#{idx}", 
+            data: { single_upload_target: "result" }, id: "id_#{idx}",
             class: "validate_hidden" %>
 
         <!-- This is the actual file upload field , sometimes it is required -->
-        <%= f.file_field field.name, class: "form-control custom_field", id: field_id, 
+        <%= f.file_field field.name, class: "form-control custom_field", id: field_id,
             data: { single_upload_target: "input" }, required: required %>
-        
+
         <!-- This is the hidden field that is used to store if the document is required, not sent to server, used by javascript to turn on/off required flag -->
         <%= f.text_field "document_required",  class: "form-control", value: required, hidden: true, disabled: true, name: "document_required", id: "document_required_#{field_id}" %>
 
@@ -57,13 +57,13 @@
         <%= f.text_field "document_user_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][send_email]", value: false, hidden: true  %>
         <!-- owner tag is the metadata in the field -->
         <%= f.text_field "document_owner_tag",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][owner_tag]", value: field.meta_data, hidden: true  %>
-        
+
         <%= f.text_field "document_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][id]", value: document&.id, hidden: true  %>
-       
+
     </div>
 
     <!-- Standard Uppy stuff -->
-    <div>    
+    <div>
         <div class="UppyInput-Progress <%=field_id%>_progress"></div>
         <!-- static link to the thumbnail generated on attachment -->
         <% image_src = "" %>

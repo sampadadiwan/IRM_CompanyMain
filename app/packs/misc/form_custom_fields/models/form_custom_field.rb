@@ -104,9 +104,9 @@ class FormCustomField < ApplicationRecord
     end
   end
 
-  def form_class
+  def form_class(current_user = nil)
     css_class = "fcf"
-    css_class += read_only ? " hidden_form_field" : ""
+    css_class += read_only && current_user&.curr_role == "investor" ? " hidden_form_field" : ""
     if condition_on.present?
       css_class += " conditional #{form_type.name.underscore}_properties_#{condition_on} #{form_type.name.underscore}_#{condition_on}"
       css_class += " #{condition_state}"
