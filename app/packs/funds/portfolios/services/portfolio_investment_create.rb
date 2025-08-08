@@ -45,7 +45,7 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   # When we import the data we create it in the same thread, as we need to ensure the attribution is setup before we move on to the next row. However if the portfolio_investment is created by the user, we can do it in the background.
   # Originally we were doing this in the background, but it was causing issues with the attribution being created in parallel and sometimes in the wrong order.
   def setup_attribution(_ctx, portfolio_investment:, **)
-    if portfolio_investment.sell?
+    if portfolio_investment.sell? && !portfolio_investment.proforma
       portfolio_investment.created_by_import ? PortfolioInvestmentJob.perform_now(portfolio_investment.id) : PortfolioInvestmentJob.perform_later(portfolio_investment.id)
     end
     true
