@@ -6,8 +6,8 @@
       <%= link_to  t_common(:show), investor_kyc , {class: "btn btn-outline-primary ti ti-eye"}%>
       
       <% if current_user.entity_id != investor_kyc.entity_id %>
-        <% if investor_kyc.completed_by_investor %>
-          <% if !investor_kyc.verified %>
+        <% if investor_kyc.object.completed_by_investor %>
+          <% if !investor_kyc.object.verified %>
             <span class="badge bg-warning">
                 Pending Verification
             </span>
