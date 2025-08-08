@@ -40,6 +40,7 @@ module WithEmailPreview
       html_part = mail.html_part || mail
       @html_body = html_part.body.decoded
       @attachments = mail.attachments
+      @subject = mail.subject
 
       # Render the email preview without layout
       render "/layouts/email_preview", layout: false

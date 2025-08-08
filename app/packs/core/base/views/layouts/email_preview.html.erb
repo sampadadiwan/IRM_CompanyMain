@@ -1,17 +1,37 @@
 <% if @html_body %>
-  <div class="email-preview">
-    To: <%= @investor_access.email %>
-    <%= raw @html_body %>
-    <% if @attachments.any? %>
-      <ul>
-        <% @attachments.each_with_index do |attachment, index| %>
-          <li>
-            <%= attachment.filename %>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
-  </div>
+  <table role="presentation" class="main">
+    <tr>
+      <td class="wrapper">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td class="content-block">
+              <p><strong>To:</strong> <%= @investor_access.email %></p>
+              <p><strong>Subject:</strong> <%= @subject %></p>
+            </td>
+          </tr>
+          <tr>
+            <td class="content-block">
+              <%= raw @html_body %>
+            </td>
+          </tr>
+          <% if @attachments.any? %>
+            <tr>
+              <td class="content-block">
+                <h6>Attachments:</h6>
+                <ul>
+                  <% @attachments.each_with_index do |attachment, index| %>
+                    <li>
+                      <%= attachment.filename %>
+                    </li>
+                  <% end %>
+                </ul>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      </td>
+    </tr>
+  </table>
 <% else %>
   <div class="alert alert-warning">
     <%= @error_message %>
