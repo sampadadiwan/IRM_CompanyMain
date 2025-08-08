@@ -22,51 +22,72 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-              <%= link_to new_investor_kyc_path(
-                            "investor_kyc[investor_id]": @investor&.id,
-                            "investor_kyc[entity_id]": entity_id,
-                            "investor_kyc[kyc_type]": "Individual"),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-user"></i> Individual
+              <% individual_kyc_form_types = current_user.entity.form_types.where(name: "IndividualKyc") %>
+
+              <% if individual_kyc_form_types.count > 1 %>
+                <% individual_kyc_form_types.each do |form_type| %>
+                  <%= link_to "Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
+                                "investor_kyc[investor_id]": @investor&.id,
+                                "investor_kyc[entity_id]": entity_id,
+                                "investor_kyc[kyc_type]": "Individual",
+                                "investor_kyc[form_type_id]": form_type.id),
+                              class: "dropdown-item d-flex align-items-center ti ti-user" %>
+                <% end %>
+              <% else %>
+                <%= link_to "Individual", new_investor_kyc_path(
+                              "investor_kyc[investor_id]": @investor&.id,
+                              "investor_kyc[entity_id]": entity_id,
+                              "investor_kyc[kyc_type]": "Individual"),
+                            class: "dropdown-item d-flex align-items-center ti ti-user" %>
+
               <% end %>
 
-              <%= link_to new_investor_kyc_path(
-                            "investor_kyc[investor_id]": @investor&.id,
-                            "investor_kyc[entity_id]": entity_id,
-                            "investor_kyc[kyc_type]": "Non Individual"),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-building"></i> Non Individual
+
+              <% non_individual_kyc_form_types = current_user.entity.form_types.where(name: "NonIndividualKyc") %>
+
+              <% if non_individual_kyc_form_types.count > 1 %>
+                <% non_individual_kyc_form_types.each do |form_type| %>
+                  <%= link_to "Non Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
+                                "investor_kyc[investor_id]": @investor&.id,
+                                "investor_kyc[entity_id]": entity_id,
+                                "investor_kyc[kyc_type]": "Non Individual",
+                                "investor_kyc[form_type_id]": form_type.id),
+                              class: "dropdown-item d-flex align-items-center ti ti-building" %>
+                <% end %>
+              <% else %>
+                <%= link_to "Non Individual", new_investor_kyc_path(
+                              "investor_kyc[investor_id]": @investor&.id,
+                              "investor_kyc[entity_id]": entity_id,
+                              "investor_kyc[kyc_type]": "Non Individual"),
+                            class: "dropdown-item d-flex align-items-center ti ti-building" %>
               <% end %>
 
-              <%= button_to create_and_send_kyc_to_investor_investor_kycs_path(
+
+              <div class="dropdown-divider"></div>
+
+              <%= button_to "Send KYC to Stakeholder", create_and_send_kyc_to_investor_investor_kycs_path(
                             "investor_kyc[investor_id]": @investor&.id,
                             "investor_kyc[entity_id]": entity_id,
                             "investor_kyc[kyc_type]": "Individual",
-                            "investor_kyc[send_kyc_form_to_user]": true), 
+                            "investor_kyc[send_kyc_form_to_user]": true),
                             method: :post,
-                          class: "dropdown-item d-flex align-items-center",
-                          form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} do %>
-                <i class="ti ti-mail-forward"></i>Send KYC to Stakeholder 
-              <% end %>
+                          class: "dropdown-item d-flex align-items-center ti ti-mail-forward",
+                          form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} %>
 
-              <%= link_to investor_kycs_path(filter: true),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-report"></i> Report
-              <% end %>
+              <%= link_to "Report", investor_kycs_path(filter: true),
+                          class: "dropdown-item d-flex align-items-center ti ti-report" %>
 
-              <%= link_to new_custom_notification_path(
+              <div class="dropdown-divider"></div>
+
+              <%= link_to "Custom KYC Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "InvestorKyc",
                             "custom_notification[entity_id]": entity_id),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-mail"></i> Custom KYC Notification
-              <% end %>
+                          class: "dropdown-item d-flex align-items-center ti ti-mail"  %>
 
-              <%= link_to new_custom_notification_path(
+              <%= link_to "Custom Agreement Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "Send Document",
                             "custom_notification[entity_id]": entity_id),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-mail-forward"></i> Custom Agreement Notification
-              <% end %>
+                          class: "dropdown-item d-flex align-items-center ti ti-mail-forward" %>
 
             </div>
           </div>
@@ -163,7 +184,7 @@
   <div class="table-responsive">
         <%
           investor_kycs_frame = "investor_kycs_frame"
-          
+
           default_columns_map = if current_user.curr_role == "investor"
             InvestorKyc::INVESTOR_STANDARD_COLUMNS
           else

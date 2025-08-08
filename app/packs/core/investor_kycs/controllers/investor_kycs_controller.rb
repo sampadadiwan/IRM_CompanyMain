@@ -56,14 +56,18 @@ class InvestorKycsController < ApplicationController
   # GET /investor_kycs/new
   def new
     kyc_type = investor_kyc_params[:kyc_type] || "Individual"
+
     # Create the appropriate KYC type based on the kyc_type parameter
     @investor_kyc = kyc_type == "Individual" ? IndividualKyc.new(investor_kyc_params) : NonIndividualKyc.new(investor_kyc_params)
     @investor_kyc.type = @investor_kyc.type_from_kyc_type
+
     # If the investor is present, set the full_name to the investor's name
     @investor_kyc.full_name = @investor_kyc.investor.investor_name if @investor_kyc.investor.present? && @investor_kyc.individual?
-
     authorize(@investor_kyc)
-    setup_custom_fields(@investor_kyc, type: @investor_kyc.type)
+
+    # Set up custom fields for the KYC model. Sometimes we need to force the form type based on the form_type_id parameter
+    form_type = current_user.entity.form_types.where(id: investor_kyc_params[:form_type_id]).last
+    setup_custom_fields(@investor_kyc, type: @investor_kyc.type, force_form_type: form_type)
   end
 
   def edit_my_kyc
