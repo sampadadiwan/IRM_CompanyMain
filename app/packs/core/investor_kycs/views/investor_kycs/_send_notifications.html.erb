@@ -28,7 +28,7 @@
               action: "click->confirm#popup", turbo: false, method: :post,
               msg: "This will generate a notification to all users associated with this investor"
             } do %>
-          <i class="ti ti-mail"></i><%= "#{config[:label]} (#{custom_notification.tag || notification.id})" %>
+          <i class="ti ti-mail"></i><%= "#{config[:label]} (#{custom_notification.tag || custom_notification.id})" %>
         <% end %>
       <% end %>
     <% else %>

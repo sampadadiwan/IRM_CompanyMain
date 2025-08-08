@@ -35,24 +35,33 @@
             data: {msg: "This will validate docs or extract data from docs into the KYCs as defined by the DocQuestions. Proceed?", action: "click->confirm#popup", method: :post, turbo: false} if current_user.entity.enable_doc_llm_validation %>
 
 
-            <%
+            <% custom_notifications = current_user.entity.custom_notifications
+                              .for_type("InvestorKyc").email_method(:kyc_required_reminder) %>
 
+            <% if custom_notifications.present? %>
 
-                custom_notifications = current_user.entity.custom_notifications
-                              .for_type("InvestorKyc").email_method(:kyc_required_reminder)
+                <% custom_notifications.each do |custom_notification| %>
 
-                custom_notifications.each do |custom_notification|
+                    <% msg = "This will send a reminder (#{custom_notification.tag}) to each KYC in the search results (including results on other pages). Proceed?" %>
 
-                msg = "This will send a reminder (#{custom_notification.tag}) to each KYC in the search results (including results on other pages). Proceed?"
+                    <!-- If custom notifications are present, show custom reminder button -->
+                    <%= button_to "Send Reminder #{custom_notification.tag}",
+                    bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true, custom_notification_id: custom_notification.id),
+                    class: "dropdown-item", form_class: "w-100",
+                    data: {msg:, action: "click->confirm#popup", method: :post}  %>
 
-            %>
+                <% end %>
 
-                <%= button_to "Send Reminder #{custom_notification.tag}",
-                bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true, custom_notification_id: custom_notification.id),
-                class: "dropdown-item", form_class: "w-100",
-                data: {msg:, action: "click->confirm#popup", method: :post}  %>
+            <% else %>
+                    <!-- If no custom notifications, show default reminder button -->
+                    <%= button_to "Send Reminder",
+                    bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true),
+                    class: "dropdown-item", form_class: "w-100",
+                    data: {msg: "This will send a reminder to each KYC in the search results (including results on other pages). Proceed?", action: "click->confirm#popup", method: :post}  %>
 
             <% end %>
+
+
 
 
             <% msg = "This will try and verify the bank details using external bank APIs for KYCs below (including results on other pages). Proceed?" %>
