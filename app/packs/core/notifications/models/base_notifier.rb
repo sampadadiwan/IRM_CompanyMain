@@ -45,4 +45,18 @@ class BaseNotifier < Noticed::Event
   def entity
     @entity ||= Entity.find(params[:entity_id])
   end
+
+  # This method is used to find the investor_advisor_id for the recipient of the email
+  # If the recipient is an investor_advisor, it will return the advisor's ID
+  # Otherwise, it will return nil
+  # @see WithAuthentication.switch_advisor
+  def investor_advisor_id(investor_entity_id, user_id)
+    return params[:investor_advisor_id] if params[:investor_advisor_id].present?
+
+    user = User.find(user_id)
+    if user.has_cached_role?(:investor_advisor)
+      @investor_advisor ||= InvestorAdvisor.where(entity_id: investor_entity_id, user_id:).last
+      @investor_advisor&.id
+    end
+  end
 end

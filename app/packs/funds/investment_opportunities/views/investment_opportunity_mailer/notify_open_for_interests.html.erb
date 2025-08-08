@@ -2,9 +2,9 @@
 <h3>Dear User</h3>
 
 <p>
-    A new investment opportunity <%= @investment_opportunity.company_name %> has been opened by <%= @investment_opportunity.entity.name %>  
-    and is accepting interests. If you want to place an indication of interest in this opportunity, 
-    then this is your chance.     
+    A new investment opportunity <%= @investment_opportunity.company_name %> has been opened by <%= @investment_opportunity.entity.name %>
+    and is accepting interests. If you want to place an indication of interest in this opportunity,
+    then this is your chance.
 </p>
 
 
@@ -12,7 +12,7 @@
     <%= render "/investment_opportunity_mailer/investment_opportunity", investment_opportunity: @investment_opportunity, current_user: nil %>
 </p>
 
-<p class="btn btn-outline-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity, subdomain: @investment_opportunity.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity, subdomain: @investment_opportunity.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) %></p>
 
 <h3>Next Steps</h3>
 <p>

@@ -9,7 +9,8 @@ class InvestorKycNotifier < BaseNotifier
       user_id: notification.recipient_id,
       investor_kyc_id: record.id,
       entity_id: params[:entity_id],
-      message: notification.message
+      message: notification.message,
+      investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id)
     }
   end
 

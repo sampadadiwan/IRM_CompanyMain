@@ -13,4 +13,4 @@
   </p>
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to 'View Call', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Call', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

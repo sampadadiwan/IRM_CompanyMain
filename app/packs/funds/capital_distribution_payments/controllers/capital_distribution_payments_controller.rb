@@ -1,5 +1,5 @@
 class CapitalDistributionPaymentsController < ApplicationController
-  before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview generate_docs]
+  before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview generate_docs payments_completed]
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
@@ -108,6 +108,17 @@ class CapitalDistributionPaymentsController < ApplicationController
       format.html { redirect_to capital_distribution_payments_url, notice: "Capital distribution payment was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def payments_completed
+    @capital_distribution_payment.completed = true
+    notice = if CapitalDistributionPaymentUpdate.call(capital_distribution_payment: @capital_distribution_payment).success?
+               "Capital distribution payment was successfully updated."
+             else
+               "Capital distribution payment could not be updated. #{@capital_distribution_payment.errors.full_messages.join(', ')}"
+             end
+
+    redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: notice
   end
 
   private

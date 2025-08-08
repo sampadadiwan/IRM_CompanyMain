@@ -114,6 +114,12 @@ module FundsHelper
       access_rights = model.fund.access_rights
       investors = model.investors
       investor_accesses = model.entity.investor_accesses.joins(:investor).merge(investors).distinct
+    when "CapitalDistributionPayment"
+      # For CapitalDistributionPayment, fund-related data is accessed via model.capital_distribution.fund
+      capital_commitments = model.fund.capital_commitments.where(id: model.capital_commitment_id)
+      access_rights = model.fund.access_rights.where(access_to_investor_id: model.investor_id)
+      investors = model.entity.investors.where(id: model.investor_id)
+      investor_accesses = model.entity.investor_accesses.where(investor_id: model.investor_id)
     else
       # Handle unexpected model types or raise an error
       raise ArgumentError, "Unsupported model type: #{model.class.name}"
@@ -188,7 +194,8 @@ module FundsHelper
 
     # Filter Investor Advisors to ensure they have permission to the fund
     approved_investor_access_ia = approved_investor_access_ia.filter do |ia|
-      FundPolicy.new(ia.user, model).permissioned_investor_advisor?(as_entity_id: model.entity_id)
+      policy = Pundit.policy(ia.user, model)
+      policy.permissioned_investor_advisor?(as_entity_id: model.entity_id) || policy.show?
     end
 
     # Number of users who either have email disabled or are not approved

@@ -20,4 +20,4 @@
     </p>
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to 'View Remittance', capital_remittance_payment_url(@capital_remittance_payment, subdomain: @capital_remittance_payment.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Remittance', capital_remittance_payment_url(@capital_remittance_payment, subdomain: @capital_remittance_payment.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

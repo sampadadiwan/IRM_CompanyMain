@@ -10,7 +10,7 @@
     <%= render "/expression_of_interest_mailer/expression_of_interest", expression_of_interest: @expression_of_interest, current_user: nil %>
 </p>
 
-<p class="btn btn-outline-primary"><%= link_to 'View EOI', expression_of_interest_url(@expression_of_interest, subdomain: @expression_of_interest.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View EOI', expression_of_interest_url(@expression_of_interest, subdomain: @expression_of_interest.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) %></p>
 
 <h3>Next Steps</h3>
 <p>

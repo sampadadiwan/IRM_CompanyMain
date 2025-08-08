@@ -210,6 +210,7 @@ class FundsController < ApplicationController
   def show_email_list
     @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
     @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id]) if params[:capital_distribution_id].present?
+    @capital_distribution_payment = CapitalDistributionPayment.find(params[:capital_distribution_payment_id]) if params[:capital_distribution_payment_id].present?
   end
 
   private

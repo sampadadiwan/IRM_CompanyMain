@@ -1,15 +1,15 @@
 <% if @custom_notification %>
-    <%= render "/custom_notifications/mail" do %>    
+    <%= render "/custom_notifications/mail" do %>
         <%= render "investor_kycs/show", investor_kyc: @investor_kyc, current_user: nil %>
     <% end %>
 <% else %>
     Dear <%= @investor_kyc.full_name %>,
-    <p>    
+    <p>
         This is a confirmation that your KYC details have been verified.
     </p>
 
     <%= render "investor_kycs/show", investor_kyc: @investor_kyc, current_user: nil %>
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to  "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to  "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) %></p>
 

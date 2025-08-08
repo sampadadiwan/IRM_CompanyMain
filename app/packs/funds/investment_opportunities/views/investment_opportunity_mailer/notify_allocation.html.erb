@@ -2,11 +2,11 @@
 <h3>Dear User</h3>
 
 <p>
-    The investment opportunity <%= @investment_opportunity.company_name %> has been allocated. To view your allocation please click the button below.     
+    The investment opportunity <%= @investment_opportunity.company_name %> has been allocated. To view your allocation please click the button below.
 </p>
 
 
-<p class="btn btn-outline-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity, subdomain: @investment_opportunity.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity, subdomain: @investment_opportunity.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) %></p>
 
 <h3>Next Steps</h3>
 <p>

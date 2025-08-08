@@ -16,6 +16,10 @@ class CapitalDistributionPaymentPolicy < FundBasePolicy
     permissioned_employee?(:update)
   end
 
+  def payments_completed?
+    permissioned_employee?(:update)
+  end
+
   def edit?
     update?
   end

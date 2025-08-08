@@ -6,6 +6,7 @@ module WithAuthentication
     after_action :verify_policy_scoped, only: [:index]
 
     before_action :set_current_entity
+    before_action :switch_advisor, if: proc { |controller| controller.current_user&.has_cached_role?(:investor_advisor) && controller.params[:investor_advisor_id].present? }
     before_action :authenticate_user!, unless: :devise_controller?
     before_action :configure_permitted_parameters, if: :devise_controller?
 
@@ -31,6 +32,18 @@ module WithAuthentication
       super
       # setup support_user_id if it is present
       current_user.support_user_id = session[:support_user_id] if current_user
+    end
+  end
+
+  def switch_advisor
+    if params[:investor_advisor_id].present?
+      # Switch to the advisor for the given investor
+      Rails.logger.debug { "Switching to advisor for investor ID: #{params[:investor_advisor_id]}" }
+      @investor_advisor = InvestorAdvisor.find(params[:investor_advisor_id])
+      authorize(@investor_advisor, :switch?)
+      ActiveRecord::Base.connected_to(role: :writing) do
+        @investor_advisor.switch(current_user)
+      end
     end
   end
 

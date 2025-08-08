@@ -2,7 +2,7 @@
 
     <%= render "/custom_notifications/mail" do %>
         <%= render "/capital_distribution_payments/show", capital_distribution_payment: @capital_distribution_payment, current_user: nil, params: {} if @custom_notification.show_details %>
-    <% end %>    
+    <% end %>
 
 <% else %>
 
@@ -22,4 +22,4 @@
 
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to 'View Distribution', capital_distribution_payment_url(@capital_distribution_payment, subdomain: @capital_distribution_payment.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Distribution', capital_distribution_payment_url(@capital_distribution_payment, subdomain: @capital_distribution_payment.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) %></p>

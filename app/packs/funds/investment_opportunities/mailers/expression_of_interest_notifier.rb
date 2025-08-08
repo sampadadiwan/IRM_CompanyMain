@@ -13,7 +13,7 @@ class ExpressionOfInterestNotifier < BaseNotifier
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
       expression_of_interest_id: record.id,
-      from_email: record.investment_opportunity.custom_fields.from_email
+      investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id)
     }
   end
 

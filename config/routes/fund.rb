@@ -66,6 +66,7 @@ resources :capital_distribution_payments do
   get 'search', on: :collection
   get "preview", on: :member
   patch 'generate_docs', on: :member
+  patch 'payments_completed', on: :member
 end
 
 resources :capital_distributions do

@@ -14,7 +14,8 @@ class CapitalRemittancePaymentNotifier < BaseNotifier
       capital_remittance_payment_id: record.id,
       fund_id: record.fund_id,
       from_email: record.fund.custom_fields.from_email,
-      additional_ccs: record.capital_remittance.capital_commitment.cc
+      additional_ccs: record.capital_remittance.capital_commitment.cc,
+      investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id)
     }
   end
 

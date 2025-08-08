@@ -1,6 +1,6 @@
 <% if @custom_notification %>
 
-    <%= render "/custom_notifications/mail" %>    
+    <%= render "/custom_notifications/mail" %>
 
 <% else %>
 
@@ -18,5 +18,5 @@
 
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>
+<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) if  @custom_notification.nil? || @custom_notification&.show_link %></p>
 

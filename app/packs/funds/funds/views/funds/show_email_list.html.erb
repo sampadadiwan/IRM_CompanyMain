@@ -5,6 +5,8 @@
         model = @capital_call
     elsif @capital_distribution.present?
         model = @capital_distribution
+    elsif @capital_distribution_payment.present?
+        model = @capital_distribution_payment
     else
         model = @fund
     end
@@ -92,7 +94,7 @@
 
 
 <%
-    if @results_map[:approved_investor_access].any?
+    if @results_map[:approved_investor_access_count] > 0 || @results_map[:approved_investor_access_ia_count] > 0
 %>
 <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
     <a class="nav-link active" id="disabled-list-tab" data-bs-toggle="tab" data-bs-target="#disabled-list" type="button" role="tab" aria-controls="disabled-list" aria-selected="true">Disabled List</a>
