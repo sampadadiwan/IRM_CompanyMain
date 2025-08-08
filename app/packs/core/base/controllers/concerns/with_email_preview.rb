@@ -18,6 +18,7 @@ module WithEmailPreview
     mailer_class = resolve_mailer_class(resource)
     # Default to "notify_<resource_name>" if no email_method is provided
     email_method = params[:email_method].presence || "notify_#{resource_name}"
+    custom_notification_id = params[:custom_notification_id]
 
     # Try to get the associated investor and their approved access
     investor = resource.try(:investor)
@@ -29,6 +30,7 @@ module WithEmailPreview
              .with(
                "#{resource_name}_id": resource.id,
                email_method:,
+               custom_notification_id:,
                user_id: @investor_access.user_id,
                entity_id: resource.try(:entity_id)
              )

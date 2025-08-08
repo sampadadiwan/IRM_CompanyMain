@@ -134,7 +134,7 @@ class InvestorKycsController < ApplicationController
 
   def send_kyc_reminder
     if @investor_kyc.investor.approved_users.present?
-      @investor_kyc.send_kyc_form(reminder: true)
+      @investor_kyc.send_kyc_form(reminder: true, custom_notification_id: params[:custom_notification_id])
       msg = "KYC Reminder sent successfully."
       redirect_to investor_kyc_url(@investor_kyc), notice: msg
     else
@@ -145,8 +145,11 @@ class InvestorKycsController < ApplicationController
 
   def notify_kyc_required
     if @investor_kyc.investor.approved_users.present?
+      # Set the flag to true to indicate that the KYC form should be sent
       @investor_kyc.send_kyc_form_to_user = true
-      @investor_kyc.send_kyc_form
+      # If a custom notification ID is provided, use it to send the KYC form
+      @investor_kyc.send_kyc_form(custom_notification_id: params[:custom_notification_id])
+      # Redirect to the KYC page with a success message
       msg = "KYC form sent successfully."
       redirect_to investor_kyc_url(@investor_kyc), notice: msg
     else
@@ -166,7 +169,7 @@ class InvestorKycsController < ApplicationController
     authorize(InvestorKyc)
 
     @investor_kycs.where(entity_id:, verified: false).find_each do |kyc|
-      kyc.send_kyc_form(reminder: true)
+      kyc.send_kyc_form(reminder: true, custom_notification_id: params[:custom_notification_id])
     end
     redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."
   end

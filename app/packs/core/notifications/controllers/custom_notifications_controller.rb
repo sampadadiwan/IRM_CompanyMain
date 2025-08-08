@@ -74,6 +74,6 @@ class CustomNotificationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def custom_notification_params
-    params.require(:custom_notification).permit(:subject, :body, :whatsapp, :for_type, :show_details, :entity_id, :owner_id, :owner_type, :attachment_password, :password_protect_attachment, :show_details_link, :email_method, :enabled, :is_erb, :to, :attachment_names)
+    params.require(:custom_notification).permit(:subject, :body, :whatsapp, :for_type, :show_details, :entity_id, :owner_id, :owner_type, :attachment_password, :password_protect_attachment, :show_details_link, :email_method, :enabled, :is_erb, :to, :attachment_names, :tag)
   end
 end

@@ -1,5 +1,5 @@
 <%= render FormCard.new(title: "Custom Notification : #{custom_notification.owner}") do %>
-  
+
   <%= form_with(model: custom_notification, validate: true) do |form| %>
     <% if custom_notification.errors.any? %>
       <div class="alert alert-danger">
@@ -33,6 +33,12 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :tag %>
+      <%= form.text_field :tag, class: "form-control"  %>
+      <small class="form-text text-muted">Tag to identify this notification</small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :subject %>
       <%= form.text_field :subject, class: "form-control"  %>
     </div>
@@ -47,7 +53,7 @@
       <%= form.text_area :whatsapp, class: "form-control"  %>
     </div>
 
-    <% if custom_notification.owner_type == "CapitalCall" %>        
+    <% if custom_notification.owner_type == "CapitalCall" %>
         <div class="form-group">
           <%= form.label :show_details %>
           <%= form.check_box :show_details, class: "form-check-input"  %>
@@ -55,7 +61,7 @@
         </div>
     <% end %>
 
-    <% if params[:debug].present? %>      
+    <% if params[:debug].present? %>
 
       <div class="form-group">
         <%= form.label :password_protect_attachment %>
@@ -76,7 +82,7 @@
       <%= form.text_field :attachment_names, class: "form-control"  %>
     </div>
 
-    <% if current_user.support? %>      
+    <% if current_user.support? %>
 
       <div class="form-group">
         <%= form.label :is_erb, "Dynamic Template" %>

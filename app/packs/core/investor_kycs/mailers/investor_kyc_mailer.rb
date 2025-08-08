@@ -6,7 +6,7 @@ class InvestorKycMailer < ApplicationMailer
   def set_kyc
     @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
     email_method = params[:email_method] || @notification.params[:email_method]
-    @custom_notification = @investor_kyc.entity.custom_notification(email_method)
+    @custom_notification = @investor_kyc.entity.custom_notification(email_method, custom_notification_id: params[:custom_notification_id], for_type: "InvestorKyc")
   end
 
   def notify_kyc_updated

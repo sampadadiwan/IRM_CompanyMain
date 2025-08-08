@@ -1,0 +1,30 @@
+<% email_methods = {
+  "notify_kyc_verified" => "Preview KYC Verified Notification",
+  "notify_kyc_required" => "Preview KYC Required Notification",
+  "kyc_required_reminder" => "Preview KYC Required Reminder Notification"
+} %>
+
+<% custom_notifications_map = current_user.entity.custom_notifications
+                              .for_type("InvestorKyc")
+                              .group_by(&:email_method) %>
+
+<% email_methods.each do |method, label| %>
+  <% notifications = custom_notifications_map[method] %>
+
+  <% if notifications.present? %>
+    <% notifications.each_with_index do |custom_notification, i| %>
+      <% btn_id = "investor_kyc_preview_#{method}_custom_#{i}_btn" %>
+      <%= link_to "#{label} (#{custom_notification.tag})",
+                  preview_investor_kyc_path(@investor_kyc.id, email_method: method, custom_notification_id: custom_notification.id),
+                  id: btn_id,
+                  target: "_blank",
+                  class: "dropdown-item ti ti-mail" %>
+    <% end %>
+  <% else %>
+    <%= link_to label,
+                preview_investor_kyc_path(@investor_kyc.id, email_method: method),
+                id: "investor_kyc_preview_#{method}_default_btn",
+                target: "_blank",
+                class: "dropdown-item ti ti-mail" %>
+  <% end %>
+<% end %>

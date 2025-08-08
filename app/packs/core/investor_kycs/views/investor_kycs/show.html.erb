@@ -41,7 +41,7 @@
                   msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
                 } do %>
       <i class="ti ti-message-2"></i>Updates Required
-    <% end %>    
+    <% end %>
   <% end %>
 
   <% if current_user.curr_role != "investor" %>
@@ -53,27 +53,7 @@
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-          <% if policy(@investor_kyc).notify_kyc_required? %>
-            <%= button_to notify_kyc_required_investor_kyc_path(@investor_kyc),
-                id: "investor_kyc_notify_kyc_required_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
-                data: {
-                  action: "click->confirm#popup", turbo: false, method: :post,
-                  msg: "This will generate a notification to all users associated with this investor"
-                } do %>
-              <i class="ti ti-bell"></i>Send KYC Required Notification
-            <% end %>
-          <% end %>
-
-          <% if policy(@investor_kyc).send_kyc_reminder? %>
-            <%= button_to send_kyc_reminder_investor_kyc_path(@investor_kyc),
-                id: "investor_kyc_send_kyc_reminder_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
-                data: {
-                  action: "click->confirm#popup", turbo: false, method: :post,
-                  msg: "This will generate a notification to all users associated with this investor"
-                } do %>
-              <i class="ti ti-bell"></i>Send KYC Reminder
-            <% end %>
-          <% end %>
+          <%= render "/investor_kycs/send_notifications", investor_kyc: @investor_kyc %>
 
           <% if policy(@investor_kyc).generate_docs? %>
             <%= link_to generate_docs_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_docs_btn", class: "dropdown-item" do %>
@@ -153,11 +133,9 @@
             <i class="ti ti-settings"></i> Preview Notifications
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Preview KYC Verified Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "notify_kyc_verified"), id: "investor_kyc_preview_kyc_verified_notification_btn", target: "_blank", class: "dropdown-item ti ti-mail" %>
 
-            <%= link_to "Preview KYC Required Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "notify_kyc_required"), id: "investor_kyc_preview_kyc_required_notification_btn", target: "_blank", class: "dropdown-item ti ti-mail" %>
+            <%= render "/investor_kycs/preview_notifications", investor_kyc: @investor_kyc %>
 
-            <%= link_to "Preview KYC Required Reminder Notification", preview_investor_kyc_path(@investor_kyc.id, email_method: "kyc_required_reminder"), id: "investor_kyc_preview_kyc_required_reminder_notification_btn", target: "_blank", class: "dropdown-item ti ti-mail" %>
           </div>
         </div>
       </div>

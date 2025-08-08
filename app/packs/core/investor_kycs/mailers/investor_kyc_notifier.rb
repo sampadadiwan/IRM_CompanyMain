@@ -6,6 +6,7 @@ class InvestorKycNotifier < BaseNotifier
   def email_data(notification)
     {
       notification_id: notification.id,
+      custom_notification_id: params[:custom_notification_id],
       user_id: notification.recipient_id,
       investor_kyc_id: record.id,
       entity_id: params[:entity_id],
@@ -23,7 +24,7 @@ class InvestorKycNotifier < BaseNotifier
 
     def custom_notification
       @investor_kyc ||= record
-      @custom_notification ||= @investor_kyc.entity.custom_notification(params[:email_method])
+      @custom_notification ||= @investor_kyc.entity.custom_notification(params[:email_method], custom_notification_id: params[:custom_notification_id])
       @custom_notification
     end
 

@@ -27,7 +27,7 @@
       </td>
     </tr>
     <% end %>
-    
+
     <tr>
       <td>
         Subject
@@ -36,6 +36,16 @@
         <%= @custom_notification.subject %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Tag
+      </td>
+      <td>
+        <%= @custom_notification.tag %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Body
@@ -52,7 +62,7 @@
         <%= @custom_notification.whatsapp %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Attachment Names
@@ -137,7 +147,9 @@
     </tr>
   </table>
   <div>
-    <%= link_to  t_common(:edit), edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>   <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
+    <%= link_to  t_common(:edit), edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>
+
+    <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
   </div>
 <% end %>
 <%= render "custom_notifications/details", custom_notification: @custom_notification %>

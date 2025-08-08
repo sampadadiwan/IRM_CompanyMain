@@ -149,7 +149,7 @@ class InvestorKyc < ApplicationRecord
 
   # Should be called only from SendKycFormJob
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes
-  def send_kyc_form(reminder: false)
+  def send_kyc_form(reminder: false, custom_notification_id: nil)
     if send_kyc_form_to_user || reminder
       email_method = :notify_kyc_required
       msg = "Kindly update your KYC details for #{entity.name} by clicking on the button below"
@@ -161,7 +161,7 @@ class InvestorKyc < ApplicationRecord
 
       # Send notification to all the users who have access to this KYC
       notification_users.each do |user|
-        InvestorKycNotifier.with(record: self, entity_id:, email_method:, msg:, user_id: user.id).deliver_later(user)
+        InvestorKycNotifier.with(record: self, entity_id:, email_method:, msg:, user_id: user.id, custom_notification_id:).deliver_later(user)
       end
 
       # Ensure the flag is set to false after sending the KYC form

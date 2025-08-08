@@ -10,10 +10,13 @@ class CustomNotification < ApplicationRecord
   scope :latest, -> { where(latest: true) }
   scope :not_latest, -> { where(latest: false) }
   scope :adhoc_notifications, -> { where(email_method: "adhoc_notification") }
+  scope :for_type, ->(type) { where(for_type: type) }
+  scope :with_tag, ->(tag) { where(tag: tag) }
 
   validates :subject, :body, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }
   validates :for_type, :email_method, length: { maximum: 100 }
+  validates :tag, length: { maximum: 30 }, allow_blank: true
 
   # validates :email_method, uniqueness: { scope: %i[owner_id owner_type], message: ->(object, _data) { "#{object.email_method} already exists for #{object.owner}" } }
   after_create_commit :reset_latest
@@ -76,7 +79,7 @@ class CustomNotification < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at email_method enabled latest is_erb owner_id owner_type subject whatsapp].sort
+    %w[created_at email_method enabled latest is_erb owner_id owner_type subject whatsapp tag].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
