@@ -13,11 +13,8 @@ class KycVerify
     json_response
   end
 
-  def verify_bank(full_name, account_number, ifsc, kyc_data)
-    response = api_verify_bank(full_name, account_number, ifsc)
-    json_response = JSON.parse(response.body)
-    store_kyc_data(kyc_data, json_response)
-    json_response
+  def verify_bank(full_name, account_number, ifsc)
+    HTTParty.post("#{BASE_URL}/client/verify/bank_account", headers: auth_headers_json, body: { unique_request_id: SecureRandom.hex(10), beneficiary_account_no: account_number, beneficiary_ifsc: ifsc, beneficiary_name: full_name }.to_json)
   end
 
   def verify_pan_card(file)
@@ -141,10 +138,6 @@ class KycVerify
 
   def api_verify_pan_card(file_path)
     HTTParty.post("#{BASE_URL}/v3/client/kyc/analyze/file/idcard", headers: auth_headers_multipart, body: { unique_request_id: SecureRandom.hex(10), front_part: File.new(file_path), should_verify: "true" })
-  end
-
-  def api_verify_bank(full_name, account_number, ifsc)
-    HTTParty.post("#{BASE_URL}/client/verify/bank_account", headers: auth_headers_json, body: { unique_request_id: SecureRandom.hex(10), beneficiary_account_no: account_number, beneficiary_ifsc: ifsc, beneficiary_name: full_name }.to_json)
   end
 
   def api_search_ckyc(request_body)

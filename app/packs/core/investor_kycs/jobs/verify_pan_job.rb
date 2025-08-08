@@ -27,7 +27,7 @@ class VerifyPanJob < ApplicationJob
       response = KycVerify.new.verify_pan_card(@model.pan_card)
       init_offer(response)
       # api keeps returning verified as nil even on success
-      verified = response[:verified] || (response[:status].casecmp?("success") && response[:name_matched])
+      verified = response[:verified] || (response[:status]&.casecmp?("success") && response[:name_matched])
       if verified
         @model.pan_verified = verified
         check_details(response)
