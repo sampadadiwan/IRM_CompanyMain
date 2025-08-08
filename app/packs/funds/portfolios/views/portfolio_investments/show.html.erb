@@ -236,6 +236,15 @@
         </td>
       </tr>
 
+      <tr>
+        <td>
+          Proforma
+        </td>
+        <td>
+          <%= display_boolean @portfolio_investment.proforma %>
+        </td>
+      </tr>
+
       <% if params[:debug].present? && @portfolio_investment.sell? %>
         <tr>
           <td>

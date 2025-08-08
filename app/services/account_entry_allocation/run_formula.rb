@@ -68,6 +68,10 @@ module AccountEntryAllocation
         # For portfolio investments, override the rollup name
         rollup_name = nil
         rollup_entry_type = fund_formula.name
+      when "AllocatePortfolioInvestment-Proforma"
+        AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx, proforma: true)
+        rollup_name = nil
+        rollup_entry_type = fund_formula.name
       when "Percentage"
         AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
       when "GeneratePortfolioNumbersForFund"

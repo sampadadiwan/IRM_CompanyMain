@@ -16,7 +16,13 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_portfolios_investment(#{fund_formula.name})" }
 
-      portfolio_investments = fund.portfolio_investments.where(investment_date: ..end_date)
+      portfolio_investments = if ctx[:proforma]
+                                # We only want to allocate proforma portfolio investments
+                                fund.portfolio_investments.proforma.where(investment_date: ..end_date)
+                              else
+                                # We only want to allocate non-proforma portfolio investments (which are the actual investments and the default scope)
+                                fund.portfolio_investments.where(investment_date: ..end_date)
+                              end
 
       fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)

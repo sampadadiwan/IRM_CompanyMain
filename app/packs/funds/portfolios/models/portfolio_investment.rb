@@ -116,6 +116,14 @@ class PortfolioInvestment < ApplicationRecord
     where("JSON_CONTAINS(excused_folio_ids, ?)", ids.to_json)
   }
 
+  # Since all computations, calcs, rollups, etc. are done on non-proforma records,
+  default_scope { where(proforma: false) }
+  scope :include_proforma, lambda {
+    unscope(where: :proforma)
+  }
+  scope :proforma, -> { include_proforma.where(proforma: true) }
+  scope :non_proforma, -> { where(proforma: false) }
+
   ##########################################################
   ###################### CONSTANTS #########################
   ##########################################################
@@ -157,6 +165,10 @@ class PortfolioInvestment < ApplicationRecord
 
   def buy_sell
     buy? ? 'Buy' : 'Sell'
+  end
+
+  def non_proforma?
+    !proforma
   end
 
   def to_s

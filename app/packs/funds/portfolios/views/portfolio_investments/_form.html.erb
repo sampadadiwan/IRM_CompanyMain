@@ -67,6 +67,12 @@
     <% end %>
 
     <div class="form-group">
+      <%= form.label :proforma %>
+      <%= form.check_box :proforma, class: "form-check-input" %>
+      <small class="text-muted">Check this box if this is a proforma investment. (Will not be used in fund ratios or Aggregatetion).</small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :excused_folio_ids, "Excused Folios" %>
       <%= form.select :excused_folio_ids,
           portfolio_investment.fund.capital_commitments.order(investor_name: :asc).map{|i| ["#{i.investor_name} - #{i.folio_id}", i.id]},

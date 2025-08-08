@@ -3,9 +3,9 @@ class PortfolioInvestmentsController < ApplicationController
 
   def fetch_rows
     # Step 1: Start with base query using search (Ransack) and eager loading
-    @portfolio_investments = ransack_with_snapshot
-                             .joins(:investment_instrument)
-                             .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
+    @portfolio_investments = ransack_with_snapshot.include_proforma
+                                                  .joins(:investment_instrument)
+                                                  .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
 
     # Step 2: Filter by fund (snapshot-aware)
     if params[:fund_id].present?
@@ -138,7 +138,7 @@ class PortfolioInvestmentsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_portfolio_investment
-    @portfolio_investment = PortfolioInvestment.with_snapshots.find(params[:id])
+    @portfolio_investment = PortfolioInvestment.include_proforma.with_snapshots.find(params[:id])
     authorize @portfolio_investment
 
     @bread_crumbs = { Funds: funds_path,
@@ -150,6 +150,6 @@ class PortfolioInvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
-    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date, :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :capital_commitment_id, :folio_id, excused_folio_ids: [], documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date, :ex_expenses_base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :capital_commitment_id, :folio_id, :proforma, excused_folio_ids: [], documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

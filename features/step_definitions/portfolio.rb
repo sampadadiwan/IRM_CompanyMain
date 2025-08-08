@@ -61,7 +61,9 @@ include CurrencyHelper
     (1..count.to_i).each do |i|
       pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund, investment_instrument: @investment_instrument)
       key_values(pi, args)
-      PortfolioInvestmentCreate.wtf?(portfolio_investment: pi).success?.should == true
+      result = PortfolioInvestmentCreate.wtf?(portfolio_investment: pi)
+      binding.pry if result.failure?
+      result.success?.should == true
       puts "\n#########PortfolioInvestment##########\n"
       puts pi.to_json
     end
@@ -75,7 +77,8 @@ include CurrencyHelper
     @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:net_bought_amount_cents)
     @api.sold_quantity.should == PortfolioInvestment.sells.sum(:quantity)
     @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:net_amount_cents)
-    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
+    quantity = PortfolioInvestment.buys.sum(:quantity)
+    @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:amount_cents) / quantity).round(0) if quantity > 0
   end
 
   Then('I should see the aggregate portfolio investment details on the details page') do
@@ -91,6 +94,31 @@ include CurrencyHelper
   end
 
 
+
+
+Then('an aggregate portfolio investment should not be created') do
+  AggregatePortfolioInvestment.count.should == 0
+end
+
+Then('the aggregate portfolio investment should have the right rollups') do
+  @api = AggregatePortfolioInvestment.last
+  @api.quantity.should == PortfolioInvestment.buys.sum(:net_quantity)
+  @api.ex_expenses_amount_cents.should == PortfolioInvestment.sum(:ex_expenses_amount_cents)
+  @api.transfer_amount_cents.should == PortfolioInvestment.sum(:transfer_amount_cents)
+  @api.transfer_quantity.should == PortfolioInvestment.sum(:transfer_quantity)
+  @api.cost_of_remaining_cents.should == PortfolioInvestment.sum(:cost_of_remaining_cents)
+  @api.unrealized_gain_cents.should == PortfolioInvestment.sum(:unrealized_gain_cents)
+  @api.gain_cents.should == PortfolioInvestment.sum(:gain_cents)
+  @api.fmv_cents.should == PortfolioInvestment.sum(:fmv_cents)
+  @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:amount_cents)
+  @api.sold_quantity.should == PortfolioInvestment.sells.sum(:quantity)
+  @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:amount_cents)
+  @api.net_bought_amount_cents.should == PortfolioInvestment.buys.sum(:net_bought_amount_cents)
+  @api.bought_quantity.should == PortfolioInvestment.buys.sum(:quantity)
+  @api.instrument_currency_fmv_cents.should == PortfolioInvestment.buys.sum(:instrument_currency_fmv_cents)
+  @api.instrument_currency_cost_of_remaining_cents.should == PortfolioInvestment.buys.sum(:instrument_currency_cost_of_remaining_cents)
+  @api.instrument_currency_unrealized_gain_cents.should == PortfolioInvestment.buys.sum(:instrument_currency_unrealized_gain_cents)
+end
 
 
 Given('there is a valuation {string} for the portfolio company') do |args|
@@ -131,7 +159,7 @@ Then('the portfolio investments must have the data in the sheet') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
-  portfolio_investments = @fund.portfolio_investments.order(id: :asc).to_a
+  portfolio_investments = @fund.portfolio_investments.include_proforma.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
@@ -218,6 +246,7 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
     api = pi.aggregate_portfolio_investment
     puts "Cost: #{api.cost_of_remaining_cents} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
     api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)
+    binding.pry if api.cost_of_remaining_cents != api.bought_amount_cents + api.cost_of_sold_cents
     api.cost_of_remaining_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
   end
 end
@@ -549,7 +578,7 @@ Then('the total number of portfolio investments with snapshots should be {string
   # Get all the snapshots of the fund
   fund_ids = Fund.with_snapshots.where(orignal_id: @fund.id).pluck(:id)
   # Get all the PIs including snapshots of the orignal fund
-  PortfolioInvestment.with_snapshots.where(fund_id: fund_ids).count.should == count.to_i
+  PortfolioInvestment.unscoped.with_snapshots.where(fund_id: fund_ids).count.should == count.to_i
 end
 
 Given('I generate a portfolio as of report for {string}') do |string|

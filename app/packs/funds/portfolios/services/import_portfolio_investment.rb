@@ -1,5 +1,5 @@
 class ImportPortfolioInvestment < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)", "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes", "Excused Folio Ids"].freeze
+  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount (Excluding Expenses)", "Quantity",	"Instrument", "Currency", "Investment Domicile", "Notes", "Excused Folio Ids", "Proforma"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -15,7 +15,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id, proforma = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
@@ -46,6 +46,7 @@ class ImportPortfolioInvestment < ImportUtil
       setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
       portfolio_investment.notes = user_data["Notes"]
       portfolio_investment.created_by_import = true
+      portfolio_investment.proforma = proforma
       portfolio_investment.import_upload_id = import_upload.id
       portfolio_investment.portfolio_company = portfolio_company
       portfolio_investment.excused_folio_ids = if user_data["Excused Folio Ids"].present?
@@ -85,8 +86,9 @@ class ImportPortfolioInvestment < ImportUtil
     investment_domicile = user_data["Investment Domicile"]
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
     ref_id = user_data["Ref Id"].to_i
+    proforma = user_data["Proforma"]&.downcase == "yes"
 
-    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id]
+    [portfolio_company_name, investment_date, ex_expenses_base_amount_cents, quantity, instrument, investment_domicile, fund, ref_id, proforma]
   end
 
   def defer_counter_culture_updates

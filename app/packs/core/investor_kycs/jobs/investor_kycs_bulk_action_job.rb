@@ -15,7 +15,7 @@ class InvestorKycsBulkActionJob < BulkActionJob
       investor_kyc.verified = false
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "sendreminder"
-      send_reminder(investor_kyc, user_id)
+      send_reminder(investor_kyc, user_id, custom_notification_id: params[:custom_notification_id])
     when "generateamlreports"
       generate_aml_report(investor_kyc, user_id)
     when "validatedocswithai"
@@ -53,7 +53,7 @@ class InvestorKycsBulkActionJob < BulkActionJob
     GenerateAmlReportJob.perform_later(investor_kyc.id, user_id)
   end
 
-  def send_reminder(investor_kyc, user_id)
+  def send_reminder(investor_kyc, user_id, custom_notification_id: nil)
     if investor_kyc.investor.approved_users.blank?
       msg = "KYC Reminder could not be sent, no users for investor."
       send_notification(msg, user_id, "danger")
@@ -64,9 +64,9 @@ class InvestorKycsBulkActionJob < BulkActionJob
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
     elsif Rails.env.test?
       # Randomize the time to send the reminder, so we dont flood aws SES
-      SendKycFormJob.perform_later(investor_kyc.id, reminder: true)
+      SendKycFormJob.perform_later(investor_kyc.id, reminder: true, custom_notification_id: custom_notification_id)
     else
-      SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: true)
+      SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: true, custom_notification_id: custom_notification_id)
     end
   end
 end

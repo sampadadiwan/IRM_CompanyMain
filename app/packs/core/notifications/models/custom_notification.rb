@@ -11,6 +11,7 @@ class CustomNotification < ApplicationRecord
   scope :not_latest, -> { where(latest: false) }
   scope :adhoc_notifications, -> { where(email_method: "adhoc_notification") }
   scope :for_type, ->(type) { where(for_type: type) }
+  scope :email_method, ->(email_method) { where(email_method: email_method) }
   scope :with_tag, ->(tag) { where(tag: tag) }
 
   validates :subject, :body, presence: true

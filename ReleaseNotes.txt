@@ -5,6 +5,13 @@ V9.0.89
 02fb178bd Added release note
 e1b5ef893 Formula ai descriptions (#944)
 
+V9.0.88
+#####################################
+ba6ad3928 Added folio ids to import PI
+7e15a65f6 Added get_ic_account_entry to CommitmentAccountEntry for excused folios
+a67d7ed65 Added excused_folio_percentage to CommitmentAccountEntry for excused folios
+
+
 V9.0.87
 #####################################
 512e18a41 Pi excused investors (#940)

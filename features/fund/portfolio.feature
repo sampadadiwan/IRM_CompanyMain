@@ -29,7 +29,26 @@ Scenario Outline: Create new PI and aggregate PI
   Then the total number of portfolio investments with snapshots should be "12"
   Then an aggregate portfolio investment should be created
   And the aggregate portfolio investment should have a quantity of "300"
+  And the aggregate portfolio investment should have the right rollups
   Then I should see the aggregate portfolio investment details on the details page
+
+  Examples:
+    |entity                             |fund                |
+    |entity_type=Investment Fund;       |name=Test fund      |
+    |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
+
+
+Scenario Outline: Proforma PI should not be rolled up to Aggregate PI
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there is a fund "<fund>" for the entity
+  Given there are "3" portfolio investments "quantity=200;proforma=true"
+  Then the total number of portfolio investments with snapshots should be "3"
+  Then an aggregate portfolio investment should be created
+  And the aggregate portfolio investment should have a quantity of "0"
+  And the aggregate portfolio investment should have the right rollups
 
   Examples:
     |entity                             |fund                |
@@ -144,12 +163,12 @@ Scenario Outline: Compute Gains
   And the api "cost_of_remaining" is "<cost_of_remaining>"
   And the api "gain" is "<gain>"
   And the api "unrealized_gain" is "<unrealized_gain>"
-  
+
   Examples:
     |Fund                           |cost_of_sold | cost_of_remaining | gain | unrealized_gain |
     |name=SAAS Fund;portfolio_cost_type=WTD_AVG;currency=INR|-8935714.29|864285.71|6264285.71|-359335.71|
     |name=SAAS Fund;portfolio_cost_type=FIFO;currency=INR   |-8600000   | 1200000 | 6600000 | -695050 |
-    
+
 
 
 Scenario Outline: Stock Adjustment

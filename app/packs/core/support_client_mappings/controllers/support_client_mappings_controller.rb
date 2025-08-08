@@ -3,6 +3,7 @@ class SupportClientMappingsController < ApplicationController
 
   # GET /support_client_mappings or /support_client_mappings.json
   def index
+    authorize SupportClientMapping
     @support_client_mappings = policy_scope(SupportClientMapping)
   end
 

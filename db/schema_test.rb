@@ -2668,6 +2668,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_08_072847) do
     t.bigint "ref_id", default: 0, null: false
     t.bigint "capital_distribution_id"
     t.json "excused_folio_ids", null: false
+    t.boolean "proforma", default: false, null: false
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_portfolio_investments_on_capital_distribution_id"
