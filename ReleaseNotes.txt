@@ -1,3 +1,20 @@
+V9.0.90
+#####################################
+a56a3fb90 Added better view all custom notification for kyc page
+eb722c970 Added better check in ImportUtil to update the form_type, only for nil form_type_id
+290da3d9f Fixed verify bank bug and no response verify pan bug (#945)
+7b7b6d4fb Fixed Complete KYC Details button for investor (#952)
+3bd1f1d6c Now proforma entries do not generate attribution
+05253a1f5 Kyc form types (#951)
+323c490e0 Refactored preview email
+37cebcb40 Proforma portfolios (#947)
+07b6de815 Kyc custom notifications (#949)
+b745ceaaa Investor advisor auto switch (#948)
+fc332e727 Fcf ro (#946)
+761bcb389 Changed GEmini key
+1c5e0123a Removed secret
+8d634d73b Added release notes
+
 
 V9.0.89
 #####################################
