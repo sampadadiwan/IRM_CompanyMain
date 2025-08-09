@@ -14,8 +14,9 @@ module WithSetupCustomFields
                     FormType.where(entity_id: model.entity_id, name: model.class.name).last
                   end
 
-    # set the models form type
-    model.form_type = form_type
+    # set the models form type, if its and existing record do not change the form type if it is already set
+    # For a new record, we can set the form type, as sometimes the the user wants to change the kyc type
+    model.form_type = form_type if model.new_record? || model.form_type.nil?
   end
 
   def setup_doc_user(model)
