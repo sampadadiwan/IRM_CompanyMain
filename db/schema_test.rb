@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_08_08_072847) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_09_040900) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1470,7 +1470,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_08_072847) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
-    t.string "tag", limit: 50
+    t.string "tag", limit: 50, default: "Default", null: false
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
   end
 

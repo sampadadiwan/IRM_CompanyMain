@@ -41,7 +41,7 @@
     <div data-controller="customfield">
       <div class="form-group">
         <%= form.label :name, "Form Name" %>
-        <%= form.select :name, types.sort, {}, class: "form-control"  %>
+        <%= form.select :name, types.sort, {include_blank: true}, class: "form-control"  %>
       </div>
 
       <div class="form-group">
