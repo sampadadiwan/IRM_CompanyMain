@@ -25,6 +25,7 @@ class FormTypesController < ApplicationController
   def new
     @form_type = params[:form_type].present? ? FormType.new(form_type_params) : FormType.new
     @form_type.entity_id ||= current_user.entity_id
+    @form_type.tag ||= "Default"
     authorize(@form_type)
   end
 

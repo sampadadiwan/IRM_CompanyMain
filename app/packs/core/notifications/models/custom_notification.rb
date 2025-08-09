@@ -80,7 +80,7 @@ class CustomNotification < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at email_method enabled latest is_erb owner_id owner_type subject whatsapp tag].sort
+    %w[created_at email_method enabled latest is_erb owner_id owner_type subject whatsapp tag for_type].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

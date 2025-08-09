@@ -79,15 +79,19 @@
 
               <div class="dropdown-divider"></div>
 
+              <%= link_to "View All Custom Notifications",
+                            custom_notifications_path(q: ransack_query_params("for_type", :eq, "InvestorKyc"), target: "_blank"),
+                            class: "dropdown-item d-flex align-items-center ti ti-eye" %>
+
               <%= link_to "Custom KYC Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "InvestorKyc",
                             "custom_notification[entity_id]": entity_id),
-                          class: "dropdown-item d-flex align-items-center ti ti-mail"  %>
+                          class: "dropdown-item d-flex align-items-center ti ti-mail-plus"  %>
 
               <%= link_to "Custom Agreement Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "Send Document",
                             "custom_notification[entity_id]": entity_id),
-                          class: "dropdown-item d-flex align-items-center ti ti-mail-forward" %>
+                          class: "dropdown-item d-flex align-items-center ti ti-mail-plus" %>
 
             </div>
           </div>
