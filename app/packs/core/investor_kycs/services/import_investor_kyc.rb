@@ -8,6 +8,7 @@ class ImportInvestorKyc < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug user_data
+    @form_types ||= import_upload.entity.form_types.where(name: %w[IndividualKyc NonIndividualKyc]).index_by { |ft| "#{ft.name}-#{ft.tag}" }
 
     saved = true
     full_name = user_data["Investing Entity"]
@@ -52,6 +53,10 @@ class ImportInvestorKyc < ImportUtil
   def save_kyc(investor_kyc, investor, user_data, custom_field_headers)
     kyc_type = user_data["Kyc Type"].presence || "Individual"
 
+    # Find the form type based on the kyc_type and form tag
+    form_tag = user_data["Form Tag"]&.strip
+    form_type = form_tag.present? ? @form_types["#{kyc_type}Kyc-#{form_tag}"] : nil
+
     verified = %w[yes true].include?(user_data["Verified"]&.downcase)
     send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)
 
@@ -69,10 +74,13 @@ class ImportInvestorKyc < ImportUtil
                                    bank_account_number: user_data["Bank Account Number"]&.to_s,
                                    bank_account_type: user_data["Account Type"],
                                    ifsc_code: user_data["Ifsc Code"],
-                                   verified:,
+                                   verified:, form_type:,
                                    send_kyc_form_to_user:)
 
+    # Form Tag is optional, so we remove it from the custom_field_headers, so it does not get saved as a custom field
+    custom_field_headers -= ["Form Tag"]
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
+
     result = if investor_kyc.new_record?
                InvestorKycCreate.call(investor_kyc:, investor_user: false)
              else

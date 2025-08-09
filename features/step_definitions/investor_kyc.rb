@@ -164,5 +164,35 @@ investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
     kyc.bank_account_type.should == user_data["Account Type"].strip
     kyc.ifsc_code.should == user_data["Ifsc Code"].strip
     kyc.verified.should == (user_data["Verified"]&.strip&.downcase == "yes" || user_data["Verified"]&.strip&.downcase == "true")
+
+    if user_data["Form Tag"].present?
+      form_type = @entity.form_types.where(name: kyc.type, tag: user_data["Form Tag"].strip).last
+      puts "Checking form type for #{kyc.investor.investor_name} with tag #{user_data["Form Tag"].strip} #{form_type&.name}"
+      puts "FCF: " + form_type.form_custom_fields.pluck(:name).to_s if form_type
+      kyc.form_type.should == form_type
+    else
+      form_type = @entity.form_types.where(name: kyc.type).last
+      puts "Checking form type for #{kyc.investor.investor_name} with no tag #{form_type&.name}"
+      puts "FCF: " + form_type.form_custom_fields.pluck(:name).to_s if form_type
+      kyc.form_type.should == form_type
+    end
   end
 end
+
+Given('there is a FormType {string} with custom fields {string}') do |form_type_args, custom_field_names|
+  form_type = FormType.new
+  key_values(form_type, form_type_args)
+  form_type.entity = @entity
+  form_type.save!
+  puts "\n########### FormType ############"
+  puts form_type.to_json
+  custom_field_names.split(',').each do |name|
+    form_type.form_custom_fields.create!(name: name.strip, field_type: "TextField", required: false)
+  end
+end
+
+Then('there are {string} records for the form type {string}') do |count, name|
+  FormType.where(name: name, entity_id: @entity.id).count.should == count.to_i
+end
+
+
