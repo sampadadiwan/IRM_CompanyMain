@@ -3,6 +3,7 @@ class ImportUpload < ApplicationRecord
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
               "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",
               "FUNDS_SAMPLE" => "/sample_uploads/funds.xlsx",
+              "FORM_CUSTOM_FIELD_SAMPLE" => "/sample_uploads/form_custom_fields.xlsx",
               "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx",
               "INTERESTS_SAMPLE" => "/sample_uploads/interests.xlsx",
               "CAPITAL_CALL_SAMPLE" => "/sample_uploads/capital_calls.xlsx",
@@ -32,7 +33,7 @@ class ImportUpload < ApplicationRecord
               "INVESTMENT_SAMPLE" => "/sample_uploads/investments.xlsx",
               "INVESTOR_KPI_MAPPING_SAMPLE" => "/sample_uploads/investor_kpi_mappings.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping].sort.freeze
+  TYPES = %w[FormCustomField InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 
@@ -59,7 +60,7 @@ class ImportUpload < ApplicationRecord
   end
 
   def owner_must_be_valid
-    errors.add(:owner, "Owner must be present and not deleted.") if owner.blank? || owner.deleted?
+    errors.add(:owner, "Owner must be present and not deleted.") if owner.blank? || (owner.respond_to?(:deleted?) && owner.deleted?)
   end
 
   def percent_completed

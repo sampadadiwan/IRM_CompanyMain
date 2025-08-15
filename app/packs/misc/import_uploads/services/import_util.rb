@@ -190,7 +190,7 @@ class ImportUtil < Trailblazer::Operation
     custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
 
     # Were any custom fields passed in ? Set them up
-    if custom_field_headers.length.positive?
+    if custom_field_headers.length.positive? && model.respond_to?(:properties)
       model.properties ||= {}
       custom_field_headers.each do |cfh|
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }

@@ -8,6 +8,8 @@ class FormType < ApplicationRecord
   validates :tag, length: { maximum: 50 }
   validates :tag, uniqueness: { scope: %i[entity_id name] }, allow_blank: true
 
+  scope :with_deleted, -> { unscope(where: :deleted_at) }
+
   has_many :form_custom_fields, -> { order(position: :asc) }, inverse_of: :form_type, dependent: :destroy
   accepts_nested_attributes_for :form_custom_fields, reject_if: :all_blank, allow_destroy: true
 

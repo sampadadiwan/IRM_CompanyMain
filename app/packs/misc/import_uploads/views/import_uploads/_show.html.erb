@@ -4,10 +4,10 @@
 
   <% if import_upload.failed_row_count > 0 %>
           <div class="alert alert-danger">
-          
+
             Failed to import <%= import_upload.failed_row_count %> rows.
-            Download <%= link_to "Results", import_upload.import_results.url, class: "btn btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.            
-            
+            Download <%= link_to "Results", import_upload.import_results.url, class: "btn btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.
+
           </div>
 
   <% end %>
@@ -30,7 +30,7 @@
       </td>
     </tr>
     <tr>
-      <% if !import_upload.owner.deleted? %>
+      <% if !import_upload.owner.respond_to?(:deleted?) || !import_upload.owner.deleted? %>
         <td>
           Owner
         </td>
@@ -106,7 +106,7 @@
               Failed to import <%= import_upload.failed_row_count %> rows
           </span>
         </td>
-        <td>        
+        <td>
             Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.
         </td>
       </tr>
@@ -149,12 +149,12 @@
         <%= import_upload.custom_fields_created %>
       </td>
     </tr>
-    
+
 
   </table>
   <% if params[:debug].present? %>
     <div>
-      <%= link_to  t_common(:edit) , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary ti ti-eye" } %> 
+      <%= link_to  t_common(:edit) , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary ti ti-eye" } %>
       <%= button_to t_common(:delete) , import_upload, method: :delete, class: "btn btn-outline-danger ti ti-trash" , form_class: "deleteButton" %>
     </div>
   <% end %>

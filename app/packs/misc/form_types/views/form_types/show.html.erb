@@ -2,42 +2,7 @@
 
 <%= render FormCard.new(title: "#{@form_type.name} #{@form_type.tag}") do %>
 
-  <div data-controller="datatable">
-    <table class="table table-bordered dataTable jqDataTable">
-      <thead>
-        <tr>
-          <th>
-            Position
-          </th>
-          <th>
-            Import Column Name
-          </th>
-          <th>
-            Label
-          </th>
-          <th>
-            <%= @form_type.name %>
-          </th>
-          <th>
-            Properties
-          </th>
-          <th>
-            Condition
-          </th>
-          <th>
-            Step
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @form_type.form_custom_fields.each do |f| %>
-          <%= render "custom_field_on_index", f: f unless (f.internal && params[:internal].blank?) %>
-        <% end %>
-      </tbody>
-
-    </table>
-
-  </div>
+  <%= render "form_custom_fields/index", form_custom_fields: @form_type.form_custom_fields, form_type: @form_type %>
 
 
   <div>
@@ -55,6 +20,16 @@
     <%= link_to form_custom_fields_path(format: :xlsx, form_type_id: @form_type.id), class: "btn btn-outline-success" do %>
       <i class="ti ti-download"></i> Download Custom Fields
     <% end %>
+
+      <%= link_to new_import_upload_path(
+                    "import_upload[owner_id]": @form_type.id,
+                    "import_upload[owner_type]": "FormType",
+                    "import_upload[import_type]": "FormCustomField",
+                    "sample_upload": "FORM_CUSTOM_FIELD_SAMPLE"
+                  ), id: "form_custom_fields_upload_btn",
+                  class: "btn btn-outline-primary" do %>
+                  <i class="ti ti-upload"></i> <%= t_common(:upload) %> Custom Fields
+      <% end %>
   </div>
 
 <% end %>
