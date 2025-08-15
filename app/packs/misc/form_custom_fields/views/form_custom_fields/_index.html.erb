@@ -1,0 +1,36 @@
+<div data-controller="datatable">
+    <table class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th>
+            Position
+          </th>
+          <th>
+            Import Column Name
+          </th>
+          <th>
+            Label
+          </th>
+          <th>
+            Type
+          </th>
+          <th>
+            Properties
+          </th>
+          <th>
+            Condition
+          </th>
+          <th>
+            Step
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <% form_custom_fields.each do |f| %>
+          <%= render "/form_custom_fields/form_custom_field", f: f unless (f.internal && params[:internal].blank?) %>
+        <% end %>
+      </tbody>
+
+    </table>
+
+  </div>

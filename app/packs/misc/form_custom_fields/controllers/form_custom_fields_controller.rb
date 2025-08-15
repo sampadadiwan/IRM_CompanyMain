@@ -3,7 +3,9 @@ class FormCustomFieldsController < ApplicationController
 
   # GET /form_custom_fields or /form_custom_fields.json
   def index
-    @form_custom_fields = FormCustomField.all
+    @form_custom_fields = policy_scope(FormCustomField)
+    @form_custom_fields = @form_custom_fields.where(form_type_id: params[:form_type_id]) if params[:form_type_id].present?
+    @form_custom_fields = @form_custom_fields.order(:position)
   end
 
   # GET /form_custom_fields/1 or /form_custom_fields/1.json

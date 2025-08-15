@@ -8,7 +8,7 @@
         </td>
         <td>
           <%= @form_custom_field.name %>
-        </td>    
+        </td>
       </tr>
           <tr>
         <td>
@@ -16,7 +16,7 @@
         </td>
         <td>
           <%= @form_custom_field.field_type %>
-        </td>    
+        </td>
       </tr>
           <tr>
         <td>
@@ -24,7 +24,7 @@
         </td>
         <td>
           <%= @form_custom_field.required %>
-        </td>    
+        </td>
       </tr>
           <tr>
         <td>
@@ -32,10 +32,10 @@
         </td>
         <td>
           <%= @form_custom_field.form_type_id %>
-        </td>    
+        </td>
       </tr>
-    
-  
+
+
 </table>
 
 
@@ -46,7 +46,7 @@
   <%= link_to :back, {class: "btn btn-outline-primary"} do %>
     <i class="ti ti-arrow-left"></i> Back
   <% end %> |
-
+ |
   <%= button_to @form_custom_field, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" do %>
     <i class="ti ti-trash"></i> <%= t_common(:delete) %>
   <% end %>

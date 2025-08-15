@@ -569,15 +569,7 @@ Then('I should see the kyc documents {string}') do |docs|
   end
 end
 
-Given('the entity has custom fields {string} for {string}') do |args, class_name|
-  puts "Creating custom fields for #{class_name} #{args.split('#')}"
-  ft = @entity.form_types.create!(name: class_name)
-  args.split("#").each do |arg|
-    cf = ft.form_custom_fields.build()
-    key_values(cf, arg)
-    cf.save!
-  end
-end
+
 
 Then('I should see ckyc and kra data comparison page') do
   expect(page).to have_content("CKYC")
