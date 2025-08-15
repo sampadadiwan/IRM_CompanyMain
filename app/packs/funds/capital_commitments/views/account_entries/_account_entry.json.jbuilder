@@ -1,8 +1,8 @@
-json.extract! account_entry, :id, :capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :entry_type, :name, :amount, :notes, :created_at, :updated_at
+json.extract! account_entry, :id, :capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :entry_type, :name, :amount, :notes, :created_at, :updated_at, :reporting_date, :period, :parent_name, :commitment_name
 
 json.amount_number account_entry.amount.to_f
-json.amount_cents account_entry.amount_cents
-json.reporting_date l(account_entry.reporting_date)
+json.amount account_entry.amount.to_d
+
 json.unit_type account_entry.capital_commitment&.unit_type
 json.fund_name account_entry.fund.name
 json.url account_entry_url(account_entry, format: :json)

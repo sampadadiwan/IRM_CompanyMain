@@ -1,50 +1,83 @@
-<% fund ||= nil %>        
-<% data_source ||= account_entries_path(params: params.to_unsafe_h, format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only], capital_commitment_id: params[:capital_commitment_id], jbuilder: true) %>    
+<% fund ||= nil %>
+<% data_source ||= account_entries_path(params: params.to_unsafe_h, format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only], capital_commitment_id: params[:capital_commitment_id], jbuilder: true) %>
 <% lazy_load_data ||= false %>
+
+<%
+  ransack_table_header = RansackTableHeader.new(AccountEntry, q: @q, current_user: current_user, records: account_entries, report_id: params["report_id"], turbo_frame: "account_entries_frame", referrer: request.referrer, snapshot: params[:snapshot])
+  custom_grid_columns = ransack_table_header.ag_selected_columns
+%>
 
 
 <div class="table-responsive">
 
-  <div data-controller="account-entries-ag" data-account-entries-ag-lazy-load-data-value=<%= lazy_load_data %>   
-    data-account-entries-ag-table-name-value="#account_entries_table">
-    
+  <div class="account_entry_ag_grid" data-controller="ag"
+    data-ag-grid-div-name-value="account_entry_ag_grid"
+    data-ag-lazy-load-data-value=<%= lazy_load_data %>
+    data-custom-columns='<%= custom_grid_columns.to_json %>'
+    data-group-by-column='<%= params[:group_by_column] %>'
+    data-ag-table-name-value="#account_entries_table" data-ag-custom-fields-value="" >
+
+
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
+      <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
 
-    <span>
-    
-      <%  
-        if params[:capital_commitment_id].present? || params[:fund_id].present?
-            account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
-            account_entry.entity_id = account_entry.fund.entity_id
-                
-      %>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <%
+          if params[:capital_commitment_id].present? || params[:fund_id].present?
+              account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id])
+              account_entry.entity_id = account_entry.fund.entity_id
 
-        <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
+        %>
 
-        <%= link_to "Upload", 
-                      new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
-                      "import_upload[owner_type]": "Fund", 
-                      "import_upload[import_type]": "AccountEntry", 
-                      "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                      { class: "btn btn-outline-primary"}   %> 
+          <%= link_to new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id),
+                      class: "btn btn-outline-primary d-inline-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-plus"></i> New Account Entry
+          <% end if policy(account_entry).new? %>
 
-      
-      <% end %>
+          <%= link_to new_import_upload_path("import_upload[owner_id]": account_entry.fund_id,
+                        "import_upload[owner_type]": "Fund",
+                        "import_upload[import_type]": "AccountEntry",
+                        "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
+                        class: "btn btn-outline-primary d-inline-flex align-items-center",
+                        data: { turbo: false } do %>
+            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+          <% end %>
+        <% end %>
 
-    
-      <%= link_to "Download", account_entries_path(capital_commitment_id: params[:capital_commitment_id], 
-                              fund_id: params[:fund_id], all: true, format: :xlsx), 
-                              class: "btn btn-outline-success" %>
-    </span>
+        <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
+        <div class="btn-group">
+          <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-download"></i> <%= t_common(:download) %>
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+                <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
+              <% end %>
+            </li>
+            <li>
+              <button class="dropdown-item" data-controller="export-xl"
+                      data-action="click->export-xl#export"
+                      data-tableid="account_entries"
+                      data-filename="Account Entries">
+                <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+              </button>
+            </li>
+            <% if params[:report_id].present? && params[:custom_xls_report].present? %>
+              <li>
+                <%= link_to xl_link + "&custom_xls_report=true", class: "dropdown-item", data: { turbo: false } do %>
+                  <i class="ti ti-file-spreadsheet"></i> Custom Report
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
 
+    <div id="account_entries_table" class="<%= get_ag_theme %>" data-source="<%= account_entries_path(params: params.to_unsafe_h, format: :json) %>">
+    </div>
   </div>
-
-  <div id="account_entries_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
-  </div>
-  
-</div>
-
-
 </div>
