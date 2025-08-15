@@ -1,4 +1,4 @@
-json.extract! capital_commitment, :id, :entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :call_amount, :distribution_amount, :folio_id, :investor_name, :unit_type, :notes, :created_at, :updated_at, :folio_currency
+json.extract! capital_commitment, :id, :entity_id, :investor_id, :fund_id, :folio_id, :investor_name, :unit_type, :notes, :created_at, :updated_at, :folio_currency
 
 json.url capital_commitment_url(capital_commitment, format: :json)
 
@@ -7,12 +7,14 @@ json.folio_link link_to(capital_commitment.folio_id, capital_commitment)
 
 json.percentage capital_commitment.percentage.to_f.round(2)
 json.full_name capital_commitment.investor_kyc&.full_name
-json.committed_amount_number capital_commitment.committed_amount.to_f
-json.call_amount_number capital_commitment.call_amount.to_f
-json.collected_amount_number capital_commitment.collected_amount.to_f
-json.distribution_amount_number capital_commitment.distribution_amount.to_f
+json.committed_amount capital_commitment.committed_amount.to_f
+json.call_amount capital_commitment.call_amount.to_f
+json.collected_amount capital_commitment.collected_amount.to_f
+json.distribution_amount capital_commitment.distribution_amount.to_f
 json.fund_currency capital_commitment.fund.currency
 json.fund_name capital_commitment.fund.name
+
+json.investor_kyc capital_commitment.investor_kyc&.as_json
 
 json.dt_actions begin
   links = []
