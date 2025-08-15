@@ -1,7 +1,10 @@
 class ImportFormCustomFields < ImportUtil
+  # No custom fields for FormCustomField
+  step nil, delete: :create_custom_fields
+
   STANDARD_HEADERS = [
     "Label", "Name", "Field Type", "Required",
-    "Created At", "Updated At", "Has Attachment", "Position", "Help Text",
+    "Has Attachment", "Position", "Help Text",
     "Read Only", "Show User IDs", "Step", "Condition On", "Condition Criteria",
     "Condition Params", "Condition State", "Internal", "Regulatory Field", "Regulation Type"
   ].freeze
@@ -29,19 +32,19 @@ class ImportFormCustomFields < ImportUtil
       name: row_data["Name"],
       label: row_data["Label"],
       field_type: row_data["Field Type"],
-      required: row_data["Required"],
-      has_attachment: row_data["Has Attachment"],
+      required: row_data["Required"].downcase == "true",
+      has_attachment: row_data["Has Attachment"].downcase == "true",
       position: row_data["Position"],
       help_text: row_data["Help Text"],
-      read_only: row_data["Read Only"],
+      read_only: row_data["Read Only"].downcase == "true",
       show_user_ids: row_data["Show User IDs"],
       step: row_data["Step"],
       condition_on: row_data["Condition On"],
       condition_criteria: row_data["Condition Criteria"],
       condition_params: row_data["Condition Params"],
       condition_state: row_data["Condition State"],
-      internal: row_data["Internal"],
-      regulatory_field: row_data["Regulatory Field"],
+      internal: row_data["Internal"].downcase == "true",
+      regulatory_field: row_data["Regulatory Field"].downcase == "true",
       regulation_type: row_data["Regulation Type"]
     )
 

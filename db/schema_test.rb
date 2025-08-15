@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_08_09_040900) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_15_050236) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1461,7 +1461,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_09_040900) do
     t.string "js_events"
     t.boolean "regulatory_field", default: false
     t.text "regulation_type"
+    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
+    t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
 
