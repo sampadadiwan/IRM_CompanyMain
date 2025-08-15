@@ -2,7 +2,7 @@
 
 <div class="row" data-controller="pivot-filter">
   <div class="form-group col-2">
-    <%= form.check_box :pivot, { class: "form-check-input", name: "pivot", checked: params[:pivot].present?, data: { "pivot-filter-target": "pivotCheckbox", action: "change->pivot-filter#toggleFieldsVisibility" } }, "true", "false" %>
+    <%= form.check_box :pivot, { class: "form-check-input", name: "pivot", checked: params[:pivot]=="true", data: { "pivot-filter-target": "pivotCheckbox", action: "change->pivot-filter#toggleFieldsVisibility" } }, "true", "false" %>
     <small class="form-text text-muted">Pivot.</small>
   </div>
 
