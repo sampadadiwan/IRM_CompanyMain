@@ -2,7 +2,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
 
-    <span>  
+    <span>
       <button class="btn btn-outline-success" data-controller="export-xl"
         data-action="click->export-xl#export"
         data-tableid="account_entries"
@@ -15,10 +15,10 @@
 <table id="account_entries" class="table table-bordered">
   <thead>
     <tr>
-      <% if params[:hide_commitment].blank? %>
+      <% if params[:hide_commitment] == "false" %>
         <th>Capital Commitment</th>
       <% end %>
-      <% if params[:hide_parent].blank? %>
+      <% if params[:hide_parent] == "false" %>
         <th style="min-width: 200px;">Parent</th>
       <% end %>
 
@@ -27,10 +27,10 @@
       <% end %>
     </tr>
     <tr>
-      <% if params[:hide_commitment].blank? %>
+      <% if params[:hide_commitment] == "false" %>
         <th></th>
       <% end %>
-      <% if params[:hide_parent].blank? %>      
+      <% if params[:hide_parent] == "false" %>
         <th></th>
       <% end %>
       <% @pivot.groups.each do |group| %>
@@ -43,26 +43,26 @@
   <tbody>
     <% @pivot.rows.each do |commitment_name, capital_commitment_id, parent_name, parent_type, parent_id| %>
       <tr>
-        <% if params[:hide_commitment].blank? %>
+        <% if params[:hide_commitment] == "false" %>
         <td>
-          <%= link_to commitment_name, 
-                capital_commitment_path(id: capital_commitment_id), 
+          <%= link_to commitment_name,
+                capital_commitment_path(id: capital_commitment_id),
                 target: "_blank" if commitment_name && capital_commitment_id %>
         </td>
         <% end %>
 
-        <% if params[:hide_parent].blank? %>
+        <% if params[:hide_parent] == "false" %>
         <td>
-          <%= link_to parent_name,  
-                "/#{parent_type.underscore.pluralize}/#{parent_id}", 
+          <%= link_to parent_name,
+                "/#{parent_type.underscore.pluralize}/#{parent_id}",
                 target: "_blank" if parent_type && parent_id if parent_name.present? %>
         </td>
         <% end %>
-        
+
         <% @pivot.groups.each do |group| %>
           <% @pivot.dates_by_group[group].each do |date| %>
             <%
-              value = @pivot.structured_data[[commitment_name, capital_commitment_id, parent_name, parent_type, parent_id]].dig(group, date) 
+              value = @pivot.structured_data[[commitment_name, capital_commitment_id, parent_name, parent_type, parent_id]].dig(group, date)
 
               display_value = number_with_precision(value.amount.to_d, precision: 2, delimiter: ',') if value&.amount.present?
             %>
@@ -74,7 +74,7 @@
   </tbody>
 </table>
 
-<% if params[:show_chart].present? %>
+<% if params[:show_chart] == "true" %>
   <%= render ToggleCard.new(title: "Chart", css_class: "show_ae_pivot_chart", state: "show") do %>
     <%= line_chart @pivot.chart,  library: { title: { text: "" } } %>
   <% end %>
