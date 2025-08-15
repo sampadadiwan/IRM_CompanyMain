@@ -1,76 +1,77 @@
 
 
-<div class="row">
-  <div class="form-group col">
-    <%= form.check_box :pivot, { class: "form-check-input", name: "pivot", checked: params[:pivot].present? }, "true", "false" %>
+<div class="row" data-controller="pivot-filter">
+  <div class="form-group col-2">
+    <%= form.check_box :pivot, { class: "form-check-input", name: "pivot", checked: params[:pivot].present?, data: { "pivot-filter-target": "pivotCheckbox", action: "change->pivot-filter#toggleFieldsVisibility" } }, "true", "false" %>
     <small class="form-text text-muted">Pivot.</small>
   </div>
 
-  <div class="form-group col">
-    <%= form.check_box :show_chart, { class: "form-check-input", name: "show_chart", checked: params[:show_chart] == "true" }, "true", "false" %>
-    <small class="form-text text-muted">Show Charts.</small>
+  <div id="pivot-fields" class="col-10 row <%= "d-none" unless params[:pivot].present? %>" data-pivot-filter-target="pivotFields">
+    <div class="form-group col">
+      <%= form.check_box :show_chart, { class: "form-check-input", name: "show_chart", checked: params[:show_chart] == "true" }, "true", "false" %>
+      <small class="form-text text-muted">Show Charts.</small>
+    </div>
+
+    <div class="form-group col">
+      <%= form.check_box :hide_parent, { class: "form-check-input", name: "hide_parent", checked: params[:hide_parent] == "true" }, "true", "false" %>
+      <small class="form-text text-muted">Hide parent.</small>
+    </div>
+
+    <div class="form-group col">
+      <%= form.check_box :hide_commitment, { class: "form-check-input", name: "hide_commitment", checked: params[:hide_commitment] == "true" }, "true", "false" %>
+      <small class="form-text text-muted">Hide commitment.</small>
+    </div>
+
+    <div class="form-group col">
+      <%= form.check_box :show_breakdown, { class: "form-check-input", name: "show_breakdown", checked: params[:show_breakdown] == "true" }, "true", "false" %>
+      <small class="form-text text-muted">Show breakdown.</small>
+    </div>
+
+    <%= form.hidden_field :template, name: "template", value: "index_group" %>
+
+    <%
+     group_by_options = [
+        ["Name", "name"],
+        ["Entry Type", "entry_type"]
+      ]
+    %>
+
+    <div class="form-group col-2">
+      <%= form.select :group_by, group_by_options, { include_hidden: false, include_blank: false, selected: params[:group_by] }, class: "form-control select2", name: "group_by" %>
+      <small class="form-text text-muted">Select the field to group by.</small>
+    </div>
   </div>
 
-  <div class="form-group col">
-    <%= form.check_box :hide_parent, { class: "form-check-input", name: "hide_parent", checked: params[:hide_parent] == "true" }, "true", "false" %>
-    <small class="form-text text-muted">Hide parent.</small>
+  <div id="non-pivot-fields" class="col-10 row <%= "d-none" if params[:pivot].present? %>" data-pivot-filter-target="nonPivotFields">
+     <%
+      field_names = ["entry_type", "unit_type", "fund_name", "account_entry_name"]
+
+      options = field_names.map do |field|
+        [field.humanize.titleize, field]
+      end
+
+      options.sort_by! { |label, value| label }
+    %>
+
+    <div class="form-group col">
+      <%= form.select :group_fields, options, {include_hidden: false, selected: params[:group_fields]}, class: "form-control select2", name: "group_fields[]", multiple: true  %>
+      <small class="form-text text-muted">Select the fields to group by.</small>
+    </div>
+
+    <div class="form-group col d-none">
+      <%= form.select :agg_type, ["sum", "count", "max", "min"], {selected: params[:agg_type]}, class: "form-control", name: "agg_type"  %>
+      <small class="form-text text-muted">Select aggregation function.</small>
+    </div>
+
+
+    <div class="form-group col d-none">
+      <%= form.select :agg_type, ["sum", "count", "max", "min"], {selected: params[:agg_type]}, class: "form-control", name: "agg_type"  %>
+      <small class="form-text text-muted">Select aggregation function.</small>
+    </div>
+
+    <div class="form-group col d-none">
+      <%= form.select :agg_field, [:amount], {selected: params[:agg_field]}, class: "form-control", name: "agg_field"  %>
+      <small class="form-text text-muted">Select the field to aggregate.</small>
+    </div>
   </div>
-
-  <div class="form-group col">
-    <%= form.check_box :hide_commitment, { class: "form-check-input", name: "hide_commitment", checked: params[:hide_commitment] == "true" }, "true", "false" %>
-    <small class="form-text text-muted">Hide commitment.</small>
-  </div>
-
-  <div class="form-group col">
-    <%= form.check_box :show_breakdown, { class: "form-check-input", name: "show_breakdown", checked: params[:show_breakdown] == "true" }, "true", "false" %>
-    <small class="form-text text-muted">Show breakdown.</small>
-  </div>
-
-  <%= form.hidden_field :template, name: "template", value: "index_group" %>
-
-  <%
-   group_by_options = [
-      ["Name", "name"],
-      ["Entry Type", "entry_type"]
-    ]
-  %>
-
-  <div class="form-group col-2">
-    <%= form.select :group_by, group_by_options, { include_hidden: false, include_blank: false, selected: params[:group_by] }, class: "form-control select2", name: "group_by" %>
-    <small class="form-text text-muted">Select the field to group by.</small>
-  </div>
-
-
-  <%
-    field_names = ["entry_type", "unit_type", "fund_name", "account_entry_name"]
-
-    options = field_names.map do |field|
-      [field.humanize.titleize, field]
-    end
-
-    options.sort_by! { |label, value| label }
-  %>
-
-  <div class="form-group col-2">
-    <%= form.select :group_fields, options, {include_hidden: false, selected: params[:group_fields]}, class: "form-control select2", name: "group_fields[]", multiple: true  %>
-    <small class="form-text text-muted">Select the fields to group by.</small>
-  </div>
-
-  <div class="form-group col d-none">
-    <%= form.select :agg_type, ["sum", "count", "max", "min"], {selected: params[:agg_type]}, class: "form-control", name: "agg_type"  %>
-    <small class="form-text text-muted">Select aggregation function.</small>
-  </div>
-
-
-  <div class="form-group col d-none">
-    <%= form.select :agg_type, ["sum", "count", "max", "min"], {selected: params[:agg_type]}, class: "form-control", name: "agg_type"  %>
-    <small class="form-text text-muted">Select aggregation function.</small>
-  </div>
-
-  <div class="form-group col d-none">
-    <%= form.select :agg_field, [:amount], {selected: params[:agg_field]}, class: "form-control", name: "agg_field"  %>
-    <small class="form-text text-muted">Select the field to aggregate.</small>
-  </div>
-
-
 </div>
