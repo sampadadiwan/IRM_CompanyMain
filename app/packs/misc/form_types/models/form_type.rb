@@ -3,7 +3,7 @@ class FormType < ApplicationRecord
 
   belongs_to :entity
 
-  validates :name, presence: true
+  validates :name, :tag, presence: true
   validates :name, length: { maximum: 255 }
   validates :tag, length: { maximum: 50 }
   validates :tag, uniqueness: { scope: %i[entity_id name] }, allow_blank: true
