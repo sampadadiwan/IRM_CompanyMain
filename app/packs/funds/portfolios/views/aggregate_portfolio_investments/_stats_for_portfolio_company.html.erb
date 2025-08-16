@@ -1,0 +1,49 @@
+<% if portfolio_company %>
+  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company]), expires_in: 5.day) do %>
+    <% target_currency = portfolio_company.entity.currency %>
+    <% params[:force_units] = target_currency %>
+
+    <%
+      as_of_date = Date.current
+      entity_id = portfolio_company.entity.id
+
+      net_bought_amount_cents = portfolio_company.portfolio_investments.sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.net_bought_amount_cents, as_of_date, entity_id) || 0
+      end
+      sold_amount_cents = portfolio_company.aggregate_portfolio_investments.sum do |api|
+        ExchangeRate.convert(api.investment_instrument.currency, target_currency, api.sold_amount_cents, as_of_date, entity_id) || 0
+      end
+      fmv_cents = portfolio_company.portfolio_investments.sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, as_of_date, entity_id) || 0
+      end
+      cost_of_remaining_cents = portfolio_company.portfolio_investments.sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, as_of_date, entity_id) || 0
+      end
+      income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
+        ExchangeRate.convert(pc.currency, target_currency, pc.amount_cents, as_of_date, entity_id) || 0
+      end
+    %>
+
+    <% cards_data = [
+      { path: nil, stat: money_to_currency(Money.new(net_bought_amount_cents, target_currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "currency-dollar" },
+      { path: nil, stat: money_to_currency(Money.new(sold_amount_cents, target_currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "cash" },
+      { path: nil, stat: money_to_currency(Money.new(fmv_cents, target_currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph" },
+      { path: nil, stat: money_to_currency(Money.new(cost_of_remaining_cents, target_currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar" },
+      { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar" },
+    ] %>
+
+    <div class="row">
+      <% cards_data.each do |card_data| %>
+        <%= render(NumberStatsComponent.new(
+                    path: card_data[:path],
+                    amount: card_data[:stat],
+                    subtitle: card_data[:subtitle],
+                    progress_bar_color: card_data[:progress_bar_color],
+                    text_info: card_data[:text_info]
+        )) %>
+      <% end %>
+    </div>
+
+    <% params[:force_units] = nil %>
+  <% end %>
+<% end %>

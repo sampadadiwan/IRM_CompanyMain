@@ -1,6 +1,7 @@
-<% 
+<%
   uri_params ||= {}
   fund ||= uri_params[:fund]
+  portfolio_company ||= @investor
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -10,5 +11,10 @@
       )
     ) do %>
   <!-- This block becomes the `content` inside the component -->
-  <%= render "aggregate_portfolio_investments/stats",  fund: %>
+  <% if fund %>
+    <%= render "aggregate_portfolio_investments/stats",  fund: %>
+  <% elsif portfolio_company%>
+    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: %>
+  <% end %>
+
 <% end %>
