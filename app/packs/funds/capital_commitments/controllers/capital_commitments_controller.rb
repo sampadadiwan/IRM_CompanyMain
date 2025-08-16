@@ -117,6 +117,7 @@ class CapitalCommitmentsController < ApplicationController
   def show
     respond_to do |format|
       format.html
+      format.json
       format.pdf do
         FerrumPdf.browser(timeout: 60)
         pdf = render_pdf

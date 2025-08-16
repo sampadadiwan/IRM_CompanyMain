@@ -26,6 +26,8 @@ class CapitalCommitment < ApplicationRecord
                        "Collected" => "collected_amount",
                        "Distributed" => "distribution_amount" }.freeze
 
+  ADDITIONAL_COLUMNS_FROM = [InvestorKyc, Investor].freeze
+
   INVESTOR_TAB_STANDARD_COLUMNS = {
     "Fund Name" => "fund_name",
     "Investing Entity" => "investor_kyc_full_name",
@@ -312,7 +314,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency total_units_amount units_amount_minus_collected foreign_currency_commitment].sort
+    %w[created_at updated_at folio_id commitment_date fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount esign_emails folio_currency total_units_amount units_amount_minus_collected foreign_currency_commitment json_fields].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

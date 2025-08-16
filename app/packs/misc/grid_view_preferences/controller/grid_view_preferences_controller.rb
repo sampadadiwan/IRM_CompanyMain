@@ -112,8 +112,18 @@ class GridViewPreferencesController < ApplicationController
       @parent.model.constantize
     end
     @field_options = model_class::STANDARD_COLUMNS
+
+    # Check if the model_class defines ADDITIONAL_COLUMNS
+    if model_class.const_defined?(:ADDITIONAL_COLUMNS_FROM)
+      model_class::ADDITIONAL_COLUMNS_FROM.each do |add_class|
+        # Merge additional columns from the class into field_options but add a prefix to the keys and values
+        @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_class.name}.#{key}" }.transform_values { |value| "#{add_class.name.underscore}.#{value}" })
+      end
+    end
+
     form_type = FormType.find_by(entity_id: current_user.entity_id, name: model_class.to_s)
     @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s) if form_type.present?
+
     @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
   end
 

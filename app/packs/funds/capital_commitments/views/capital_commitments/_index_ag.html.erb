@@ -1,11 +1,24 @@
+<% cc_turbo_frame = "capital_commitments_frame"%>
 <% fund ||= nil; cols ||= params[:cols] %>
 <% data_source ||= capital_commitments_path(params: params.to_unsafe_h, format: :json, all: true, jbuilder: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
 
+<%
+  ransack_table_header = RansackTableHeader.new(CapitalCommitment, q: @q, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: cc_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot])
+  custom_grid_columns = ransack_table_header.ag_selected_columns
+  group_by_column = params[:group_by_column]
+%>
+
 <%= render "/capital_commitments/index_header", fund: fund, xl_link: xl_link %>
 
-<div id="capital_commitments" data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments_table">
+<div class="capital_commitments_ag_grid" data-controller="ag"
+  data-ag-grid-div-name-value="capital_commitments_ag_grid"
+  data-ag-lazy-load-data-value=<%= lazy_load_data %>
+  data-custom-columns='<%= custom_grid_columns.to_json %>'
+  data-group-by-column='<%= group_by_column %>'
+  data-ag-table-name-value="#capital_commitments_table"
+  data-ag-custom-fields-value="" >
   <div id="capital_commitments_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
   </div>
 </div>

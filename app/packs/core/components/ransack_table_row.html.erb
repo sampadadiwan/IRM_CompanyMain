@@ -3,7 +3,7 @@
       <% if attribute.start_with?("custom_fields.") %>
         <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
       <% else %>
-        <% value = @model.send(attribute) %>
+        <% value = attribute.split('.').inject(@model) { |object, method| object&.send(method) } %>
         <% if  value.is_a?(Date) %>
           <%= l(value) %>
         <% elsif value.is_a?(Money) %>
