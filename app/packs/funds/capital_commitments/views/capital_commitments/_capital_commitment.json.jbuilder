@@ -15,6 +15,8 @@ json.fund_currency capital_commitment.fund.currency
 json.fund_name capital_commitment.fund.name
 
 json.investor_kyc capital_commitment.investor_kyc&.as_json
+json.investor capital_commitment.investor&.as_json
+json.custom_fields capital_commitment.json_fields
 
 json.dt_actions begin
   links = []

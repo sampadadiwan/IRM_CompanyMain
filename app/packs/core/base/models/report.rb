@@ -64,6 +64,14 @@ class Report < ApplicationRecord
 
   def model
     @model ||= url.split('?').first.delete_prefix('/').singularize.camelize
+    # Special handling for KYC
+    if @model == "InvestorKyc"
+      if category == "IndividualKyc"
+        @model = "IndividualKyc"
+      elsif category == "NonIndividualKyc"
+        @model = "NonIndividualKyc"
+      end
+    end
   end
 
   def set_model
