@@ -5,17 +5,25 @@
 <% data_source ||= interests_path(params: params.to_unsafe_h, format: :json, all: true, secondary_sale_id: params[:secondary_sale_id], jbuilder: true) %>
 
 
+<%
+  ransack_table_header = RansackTableHeader.new(Interest, q: @q, current_user: current_user, records: @q.result, report_id: params["report_id"], referrer: request.referrer, snapshot: params[:snapshot], turbo_frame: "interests_frame")
+  custom_grid_columns = ransack_table_header.ag_selected_columns
+%>
 <div class="table-responsive">
 
-  <div data-controller="interests-ag" data-interests-ag-lazy-load-data-value=<%= false %>   
-    data-interests-ag-table-name-value="#interests_table" data-interests-ag-custom-fields-value="<%=@secondary_sale.interest_pivot_custom_fields%>" >
-    
+  <div class="interests_ag_grid" data-controller="ag"
+    data-ag-grid-div-name-value="interests_ag_grid"
+    data-ag-lazy-load-data-value=<%= false %>
+    data-custom-columns='<%= custom_grid_columns.to_json %>'
+    data-group-by-column='<%= params[:group_by_column] %>'
+    data-ag-table-name-value="#interests_table" data-ag-custom-fields-value="<%=@secondary_sale.interest_pivot_custom_fields%>" >
+
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Interests</h1>        
+        <h1 class="h3 mb-0 text-gray-800">Interests</h1>
     </div>
 
-    <%#= render "interests/index_header", secondary_sale: @secondary_sale, secondary_sale_id: %>
+    <%= render "interests/index_header", secondary_sale: @secondary_sale, secondary_sale_id: secondary_sale_id %>
 
     <div id="interests_table" class="<%= get_ag_theme %>" data-source="<%= data_source %>">
     </div>

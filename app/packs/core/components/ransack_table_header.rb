@@ -31,7 +31,7 @@ class RansackTableHeader < ViewComponent::Base
     columns = report.ag_selected_columns if report.present?
 
     form_type = entity.form_types.find_by(name: @model.to_s)
-    columns = form_type.ag_selected_columns if columns.blank?
+    columns = form_type&.ag_selected_columns if columns.blank?
     columns = @default_columns_map if columns.blank? && @default_columns_map.present?
     columns = @model.ag_grids_default_columns if columns.blank?
 

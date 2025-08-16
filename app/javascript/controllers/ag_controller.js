@@ -5,7 +5,7 @@ export default class extends BaseAgGrid {
 
   columnDefs() {
 
-    
+
     const controller = this;
     const html_column = this.html_column;
     const formatNumberWithCommas = this.formatNumberWithCommas;
@@ -31,7 +31,7 @@ export default class extends BaseAgGrid {
       } else if (data_type === "Number" || data_type === "Decimal") {
         numericCols.push(key);
         columnDefs.push(numberFormatColumn(controller, key, label, formatNumberWithCommas));
-      } else if (data_type === "Html" || data_type === "Boolean") {
+      } else if (data_type.toLowerCase() === "html" || data_type === "Boolean") {
         columnDefs.push(html_column(controller, key, label));
       } else {
         columnDefs.push(textColumn(controller, key, label));
@@ -45,7 +45,7 @@ export default class extends BaseAgGrid {
       headerName: "Actions",
     });
 
-    const lastColIndex = columnDefs.length - 2; 
+    const lastColIndex = columnDefs.length - 2;
     if (columnDefs[lastColIndex]) {
       columnDefs[lastColIndex].flex = 1;
     }
@@ -62,5 +62,5 @@ export default class extends BaseAgGrid {
       this.gridOptions.columnApi.setRowGroupColumns([groupByColumn]);
     }
   }
- 
+
 }

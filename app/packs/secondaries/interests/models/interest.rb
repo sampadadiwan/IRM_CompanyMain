@@ -7,6 +7,19 @@ class Interest < ApplicationRecord
   include WithIncomingEmail
   include WithAllocations
 
+  STANDARD_COLUMNS = {
+    "Buyer Entity" => "buyer_entity_name",
+    "Investor" => "investor_name",
+    "User" => "user",
+    "Quantity" => "quantity",
+    "Price" => "price",
+    "Allocation Quantity" => "allocation_quantity",
+    "Allocation Amount" => "allocation_amount",
+    "Status" => "short_listed_status",
+    "Verified" => "verified",
+    "Created At" => "created_at"
+  }.freeze
+
   belongs_to :user, optional: true
   belongs_to :investor
   belongs_to :final_agreement_user, class_name: "User", optional: true
