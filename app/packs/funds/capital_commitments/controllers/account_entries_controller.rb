@@ -93,7 +93,7 @@ class AccountEntriesController < ApplicationController
         return
       end
       @time_series = AccountEntryTimeSeries.new(@account_entries).call
-    elsif params[:pivot].present?
+    elsif params[:pivot] == "true"
       # Create a pivot table
       group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
       show_breakdown = params[:show_breakdown] == "true" # can be "true" or "false"
