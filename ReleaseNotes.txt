@@ -1,3 +1,24 @@
+V9.0.91
+#####################################
+f1ce3c570 Merge pull request #963 from ausangshukla/data_card
+3ee57f6ca Now check for pivot == true
+ee588abc9 Added better support for Grid VP, for KYCs
+3e7bc6d8a Added API stats widget to Portfolio COmpany Dashboard
+de74f3ba6 Imroved data card with fields
+56c01b1f7 Upgraded ag table for interests
+f205c537d Added better custom grid cols for ADDITIONAL_COLUMNS_FROM
+3c35d5305 Changed ag grid for AE
+028f0d42d Changed commitments-ag to ag controller
+cd36b7ab9 Moved the js to stimuls controller
+250b4593f Added show_breakdown to AE filter
+5476c0327 Added import FCF tests
+b7111c953 Added import of kyc custom fields
+dbdd27f1e Better download of FCF
+4493d92d9 Added better AE filters
+66f589768 Made form type tag mandatory
+a725c1a84 Added release notes
+
+
 V9.0.90
 #####################################
 a56a3fb90 Added better view all custom notification for kyc page

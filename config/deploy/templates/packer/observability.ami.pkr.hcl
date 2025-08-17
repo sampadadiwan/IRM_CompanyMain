@@ -13,6 +13,22 @@ variable "ami_date" {
   default = ""  # Optional default value (if needed)
 }
 
+variable "source_ami" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_id" {
+  type = string
+}
+
+variable "security_group_id" {
+  type = string
+}
+
 source "amazon-ebs" "ubuntu" {
   ami_name      = "Observability-${var.ami_date}"
   instance_type = "t2.micro"
@@ -20,20 +36,11 @@ source "amazon-ebs" "ubuntu" {
 
   // skip_region_validation = "true"
   associate_public_ip_address = "true"
-  
-  // Dev ap-south-1
-  // source_ami                  = "ami-0522ab6e1ddcc7055"
-  // vpc_id                      = "vpc-07ca6f6769142b3de" 
-  // subnet_id                   = "subnet-009ecf23ee9b89068"
-  // security_group_id           = "sg-0af3021d12d4d62ba"
-  
-  // Prod ap-south-1
-  source_ami                  = "ami-0522ab6e1ddcc7055"  
-  vpc_id                      = "vpc-046e5a8eaa85659c7" 
-  subnet_id                   = "subnet-06b5ffab112b6d45d"
+  source_ami                  = var.source_ami
+  vpc_id                      = var.vpc_id
+  subnet_id                   = var.subnet_id
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-0b99bcf605c36edf1"
-  
+  security_group_id           = var.security_group_id
   ssh_username                = "ubuntu"
 
    # Add tags for the AMI
@@ -113,7 +120,7 @@ build {
       // log rotate
       "sudo apt install --yes logrotate",
 
-      
+
     ]
   }
 }

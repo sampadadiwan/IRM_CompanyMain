@@ -19,44 +19,36 @@ variable "mysql_root_password" {
   type = string
 }
 
-###############################################
-# AMAZON EBS SOURCE CONFIG - STAGING
-###############################################
-source "amazon-ebs" "staging" {
-  ami_name                    = "DB_Redis_ES_Staging-${var.ami_date}"
-  instance_type               = "t2.micro"
-  region                      = "ap-south-1"
-  source_ami                  = "ami-0522ab6e1ddcc7055"
-  associate_public_ip_address = "true"
-  vpc_id                      = "vpc-staging-id"         # Replace with your staging VPC ID
-  subnet_id                   = "subnet-staging-id"      # Replace with your staging Subnet ID
-  ssh_interface               = "public_ip"
-  security_group_id           = "sg-staging-id"          # Replace with your staging SG ID
-  ssh_username                = "ubuntu"
-
-  tags = {
-    "Name"      = "DB_Redis_ES_Staging"
-    "CreatedBy" = "Packer"
-  }
+variable "source_ami" {
+  type = string
 }
 
-###############################################
-# AMAZON EBS SOURCE CONFIG - PRODUCTION
-###############################################
-source "amazon-ebs" "production" {
-  ami_name                    = "DB_Redis_ES_Prod-${var.ami_date}"
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_id" {
+  type = string
+}
+
+variable "security_group_id" {
+  type = string
+}
+
+source "amazon-ebs" "ubuntu" { # Renamed to 'ubuntu' for consistency with appserver.ami.pkr.hcl
+  ami_name                    = "DB_Redis_ES-${var.ami_date}"
   instance_type               = "t2.micro"
   region                      = "ap-south-1"
-  source_ami                  = "ami-0522ab6e1ddcc7055"
+  source_ami                  = var.source_ami
   associate_public_ip_address = "true"
-  vpc_id                      = "vpc-0cb0c5cad8c279582"            # Replace with your production VPC ID
-  subnet_id                   = "subnet-0cf73758b0fb6a9b5"         # Replace with your production Subnet ID
+  vpc_id                      = var.vpc_id
+  subnet_id                   = var.subnet_id
   ssh_interface               = "public_ip"
-  security_group_id           = "sg-001a351ad10185d5b"             # Replace with your production SG ID
+  security_group_id           = var.security_group_id
   ssh_username                = "ubuntu"
 
   tags = {
-    "Name"      = "DB_Redis_ES_Prod"
+    "Name"      = "DB_Redis_ES"
     "CreatedBy" = "Packer"
   }
 }
@@ -97,16 +89,17 @@ locals {
     "sudo service mysql restart",
 
     # Install percona
-    curl -O https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
-    sudo apt install ./percona-release_latest.$(lsb_release -sc)_all.deb
-    sudo percona-release setup pxb-80
-    sudo apt update
-    sudo apt install percona-xtrabackup-80
-    sudo apt install lz4 zstd
-    # sudo apt-get install awscli
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    sudo ./aws/install
+    "curl -O https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb",
+    "sudo apt install ./percona-release_latest.$(lsb_release -sc)_all.deb",
+    "sudo percona-release setup pxb-80",
+    "sudo apt update",
+    "sudo apt install -y percona-xtrabackup-80",
+    "sudo apt install -y lz4 zstd",
+    "# sudo apt-get install awscli",
+    "sudo apt install -y unzip",
+    "curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+    "unzip awscliv2.zip",
+    "sudo ./aws/install",
 
 
 
@@ -124,24 +117,8 @@ locals {
 # BUILD BLOCK - STAGING
 ###############################################
 build {
-  name    = "build-staging"
-  sources = ["source.amazon-ebs.staging"]
-
-  provisioner "shell" {
-    inline = local.setup_commands
-  }
-
-  provisioner "shell" {
-    inline = local.mysql_password_setup
-  }
-}
-
-###############################################
-# BUILD BLOCK - PRODUCTION
-###############################################
-build {
-  name    = "build-production"
-  sources = ["source.amazon-ebs.production"]
+  name    = "DB_Redis_ES"
+  sources = ["source.amazon-ebs.ubuntu"]
 
   provisioner "shell" {
     inline = local.setup_commands

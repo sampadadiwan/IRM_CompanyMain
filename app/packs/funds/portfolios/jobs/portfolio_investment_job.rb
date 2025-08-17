@@ -3,7 +3,9 @@ class PortfolioInvestmentJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(id)
-    portfolio_investment = PortfolioInvestment.find(id)
-    portfolio_investment.setup_attribution
+    Chewy.strategy(:sidekiq) do
+      portfolio_investment = PortfolioInvestment.find(id)
+      portfolio_investment.setup_attribution
+    end
   end
 end
