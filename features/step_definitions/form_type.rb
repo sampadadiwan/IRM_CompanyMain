@@ -61,6 +61,6 @@ Then('There should be {string} form custom fields created with data in the sheet
     expect(fcf.internal.to_s).to eq(user_data['Internal'].to_s&.downcase)
     expect(fcf.reg_env).to eq(user_data['Regulatory Environment'])
     expect(fcf.meta_data).to eq(user_data['Metadata']) if user_data['Metadata'].present?
-    expect(fcf.info).to eq(user_data['Info']) if user_data['Info'].present?
+    expect(fcf.info.to_plain_text).to eq(user_data['Info']) if user_data['Info'].present?
   end
 end
