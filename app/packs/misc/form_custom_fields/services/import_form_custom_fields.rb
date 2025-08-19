@@ -6,7 +6,7 @@ class ImportFormCustomFields < ImportUtil
     "Label", "Name", "Field Type", "Required",
     "Has Attachment", "Position", "Help Text",
     "Read Only", "Show User IDs", "Step", "Condition On", "Condition Criteria",
-    "Condition Params", "Condition State", "Internal", "Regulatory Field", "Regulation Type"
+    "Condition Params", "Condition State", "Internal", "Regulatory Environment"
   ].freeze
 
   def standard_headers
@@ -44,8 +44,7 @@ class ImportFormCustomFields < ImportUtil
       condition_params: row_data["Condition Params"],
       condition_state: row_data["Condition State"],
       internal: row_data["Internal"].downcase == "true",
-      regulatory_field: row_data["Regulatory Field"].downcase == "true",
-      regulation_type: row_data["Regulation Type"]
+      reg_env: row_data["Regulatory Environment"]
     )
 
     form_custom_field.form_type_id = import_upload.owner_id

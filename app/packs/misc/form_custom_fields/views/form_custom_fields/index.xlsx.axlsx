@@ -6,7 +6,7 @@ wb.add_worksheet(name: "FormCustomFields") do |sheet|
                   "ID", "Name", "Label", "Field Type", "Required", "Form Type ID",
                   "Created At", "Updated At", "Has Attachment", "Position", "Help Text",
                   "Read Only", "Show User IDs", "Step", "Condition On", "Condition Criteria",
-                  "Condition Params", "Condition State", "Internal", "Regulatory Field", "Regulation Type"
+                  "Condition Params", "Condition State", "Internal", "Regulatory Environment"
                 ])
 
   # Create entries for each item
@@ -15,7 +15,7 @@ wb.add_worksheet(name: "FormCustomFields") do |sheet|
       fcf.id, fcf.name, fcf.label, fcf.field_type, fcf.required, fcf.form_type_id,
       fcf.created_at, fcf.updated_at, fcf.has_attachment, fcf.position, fcf.help_text,
       fcf.read_only, fcf.show_user_ids, fcf.step, fcf.condition_on, fcf.condition_criteria,
-      fcf.condition_params, fcf.condition_state, fcf.internal, fcf.regulatory_field, fcf.regulation_type
+      fcf.condition_params, fcf.condition_state, fcf.internal, fcf.reg_env
     ]
   end
 end
