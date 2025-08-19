@@ -59,7 +59,6 @@ Then('There should be {string} form custom fields created with data in the sheet
     expect(fcf.condition_params).to eq(user_data['Condition Params'])
     expect(fcf.condition_state).to eq(user_data['Condition State'])
     expect(fcf.internal.to_s).to eq(user_data['Internal'].to_s&.downcase)
-    expect(fcf.regulatory_field.to_s).to eq(user_data['Regulatory Field'].to_s&.downcase)
-    expect(fcf.regulation_type).to eq(user_data['Regulation Type'])
+    expect(fcf.reg_env).to eq(user_data['Regulatory Environment'])
   end
 end

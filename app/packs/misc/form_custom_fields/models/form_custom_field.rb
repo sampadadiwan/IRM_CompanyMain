@@ -10,6 +10,7 @@ class FormCustomField < ApplicationRecord
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
+  validates :reg_env, length: { maximum: 15 }
 
   validates :name, uniqueness: { scope: :form_type_id }
   validates :name, presence: true

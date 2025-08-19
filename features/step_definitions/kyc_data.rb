@@ -1,5 +1,5 @@
 Given('an entity with a fund and an investor exists') do
-  
+
   steps %(
       Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
       Given the user has role "company_admin"
@@ -29,13 +29,13 @@ When('I navigate to the new individual KYC page') do
 end
 
 When('I fill in {string} with {string}') do |field, data|
-  field = field.strip  
+  field = field.strip
   data = Time.zone.parse(data) if field.include?("date") && data.present?
   fill_in("individual_kyc_#{field}", with: data)
 end
 
 When('I fill in kyc data {string} with {string}') do |field, data|
-  field = field.strip  
+  field = field.strip
   data = Time.zone.parse(data) if field.include?("date") && data.present?
   fill_in("kyc_data_#{field}", with: data)
 end
@@ -86,7 +86,7 @@ Then('I fill in the form and it is populated with the CKYC data') do
   expect(find_field("individual_kyc_full_name").value).to eq(@kyc_data.full_name)
   expect(find_field("individual_kyc_PAN").value).to eq(@kyc_data.PAN)
   page.attach_file('./public/sample_uploads/example_pan.jpeg') do
-    within '#custom_file_upload_pan' do
+    within '#custom_file_upload_pan_tax_id' do
       click_on 'Choose file'
     end
   end
@@ -223,10 +223,10 @@ Given('CKYC and KRA are enabled for the entity with a valid FI code') do
 end
 
 Given('the investor has a verified user with KYC permissions') do
-  @investor_user.extended_permissions.set(:investor_kyc_create) 
-  @investor_user.extended_permissions.set(:investor_kyc_update) 
+  @investor_user.extended_permissions.set(:investor_kyc_create)
+  @investor_user.extended_permissions.set(:investor_kyc_update)
   @investor_user.extended_permissions.set(:investor_kyc_read)
-  @investor_user.save! 
+  @investor_user.save!
 end
 
 Given('I send a KYC request to the investor') do
@@ -240,7 +240,7 @@ Given('I send a KYC request to the investor') do
     # find_button("Send KYC to Stakeholder", visible: :all).click
   # end
   # find_button("Send KYC to Stakeholder", visible: :all).click
-  # 
+  #
   # button = find("form.deleteButton button", visible: :all)
   # page.execute_script("arguments[0].click()", button)
 
@@ -261,7 +261,7 @@ When('I log in as the investor user') do
 end
 
 When('I follow the KYC link from the email') do
-  
+
   puts "Checking email for #{@investor_user.email}"
   open_email(@investor_user.email)
   @investor_kyc = InvestorKyc.last
