@@ -1,5 +1,5 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids]
+  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids add_regulatory_fields]
 
   # GET /form_types or /form_types.json
   def index
@@ -95,6 +95,23 @@ class FormTypesController < ApplicationController
     end
   end
 
+  def add_regulatory_fields
+    reg_env = params[:reg_env]
+    back_to = params[:back_to] || form_type_path(@form_type)
+    if reg_env.blank?
+      redirect_to back_to, alert: "Regulatory environment must be specified."
+      return
+    end
+
+    @form_type.reg_env = reg_env
+
+    if @form_type.save
+      redirect_to back_to, notice: "#{reg_env} Reporting fields added successfully to #{@form_type.name} #{@form_type.tag.presence || @form_type.id}"
+    else
+      redirect_to back_to, alert: "Failed to add Reporting fields for #{reg_env} to #{@form_type.name} #{@form_type.tag.presence || @form_type.id}"
+    end
+  end
+
   # DELETE /form_types/1 or /form_types/1.json
   def destroy
     @form_type.destroy
@@ -137,6 +154,6 @@ class FormTypesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def form_type_params
-    params.require(:form_type).permit(:name, :tag, :entity_id, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info])
+    params.require(:form_type).permit(:name, :tag, :entity_id, :reg_env, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info reg_env])
   end
 end

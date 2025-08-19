@@ -1,9 +1,3 @@
-<%
-    struct = OpenStruct.new(model.properties)
-    fields = model.form_type.form_custom_fields.visible
-    fields = fields.where(step: step) if step.present?
-%>
-
 <div data-controller="form-custom-fields">
     <%= form.fields_for :properties, struct  do |builder| %>
         <% fields.each do |field| %>

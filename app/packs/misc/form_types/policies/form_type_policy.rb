@@ -29,6 +29,10 @@ class FormTypePolicy < ApplicationPolicy
     create?
   end
 
+  def add_regulatory_fields?
+    update?
+  end
+
   def edit?
     update?
   end

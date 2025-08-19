@@ -310,52 +310,55 @@
     </tr>
     <% end %>
 
-
     <% if params[:debug].present? %>
-    <tr>
-      <td>
-        Bank Verification Response
-      </td>
-      <td>
-        <%= investor_kyc.bank_verification_response %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Bank Verification Status
-      </td>
-      <td>
-        <%= investor_kyc.bank_verification_status %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Signature Data
-      </td>
-      <td>
-        <%= investor_kyc.signature_data %>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          Bank Verification Response
+        </td>
+        <td>
+          <%= investor_kyc.bank_verification_response %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Bank Verification Status
+        </td>
+        <td>
+          <%= investor_kyc.bank_verification_status %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Signature Data
+        </td>
+        <td>
+          <%= investor_kyc.signature_data %>
+        </td>
+      </tr>
 
-    <tr>
-      <td>
-        <%=pan_label%> Verification Response
-      </td>
-      <td>
-        <%= investor_kyc.pan_verification_response %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <%=pan_label%> Verification Status
-      </td>
-      <td>
-        <%= investor_kyc.pan_verification_status %>
-      </td>
-    </tr>
-
+      <tr>
+        <td>
+          <%=pan_label%> Verification Response
+        </td>
+        <td>
+          <%= investor_kyc.pan_verification_response %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <%=pan_label%> Verification Status
+        </td>
+        <td>
+          <%= investor_kyc.pan_verification_status %>
+        </td>
+      </tr>
     <% end %>
 
   </table>
 
+<% end %>
+
+<%# Investor User cannot see regulatory fields %>
+<% if !current_user&.curr_role_investor? %>
+  <%= render "form_custom_fields/reporting_fields", object: investor_kyc, edit_path: edit_reporting_fields_investor_kyc_path(investor_kyc)%>
 <% end %>

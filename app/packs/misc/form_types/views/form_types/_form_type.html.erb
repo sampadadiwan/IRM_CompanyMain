@@ -20,5 +20,29 @@
         <i class="ti ti-settings"></i> Configure Grids
       <% end %>
     <% end %>
+
+    <% if FormCustomField::REGULATORY_FIELD_MODELS.include?(form_type.name) %>
+
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-plus"></i> Add Reporting Fields
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+            <% ["SEBI"].each do |reg_env| %>
+
+              <%= button_to reg_env, add_regulatory_fields_form_type_path(id: form_type.id, reg_env: reg_env, back_to: form_types_path(params: params.to_unsafe_h)),
+                      method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                      data: { action: "click->confirm#popup", turbo: false,
+                              msg: "This will update the form type to include regulatory fields for #{reg_env}. Proceed?",
+                              method: :patch }%>
+           <% end %>
+          </div>
+        </div>
+      </div>
+
+    <% end %>
   </td>
 </tr>

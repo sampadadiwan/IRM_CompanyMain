@@ -16,6 +16,9 @@ class FormCustomField < ApplicationRecord
 
   has_rich_text :info
 
+  REGULATORY_ENVS = %w[SEBI CRISIL IFSC MAS].freeze
+  REGULATORY_FIELD_MODELS = %w[IndividualKyc NonIndividualKyc InvestmentInstrument].freeze
+
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select" }.freeze
 
   scope :writable, -> { where(read_only: false) }
@@ -24,6 +27,9 @@ class FormCustomField < ApplicationRecord
   # Internal fields are those that are setup by CapHive for SEBI reporting etc. Not changable by the company
   scope :internal, -> { where(internal: true) }
   scope :not_internal, -> { where(internal: false) }
+  scope :regulatory, -> { where.not(reg_env: [nil, ""]) }
+  scope :not_regulatory, -> { where(reg_env: [nil, ""]) }
+  scope :for_env, ->(env) { where(reg_env: env) }
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
 

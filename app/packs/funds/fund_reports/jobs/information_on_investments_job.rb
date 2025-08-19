@@ -34,15 +34,15 @@ class InformationOnInvestmentsJob
       data[index]["Name of Investee Company"]["Value"] = api.portfolio_company_name
       data[index]["PAN of Investee Company if available"]["Value"] = api.portfolio_company.pan
 
-      data[index]["Type of Investee Company"]["Value"] = inv_instrument.custom_fields.type_of_investee_company
-      data[index]["Type of Security"]["Value"] = inv_instrument.custom_fields.type_of_security
-      data[index]["Other Security Type"]["Value"] = inv_instrument.custom_fields.details_of_security
-      data[index]["Whether its an offshore investment?"]["Value"] = inv_instrument.custom_fields.offshore_investment
-      data[index]["ISIN"]["Value"] = inv_instrument.custom_fields.isin
+      data[index]["Type of Investee Company"]["Value"] = inv_instrument.custom_fields.sebi_type_of_investee_company
+      data[index]["Type of Security"]["Value"] = inv_instrument.custom_fields.sebi_type_of_security
+      data[index]["Other Security Type"]["Value"] = inv_instrument.custom_fields.sebi_details_of_security
+      data[index]["Whether its an offshore investment?"]["Value"] = inv_instrument.custom_fields.sebi_offshore_investment
+      data[index]["ISIN"]["Value"] = inv_instrument.custom_fields.sebi_isin
       data[index]["SEBI Registration Number of investee Company"]["Value"] = inv_instrument.custom_fields.sebi_registration_number
-      data[index]["Whether Investee company is an Associate"]["Value"] = inv_instrument.custom_fields.is_associate
-      data[index]["Whether it is managed or sponsored by AIF's manager or sponsor or their associates"]["Value"] = inv_instrument.custom_fields.is_managed_or_sponsored_by_aif
-      data[index]["Sector"]["Value"] = inv_instrument.custom_fields.sector
+      data[index]["Whether Investee company is an Associate"]["Value"] = inv_instrument.custom_fields.sebi_is_associate
+      data[index]["Whether it is managed or sponsored by AIF's manager or sponsor or their associates"]["Value"] = inv_instrument.custom_fields.sebi_is_managed_or_sponsored_by_aif
+      data[index]["Sector"]["Value"] = inv_instrument.custom_fields.sebi_sector
 
       api_as_of_date = api.as_of(end_date)
       # pis = api.portfolio_investments.where("investment_date <= ?", end_date)
@@ -84,15 +84,15 @@ class InformationOnInvestmentsJob
           Rails.logger.info "Skipping Aggregate Portfolio Investment #{api.id} as it has no portfolio investments with investment date before the end date"
           next
         end
-        type_of_investee_company = inv_instrument.custom_fields.type_of_investee_company
-        type_of_security = inv_instrument.custom_fields.type_of_security
-        details_of_security = inv_instrument.custom_fields.details_of_security
-        offshore_investment = inv_instrument.custom_fields.offshore_investment
-        isin = inv_instrument.custom_fields.isin
+        type_of_investee_company = inv_instrument.custom_fields.sebi_type_of_investee_company
+        type_of_security = inv_instrument.custom_fields.sebi_type_of_security
+        details_of_security = inv_instrument.custom_fields.sebi_details_of_security
+        offshore_investment = inv_instrument.custom_fields.sebi_offshore_investment
+        isin = inv_instrument.custom_fields.sebi_isin
         sebi_registration_number = inv_instrument.custom_fields.sebi_registration_number
-        is_associate = inv_instrument.custom_fields.is_associate
-        is_managed_or_sponsored_by_aif = inv_instrument.custom_fields.is_managed_or_sponsored_by_aif
-        sector = inv_instrument.custom_fields.sector
+        is_associate = inv_instrument.custom_fields.sebi_is_associate
+        is_managed_or_sponsored_by_aif = inv_instrument.custom_fields.sebi_is_managed_or_sponsored_by_aif
+        sector = inv_instrument.custom_fields.sebi_sector
 
         api_as_of_date = api.as_of(end_date)
         amount_invested = api_as_of_date.cost_of_remaining.to_d

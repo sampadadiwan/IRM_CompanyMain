@@ -14,6 +14,14 @@
                 <a href="#step-3" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">3</a>
                 <p>Step 3</p>
             </div>
+            <% regulatory_custom_fields = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory : [] %>
+            <% show_step_4_for_regulatory_fields = regulatory_custom_fields.present? && !current_user.curr_role_investor? %>
+            <% if show_step_4_for_regulatory_fields %>
+            <div class="stepwizard-step">
+                <a href="#step-4" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">4</a>
+                <p>Step 4</p>
+            </div>
+            <% end %>
         </div>
     </div>
   </div>
@@ -231,6 +239,7 @@
           </div>
           <% end %>
 
+         
           <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
 
           <% unless current_user.curr_role == "investor" %>
@@ -257,6 +266,36 @@
             <%= form.check_box :completed_by_investor, class: "form-check-input"  %>
           </div>
 
+
+          <div class="form-group">
+            <% if show_step_4_for_regulatory_fields %>
+              <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+            <% else %>
+              <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
+            <% end %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if show_step_4_for_regulatory_fields %>
+  <div class="col-md-6 setup-content" id="step-4">
+    <div class="">
+      <div class="card">
+        <div class="card-header"> 4. Reporting Fields </div>
+        <div class="card-body">
+          
+          <% if regulatory_custom_fields.present? %>
+            <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq
+            reg_envs.each do |reg_env| %>
+
+              <%= custom_form_fields(investor_kyc, form, custom_fields: regulatory_custom_fields.for_env(reg_env)) %>
+
+              <% end %>
+          <% end %>
+
           <div class="form-group">
             <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
           </div>
@@ -265,6 +304,8 @@
       </div>
     </div>
   </div>
+  <% end %>
+
 <% end %>
 
 </div>

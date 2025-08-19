@@ -44,17 +44,23 @@
     </td>
   </tr>
 
-  <%= display_custom_fields(@investment_instrument) %>
-
+<%= display_custom_fields(@investment_instrument) if current_user %>
 </table>
+
+<% end %>
+
+<% if !current_user&.curr_role_investor? %>
+  <%# Investor User cannot see regulatory fields%>
+  <%= render "form_custom_fields/reporting_fields", object: @investment_instrument %>
+<% end %>
+
 <div class="associated_entity">
   <% if policy(@investment_instrument).edit? %>
-    <%= link_to  t_common(:edit), edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %>
-    <%= button_to t_common(:delete), @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "This will permanently delete this item and also all associated portfolio transactions across funds. Proceed?"}  %>
+    <%= link_to  t_common(:edit), edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary ti ti-edit"} %>
+    <%= button_to t_common(:delete), @investment_instrument, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "This will permanently delete this item and also all associated portfolio transactions across funds. Proceed?"}  %>
   <% end %>
 </div>
 
-<% end %>
 
 <div class="associated_entity">
   <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows %>

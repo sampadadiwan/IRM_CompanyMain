@@ -203,7 +203,6 @@
                <%= "Account Entries," if @entity.permissions.enable_account_entries? %>
                <%= "Stakeholders," if @entity.permissions.enable_investors? %>
                <%= "Cap Table," if @entity.permissions.enable_captable? %>
-               <%= "SEBI Fields" if @entity.permissions.enable_sebi_fields? %>
             </td>
          </tr>
 
@@ -213,8 +212,6 @@
       <div>
          <% if policy(@entity).edit? %>
             <%= link_to  t_common(:edit), edit_entity_path(@entity), {class: "btn btn-outline-primary"} %>
-            <%= button_to "Add SEBI Fields", add_sebi_fields_entity_path(@entity),{class: "btn btn-outline-secondary", method: :patch} if policy(@entity).add_sebi_fields? %>
-            <%= button_to "Remove SEBI Fields", remove_sebi_fields_entity_path(@entity),{class: "btn btn-outline-secondary", method: :patch} if policy(@entity).remove_sebi_fields? %>
             <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %>
          <% end %>
       </div>

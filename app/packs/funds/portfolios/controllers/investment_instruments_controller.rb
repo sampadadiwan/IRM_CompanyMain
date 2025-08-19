@@ -26,7 +26,9 @@ class InvestmentInstrumentsController < ApplicationController
     @investment_instrument = InvestmentInstrument.new(investment_instrument_params)
     @investment_instrument.entity_id = current_user.entity_id
     authorize @investment_instrument
-    setup_custom_fields(@investment_instrument)
+    # form_type is assigned to a new investment instrument object - by deafult the last one. but if it is passed in the params we need to force it
+    # as using the last one can cause issues if a user has selected a different form type which was not the last one
+    setup_custom_fields(@investment_instrument, force_form_type: @investment_instrument.form_type)
   end
 
   # GET /investment_instruments/1/edit
@@ -87,6 +89,6 @@ class InvestmentInstrumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_instrument_params
-    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, :currency, properties: {})
+    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, :form_type_id, :currency, properties: {})
   end
 end

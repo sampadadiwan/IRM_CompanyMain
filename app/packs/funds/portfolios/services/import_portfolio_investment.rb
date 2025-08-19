@@ -24,7 +24,9 @@ class ImportPortfolioInvestment < ImportUtil
     investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, entity_id: import_upload.entity_id, currency: user_data["Currency"])
 
     # add the sebi reporting fields in invesment instrument in json_fields (merge with any existing)
-    investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::SEBI_REPORTING_FIELDS.stringify_keys.keys.map(&:titleize))&.transform_keys { |key| key.downcase.tr(' ', '_') })
+    investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::REPORTING_FIELDS.values.map(&:keys).flatten.map { |x| x.to_s.titleize })&.transform_keys { |key| key.downcase.tr(' ', '_') })
+
+    custom_field_headers -= InvestmentInstrument::REPORTING_FIELDS.values.map(&:keys).flatten.map { |x| x.to_s.titleize }
 
     if investment_instrument.valid?
       investment_instrument.investment_domicile ||= investment_domicile

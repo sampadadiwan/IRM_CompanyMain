@@ -27,7 +27,7 @@
       </thead>
       <tbody>
         <% form_custom_fields.each do |f| %>
-          <%= render "/form_custom_fields/form_custom_field", f: f unless (f.internal && params[:internal].blank?) %>
+          <%= render "/form_custom_fields/form_custom_field", f: f %>
         <% end %>
       </tbody>
 

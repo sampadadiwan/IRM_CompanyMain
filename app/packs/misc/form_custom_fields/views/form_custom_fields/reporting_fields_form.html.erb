@@ -1,0 +1,35 @@
+<% validate = validate.present? ? validate : true %>
+<%# always validate for investor  %>
+<% validate = validate || current_user.curr_role_investor? %>
+<%= render FormCard.new(title: "#{object.to_s} Reporting Fields") do %>
+
+    <%= form_with(model: object, url: url, validate: validate, method: :put) do |form| %>
+    <% if object.errors.any? %>
+        <div class="alert alert-danger">
+        <h2><%= pluralize(object.errors.count, "error") %> prohibited this object from being saved:</h2>
+
+        <ul>
+            <% object.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+            <% end %>
+        </ul>
+        </div>
+    <% end %>
+
+    <% regulatory_custom_fields = object.form_type.present? ? object.form_custom_fields.regulatory : [] %>
+
+    <% if regulatory_custom_fields.present? %>
+        <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq
+        reg_envs.each do |reg_env| %>
+
+            <%= custom_form_fields(object, form, custom_fields: regulatory_custom_fields.for_env(reg_env)) %>
+
+        <% end %>
+    <% end %>
+
+    <div class="form-group">
+        <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    </div>
+    <% end %>
+
+<% end %>

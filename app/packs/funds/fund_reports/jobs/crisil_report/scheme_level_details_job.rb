@@ -52,12 +52,12 @@ class SchemeLevelDetailsJob
 
     @institutional_kyc_commitments = commitments
                                      .joins(:investor_kyc)
-                                     .where("#{json_method}(investor_kycs.json_fields -> '$.investor_sub_category') IN (?)", @institutional_categories)
+                                     .where("#{json_method}(investor_kycs.json_fields -> '$.sebi_investor_sub_category') IN (?)", @institutional_categories)
                                      .where(commitment_date: ..end_date)
 
     @retail_kyc_commitments = commitments
                               .joins(:investor_kyc)
-                              .where("#{json_method}(investor_kycs.json_fields -> '$.investor_sub_category') IN (?)", @retail_categories)
+                              .where("#{json_method}(investor_kycs.json_fields -> '$.sebi_investor_sub_category') IN (?)", @retail_categories)
                               .where(commitment_date: ..end_date)
 
     ######### Save the report
@@ -82,12 +82,12 @@ class SchemeLevelDetailsJob
       json_method = Rails.env.test? ? "json_extract" : "JSON_UNQUOTE"
       institutional_kyc_commitments = commitments
                                       .joins(:investor_kyc)
-                                      .where("#{json_method}(investor_kycs.json_fields -> '$.investor_sub_category') IN (?)", @institutional_categories)
+                                      .where("#{json_method}(investor_kycs.json_fields -> '$.sebi_investor_sub_category') IN (?)", @institutional_categories)
                                       .where(commitment_date: ..end_date)
 
       retail_kyc_commitments = commitments
                                .joins(:investor_kyc)
-                               .where("#{json_method}(investor_kycs.json_fields -> '$.investor_sub_category') IN (?)", @retail_categories)
+                               .where("#{json_method}(investor_kycs.json_fields -> '$.sebi_investor_sub_category') IN (?)", @retail_categories)
                                .where(commitment_date: ..end_date)
       Rails.logger.debug { "SchemeLevelDetails for #{scheme_name}" }
       institutional_and_retial_row_data = get_row_data(scheme, institutional_kyc_commitments, retail_kyc_commitments)

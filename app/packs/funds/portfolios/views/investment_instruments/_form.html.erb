@@ -36,6 +36,17 @@
 
   <%= custom_form_fields(investment_instrument, form) %>
 
+  <% regulatory_custom_fields = investment_instrument.form_type.present? ? investment_instrument.form_custom_fields.regulatory : [] %>
+
+  <% if regulatory_custom_fields.present? %>
+    <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq
+    reg_envs.each do |reg_env| %>
+
+      <%= custom_form_fields(investment_instrument, form, custom_fields: regulatory_custom_fields.for_env(reg_env)) %>
+
+      <% end %>
+  <% end %>
+
   <div class="form-group">
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
   </div>

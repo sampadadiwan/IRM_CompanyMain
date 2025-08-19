@@ -76,28 +76,28 @@ class InfoOnInvestorsJob
   def report_table_1_data(kycs, fund)
     data = hash_tree
     data["Name of the Scheme"]["Value"] = fund.name
-    data["T1_Sponsor"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Sponsor").count
-    data["T1_Manager"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Manager").count
-    data["T1_Directors/Partners/Employees of Sponsor"]["Value"] = kycs.search_custom_fields("investor_sub_category", ["Directors/Partners/Employees of Sponsor"]).count
-    data["T1_Directors/Partners/Employees of Manager"]["Value"] = kycs.search_custom_fields("investor_sub_category", ["Directors/Partners/Employees of Manager"]).count
-    data["T1_Employee Benefit Trust of Manager"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Employee Benefit Trust of Manager").count
-    data["T1_Banks"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Banks").count
-    data["T1_NBFCs"]["Value"] = kycs.search_custom_fields("investor_sub_category", "NBFCs").count
-    data["T1_Insurance Companies"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Insurance Companies").count
-    data["T1_Pension Funds"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Pension Funds").count
-    data["T1_Provident Funds"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Provident Funds").count
-    data["T1_AIFs"]["Value"] = kycs.search_custom_fields("investor_sub_category", "AIFs").count
-    data["T1_Other Corporates"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Other Corporates").count
-    data["T1_Resident Individuals"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Resident Individuals").count
-    data["T1_Non-Corporate (other than Trusts)"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Non-Corporate (other than Trusts)").count
-    data["T1_Trusts"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Trusts").count
-    data["T1_FPIs"]["Value"] = kycs.search_custom_fields("investor_sub_category", "FPIs").count
-    data["T1_FVCIs"]["Value"] = kycs.search_custom_fields("investor_sub_category", "FVCIs").count
-    data["T1_NRIs"]["Value"] = kycs.search_custom_fields("investor_sub_category", "NRIs").count
-    data["T1_Foreign Others"]["Value"] = kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").count
+    data["T1_Sponsor"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Sponsor").count
+    data["T1_Manager"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Manager").count
+    data["T1_Directors/Partners/Employees of Sponsor"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", ["Directors/Partners/Employees of Sponsor"]).count
+    data["T1_Directors/Partners/Employees of Manager"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", ["Directors/Partners/Employees of Manager"]).count
+    data["T1_Employee Benefit Trust of Manager"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Employee Benefit Trust of Manager").count
+    data["T1_Banks"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Banks").count
+    data["T1_NBFCs"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "NBFCs").count
+    data["T1_Insurance Companies"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Insurance Companies").count
+    data["T1_Pension Funds"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Pension Funds").count
+    data["T1_Provident Funds"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Provident Funds").count
+    data["T1_AIFs"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "AIFs").count
+    data["T1_Other Corporates"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Other Corporates").count
+    data["T1_Resident Individuals"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Resident Individuals").count
+    data["T1_Non-Corporate (other than Trusts)"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Non-Corporate (other than Trusts)").count
+    data["T1_Trusts"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Trusts").count
+    data["T1_FPIs"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "FPIs").count
+    data["T1_FVCIs"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "FVCIs").count
+    data["T1_NRIs"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "NRIs").count
+    data["T1_Foreign Others"]["Value"] = kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").count
 
-    data["T1_Domestic Developmental Agencies / Government Agencies"]["Value"] = kycs.search_custom_fields("investor_sub_category", "Domestic Developmental Agencies/Government Agencies").count
-    data["T1_Other Others"]["Value"] = kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").count
+    data["T1_Domestic Developmental Agencies / Government Agencies"]["Value"] = kycs.search_custom_fields("sebi_investor_sub_category", "Domestic Developmental Agencies/Government Agencies").count
+    data["T1_Other Others"]["Value"] = kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").count
     data["T1_Total"]["Value"] = kycs.count
     data
   end
@@ -124,7 +124,7 @@ class InfoOnInvestorsJob
     data["T2_FVCIs"]["Value"] = t2_calculate_sum(kycs, "FVCIs", end_date, :amount, fund.id)
     data["T2_NRIs"]["Value"] = t2_calculate_sum(kycs, "NRIs", end_date, :amount, fund.id)
     sum = 0
-    kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").find_each do |kyc|
+    kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").find_each do |kyc|
       kyc.capital_commitments.where(fund_id: fund.id).find_each do |cc|
         cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
           amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
@@ -136,7 +136,7 @@ class InfoOnInvestorsJob
     data["T2_Domestic Developmental Agencies / Government Agencies"]["Value"] = t2_calculate_sum(kycs, "Domestic Developmental Agencies/Government Agencies", end_date, :amount, fund.id)
 
     sum = 0
-    kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").find_each do |kyc|
+    kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").find_each do |kyc|
       kyc.capital_commitments.where(fund_id: fund.id).find_each do |cc|
         cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
           amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
@@ -178,12 +178,12 @@ class InfoOnInvestorsJob
     data["T3_FPIs"]["Value"] = t3_calculate_sum(kycs, "FPIs", end_date, :committed_amount, fund.id)
     data["T3_FVCIs"]["Value"] = t3_calculate_sum(kycs, "FVCIs", end_date, :committed_amount, fund.id)
     data["T3_NRIs"]["Value"] = t3_calculate_sum(kycs, "NRIs", end_date, :committed_amount, fund.id)
-    data["T3_Foreign Others"]["Value"] = money_to_currency(Money.new(kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").sum do |kyc|
+    data["T3_Foreign Others"]["Value"] = money_to_currency(Money.new(kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").sum do |kyc|
       kyc.capital_commitments.where(fund_id: fund.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end))
     data["T3_Domestic Developmental Agencies / Government Agencies"]["Value"] = t3_calculate_sum(kycs, "Domestic Developmental Agencies/Government Agencies", end_date, :committed_amount, fund.id)
 
-    data["T3_Other Others"]["Value"] = money_to_currency(Money.new(kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").sum do |kyc|
+    data["T3_Other Others"]["Value"] = money_to_currency(Money.new(kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").sum do |kyc|
       kyc.capital_commitments.where(fund_id: fund.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end))
     data["T3_Total"]["Value"] = money_to_currency(Money.new(kycs.sum do |kyc|
@@ -194,7 +194,7 @@ class InfoOnInvestorsJob
 
   def t2_calculate_sum(kycs, sub_cat, end_date, sum_method, fund_id, show_currency: true)
     sum = 0
-    kycs.search_custom_fields("investor_sub_category", sub_cat).find_each do |kyc|
+    kycs.search_custom_fields("sebi_investor_sub_category", sub_cat).find_each do |kyc|
       # go to remittance payment level and sum
       kyc.capital_commitments.where(fund_id:).where(commitment_date: ..end_date).find_each do |cc|
         cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
@@ -207,34 +207,34 @@ class InfoOnInvestorsJob
   end
 
   def t3_calculate_sum(kycs, sub_cat, end_date, sum_method, fund_id, show_currency: true)
-    money = Money.new(kycs.search_custom_fields("investor_sub_category", sub_cat).sum do |kyc|
+    money = Money.new(kycs.search_custom_fields("sebi_investor_sub_category", sub_cat).sum do |kyc|
       kyc.capital_commitments.where(fund_id:).where(commitment_date: ..end_date).sum(&sum_method)
     end)
     show_currency ? money_to_currency(money) : money
   end
 
   def get_table_1_row_data(scheme, kycs, sr_no)
-    sponsor_count = kycs.search_custom_fields("investor_sub_category", "Sponsor").count
-    manager_count = kycs.search_custom_fields("investor_sub_category", "Manager").count
-    personnel_of_sponsor_count = kycs.search_custom_fields("investor_sub_category", ["Directors/Partners/Employees of Sponsor"]).count
-    personnel_of_manager_count = kycs.search_custom_fields("investor_sub_category", ["Directors/Partners/Employees of Manager"]).count
-    employee_benefit_trust_of_manager_count = kycs.search_custom_fields("investor_sub_category", "Employee Benefit Trust of Manager").count
-    bank_count = kycs.search_custom_fields("investor_sub_category", "Banks").count
-    nbfc_count = kycs.search_custom_fields("investor_sub_category", "NBFCs").count
-    insurance_companies_count = kycs.search_custom_fields("investor_sub_category", "Insurance Companies").count
-    pension_funds_count = kycs.search_custom_fields("investor_sub_category", "Pension Funds").count
-    provident_funds_count = kycs.search_custom_fields("investor_sub_category", "Provident Funds").count
-    aifs_count = kycs.search_custom_fields("investor_sub_category", "AIFs").count
-    other_corporates_count = kycs.search_custom_fields("investor_sub_category", "Other Corporates").count
-    resident_individuals_count = kycs.search_custom_fields("investor_sub_category", "Resident Individuals").count
-    non_corporate_other_than_trusts_count = kycs.search_custom_fields("investor_sub_category", "Non-Corporate (other than Trusts)").count
-    trusts_count = kycs.search_custom_fields("investor_sub_category", "Trusts").count
-    fpi_count = kycs.search_custom_fields("investor_sub_category", "FPIs").count
-    fvci_count = kycs.search_custom_fields("investor_sub_category", "FVCIs").count
-    nri_count = kycs.search_custom_fields("investor_sub_category", "NRIs").count
-    foreign_others_count = kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").count
-    domestic_developmental_agencies_government_agencies_count = kycs.search_custom_fields("investor_sub_category", "Domestic Developmental Agencies/Government Agencies").count
-    other_others_count = kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").count
+    sponsor_count = kycs.search_custom_fields("sebi_investor_sub_category", "Sponsor").count
+    manager_count = kycs.search_custom_fields("sebi_investor_sub_category", "Manager").count
+    personnel_of_sponsor_count = kycs.search_custom_fields("sebi_investor_sub_category", ["Directors/Partners/Employees of Sponsor"]).count
+    personnel_of_manager_count = kycs.search_custom_fields("sebi_investor_sub_category", ["Directors/Partners/Employees of Manager"]).count
+    employee_benefit_trust_of_manager_count = kycs.search_custom_fields("sebi_investor_sub_category", "Employee Benefit Trust of Manager").count
+    bank_count = kycs.search_custom_fields("sebi_investor_sub_category", "Banks").count
+    nbfc_count = kycs.search_custom_fields("sebi_investor_sub_category", "NBFCs").count
+    insurance_companies_count = kycs.search_custom_fields("sebi_investor_sub_category", "Insurance Companies").count
+    pension_funds_count = kycs.search_custom_fields("sebi_investor_sub_category", "Pension Funds").count
+    provident_funds_count = kycs.search_custom_fields("sebi_investor_sub_category", "Provident Funds").count
+    aifs_count = kycs.search_custom_fields("sebi_investor_sub_category", "AIFs").count
+    other_corporates_count = kycs.search_custom_fields("sebi_investor_sub_category", "Other Corporates").count
+    resident_individuals_count = kycs.search_custom_fields("sebi_investor_sub_category", "Resident Individuals").count
+    non_corporate_other_than_trusts_count = kycs.search_custom_fields("sebi_investor_sub_category", "Non-Corporate (other than Trusts)").count
+    trusts_count = kycs.search_custom_fields("sebi_investor_sub_category", "Trusts").count
+    fpi_count = kycs.search_custom_fields("sebi_investor_sub_category", "FPIs").count
+    fvci_count = kycs.search_custom_fields("sebi_investor_sub_category", "FVCIs").count
+    nri_count = kycs.search_custom_fields("sebi_investor_sub_category", "NRIs").count
+    foreign_others_count = kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").count
+    domestic_developmental_agencies_government_agencies_count = kycs.search_custom_fields("sebi_investor_sub_category", "Domestic Developmental Agencies/Government Agencies").count
+    other_others_count = kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").count
     total_count = sponsor_count + manager_count + personnel_of_sponsor_count + personnel_of_manager_count + employee_benefit_trust_of_manager_count + bank_count + nbfc_count + insurance_companies_count + pension_funds_count + provident_funds_count + aifs_count + other_corporates_count + resident_individuals_count + non_corporate_other_than_trusts_count + trusts_count + fpi_count + fvci_count + nri_count + foreign_others_count + domestic_developmental_agencies_government_agencies_count + other_others_count
     difference = kycs.count - total_count
 
@@ -262,7 +262,7 @@ class InfoOnInvestorsJob
     fvci_coll_amt = t2_calculate_sum(kycs, "FVCIs", end_date, :amount, scheme.id, show_currency: false).amount.to_d
     nri_coll_amt = t2_calculate_sum(kycs, "NRIs", end_date, :amount, scheme.id, show_currency: false).amount.to_d
     sum = 0
-    kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").find_each do |kyc|
+    kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").find_each do |kyc|
       kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).find_each do |cc|
         cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
           amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
@@ -273,7 +273,7 @@ class InfoOnInvestorsJob
     foreign_others_coll_amt = Money.new(sum).amount.to_d
     domestic_developmental_agencies_government_agencies_coll_amt = t2_calculate_sum(kycs, "Domestic Developmental Agencies/Government Agencies", end_date, :amount, scheme.id, show_currency: false).amount.to_d
     sum = 0
-    kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").find_each do |kyc|
+    kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").find_each do |kyc|
       kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).find_each do |cc|
         cc.capital_remittances.where(remittance_date: ..end_date).find_each do |cr|
           amt = cr.capital_remittance_payments.where(payment_date: ..end_date).sum(&:amount)
@@ -316,12 +316,12 @@ class InfoOnInvestorsJob
     fpi_comm_amt = t3_calculate_sum(kycs, "FPIs", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
     fvci_comm_amt = t3_calculate_sum(kycs, "FVCIs", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
     nri_comm_amt = t3_calculate_sum(kycs, "NRIs", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
-    foreign_others_comm_amt = Money.new(kycs.search_custom_fields("investor_category", "Foreign").search_custom_fields("investor_sub_category", "Foreign Others").sum do |kyc|
+    foreign_others_comm_amt = Money.new(kycs.search_custom_fields("sebi_investor_category", "Foreign").search_custom_fields("sebi_investor_sub_category", "Foreign Others").sum do |kyc|
       kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end).amount.to_d
     domestic_developmental_agencies_government_agencies_comm_amt = t3_calculate_sum(kycs, "Domestic Developmental Agencies/Government Agencies", end_date, :committed_amount, scheme.id, show_currency: false).amount.to_d
 
-    other_others_comm_amt = Money.new(kycs.search_custom_fields("investor_category", "Other").search_custom_fields("investor_sub_category", "Others").sum do |kyc|
+    other_others_comm_amt = Money.new(kycs.search_custom_fields("sebi_investor_category", "Other").search_custom_fields("sebi_investor_sub_category", "Others").sum do |kyc|
       kyc.capital_commitments.where(fund_id: scheme.id).where(commitment_date: ..end_date).sum(&:committed_amount)
     end).amount.to_d
 

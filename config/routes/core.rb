@@ -27,6 +27,7 @@ resources :form_custom_fields
 resources :form_types do
   get 'clone', on: :member
   patch 'rename_fcf', on: :member
+  patch 'add_regulatory_fields', on: :member
 end
 
 resources :e_signatures
@@ -69,6 +70,8 @@ resources :investor_kycs do
   get "download_kra_data", on: :member
   get "fetch_ckyc_data", on: :member
   get 'esign_emails', on: :collection
+  get 'edit_reporting_fields', on: :member
+  put 'update_reporting_fields', on: :member
 end
 
 resources :aml_reports

@@ -124,6 +124,16 @@ class InvestorKycPolicy < ApplicationPolicy
     update?
   end
 
+  # same as edit except doesnt check verified
+  def edit_reporting_fields?
+    update_reporting_fields?
+  end
+
+  # same as update except doesnt check verified
+  def update_reporting_fields?
+    (create?(:investor_kyc_update) && !user.curr_role_investor?) || support?
+  end
+
   def destroy?
     create?(:investor_kyc_delete) && !record.verified
   end

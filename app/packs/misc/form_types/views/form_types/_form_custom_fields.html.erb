@@ -64,6 +64,21 @@
             <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
         </div>
 
+        <% if params[:debug].present? %>
+
+            <% labels = FormCustomField::REGULATORY_ENVS %>
+            <div class="form-group col-md-1">
+                <%= f.label :regulatory_env %>
+                <%= f.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
+                <datalist id="label-list">
+                    <% labels.each do |label| %>
+                    <option value="<%= label %>"></option>
+                    <% end %>
+                </datalist>
+            </div>
+            
+        <% end %>
+
         <div class="form-group col-md-2">    
             <%= f.label :none, "&nbsp;".html_safe %>
             <span>

@@ -38,22 +38,42 @@
 
     <%= form.hidden_field :entity_id %>
 
-    <div data-controller="customfield">
-      <div class="form-group">
-        <%= form.label :name, "Form Name" %>
-        <%= form.select :name, types.sort, {include_blank: true}, class: "form-control"  %>
-      </div>
+    <%# If the Model for form type supports regulatory fields then shows that input  %>
+    <div class="form-group">
+      <%= form.label :name, "Form Name" %>
+      <%= form.select :name, types.sort, {include_blank: true}, class: "form-control" %>
+    </div>
 
+    <div class="form-group">
+      <%= form.label :tag %>
+      <%= form.text_field :tag, class: "form-control" %>
+    </div>
+
+    <%# Regulatory env input is only visible on debug %>
+    <% if params[:debug].present? %>
       <div class="form-group">
-        <%= form.label :tag %>
-        <%= form.text_field :tag, class: "form-control"  %>
+        <%= form.label :regulatory_env %>
+        <%= form.text_field :reg_env, list: 'label-list', class: "form-control", maxlength: 50 %>
+        <datalist id="label-list">
+          <% FormCustomField::REGULATORY_ENVS.each do |label| %>
+            <option value="<%= label %>"></option>
+          <% end %>
+        </datalist>
       </div>
+    <% end %>
 
       <h1>Custom Fields</h1>
       <div id='form_custom_fields'>
         <%= form.fields_for :form_custom_fields do |field| %>
-          <%= render 'form_custom_fields', :f => field  unless ((field.object.field_type == "Calculation" || field.object.internal) && (!current_user.support? && !Rails.env.local?)) %>
+        <%# if field is calc or marked internal then its internal %>
+          <% is_internal = field.object.field_type == "Calculation" || field.object.internal %>
+          <% allowed = current_user.support? || params[:debug].present? || params[:internal].present? #|| Rails.env.local? %>
+
+          <% if !is_internal || allowed %>
+            <%= render 'form_custom_fields', f: field %>
+          <% end %>
         <% end %>
+
         <div class='links'>
         </div>
       </div>

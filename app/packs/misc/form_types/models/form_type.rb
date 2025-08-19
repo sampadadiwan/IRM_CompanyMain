@@ -13,6 +13,18 @@ class FormType < ApplicationRecord
   has_many :form_custom_fields, -> { order(position: :asc) }, inverse_of: :form_type, dependent: :destroy
   accepts_nested_attributes_for :form_custom_fields, reject_if: :all_blank, allow_destroy: true
 
+  attr_accessor :reg_env
+
+  before_save :add_regulatory_custom_fields, if: -> { reg_env.present? && FormCustomField::REGULATORY_FIELD_MODELS.include?(name) }
+
+  # Add the regulatory fields to the form type
+  def add_regulatory_custom_fields
+    # Skip if the form type is not one of the regulatory models
+    return if FormCustomField::REGULATORY_FIELD_MODELS.exclude?(name)
+
+    AddRegulatoryCustomFieldsService.new.add_custom_fields_to_form(self)
+  end
+
   # Sometimes after we import data, we have custom fields which get imported
   # But there exists no custom form fields for the import - hence we can see it but not edit it.
   # This automatically sets up the custom form fields, given that custom fields have been imported into the record

@@ -1,4 +1,4 @@
-class InvestorKyc < ApplicationRecord
+class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   STANDARD_COLUMNS = { "Investor" => "investor_name",
                        "Investing Entity" => "full_name",
                        "Type" => "kyc_type",
@@ -14,10 +14,6 @@ class InvestorKyc < ApplicationRecord
                                 "Completed" => "completed_by_investor",
                                 "Kyc Verified" => "verified",
                                 "Expired" => "expired" }.freeze
-  SEBI_REPORTING_FIELDS = {
-    investor_category: "Select",
-    investor_sub_category: "Select"
-  }.freeze
 
   SEBI_INVESTOR_CATEGORIES = %i[Internal Domestic Foreign Other].freeze
 
@@ -27,10 +23,17 @@ class InvestorKyc < ApplicationRecord
     Foreign: ["FPIs", "FVCIs", "NRIs", "Foreign Others"],
     Other: ["Domestic Developmental Agencies/Government Agencies", "Others"]
   }.freeze
-
-  SELECT_FIELDS_OPTIONS = {
-    investor_category: SEBI_INVESTOR_CATEGORIES,
-    investor_sub_category: SEBI_INVESTOR_SUB_CATEGORIES_MAPPING
+  # Reporting fields as per regulatory environment
+  REPORTING_FIELDS = {
+    sebi: {
+      sebi_investor_category: { field_type: "Select",
+                                meta_data: SEBI_INVESTOR_CATEGORIES.join(","),
+                                label: "Investor Category",
+                                js_events: "change->form-custom-fields#investor_category_changed" },
+      sebi_investor_sub_category: { field_type: "Select",
+                                    meta_data: SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.values.flatten.join(","),
+                                    label: "Investor Sub Category" }
+    }
   }.freeze
 
   # Make all models searchable
@@ -124,20 +127,34 @@ class InvestorKyc < ApplicationRecord
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
   end
 
-  validate :sebi_investor_sub_category_heirarchy
+  validate :sebi_investor_sub_category_hierarchy
 
-  def sebi_investor_sub_category_heirarchy
-    if json_fields["investor_category"].present?
-      json_fields["investor_sub_category"] = json_fields["investor_sub_category"].split(" - ", 2).last.strip if json_fields["investor_sub_category"].present?
+  def sebi_investor_sub_category_hierarchy
+    json_fields["sebi_investor_category"] = json_fields["sebi_investor_category"]&.strip&.titleize
+    json_fields["sebi_investor_sub_category"] = json_fields["sebi_investor_sub_category"]&.strip
 
-      Rails.logger.debug { "investor_category: #{json_fields['investor_category']}, investor_sub_category: #{json_fields['investor_sub_category']}" }
-      errors.add(:investor_category, "should be present to enter investor sub-category") if json_fields["investor_sub_category"].present? && json_fields["investor_category"].blank?
+    # Rule: category must exist if sub-category exists
+    if json_fields["sebi_investor_sub_category"].present? && json_fields["sebi_investor_category"].blank?
+      errors.add(:sebi_investor_category, "should be present to enter investor sub-category")
+      return
+    end
 
-      errors.add(:investor_category, "should be one of #{SEBI_INVESTOR_CATEGORIES.join(', ')}") if json_fields["investor_category"].present? && SEBI_INVESTOR_CATEGORIES.map { |x| x.to_s.downcase }.exclude?(json_fields["investor_category"].downcase)
+    # If category exists, validate it
+    if json_fields["sebi_investor_category"].present?
+      allowed_categories = SEBI_INVESTOR_CATEGORIES.map(&:to_s)
+      unless allowed_categories.include?(json_fields["sebi_investor_category"])
+        errors.add(:sebi_investor_category, "should be one of #{allowed_categories.join(', ')}")
+        return
+      end
 
-      errors.add(:investor_sub_category, "should be one of #{SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.stringify_keys[json_fields['investor_category']].join(', ')}") if json_fields["investor_category"].present? && json_fields["investor_sub_category"].present? && SEBI_INVESTOR_SUB_CATEGORIES_MAPPING.stringify_keys[json_fields["investor_category"]]&.exclude?(json_fields["investor_sub_category"])
+      # Validate sub-category if present
+      if json_fields["sebi_investor_sub_category"].present?
+        allowed_sub_categories = SEBI_INVESTOR_SUB_CATEGORIES_MAPPING[json_fields["sebi_investor_category"].to_sym] || []
+        errors.add(:sebi_investor_sub_category, "should be one of #{allowed_sub_categories.join(', ')}") unless allowed_sub_categories.include?(json_fields["sebi_investor_sub_category"])
+      end
     end
   end
+
   # Customize form
   serialize :pan_verification_response, type: Hash
   serialize :bank_verification_response, type: Hash

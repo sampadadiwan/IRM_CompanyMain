@@ -17,7 +17,7 @@
     <% if field.js_events.blank? %>
         <%= f.select field.name, options, {}, class: "form-control custom_field", required: field.required %>
     <% else %>
-    <%  # check add_sebi_fields for usage
+    <%  # check AddRegulatoryCustomFieldsService for usage
         # data: {action: field.js_events} is used to trigger js events on change of select field
         # used to investor_sub_category manipulate dropdown based on investor_category dropdown in kyc form
      %>

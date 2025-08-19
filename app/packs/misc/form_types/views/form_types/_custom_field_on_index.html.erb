@@ -14,6 +14,7 @@
     <td>
         Required <%= display_boolean f.required %>,
         Read Only <%= display_boolean f.read_only %> <br>
+        Reg Env: <%= f.reg_env&.html_safe %> <br>
         Metadata: <%= f.meta_data %> <br>
         Help Text: <%= f.help_text&.html_safe %> <br>
         <% 

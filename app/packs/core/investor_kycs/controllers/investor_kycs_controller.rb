@@ -1,7 +1,7 @@
 class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview download_kra_data fetch_ckyc_data assign_kyc_data]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields]
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   has_scope :uncalled, type: :boolean
@@ -361,6 +361,32 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
+        format.json { render :show, status: :ok, location: @investor_kyc }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: result[:errors], status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # GET /investor_kycs/1/edit_reporting_fields
+  # This action is used to edit the reporting fields of an InvestorKyc
+  # It renders a form for updating the reporting fields, which are custom fields associated with the KYC
+  def edit_reporting_fields
+    authorize(@investor_kyc)
+    url = update_reporting_fields_investor_kyc_path(@investor_kyc)
+    render "form_custom_fields/reporting_fields_form", locals: { object: @investor_kyc, url: url }
+  end
+
+  # PUT /investor_kycs/1/update_reporting_fields
+  # This action updates the reporting fields of an InvestorKyc and nothing else
+  def update_reporting_fields
+    investor_user = current_user.curr_role_investor?
+    @investor_kyc.assign_attributes(investor_kyc_params)
+
+    respond_to do |format|
+      if @investor_kyc.save(validate: investor_user)
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Reporting Fields updated successfully." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
