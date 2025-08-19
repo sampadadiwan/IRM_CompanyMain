@@ -4,7 +4,7 @@ wb.add_worksheet(name: "FormCustomFields") do |sheet|
   # Create the header row
   sheet.add_row([
                   "ID", "Name", "Label", "Field Type", "Required", "Form Type ID",
-                  "Created At", "Updated At", "Has Attachment", "Position", "Help Text",
+                  "Created At", "Updated At", "Has Attachment", "Position", "Help Text", "Metadata", "Info",
                   "Read Only", "Show User IDs", "Step", "Condition On", "Condition Criteria",
                   "Condition Params", "Condition State", "Internal", "Regulatory Environment"
                 ])
@@ -13,7 +13,7 @@ wb.add_worksheet(name: "FormCustomFields") do |sheet|
   @form_custom_fields.each do |fcf|
     sheet.add_row [
       fcf.id, fcf.name, fcf.label, fcf.field_type, fcf.required, fcf.form_type_id,
-      fcf.created_at, fcf.updated_at, fcf.has_attachment, fcf.position, fcf.help_text,
+      fcf.created_at, fcf.updated_at, fcf.has_attachment, fcf.position, fcf.help_text, fcf.meta_data, fcf.info.to_trix_html,
       fcf.read_only, fcf.show_user_ids, fcf.step, fcf.condition_on, fcf.condition_criteria,
       fcf.condition_params, fcf.condition_state, fcf.internal, fcf.reg_env
     ]
