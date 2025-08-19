@@ -27,7 +27,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   REPORTING_FIELDS = {
     sebi: {
       sebi_investor_category: { field_type: "Select",
-                                meta_data: SEBI_INVESTOR_CATEGORIES.join(","),
+                                meta_data: ",#{SEBI_INVESTOR_CATEGORIES.join(',')}",
                                 label: "Investor Category",
                                 js_events: "change->form-custom-fields#investor_category_changed" },
       sebi_investor_sub_category: { field_type: "Select",

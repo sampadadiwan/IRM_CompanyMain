@@ -14,10 +14,10 @@ class InvestmentInstrument < ApplicationRecord
   REPORTING_FIELDS = {
     sebi: {
       sebi_type_of_investee_company: { field_type: "Select",
-                                       meta_data: TYPES_OF_INVESTEE_COMPANY.join(","),
+                                       meta_data: ",#{TYPES_OF_INVESTEE_COMPANY.join(',')}",
                                        label: "Type of Investee Company" },
       sebi_type_of_security: { field_type: "Select",
-                               meta_data: TYPES_OF_SECURITY.join(","),
+                               meta_data: ",#{TYPES_OF_SECURITY.join(',')}",
                                label: "Type of Security" },
       sebi_details_of_security: { field_type: "TextField",
                                   label: "Details of Security (if Type of Security chosen is Others)" },
@@ -26,16 +26,16 @@ class InvestmentInstrument < ApplicationRecord
       sebi_registration_number: { field_type: "TextField",
                                   label: "SEBI Registration Number" },
       sebi_is_associate: { field_type: "Select",
-                           meta_data: "Yes,No",
+                           meta_data: ",Yes,No",
                            label: "Is Associate" },
       sebi_is_managed_or_sponsored_by_aif: { field_type: "Select",
-                                             meta_data: "Yes,No",
+                                             meta_data: ",Yes,No",
                                              label: "Is Managed or Sponsored by AIF" },
       sebi_sector: { field_type: "Select",
-                     meta_data: SECTORS.join(","),
+                     meta_data: ",#{SECTORS.join(',')}",
                      label: "Sector" },
       sebi_offshore_investment: { field_type: "Select",
-                                  meta_data: "Yes,No",
+                                  meta_data: ",Yes,No",
                                   label: "Offshore Investment" }
     }
   }.freeze
