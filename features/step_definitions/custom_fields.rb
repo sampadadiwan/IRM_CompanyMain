@@ -52,14 +52,14 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
 
   # class_name = @investor_kyc.type_from_kyc_type.underscore
   class_name = "individual_kyc"
- 
+
   if !current_path.include?("edit")
     select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
   end
 
   if files.include?("pan")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_pan' do
+      within '#custom_file_upload_pan_tax_id' do
         click_on 'Choose file'
       end
     end
@@ -90,7 +90,7 @@ Given('I fill InvestorKyc details with regulatory fields {string} with files {st
   fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
   click_on("Next")
   #sleep(1)
-  
+
   # go to regulatory custom fields page
   if args.include?("properties")
     click_on("Next")
@@ -185,7 +185,7 @@ Then('I should see the Instrument details on the details page and regulatory fie
     expect(page).to have_content("Unlisted Equity/Equity Linked")
     expect(page).to have_content("Test Security Details")
     expect(page).to have_content("INE123456789")
-    expect(page).to have_content("SEBI123456")  
+    expect(page).to have_content("SEBI123456")
     expect(page).to have_content("Yes")
     expect(page).to have_content("Biotechnology")
   else

@@ -79,6 +79,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_15_050236) do
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["name", "fund_id", "capital_commitment_id", "entry_type", "reporting_date", "cumulative", "deleted_at", "parent_type", "parent_id", "ref_id", "amount_cents"], name: "index_accounts_on_unique_fields", unique: true
     t.index ["name"], name: "index_account_entries_on_name"
@@ -1462,6 +1463,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_15_050236) do
     t.boolean "regulatory_field", default: false
     t.text "regulation_type"
     t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
+    t.string "reg_env"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true

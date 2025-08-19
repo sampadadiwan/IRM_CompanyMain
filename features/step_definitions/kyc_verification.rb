@@ -20,7 +20,7 @@ Given('I go to create InvestorKyc {string}') do |args|
   fill_in("#{class_name}_kyc_full_name", with: @investor_kyc.full_name)
   fill_in("#{class_name}_kyc_PAN", with: @investor_kyc.PAN)
   page.attach_file('./public/sample_uploads/example_pan.jpeg') do
-    within '#custom_file_upload_pan' do
+    within '#custom_file_upload_pan_tax_id' do
       click_on 'Choose file'
     end
   end

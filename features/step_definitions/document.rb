@@ -32,7 +32,7 @@ Given('investor has access right {string} in the document') do |arg1|
     @access_right = AccessRight.new(owner: @document, entity: @entity)
     key_values(@access_right, arg1)
     puts @access_right.to_json
-    
+
     @access_right.save!
     puts "\n####Access Right####\n"
     puts @access_right.to_json
@@ -335,6 +335,7 @@ Then('user sends a single document using that Custom Notification') do
   visit document_path(@document)
   click_on "Send Document"
   click_on "Send #{@custom_notification.subject}"
+  click_on "Proceed"
   expect(page).to have_text "Document will be sent to the email addresses as requested."
 end
 

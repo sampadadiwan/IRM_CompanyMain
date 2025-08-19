@@ -1460,9 +1460,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_15_050236) do
     t.string "condition_state", limit: 5, default: "show"
     t.boolean "internal", default: false
     t.string "js_events"
-    t.boolean "regulatory_field", default: false
-    t.text "regulation_type"
     t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
+    t.string "reg_env"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true

@@ -150,9 +150,9 @@ Scenario Outline: Create investor kyc - no ckyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is an existing investor "investor_name=Investor 1"
-  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN,Upload Address Proof,Upload Cancelled Cheque / Bank Statement" for ""
+  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN / Tax ID,Upload Address Proof,Upload Cancelled Cheque / Bank Statement" for ""
   Then I should see the "Investor kyc was successfully saved."
-  And I should see the kyc documents "Upload PAN,Upload Address Proof"
+  And I should see the kyc documents "Upload PAN / Tax ID,Upload Address Proof"
   Then mock UpdateDocumentFolderPathJob job
   Then Folder path should be present and correct
   And when I upload the document for the kyc
