@@ -105,7 +105,6 @@ class GridViewPreferencesController < ApplicationController
   end
 
   def configure_grids
-    binding.pry
     @parent = find_parent
     model_class = begin
       @parent.name.constantize

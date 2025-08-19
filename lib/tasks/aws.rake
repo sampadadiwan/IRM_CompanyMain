@@ -5,18 +5,18 @@ require_relative 'aws_utils'
 
 include AwsUtils
 
-namespace :aws do  
+namespace :aws do
 
-  task :grow_disk do 
+  task :grow_disk do
     # Run the following system cmds
-    puts "Growing disk..."
+    puts "🌱 Growing disk..."
     system("df -k /")
     system("sudo lsblk")
     system("sudo growpart /dev/nvme0n1 1")
     system("sudo lsblk")
     system("sudo resize2fs /dev/nvme0n1p1")
     system("df -k /")
-    puts "Disk grown successfully."
+    puts "✅ Disk grown successfully."
   end
 
   # This is the task that will be called whenever we need to do a complete DR into another region
@@ -32,16 +32,25 @@ namespace :aws do
 
   desc "Copy an AMI to a different region"
   task :copy_ami, [:ami_id, :destination_region] => [:environment] do |t, args|
-    args.with_defaults(destination_region: ENV["AWS_BACKUP_REGION"]) # Default destination region
-    copy_ami(args[:ami_id], args[:destination_region])
+    # Prioritize ami_id from args, then from environment variable
+    ami_id = args[:ami_id] || ENV["ami_id"]
+    destination_region = args[:destination_region] || ENV["AWS_BACKUP_REGION"] # Default destination region
+
+    # Ensure ami_id is present
+    unless ami_id
+      raise "AMI ID is missing. Please provide it as an argument (e.g., rake aws:copy_ami[ami-xxxxxxxxxxxxxxxxx]) or as an environment variable (e.g., ami_id=ami-xxxxxxxxxxxxxxxxx rake aws:copy_ami)."
+    end
+
+    copy_ami(ami_id, destination_region)
   end
 
   desc "Create an AMI and copy it to another region"
   task :create_and_copy_ami, [:instance_name, :destination_region] => [:environment] do |t, args|
     args.with_defaults(destination_region: ENV["AWS_BACKUP_REGION"])
+
     # Create an AMI from the instance name
-    puts "Creating and copying AMI: #{args}"
-    ami_id = create_ami_from_snapshot(args)         
+    puts "📦 Creating and copying AMI: #{args}"
+    ami_id = create_ami_from_snapshot(args)
     # Copy the AMI to the destination region
     copy_ami(ami_id, args[:destination_region])
     # Clean up old AMIs
@@ -57,7 +66,7 @@ namespace :aws do
   end
 
   desc "Create an AMI from a named EC2 instance"
-  task :create_ami, [:instance_name] => [:environment] do |t, args|    
+  task :create_ami, [:instance_name] => [:environment] do |t, args|
     create_ami_from_snapshot(args)
   end
 

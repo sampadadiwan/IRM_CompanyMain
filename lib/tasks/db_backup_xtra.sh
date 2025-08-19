@@ -8,7 +8,7 @@ IFS=$'\n\t'
 # If not then no need to delete the full backup dir, during the day, reuse for every hourly incr
 
 # To setup these ENVs run on the prod box
-# RAILS_ENV=production rake xtrabackup:generate_backup_script 
+# RAILS_ENV=production rake xtrabackup:generate_backup_script
 # This generates a file with all vars setup
 
 # This is the sequence to restore replica
@@ -27,7 +27,7 @@ IFS=$'\n\t'
 
 
 # To setup these ENVs run on the prod box
-# RAILS_ENV=production rake xtrabackup:generate_backup_script 
+# RAILS_ENV=production rake xtrabackup:generate_backup_script
 # This generates a file with all vars setup
 
 export BUCKET="__BUCKET__"
@@ -355,7 +355,7 @@ restore_primary_datadir() {
   echo "  - Moving data from $PRIMARY_RESTORE..."
   # Recreate the original datadir for the new data and copy the contents.
   sudo mkdir -p "$datadir"
-  
+
   shopt -s dotglob nullglob
   sudo mv "$PRIMARY_RESTORE"/* "$datadir"/
   shopt -u dotglob nullglob

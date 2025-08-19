@@ -1,7 +1,7 @@
 class Labels
   LABEL_MAP = {
     SEBI: {
-      'Tax ID': "PAN",
+      'Tax ID': "PAN / Tax ID",
       'Bank Routing Number': "IFSC Code",
       'Address Proof Documents': "Any one of: Aadhar Card, Voter ID, Passport, Driving License, Other Govt ID"
     },

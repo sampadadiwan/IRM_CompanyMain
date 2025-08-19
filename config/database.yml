@@ -39,7 +39,7 @@ development:
 
 staging:
   primary:
-    <<: *default  
+    <<: *default
     database: IRM_staging
   primary_replica:
     <<: *default_replica

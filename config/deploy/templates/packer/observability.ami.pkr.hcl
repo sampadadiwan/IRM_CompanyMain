@@ -120,6 +120,9 @@ build {
       // log rotate
       "sudo apt install --yes logrotate",
 
+      // Install OhMyZsh
+      "yes | sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" \"\" --unattended",
+
 
     ]
   }

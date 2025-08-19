@@ -36,6 +36,8 @@ set :puma_state,      "#{shared_path}/tmp/pids/puma.state"
 set :puma_pid,        "#{shared_path}/tmp/pids/puma.pid"
 set :puma_access_log, "#{release_path}/log/puma.error.log"
 set :puma_error_log,  "#{release_path}/log/puma.access.log"
+set :puma_threads, [0,16]
+set :puma_restart_command, "bundle exec pumactl -S #{fetch(:puma_state)} restart"
 set :puma_preload_app, true
 set :puma_worker_timeout, nil
 set :puma_workers, 4
@@ -44,6 +46,7 @@ set :puma_init_active_record, true
 
 set :puma_systemctl_user, :system
 set :puma_service_unit_name, "puma_IRM_#{fetch(:stage)}"
+set :skip_notification, ENV['SKIP_NOTIFICATION'] == 'true'
 
 
 namespace :deploy do
@@ -68,7 +71,7 @@ namespace :deploy do
     end
   end
 
-  before 'deploy:starting', 'deploy:notify_before'
+  before 'deploy:starting', 'deploy:notify_before' unless fetch(:skip_notification, false)
   after 'deploy:finished', 'deploy:notify_after'
 
   desc "Uploads .env remote servers."
@@ -113,7 +116,8 @@ namespace :deploy do
     end
   end
 
-  before "deploy:updated", :ensure_rails_credentials
+  before 'deploy:updated', 'IRM:set_rails_master_key'
+  # before "deploy:updated", :ensure_rails_credentials
   before 'deploy:finished', 'sidekiq:restart'
   after  'deploy:finished', :ensure_permissions
 end
@@ -142,7 +146,7 @@ namespace :nginx do
   end
 
   before 'nginx:switch_maintenance', 'sidekiq:monit:unmonitor'
-  before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
+  # before 'nginx:switch_maintenance', 'puma:monit:unmonitor'
   before 'nginx:switch_maintenance', 'sidekiq:stop'
   before 'nginx:switch_maintenance', 'puma:stop'
 
@@ -157,7 +161,7 @@ namespace :nginx do
   after 'nginx:switch_app', 'sidekiq:restart'
   after 'nginx:switch_app', 'puma:restart'
   before 'nginx:switch_app', 'sidekiq:monit:monitor'
-  before 'nginx:switch_app', 'puma:monit:monitor'
+  # before 'nginx:switch_app', 'puma:monit:monitor'
 end
 
 # These recovery tasks are to be invoked ONLY if you are rebuilding an environment from scratch
@@ -170,16 +174,16 @@ namespace :recovery do
   task :load_db_from_backups do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
-        execute :rake, "'db:restore['IRM_#{fetch(:stage)}', 'Primary']' RAILS_ENV=#{fetch(:stage)}"
-        execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
+        execute :rake, "db:restore_primary_db RAILS_ENV=#{fetch(:stage)}"
+        execute :rake, "db:restore_replica_db RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
 
-  task :create_replica do
+  task :restore_replica_db do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
-        execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
+        execute :rake, "db:restore_replica_db RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
@@ -192,7 +196,7 @@ namespace :recovery do
     end
   end
 
-  
+
 end
 
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
@@ -248,7 +252,8 @@ namespace :IRM do
 
       # Execute the command on the remote host
       execute set_env_command
-
+      # Export the RAILS_MASTER_KEY
+      execute "echo \"#{env_value}\" > #{release_path}/config/credentials/#{fetch(:stage)}.key"
       # Reload the environment so the change takes effect
       # execute :sudo, 'source /etc/environment'
     end
@@ -257,12 +262,13 @@ namespace :IRM do
   desc 'Generate and upload Monit, nginx configuration and systemd service files'
   task :setup do
     on roles(:app) do
-      configure_logrotate
-    
+      # configure_logrotate
+
       # Define the paths
       monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
       nginx_config_path = "/etc/nginx/sites-available"
+      puma_config_path = "/home/ubunut/IRM/shared"
 
       # Helper method to generate and upload files
       def generate_and_upload(template_path, local_temp_path, remote_path)
@@ -274,6 +280,11 @@ namespace :IRM do
         # Move the file to the final destination with sudo
         execute :sudo, :mv, local_temp_path, remote_path
       end
+
+      # For Puma config
+      local_puma_config = "/tmp/puma.rb"
+      generate_and_upload('./config/deploy/templates/puma.rb.erb', local_puma_config, puma_config_path)
+
 
       # For Puma Monit config
       local_puma_monit = "/tmp/puma_IRM_#{fetch(:stage)}.conf"
@@ -288,9 +299,9 @@ namespace :IRM do
       generate_and_upload('./config/deploy/monit/sidekiq_IRM_env.conf.erb', local_sidekiq_monit, monit_config_path)
 
       # for nginx config
-      local_nginx_conf = "/tmp/nginx_IRM_#{fetch(:stage)}"
+      local_nginx_conf = "/tmp/IRM_#{fetch(:stage)}"
       generate_and_upload('./config/deploy/templates/nginx_conf.erb', local_nginx_conf, nginx_config_path)
-      execute :sudo, "ln -s #{nginx_config_path}/nginx_IRM_#{fetch(:stage)} /etc/nginx/sites-enabled/nginx_IRM_#{fetch(:stage)} || true"
+      execute :sudo, "ln -s #{nginx_config_path}/IRM_#{fetch(:stage)} /etc/nginx/sites-enabled/IRM_#{fetch(:stage)} || true"
 
       # for monitrc
       local_monitrc = "/tmp/monitrc"
@@ -302,6 +313,9 @@ namespace :IRM do
 
       # Remove the /etc/nginx/sites-enabled/default file
       execute :sudo, :rm, "-f", "/etc/nginx/sites-enabled/default"
+
+      execute :mkdir, "-p", "/home/ubuntu/IRM/shared/tmp/sockets"
+      execute :touch, "/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock"
 
       # restart nginx - Does not work as the nginx config is pointing to the app, which is not yet deployed
       # execute :sudo, "service nginx restart"
@@ -323,5 +337,5 @@ namespace :IRM do
     end
   end
 
-  before 'IRM:setup', 'IRM:set_rails_master_key'
+  # before 'IRM:setup', 'IRM:set_rails_master_key'
 end

@@ -7,7 +7,7 @@ require 'fileutils'
 namespace :xtrabackup do
 
    desc "Run the xtrabackup script with environment variables set from Rails credentials and .env"
-  task generate_backup_script: :environment do 
+  task generate_backup_script: :environment do
 
     # Path to the original and temporary script
     original_script_path = Rails.root.join('lib', 'tasks', 'db_backup_xtra.sh')
@@ -19,7 +19,7 @@ namespace :xtrabackup do
 
     # Replace placeholders with credentials
     script_content.gsub!('__BUCKET__', ENV["AWS_S3_BUCKET"] + "-backup-xtra")
-    script_content.gsub!('__AWS_REGION__', ENV["AWS_REGION"].to_s)
+    script_content.gsub!('__AWS_REGION__', ENV["AWS_S3_REGION"].to_s)
     script_content.gsub!('__AWS_ACCESS_KEY_ID__', Rails.application.credentials.dig("AWS_ACCESS_KEY_ID").to_s)
     script_content.gsub!('__AWS_SECRET_ACCESS_KEY__', Rails.application.credentials.dig("AWS_SECRET_ACCESS_KEY").to_s)
     script_content.gsub!('__MYSQL_PASSWORD__', Rails.application.credentials.dig("DB_PASS").to_s)
@@ -122,71 +122,4 @@ namespace :xtrabackup do
     "/tmp/backup/full_#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}"
   end
 
-  desc "Full backup"
-  task full: [:environment, :setup_env] do
-    puts "Running FULL backup..."
-    ensure_s3_bucket_exists
-    FileUtils.mkdir_p(backup_target_dir) # Ensure target directory exists
-    cmd = <<~CMD
-      #{xtrabackup_bin} \
-      --backup \
-      --target-dir=#{backup_target_dir} \
-      --user=#{mysql_user} \
-      --password=#{mysql_password}
-
-      #{xbcloud_bin} put --s3-bucket="#{s3_bucket}" --storage=s3 --parallel=10 #{backup_target_dir}
-    CMD
-
-    system(cmd) || abort("FULL backup failed!")
-    puts "Full backup complete."
-  end
-
-  desc "Incremental backup (needs last full)"
-  task incremental: [:environment, :setup_env] do
-    base_dir = ENV["BASE_DIR"] || raise("Set BASE_DIR pointing to last full backup")
-    puts "Running INCREMENTAL backup from #{base_dir}..."
-    ensure_s3_bucket_exists
-
-    inc_dir = "/tmp/backup/inc_#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}" # Consistent path
-    FileUtils.mkdir_p(inc_dir) # Ensure incremental directory exists
-
-    cmd = <<~CMD
-      #{xtrabackup_bin} \
-      --backup \
-      --target-dir=#{inc_dir} \
-      --incremental-basedir=#{base_dir} \
-      --user=#{mysql_user} \
-      --password=#{mysql_password}
-
-      #{xbcloud_bin} put --s3-bucket="#{s3_bucket}" --storage=s3 --parallel=10 #{inc_dir}
-    CMD
-
-    system(cmd) || abort("INCREMENTAL backup failed!")
-    puts "Incremental backup complete."
-  end
-
-  desc "Restore latest FULL + INCREMENTALS"
-  task restore: [:environment, :setup_env] do
-    restore_dir = "/restore/#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}"
-    FileUtils.mkdir_p(restore_dir)
-
-    puts "Restoring from S3 bucket #{s3_bucket} into #{restore_dir}..."
-
-    cmd = <<~CMD
-      #{xbcloud_bin} get --s3-bucket=#{s3_bucket} --storage=s3 --parallel=10 --prefix=full_ --to=#{restore_dir}/full
-
-      #{xtrabackup_bin} --prepare --apply-log-only --target-dir=#{restore_dir}/full
-
-      #{xbcloud_bin} list --s3-bucket=#{s3_bucket} | grep inc_ | while read inc; do
-        #{xbcloud_bin} get --s3-bucket=#{s3_bucket} --storage=s3 --parallel=10 --prefix=$inc --to=#{restore_dir}/$inc
-        #{xtrabackup_bin} --prepare --apply-log-only --target-dir=#{restore_dir}/full --incremental-dir=#{restore_dir}/$inc
-      done
-
-      echo "Final apply..."
-      #{xtrabackup_bin} --prepare --target-dir=#{restore_dir}/full
-    CMD
-
-    system(cmd) || abort("Restore failed!")
-    puts "Restore complete."
-  end
 end

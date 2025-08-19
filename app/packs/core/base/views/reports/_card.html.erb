@@ -2,15 +2,15 @@
 <div class="col-md-3 single-note-item all-category <%= type %>">
   <div class="card card-body">
     <span class="side-stick"></span>
-    <h6 class="note-title text-truncate w-75 mb-0"> 
+    <h6 class="note-title text-truncate w-75 mb-0">
       <% if report.is_dynamic? %>
         <%= report.name %>
       <% else %>
-        <%= link_to report.name, report.url, class: "fw-bolder" %> 
+        <%= link_to report.name, report.url, class: "fw-bolder" %>
       <% end %>
     </h6>
     <p class="note-date fs-2">
-        <%= l report.updated_at %> 
+        <%= l report.updated_at %>
     </p>
     <span class="note-date fs-1"><%= report.category.presence || "N/A" %></span>
     <div class="note-content">
@@ -44,7 +44,7 @@
                                   ti ti-eye
                                 " href="<%= report_path(report) %>">Show</a>
 
-            <% if policy(report).update? %>              
+            <% if policy(report).update? %>
               <a class="
                                     note-social
                                     badge-group-item badge-social
@@ -54,7 +54,9 @@
                                     d-flex
                                     ti ti-edit
                                   " href="<%= edit_report_path(report) %>"> Edit</a>
-              
+
+                <% if report.allow_custom_grid_columns? %>
+
                 <a class="
                                       note-social
                                       badge-group-item badge-social
@@ -64,7 +66,10 @@
                                       d-flex
                                       ti ti-settings
                                     " href="<%= configure_grids_grid_view_preferences_path(owner_type: 'Report', owner_id: report.id) %>">Configure Grid</a>
-              
+
+
+                <% end %>
+
             <% end %>
           </div>
         </div>

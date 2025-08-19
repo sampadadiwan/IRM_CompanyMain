@@ -72,6 +72,13 @@ class Report < ApplicationRecord
         @model = "NonIndividualKyc"
       end
     end
+    @model
+  end
+
+  def allow_custom_grid_columns?
+    model.constantize.const_defined?(:STANDARD_COLUMNS)
+  rescue NameError
+    false
   end
 
   def set_model

@@ -216,9 +216,13 @@
           Send Document
         </button>
         <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
+
+          <%
+            doc_send_msg = "This will send an email to the recipients with this document. Proceed?"
+          %>
           <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
             <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
-                          method: :patch, form_class: "deleteButton",
+                          method: :patch, form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: doc_send_msg},
                           class: "dropdown-item ti ti-mail" %>
           <% end %>
         </div>

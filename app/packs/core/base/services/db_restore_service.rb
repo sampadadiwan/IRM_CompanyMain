@@ -27,8 +27,8 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   PROFILE_NAME = "DbCheckInstanceProfile".freeze
 
   # Entry point for the service. Creates a new instance of the service and runs the restore process.
-  def self.run!(instance_name: INSTANCE_NAME)
-    new.run!(instance_name: instance_name)
+  def self.run!(instance_name: INSTANCE_NAME, stop_instance_flag: true)
+    new.run!(instance_name: instance_name, stop_instance_flag: stop_instance_flag)
   end
 
   # Main method to orchestrate the DB restore process.
@@ -40,7 +40,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   # 6. Executes the backup script remotely.
   # 7. Verifies the timestamp of the restored data to ensure it's recent.
   # 8. Cleans up temporary files and stops the instance.
-  def run!(instance_name: INSTANCE_NAME)
+  def run!(instance_name: INSTANCE_NAME, stop_instance_flag: true)
     total_start_time = Time.zone.now
 
     # Ensure the backup script is present locally.
@@ -79,7 +79,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     # Clean up temporary files and stop the instance.
     Rails.logger.info { "[DbRestoreService] Starting step: Cleanup and stop instance" }
     cleanup(ip)
-    stop_instance(instance)
+    stop_instance(instance) if stop_instance_flag
 
     # Log the total duration of the process.
     total_duration = Time.zone.now - total_start_time
