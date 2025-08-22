@@ -13,7 +13,8 @@ class AllocationRunsController < ApplicationController
   # rubocop :disable Rails/SkipsModelValidations
   def unlock
     fund = @allocation_run.fund
-    if AllocationRun.where(fund: fund).update_all(locked: false).positive?
+    # We want to unlock AllocationRuns with the same end_date
+    if AllocationRun.where(fund: fund, end_date: @allocation_run.end_date).update_all(locked: false).positive?
       flash[:notice] = "AllocationRun unlocked successfully."
     else
       flash[:alert] = "Failed to unlock AllocationRun."
