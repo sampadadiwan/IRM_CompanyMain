@@ -1,6 +1,6 @@
 class FundFormulasController < ApplicationController
   before_action :set_fund_formula, only: %i[show edit update destroy]
-  after_action :verify_authorized, except: %i[index enable_formulas]
+  after_action :verify_authorized, except: %i[index enable_formulas generate_formula]
 
   # GET /fund_formulas or /fund_formulas.json
   def index
@@ -96,6 +96,37 @@ class FundFormulasController < ApplicationController
     end
   end
 
+  def generate_formula
+    name = params[:name]
+    rule_type = params[:rule_type]
+    entry_type = params[:entry_type]
+    description = params[:description]
+
+    if name.blank? || rule_type.blank? || description.blank?
+      flash.now[:alert] = "Name, Rule Type, and Description are required to generate a formula."
+      msg = "Formula Generation Failed - Missing #{'Name' if name.blank?} #{'Rule Type' if rule_type.blank?} #{'Description' if description.blank?} - #{Time.zone.now}"
+      UserAlert.new(message: msg, user_id: current_user.id, level: :danger).broadcast
+      # dont render anything if params are missing
+      respond_to do |format|
+        format.turbo_stream { render partial: "fund_formulas/generate_formula", locals: { formula: nil } }
+      end
+    else
+      formula = FundFormulaGenerator.call(
+        name: name,
+        rule_type: rule_type,
+        entry_type: entry_type,
+        description: description
+      )
+
+      respond_to do |format|
+        msg = "Formula Generated Successfully - #{Time.zone.now}"
+        UserAlert.new(message: msg, user_id: current_user.id, level: :success).broadcast
+        # render the formula in the target element
+        format.turbo_stream { render partial: "fund_formulas/generate_formula", locals: { formula: } }
+      end
+    end
+  end
+
   # DELETE /fund_formulas/1 or /fund_formulas/1.json
   def destroy
     @fund_formula.destroy
@@ -123,7 +154,7 @@ class FundFormulasController < ApplicationController
       # Only support can change the formula
       params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :formula, :meta_data, :generate_ytd_qtly, :explain, :is_template, tag_list: [])
     else
-      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :meta_data, :generate_ytd_qtly, :explain, tag_list: [])
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :ai_generated, :meta_data, :generate_ytd_qtly, :explain, tag_list: [])
     end
   end
 end

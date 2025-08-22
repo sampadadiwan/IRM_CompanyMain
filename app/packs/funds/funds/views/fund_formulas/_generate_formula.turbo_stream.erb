@@ -1,0 +1,8 @@
+<% if formula.present? %>
+  <% target ||= params[:target] || "formulaForm" %>
+  <%= turbo_stream.replace target do %>
+    <div id="formula_form" data-generate-formula-target="formulaForm">
+      <%= text_area_tag "fund_formula[formula]", formula, id: "fund_formula_formula", class: "form-control", placeholder: "Read-only field" %>
+    </div>
+  <% end %>
+<% end %>
