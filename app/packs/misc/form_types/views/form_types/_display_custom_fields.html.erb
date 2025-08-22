@@ -36,6 +36,17 @@
 <% end %> 
 
 <% if timestamps_and_snapshot %>
+    <% if model.form_type_id.present? %>
+    <tr class="">
+        <td>
+            Form Type
+        </td>
+        <td>
+            <%= link_to model.form_type.tag || model.form_type_id, model.form_type %>
+        </td>
+    </tr>
+    <% end %> 
+
 <tr class="">
     <td>
         Created
