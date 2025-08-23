@@ -335,7 +335,7 @@ class PortfolioInvestment < ApplicationRecord
     %w[
       amount cost_of_sold created_at fmv folio_id gain investment_date
       net_quantity notes portfolio_company_name quantity sector sold_quantity
-      updated_at snapshot_date snapshot
+      updated_at snapshot_date snapshot portfolio_company_id
     ].sort
   end
 

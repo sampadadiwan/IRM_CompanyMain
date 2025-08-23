@@ -1,0 +1,144 @@
+<%
+    investor = Investor.where(id: params[:portfolio_company_id]).first
+
+    if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
+        # Create dummy mappings for the startup, which has all the kpi names
+        investor_kpi_mappings = investor.investor_kpi_mappings
+    else
+        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, standard_kpi_name: kpi_name, category: "General")}
+    end
+
+    # Filter investor_kpi_mappings based on the category if provided
+    if params[:category].present?
+        investor_kpi_mappings = investor_kpi_mappings.select{|ikm| ikm.category == params[:category]}
+    end
+%>
+
+<%= turbo_frame_tag "kpi_reports_budget", target: "_top" do %>
+
+    <%= render "/kpi_reports/budget_filter", entity: @entity %>
+
+    <div class="table-responsive" data-controller="datatable">
+        <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable">
+            <%
+                num_periods_to_display = params[:num_periods] &.to_i || 2
+
+                # Separate kpi_reports into Quarterly and YTD groups
+                quarterly_reports = kpi_reports.filter { |r| r.period == 'Quarter' }.sort_by(&:as_of).last(num_periods_to_display)
+                ytd_reports = kpi_reports.filter { |r| r.period == 'YTD' }.sort_by(&:as_of).last(num_periods_to_display)
+
+                # Combine and sort the filtered reports by as_of date
+                filtered_kpi_reports = (quarterly_reports + ytd_reports).sort_by(&:as_of)
+
+                # Group filtered_kpi_reports by as_of date to easily access Actuals and Budgets for each period
+                grouped_filtered_kpi_reports = filtered_kpi_reports.group_by(&:as_of).transform_values do |reports_for_date|
+                    {
+                        actual: reports_for_date.find { |r| r.tag_list.blank? },
+                        budget: reports_for_date.find { |r| r.tag_list == 'Budget' }
+                    }
+                end
+            %>
+            <thead>
+                <tr>
+                    <th rowspan="3">Particulars</th>
+                    <% filtered_kpi_reports.map(&:period).uniq.each do |period| %>
+                        <th colspan="<%= filtered_kpi_reports.select { |r| r.period == period }.map(&:as_of).uniq.count * 3 %>" class="text-center">
+                            <%= period %>
+                        </th>
+                    <% end %>
+                </tr>
+                <tr>
+                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                        <th colspan="2" class="text-center">
+                            <%= as_of_date.strftime("%b-%y") %>
+                        </th>
+                        <th rowspan="2" class="text-center">Achievement %</th>
+                    <% end %>
+                </tr>
+                <tr>
+                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                        <th>Actuals</th>
+                        <th>Budget</th>
+                    <% end %>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Period</td>
+                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                        <% kpi_report_for_period = filtered_kpi_reports.find { |r| r.as_of == as_of_date && r.tag_list.blank? } %>
+                        <td>
+                            <%= link_to kpi_report_for_period.period, show_performance_kpi_reports_path(as_of: kpi_report_for_period.as_of, portfolio_company_id: kpi_report_for_period.portfolio_company_id), target: "_blank" %>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    <% end %>
+                </tr>
+                <% investor_kpi_mappings.each do |ikm| %>
+                    <tr>
+                        <td>
+                            <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
+                        </td>
+                        <% grouped_filtered_kpi_reports.keys.sort.each do |as_of_date| %>
+                            <% actual_kpi_report = grouped_filtered_kpi_reports[as_of_date][:actual] %>
+                            <% budget_kpi_report = grouped_filtered_kpi_reports[as_of_date][:budget] %>
+
+                            <!-- Actuals Column -->
+                            <td class="value_<%= actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                <% if actual_kpi_report %>
+                                    <% kpis = actual_kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
+                                    <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
+                                    <% if kpi %>
+                                        <%= display_kpi(kpi, ikm, params: params) %>
+                                        <br>
+                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
+                                        <% if kpi.notes.present? %>
+                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                        <% end %>
+                                    <% else %>
+                                        N/A
+                                    <% end %>
+                                <% else %>
+                                    N/A
+                                <% end %>
+                            </td>
+
+                            <!-- Budget Column -->
+                            <td class="value_<%= budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                <% if budget_kpi_report %>
+                                    <% kpis = budget_kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
+                                    <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
+                                    <% if kpi %>
+                                        <%= display_kpi(kpi, ikm, params: params) %>
+                                        <br>
+                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
+                                        <% if kpi.notes.present? %>
+                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                        <% end %>
+                                    <% else %>
+                                        N/A
+                                    <% end %>
+                                <% else %>
+                                    N/A
+                                <% end %>
+                            </td>
+
+                            <!-- Achievement % Column -->
+                            <td>
+                                <%
+                                    actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                    budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                %>
+                                <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
+                                    <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                <% else %>
+                                    N/A
+                                <% end %>
+                            </td>
+                        <% end %>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+<% end %>

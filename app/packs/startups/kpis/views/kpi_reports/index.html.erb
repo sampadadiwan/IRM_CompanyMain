@@ -7,6 +7,10 @@
         <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
             <%= render "/kpi_reports/grid_view", kpi_reports: @kpi_reports if @kpi_reports %>
         <% end %>
+    <% elsif params[:budget_view].present? %>
+        <%= turbo_frame_tag "kpi_reports_budget", target: "_top" do %>
+            <%= render "/kpi_reports/budget_view_table", kpi_reports: @kpi_reports if @kpi_reports %>
+        <% end %>
     <% else %>
         <% turbo_frame_tag "kpi_reports_frame", target: "_top" do %>
             <%= render "/kpi_reports/index", kpi_reports: @kpi_reports, q: @q if @kpi_reports %>

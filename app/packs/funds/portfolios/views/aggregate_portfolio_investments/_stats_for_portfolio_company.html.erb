@@ -20,7 +20,7 @@
         ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, as_of_date, entity_id) || 0
       end
       income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
-        ExchangeRate.convert(pc.currency, target_currency, pc.amount_cents, as_of_date, entity_id) || 0
+        ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, as_of_date, entity_id) || 0
       end
     %>
 
