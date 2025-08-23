@@ -1,3 +1,9 @@
+V9.0.93
+#####################################
+82d328f84 Generate formula (#957)
+5b9b3dbbf Display form type tag on show page (#971)
+df4556ebd Rotated keys
+
 V9.0.91
 #####################################
 f1ce3c570 Merge pull request #963 from ausangshukla/data_card
