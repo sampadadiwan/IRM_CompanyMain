@@ -1,4 +1,4 @@
 
-<%= turbo_frame_tag "capital_calls_frame", target: "_top" do %>
+<%= turbo_frame_tag with_frame("capital_calls_frame"), target: "_top" do %>
     <%= render "/capital_calls/index", capital_calls: @capital_calls, q: @q, fund: @fund, lazy_load_data: false %>
  <% end %>

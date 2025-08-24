@@ -1,5 +1,5 @@
 
-<%= turbo_frame_tag "capital_distributions_frame", target: "_top" do %>
-  <%= render "/layouts/filter", associations: [] %>        
+<%= turbo_frame_tag with_frame("capital_distributions_frame"), target: "_top" do %>
+  <%= render "/layouts/filter", associations: [] %>
   <%= render "/capital_distributions/index", capital_distributions: @capital_distributions %>
 <% end %>

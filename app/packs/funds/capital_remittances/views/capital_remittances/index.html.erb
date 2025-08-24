@@ -2,7 +2,7 @@
 <%= render "/layouts/filter", associations: [:capital_call, :capital_commitment, :investor] %>
 
 <%= render ReportingComponent.new do %>
-    <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
+    <%= turbo_frame_tag with_frame("capital_remittances_frame"), target: "_top" do %>
         <%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: @capital_call, capital_commitment: @capital_commitment %>
     <% end %>
 <% end %>

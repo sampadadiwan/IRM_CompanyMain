@@ -127,7 +127,26 @@
         </tr>
 
         <%= display_custom_fields(@user) %>
-        
+
+
+        <tr>
+          <td>
+            Regions
+          </td>
+          <td>
+            <%= @user.regions %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Primary Region
+          </td>
+          <td>
+            <%= @user.primary_region %>
+          </td>
+        </tr>
+
       </table>
 
       <div>

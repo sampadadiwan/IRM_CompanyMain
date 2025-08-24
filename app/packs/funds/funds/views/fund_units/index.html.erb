@@ -2,7 +2,7 @@
 <%= render "/layouts/filter", associations: [:fund, :capital_commitment, :investor] %>
 
 <%= render ReportingComponent.new do %>
-  <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+  <%= turbo_frame_tag with_frame("fund_units_list"), target: "_top" do %>
     <%= render "/fund_units/index", fund_units: @fund_units, cols: params[:cols] %>
   <% end %>
 <% end %>

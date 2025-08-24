@@ -18,44 +18,43 @@
 
     <%= render "/kpi_reports/budget_filter", entity: @entity %>
 
+    <%
+        num_periods_to_display = (params[:num_periods] &.to_i || 1)
+        tag_lists_to_display = @tag_list
+
+        # Determine if the Achievement % column should be shown
+        show_achievement_column = @tag_list.include?('Actual') && @tag_list.include?('Budget')
+
+        # Separate kpi_reports into Quarterly and YTD groups
+        primary_tag_for_filtering = @tag_list.find { |tag| tag != 'Actual' } || 'Actual'
+
+        quarterly_reports_base = kpi_reports.filter { |r| r.period == 'Quarter' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
+        year_reports_base = kpi_reports.filter { |r| r.period == 'Year' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
+
+        # Get unique as_of dates from the base reports
+        quarterly_as_of_dates = quarterly_reports_base.map(&:as_of).uniq
+        year_as_of_dates = year_reports_base.map(&:as_of).uniq
+
+        # Now, filter all kpi_reports to include all tags for these specific as_of dates
+        quarterly_reports = kpi_reports.filter { |r| r.period == 'Quarter' && r.as_of.present? && quarterly_as_of_dates.include?(r.as_of) }
+        year_reports = kpi_reports.filter { |r| r.period == 'Year' && r.as_of.present? && year_as_of_dates.include?(r.as_of) }
+
+        # Group kpi_reports by as_of date and tag_list
+        grouped_quarterly_reports = quarterly_reports.group_by(&:as_of).transform_values do |reports_for_date|
+            tag_lists_to_display.map do |tag|
+                [tag, reports_for_date.find { |r| r.tag_list == tag }]
+            end.to_h
+        end
+        grouped_yearly_reports = year_reports.group_by(&:as_of).transform_values do |reports_for_date|
+            tag_lists_to_display.map do |tag|
+                [tag, reports_for_date.find { |r| r.tag_list == tag }]
+            end.to_h
+        end
+
+    %>
+
     <div class="table-responsive" data-controller="datatable">
         <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey">
-
-
-            <%
-                num_periods_to_display = (params[:num_periods] &.to_i || 1)
-                tag_lists_to_display = @tag_list
-
-                # Determine if the Achievement % column should be shown
-                show_achievement_column = @tag_list.include?('Actual') && @tag_list.include?('Budget')
-
-                # Separate kpi_reports into Quarterly and YTD groups
-                primary_tag_for_filtering = @tag_list.find { |tag| tag != 'Actual' } || 'Actual'
-
-                quarterly_reports_base = kpi_reports.filter { |r| r.period == 'Quarter' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
-                year_reports_base = kpi_reports.filter { |r| r.period == 'Year' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
-
-                # Get unique as_of dates from the base reports
-                quarterly_as_of_dates = quarterly_reports_base.map(&:as_of).uniq
-                year_as_of_dates = year_reports_base.map(&:as_of).uniq
-
-                # Now, filter all kpi_reports to include all tags for these specific as_of dates
-                quarterly_reports = kpi_reports.filter { |r| r.period == 'Quarter' && r.as_of.present? && quarterly_as_of_dates.include?(r.as_of) }
-                year_reports = kpi_reports.filter { |r| r.period == 'Year' && r.as_of.present? && year_as_of_dates.include?(r.as_of) }
-
-                # Group kpi_reports by as_of date and tag_list
-                grouped_quarterly_reports = quarterly_reports.group_by(&:as_of).transform_values do |reports_for_date|
-                    tag_lists_to_display.map do |tag|
-                        [tag, reports_for_date.find { |r| r.tag_list == tag }]
-                    end.to_h
-                end
-                grouped_yearly_reports = year_reports.group_by(&:as_of).transform_values do |reports_for_date|
-                    tag_lists_to_display.map do |tag|
-                        [tag, reports_for_date.find { |r| r.tag_list == tag }]
-                    end.to_h
-                end
-
-            %>
             <thead>
                 <tr>
                     <th rowspan="3">Particulars</th>
@@ -101,6 +100,7 @@
                     <% end %>
                 </tr>
             </thead>
+
             <tbody>
 
                 <% investor_kpi_mappings.each do |ikm| %>

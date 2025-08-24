@@ -2,7 +2,7 @@
 
 <%= render ReportingComponent.new do %>
 
-    <%= turbo_frame_tag "investment_opportunities_list", target: "_top" do %>
+    <%= turbo_frame_tag with_frame("investment_opportunities_list"), target: "_top" do %>
         <%= render "/investment_opportunities/index",  investment_opportunities: @investment_opportunities %>
         <%= raw pagy_bootstrap_nav(@pagy) %>
     <% end %>

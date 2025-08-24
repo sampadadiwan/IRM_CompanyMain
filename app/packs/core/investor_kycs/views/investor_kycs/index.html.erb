@@ -2,8 +2,7 @@
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments, :funds] %>
 <%= render "/investor_kycs/stats" if current_user.curr_role_employee?  %>
 <%= render ReportingComponent.new do %>
-    <%= turbo_frame_tag "investor_kycs_frame", target: "_top" do %>
+    <%= turbo_frame_tag with_frame("investor_kycs_frame"), target: "_top" do %>
         <%= render "investor_kycs/index", investor_kycs: @investor_kycs, lazy_load_data: false %>
     <%end%>
 <% end %>
-  

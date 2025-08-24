@@ -5,13 +5,13 @@
 
 
 <%= render ReportingComponent.new do %>
-    <%= turbo_frame_tag "investors_frame", target: "_top" do %>
+    <%= turbo_frame_tag with_frame("investors_frame"), target: "_top" do %>
         <%= render "/investors/index", investors: @investors %>
     <%end%>
 <% end %>
 
 <div class="associated_entity">
-<%#= render "/layouts/steps", steps: ["Setup Investors", "Grant Access", "Add Users", 
+<%#= render "/layouts/steps", steps: ["Setup Investors", "Grant Access", "Add Users",
                       "View Investments", "Manage Notes"].freeze %>
 
 </div>

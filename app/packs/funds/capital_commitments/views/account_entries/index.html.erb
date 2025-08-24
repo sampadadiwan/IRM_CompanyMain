@@ -3,7 +3,7 @@
 <%= render "/layouts/filter", associations: [:capital_commitment, :allocation_run, :fund_formula], include_template: "/account_entries/group_filter", hidden_fields: {time_series: params[:time_series],  parent_in_key: params[:parent_in_key]} %>
 
 <%= render ReportingComponent.new do %>
-  <%= turbo_frame_tag "account_entries_frame", target: "_top" do %>
+  <%= turbo_frame_tag with_frame("account_entries_frame"), target: "_top" do %>
     <% if params[:ag].present? %>
       <%= render "/account_entries/index_ag", account_entries: @account_entries,
           fund: nil, lazy_load_data: false, data_source: nil %>

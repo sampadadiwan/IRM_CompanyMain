@@ -58,7 +58,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL", metadata_help: "{chart: false}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis Budget vs Actual", path: "investors/widgets/kpis_budget_vs_actual", size: "XL", metadata_help: "{categories: 'Income Statement', tag_list: 'Actual,Budget', units: 'Lakhs', num_periods: 2}"),
 
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder"}'),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{cols: 1, fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder"}'),
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),

@@ -1,0 +1,5 @@
+<% turbo_frame_id = "report_#{@report.id}" %>
+<div class="associated_entity">
+    <turbo-frame id="<%= turbo_frame_id %>" src="<%= @report_url + '&report_id=' + @report.id.to_s + '&title=' + ERB::Util.url_encode(@report.name) %>" loading="lazy" target="_top">
+    </turbo-frame>
+</div>

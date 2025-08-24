@@ -49,6 +49,8 @@ Rails.application.routes.draw do
     post 'accept_terms', on: :collection
     get 'chat', on: :collection
     post 'chat', on: :collection
+    get 'cross_instance_link', on: :member
+    get 'cross_instance_login', on: :collection
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

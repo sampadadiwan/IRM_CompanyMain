@@ -1,3 +1,3 @@
-<%= turbo_frame_tag "fund_unit_settings_frame", target: "_top" do %>
+<%= turbo_frame_tag with_frame("fund_unit_settings_frame"), target: "_top" do %>
 	<%= render "/fund_unit_settings/index", fund_unit_settings: @fund_unit_settings, lazy_load_data: false %>
 <% end %>

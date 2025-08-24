@@ -57,6 +57,35 @@ class UsersController < ApplicationController
     end
   end
 
+  # Generates a cross-instance login link for the user and redirects to the target site
+  # rubocop:disable Security/Eval
+  def cross_instance_link
+    # Generate a short-lived token for the user's email, purpose: login
+    token = CrossInstanceLink.new.generate(current_user.email, purpose: :login, expires_in: 30.seconds)
+    site = params[:site].to_sym
+    # Build the target URL using the site param and the generated token
+    url = eval(ENV.fetch("SITES", nil))[site] + "/users/cross_instance_login?token=#{token}"
+
+    # Redirect the user to the cross-instance login URL
+    redirect_to url
+  end
+  # rubocop:enable Security/Eval
+
+  # Handles login via a cross-instance link
+  def cross_instance_login
+    # Verify the token and extract the payload (user email)
+    payload = CrossInstanceLink.new.verify(params[:token], purpose: :login)
+    # Find the user by email
+    user = User.find_by!(email: payload[:email])
+    # Sign in the user
+    sign_in(user)
+    # Redirect to the root path after successful login
+    redirect_to root_path
+  rescue CrossInstanceLink::VerificationError
+    # Handle invalid or expired token
+    render plain: "Invalid or expired link", status: :unauthorized
+  end
+
   def no_password_login
     # If we have support trying to log in as this user, lets track that
     support_user_id = current_user&.has_cached_role?(:support) ? current_user.id : nil

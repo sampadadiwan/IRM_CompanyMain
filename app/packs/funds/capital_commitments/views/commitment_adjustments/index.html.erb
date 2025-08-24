@@ -1,5 +1,5 @@
 
-<%= turbo_frame_tag "commitment_adjustments_list", target: "_top" do %>
+<%= turbo_frame_tag with_frame("commitment_adjustments_list"), target: "_top" do %>
   <%= render "/commitment_adjustments/index", commitment_adjustments: @commitment_adjustments %>
 <% end %>
 

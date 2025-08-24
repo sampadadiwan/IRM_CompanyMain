@@ -1,5 +1,5 @@
 
 
-<%= turbo_frame_tag "portfolio_cashflows_list", target: "_top" do %>
+<%= turbo_frame_tag with_frame("portfolio_cashflows_list"), target: "_top" do %>
     <%= render "/portfolio_cashflows/index", portfolio_cashflows: @portfolio_cashflows %>
 <% end %>

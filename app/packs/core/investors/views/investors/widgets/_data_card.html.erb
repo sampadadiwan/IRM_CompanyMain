@@ -7,31 +7,32 @@
   #  Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder
   fields_to_display = args[:fields] ? args[:fields].split(",").map { |field| field.strip.split(":") } : []
   uri_params ||= {}
+  cols = args[:cols] || 2
 %>
 
 
 <%= render ToggleCard.new(title: @investor.investor_name, css_class: "show_investors_data_card", state: "show") do %>
 
 <table class="table table-bordered dataTable ">
-
-  <% fields_to_display.each do |label, key| %>
+  <% fields_to_display.each_slice(cols) do |row_fields| %>
     <tr>
-      <td>
-        <%= label.humanize %>
-      </td>
-      <td>
-        <% value = key.split('.').inject(investor) { |object, method| object&.send(method) } %>
-        <% if  value.is_a?(Date) %>
-          <%= l(value) %>
-        <% elsif value.is_a?(Money) %>
-          <%= money_to_currency value, params %>
-        <% else %>
-          <%= value %>
-        <% end %>
-      </td>
+      <% row_fields.each do |label, key| %>
+        <td>
+          <strong><%= label.humanize %></strong>
+        </td>
+        <td>
+          <% value = key.split('.').inject(investor) { |object, method| object&.send(method) } %>
+          <% if  value.is_a?(Date) %>
+            <%= l(value) %>
+          <% elsif value.is_a?(Money) %>
+            <%= money_to_currency value, params %>
+          <% else %>
+            <%= value %>
+          <% end %>
+        </td>
+      <% end %>
     </tr>
   <% end %>
-
 </table>
 
 <% end %>

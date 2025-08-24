@@ -30,7 +30,9 @@ class UserDashboard < Administrate::BaseDashboard
     confirmed_at: Field::DateTime,
     roles: Field::HasMany,
     access_rights_cache: Field::String,
-    curr_role: Field::Select.with_options(collection: ["", "employee", "investor"])
+    curr_role: Field::Select.with_options(collection: ["", "employee", "investor"]),
+    regions: Field::String,
+    primary_region: Field::Select.with_options(collection: %w[in us sg eu])
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -60,6 +62,8 @@ class UserDashboard < Administrate::BaseDashboard
     last_name
     created_at
     updated_at
+    regions
+    primary_region
     email
     phone
     whatsapp_enabled
@@ -96,6 +100,8 @@ class UserDashboard < Administrate::BaseDashboard
     advisor_entity
     advisor_entity_roles
     roles
+    regions
+    primary_region
     permissions
   ].freeze
 

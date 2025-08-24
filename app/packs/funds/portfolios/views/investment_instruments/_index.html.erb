@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "investment_instruments_list", target: "_top" do %>
+<%= turbo_frame_tag with_frame("investment_instruments_list"), target: "_top" do %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
     <span>
@@ -13,7 +13,7 @@
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="ti ti-plus"></i> New
             </button>
-            
+
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% investment_instrument_form_types = current_user.entity.form_types.where(name: "InvestmentInstrument") %>

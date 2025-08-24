@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_23_154343) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_24_105331) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3178,6 +3178,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_23_154343) do
     t.text "access_rights_cache"
     t.integer "access_rights_cached_permissions"
     t.string "session_token"
+    t.string "regions", default: "in", null: false
+    t.string "primary_region", default: "in", null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true

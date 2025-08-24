@@ -23,7 +23,7 @@
 
 <%= render "/layouts/filter", associations: [:portfolio_company] %>
 
-<%= turbo_frame_tag "investments_frame", target: "_top"  do %>
+<%= turbo_frame_tag with_frame("investments_frame"), target: "_top"  do %>
 
   <% if params[:show_investments].blank? || params[:show_investments] == "true"  %>
     <% if params[:ag].present? %>
@@ -35,7 +35,7 @@
 
   <% if params[:portfolio_company_id].present? %>
 
-    
+
     <div class="associated_entity">
 
       <% if params[:show_charts].blank? || params[:show_charts] == "true"  %>
@@ -47,7 +47,7 @@
       <% end %>
 
     </div>
-    
+
   <% end %>
 <% end %>
 

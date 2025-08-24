@@ -1397,3 +1397,13 @@ button:disabled {
   max-width: 300px !important;
   display: inline-block !important;
 }
+
+#kpi_reports_budget_grid {
+  thead th {
+    font-weight: 600 !important;
+  }
+
+  a {
+    color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color)));
+  }
+}
