@@ -1,0 +1,18 @@
+<%
+  tag_list = args[:tag_list].split(",").map(&:strip) if args[:tag_list].present?
+  tag_list ||= ["Actual", "Budget"]
+  num_periods = args[:num_periods] || 2
+
+  uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, all: true, budget_view: true, categories: args[:categories], tag_list:, units: args[:units], num_periods:)) %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do
+%>
+    <%= turbo_frame_tag "kpi_reports_budget", target: "_top", src: "#{uri.to_s}" do %>
+    <%end%>
+
+<% end %>

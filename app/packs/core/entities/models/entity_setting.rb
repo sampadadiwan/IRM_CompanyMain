@@ -41,7 +41,7 @@ class EntitySetting < ApplicationRecord
   end
 
   # rubocop : disable Rails/SkipsModelValidations
-  def self.disable_all(reset_password: false)
+  def self.disable_all(reset: false)
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)
       User.update_all(whatsapp_enabled: false)
@@ -50,7 +50,7 @@ class EntitySetting < ApplicationRecord
       root.password = "password"
       root.save
 
-      if reset_password
+      if reset
         User.find_each do |u|
           u.password = "password"
           u.save

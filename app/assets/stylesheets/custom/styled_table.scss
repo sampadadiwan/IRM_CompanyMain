@@ -8,10 +8,11 @@ td[data-row-toggle-target="control"]:hover .expand {
   cursor: pointer;
 }
 
-table.table-grey {
+[data-bs-theme=light] table.table-grey {
   thead th {
     background-color: #f8f9fa !important;
     color: #212529;
+    border: 1px solid lightgray /* dark grey */
   }
 }
 

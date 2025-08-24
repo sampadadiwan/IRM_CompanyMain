@@ -18,11 +18,20 @@ class KpiReportsController < ApplicationController
                      @kpi_reports.includes(:user)
                    end
 
-    @kpi_reports = @kpi_reports.where(tag_list: [nil, ""]) if params[:tag_list].blank?
+    @kpi_reports = if params[:tag_list].blank?
+                     @tag_list = ["Actual"]
+                     @kpi_reports.where(tag_list: @tag_list)
+                   elsif params[:tag_list].is_a?(String)
+                     @tag_list = params[:tag_list].split(",").map(&:strip)
+                     @kpi_reports.where(tag_list: @tag_list)
+                   elsif params[:tag_list].is_a?(Array)
+                     @tag_list = params[:tag_list].map(&:strip)
+                     @kpi_reports.where(tag_list: @tag_list)
+                   end
 
     @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
     @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
-    @kpi_reports = filter_params(@kpi_reports, :period, :tag_list, :owner_type, :entity_id)
+    @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id)
     @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
 
     @pagy, @kpi_reports = pagy(@kpi_reports, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?

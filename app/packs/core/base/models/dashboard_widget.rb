@@ -56,6 +56,7 @@ class DashboardWidget < ApplicationRecord
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis", path: "investors/widgets/kpis_grid_view", size: "XL", metadata_help: "{chart: false, compound: false, period: 'Quarter', no_actions: false, categories: 'Balance Sheet, Income Statement'}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis Performance Table", path: "investors/widgets/performance_table", size: "XL", metadata_help: "{chart: false}"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Kpis Budget vs Actual", path: "investors/widgets/kpis_budget_vs_actual", size: "XL", metadata_help: "{categories: 'Income Statement', tag_list: 'Actual,Budget', units: 'Lakhs', num_periods: 2}"),
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder"}'),
 

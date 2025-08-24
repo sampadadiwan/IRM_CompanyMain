@@ -32,6 +32,9 @@ Highcharts.setOptions({
 });
 
 $('.select2').select2();
+document.addEventListener("turbo:frame-load", function() {
+  $('.select2').select2();
+});
 
 document.addEventListener("turbo:load", () => {
   document.querySelectorAll("action-text-attachment").forEach(el => {
@@ -84,7 +87,7 @@ $( document ).on('turbo:load', function() {
     // data-simplebar
     $(".data-simplebar").each(function() {
       new SimpleBar(this);
-    });    
+    });
 
     "use strict";
 });

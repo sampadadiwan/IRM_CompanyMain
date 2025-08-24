@@ -19,122 +19,165 @@
     <%= render "/kpi_reports/budget_filter", entity: @entity %>
 
     <div class="table-responsive" data-controller="datatable">
-        <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable">
+        <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey">
+
+
             <%
-                num_periods_to_display = params[:num_periods] &.to_i || 2
+                num_periods_to_display = (params[:num_periods] &.to_i || 1)
+                tag_lists_to_display = @tag_list
+
+                # Determine if the Achievement % column should be shown
+                show_achievement_column = @tag_list.include?('Actual') && @tag_list.include?('Budget')
 
                 # Separate kpi_reports into Quarterly and YTD groups
-                quarterly_reports = kpi_reports.filter { |r| r.period == 'Quarter' }.sort_by(&:as_of).last(num_periods_to_display)
-                ytd_reports = kpi_reports.filter { |r| r.period == 'YTD' }.sort_by(&:as_of).last(num_periods_to_display)
+                primary_tag_for_filtering = @tag_list.find { |tag| tag != 'Actual' } || 'Actual'
 
-                # Combine and sort the filtered reports by as_of date
-                filtered_kpi_reports = (quarterly_reports + ytd_reports).sort_by(&:as_of)
+                quarterly_reports_base = kpi_reports.filter { |r| r.period == 'Quarter' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
+                year_reports_base = kpi_reports.filter { |r| r.period == 'Year' && r.tag_list == primary_tag_for_filtering }.sort_by(&:as_of).last(num_periods_to_display)
 
-                # Group filtered_kpi_reports by as_of date to easily access Actuals and Budgets for each period
-                grouped_filtered_kpi_reports = filtered_kpi_reports.group_by(&:as_of).transform_values do |reports_for_date|
-                    {
-                        actual: reports_for_date.find { |r| r.tag_list.blank? },
-                        budget: reports_for_date.find { |r| r.tag_list == 'Budget' }
-                    }
+                # Get unique as_of dates from the base reports
+                quarterly_as_of_dates = quarterly_reports_base.map(&:as_of).uniq
+                year_as_of_dates = year_reports_base.map(&:as_of).uniq
+
+                # Now, filter all kpi_reports to include all tags for these specific as_of dates
+                quarterly_reports = kpi_reports.filter { |r| r.period == 'Quarter' && r.as_of.present? && quarterly_as_of_dates.include?(r.as_of) }
+                year_reports = kpi_reports.filter { |r| r.period == 'Year' && r.as_of.present? && year_as_of_dates.include?(r.as_of) }
+
+                # Group kpi_reports by as_of date and tag_list
+                grouped_quarterly_reports = quarterly_reports.group_by(&:as_of).transform_values do |reports_for_date|
+                    tag_lists_to_display.map do |tag|
+                        [tag, reports_for_date.find { |r| r.tag_list == tag }]
+                    end.to_h
                 end
+                grouped_yearly_reports = year_reports.group_by(&:as_of).transform_values do |reports_for_date|
+                    tag_lists_to_display.map do |tag|
+                        [tag, reports_for_date.find { |r| r.tag_list == tag }]
+                    end.to_h
+                end
+
             %>
             <thead>
                 <tr>
                     <th rowspan="3">Particulars</th>
-                    <% filtered_kpi_reports.map(&:period).uniq.each do |period| %>
-                        <th colspan="<%= filtered_kpi_reports.select { |r| r.period == period }.map(&:as_of).uniq.count * 3 %>" class="text-center">
-                            <%= period %>
+                    <% if quarterly_reports.present? %>
+                        <th colspan="<%= quarterly_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
+                            Quarter
+                        </th>
+                    <% end %>
+                    <% if year_reports.present? %>
+                        <th colspan="<%= year_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
+                            Year
                         </th>
                     <% end %>
                 </tr>
                 <tr>
-                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
-                        <th colspan="2" class="text-center">
+                    <% quarterly_reports.map { |r| r.as_of.is_a?(String) ? Date.parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
+                        <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
-                        <th rowspan="2" class="text-center">Achievement %</th>
+                        <% if show_achievement_column %>
+                            <th rowspan="2" class="text-center">Actual / Budget</th>
+                        <% end %>
+                    <% end %>
+                    <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
+                        <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
+                            <%= as_of_date.strftime("%b-%y") %>
+                        </th>
+                        <% if show_achievement_column %>
+                            <th rowspan="2" class="text-center">Actual / Budget</th>
+                        <% end %>
                     <% end %>
                 </tr>
                 <tr>
-                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
-                        <th>Actuals</th>
-                        <th>Budget</th>
+                    <% quarterly_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                        <% tag_lists_to_display.each do |tag| %>
+                            <th><%= tag %></th>
+                        <% end %>
+                    <% end %>
+                    <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                        <% tag_lists_to_display.each do |tag| %>
+                            <th><%= tag %></th>
+                        <% end %>
                     <% end %>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Period</td>
-                    <% filtered_kpi_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
-                        <% kpi_report_for_period = filtered_kpi_reports.find { |r| r.as_of == as_of_date && r.tag_list.blank? } %>
-                        <td>
-                            <%= link_to kpi_report_for_period.period, show_performance_kpi_reports_path(as_of: kpi_report_for_period.as_of, portfolio_company_id: kpi_report_for_period.portfolio_company_id), target: "_blank" %>
-                        </td>
-                        <td></td>
-                        <td></td>
-                    <% end %>
-                </tr>
+
                 <% investor_kpi_mappings.each do |ikm| %>
                     <tr>
                         <td>
                             <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
                         </td>
-                        <% grouped_filtered_kpi_reports.keys.sort.each do |as_of_date| %>
-                            <% actual_kpi_report = grouped_filtered_kpi_reports[as_of_date][:actual] %>
-                            <% budget_kpi_report = grouped_filtered_kpi_reports[as_of_date][:budget] %>
-
-                            <!-- Actuals Column -->
-                            <td class="value_<%= actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
-                                <% if actual_kpi_report %>
-                                    <% kpis = actual_kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
-                                    <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
-                                    <% if kpi %>
-                                        <%= display_kpi(kpi, ikm, params: params) %>
-                                        <br>
-                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
-                                        <% if kpi.notes.present? %>
-                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                        <% # Render quarterly reports %>
+                        <% quarterly_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                            <% tag_lists_to_display.each do |tag| %>
+                                <% kpi_report = grouped_quarterly_reports[as_of_date][tag] %>
+                                <td class="value_<%= kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                    <% if kpi_report %>
+                                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
+                                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
+                                        <% if kpi %>
+                                            <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
+                                        <% else %>
+                                            N/A
                                         <% end %>
                                     <% else %>
                                         N/A
                                     <% end %>
-                                <% else %>
-                                    N/A
-                                <% end %>
-                            </td>
+                                </td>
+                            <% end %>
+                            <% if show_achievement_column %>
+                                <!-- Achievement % Column -->
+                                <td>
+                                    <%
+                                        actual_kpi_report = grouped_quarterly_reports[as_of_date]['Actual']
+                                        budget_kpi_report = grouped_quarterly_reports[as_of_date]['Budget']
+                                        actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                    %>
+                                    <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
+                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                    <% else %>
+                                        N/A
+                                    <% end %>
+                                </td>
+                            <% end %>
+                        <% end %>
 
-                            <!-- Budget Column -->
-                            <td class="value_<%= budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
-                                <% if budget_kpi_report %>
-                                    <% kpis = budget_kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
-                                    <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
-                                    <% if kpi %>
-                                        <%= display_kpi(kpi, ikm, params: params) %>
-                                        <br>
-                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
-                                        <% if kpi.notes.present? %>
-                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                        <% # Render yearly reports %>
+                        <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
+                            <% tag_lists_to_display.each do |tag| %>
+                                <% kpi_report = grouped_yearly_reports[as_of_date][tag] %>
+                                <td class="value_<%= kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                    <% if kpi_report %>
+                                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
+                                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
+                                        <% if kpi %>
+                                            <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
+                                        <% else %>
+                                            N/A
                                         <% end %>
                                     <% else %>
                                         N/A
                                     <% end %>
-                                <% else %>
-                                    N/A
-                                <% end %>
-                            </td>
-
-                            <!-- Achievement % Column -->
-                            <td>
-                                <%
-                                    actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                    budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                %>
-                                <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
-                                    <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
-                                <% else %>
-                                    N/A
-                                <% end %>
-                            </td>
+                                </td>
+                            <% end %>
+                            <% if show_achievement_column %>
+                                <!-- Achievement % Column -->
+                                <td>
+                                    <%
+                                        actual_kpi_report = grouped_yearly_reports[as_of_date]['Actual']
+                                        budget_kpi_report = grouped_yearly_reports[as_of_date]['Budget']
+                                        actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                    %>
+                                    <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
+                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                    <% else %>
+                                        N/A
+                                    <% end %>
+                                </td>
+                            <% end %>
                         <% end %>
                     </tr>
                 <% end %>

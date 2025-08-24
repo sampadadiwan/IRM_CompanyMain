@@ -16,6 +16,12 @@ class KpiReport < ApplicationRecord
     "For" => "entity_name"
   }.freeze
 
+  TAG_LIST = {
+    "Actual" => "Actual",
+    "Budget" => "Budget",
+    "IC" => "IC"
+  }.freeze
+
   belongs_to :entity
   # This is in case the fund is uploading the kpis
   belongs_to :portfolio_company, class_name: "Investor", optional: true

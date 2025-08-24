@@ -11,16 +11,16 @@
     <% if params[:no_actions].blank? %>
 
     <h1 class="h4 mb-0 text-800">
-        KPIs: 
-                
+        KPIs:
+
         <% if params[:portfolio_company_id].present? %>
-            <%=  investor ? link_to(investor.investor_name, investor) : @entity.name %>        
+            <%=  investor ? link_to(investor.investor_name, investor) : @entity.name %>
         <% end %>
     </h1>
 
     <span>
         <% if params[:q].blank?%>
-            <%= render "kpi_reports/filter", entity: @entity %> 
+            <%= render "kpi_reports/filter", entity: @entity %>
         <% end %>
 
         <div class="btn-group">
@@ -34,22 +34,25 @@
 
                 <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report" %>
 
-                <button class="dropdown-item ti ti-download", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
+                <button class="dropdown-item ti ti-download", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button>
 
                 <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage" if kpi_reports.last %>
 
-                <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader -> 
-                <%= link_to "Upload", 
+                <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader ->
+                <%= link_to "Upload",
                     new_import_upload_path(
-                        "import_upload[import_type]": "Kpi", 
+                        "import_upload[import_type]": "Kpi",
                         "import_upload[entity_id]": current_user.entity_id,
                         "import_upload[owner_id]": params[:portfolio_company_id],
                         "import_upload[owner_type]": "Investor",
-                        "sample_upload": "KPIS_SAMPLE"), 
-                        { class: "dropdown-item ti ti-upload"} if Rails.env.test? %> 
+                        "sample_upload": "KPIS_SAMPLE"),
+                        { class: "dropdown-item ti ti-upload"} if Rails.env.test? %>
 
 
                 <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan" if investor %>
+
+
+                <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics" %>
             </div>
         </div>
         </div>
@@ -59,11 +62,11 @@
 </div>
 
 <% if kpi_reports.present? %>
-<% 
-    
+<%
+
     if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
         # Create dummy mappings for the startup, which has all the kpi names
-        investor_kpi_mappings = investor.investor_kpi_mappings 
+        investor_kpi_mappings = investor.investor_kpi_mappings
     else
         investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, standard_kpi_name: kpi_name, category: "General")}
     end

@@ -27,9 +27,26 @@
     <%= form.select :units, ["Crores", "Lakhs", "Million", "Common"], {selected: units, include_blank: true}, class: "form-control", name: "units" %>
   </div>
 
+  <div class="form-group col-md-1">
+    <%
+      selected_tags = params[:tag_list].is_a?(Array) ? params[:tag_list] : params[:tag_list].split(",").map(&:strip) if params[:tag_list].present?
+      selected_tags ||= ["Actual"]
+    %>
+
+    <%= form.label :tag_list, "Tags" %>
+    <%= form.select :tag_list, current_user.entity.kpi_reports.pluck(:tag_list).uniq, { selected: selected_tags, include_blank: false, include_hidden: false }, class: "form-control select2", name: "tag_list[]", multiple: true, data: { width: "100px" } %>
+  </div>
+
   <%= button_tag type: :submit, class: "btn btn-outline-success", id: "submit" do %>
     <i class="ti ti-filter"></i>
     Filter
   <% end %>
+
+  <button class="btn btn-outline-secondary" data-controller="export-xl"
+                      data-action="click->export-xl#export"
+                      data-tableid="kpi_reports_budget_grid"
+                      data-filename="Comparison">
+                <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+  </button>
 
 <% end %>

@@ -1308,15 +1308,15 @@ iframe {
 }
 
 .markdown-body {
-  padding: 10px 15px;  
+  padding: 10px 15px;
 
   table {
     table-layout: fixed; /* Ensures columns take fixed space */
     width: 100%;
     max-width: 80vw !important;
-    border-collapse: collapse; 
+    border-collapse: collapse;
   }
-  
+
   td, th {
     white-space: normal;
     word-wrap: break-word;
@@ -1333,7 +1333,7 @@ iframe {
     overflow-wrap: break-word;  /* For better browser compatibility */
   }
 
-  
+
 }
 
 #chat_box {
@@ -1372,7 +1372,7 @@ button:disabled {
   min-width: 40%;
   button.badge {
     border: 0px !important;
-  } 
+  }
 }
 
 .wide-tooltip {                /* the class we passed above   */
@@ -1388,4 +1388,12 @@ button:disabled {
   .ms-3{
     color: black !important;
   }
+}
+
+
+#kpi_reports_filter .select2-container {
+  width: 300px !important;   /* force width */
+  min-width: 200px !important;
+  max-width: 300px !important;
+  display: inline-block !important;
 }

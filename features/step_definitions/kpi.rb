@@ -78,7 +78,7 @@
   end
 
   Then('when I view the KPI report in grid view') do
-    visit(kpi_reports_path(grid_view: true))
+    visit(kpi_reports_path(grid_view: true, entity_id: @user.entity_id))
   end
 
   Then('I should see the KPI Report with all Kpis') do

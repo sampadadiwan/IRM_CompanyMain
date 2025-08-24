@@ -55,7 +55,7 @@ class ImportKpi < ImportUtil
 
   def setup_kpi_report(entity_id, portfolio_company, user_data, import_upload)
     _, _, as_of, period, = get_data(user_data)
-    tag = user_data['Tag'].presence || ""
+    tag = user_data['Tag'].presence || "Actual"
 
     kpi_report = KpiReport.find_or_initialize_by(as_of:, period:, entity_id:, portfolio_company:, tag_list: tag)
     if kpi_report.new_record?

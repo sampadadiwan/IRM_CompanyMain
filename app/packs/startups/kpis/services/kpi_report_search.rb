@@ -2,9 +2,11 @@ class KpiReportSearch
   def self.perform(kpi_reports, params)
     kpi_reports = kpi_reports.where(id: search_ids(kpi_reports, params)) if params[:search] && params[:search][:value].present?
 
-    # Test cases have static data, hence we load all the kpi_reports, but in production we filter by months
-    no_of_periods = params[:no_of_periods].present? ? params[:no_of_periods].to_i : 12
-    period = params[:period].presence || 'month'
+    if params[:budget_view].blank?
+      # Test cases have static data, hence we load all the kpi_reports, but in production we filter by months
+      no_of_periods = params[:no_of_periods].present? ? params[:no_of_periods].to_i : 12
+      period = params[:period].presence || 'month'
+    end
 
     if no_of_periods.present? && !Rails.env.test?
 

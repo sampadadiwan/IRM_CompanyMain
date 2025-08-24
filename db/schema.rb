@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_19_122957) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_23_154343) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1460,8 +1460,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_122957) do
     t.string "condition_state", limit: 5, default: "show"
     t.boolean "internal", default: false
     t.string "js_events"
-    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
     t.string "reg_env", limit: 15
+    t.integer "import_upload_id", comment: "ID of the import upload that created or updated this form custom field"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
@@ -2257,7 +2257,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_122957) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.bigint "portfolio_company_id"
-    t.string "tag_list", default: ""
+    t.string "tag_list", default: "Actual"
     t.bigint "owner_id"
     t.string "period", limit: 12, default: "Quarter"
     t.datetime "deleted_at"
@@ -2848,8 +2848,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_122957) do
     t.bigint "portfolio_company_id", null: false
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.string "category", limit: 15, null: false
-    t.string "sub_category", limit: 100, null: false
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
