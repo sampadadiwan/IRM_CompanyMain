@@ -300,7 +300,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified completed_by_investor expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed json_fields created_at].sort
+    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified completed_by_investor expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed json_fields created_at aml_status].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
