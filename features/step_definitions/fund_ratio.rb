@@ -68,7 +68,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
-    user_data = [headers, row].transpose.to_h    
+    user_data = [headers, row].transpose.to_h
     # puts "Checking import of #{user_data}"
     folio_id = user_data["Folio No"]
     investor_name = user_data["Investor"]&.strip
@@ -79,7 +79,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     owner = user_data["Owner Id"].present? ? user_data["Owner Type"].constantize.find(user_data["Owner Id"]) : nil
     fund_ratio = FundRatio.where(name:, capital_commitment: cc, owner:, end_date:).first
-    
+
     if fund_ratio
       # puts "Found fund ratio for investor #{investor_name} with end date #{end_date}"
       # ap fund_ratio
@@ -93,7 +93,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
       puts "No fund ratio found for row #{user_data}"
       count += 0
     end
-    
+
   end
 
   puts "Total Fund Ratios matched: #{count}"
@@ -119,11 +119,11 @@ When('I read all sheets and compute XIRR') do
       date = @workbook.cell(i, 2)
       type = @workbook.cell(i, 3)
 
-      next if amount.nil? || date.nil? 
+      next if amount.nil? || date.nil?
       puts "Row #{i}: Amount: #{amount}, Date: #{date}, Type: #{type}"
-      
+
       if type.to_s.downcase == 'output'
-        @expected_xirr = amount.round(2)  
+        @expected_xirr = amount.round(2)
         break
       else
         cashflows << XirrTransaction.new(amount, date: Date.parse(date.to_s), notes: type.to_s)

@@ -59,6 +59,9 @@ class PortfolioInvestment < ApplicationRecord
   ##################### MONETIZED FIELDS ###################
   ##########################################################
 
+  monetize :tracking_amount_cents, :tracking_fmv_cents,
+           with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+
   monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents,
            with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
@@ -141,6 +144,13 @@ class PortfolioInvestment < ApplicationRecord
     "FIFO Cost" => "cost_of_sold",
     "Notes" => "notes"
   }.freeze
+
+  ADDITIONAL_COLUMNS = {
+    "Tracking Amount" => "tracking_amount_cents",
+    "Tracking FMV" => "tracking_fmv_cents"
+  }.freeze
+
+  ADDITIONAL_COLUMNS_FROM = [Fund, AggregatePortfolioInvestment].freeze
 
   ##########################################################
   ####################### HELPERS ##########################

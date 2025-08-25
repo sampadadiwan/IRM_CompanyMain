@@ -293,11 +293,13 @@ class FundPortfolioCalcs < FundRatioCalcs
       api.portfolio_investments.where(investment_date: ..@end_date)
 
       api_as_of = api.as_of(@end_date)
-      api_as_of.bought_amount
-      cost_of_remaining = api_as_of.cost_of_remaining
-      fmv = api_as_of.fmv
 
-      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining) } if cost_of_remaining.positive?
+      cost_of_remaining = api_as_of.cost_of_remaining.to_f
+      fmv = api_as_of.fmv.to_f
+      sold_amount = api_as_of.sold_amount.to_f
+      bought_amount = api_as_of.bought_amount.to_f
+
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining), moic: (fmv + (sold_amount / bought_amount)) } if cost_of_remaining.positive?
     end
 
     @api_cost_map

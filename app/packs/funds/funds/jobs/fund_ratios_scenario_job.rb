@@ -100,7 +100,7 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # Compute the portfolio_company_ratios
     calc.portfolio_company_metrics.each do |portfolio_company_id, values|
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
+      # FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
 
       FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x", scenario: @scenario)
     end

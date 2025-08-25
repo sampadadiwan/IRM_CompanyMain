@@ -38,7 +38,9 @@ module WithExchangeRate
   end
 
   # The TrackingExchangeRate is the exchange_rate between the fund currency and the tracking_currency
-  def tracking_exchange_rate(caller_label: "")
+  def tracking_exchange_rate(caller_label: "", exchange_rate_date: nil)
+    exchange_rate_date ||= tracking_exchange_rate_date
+
     f = if instance_of?(Fund)
           self
         else
@@ -46,8 +48,8 @@ module WithExchangeRate
         end
 
     if f.tracking_currency.present? && f.tracking_currency != f.currency
-      er = get_exchange_rate(f.currency, f.tracking_currency, tracking_exchange_rate_date)
-      raise "Tracking Exchange rate from #{f.currency} to #{f.tracking_currency} for #{caller_label} not found for date #{tracking_exchange_rate_date}" unless er
+      er = get_exchange_rate(f.currency, f.tracking_currency, exchange_rate_date)
+      raise "Tracking Exchange rate from #{f.currency} to #{f.tracking_currency} for #{caller_label} not found for date #{exchange_rate_date}" unless er
 
       er
     else

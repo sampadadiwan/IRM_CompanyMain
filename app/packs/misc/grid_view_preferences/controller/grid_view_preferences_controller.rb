@@ -111,7 +111,11 @@ class GridViewPreferencesController < ApplicationController
     rescue StandardError
       @parent.model.constantize
     end
+
+    # Initialize field_options with standard columns
     @field_options = model_class::STANDARD_COLUMNS
+    # Add the ADDITIONAL_COLUMNS if they are defined
+    @field_options = @field_options.merge(model_class::ADDITIONAL_COLUMNS) if model_class.const_defined?(:ADDITIONAL_COLUMNS)
 
     # Check if the model_class defines ADDITIONAL_COLUMNS
     if model_class.const_defined?(:ADDITIONAL_COLUMNS_FROM)
