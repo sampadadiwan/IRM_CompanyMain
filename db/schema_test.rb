@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_08_25_073131) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1124,7 +1124,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_073131) do
     t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false, null: true
+    t.boolean "template", default: false, null: false
     t.boolean "send_email", null: false
     t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"
@@ -1138,6 +1138,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_073131) do
     t.datetime "last_status_updated_at"
     t.boolean "force_esign_order", default: false
     t.text "qna"
+    t.boolean "embed", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"

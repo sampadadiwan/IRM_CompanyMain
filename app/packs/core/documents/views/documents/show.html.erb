@@ -4,8 +4,8 @@
 <div class="row">
    <% if @document.video? %>
      <%= render "layouts/video", url: @document.file_url %>
-   <% elsif @document.excel? && false %>
-     <%= render "documents/excel", url: @document.file_url %>
+   <% elsif @document.embed %>
+     <%= render "documents/embed", document: @document %>
    <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
       <%= render "documents/pdf" %>
    <% end %>
@@ -109,6 +109,7 @@
                      </td>
                      <td>
                         Download <%= display_boolean @document.download %>
+                        &nbsp;&nbsp; Embed <%= display_boolean @document.embed %>
                         &nbsp;&nbsp; Printing <%= display_boolean @document.printing %>
                         &nbsp;&nbsp; Original <%= display_boolean @document.orignal  %>
                         &nbsp;&nbsp; Public <%= display_boolean @document.public_visibility  %>

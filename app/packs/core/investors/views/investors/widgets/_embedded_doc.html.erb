@@ -1,0 +1,24 @@
+<%
+  widget_size ||= "col-md-6"
+  name ||= nil
+  args ||= {}
+  # Find the document to embed, this is the latest document with the name
+  document = @investor.documents.where(name: args[:name]).order(id: :desc).first
+%>
+
+<% if document %>
+
+  <%= render(
+        WidgetCardComponent.new(
+          widget: widget,
+          args: args,
+          widget_size: widget.widget_size
+        )
+      ) do
+  %>
+
+        <%= render "/documents/embed", document: document %>
+
+  <% end %>
+
+<% end %>

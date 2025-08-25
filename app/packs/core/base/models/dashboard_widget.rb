@@ -25,7 +25,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
     DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL"),
-    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, other_report_args: '...' }")
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Fund Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, other_report_args: '...' }"),
+    DashboardWidget.new(dashboard_name: "Fund Dashboard", widget_name: "Embed Document", path: "funds/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name'}")
 
   ].freeze
 
@@ -44,7 +45,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "KYCs", path: "investors/widgets/kycs", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium")
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name'}")
 
   ].freeze
 
@@ -71,7 +73,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Report", path: "investors/widgets/portfolio_report", size: "XL"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Key Kpis", path: "investors/widgets/kpi_key_numbers", size: "XL", metadata_help: "{kpis: 'csv of kpi names to show'}"),
 
-    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL")
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name'}")
 
   ].freeze
 

@@ -62,7 +62,7 @@ include CurrencyHelper
       pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund, investment_instrument: @investment_instrument)
       key_values(pi, args)
       result = PortfolioInvestmentCreate.wtf?(portfolio_investment: pi)
-      binding.pry if result.failure?
+      # binding.pry if result.failure?
       result.success?.should == true
       puts "\n#########PortfolioInvestment##########\n"
       puts pi.to_json
@@ -246,7 +246,7 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
     api = pi.aggregate_portfolio_investment
     puts "Cost: #{api.cost_of_remaining_cents} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
     api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)
-    binding.pry if api.cost_of_remaining_cents != api.bought_amount_cents + api.cost_of_sold_cents
+    # binding.pry if api.cost_of_remaining_cents != api.bought_amount_cents + api.cost_of_sold_cents
     api.cost_of_remaining_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
   end
 end
@@ -672,7 +672,7 @@ end
 Then('I should see the PI details on the details page') do
   @portfolio_investment = PortfolioInvestment.last
   @api = @portfolio_investment.aggregate_portfolio_investment
-  expect(page).to have_content(@portfolio_investment.portfolio_company.to_s) 
+  expect(page).to have_content(@portfolio_investment.portfolio_company.to_s)
   expect(page).to have_content(@portfolio_investment.investment_instrument.to_s)
   expect(page).to have_content(@date.strftime("%d/%m/%Y"))
   expect(page).to have_content(@quantity)

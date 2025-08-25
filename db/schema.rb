@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_25_073131) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1138,6 +1138,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_073131) do
     t.datetime "last_status_updated_at"
     t.boolean "force_esign_order", default: false
     t.text "qna"
+    t.boolean "embed", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"

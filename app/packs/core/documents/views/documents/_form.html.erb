@@ -70,6 +70,14 @@
             <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
           </div>
 
+
+          <div class="form-group nonpdf">
+            <%= form.label :orignal, "Embed Document" %>
+            <%= form.check_box :embed, class: "form-check-input",
+                      data: {action: "click->docform#onOrignalChange"} %>
+            <small class="text-muted">Allow embedded document viewer (Document will be sent externally to microsoft's embedded viewer)</small>
+          </div>
+
           <div class="form-group pdfopts">
             <%= form.label :download, "Allow Download" %>
             <%= form.check_box :download, class: "form-check-input",

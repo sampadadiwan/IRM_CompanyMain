@@ -58,7 +58,6 @@ investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
       puts "FCF: " + form_type.form_custom_fields.pluck(:name).to_s if form_type
       kyc.form_type.should == form_type
     else
-      binding.pry
       form_type = @entity.form_types.where(name: kyc.type).last
       puts "Checking form type for #{kyc.investor.investor_name} with no tag #{form_type&.name}"
       puts "FCF: " + form_type.form_custom_fields.pluck(:name).to_s if form_type
