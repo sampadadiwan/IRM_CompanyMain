@@ -604,3 +604,96 @@ Then('the portfolio as of report should be generated for the date {string} with 
     end
   end
 end
+
+
+Given('I go to view the fund') do
+  @fund ||= Fund.last
+  visit(fund_path(@fund))
+end
+
+Given('I click on {string}') do |string|
+  click_on(string)
+end
+
+Given('I fill the scenario form') do
+  @scenario_name = "Test Scenario #{rand(1000)}"
+  fill_in('portfolio_scenario_name', with: @scenario_name)
+end
+
+Given('I fill the new scenario investment form') do
+  @investment_name = "Test Investment #{rand(1000)}"
+  @portfolio_company ||= @entity.investors.portfolio_companies.first
+  @investment_instrument ||= @portfolio_company.investment_instruments.first
+  @date = Date.today - rand(100).days
+  fill_in('scenario_investment_transaction_date', with: @date)
+  select(@portfolio_company.investor_name, from: "scenario_investment_portfolio_company_id")
+  select(@investment_instrument.name, from: "scenario_investment_investment_instrument_id")
+  fill_in('scenario_investment_price', with: 1234)
+  fill_in('scenario_investment_quantity', with: 50)
+  @notes = "Test investment notes #{rand(1000)}"
+  fill_in('scenario_investment_notes', with: @notes)
+end
+
+Then('I should see the new investment added on the portfolio scenarios page') do
+  expect(page).to have_content("1,234.00")
+  expect(page).to have_content(@portfolio_company.investor_name)
+  expect(page).to have_content(@notes)
+  expect(page).to have_content(@date.strftime("%d/%m/%Y"))
+end
+
+Given('I partally fill the new scenario investment form') do
+  @date = Date.today - rand(100).days
+  fill_in('scenario_investment_transaction_date', with: @date)
+end
+
+Then('I should see the errors on the same page') do
+  expect(page).to have_content("Portfolio company must exist")
+  expect(page).to have_content("Investment instrument must exist")
+  expect(page).to have_content("Price cents must be greater than 0")
+end
+
+Given('I go to API show page') do
+  @api ||= AggregatePortfolioInvestment.last
+  visit(aggregate_portfolio_investment_path(@api))
+end
+
+Given('I fill in the new investment form') do
+  @date = Date.today - rand(100).days
+  fill_in("portfolio_investment_investment_date", with: @date)
+  @amount = 1000 + rand(1000)
+  fill_in("portfolio_investment_ex_expenses_base_amount", with: @amount)
+  @quantity = 10 + rand(10)
+  fill_in("portfolio_investment_quantity", with: @quantity)
+  @notes = "Test investment notes #{rand(1000)}"
+  fill_in("portfolio_investment_notes", with: @notes)
+end
+
+
+Then('I should see the PI details on the details page') do
+  @portfolio_investment = PortfolioInvestment.last
+  @api = @portfolio_investment.aggregate_portfolio_investment
+  expect(page).to have_content(@portfolio_investment.portfolio_company.to_s) 
+  expect(page).to have_content(@portfolio_investment.investment_instrument.to_s)
+  expect(page).to have_content(@date.strftime("%d/%m/%Y"))
+  expect(page).to have_content(@quantity)
+  expect(page).to have_content(money_to_currency(@amount))
+  expect(page).to have_content(@notes)
+end
+
+Given('I fill in the new investment form with different Portfolio Company') do
+  @portfolio_company = Investor.portfolio_companies.second
+  @api = AggregatePortfolioInvestment.where(portfolio_company_id: @portfolio_company.id).first
+  @investment_instrument = @portfolio_company.investment_instruments.first
+  select(@portfolio_company.name, from: "portfolio_investment_portfolio_company_id")
+  sleep(1)
+  select(@investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
+  @date = Date.today - rand(100).days
+  fill_in("portfolio_investment_investment_date", with: @date)
+  byebug
+  @amount = 1000 + rand(1000)
+  fill_in("portfolio_investment_ex_expenses_base_amount", with: @amount)
+  @quantity = 10 + rand(10)
+  fill_in("portfolio_investment_quantity", with: @quantity)
+  @notes = "Test investment notes #{rand(1000)}"
+  fill_in("portfolio_investment_notes", with: @notes)
+end

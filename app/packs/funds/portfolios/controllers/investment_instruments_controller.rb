@@ -16,6 +16,8 @@ class InvestmentInstrumentsController < ApplicationController
       :sector,
       :import_upload_id
     )
+
+    @investment_type = params[:investment_type] || :portfolio_investment
   end
 
   # GET /investment_instruments/1 or /investment_instruments/1.json

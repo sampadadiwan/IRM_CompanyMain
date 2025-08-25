@@ -1,8 +1,9 @@
+<% investment_type ||= @investment_type || "portfolio_investment" %>
 <%= turbo_stream.update params[:target] do %>
   
-      <div class=""><label for="portfolio_investment_investment_instrument_id">Instrument</label></div>
+      <div class=""><label for="<%= investment_type %>_investment_instrument_id">Instrument</label></div>
       <div class="">
-      <select class="form-control" name="portfolio_investment[investment_instrument_id]" id="portfolio_investment_investment_instrument_id" data-action="change->select#change" data-target="base_amount_help_text" data-url="<%= base_amount_form_portfolio_investments_path(params: params.to_unsafe_h) %>" data-param= "investment_instrument_id" >
+      <select class="form-control" name="<%= investment_type %>[investment_instrument_id]" id="<%= investment_type %>_investment_instrument_id" data-action="change->select#change" data-target="base_amount_help_text" data-url="<%= base_amount_form_portfolio_investments_path(params: params.to_unsafe_h) %>" data-param= "investment_instrument_id" >
         <%= options_for_select [nil] + @investment_instruments.order(name: :asc).map{|i| [i.name, i.id]} %>
       </select>
       

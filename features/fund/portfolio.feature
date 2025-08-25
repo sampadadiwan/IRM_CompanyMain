@@ -230,3 +230,63 @@ Scenario Outline: Aggregate Portfolio Investment As Of report
   Then the portfolio as of report should be generated for the date "03/02/2024" with expected data
   Given I generate a portfolio as of report for "04/03/2024"
   Then the portfolio as of report should be generated for the date "04/03/2024" with expected data
+
+Scenario Outline: Portfolio Scenario and scenario investment creation
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  And Given I upload the portfolio companies
+  And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "8" portfolio investments created
+  And the portfolio investments must have the data in the sheet
+  And the aggregate portfolio investments must have cost of sold computed
+  Given I go to view the fund
+  Given I click the tab "Portfolio"
+  Given I click on "Scenarios"
+  Given I click on "New Scenario"
+  Given I fill the scenario form
+  Given I click on "Save"
+  Then I should see the "Portfolio scenario was successfully created"
+  Given I click on "Edit"
+  Given I fill the scenario form
+  Given I click on "Save"
+  Then I should see the "Portfolio scenario was successfully updated"
+  Given I click on "New Scenario Investment"
+  Given I fill the new scenario investment form
+  Given I click on "Save"
+  Then I should see the new investment added on the portfolio scenarios page
+  Given I click on "New Scenario Investment"
+  Given I partally fill the new scenario investment form
+  Given I click on "Save"
+  Then I should see the errors on the same page
+
+@import
+Scenario Outline: Import portfolio investments
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  And Given I upload the portfolio companies
+  And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "8" portfolio investments created
+  And the portfolio investments must have the data in the sheet
+  And the aggregate portfolio investments must have cost of sold computed
+  Given I go to API show page
+  Given I click on "New Investment"
+  And I fill in the new investment form
+  Given I click on "Save"
+  Then I should see the "Portfolio investment was successfully created"
+  Then I should see the PI details on the details page
+  Given I go to API show page
+  Given I click on "New Investment"
+  And I fill in the new investment form with different Portfolio Company
+  Given I click on "Save"
+  Then I should see the "Portfolio investment was successfully created"
+  Then I should see the PI details on the details page

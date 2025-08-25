@@ -31,7 +31,7 @@
 
         <div class="form-group col">
           <%= form.label :portfolio_company_id %>
-          <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path}", "data-param": "portfolio_company_id"  %>
+          <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path(investment_type: :scenario_investment)}", "data-param": "portfolio_company_id"  %>
 
           <small class="text-muted">
             Create <%= link_to "New Portfolio Company", 
@@ -44,10 +44,16 @@
       </div>
 
       
-      <% investment_instruments = scenario_investment.new_record? ? [] : scenario_investment.portfolio_company.investment_instruments %>
+      <% investment_instruments = if scenario_investment.new_record? && scenario_investment.portfolio_company.blank?
+                                    []
+                                  else 
+                                    scenario_investment.portfolio_company.investment_instruments
+                                  end
+      %>
       <div class="form-group" id="instrument_form_group">
         <%= form.label :investment_instrument_id, "Instrument" %>
-        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" }  %>
+        <% options = {include_blank: true} %>
+        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, options, class: "form-control", data: { select_target: "select" }  %>
       </div>
 
     </div>

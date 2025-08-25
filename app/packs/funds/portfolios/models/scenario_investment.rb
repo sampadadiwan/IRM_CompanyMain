@@ -1,5 +1,4 @@
 class ScenarioInvestment < ApplicationRecord
-  include WithCustomField
   include ForInvestor
 
   belongs_to :entity
