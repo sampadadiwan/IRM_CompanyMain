@@ -78,6 +78,11 @@ class Fund < ApplicationRecord
 
   CATEGORIES = ["Category I", "Category II", "Category III"].freeze
   REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
+  STANDARD_COLUMNS = {
+    "Name" => "name",
+    "Category" => "category",
+    "Tags" => "tag_list"
+  }.freeze
 
   monetize  :tracking_committed_amount_cents, :tracking_call_amount_cents,
             :tracking_collected_amount_cents, :tracking_distribution_amount_cents,

@@ -17,6 +17,8 @@ class FundRatio < ApplicationRecord
     "Scenario" => "scenario"
   }.freeze
 
+  ADDITIONAL_COLUMNS_FROM = [Fund].freeze
+
   CONDENSED_COLUMNS = {
     "Name" => "name",
     "Display Value" => "display_value",
