@@ -1,5 +1,5 @@
-<% 
-        latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first 
+<%
+        latest_kpi_report = @investor.portfolio_kpi_reports.order(as_of: :desc).first
         # Get the kpi_names from custom fields or args
         kpi_names = @investor.investor_kpi_mappings.show_in_report.pluck(:standard_kpi_name)
         # Fetch the KPIs from the latest report
@@ -14,7 +14,7 @@
           args: args,
           widget_size: widget.widget_size
         )
-      ) do 
+      ) do
   %>
 
       <% cache_if(current_user != nil, cache_key(["investor_datshboard_kpis", @investor]), expires_in: 5.day) do %>
@@ -41,6 +41,6 @@
       <% end %>
 
   <% end %>
-<% 
-    end 
+<%
+    end
 %>

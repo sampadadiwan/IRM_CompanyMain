@@ -80,10 +80,22 @@ class FundRatiosJob < ApplicationJob
       FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
     end
 
+    if fund.has_tracking_currency?
+      calc.portfolio_company_irr(return_cash_flows: false, use_tracking_currency: true).each do |portfolio_company_id, values|
+        FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], display_value: "#{values[:xirr]} %")
+      end
+    end
+
     calc.api_irr(return_cash_flows: false).each do |api_id, values|
       value = values[:xirr]
       cash_flows = values[:cash_flows]
       FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value:, cash_flows:, display_value: "#{value} %")
+    end
+
+    if fund.has_tracking_currency?
+      calc.api_irr(return_cash_flows: false, use_tracking_currency: true).each do |api_id, values|
+        FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], display_value: "#{values[:xirr]} %")
+      end
     end
 
     # Compute the portfolio_company_ratios
@@ -102,6 +114,12 @@ class FundRatiosJob < ApplicationJob
     value = calc.gross_portfolio_irr
     display_value = "#{value} %"
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR", value:, display_value:)
+
+    if fund.has_tracking_currency?
+      value = calc.gross_portfolio_irr(use_tracking_currency: true)
+      display_value = "#{value} %"
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR (#{fund.tracking_currency})", value:, display_value:)
+    end
   end
 
   def notify(message, user_id, level: "success")

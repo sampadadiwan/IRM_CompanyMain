@@ -2,7 +2,13 @@
   uri_params ||= {}
   fund ||= uri_params[:fund]
   portfolio_company ||= @investor
+  # Which fields to display?
+  fields = args[:fields].split(",").map(&:strip) if args && args[:fields].present?
+  fields ||= []
+
+  force_units = args[:force_units]
 %>
+
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -12,9 +18,9 @@
     ) do %>
   <!-- This block becomes the `content` inside the component -->
   <% if fund %>
-    <%= render "aggregate_portfolio_investments/stats",  fund: %>
+    <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, force_units: force_units %>
   <% elsif portfolio_company%>
-    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: %>
+    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, force_units: force_units %>
   <% end %>
 
 <% end %>

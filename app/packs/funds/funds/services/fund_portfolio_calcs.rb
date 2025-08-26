@@ -82,13 +82,20 @@ class FundPortfolioCalcs < FundRatioCalcs
     committed_cents.positive? ? collected_cents / committed_cents : 0
   end
 
-  def gross_portfolio_irr
+  def gross_portfolio_irr(use_tracking_currency: false)
     cf = XirrCashflow.new
+
+    tracking_exchange_rate = nil
+    if use_tracking_currency
+      tracking_exchange_rate = @fund.get_exchange_rate(@fund.currency, @fund.tracking_currency, @end_date)
+      raise "No exchange rate found for #{@fund.currency} to #{@fund.tracking_currency} on #{@end_date}" unless tracking_exchange_rate
+    end
 
     # Get the buy cash flows
     buy_pis = @fund.portfolio_investments.buys.before(@end_date)
     buy_pis.find_each do |buy|
-      cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
+      amount = use_tracking_currency ? (buy.amount_cents * tracking_exchange_rate.rate).round : buy.amount_cents
+      cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Bought Amount") if amount.positive?
     end
 
     # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
@@ -96,22 +103,27 @@ class FundPortfolioCalcs < FundRatioCalcs
     @fund.stock_conversions.where(conversion_date: ..@end_date).find_each do |sc|
       quantity = sc.from_quantity
       pi = sc.from_portfolio_investment
-      cf << XirrTransaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+      amount = use_tracking_currency ? (quantity * pi.cost_cents * tracking_exchange_rate.rate).round : (quantity * pi.cost_cents)
+      cf << XirrTransaction.new(amount, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
     end
 
     # Get the sell cash flows
     @fund.portfolio_investments.sells.where(investment_date: ..@end_date).find_each do |sell|
-      cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
+      amount = use_tracking_currency ? (sell.amount_cents * tracking_exchange_rate.rate).round : sell.amount_cents
+      cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sold Amount") if amount.positive?
     end
 
     # Get the FMV
-    cf << XirrTransaction.new(fmv_on_date, date: @end_date, notes: "FMV on Date") if fmv_on_date.positive?
+    fmv_val = fmv_on_date
+    fmv_val = (fmv_val * tracking_exchange_rate.rate).round if use_tracking_currency
+    cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV on Date") if fmv_val.positive?
 
     # loop over all apis
     @fund.aggregate_portfolio_investments.each do |api|
       portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
       portfolio_cashflows.each do |pcf|
-        cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+        amount = use_tracking_currency ? (pcf.amount_cents * tracking_exchange_rate.rate).round : pcf.amount_cents
+        cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
       end
     end
 
@@ -125,10 +137,16 @@ class FundPortfolioCalcs < FundRatioCalcs
   # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/BlockLength
   # Compute the XIRR for each portfolio company
-  def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
+  def portfolio_company_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false)
     @portfolio_company_irr_map ||= {}
 
     if @portfolio_company_irr_map.empty?
+      tracking_exchange_rate = nil
+      if use_tracking_currency
+        tracking_exchange_rate = @fund.get_exchange_rate(@fund.currency, @fund.tracking_currency, @end_date)
+        raise "No exchange rate found for #{@fund.currency} to #{@fund.tracking_currency} on #{@end_date}" unless tracking_exchange_rate
+      end
+
       # Get all the Portfolio companies
       @fund.portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id| # rubocop:disable Metrics/BlockLength
         portfolio_company = Investor.find(portfolio_company_id)
@@ -140,7 +158,8 @@ class FundPortfolioCalcs < FundRatioCalcs
         # Get the buy cash flows
         Rails.logger.debug "#########BUYS#########"
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
-          cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
+          amount = use_tracking_currency ? (buy.amount_cents * tracking_exchange_rate.rate).round : buy.amount_cents
+          cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
         end
 
         # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
@@ -148,13 +167,15 @@ class FundPortfolioCalcs < FundRatioCalcs
         @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
           quantity = sc.from_quantity
           pi = sc.from_portfolio_investment
-          cf << XirrTransaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+          amount = use_tracking_currency ? (quantity * pi.cost_cents * tracking_exchange_rate.rate).round : (quantity * pi.cost_cents)
+          cf << XirrTransaction.new(amount, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
         end
 
         Rails.logger.debug "#########SELLS#########"
         # Get the sell cash flows
         portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
-          cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
+          amount = use_tracking_currency ? (sell.amount_cents * tracking_exchange_rate.rate).round : sell.amount_cents
+          cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
         end
 
         Rails.logger.debug "#########FMV & Portfolio CF#########"
@@ -164,11 +185,13 @@ class FundPortfolioCalcs < FundRatioCalcs
           # Get the portfolio income cash flows
           portfolio_cashflows = api.portfolio_cashflows.actual.where(portfolio_company_id:, payment_date: ..@end_date)
           portfolio_cashflows.each do |pcf|
-            cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+            amount = use_tracking_currency ? (pcf.amount_cents * tracking_exchange_rate.rate).round : pcf.amount_cents
+            cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
           end
 
           # Get the FMV for this specific portfolio_company
           fmv_val = fmv_on_date(api, scenarios:).round(4)
+          fmv_val = (fmv_val * tracking_exchange_rate.rate).round if use_tracking_currency
           cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
           Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
         end
@@ -228,10 +251,15 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   # Compute the XIRR for each API
-  def api_irr(return_cash_flows: false, scenarios: nil)
+  def api_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false)
     @api_irr_map ||= {}
 
     if @api_irr_map.empty?
+      tracking_exchange_rate = nil
+      if use_tracking_currency
+        tracking_exchange_rate = @fund.get_exchange_rate(@fund.currency, @fund.tracking_currency, @end_date)
+        raise "No exchange rate found for #{@fund.currency} to #{@fund.tracking_currency} on #{@end_date}" unless tracking_exchange_rate
+      end
 
       @fund.aggregate_portfolio_investments.each do |api|
         portfolio_company_id = api.portfolio_company_id
@@ -244,29 +272,34 @@ class FundPortfolioCalcs < FundRatioCalcs
 
         # Get the buy cash flows
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
-          cf << XirrTransaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
+          amount = use_tracking_currency ? (buy.amount_cents * tracking_exchange_rate.rate).round : buy.amount_cents
+          cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
         end
 
         # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
         @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
           quantity = sc.from_quantity
           pi = sc.from_portfolio_investment
-          cf << XirrTransaction.new(quantity * pi.cost_cents, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+          amount = use_tracking_currency ? (quantity * pi.cost_cents * tracking_exchange_rate.rate).round : (quantity * pi.cost_cents)
+          cf << XirrTransaction.new(amount, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
         end
 
         # Get the sell cash flows
         portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
-          cf << XirrTransaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
+          amount = use_tracking_currency ? (sell.amount_cents * tracking_exchange_rate.rate).round : sell.amount_cents
+          cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
         end
 
         # Get the portfolio income cash flows
         portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
         portfolio_cashflows.each do |pcf|
-          cf << XirrTransaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
+          amount = use_tracking_currency ? (pcf.amount_cents * tracking_exchange_rate.rate).round : pcf.amount_cents
+          cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
         end
 
         # Get the FMV for this specific portfolio_company
         fmv_val = fmv_on_date(api, scenarios:).round(4)
+        fmv_val = (fmv_val * tracking_exchange_rate.rate).round if use_tracking_currency
         cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
 
         Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }

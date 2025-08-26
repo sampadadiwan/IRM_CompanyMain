@@ -1,4 +1,3 @@
-Here you go — clean, copy-pasteable **Markdown** for your design note:
 
 ---
 
