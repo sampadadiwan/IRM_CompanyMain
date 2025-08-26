@@ -689,7 +689,6 @@ Given('I fill in the new investment form with different Portfolio Company') do
   select(@investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
   @date = Date.today - rand(100).days
   fill_in("portfolio_investment_investment_date", with: @date)
-  byebug
   @amount = 1000 + rand(1000)
   fill_in("portfolio_investment_ex_expenses_base_amount", with: @amount)
   @quantity = 10 + rand(10)

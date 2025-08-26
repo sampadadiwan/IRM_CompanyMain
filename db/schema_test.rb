@@ -2853,8 +2853,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
     t.bigint "portfolio_company_id", null: false
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.string "category", limit: 15, null: false
-    t.string "sub_category", limit: 100, null: false
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
