@@ -57,12 +57,14 @@ module AccountEntryAllocation
       account_entry.fund_formula    = fund_formula
       account_entry.allocation_run_id = ctx[:allocation_run_id]
       # Evaluate the formula, but not for Percentage rules, as thats precomputed See ComputeCustomPercentage
-      account_entry.amount_cents = safe_eval(formula, bdg) unless fund_formula.rule_type == "Percentage"
-      # Explanation data
-      account_entry.explanation = []
-      account_entry.explanation << formula
-      account_entry.explanation << fund_formula.description
-      account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explain && fund_formula.explain
+      unless fund_formula.rule_type == "Percentage"
+        account_entry.amount_cents = safe_eval(formula, bdg)
+        # Explanation data
+        account_entry.explanation = []
+        account_entry.explanation << formula
+        account_entry.explanation << fund_formula.description
+        account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explain && fund_formula.explain
+      end
 
       # Validate and simulate save
       # account_entry.validate!
