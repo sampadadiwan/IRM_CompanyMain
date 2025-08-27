@@ -1,5 +1,5 @@
-<% 
-    uri_params ||= {} 
+<%
+    uri_params ||= {}
     name ||= "Default"
 %>
 
@@ -10,14 +10,14 @@
         <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
             <li class="nav-item">
                 <a class="nav-link btn btn-sm btn-outline-primary" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
-                    <%= dashboard_widget.widget_name.titleize %>
+                    <%= dashboard_widget.tags.titleize %>
                 </a>
             </li>
         <% end %>
 
         <!-- Add a dropdown for reports -->
         <li class="nav-item dropdown">
-            
+
             <a class="nav-link btn btn-sm btn-outline-primary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Reports
             </a>
@@ -27,17 +27,17 @@
                     <li><%= link_to report.name, report_url(dashboard_name, report), class: "dropdown-item" %></li>
                 <% end %>
             </ul>
-            
+
         </li>
 
-        
+
 
     </ul>
 </nav>
 <% end %>
 
-<div class="row">    
-    
+<div class="row">
+
     <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
             <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
