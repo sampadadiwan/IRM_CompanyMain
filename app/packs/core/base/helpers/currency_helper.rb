@@ -41,7 +41,7 @@ module CurrencyHelper
                 money /= 100_000
                 sanf = true
                 raw_units
-              when "million"
+              when "millions"
                 money /= 1_000_000
                 sanf = false
                 raw_units

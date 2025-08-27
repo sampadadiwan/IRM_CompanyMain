@@ -1,3 +1,4 @@
+
 <% if portfolio_company %>
   <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company]), expires_in: 5.day) do %>
     <%
