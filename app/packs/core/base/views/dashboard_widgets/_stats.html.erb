@@ -1,0 +1,63 @@
+<% cache_if(current_user != nil, cache_key("dashboard_widget_stats"), expires_in: 5.day) do %>
+  <% enabled_disabled_stats = {
+      enabled: { path: dashboard_widgets_path(q: ransack_query_params("enabled", :eq, true)), subtitle: "Enabled", progress_bar_color: "success", icon: "ti ti-check" },
+      disabled: { path: dashboard_widgets_path(q: ransack_query_params("enabled", :eq, false)), subtitle: "Disabled", progress_bar_color: "warning", icon: "ti ti-ban" }
+    }
+  %>
+
+
+  <div class="row">
+    <% enabled_disabled_stats.each do |type, data| %>
+      <div class="col">
+        <a href="<%= data[:path] %>">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <h3 class="fs-8"><%= policy_scope(DashboardWidget.send(type).all).count %></h3>
+                  <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= data[:progress_bar_color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+                </div>
+              </div>
+              <div class="progress-bar text-bg-<%= data[:progress_bar_color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+  </div>
+
+  <% dashboard_name_stats = {
+      fund_dashboard: { path: dashboard_widgets_path(q: ransack_query_params("dashboard_name", :eq, "Fund Dashboard")), subtitle: "Fund Dashboard", progress_bar_color: "info", icon: "ti ti-building-bank" },
+      ops_dashboard: { path: dashboard_widgets_path(q: ransack_query_params("dashboard_name", :eq, "Ops Dashboard")), subtitle: "Ops Dashboard", progress_bar_color: "primary", icon: "ti ti-settings" },
+      investor_dashboard: { path: dashboard_widgets_path(q: ransack_query_params("dashboard_name", :eq, "Investor Dashboard")), subtitle: "Investor Dashboard", progress_bar_color: "secondary", icon: "ti ti-user" },
+      portfolio_company_dashboard: { path: dashboard_widgets_path(q: ransack_query_params("dashboard_name", :eq, "Portfolio Company Dashboard")), subtitle: "Portfolio Company Dashboard", progress_bar_color: "danger", icon: "ti ti-building" },
+      portfolio_dashboard: { path: dashboard_widgets_path(q: ransack_query_params("dashboard_name", :eq, "Portfolio Dashboard")), subtitle: "Portfolio Dashboard", progress_bar_color: "success", icon: "ti ti-chart-pie" }
+    }
+  %>
+
+  <div class="row mt-3">
+    <% dashboard_name_stats.each do |type, data| %>
+      <div class="col">
+        <a href="<%= data[:path] %>">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <h3 class="fs-8"><%= policy_scope(DashboardWidget.for_dashboard(data[:subtitle]).all).count %></h3>
+                  <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= data[:progress_bar_color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+                </div>
+              </div>
+              <div class="progress-bar text-bg-<%= data[:progress_bar_color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+  </div>
+<% end %>

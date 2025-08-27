@@ -6,6 +6,9 @@
   </span>
 </div>
 
+<%= render "dashboard_widgets/stats" %>
+
+
 <%= render "/layouts/filter", associations: [] %>
 
 <div class="table-responsive" data-controller="datatable">
@@ -32,13 +35,13 @@
         <th>
           <%= sort_link @q, :size %>
         </th>
-        <th>          
+        <th>
           <%= sort_link @q, :position %>
         </th>
         <th>
           Metadata
         </th>
-        <th>          
+        <th>
           <%= sort_link @q, :enabled %>
         </th>
         <th>
