@@ -1,6 +1,6 @@
-<% 
+<%
     if args[:report_id].present?
-        report = Report.find(args[:report_id]) 
+        report = Report.find(args[:report_id])
 
         args[:fund_id] = @fund&.id
         args[:investor_id] = @investor&.id
@@ -11,10 +11,8 @@
 %>
 
     <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
-    
         <turbo-frame id="report_<%=report.id%>" src="<%= uri %>" loading="lazy" target="_top">
         </turbo-frame>
-    
     <% end %>
 
 <% end %>

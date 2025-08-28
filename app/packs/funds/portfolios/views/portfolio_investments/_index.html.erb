@@ -38,7 +38,7 @@
         <i class="ti ti-upload"></i> <%= t_common(:upload) %>
       <% end %>
 
-      
+
     <% end %>
 
       <% xl_link = "#{request.path}.xlsx?#{request.query_string}" %>
@@ -66,7 +66,7 @@
                 <i class="ti ti-file-spreadsheet"></i> Custom Report
               <% end %>
             </li>
-          <% end %>         
+          <% end %>
         </ul>
       </div>
 
@@ -79,25 +79,26 @@
     <%
 
       ransack_table_header = RansackTableHeader.new(PortfolioInvestment, q: @q, current_user: current_user, records: portfolio_investments, report_id: params["report_id"], turbo_frame: pi_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot])
-    
+
 
       custom_grid_columns = ransack_table_header.ag_selected_columns
 
       if params[:show_fund_name].present?
-        fund_params = { key: "fund_name", label: "Fund Name", data_type: "String" } 
+        fund_params = { key: "fund_name", label: "Fund Name", data_type: "String" }
         # add fund name to the front of the custom grid columns
         custom_grid_columns.unshift(fund_params)
       end
     %>
 
-    <div class="portfolio_investment_ag_grid" data-controller="ag" 
+    <% table_suffix = rand(100000) %>
+    <div class="portfolio_investment_ag_grid" data-controller="ag"
       data-ag-grid-div-name-value="portfolio_investment_ag_grid"
       data-ag-lazy-load-data-value=<%= false %>
       data-custom-columns='<%= custom_grid_columns.to_json %>'
       data-group-by-column='<%= params[:group_by_column] %>'
-      data-ag-table-name-value="#portfolio_investments_table" data-ag-custom-fields-value="" >
+      data-ag-table-name-value="#portfolio_investments_table<%=table_suffix%>" data-ag-custom-fields-value="" >
 
-      <div id="portfolio_investments_table" class="<%= get_ag_theme %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
+      <div id="portfolio_investments_table<%=table_suffix%>" class="<%= get_ag_theme %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
       </div>
 
       </div>
@@ -105,14 +106,14 @@
 
 <% else %>
 
-  
-  
+
+
   <div class="table-responsive">
 
     <%=render SearchComponent.new(data_source: portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: pi_turbo_frame) %>
 
     <%= render RansackTable.new(PortfolioInvestment, q: @q, current_user: current_user, records: portfolio_investments, report_id: params["report_id"], turbo_frame: pi_turbo_frame, referrer: request.referrer, snapshot: params[:snapshot], pagy: @pagy) %>
-      
+
   </div>
 
 <% end %>
