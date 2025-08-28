@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("Investor")
 
 wb.add_worksheet(name: "Investors") do |sheet|
   # Create the header row
-  sheet.add_row(%w[Name Pan Tags Category City] + custom_headers)
+  sheet.add_row(["Name", "Primary Email", "Pan", "Tags", "Category", "City"] + custom_headers)
 
   # Create entries for each item
   @investors.each do |inv|
     custom_field_values = get_custom_values(inv, form_type, custom_field_names)
-    sheet.add_row [inv.investor_name, inv.pan, inv.tag_list, inv.category, inv.city] + custom_field_values
+    sheet.add_row [inv.investor_name, inv.primary_email, inv.pan, inv.tag_list, inv.category, inv.city] + custom_field_values
   end
 end

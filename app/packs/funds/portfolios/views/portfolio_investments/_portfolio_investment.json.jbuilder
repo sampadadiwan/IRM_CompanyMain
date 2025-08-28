@@ -6,6 +6,9 @@ json.amount portfolio_investment.quantity >= 0 ? portfolio_investment.amount.to_
 json.cost portfolio_investment.cost.to_f.round(2)
 json.fmv portfolio_investment.fmv.to_f.round(2)
 json.unrealized_gain portfolio_investment.unrealized_gain.to_f.round(2)
+json.tracking_amount portfolio_investment.tracking_amount.to_f.round(2)
+json.tracking_fmv portfolio_investment.tracking_fmv.to_f.round(2)
+
 json.gain portfolio_investment.gain.to_f.round(2)
 json.cost_of_sold portfolio_investment.cost_of_sold.to_f.round(2)
 json.created_at l(portfolio_investment.created_at)

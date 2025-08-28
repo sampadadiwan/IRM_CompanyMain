@@ -1,6 +1,9 @@
 class ImportExchangeRate < ImportUtil
   STANDARD_HEADERS = ["From", "To", "Rate", "Rate", "As Of", "Notes"].freeze
 
+  # No custom fields for ExchangeRate
+  step nil, delete: :create_custom_fields
+
   def standard_headers
     STANDARD_HEADERS
   end

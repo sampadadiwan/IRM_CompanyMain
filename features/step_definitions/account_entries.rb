@@ -74,14 +74,14 @@ Given('the Allocation Run {string} is created for the {string}') do |args, fund_
 
 	allocation_run = AllocationRun.create!(fund: fund, entity_id: fund.entity_id, start_date: key_val["start_date"], end_date: key_val["end_date"], run_allocations: true, user_id: User.first.id)
 
-  	
+
 	AccountEntryAllocationJob.perform_now(fund.id, Date.parse(key_val["start_date"]), Date.parse(key_val["end_date"]), rule_for: "", tag_list: nil, run_allocations: true, explain: true, user_id: User.first.id, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: allocation_run.id)
 
 end
 
-Then('the account entries generated match the accoun entries in {string}') do |string|
+Then('the account entries generated match the account entries in {string}') do |generated_account_entries|
 
-  file = File.open("./public/sample_uploads/allocate_account_entries/generated_account_entries.xlsx", "r")
+  file = File.open("public/sample_uploads/#{generated_account_entries}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
   count = 0
@@ -101,11 +101,11 @@ Then('the account entries generated match the accoun entries in {string}') do |s
 
 	if parent_name.present?
 		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:)
-	else		
+	else
 		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:)
 	end
 
-	# binding.pry if account_entry.nil?
+	binding.pry if account_entry.nil?
 	account_entry.should_not be_nil, "Account entry not found for row #{idx + 1} with data: #{user_data.inspect}"
 
 	account_entry.parent_type = user_data["Parent Type"] if user_data["Parent Type"].present?
@@ -120,7 +120,7 @@ Then('the account entries generated match the accoun entries in {string}') do |s
 
 	count = idx
   end
-  
+
   count.should == 690
 
 end

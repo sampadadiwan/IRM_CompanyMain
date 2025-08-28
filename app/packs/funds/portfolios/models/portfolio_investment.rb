@@ -146,8 +146,8 @@ class PortfolioInvestment < ApplicationRecord
   }.freeze
 
   ADDITIONAL_COLUMNS = {
-    "Tracking Amount" => "tracking_amount_cents",
-    "Tracking FMV" => "tracking_fmv_cents"
+    "Tracking Amount" => "tracking_amount",
+    "Tracking FMV" => "tracking_fmv"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = [Fund, AggregatePortfolioInvestment].freeze

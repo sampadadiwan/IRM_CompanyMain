@@ -102,7 +102,8 @@ module AccountEntryAllocation
               rule_for: fund_formula.rule_for,
               fund_id: fund_formula.fund_id,
               entity_id: fund_formula.entity_id,
-              parent: parent
+              parent: parent,
+              folio_amount_cents: 0
             )
 
             begin
