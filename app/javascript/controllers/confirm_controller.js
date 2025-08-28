@@ -69,10 +69,11 @@ export default class extends Controller {
         let notifyText = $(notify_span)[0];
 
          // Copy the text inside the text field
-        navigator.clipboard.writeText(copyText.innerHTML);
+        navigator.clipboard.writeText(copyText.innerText);
+        console.log(copyText.innerText);
 
         // Alert the copied text
-        console.log("Copied the text: " + copyText.innerHTML);
+        console.log("Copied the text: " + copyText.innerText);
         // $(copyText).css({'color': 'blue', 'font-weight': '500'});
         $(copyText).animate({color:'blue', 'font-size': '110%'}, 1000);
         $(notifyText).text(`Copied ${copyText.innerHTML}`);

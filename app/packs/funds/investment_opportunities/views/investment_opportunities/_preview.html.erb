@@ -25,7 +25,7 @@
     <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} if current_user %>
 </div>
 
-<% if current_user.has_cached_role?(:rm) %>
+<% if current_user && current_user.has_cached_role?(:rm) %>
 
     <div id="eois" class="associated_entity">
 
