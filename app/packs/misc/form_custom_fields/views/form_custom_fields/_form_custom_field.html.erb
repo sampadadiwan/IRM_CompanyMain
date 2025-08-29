@@ -21,7 +21,20 @@
             class_name = f.form_type.name.underscore
             class_name = "investor_kyc" if ["individual_kyc", "non_individual_kyc"].include?(class_name)
         %>
-        Template Field: <span class="text-muted"><%= class_name %>.custom_fields.<%= f.name %></span>
+        <% template_field_text = "=#{class_name}.custom_fields.#{f.name}" %>
+        <% span_id = "fcf_#{f.id}_template_text" %>
+        <% notice_id = "fcf_#{f.id}_notice" %>
+
+        Template Field:  
+        <span id="<%= span_id %>" class="text-muted"><%= template_field_text %></span> 
+        <i class="fas fa-copy"
+            data-action="click->confirm#copy"
+            data-target="#<%= span_id %>"
+            data-notify="#<%= notice_id %>"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Copy"></i>
+        <span id="<%= notice_id %>" class="copy-notice d-block mt-1 text-success small"></span>
     </td>
     <td>
         <% if f.condition_on.present? %>
