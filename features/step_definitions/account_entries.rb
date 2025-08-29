@@ -100,7 +100,11 @@ Then('the account entries generated match the account entries in {string}') do |
 	parent_name = user_data["Parent"].presence
 
 	if parent_name.present?
-		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:)
+		if user_data["Ref Id"].present?
+			account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:, ref_id: user_data["Ref Id"])
+		else
+			account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:)
+		end
 	else
 		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:)
 	end
@@ -114,7 +118,7 @@ Then('the account entries generated match the account entries in {string}') do |
 		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8))
 	else
-		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
+		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 

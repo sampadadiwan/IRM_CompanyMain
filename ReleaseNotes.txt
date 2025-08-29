@@ -1,3 +1,15 @@
+V9.0.96
+#####################################
+bc33c6fc3 Fixed copy of IO link
+3bf83185c Fixed multiple PI ag grids on the same dashboard
+78f85501e Fixed PI additional cols
+c820c5432 Added account_entry_partition.md PR review
+36bfeb9ac Removed setting report_datein allocate _entry
+ea9889154 Added stats to dashboard widget
+a441e8bc0 Fixed millios for currency helper
+5755d335c Fixed bug in AE allocation, for Percentage computations
+83e8dd363 Changed Dashboard menu to tags
+
 V9.0.93
 #####################################
 82d328f84 Generate formula (#957)
