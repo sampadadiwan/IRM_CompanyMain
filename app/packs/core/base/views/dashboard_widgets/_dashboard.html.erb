@@ -10,7 +10,8 @@
         <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
             <li class="nav-item">
                 <a class="nav-link btn btn-sm btn-outline-primary" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
-                    <%= dashboard_widget.tags.titleize %>
+                    <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
+                    <%= label.titleize %>
                 </a>
             </li>
         <% end %>
