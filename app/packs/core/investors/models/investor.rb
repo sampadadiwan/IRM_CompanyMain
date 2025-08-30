@@ -256,7 +256,7 @@ class Investor < ApplicationRecord
     pis = entity.portfolio_investments.where(portfolio_company_id: id,
                                              investment_instrument: valuation.investment_instrument)
     pis.each do |pi|
-      PortfolioInvestmentUpdate.call(portfolio_investment: pi)
+      PortfolioInvestmentUpdate.call(portfolio_investment: pi, valuation: valuation)
     end
   end
 

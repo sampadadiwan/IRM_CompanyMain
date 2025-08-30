@@ -31,10 +31,10 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :aggregate_portfolio_investment, -> { with_snapshots }
   # This is the capital distribution that this PI is linked to, when sold, and proceeds are distributed
   belongs_to :capital_distribution, optional: true
-  # Valuations
+  # Valuations for the portfolio_company
   has_many :valuations, through: :portfolio_company
-  has_one :latest_valuation, -> { reorder(nil).order(valuation_date: :desc, id: :desc) }, # ensure newest first
-          through: :portfolio_company, source: :valuations, class_name: "Valuation"
+  # This is the latest valuation that was applied to the PI for FMV
+  belongs_to :valuation, optional: true
 
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
@@ -155,7 +155,7 @@ class PortfolioInvestment < ApplicationRecord
     "Sale Price Per Share" => "sale_price_per_share"
   }.freeze
 
-  ADDITIONAL_COLUMNS_FROM = %w[fund aggregate_portfolio_investment portfolio_company].freeze
+  ADDITIONAL_COLUMNS_FROM = %w[fund aggregate_portfolio_investment portfolio_company valuation].freeze
 
   ##########################################################
   ####################### HELPERS ##########################

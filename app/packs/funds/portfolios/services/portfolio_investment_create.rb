@@ -1,4 +1,5 @@
 class PortfolioInvestmentCreate < PortfolioInvestmentAction
+  step :set_valuation
   step :validate_currency
   left :handle_currency_errors, Output(:failure) => End(:failure)
   step :compute_amount_cents

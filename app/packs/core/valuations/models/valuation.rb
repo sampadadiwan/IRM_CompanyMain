@@ -34,13 +34,23 @@ class Valuation < ApplicationRecord
   def update_owner
     if (saved_change_to_valuation_cents? ||
        saved_change_to_per_share_value_cents? ||
-       saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated)
+       saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated) && latest?
       owner.valuation_updated(self)
     end
   end
 
+  # Check if this is the latest valuation
+  # TODO - move to an attribute
+  def latest?
+    if owner.present?
+      investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
+    else
+      investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
+    end
+  end
+
   def to_s
-    "#{entity} - #{valuation_date}"
+    "#{entity} - #{investment_instrument} - #{valuation_date}"
   end
 
   def to_extended_s

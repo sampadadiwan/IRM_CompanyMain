@@ -1,4 +1,14 @@
 class PortfolioInvestmentAction < Trailblazer::Operation
+  def set_valuation(ctx, portfolio_investment:, **)
+    if ctx[:valuation].present?
+      portfolio_investment.valuation = ctx[:valuation]
+    else
+      # Find a valuation thats the latest for the portfolio investment
+      portfolio_investment.valuation = portfolio_investment.valuations.order(valuation_date: :desc).first
+    end
+    true
+  end
+
   def compute_amount_cents(_ctx, portfolio_investment:, **)
     portfolio_investment.compute_amount_cents
     true

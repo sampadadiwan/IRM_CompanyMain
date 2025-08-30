@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_30_073812) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2674,6 +2674,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
     t.boolean "proforma", default: false, null: false
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "valuation_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_portfolio_investments_on_capital_distribution_id"
@@ -2689,6 +2690,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
     t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
+    t.index ["valuation_id"], name: "index_portfolio_investments_on_valuation_id"
   end
 
   create_table "portfolio_report_extracts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3547,6 +3549,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_131552) do
   add_foreign_key "portfolio_investments", "funds"
   add_foreign_key "portfolio_investments", "investment_instruments"
   add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_investments", "valuations"
   add_foreign_key "portfolio_report_extracts", "entities"
   add_foreign_key "portfolio_report_extracts", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_report_extracts", "portfolio_report_sections"
