@@ -1,3 +1,12 @@
+V9.0.97
+#####################################
+91f5e5f0a Add valuation to portfolio investment (#983)
+a6a706468 Refactored the FundRatioJob
+bbc5dd580 Added better support for ADDITIONAL_COLUMNS_FROM for custom grids, using relationships
+d007f8fcf Added cost_of_sold_per_share and sale_price_per_share to PI
+936a7dd99 Fixed tests for AE allocations
+3b62b74d7 Added copy icon for fcf template text (#982)
+
 V9.0.96
 #####################################
 bc33c6fc3 Fixed copy of IO link

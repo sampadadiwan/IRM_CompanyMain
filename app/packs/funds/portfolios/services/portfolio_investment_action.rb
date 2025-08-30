@@ -1,11 +1,6 @@
 class PortfolioInvestmentAction < Trailblazer::Operation
   def set_valuation(ctx, portfolio_investment:, **)
-    if ctx[:valuation].present?
-      portfolio_investment.valuation = ctx[:valuation]
-    else
-      # Find a valuation thats the latest for the portfolio investment
-      portfolio_investment.valuation = portfolio_investment.valuations.order(valuation_date: :desc).first
-    end
+    portfolio_investment.valuation = (ctx[:valuation].presence || portfolio_investment.valuations.order(valuation_date: :desc).first)
     true
   end
 

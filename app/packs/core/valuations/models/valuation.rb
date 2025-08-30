@@ -3,9 +3,20 @@ class Valuation < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
 
+  STANDARD_COLUMNS = {
+    "Name" => "name",
+    "Valuation Date" => "valuation_date",
+    "Per Share Value" => "per_share_value",
+    "Currency" => "currency"
+  }.freeze
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   belongs_to :investment_instrument # , optional: true
+  include FileUploader::Attachment(:report)
+
+  monetize :valuation_cents, :per_share_value_cents,
+           with_currency: ->(s) { s.currency }
 
   scope :by_instrument, lambda { |instrument_name|
     joins(:investment_instrument).where(investment_instrument: { name: instrument_name })
@@ -14,16 +25,11 @@ class Valuation < ApplicationRecord
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
   validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type] }
+  validates :name, length: { maximum: 60 }, allow_blank: true
 
   # Ensure callback to the owner
   after_save :update_owner
   after_save :update_entity
-
-  include FileUploader::Attachment(:report)
-
-  monetize :valuation_cents, :per_share_value_cents,
-           with_currency: ->(s) { s.currency }
-
   def update_entity
     if owner_type.blank?
       entity.per_share_value_cents = per_share_value_cents
@@ -39,6 +45,15 @@ class Valuation < ApplicationRecord
     end
   end
 
+  before_save :set_name
+  def set_name
+    if investment_instrument.present?
+      self.name = "#{investment_instrument} - #{valuation_date}" if name.blank?
+    elsif name.blank?
+      self.name = "#{entity} - #{valuation_date}"
+    end
+  end
+
   # Check if this is the latest valuation
   # TODO - move to an attribute
   def latest?
@@ -50,7 +65,7 @@ class Valuation < ApplicationRecord
   end
 
   def to_s
-    "#{entity} - #{investment_instrument} - #{valuation_date}"
+    name
   end
 
   def to_extended_s
