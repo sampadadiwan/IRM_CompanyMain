@@ -125,6 +125,6 @@ Then('the account entries generated match the account entries in {string}') do |
 	count = idx
   end
 
-  count.should == 690
+  count.should == 810
 
 end
