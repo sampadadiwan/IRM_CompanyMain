@@ -26,7 +26,7 @@ class CapitalCommitment < ApplicationRecord
                        "Collected" => "collected_amount",
                        "Distributed" => "distribution_amount" }.freeze
 
-  ADDITIONAL_COLUMNS_FROM = [InvestorKyc, Investor].freeze
+  ADDITIONAL_COLUMNS_FROM = %w[investor_kyc investor].freeze
 
   INVESTOR_TAB_STANDARD_COLUMNS = {
     "Fund Name" => "fund_name",

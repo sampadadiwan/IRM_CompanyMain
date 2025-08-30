@@ -33,6 +33,9 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :capital_distribution, optional: true
   # Valuations
   has_many :valuations, through: :portfolio_company
+  has_one :latest_valuation, -> { reorder(nil).order(valuation_date: :desc, id: :desc) }, # ensure newest first
+          through: :portfolio_company, source: :valuations, class_name: "Valuation"
+
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
   has_many :stock_conversions, foreign_key: :from_portfolio_investment_id, dependent: :destroy
@@ -152,7 +155,7 @@ class PortfolioInvestment < ApplicationRecord
     "Sale Price Per Share" => "sale_price_per_share"
   }.freeze
 
-  ADDITIONAL_COLUMNS_FROM = [Fund, AggregatePortfolioInvestment, Investor].freeze
+  ADDITIONAL_COLUMNS_FROM = %w[fund aggregate_portfolio_investment portfolio_company].freeze
 
   ##########################################################
   ####################### HELPERS ##########################

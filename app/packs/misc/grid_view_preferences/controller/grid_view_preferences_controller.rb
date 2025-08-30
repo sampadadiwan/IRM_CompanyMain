@@ -119,16 +119,24 @@ class GridViewPreferencesController < ApplicationController
 
     # Check if the model_class defines ADDITIONAL_COLUMNS
     if model_class.const_defined?(:ADDITIONAL_COLUMNS_FROM)
-      model_class::ADDITIONAL_COLUMNS_FROM.each do |add_class|
+      model_class::ADDITIONAL_COLUMNS_FROM.each do |add_relationship|
+        add_class = model_class.reflect_on_association(add_relationship).klass
         # Merge additional columns from the class into field_options but add a prefix to the keys and values
-        @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_class.name}.#{key}" }.transform_values { |value| "#{add_class.name.underscore}.#{value}" })
+        @field_options = @field_options.merge(add_class::STANDARD_COLUMNS.transform_keys { |key| "#{add_relationship}.#{key}" }.transform_values { |value| "#{add_relationship}.#{value}" })
+        # Merge the custom columns of the add_class
+        form_type = FormType.find_by(entity_id: current_user.entity_id, name: add_class.to_s)
+        if form_type.present?
+          @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
+          @field_options = @field_options.merge(Array(@custom_field_names).to_h { |name| ["#{add_relationship}.#{name.humanize}", "#{add_relationship}.custom_fields.#{name}"] })
+        end
       end
     end
 
     form_type = FormType.find_by(entity_id: current_user.entity_id, name: model_class.to_s)
-    @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s) if form_type.present?
-
-    @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
+    if form_type.present?
+      @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
+      @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
+    end
   end
 
   private
