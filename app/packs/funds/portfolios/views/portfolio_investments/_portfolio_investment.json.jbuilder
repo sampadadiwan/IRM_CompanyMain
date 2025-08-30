@@ -9,6 +9,9 @@ json.unrealized_gain portfolio_investment.unrealized_gain.to_f.round(2)
 json.tracking_amount portfolio_investment.tracking_amount.to_f.round(2)
 json.tracking_fmv portfolio_investment.tracking_fmv.to_f.round(2)
 
+json.sale_price_per_share portfolio_investment.sale_price_per_share.to_f.round(2)
+json.cost_of_sold_per_share portfolio_investment.cost_of_sold_per_share.to_f.round(2)
+
 json.gain portfolio_investment.gain.to_f.round(2)
 json.cost_of_sold portfolio_investment.cost_of_sold.to_f.round(2)
 json.created_at l(portfolio_investment.created_at)

@@ -144,7 +144,7 @@ class Investor < ApplicationRecord
   scope :perms, ->(p) { joins(:investor_entity).merge(Entity.perms(p)) }
   scope :no_perms, ->(p) { joins(:investor_entity).merge(Entity.no_perms(p)) }
 
-  STANDARD_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Access" => "investor_access_count" }.freeze
+  STANDARD_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Access" => "investor_access_count", "City" => "city" }.freeze
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)

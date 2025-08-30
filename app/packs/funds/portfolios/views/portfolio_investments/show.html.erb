@@ -189,6 +189,18 @@
       </tr>
 
       <% if @portfolio_investment.sell? %>
+
+      <tr>
+        <td>
+          Sale Price Per Share
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.sale_price_per_share, params %>
+        </td>
+      </tr>
+
+
+
       <tr>
         <td>
           Cost of Sold
@@ -197,6 +209,17 @@
           <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Cost of Sold Per Share
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.cost_of_sold_per_share, params %>
+        </td>
+      </tr>
+
+
       <tr>
         <td>
           Gain

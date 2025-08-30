@@ -66,7 +66,7 @@ class PortfolioInvestment < ApplicationRecord
            with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
   monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents,
-           :amount_cents, :cost_cents, :fmv_cents, :gain_cents,
+           :amount_cents, :cost_cents, :sale_price_per_share_cents, :cost_of_sold_per_share_cents, :fmv_cents, :gain_cents,
            :unrealized_gain_cents, :cost_of_sold_cents, :cost_of_remaining_cents,
            :transfer_amount_cents,
            with_currency: ->(i) { i.fund.currency }
@@ -147,10 +147,12 @@ class PortfolioInvestment < ApplicationRecord
 
   ADDITIONAL_COLUMNS = {
     "Tracking Amount" => "tracking_amount",
-    "Tracking FMV" => "tracking_fmv"
+    "Tracking FMV" => "tracking_fmv",
+    "Cost Of Sold Per Share" => "cost_of_sold_per_share",
+    "Sale Price Per Share" => "sale_price_per_share"
   }.freeze
 
-  ADDITIONAL_COLUMNS_FROM = [Fund, AggregatePortfolioInvestment].freeze
+  ADDITIONAL_COLUMNS_FROM = [Fund, AggregatePortfolioInvestment, Investor].freeze
 
   ##########################################################
   ####################### HELPERS ##########################
@@ -196,6 +198,14 @@ class PortfolioInvestment < ApplicationRecord
   # Returns cost per share in fund currency
   def cost_cents
     quantity.positive? ? (amount_cents / quantity).abs : 0
+  end
+
+  def sale_price_per_share_cents
+    quantity.negative? ? (amount_cents / quantity).abs : 0
+  end
+
+  def cost_of_sold_per_share_cents
+    quantity.negative? ? (cost_of_sold_cents / quantity).abs : 0
   end
 
   # Returns cost per share in instrument's base currency
