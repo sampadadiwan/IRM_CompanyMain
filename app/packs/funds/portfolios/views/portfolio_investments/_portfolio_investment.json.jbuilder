@@ -17,7 +17,10 @@ json.cost_of_sold portfolio_investment.cost_of_sold.to_f.round(2)
 json.created_at l(portfolio_investment.created_at)
 json.investment_instrument_name portfolio_investment.investment_instrument.name
 json.fund_name portfolio_investment.fund.name
+
 json.portfolio_company portfolio_investment.portfolio_company, partial: 'investors/investor', as: :investor
+json.valuation portfolio_investment.valuation, partial: 'valuations/valuation', as: :valuation
+json.investment_instrument portfolio_investment.investment_instrument, partial: 'investment_instruments/investment_instrument', as: :investment_instrument
 
 # Send the custom_fields
 json.custom_fields portfolio_investment.json_fields
