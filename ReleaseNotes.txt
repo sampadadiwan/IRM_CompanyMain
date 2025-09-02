@@ -1,3 +1,14 @@
+V9.0.98
+#####################################
+f674f9b14 Fixed the selct2 issue stemming from the budget/actual compare widget
+4e097ce4a Fixed columns for budget and actuals
+8aa7db5d6 Fixed issues with the FundUnitTransferService, added counter_culture_fix_counts (#987)
+9087a50e1 Io preview fix 020925 (#985)
+9be3007b0 Added valuations to PI from investment_instrument
+f3592714f Million now works properly (#984)
+897973cc7 Added valuation to PI json
+2f6d15af5 Fixed bug for default dashboard
+
 V9.0.97
 #####################################
 91f5e5f0a Add valuation to portfolio investment (#983)
