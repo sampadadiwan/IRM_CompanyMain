@@ -31,8 +31,8 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :aggregate_portfolio_investment, -> { with_snapshots }
   # This is the capital distribution that this PI is linked to, when sold, and proceeds are distributed
   belongs_to :capital_distribution, optional: true
-  # Valuations for the portfolio_company
-  has_many :valuations, through: :portfolio_company
+  # Valuations for the investment_instrument
+  has_many :valuations, through: :investment_instrument
   # This is the latest valuation that was applied to the PI for FMV
   belongs_to :valuation, optional: true
 
