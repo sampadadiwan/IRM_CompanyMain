@@ -31,9 +31,33 @@ Highcharts.setOptions({
   }
 });
 
-$('.select2').select2();
-document.addEventListener("turbo:frame-load", function() {
-  $('.select2').select2();
+
+function initSelect2(root = document) {
+  $(root).find('select.select2').each(function () {
+    // Skip if already initialized by Select2
+    if ($(this).hasClass('select2-hidden-accessible')) return;
+
+    // If used in a Bootstrap modal, ensure the dropdown renders inside it
+    const $parentModal = $(this).closest('.modal');
+    $(this).select2({
+      width: 'resolve',
+      dropdownParent: $parentModal.length ? $parentModal : $(document.body)
+    });
+  });
+}
+
+// Initialize on normal Turbo renders
+document.addEventListener('turbo:load', () => initSelect2());
+
+// Initialize when a <turbo-frame> finishes loading
+document.addEventListener('turbo:frame-load', (e) => initSelect2(e.target));
+
+// Important: tear down before Turbo caches the page,
+// otherwise re-visits can double-initialize or break the UI
+document.addEventListener('turbo:before-cache', () => {
+  $('select.select2').each(function () {
+    if ($(this).data('select2')) $(this).select2('destroy');
+  });
 });
 
 document.addEventListener("turbo:load", () => {
