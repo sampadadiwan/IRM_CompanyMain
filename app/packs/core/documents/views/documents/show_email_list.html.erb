@@ -1,0 +1,27 @@
+<table id="users" class="table table-bordered  dataTable jqDataTable">
+  <thead>
+    <tr>
+        <th>
+        Name
+        </th>
+
+        <th>
+            Email
+        </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @notification_users.each do |user| %>
+    <tr>
+        <td>
+        <%= user.full_name %>
+        </td>
+        <td>
+        <%= user.email %>
+        </td>
+    </tr>
+    <% end %>
+  </tbody>
+  
+</table>

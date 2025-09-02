@@ -103,4 +103,8 @@ class DocumentPolicy < ApplicationPolicy
   def send_document_notification?
     update?
   end
+
+  def show_email_list?
+    update?
+  end
 end

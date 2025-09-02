@@ -160,6 +160,7 @@ resources :documents do
   patch 'send_document_notification', on: :member
   post 'share_by_email', on: :member # New route for sharing documents by email
   get 'show_file', on: :member
+  get 'show_email_list', on: :member # New route for showing email list
 end
 
 # Top-level route for viewing shared documents

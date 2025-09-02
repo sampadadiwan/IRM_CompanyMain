@@ -11,9 +11,16 @@
     <div class="dropdown-divider"></div>
 
     <span class="dropdown-item-text">Email Using Template:</span>
-    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup. Proceed?" %>
 
+    <% query_params = ransack_query_params_multiple([
+                                                    ['for_type', :eq, "Send Document"]
+                                                    ])
+    %>
     <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
+        <% msg = "This will send an email for each document in the search results (including results on other pages) using custom notification<br><strong>#{link_to cust_not.subject, custom_notification_path(cust_not), target: '_blank'}</strong><br>Proceed?<br>
+        #{link_to 'View Custom Notifications', custom_notifications_path(entity_id: current_user.entity_id, filter: true, q: query_params), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}"
+        %>
+
         <%= bulk_action_button("Send Document", msg, folder_id: folder_id, custom_notification_id: cust_not.id, label: cust_not.subject) if params[:q].present? %>
     <% end %>
 

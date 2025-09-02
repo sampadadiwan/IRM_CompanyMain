@@ -210,29 +210,40 @@
       <%= button_to "UnApprove", document_path(@document, "document[approved]": false, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success ti ti-cross", method: :patch} if policy(@document).unapprove? %>
 
       <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
-      <%= button_to t_common(:delete), @document, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
+      <%= button_to t_common(:delete), @document, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup",turbo:false} if policy(@document).destroy? %>
 
       <% unless current_user.curr_role == "investor" %>
-        <button class="btn btn-outline-primary dropdown-toggle ti ti-send" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown">
-          Send Document
-        </button>
-        <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
-
-          <%
-            doc_send_msg = "This will send an email to the recipients with this document. Proceed?"
-          %>
-          <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
-            <%= button_to "Send #{cust_not.subject}", send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
-                          method: :patch, form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: doc_send_msg},
-                          class: "dropdown-item ti ti-mail" %>
-          <% end %>
-        </div>
+         <button class="btn btn-outline-primary dropdown-toggle ti ti-send" type="button" id="sendDocumentDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Send Document
+         </button>
+         <div class="dropdown-menu" aria-labelledby="sendDocumentDropdown">
+            <% query_params = ransack_query_params_multiple([
+                                                            ['for_type', :eq, "Send Document"]
+                                                         ])
+            %>
+            <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
+               <%
+               msg = "This will send an email to the recipients who have access to this document using custom notification
+               <br><strong>#{link_to cust_not.subject, custom_notification_path(cust_not), target: '_blank'}</strong><br>Proceed?<br>
+               #{link_to 'View Who Gets Notified', show_email_list_document_path(@document), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}
+               #{link_to 'View Custom Notifications', custom_notifications_path(entity_id: @document.entity_id, filter: true, q: query_params), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}"
+               %>
+               <%= button_to "Send #{cust_not.subject}",
+               send_document_notification_document_path(@document, custom_notification_id: cust_not.id),
+               method: :patch,
+               form_class: "deleteButton d-inline",
+               data: {
+                  action: "click->confirm#popup",
+                  msg: msg,
+                  method: :patch,
+                  turbo: false
+               },
+               class: "dropdown-item flex-grow-1 text-start"
+               %>
+            <% end %>
+         </div>
       <% end %>
    </div>
    <%= render "documents/document_details", document: @document if policy(@document).update? %>
 
 <% end %>
-
-
-
-

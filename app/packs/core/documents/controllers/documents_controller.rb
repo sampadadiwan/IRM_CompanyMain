@@ -4,8 +4,8 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign]
-  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list]
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
   def signature_progress
@@ -290,6 +290,10 @@ class DocumentsController < ApplicationController
     else
       redirect_to document_url(@document), alert: "Failed to share document: #{result.errors}"
     end
+  end
+
+  def show_email_list
+    @notification_users = @document.notification_users
   end
 
   private
