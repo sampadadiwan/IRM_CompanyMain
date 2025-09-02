@@ -119,11 +119,15 @@ Scenario Outline: Transfer Fund Units
   When fund units are transferred "<transfer>"
   Then the units should be transferred
   And I should be able to see the transferred fund units
+  And the account entries are adjusted upon fund unit transfer
+  And the remittances are adjusted upon fund unit transfer
+  And distributions are adjusted upon fund unit transfer
+  And adjustments are create upon fund unit transfer
 
 Examples:
   	|fund                 | call                 | transfer |
-  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,quantity=1|
-    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,quantity=2 |
+  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil|
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil |
 
 @import
 Scenario Outline: Import fund units that are same except issue date

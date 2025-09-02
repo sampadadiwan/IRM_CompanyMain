@@ -82,11 +82,14 @@ class CapitalCommitmentsController < ApplicationController
       from_commitment = @capital_commitment
       price = params[:price].to_d
       premium = params[:premium].to_d
-      quantity = params[:quantity].to_d
-      transfer_date = params[:transfer_date]
+      transfer_ratio = params[:transfer_ratio].to_f / 100
+      transfer_date = Date.parse(params[:transfer_date])
       to_folio_id = params[:to_folio_id]
+      transfer_account_entries = params[:transfer_account_entries] == "1"
+      account_entries_excluded = params[:account_entries_excluded]
 
-      valid_params = params.to_unsafe_h.slice(:to_folio_id, :quantity, :price, :premium, :transfer_date)
+      valid_params = params.to_unsafe_h.slice(:to_folio_id, :transfer_ratio, :price, :premium, :transfer_date, :transfer_account_entries, :account_entries_excluded)
+
       # Check if the to_folio_id is valid
       to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: to_folio_id)
 
@@ -94,10 +97,18 @@ class CapitalCommitmentsController < ApplicationController
         # Redirect back to the form with an error message
         redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: "Invalid folio #{params[:to_folio_id]}"
       else
+        valid_params = {
+          transfer_ratio: transfer_ratio,
+          price: price,
+          premium: premium,
+          transfer_date: transfer_date,
+          transfer_account_entries: transfer_account_entries,
+          account_entries_excluded: account_entries_excluded
+        }
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
         # Transfer fund units using the TB
-        result = FundUnitTransferService.call(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:, transfer_date:)
+        result = FundUnitTransferService.call(from_commitment:, to_commitment:, fund:, **valid_params)
         if result.success?
           # Redirect to the fund units tab
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"

@@ -22,8 +22,9 @@
       </div>
 
       <div class="form-group">
-        <%= label_tag :quantity, "Quantity" %>
-        <%= number_field_tag :quantity, params[:quantity], class: 'form-control', step: :any, required: true %>
+        <%= label_tag :transfer_ratio, "Transfer Ratio" %>
+        <%= number_field_tag :transfer_ratio, params[:transfer_ratio], class: 'form-control', step: :any, required: true %>
+        <span class="text-muted">Enter as a percentage 0 - 100 </span>
       </div>
 
       <div class="form-group">
@@ -50,6 +51,21 @@
               ),
               class: 'form-control select2', required: true %>
       </div>
+
+
+      <div class="form-group">
+        <%= label_tag :transfer_account_entries, "Transfer Account Entries" %>
+        <%= check_box_tag :transfer_account_entries, "1", params[:transfer_account_entries], class: "form-check-input" %>
+        <span class="text-muted">Transfer account entries from Seller to Buyer</span>
+      </div>
+
+
+      <div class="form-group">
+        <%= label_tag :account_entries_excluded, "Account Entries Not pro-rated" %>
+        <%= text_field_tag :account_entries_excluded, params[:account_entries_excluded], class: 'form-control' %>
+        <span class="text-muted">These account entries will not be included in the transfer if the checkbox above is checked</span>
+      </div>
+
 
       <div class="form-group">
         <%= submit_tag "Transfer", class: "btn btn-outline-primary" %>
