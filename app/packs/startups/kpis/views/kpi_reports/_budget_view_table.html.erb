@@ -137,6 +137,8 @@
                                     %>
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
                                         <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                    <% elsif actual_kpi_value.present? %>
+                                        <%= actual_kpi_value %>
                                     <% else %>
                                         N/A
                                     <% end %>
@@ -173,6 +175,8 @@
                                     %>
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
                                         <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                    <% elsif actual_kpi_value.present? %>
+                                        <%= actual_kpi_value %>
                                     <% else %>
                                         N/A
                                     <% end %>
