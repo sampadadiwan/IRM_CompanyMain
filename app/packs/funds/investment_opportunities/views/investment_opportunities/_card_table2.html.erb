@@ -1,7 +1,7 @@
 <% col_size ||= 4 %>
 <div class="io_facts row">
 
-  <div class="col-<%=col_size%>">
+  <div class="col-12 col-md-<%= col_size %>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -9,7 +9,7 @@
             class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
             <i class="ti ti-currency-dollar fs-6"></i>
           </div>
-          <div class="ms-3 align-self-center">          
+          <div class="ms-3 align-self-center text-wrap">          
             <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></h3>
             <span class="text-muted">Fund Raise Amount</span>
           </div>
@@ -25,7 +25,7 @@
     end 
   %>
 
-  <div class="col-<%=col_size%>">
+  <div class="col-12 col-md-<%= col_size %>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -33,7 +33,7 @@
             class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
             <i class="ti ti-ticket fs-6"></i>
           </div>
-          <div class="ms-3 align-self-center">
+          <div class="ms-3 align-self-center text-wrap">
             <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.min_ticket_size, params %></h3>
             <span class="text-muted">Min Ticket Size</span>
           </div>
@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <div class="col-<%=col_size%>">
+  <div class="col-12 col-md-<%= col_size %>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -50,7 +50,7 @@
             class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
             <i class="ti ti-calendar fs-6"></i>
           </div>
-          <div class="ms-3 align-self-center">
+          <div class="ms-3 align-self-center text-wrap">
             <h3 class="mb-0 fs-6"><%= l investment_opportunity.last_date %></h3>
             <span class="text-muted">Last Date</span>
           </div>
@@ -63,10 +63,10 @@
 
   <% tags = investment_opportunity.tag_list&.split(",") %>
   
-  <div class="col-<%=col_size%>">
+  <div class="col-12 col-md-<%= col_size %>">
     <div class="card">
       <div class="card-body">
-        <div class="row text-center">
+        <div class="d-flex flex-row align-items-center">
           <div
             class="">
             <i class=""></i>

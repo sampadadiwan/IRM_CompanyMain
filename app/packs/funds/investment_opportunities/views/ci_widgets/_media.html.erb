@@ -15,7 +15,9 @@
                             class="img-fluid object-fit-contain"
                         />
                 <% elsif widget.embed_script.present? %>
+                    <div class="ratio ratio-16x9">
                     <%= widget.embed_script.html_safe %>
+                    </div>
                 <% else %>
                     <%= widget.image_url %>
                 <% end %>
