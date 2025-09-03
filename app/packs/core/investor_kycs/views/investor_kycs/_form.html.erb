@@ -151,9 +151,11 @@
             </div>
 
 
+            <% kyc_type_key = investor_kyc.kyc_type || "Individual" %>
+            <% kyc_type_key = "#{kyc_type_key.camelize} Address Proof Documents" %>
             <div class="form-group">
                 <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
-                <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
+                <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, kyc_type_key) %>
                 <small class="form-text text-muted"> <%=address_proof_label%></small>
             </div>
 
@@ -168,7 +170,7 @@
 
           <div class="form-group">
               <%= file_fields("Upload Correspondence Address Proof", investor_kyc, form, required: false) %>
-              <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, "Address Proof Documents") %>
+              <% address_proof_label = Labels.get(current_user.entity.entity_setting.regulatory_env, kyc_type_key) %>
               <small class="form-text text-muted"> In case Correspondence Address is different from Permanent Address, please attach a valid government issued address proof.</small>
           </div>
 
