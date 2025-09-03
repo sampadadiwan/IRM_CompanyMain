@@ -44,14 +44,15 @@
               <% row_class = r.investor_kpi_mapping.parent_id.blank? ? 'parent' : 'child' %>
               <tr class="<%= row_class %>">
                 <td class="text-start fw-semibold" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
+                  <div class="d-flex align-items-center">
                     <% if r.investor_kpi_mapping.parent_id.present? %>
-                        &nbsp;&nbsp;
-                        <i class="ti ti-chevron-right"></i>
+                        <i class="ti ti-chevron-right me-1"></i>
                     <% end %>
                     <%= r.metric %>
                     <% if r.investor_kpi_mapping.child_count > 0 %>
-                        <span class="expand">+</span>
+                        <span class="expand ms-1">+</span>
                     <% end %>
+                  </div>
                 </td>
 
                 <td><%= r.monthly_prev_kpi ? link_to(number_with_delimiter(r.monthly_prev_kpi.value, delimiter: ','), r.monthly_prev_kpi) : nil %></td>

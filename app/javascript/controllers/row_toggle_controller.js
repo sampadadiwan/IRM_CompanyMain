@@ -24,7 +24,7 @@ export default class extends Controller {
 
     while (next && !next.classList.contains("parent")) {
       if (next.classList.contains("child")) {
-        next.style.display = opening ? "" : "none"
+        next.style.display = opening ? "table-row" : "none"
       }
       next = next.nextElementSibling
     }

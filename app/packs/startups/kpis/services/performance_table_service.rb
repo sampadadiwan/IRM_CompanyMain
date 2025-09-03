@@ -48,18 +48,32 @@ class PerformanceTableService
   # Otherwise, it builds rows for all KPIs associated with the `kpi_report`.
   # @return [Array<MetricRow>] An array of MetricRow objects, each representing a row in the performance table.
   def call
-    if metric_names.present?
-      @investor_kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.where(standard_kpi_name: metric_names).index_by(&:standard_kpi_name)
-      metric_names.map { |name| build_row(name, @investor_kpi_mappings[name]) }
-    else
-      @investor_kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.index_by(&:standard_kpi_name)
-      @kpi_report.kpis.map { |kpi| build_row(kpi.name, @investor_kpi_mappings[kpi.name]) }
-    end
+    # Fetch all relevant InvestorKpiMappings for the portfolio company, ordered hierarchically
+    # and eager load necessary associations.
+    investor_kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings
+                                       .includes(:kpis)
+                                       .arrange(order: :position) # Use ancestry's arrange for hierarchical order
+
+    rows = []
+    # Recursively build rows, ensuring parent rows are followed by their children
+    build_hierarchical_rows(investor_kpi_mappings, rows)
+    rows
   end
 
   private
 
-  attr_reader :metric_names, :as_of, :scope, :kpis_by_metric_and_date, :investor_kpi_mappings
+  attr_reader :metric_names, :as_of, :scope, :kpis_by_metric_and_date
+
+  def build_hierarchical_rows(mappings, rows_array)
+    mappings.each do |mapping, children|
+      # Only build a row if the mapping has a standard_kpi_name (i.e., it's a real metric)
+      # and it's marked to be shown in the report.
+      rows_array << build_row(mapping.standard_kpi_name, mapping) if mapping.standard_kpi_name.present? && mapping.show_in_report
+
+      # Recursively add children
+      build_hierarchical_rows(children, rows_array) if children.present?
+    end
+  end
 
   # --------------------------- Data Fetching --------------------------- #
   # Fetches all relevant KPIs for the specified metrics and date range.
