@@ -1,3 +1,9 @@
+V9.0.99
+#####################################
+2f1b88e3d Non Individual Kyc address proof help text updated (#989)
+d89bb26a8 Added better performance table with child rows
+
+
 V9.0.98
 #####################################
 f674f9b14 Fixed the selct2 issue stemming from the budget/actual compare widget
