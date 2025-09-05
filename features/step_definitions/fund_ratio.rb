@@ -52,6 +52,7 @@ Then("the Fund ratios must be updated") do
   fund_ratio = FundRatio.find_by(name: "Fund Utilization")
   expect(fund_ratio.value).to(eq(-0.4521e0,))
   expect(fund_ratio.notes).to(eq("Updated"))
+  expect(fund_ratio.label).to(eq("Updated"))
 end
 
 

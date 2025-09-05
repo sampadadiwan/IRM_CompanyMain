@@ -1,5 +1,5 @@
 class FundRatioIndex < Chewy::Index
-  SEARCH_FIELDS = %i[entity_name name fund_name end_date scenario].freeze
+  SEARCH_FIELDS = %i[entity_name name fund_name end_date scenario label].freeze
 
   index_scope FundRatio.includes(:entity, :fund)
   field :fund_id
@@ -8,6 +8,7 @@ class FundRatioIndex < Chewy::Index
   field :scenario
   field :capital_commitment_id
   field :end_date
+  field :label
   field :entity_id
   field :fund_name, value: ->(f) { f.fund&.name }
   field :entity_name, value: ->(f) { f.entity.name }

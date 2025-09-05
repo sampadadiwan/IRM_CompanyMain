@@ -1,5 +1,5 @@
 class ImportFundRatio < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Folio No", "Portfolio Company", "Instrument", "Ratio Name", "Value", "End Date", "Note", "Update Only"].freeze
+  STANDARD_HEADERS = ["Fund", "Folio No", "Portfolio Company", "Instrument", "Ratio Name", "Value", "End Date", "Label", "Note", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -105,7 +105,8 @@ class ImportFundRatio < ImportUtil
       display_value: attrs[:display_value],
       end_date: attrs[:end_date],
       import_upload_id: attrs[:import_upload].id,
-      notes: attrs[:user_data]["Note"]
+      notes: attrs[:user_data]["Note"],
+      label: attrs[:user_data]["Label"]
     )
     fund_ratio.save!
   end
@@ -133,7 +134,8 @@ class ImportFundRatio < ImportUtil
       display_value: attrs[:display_value],
       end_date: attrs[:end_date],
       import_upload_id: attrs[:import_upload].id,
-      notes: attrs[:user_data]["Note"]
+      notes: attrs[:user_data]["Note"],
+      label: attrs[:user_data]["Label"]
     )
 
     fund_ratio.capital_commitment_id = attrs[:owner].id if attrs[:owner].is_a?(CapitalCommitment)

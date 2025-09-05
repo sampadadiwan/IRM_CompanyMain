@@ -108,6 +108,6 @@ class FundRatiosController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_ratio_params
-    params.require(:fund_ratio).permit(:entity_id, :fund_id, :capital_commitment_id, :valuation_id, :name, :value, :display_value, :notes)
+    params.require(:fund_ratio).permit(:entity_id, :fund_id, :capital_commitment_id, :valuation_id, :name, :value, :display_value, :label, :notes)
   end
 end
