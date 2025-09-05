@@ -29,3 +29,23 @@ Scenario Outline: Dont Generate Aml Report on Kyc Update
   Given I update the last investor kycs name to "somegoodname"
   Then I should see the "Investor kyc was successfully saved."
   Then aml report is not generated for the investor kyc
+
+Scenario Outline: Generate AML report Manually with and without PAN
+  Given Im logged in as a user "first_name=Testuser" for an entity "name=Urban1;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor "investor_name=Investor 11"
+  Given I create a new InvestorKyc "PAN=ABCDE1234F;full_name=Some Name" to trigger aml report generation
+  Then I should see the "Investor kyc was successfully saved."
+  Then aml report is not generated for the investor kyc
+  Given I go to view the KYC
+  Given I click on "KYC Actions"
+  Given I mock aml and click on "Generate AML Report"
+  Then AML Report is Generated with PAN
+  Given I create a new InvestorKyc "PAN=123456789;full_name=Good Name" to trigger aml report generation
+  Then I should see the "Investor kyc was successfully saved."
+  Then aml report is not generated for the investor kyc
+  Given I go to view the KYC
+  Given I click on "KYC Actions"
+  Given I mock aml and click on "Generate AML Report"
+  Then AML Report is Generated without PAN

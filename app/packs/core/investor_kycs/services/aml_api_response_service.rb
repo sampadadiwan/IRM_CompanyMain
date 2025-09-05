@@ -6,6 +6,8 @@ class AmlApiResponseService
     name = aml_report_object.investor_kyc.full_name
     pan = aml_report_object.investor_kyc.PAN
     dob = aml_report_object.investor_kyc.birth_date
+    # if the primary pan does not follow format ABCDE1234F, then ignore it
+    pan = nil if pan.present? && !/\A[A-Z]{5}\d{4}[A-Z]\z/.match?(pan.upcase)
 
     if aml_report_object.custom_name.present?
       name = aml_report_object.custom_name

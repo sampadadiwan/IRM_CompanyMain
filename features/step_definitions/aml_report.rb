@@ -24,6 +24,12 @@ end
 
 def mock_pdf_file
   file_path = Rails.root.join('public/sample_uploads/Offer_1_SPA.pdf')
+
+  # Stub download_file so the job never actually fetches via URI
+  allow_any_instance_of(AmlReportAsyncDownloadJob).to receive(:download_file) do |_, _, tmpfile|
+    FileUtils.cp(file_path, tmpfile.path)
+  end
+
   @doc = Document.create!(
     entity: Investor.first.entity,
     owner: Investor.first,
@@ -33,17 +39,7 @@ def mock_pdf_file
     user_id: User.first.id
   )
 
-  url = @doc.file.url
-
-  allow(URI).to receive(:parse).and_wrap_original do |original_method, url|
-    if url =~ /\.pdf$/
-      instance_double(URI::HTTPS, open: File.open(file_path), query: "param1=value1")
-    else
-      original_method.call(url)
-    end
-  end
-
-  url
+  @doc.file.url
 end
 
 # Shared setup for AML stubbing
@@ -103,7 +99,7 @@ Then('Aml report should be generated for the kycs that have full name') do
   sleep(5)
   @amls.each do |ik_id, count|
     kyc = InvestorKyc.find(ik_id)
-    kyc.documents.where("name like ?", "%AML Report%").count == count + 1
+    kyc.aml_reports.last.documents.where("name like ?", "%AML Report%").count.should == count + 1
   end
 end
 
@@ -164,4 +160,33 @@ end
 Then('I update full name to nil for the KYC') do
   @last_kyc = InvestorKyc.last
   @last_kyc.update_column(:full_name, nil)
+end
+
+Given('I go to view the KYC') do
+  @kyc = InvestorKyc.last
+  @kyc_aml_docs_count = @kyc.documents.where("name like ?", "%AML Report%").count
+  @kyc_aml_reports_count = @kyc.aml_reports.count
+  visit(investor_kyc_path(@kyc))
+end
+
+Then('AML Report is Generated with PAN') do
+  mock_aml
+  expect(@kyc.aml_reports.count).to eq(@kyc_aml_reports_count + 1)
+  aml_report = @kyc.aml_reports.last
+  expect(JSON.parse(aml_report.request_data.values.first)["data"]["filters"].keys.include?("pan_number")).to be_truthy
+  expect(aml_report.documents.where("name like ?", "%AML Report%").count).to eq(@kyc_aml_docs_count + 1)
+end
+
+Then('AML Report is Generated without PAN') do
+  mock_aml
+  expect(@kyc.aml_reports.count).to eq(@kyc_aml_reports_count + 1)
+  aml_report = @kyc.aml_reports.last
+  expect(JSON.parse(aml_report.request_data.values.first)["data"]["filters"].keys.include?("pan_number")).to be_falsey
+  expect(aml_report.documents.where("name like ?", "%AML Report%").count).to eq(@kyc_aml_docs_count + 1)
+end
+
+Given('I mock aml and click on {string}') do |string|
+  mock_aml
+  click_on(string)
+  sleep(1)
 end
