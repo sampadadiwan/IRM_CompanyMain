@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_30_113022) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_05_081151) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1213,6 +1213,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_30_113022) do
     t.string "primary_email"
     t.integer "customization_flags", default: 0
     t.bigint "root_folder_id"
+    t.integer "primary_region_id"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
     t.index ["pan"], name: "index_entities_on_pan"
@@ -3183,13 +3184,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_30_113022) do
     t.text "access_rights_cache"
     t.integer "access_rights_cached_permissions"
     t.string "session_token"
-    t.string "regions", default: "in", null: false
-    t.string "primary_region", default: "in", null: false
+    t.string "regions"
+    t.string "primary_region"
+    t.string "last_synced_ccf_hex", limit: 64
+    t.datetime "last_synced_at"
+    t.integer "primary_region_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["entity_id"], name: "index_users_on_entity_id"
     t.index ["form_type_id"], name: "index_users_on_form_type_id"
+    t.index ["last_synced_ccf_hex"], name: "index_users_on_last_synced_ccf_hex"
+    t.index ["regions"], name: "index_users_on_regions"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 

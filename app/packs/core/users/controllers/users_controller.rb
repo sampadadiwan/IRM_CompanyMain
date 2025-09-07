@@ -1,12 +1,12 @@
 class UsersController < ApplicationController
-  before_action :authenticate_user!, except: %w[magic_link no_password_login welcome]
+  before_action :authenticate_user!, except: %w[magic_link no_password_login welcome cross_site_login]
   # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
   before_action :set_user, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook]
+  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login]
 
   def welcome; end
 
@@ -57,31 +57,37 @@ class UsersController < ApplicationController
     end
   end
 
-  # Generates a cross-instance login link for the user and redirects to the target site
+  # Generates a cross-site login link for the user and redirects to the target site
   # rubocop:disable Security/Eval
-  def cross_instance_link
+  def cross_site_link
+    authorize current_user
     # Generate a short-lived token for the user's email, purpose: login
-    token = CrossInstanceLink.new.generate(current_user.email, purpose: :login, expires_in: 30.seconds)
     site = params[:site].to_sym
-    # Build the target URL using the site param and the generated token
-    url = eval(ENV.fetch("SITES", nil))[site] + "/users/cross_instance_login?token=#{token}"
+    token = CrossSiteLink.new.generate(current_user.email, purpose: :login, expires_in: 30.seconds, site: site)
 
-    # Redirect the user to the cross-instance login URL
-    redirect_to url
+    # Build the target URL using the site param and the generated token
+    url = eval(ENV.fetch("SITES", nil))[site] + "/users/cross_site_login?token=#{token}"
+
+    # Redirect the user to the cross-site login URL
+    redirect_to url, allow_other_host: true
   end
   # rubocop:enable Security/Eval
 
-  # Handles login via a cross-instance link
-  def cross_instance_login
-    # Verify the token and extract the payload (user email)
-    payload = CrossInstanceLink.new.verify(params[:token], purpose: :login)
-    # Find the user by email
-    user = User.find_by!(email: payload[:email])
-    # Sign in the user
-    sign_in(user)
+  # Handles login via a cross-site link
+  def cross_site_login
+    # The request comes in as a GET request, but the sign_in method modifies state, so we need the writing role
+    ActiveRecord::Base.connected_to(role: :writing) do
+      # Verify the token and extract the payload (user email)
+      site = ENV.fetch("CURRENT_SITE", nil).to_sym
+      payload = CrossSiteLink.new.verify(params[:token], purpose: :login, site: site)
+      # Find the user by email
+      user = User.find_by!(email: payload[:email])
+      # Sign in the user
+      sign_in(user)
+    end
     # Redirect to the root path after successful login
     redirect_to root_path
-  rescue CrossInstanceLink::VerificationError
+  rescue CrossSiteLink::VerificationError
     # Handle invalid or expired token
     render plain: "Invalid or expired link", status: :unauthorized
   end

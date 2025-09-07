@@ -5,8 +5,8 @@
 2. git clone https://github.com/ausangshukla/IRM-infra
 3. Ensure you have pulumi installed (https://www.pulumi.com/)
     a. pulumi install plugin resurce aws
-    
-4. You have the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY 
+
+4. You have the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 ## Philosophy
 1. We will use IRM-infra to setup the entire infra
@@ -24,22 +24,23 @@
 
 ## Procedure
 0. export AWS keys
-    a. export AWS_ACCESS_KEY_ID=xxxxx
-    b. export AWS_SECRET_ACCESS_KEY=yyyyy
+    a. export AWS_REGION
+    b. export AWS_ACCESS_KEY_ID=xxxxx, export AWS_SECRET_ACCESS_KEY=yyyyy
     c. These keys should be available in the application secrets
 1.	Ensure latest AMIs are present in the region for AppServer and DB-Redis-ES
 2.	RAILS_ENV=env rake "aws:setup_infra[env, AppServer, DB-Redis-ES, region]"
     a.	replace env with production or staging
-    b.	replace region with ap-south-1 or ap-south-2
+    b.	replace region with ap-south-1 or ap-south-2 or us-east-1
     c.	ex. RAILS_ENV=production rake "aws:setup_infra[production, AppServer, DB-Redis-ES, ap-south-1]"
-	
+
 3.	The script will pause in the middle, after making changes to the deployment scripts
     a.	It will update the IP addresses in various files based on the new deployment
     b.	Review the changes
-    c.	Commit the changes as a branch ex new_infra_prod_07_18_2024
-    d.	Put this name into the command line
+    c.	Restore the DB into the DB servers manually using the `db_backup_xtra_#{Rails.env}.sh restore primary`
+    d.  Commit the changes as a branch ex new_infra_prod_07_18_2024
+    e.	Put this name into the command line
 
-Ex ouput is below  
+Ex ouput is below
 
     Updating credentials for Rails.env = production, key = DB_HOST, value = 10.0.3.178
     Credentials updated successfully for Rails.env = production, key = DB_HOST.
@@ -57,6 +58,5 @@ Ex ouput is below
 
 
 4.	Then the script will deploy this branch to the new infra
-5.	It will pull the DB snapshot in S3 and load it into the primary DB & replica
-6.	It will then setup the replica
-7.	Note: That if the last backup is before the last deployment to prod, it may not have the required migrations. This has to be run manually as the backup DB will be loaded	
+5.	Setup replica using rake db:reset_replication on the appserver box
+6.	Note: That if the last backup is before the last deployment to prod, it may not have the required migrations. This has to be run manually as the backup DB will be loaded

@@ -1,5 +1,5 @@
-# config valid for current version and patch releases of Capistrano
-lock "~> 3.18"
+# config/deploy.rb
+set :rails_env, fetch(:stage)
 
 set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
@@ -8,9 +8,7 @@ set :branch, ENV["branch"] || 'main'
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true
 if fetch(:stage) == :production
-  set :ssh_options, keys: "~/.ssh/caphive2.pem", compression: false, keepalive: true
-else
-  set :ssh_options, keys: "~/.ssh/altxdev.pem", compression: false, keepalive: true
+
 end
 
 # Default value for :pty is false
@@ -45,8 +43,9 @@ set :puma_daemonize, true
 set :puma_init_active_record, true
 
 set :puma_systemctl_user, :system
-set :puma_service_unit_name, "puma_IRM_#{fetch(:stage)}"
 set :skip_notification, ENV['SKIP_NOTIFICATION'] == 'true'
+set :puma_service_unit_name, -> { "puma_#{fetch(:application)}_#{fetch(:rails_env)}" }
+
 
 
 namespace :deploy do
@@ -72,7 +71,7 @@ namespace :deploy do
   end
 
   before 'deploy:starting', 'deploy:notify_before' unless fetch(:skip_notification, false)
-  after 'deploy:finished', 'deploy:notify_after'
+  after 'deploy:finished', 'deploy:notify_after' unless fetch(:skip_notification, false)
 
   desc "Uploads .env remote servers."
   task :ensure_rails_credentials do
@@ -190,7 +189,6 @@ namespace :recovery do
 
   task :delete_old_assets do
     on roles(:app) do |_host|
-      execute :docker, 'stop uptime-kuma|| true'
       execute :rm, '-rf', '/home/ubuntu/IRM/shared/releases/* || true'
       execute :rm, '-rf', '/home/ubuntu/IRM/shared/tmp/cache/assets/* || true'
     end
@@ -198,6 +196,32 @@ namespace :recovery do
 
 
 end
+
+
+namespace :env do
+  task :point_envfile do
+    on roles(:app) do
+
+      # Link the .env file in the release to the correct regional file from the repo
+      execute :ln, "-nfs",
+        "#{release_path}/.env.#{fetch(:rails_env)}.#{fetch(:env_variant)}",
+        "#{release_path}/.env.#{fetch(:rails_env)}"
+
+
+      # Link the encrypted file in the release to the correct regional file (from repo)
+      execute :ln, "-nfs",
+        "#{release_path}/config/credentials/#{fetch(:rails_env)}.#{fetch(:env_variant)}.yml.enc",
+        "#{release_path}/config/credentials/#{fetch(:rails_env)}.yml.enc"
+
+      # Link the key in the release to the regional key stored in shared/
+      execute :ln, "-nfs",
+        "#{release_path}/config/credentials/#{fetch(:rails_env)}.#{fetch(:env_variant)}.key",
+        "#{release_path}/config/credentials/#{fetch(:rails_env)}.key"
+    end
+  end
+end
+
+before "deploy:symlink:shared", "env:point_envfile"
 
 # These tasks are to be called only when a completely new AMI, with no previous setup, is being used
 # E.x bundle exec cap staging IRM:setup
@@ -233,7 +257,7 @@ namespace :IRM do
   task :set_rails_master_key do
     on roles(:app) do
       # Path to the local file on your machine (relative to the project root or absolute)
-      local_credentials_key = "./config/credentials/#{fetch(:stage)}.key"
+      local_credentials_key = "./config/credentials/#{fetch(:rails_env)}.#{fetch(:env_variant)}.key"
 
       # Ensure the file exists locally
       unless File.exist?(local_credentials_key)
@@ -268,7 +292,7 @@ namespace :IRM do
       monit_config_path = "/etc/monit/conf.d"
       system_config_path = "/etc/systemd/system/"
       nginx_config_path = "/etc/nginx/sites-available"
-      puma_config_path = "/home/ubunut/IRM/shared"
+      puma_config_path = "/home/ubuntu/IRM/shared"
 
       # Helper method to generate and upload files
       def generate_and_upload(template_path, local_temp_path, remote_path)
@@ -282,6 +306,7 @@ namespace :IRM do
       end
 
       # For Puma config
+      execute :mkdir, "-p", "/home/ubuntu/IRM/shared/"
       local_puma_config = "/tmp/puma.rb"
       generate_and_upload('./config/deploy/templates/puma.rb.erb', local_puma_config, puma_config_path)
 

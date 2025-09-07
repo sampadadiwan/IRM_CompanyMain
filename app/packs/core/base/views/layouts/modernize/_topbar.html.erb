@@ -20,11 +20,11 @@
         </li -->
       </ul>
       <ul class="navbar-nav quick-links d-none d-lg-flex">
-        <%= render "/layouts/modernize/favs" if current_user %>        
+        <%= render "/layouts/modernize/favs" if current_user %>
       </ul>
       <div class="d-block d-lg-none">
-          <img src="/img/logo-without-tagline.jpg" width="80" class="logo-light" />    
-          <img src="/img/logo-transparent2.png" width="80" class="logo-dark" />    
+          <img src="/img/logo-without-tagline.jpg" width="80" class="logo-light" />
+          <img src="/img/logo-transparent2.png" width="80" class="logo-dark" />
       </div>
       <a class="navbar-toggler nav-icon-hover p-0 border-0" href="javascript:void(0)" data-bs-toggle="collapse"
               data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
@@ -35,9 +35,9 @@
       </a>
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <div class="d-flex align-items-center justify-content-between">
-          
+
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
-            
+
             <% if current_user && current_user.support_user_id.present? %>
               <span class="blink text-danger fs-5"> Support for: <%= current_user.entity.name %> &nbsp; </span>
             <% end %>
@@ -46,20 +46,26 @@
                 <div class="topbar-divider "></div>
                 <%= render "/investor_advisors/personas" %>
             <% end %>
+
+            <% if current_user && current_user.regions.present? %>
+                <div class="topbar-divider "></div>
+                <%= render "/layouts/sites" %>
+            <% end %>
+
             <% if current_user && !current_user.investor_advisor? &&
-                (   
-                    current_user.has_cached_role?(:investor) 
+                (
+                    current_user.has_cached_role?(:investor)
                 )  %>
                 <div class="topbar-divider "></div>
-                <%= render "/layouts/persona" %>                
+                <%= render "/layouts/persona" %>
             <% end %>
-            
+
             <%= render "/layouts/modernize/notifications" %>
 
             <%= render "/layouts/modernize/company_menus" %>
 
             <%= render "/layouts/modernize/profile_menus" %>
-            
+
           </ul>
         </div>
       </div>
@@ -70,7 +76,7 @@
     <%#= render "/layouts/modernize/mobile_navbar" %>
 
   </div>
-  
+
 </header>
 <!--  Header End -->
 

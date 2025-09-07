@@ -50,4 +50,8 @@ class UserPolicy < ApplicationPolicy
     # Only make user flag inactive, never destroy the user, else we loose associated data.
     false
   end
+
+  def cross_site_link?
+    user.regions.present?
+  end
 end

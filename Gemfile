@@ -232,6 +232,7 @@ group :test do
   # gem "selenium-webdriver"
   gem 'capybara-playwright-driver'
   gem 'playwright-ruby-client', '1.50.1'
+  gem "webmock"
 end
 
 gem "marginalia"

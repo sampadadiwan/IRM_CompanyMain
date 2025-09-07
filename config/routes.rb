@@ -49,9 +49,13 @@ Rails.application.routes.draw do
     post 'accept_terms', on: :collection
     get 'chat', on: :collection
     post 'chat', on: :collection
-    get 'cross_instance_link', on: :member
-    get 'cross_instance_login', on: :collection
+    get 'cross_site_link', on: :member
+    get 'cross_site_login', on: :collection
   end
+
+  post "/internal/sync/users",         to: "users_sync#upsert"
+  post "/internal/sync/users/disable", to: "users_sync#disable"
+  post "/internal/sync/users/digest",  to: "users_sync#digest" # optional reconciliation
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

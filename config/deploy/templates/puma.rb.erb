@@ -1,7 +1,7 @@
 #!/usr/bin/env puma
 
 directory '<%= current_path %>'
-rackup "<%=fetch(:puma_rackup)%>"
+rackup "<%= current_path %>/config.ru"
 environment '<%= fetch(:puma_env) %>'
 <% if fetch(:puma_tag) %>
 tag '<%= fetch(:puma_tag)%>'

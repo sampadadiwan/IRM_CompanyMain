@@ -13,6 +13,10 @@ variable "ami_date" {
   default = ""  # Optional default value (if needed)
 }
 
+variable "aws_region" {
+  type = string
+}
+
 variable "source_ami" {
   type = string
 }
@@ -32,11 +36,22 @@ variable "security_group_id" {
 source "amazon-ebs" "ubuntu" {
   ami_name      = "Observability-${var.ami_date}"
   instance_type = "t2.micro"
-  region        = "ap-south-1"
+  region        = var.aws_region
 
   // skip_region_validation = "true"
   associate_public_ip_address = "true"
-  source_ami                  = var.source_ami
+  # source_ami                  = var.source_ami # Commented out to use source_ami_filter
+
+  source_ami_filter {
+    filters = {
+      name                = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = ["099720109477"] # Canonical's owner ID for Ubuntu AMIs
+  }
+
   vpc_id                      = var.vpc_id
   subnet_id                   = var.subnet_id
   ssh_interface               = "public_ip"

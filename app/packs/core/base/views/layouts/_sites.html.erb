@@ -1,0 +1,15 @@
+<% model = current_user %>
+<%= form_with(model: model, method: :get, url: cross_site_link_user_path(current_user), id: "persona_form", data: {turbo: false}) do |form| %>
+
+  <div class="form-group" data-controller="persona">
+    <% selected = params[:site].present? ? params[:site] : ENV["CURRENT_SITE"] %>
+    <%= form.select :site, current_user.regions.split(",").map(&:strip ), {selected: selected},
+        { id: "site", class: "form-control", name: "site",
+        data: { action: "change->persona#setRegion", toggle: "tooltip", title: "Choose Region" } } %>
+  </div>
+
+
+  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
+
+
+<% end %>

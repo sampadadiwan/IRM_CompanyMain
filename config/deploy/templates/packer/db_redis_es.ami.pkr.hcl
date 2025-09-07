@@ -14,6 +14,11 @@ variable "ami_date" {
   default = ""  # Default value; can be overridden via CLI or env var
 }
 
+# Declare variable for AWS region
+variable "aws_region" {
+  type = string
+}
+
 # Declare variable for MySQL root password
 variable "mysql_root_password" {
   type = string
@@ -38,8 +43,19 @@ variable "security_group_id" {
 source "amazon-ebs" "ubuntu" { # Renamed to 'ubuntu' for consistency with appserver.ami.pkr.hcl
   ami_name                    = "DB_Redis_ES-${var.ami_date}"
   instance_type               = "t2.micro"
-  region                      = "ap-south-1"
-  source_ami                  = var.source_ami
+  region                      = var.aws_region # Use the variable for region
+  # source_ami                  = var.source_ami # Commented out to use source_ami_filter
+
+  source_ami_filter {
+    filters = {
+      name                = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = ["099720109477"] # Canonical's owner ID for Ubuntu AMIs
+  }
+
   associate_public_ip_address = "true"
   vpc_id                      = var.vpc_id
   subnet_id                   = var.subnet_id

@@ -86,7 +86,7 @@ module CapHive
     config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone, Money, Money::Currency, Money::Bank::VariableExchange, Money::RatesStore::Memory, Monitor]
 
     config.action_mailer.smtp_settings = {
-      address: "email-smtp.ap-south-1.amazonaws.com",
+      address: ENV.fetch("SMTP_SERVER", "email-smtp.ap-south-1.amazonaws.com"),
       domain: ENV.fetch("DOMAIN", nil),
       port: 587,
       user_name: Rails.application.credentials[:SES_SMTP_USERNAME],

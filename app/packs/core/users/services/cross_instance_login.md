@@ -140,11 +140,11 @@ Here’s a structured brainstorm of **requirements, edge cases, and error scenar
 
 
 
-Let’s walk through the **full lifecycle** of how a user logged into **US** can seamlessly log into **India** using the `CrossInstanceLink` service.
+Let’s walk through the **full lifecycle** of how a user logged into **US** can seamlessly log into **India** using the `CrossSiteLink` service.
 
 ---
 
-## 🌐 Flow: US → India login with `CrossInstanceLink`
+## 🌐 Flow: US → India login with `CrossSiteLink`
 
 ### 1. User is logged into US site
 
@@ -158,7 +158,7 @@ Let’s walk through the **full lifecycle** of how a user logged into **US** can
 * The US server calls the service:
 
   ```ruby
-  token = CrossInstanceLink.new.generate(
+  token = CrossSiteLink.new.generate(
     user.email,
     purpose: "login",
     expires_in: 5.minutes
@@ -191,7 +191,7 @@ Let’s walk through the **full lifecycle** of how a user logged into **US** can
 * It calls:
 
   ```ruby
-  payload = CrossInstanceLink.new.verify(params[:token], purpose: "login")
+  payload = CrossSiteLink.new.verify(params[:token], purpose: "login")
   ```
 
 * Verification checks:
@@ -252,10 +252,10 @@ sequenceDiagram
     participant India_App as India App
 
     User->>US_App: Logged in, clicks "Switch to India"
-    US_App->>US_App: Generate token with CrossInstanceLink (email + purpose + expiry, signed with CROSS_INSTANCE_SECRET)
+    US_App->>US_App: Generate token with CrossSiteLink (email + purpose + expiry, signed with CROSS_INSTANCE_SECRET)
     US_App-->>User: Redirect to https://india.caphive.com/sso?token=XYZ
     User->>India_App: Open /sso?token=XYZ
-    India_App->>India_App: Verify token with CrossInstanceLink (check signature, expiry, purpose)
+    India_App->>India_App: Verify token with CrossSiteLink (check signature, expiry, purpose)
     alt Token valid
         India_App->>India_App: Find user by email from payload
         India_App->>India_App: sign_in(user)
@@ -340,7 +340,7 @@ This makes client tenancy explicit in the DNS.
 3. **User login experience**
 
    * If you introduce SSO / cross-instance login, you’ll need a **cross-domain auth flow** (`us.caphive.com` → `india.caphive.com`).
-   * This is where your earlier `CrossInstanceLink` work comes in.
+   * This is where your earlier `CrossSiteLink` work comes in.
 
 4. **Client communication**
 
@@ -363,7 +363,7 @@ This makes client tenancy explicit in the DNS.
 
 3. **Auth/SSO**:
 
-   * Implement your cross-instance login using `CrossInstanceLink` for seamless switching.
+   * Implement your cross-instance login using `CrossSiteLink` for seamless switching.
 
 ---
 

@@ -103,6 +103,16 @@ Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'
 
 
+ENV["REGION"] ||= "US"
+# Provide HMAC secrets in test
+ENV["SYNC_API_HMAC_US"] ||= "us-secret-test-#{SecureRandom.hex(8)}"
+ENV["SYNC_API_HMAC_IN"] ||= "in-secret-test-#{SecureRandom.hex(8)}"
+ENV["SYNC_API_HMAC_SG"] ||= "sg-secret-test-#{SecureRandom.hex(8)}"
+
+# Provide base URLs for sync API in test
+ENV["SYNC_API_BASE_URL_US"] ||= "https://dev.altconnects.us"
+ENV["SYNC_API_BASE_URL_IN"] ||= "https://dev.altconnects.in"
+ENV["SYNC_API_BASE_URL_SG"] ||= "https://dev.altconnects.sg"
 
 
 module IRMUtils

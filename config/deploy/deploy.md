@@ -1,18 +1,42 @@
-# How to Deploy the app 
+# How to Deploy the app
 
-## Creating AMIs 
-1. Check the source_ami in config/deploy/templates/appserver.ami.pkr.hcl. This must be changed based on the region, and if you have newer versions of the base AMI to use
-2. Run the cmd 
-`packer build -var ami_date=$(date +%Y-%m-%d) config/deploy/templates/appserver.pkr.hcl`
-3. Note to run the above you must export the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the env (staging or production)
+## Creating AMIs
+1. Note to run the above you must export the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the env (staging or production)
 `export AWS_ACCESS_KEY_ID=XXXXXX`
 `export AWS_SECRET_ACCESS_KEY=YYYYYY`
-4. Wait for the AMI to be create, once its done, check in the AWS console that it has been created under AMIs. This typically takes about 10+ mins
+`export AWS_REGION=us-east-1`
 
-## Manually spinning up a server using the AMI created above
-1. Spin up an EC2 instance with the AMI created above, and the right SG, VPC, Keys etc
-2. Get the public IP address, and place it in the deploy/staging.rb (or production.rb) file
-3. `bundle exec cap staging IRM:setup` - this will create all the monit, puma, sidekiq services etc
-4. 
+## Build all the AMIs in the region
+2. rake packer:"build_env[dev,us,all]"
 
+3. rake "aws:setup_infra[staging,AppServer,DB_Redis_ES,us-east-1,us]"
 
+4. Once the servers are created and the infra is up. Login to both the DB servers using the web servers as jump hosts
+   Copy the db_backup_xtra_#{Rails.env}.sh to the DB and Replica and run
+   `db_backup_xtra_#{Rails.env}.sh restore_primary`
+
+   This will load the DB into both primary and replica from the S3 backups
+
+5. Follow the instructions in rake to commit and deploy
+
+6. Reset Replication
+  `RAILS_ENV=xxx bundle exec rake db:reset_replication`
+
+  In some cases you need to log into the replica and restart replicaton
+  `-- On the replica
+  STOP REPLICA;
+  CHANGE REPLICATION FILTER
+    REPLICATE_IGNORE_TABLE = (IRM_staging.solid_cache_entries);
+  START REPLICA;
+
+  SHOW REPLICA STATUS\G
+  `
+
+7. New S3 buckets need CORS policy setup, else file uploads will fail
+
+8. Now that the app is deployed we need to repoint the domain.
+    1. The DNS for caphive.com is on AWS, but unfortunately in the dev account
+    2. The DNS for the dev.altconnects.com is in godaddy
+    3. Copy the AWS LB public DNS name (E.x appLb-production-82f2e1d-1367284319.ap-south-1.elb.amazonaws.com) and make the changes for the CNAME for
+        a. caphive.com or (*.altconnects.com)
+        b. *.caphive.com

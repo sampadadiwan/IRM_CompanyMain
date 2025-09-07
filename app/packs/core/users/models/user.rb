@@ -3,6 +3,7 @@ class User < ApplicationRecord
   include WithCustomField
   include Memoized
   include AccessRightsCache
+  include CanonicalFingerprint
 
   acts_as_favoritor
 
@@ -53,7 +54,7 @@ class User < ApplicationRecord
   # Make all models searchable
   update_index('user') { self if index_record? }
 
-  rolify # before_add: :forbid_bad_role
+  rolify before_add: :forbid_bad_role
   accepts_nested_attributes_for :roles, allow_destroy: true
 
   # Include default devise modules. Others available are:
@@ -235,8 +236,13 @@ class User < ApplicationRecord
   # We only allow users to have the investor_advisor role if their advisor entity is of type "Investor Advisor"
   # This is a hard rule that cannot be overriden at this time
   def forbid_bad_role(role)
-    if advisor_entity&.entity_type != "Investor Advisor" && role.name.to_s == "investor_advisor"
-      errors.add(:roles, "Cannot add investor_advisor role to a user whose 'advisor entity' is not an 'Investor Advisor'")
+    # if advisor_entity&.entity_type != "Investor Advisor" && role.name.to_s == "investor_advisor"
+    #   errors.add(:roles, "Cannot add investor_advisor role to a user whose 'advisor entity' is not an 'Investor Advisor'")
+    #   throw :abort
+    # end
+
+    if ["super", :super].include?(role.name)
+      errors.add(:roles, "Cannot add super role to a user")
       throw :abort
     end
   end
