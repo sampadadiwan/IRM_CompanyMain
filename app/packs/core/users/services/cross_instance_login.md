@@ -10,7 +10,7 @@ Here’s a structured brainstorm of **requirements, edge cases, and error scenar
    * Users must exist in both DBs to support cross-login.
    * Sync must ensure:
 
-     * Consistent identifiers (same `user_id` or a globally unique ID).
+     * Consistent identifiers (same `email`).
      * Same or mapped roles/permissions across DBs.
      * Handling updates (email, name, roles).
    * Decide **how to sync**:
@@ -253,7 +253,7 @@ sequenceDiagram
 
     User->>US_App: Logged in, clicks "Switch to India"
     US_App->>US_App: Generate token with CrossSiteLink (email + purpose + expiry, signed with CROSS_INSTANCE_SECRET)
-    US_App-->>User: Redirect to https://india.caphive.com/sso?token=XYZ
+    US_App-->>User: Redirect to https://caphive.com/sso?token=XYZ
     User->>India_App: Open /sso?token=XYZ
     India_App->>India_App: Verify token with CrossSiteLink (check signature, expiry, purpose)
     alt Token valid
@@ -287,8 +287,8 @@ Move from a **single global domain (`app.caphive.com`)** to a **multi-region, mu
 
 ### Regional Domains
 
-* `us.caphive.com` → LB in **US region**.
-* `india.caphive.com` → LB in **India region**.
+* `caphive.us` → LB in **US region**.
+* `caphive.com` → LB in **India region**.
 
 These become your **entry points** for app users.
 
@@ -296,8 +296,8 @@ These become your **entry points** for app users.
 
 * Clients are tied to a region:
 
-  * `client1.india.caphive.com` → LB in India.
-  * `client2.us.caphive.com` → LB in US.
+  * `client1.caphive.com` → LB in India.
+  * `client2.caphive.us` → LB in US.
 
 This makes client tenancy explicit in the DNS.
 ➡️ No more ambiguity — a client’s region is encoded in the hostname.
@@ -308,13 +308,13 @@ This makes client tenancy explicit in the DNS.
 
 * **Top-level (infra domains):**
 
-  * `us.caphive.com` → CNAME to `us-lb.amazonaws.com` (example).
-  * `india.caphive.com` → CNAME to `india-lb.amazonaws.com`.
+  * `caphive.us` → CNAME to `us-lb.amazonaws.com` (example).
+  * `caphive.com` → CNAME to `india-lb.amazonaws.com`.
 
 * **Client subdomains (regionalized):**
 
-  * `client1.india.caphive.com` → CNAME → `india-lb.amazonaws.com`.
-  * `client2.us.caphive.com` → CNAME → `us-lb.amazonaws.com`.
+  * `client1.caphive.com` → CNAME → `india-lb.amazonaws.com`.
+  * `client2.caphive.us` → CNAME → `us-lb.amazonaws.com`.
 
 ---
 
@@ -322,7 +322,7 @@ This makes client tenancy explicit in the DNS.
 
 1. **Tenant resolution logic**
 
-   * When a request comes in at `client1.india.caphive.com`, your app knows:
+   * When a request comes in at `client1.caphive.com`, your app knows:
 
      * Tenant = `client1`
      * Region = `india`
@@ -333,19 +333,19 @@ This makes client tenancy explicit in the DNS.
 
    * You’ll need wildcard certs per region:
 
-     * `*.india.caphive.com`
-     * `*.us.caphive.com`
+     * `*.caphive.com`
+     * `*.caphive.us`
    * Or one SAN cert covering all (depends on your cert mgmt strategy).
 
 3. **User login experience**
 
-   * If you introduce SSO / cross-instance login, you’ll need a **cross-domain auth flow** (`us.caphive.com` → `india.caphive.com`).
+   * If you introduce SSO / cross-instance login, you’ll need a **cross-domain auth flow** (`caphive.us` → `caphive.com`).
    * This is where your earlier `CrossSiteLink` work comes in.
 
 4. **Client communication**
 
    * Existing clients (`client1.caphive.com`) will need to update bookmarks / integrations.
-   * You might keep `client1.caphive.com` around temporarily as a **CNAME → client1.india.caphive.com** for backward compatibility.
+   * You might keep `client1.caphive.com` around temporarily as a **CNAME → client1.caphive.com** for backward compatibility.
 
 ---
 
@@ -353,8 +353,8 @@ This makes client tenancy explicit in the DNS.
 
 1. **DNS**:
 
-   * Create `us.caphive.com` and `india.caphive.com` → point each to regional LB.
-   * Create client subdomains (`client1.india.caphive.com`, …) mapped accordingly.
+   * Create `caphive.us` and `caphive.com` → point each to regional LB.
+   * Create client subdomains (`client1.caphive.com`, …) mapped accordingly.
 
 2. **App logic**:
 
@@ -371,10 +371,10 @@ This makes client tenancy explicit in the DNS.
 
 flowchart TD
     subgraph DNS["🌍 DNS (caphive.com)"]
-        A1[us.caphive.com] -->|CNAME| LB_US
-        A2[india.caphive.com] -->|CNAME| LB_IN
-        C1[client1.india.caphive.com] -->|CNAME| LB_IN
-        C2[client2.us.caphive.com] -->|CNAME| LB_US
+        A1[caphive.us] -->|CNAME| LB_US
+        A2[caphive.com] -->|CNAME| LB_IN
+        C1[client1.caphive.com] -->|CNAME| LB_IN
+        C2[client2.caphive.us] -->|CNAME| LB_US
     end
 
     subgraph US_Region["🇺🇸 US Region"]
@@ -425,7 +425,7 @@ Create per-region stage files:
 
 ```bash
 deploy/production_us.rb
-deploy/production_india.rb
+deploy/production_in.rb
 ```
 
 Example:
@@ -438,9 +438,9 @@ set :branch, "main"
 ```
 
 ```ruby
-# deploy/production_india.rb
+# deploy/production_in.rb
 server "in-app-server-1", user: "deploy", roles: %w{app db web}
-set :rails_env, "production_india"
+set :rails_env, "production_in"
 set :branch, "main"
 ```
 
@@ -451,15 +451,15 @@ set :branch, "main"
 Generate credentials:
 
 ```bash
-rails credentials:edit --environment production_us
-rails credentials:edit --environment production_india
+rails credentials:edit --environment production.us
+rails credentials:edit --environment production.in
 ```
 
 This creates:
 
 ```
-config/credentials/production_us.yml.enc
-config/credentials/production_india.yml.enc
+config/credentials/production.us.yml.enc
+config/credentials/production.in.yml.enc
 ```
 
 Rails will load the correct file automatically based on `Rails.env`.
@@ -476,7 +476,7 @@ Rails will load the correct file automatically based on `Rails.env`.
 * Deploy to India:
 
   ```bash
-  cap production_india deploy
+  cap production_in deploy
   ```
 
 ---
