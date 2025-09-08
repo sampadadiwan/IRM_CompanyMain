@@ -96,6 +96,49 @@
       <%= @fund_ratio.notes %>
     </td>
   </tr>
+
+  <% if @fund_ratio.cash_flows.present? %>
+  <tr>
+    <td>
+      Cashflows
+    </td>
+    <td>
+      <% if @fund_ratio.cash_flows.present? %>
+
+        <button class="dropdown-item" data-controller="export-xl"
+                        data-action="click->export-xl#export"
+                        data-tableid="cash_flows_table"
+                        data-filename="Cash Flows">
+                  <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+        </button>
+
+        <% all_keys = @fund_ratio.cash_flows.flat_map(&:keys).uniq %>
+
+        <table class="table table-bordered" id="cash_flows_table">
+          <thead>
+            <tr>
+              <% all_keys.each do |key| %>
+                <th><%= key.titleize %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @fund_ratio.cash_flows.each do |cash_flow| %>
+              <tr>
+                <% all_keys.each do |key| %>
+                  <td><%= cash_flow[key] %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        No cash flows available.
+      <% end %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 
 <div class="associated_entity">

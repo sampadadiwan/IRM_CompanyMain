@@ -115,7 +115,8 @@ class FundsController < ApplicationController
 
       case params[:type]
       when "fund"
-        FundRatiosJob.perform_later(@fund.id, nil, Date.parse(params[:end_date]), current_user.id, generate_for_commitments)
+        FundRatiosJob.perform_later(@fund.id, nil, Date.parse(params[:end_date]), current_user.id, generate_for_commitments, return_cash_flows: params[:return_cash_flows] == "1")
+
       when "cross-fund", "cross-portfolio"
         FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], portfolio_companies_tags: params[:portfolio_companies_tags], currency: params[:currency], type: params[:type])
       else

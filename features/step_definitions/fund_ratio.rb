@@ -57,7 +57,7 @@ end
 
 
 Given('given the fund_ratios are computed for the date {string}') do |end_date|
-  FundRatiosJob.perform_now(@fund.id, nil, Date.parse(end_date), User.first.id, true)
+  FundRatiosJob.perform_now(@fund.id, nil, Date.parse(end_date), User.first.id, true, return_cash_flows: true)
 end
 
 Then('the fund ratios computed must match the ratios in {string}') do |file_name|

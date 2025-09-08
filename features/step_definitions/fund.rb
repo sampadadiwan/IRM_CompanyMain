@@ -1505,7 +1505,7 @@ end
 
 
 Given('the fund has fund ratios') do
-    FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true)
+    FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true, return_cash_flows: true)
 end
 
 

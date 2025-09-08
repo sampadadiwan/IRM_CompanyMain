@@ -82,7 +82,7 @@ class FundPortfolioCalcs < FundRatioCalcs
     committed_cents.positive? ? collected_cents / committed_cents : 0
   end
 
-  def gross_portfolio_irr(use_tracking_currency: false)
+  def gross_portfolio_irr(return_cash_flows: false, use_tracking_currency: false)
     cf = XirrCashflow.new
 
     tracking_exchange_rate = nil
@@ -130,8 +130,9 @@ class FundPortfolioCalcs < FundRatioCalcs
     cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
 
     lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
-    # lxirr ? (lxirr * 100).round(2) : 0
-    (lxirr * 100).round(2)
+    xirr_val = (lxirr * 100).round(2)
+    cash_flows = return_cash_flows ? cf : nil
+    { xirr: xirr_val, cash_flows: }
   end
 
   # rubocop:disable Metrics/MethodLength
@@ -212,7 +213,7 @@ class FundPortfolioCalcs < FundRatioCalcs
   # rubocop:enable Metrics/MethodLength
   # rubocop:enable Metrics/BlockLength
 
-  def portfolio_company_metrics
+  def portfolio_company_metrics(return_cash_flows: false)
     @portfolio_company_metrics_map ||= {}
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
@@ -240,10 +241,20 @@ class FundPortfolioCalcs < FundRatioCalcs
       value_to_cost = total_fmv / cost_of_remaining.to_f
       moic = (total_fmv + total_sold) / bought_amount.to_f
 
+      cash_flows = if return_cash_flows
+                     {
+                       bought_amount: bought_amount,
+                       total_fmv: total_fmv,
+                       total_sold: total_sold,
+                       cost_of_remaining: cost_of_remaining
+                     }
+                   end
+
       @portfolio_company_metrics_map[portfolio_company_id] = {
         name: portfolio_company.investor_name,
         value_to_cost: value_to_cost,
-        moic: moic
+        moic: moic,
+        cash_flows: cash_flows
       }
     end
 
@@ -319,7 +330,7 @@ class FundPortfolioCalcs < FundRatioCalcs
     @api_irr_map
   end
 
-  def api_cost_to_value
+  def api_cost_to_value(return_cash_flows: false)
     @api_cost_map ||= {}
 
     @fund.aggregate_portfolio_investments.each do |api|
@@ -332,7 +343,16 @@ class FundPortfolioCalcs < FundRatioCalcs
       sold_amount = api_as_of.sold_amount.to_f
       bought_amount = api_as_of.bought_amount.to_f
 
-      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining), moic: (fmv + (sold_amount / bought_amount)) } if cost_of_remaining.positive?
+      cash_flows = if return_cash_flows
+                     {
+                       bought_amount: bought_amount,
+                       fmv: fmv,
+                       sold_amount: sold_amount,
+                       cost_of_remaining: cost_of_remaining
+                     }
+                   end
+
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining), moic: (fmv + (sold_amount / bought_amount)), cash_flows: } if cost_of_remaining.positive?
     end
 
     @api_cost_map

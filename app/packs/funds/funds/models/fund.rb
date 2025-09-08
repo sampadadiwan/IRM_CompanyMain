@@ -141,8 +141,8 @@ class Fund < ApplicationRecord
     []
   end
 
-  def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
-    FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
+  def generate_fund_ratios(user_id, end_date, generate_for_commitments: false, return_cash_flows: false)
+    FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments, return_cash_flows:)
   end
 
   def folder_path

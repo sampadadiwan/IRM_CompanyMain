@@ -1,3 +1,10 @@
+V9.1.00
+#####################################
+48c2969e6 Multi instance (#992)
+81c0025ce Added labels to fund ratio upload,show and download (#988)
+2d0549e56 Aml kyc pan validation (#990)
+9d8479886 Removed unwanted files
+
 V9.0.99
 #####################################
 2f1b88e3d Non Individual Kyc address proof help text updated (#989)

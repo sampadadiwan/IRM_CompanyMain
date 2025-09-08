@@ -116,7 +116,7 @@ module AccountEntryAllocation
     def generate_fund_ratios(ctx, fund:, start_date:, end_date:, user_id:, **)
       if ctx[:fund_ratios]
         begin
-          FundRatiosJob.perform_now(fund.id, nil, end_date, user_id, true)
+          FundRatiosJob.perform_now(fund.id, nil, end_date, user_id, true, return_cash_flows: ctx[:return_cash_flows])
           msg = "Done generating fund ratios for #{start_date} - #{end_date}"
           Rails.logger.info msg
           notify(msg, :success, user_id)
