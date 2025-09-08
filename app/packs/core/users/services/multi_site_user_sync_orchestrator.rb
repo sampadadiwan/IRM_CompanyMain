@@ -42,11 +42,11 @@ class MultiSiteUserSyncOrchestrator
     new(user, force_all, previous_regions, event_id, perform_now).call
   end
 
-  def self.call(user:, force_all: false, previous_regions: nil, event_id: nil)
-    new(user, force_all, previous_regions, event_id).call
+  def self.call(user:, force_all: false, previous_regions: nil, event_id: nil, perform_now: false)
+    new(user, force_all, previous_regions, event_id, perform_now).call
   end
 
-  def initialize(user, force_all, previous_regions, event_id)
+  def initialize(user, force_all, previous_regions, event_id, perform_now)
     @user             = user
     @force_all        = force_all
     @event_id         = event_id
