@@ -21,6 +21,8 @@ Sidekiq.configure_server do |config|
     # Sidekiq::Cron::Job.create(name: 'OpenWebSync', cron: 'every 5 minutes', class: 'OwSyncJob') if Rails.application.credentials["OPEN_WEB_UI_ACCESS_TOKEN"].present?
 
     # Used to update the tracking currency for all funds
+
+    Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')
     # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
@@ -37,10 +39,7 @@ Sidekiq.configure_server do |config|
 
     Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
 
-    unless Rails.env.local?
-      # Check the health of the replication
-      Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
-    end
+    Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end

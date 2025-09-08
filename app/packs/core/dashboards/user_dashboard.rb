@@ -32,7 +32,7 @@ class UserDashboard < Administrate::BaseDashboard
     access_rights_cache: Field::String,
     curr_role: Field::Select.with_options(collection: ["", "employee", "investor"]),
     regions: Field::String,
-    primary_region: Field::Select.with_options(collection: %w[in us sg eu])
+    primary_region: Field::Select.with_options(collection: %w[IN US SG])
   }.freeze
 
   # COLLECTION_ATTRIBUTES

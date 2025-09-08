@@ -56,8 +56,8 @@ class MultiSiteUserSyncJob < ApplicationJob
     Rails.logger.warn("[MultiSiteUserSyncJob] Retryable transport error: #{e.class} #{e.message}")
     raise # let ActiveJob retry with backoff
   rescue SyncApiClient::FatalError => e
-    Rails.logger.error("[MultiSiteUserSyncJob] Fatal transport error (dropping): #{e.class} #{e.message}")
-    # deliberate swallow; consider notifying ops / sentry here
+    Rails.logger.error("[MultiSiteUserSyncJob] Fatal transport error (re-raising): #{e.class} #{e.message}")
+    raise # re-raise FatalError to be caught by orchestrator
   end
 
   private

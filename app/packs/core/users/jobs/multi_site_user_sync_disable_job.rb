@@ -3,7 +3,7 @@
 # Sends a DISABLE command to a target region for a given user.
 # This removes access in that region (soft-disable), preserving audit trails.
 class MultiSiteUserSyncDisableJob < ApplicationJob
-  queue_as :sync
+  queue_as :low
 
   # @param user_id [Integer]
   # @param target_region [String] e.g., "IN"

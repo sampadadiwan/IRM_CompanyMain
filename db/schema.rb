@@ -1537,6 +1537,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_05_081151) do
     t.bigint "import_upload_id"
     t.string "scenario", limit: 40, default: "Default"
     t.bigint "form_type_id"
+    t.string "label", limit: 50
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"

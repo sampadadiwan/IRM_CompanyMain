@@ -83,6 +83,7 @@ class User < ApplicationRecord
   scope :super_users, -> { joins(:roles).where("roles.name =?", "super") }
   scope :investor_advisor_roles, -> { joins(:roles).where("roles.name =?", "investor_advisor") }
   scope :not_investor_advisor_roles, -> { where(advisor_entity_id: nil) }
+  scope :syncable, -> { where.not(primary_region: [nil, ""]) }
 
   before_create :setup_defaults
   after_create :update_investor_access

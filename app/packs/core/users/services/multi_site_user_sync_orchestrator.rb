@@ -22,11 +22,26 @@ class MultiSiteUserSyncOrchestrator
     keyword_init: true
   )
 
+  def self.sync_all
+    @errors = []
+    User.syncable.each do |user|
+      # Sync every user, but do it in the same job MultiSiteUserSyncAllJob
+      call(user: user, perform_now: true)
+    rescue SyncApiClient::FatalError => e
+      @errors << { user_id: user.id, email: user.email, error: e.message }
+    end
+    EntityMailer.with(error_msg: @errors).notify_errors.deliver_now if @errors.present?
+  end
+
   # @param user [User]
   # @param force_all [Boolean] seed all non-primary regions regardless of CCF
   # @param previous_regions [Array<String>, nil] pass prior value to compute removed regions
   # @param event_id [String, nil] optional idempotency key propagated to jobs
   # @return [Result]
+  def self.call(user:, force_all: false, previous_regions: nil, event_id: nil, perform_now: false)
+    new(user, force_all, previous_regions, event_id, perform_now).call
+  end
+
   def self.call(user:, force_all: false, previous_regions: nil, event_id: nil)
     new(user, force_all, previous_regions, event_id).call
   end
@@ -38,6 +53,7 @@ class MultiSiteUserSyncOrchestrator
     @primary          = norm(user.primary_region)
     @current_regions  = norm_list(user.regions&.split(","))
     @previous_regions = norm_list(previous_regions&.split(","))
+    @perform_now      = perform_now
   end
 
   def call
@@ -48,7 +64,11 @@ class MultiSiteUserSyncOrchestrator
     # Decide UPSERT fanout
     if @force_all || @user.needs_sync?
       targets_now.each do |region|
-        MultiSiteUserSyncJob.perform_later(@user.id, region, force: @force_all, event_id: @event_id)
+        if @perform_now
+          MultiSiteUserSyncJob.perform_now(@user.id, region, force: @force_all, event_id: @event_id)
+        else
+          MultiSiteUserSyncJob.perform_later(@user.id, region, force: @force_all, event_id: @event_id)
+        end
         res.enqueued_upserts << region
       end
     else
@@ -64,6 +84,7 @@ class MultiSiteUserSyncOrchestrator
       end
     end
 
+    Rails.logger.debug res
     res
   end
 
