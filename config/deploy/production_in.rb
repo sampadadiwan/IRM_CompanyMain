@@ -11,8 +11,9 @@ server "13.233.131.224", user: "ubuntu", roles: %w[app web] if ENV["LB"]
 # server "18.61.81.133", user: "ubuntu", roles: %w[primary app db web]
 # server "18.61.2.41", user: "ubuntu", roles: %w[app web] if ENV["LB"]
 
-set :rails_env, "production_in"
+set :rails_env, "production"
 set :stage, :production
+set :env_variant, "in"
 
 set :ssh_options, keys: "~/.ssh/caphive2.pem", compression: false, keepalive: true
 
