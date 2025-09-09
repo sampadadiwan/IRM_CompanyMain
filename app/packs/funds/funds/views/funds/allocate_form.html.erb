@@ -11,14 +11,14 @@
   <%= render FormCard.new(title:, header_css_class: "fs-5") do %>
 
   <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
-    
+
     <%= form.text_field :sample, class: "form-control", name: "sample", value: params[:sample], hidden: true %>
 
     <div class="form-group">
       <%= form.label :start_date %>
       <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
     </div>
-    
+
     <div class="form-group">
       <%= form.label :end_date %>
       <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
@@ -63,7 +63,7 @@
       <%= form.label :generate_soa, "Generate SOA" %>
       <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true, checked: generate_soa %>
       <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
-    </div>    
+    </div>
 
     <div class="form-group">
       <%= form.label :template_name, "SOA Template" %>
@@ -123,7 +123,7 @@
             Locked
           </th>
           <th>
-            
+
           </th>
       </tr>
     </thead>
@@ -176,7 +176,7 @@
                 <%= button_tag "Lock", class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" } %>
               <% end %>
             <% end %>
-            <%= link_to "Account Entries", account_entries_path(filter: true, q: ransack_query_params("allocation_run_id", :eq, runs.id)), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.parse("29/03/2025") %>
+            <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params("allocation_run_id", :eq, runs.id)), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.parse("29/03/2025") %>
           </td>
         </tr>
       <% end %>
