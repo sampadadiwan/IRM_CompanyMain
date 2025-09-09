@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_05_081151) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_09_140100) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -69,7 +69,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_05_081151) do
     t.string "parent_name"
     t.string "commitment_name"
     t.integer "ref_id", default: 0, null: false
-    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
@@ -78,6 +77,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_05_081151) do
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
