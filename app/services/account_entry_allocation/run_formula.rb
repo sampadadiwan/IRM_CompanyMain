@@ -72,6 +72,14 @@ module AccountEntryAllocation
         AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx, proforma: true)
         rollup_name = nil
         rollup_entry_type = fund_formula.name
+      when "AllocateMasterFundPortfolioInvestment"
+        AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx.merge(master_fund_investments: true))
+        rollup_name = nil
+        rollup_entry_type = fund_formula.name
+      when "AllocateMasterFundPortfolioInvestment-Proforma"
+        AccountEntryAllocation::AllocatePortfolioInvestments.call(ctx.merge(master_fund_investments: true), proforma: true)
+        rollup_name = nil
+        rollup_entry_type = fund_formula.name
       when "Percentage"
         AccountEntryAllocation::ComputeCustomPercentage.call(ctx)
       when "GeneratePortfolioNumbersForFund"

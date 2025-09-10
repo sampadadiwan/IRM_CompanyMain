@@ -16,12 +16,20 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_portfolios_investment(#{fund_formula.name})" }
 
+      target_fund = if ctx[:master_fund_investments]
+                      raise "Error in #{fund_formula.name}: Master fund for #{fund} is not set" if fund.master_fund.nil?
+
+                      fund.master_fund
+                    else
+                      fund
+                    end
+
       portfolio_investments = if ctx[:proforma]
                                 # We only want to allocate proforma portfolio investments
-                                fund.portfolio_investments.proforma.where(investment_date: ..end_date)
+                                target_fund.portfolio_investments.proforma.where(investment_date: ..end_date)
                               else
                                 # We only want to allocate non-proforma portfolio investments (which are the actual investments and the default scope)
-                                fund.portfolio_investments.where(investment_date: ..end_date)
+                                target_fund.portfolio_investments.where(investment_date: ..end_date)
                               end
 
       fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
