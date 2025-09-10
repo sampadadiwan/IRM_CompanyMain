@@ -235,8 +235,8 @@ class KycDocGenerator
   end
 
   # Add the reporting entries for the investor kyc, note that since a KYC can be linked to multiple commitments, there could be multiple account entries with the same name (ex Setup Fees, one for each commitment), so sum them (Ex Sum of Setup Fees) before adding to the context
-  def add_reporting_entries(context, investor_kyc, start_date, end_date, fund_id)
-    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
+  def add_reporting_entries(context, investor_kyc, _start_date, end_date, fund_id)
+    raes = investor_kyc.account_entries.where(reporting_date: end_date, rule_for: "Reporting")
     # Filter by fund id if provided
     raes = raes.where(fund_id: fund_id) if fund_id.present?
 
@@ -250,7 +250,7 @@ class KycDocGenerator
 
     if fund_id.present?
       # make sure to filter by fund id
-      fraes = AccountEntry.fund_entries.where(fund_id: fund_id, reporting_date: start_date..end_date, rule_for: "Reporting")
+      fraes = AccountEntry.fund_entries.where(fund_id: fund_id, reporting_date: end_date, rule_for: "Reporting")
       fraes.group_by { |ae| [ae.name, ae.entry_type] }.each do |name_entry_type, aes|
         total_amount_cents = aes.sum(&:amount_cents)
         ae = AccountEntry.new(name: name_entry_type[0], entry_type: name_entry_type[1], amount_cents: total_amount_cents, fund_id: fund_id, reporting_date: aes[0].reporting_date)

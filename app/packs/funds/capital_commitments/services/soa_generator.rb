@@ -289,12 +289,12 @@ class SoaGenerator
                    })
   end
 
-  def add_reporting_entries(context, capital_commitment, start_date, end_date)
-    raes = capital_commitment.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
+  def add_reporting_entries(context, capital_commitment, _start_date, end_date)
+    raes = capital_commitment.account_entries.where(reporting_date: end_date, rule_for: "Reporting")
     raes.each do |ae|
       context["reporting_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
     end
-    raes = capital_commitment.fund.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", folio_id: nil)
+    raes = capital_commitment.fund.account_entries.where(reporting_date: end_date, rule_for: "Reporting", folio_id: nil)
     raes.each do |ae|
       context["reporting_fund_#{ae.template_field_name}"] = TemplateDecorator.decorate(ae)
     end

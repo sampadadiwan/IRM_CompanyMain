@@ -1,3 +1,15 @@
+V9.1.01
+#####################################
+d3b17aa73 Change font weight to 500
+bf765900a Added AllocateMasterFundPortfolioInvestment (#996)
+bfba5d0de Added append_to_commitment_agreement docs in kyc doc gen (#997)
+cb7cd5f4f Sync test schema
+1b688481d Added better fund_id and allocation_run_id index
+2847e7eb4 Better documentation for MultiSiteUserSyncOrchestrator
+8e8f92e15 Removed dup method from multi_site_user_sync_orchestrator
+de531fb94 Added return_cash_flows flag (#995)
+5b30a9f34 Added better deploy_id and deploy_us file
+
 V9.1.00
 #####################################
 48c2969e6 Multi instance (#992)
