@@ -83,6 +83,57 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
+  create_table "account_entries_old", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "capital_commitment_id"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "investor_id"
+    t.bigint "form_type_id"
+    t.string "folio_id", limit: 40
+    t.date "reporting_date"
+    t.string "entry_type", limit: 50
+    t.string "name", limit: 125
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "explanation"
+    t.boolean "cumulative", default: false
+    t.string "period", limit: 25
+    t.string "parent_type"
+    t.bigint "parent_id"
+    t.boolean "generated", default: false
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.bigint "fund_formula_id"
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.datetime "deleted_at"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "allocation_run_id"
+    t.string "parent_name"
+    t.string "commitment_name"
+    t.integer "ref_id", default: 0, null: false
+    t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
+    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
+    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["entry_type"], name: "index_account_entries_on_entry_type"
+    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
+    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
+    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
+    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["name", "fund_id", "capital_commitment_id", "entry_type", "reporting_date", "cumulative", "deleted_at", "parent_type", "parent_id", "ref_id", "amount_cents"], name: "index_accounts_on_unique_fields", unique: true
+    t.index ["name"], name: "index_account_entries_on_name"
+    t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
+    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+  end
+
   create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "status", default: 0, null: false
     t.string "message_id", null: false
@@ -3159,6 +3210,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
   add_foreign_key "access_rights", "users", column: "granted_by_id"
+  add_foreign_key "account_entries_old", "capital_commitments"
+  add_foreign_key "account_entries_old", "entities"
+  add_foreign_key "account_entries_old", "exchange_rates"
+  add_foreign_key "account_entries_old", "form_types"
+  add_foreign_key "account_entries_old", "fund_formulas"
+  add_foreign_key "account_entries_old", "funds"
+  add_foreign_key "account_entries_old", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_portfolio_investments", "entities"
