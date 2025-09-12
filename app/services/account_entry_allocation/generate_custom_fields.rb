@@ -28,7 +28,7 @@ module AccountEntryAllocation
           amount_cents: safe_eval(fund_formula.formula, binding)
         )
 
-        commitment_cache.add_to_computed_fields_cache(capital_commitment, ae)
+        commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, ae)
 
         # This triggers any internal caching/notifications
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?

@@ -87,7 +87,7 @@ module AccountEntryAllocation
       ctx[:bulk_insert_cumulative_records] << cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
 
       # Update the commitment cache with the computed fields
-      commitment_cache.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+      commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, cumulative_ae)
     end
   end
 end

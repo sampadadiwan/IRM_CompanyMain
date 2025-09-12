@@ -77,7 +77,7 @@ module AccountEntryAllocation
       ae_attributes[:updated_at] = Time.zone.now
       bulk_records << ae_attributes
 
-      commitment_cache.add_to_computed_fields_cache(capital_commitment, account_entry) if capital_commitment
+      commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, account_entry) if capital_commitment
       # ctx[:instance_variables][@variable_name] = account_entry.amount_cents
 
       ctx[:bulk_insert_records] = bulk_records

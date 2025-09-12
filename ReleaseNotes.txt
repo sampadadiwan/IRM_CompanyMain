@@ -1,3 +1,13 @@
+V9.1.02
+#####################################
+d1c0b14b0 Localized date for filter from AE allocation completion
+78b64bc05 Localized date for filter from AE allocation form
+25ae0fb93 Removed index from AE for partitioning
+c17fa368e Allocation Runs link to Account Entries now has the end_date as the reporting_date
+173887f9f Reporting date set to 1 quarter before for AE filters
+d0ad97e08 Added ransack_has_attr? to fix bug for reporting_date in filters
+693edfd43 Account entry partition (#998)
+
 V9.1.01
 #####################################
 d3b17aa73 Change font weight to 500

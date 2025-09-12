@@ -15,6 +15,7 @@ module AccountEntryAllocation
       # Check if we already have some cached fields for this commitment
       if @cached_generated_fields[capital_commitment.id]
         cached_commitment_fields = @cached_generated_fields[capital_commitment.id]
+        # cached_commitment_fields["start_of_financial_year"] ||= capital_commitment.start_of_financial_year_date(start_date)
       else
 
         # Commitment remittance and dist
@@ -40,13 +41,13 @@ module AccountEntryAllocation
 
       @engine.create_variables(cached_commitment_fields)
       # return the cached fields
+
       cached_commitment_fields
     end
 
     # This is used to simplify the formulas, use these variables inside the formulas
-    def add_to_computed_fields_cache(capital_commitment, account_entry)
-      @cached_generated_fields[capital_commitment.id] ||= {}
-      cached_commitment_fields = @cached_generated_fields[capital_commitment.id]
+    def add_to_computed_fields_cache(ctx, capital_commitment, account_entry)
+      cached_commitment_fields = computed_fields_cache(capital_commitment, ctx[:start_date])
       cached_commitment_fields[to_varable_name(account_entry.name)] = account_entry.amount_cents
     end
 

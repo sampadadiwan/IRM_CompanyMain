@@ -29,7 +29,7 @@ module AccountEntryAllocation
         cumulative_ae.rule_for = "reporting"
 
         bulk_records << cumulative_ae.attributes.except("id", "created_at", "updated_at", "generated_deleted")
-        commitment_cache.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+        commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, cumulative_ae)
       end
 
       if bulk_records.present?
