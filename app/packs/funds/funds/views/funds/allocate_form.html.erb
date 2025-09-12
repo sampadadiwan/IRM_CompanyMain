@@ -176,7 +176,7 @@
                 <%= button_tag "Lock", class: "btn btn-sm btn-outline-danger", data: { confirm: "Are you sure you want to lock this AllocationRun?" } %>
               <% end %>
             <% end %>
-            <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params("allocation_run_id", :eq, runs.id)), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.parse("29/03/2025") %>
+            <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, runs.end_date]])), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.parse("29/03/2025") %>
           </td>
         </tr>
       <% end %>
