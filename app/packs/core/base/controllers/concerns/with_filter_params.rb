@@ -88,4 +88,59 @@ module WithFilterParams
       render template
     end
   end
+
+  # Checks whether Ransack params include any of the given attribute names.
+  # Works for both simple keys (e.g., "reporting_date_gteq") and advanced "c/a/p/v" format.
+  #
+  # Examples:
+  #   ransack_has_attr?(params[:q], :reporting_date)
+  #   ransack_has_attr?(params[:q], %w[reporting_date posted_on])
+  #
+  def ransack_has_attr?(q_param, attrs)
+    return false if q_param.blank?
+
+    qh = q_param.respond_to?(:to_unsafe_h) ? q_param.to_unsafe_h : q_param
+    attrs = Array(attrs).map!(&:to_s)
+
+    # 1) Simple predicate keys like "reporting_date_gteq", "reporting_date_lt", etc.
+    return true if qh.any? { |k, _| attrs.any? { |a| k.to_s == a || k.to_s.start_with?("#{a}_") } }
+
+    # 2) Advanced conditions: walk nested groups/conditions
+    queue = [qh]
+    while (node = queue.shift)
+      conds  = node['c'] || node[:c]
+      groups = node['g'] || node[:g]
+
+      [conds, groups].compact.each do |branch|
+        items = branch.is_a?(Hash) ? branch.values : Array(branch)
+
+        items.each do |item|
+          # Recurse into nested groups
+          queue << item if item.is_a?(Hash) && (item.key?('c') || item.key?(:c) || item.key?('g') || item.key?(:g))
+
+          # Extract attribute names from 'a'
+          a_field = item.is_a?(Hash) ? (item['a'] || item[:a]) : nil
+          a_list =
+            case a_field
+            when Hash  then a_field.values
+            when Array then a_field
+            else []
+            end
+
+          names = a_list.filter_map do |h|
+            if h.is_a?(Hash)
+              h['name'] || h[:name] || h['value'] || h[:value]
+            else
+              h
+            end
+          end.map!(&:to_s)
+
+          # Match exact or association-ish variants (e.g., "fund_name")
+          return true if names.any? { |n| attrs.any? { |a| n == a || n.start_with?("#{a}_") || n.end_with?("_#{a}") } }
+        end
+      end
+    end
+
+    false
+  end
 end
