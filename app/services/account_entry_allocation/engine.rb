@@ -18,7 +18,7 @@ module AccountEntryAllocation
 
     def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, tag_list: nil,
                    run_allocations: true, explain: false, generate_soa: false,
-                   template_id: nil, fund_ratios: false, sample: false, allocation_run_id: nil)
+                   template_id: nil, fund_ratios: false, sample: false, allocation_run_id: nil, timing: false)
       @fund            = fund
       @start_date      = start_date
       @end_date        = end_date
@@ -32,6 +32,7 @@ module AccountEntryAllocation
       @fund_ratios     = fund_ratios
       @sample          = sample
       @allocation_run_id = allocation_run_id
+      @timing = timing
 
       # Possibly retrieve an AllocationRun record
       @allocation_run = AllocationRun.find(allocation_run_id) if allocation_run_id.present?
@@ -64,11 +65,16 @@ module AccountEntryAllocation
         formula_count: 0,
         formula_index: 0,
         commitment_cache: @commitment_cache,
-        instance_variables: @instance_variables
+        instance_variables: @instance_variables,
+        timing: @timing
       }
       Rails.logger.debug { "Engine: ctx = #{ctx}" }
+
+      # Start tracing just your Fund query:
+      # SqlTracer.start(pattern: /FROM `investor_kycs`/)
       # Now call the RunFormulas operation (which in turn calls sub-operations).
       AccountEntryAllocation::RunFormulas.call(ctx)
+      # SqlTracer.stop
 
       # Return the final context or the result object for further inspection.
     end

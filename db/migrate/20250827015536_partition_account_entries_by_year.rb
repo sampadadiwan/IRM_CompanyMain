@@ -45,9 +45,7 @@ class PartitionAccountEntriesByYear < ActiveRecord::Migration[8.0]
             PRIMARY KEY (id, reporting_date),
 
             # UNIQUE KEY index_accounts_on_unique_fields (
-            #   name, fund_id, capital_commitment_id, entry_type,
-            #   reporting_date, cumulative, deleted_at,
-            #   parent_type, parent_id, ref_id, amount_cents
+            #   name,fund_id,capital_commitment_id,entry_type,reporting_date,cumulative,deleted_at,parent_type,parent_id,ref_id,amount_cents
             # ),
             KEY index_account_entries_on_reporting_date (reporting_date),
             KEY index_account_entries_on_fund_id (fund_id),
@@ -69,6 +67,7 @@ class PartitionAccountEntriesByYear < ActiveRecord::Migration[8.0]
       SQL
     end
 
+
     say_with_time "Copying data in batches of #{BATCH_SIZE}" do
       max_id = select_value("SELECT MAX(id) FROM account_entries").to_i
       start_id = 1
@@ -79,24 +78,10 @@ class PartitionAccountEntriesByYear < ActiveRecord::Migration[8.0]
 
         execute <<~SQL
           INSERT INTO account_entries_new (
-            id, capital_commitment_id, entity_id, fund_id,
-            investor_id, form_type_id, folio_id, reporting_date,
-            entry_type, name, amount_cents, notes, created_at,
-            updated_at, explanation, cumulative, period,
-            parent_type, parent_id, `generated`, folio_amount_cents,
-            exchange_rate_id, fund_formula_id, rule_for, json_fields,
-            import_upload_id, deleted_at, tracking_amount_cents,
-            allocation_run_id, parent_name, commitment_name, ref_id
+            id,capital_commitment_id,entity_id,fund_id,investor_id,form_type_id,folio_id,reporting_date,entry_type,name,amount_cents,notes,created_at,updated_at,explanation,cumulative,period,parent_type,parent_id,`generated`,folio_amount_cents,exchange_rate_id,fund_formula_id,rule_for,json_fields,import_upload_id,deleted_at,tracking_amount_cents,allocation_run_id,parent_name,commitment_name,ref_id
           )
           SELECT
-            id, capital_commitment_id, entity_id, fund_id,
-            investor_id, form_type_id, folio_id, reporting_date,
-            entry_type, name, amount_cents, notes, created_at,
-            updated_at, explanation, cumulative, period,
-            parent_type, parent_id, `generated`, folio_amount_cents,
-            exchange_rate_id, fund_formula_id, rule_for, json_fields,
-            import_upload_id, deleted_at, tracking_amount_cents,
-            allocation_run_id, parent_name, commitment_name, ref_id
+            id,capital_commitment_id,entity_id,fund_id,investor_id,form_type_id,folio_id,reporting_date,entry_type,name,amount_cents,notes,created_at,updated_at,explanation,cumulative,period,parent_type,parent_id,`generated`,folio_amount_cents,exchange_rate_id,fund_formula_id,rule_for,json_fields,import_upload_id,deleted_at,tracking_amount_cents,allocation_run_id,parent_name,commitment_name,ref_id
           FROM account_entries
           WHERE id BETWEEN #{start_id} AND #{end_id};
         SQL

@@ -51,6 +51,7 @@ module AccountEntryAllocation
 
       account_entry.capital_commitment = capital_commitment
       account_entry.folio_id = capital_commitment&.folio_id
+      account_entry.fund = ctx[:fund]
 
       account_entry.parent = parent if account_entry.parent_id.nil? && account_entry.parent_id != parent&.id
       account_entry.generated       = true

@@ -45,7 +45,7 @@ module AccountEntryAllocation
         # Determine the set of capital commitments to iterate over
         # If `for_folios` is true, use all commitments of the fund
         # Otherwise, treat as a single nil commitment (used in build_account_entry to signify no commitment)
-        capital_commitments = for_folios ? fund.capital_commitments : [nil]
+        capital_commitments = for_folios ? fund.capital_commitments.includes(:entity, :fund, :investor_kyc) : [nil]
 
         # Iterate through each capital commitment
         capital_commitments.each do |capital_commitment|

@@ -26,13 +26,21 @@ module AccountEntryAllocation
 
       portfolio_investments = if ctx[:proforma]
                                 # We only want to allocate proforma portfolio investments
-                                target_fund.portfolio_investments.proforma.where(investment_date: ..end_date)
+                                target_fund.portfolio_investments.proforma
                               else
                                 # We only want to allocate non-proforma portfolio investments (which are the actual investments and the default scope)
-                                target_fund.portfolio_investments.where(investment_date: ..end_date)
+                                target_fund.portfolio_investments
                               end
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
+      portfolio_investments = if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["between_start_and_end_dates"] == "true"
+                                # For some formulas, we only want to consider portfolio investments between the start and end dates. This is for performance reasons
+                                portfolio_investments.where(investment_date: start_date..end_date)
+                              else
+                                # By default, we consider all portfolio investments up to the end date
+                                portfolio_investments.where(investment_date: ..end_date)
+                              end
+
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments.each do |portfolio_investment|
@@ -63,9 +71,9 @@ module AccountEntryAllocation
           # File.open("tmp/ruby_prof_callstack_#{Time.zone.now}.html", "w") do |file|
           #   printer.print(file)
           # end
-
-          notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
         end
+
+        notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
 
       true

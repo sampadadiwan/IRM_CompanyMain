@@ -6,9 +6,23 @@ module AccountEntryAllocation
     step :run_formula
 
     def run_formula(ctx, **)
+      start_time = Time.zone.now
       # Call the internal method to run the formula, at max 3 times if there is a failure
       (1..3).each do |attempt|
         run_formula_internal(ctx)
+        end_time = Time.zone.now
+        if ctx[:timing]
+          fund_formula = ctx[:fund_formula]
+          fund_formula.reload
+          fund_formula.timing ||= {}
+          fund_formula.timing[:last_run_time] = end_time - start_time
+          fund_formula.timing[:total_run_time] ||= 0
+          fund_formula.timing[:total_run_time] += end_time - start_time
+          fund_formula.timing[:run_count] ||= 0
+          fund_formula.timing[:run_count] += 1
+          fund_formula.timing[:average_run_time] = fund_formula.timing[:total_run_time] / fund_formula.timing[:run_count]
+          fund_formula.save
+        end
         return true
       rescue ActiveRecord::DatabaseConnectionError => e
         Rails.logger.error { "Attempt #{attempt} failed with error: #{e.message}" }
@@ -20,6 +34,7 @@ module AccountEntryAllocation
         Rails.logger.debug { "Retrying in #{2**attempt} seconds..." }
         sleep(2**attempt) # Exponential backoff before retrying
       end
+
       false # If all attempts fail, return false
     end
 
