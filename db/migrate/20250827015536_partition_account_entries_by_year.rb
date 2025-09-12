@@ -44,11 +44,11 @@ class PartitionAccountEntriesByYear < ActiveRecord::Migration[8.0]
 
             PRIMARY KEY (id, reporting_date),
 
-            UNIQUE KEY index_accounts_on_unique_fields (
-              name, fund_id, capital_commitment_id, entry_type,
-              reporting_date, cumulative, deleted_at,
-              parent_type, parent_id, ref_id, amount_cents
-            ),
+            # UNIQUE KEY index_accounts_on_unique_fields (
+            #   name, fund_id, capital_commitment_id, entry_type,
+            #   reporting_date, cumulative, deleted_at,
+            #   parent_type, parent_id, ref_id, amount_cents
+            # ),
             KEY index_account_entries_on_reporting_date (reporting_date),
             KEY index_account_entries_on_fund_id (fund_id),
             KEY index_account_entries_on_entity_id (entity_id),
