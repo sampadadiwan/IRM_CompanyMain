@@ -1,4 +1,5 @@
 class AccountEntry < ApplicationRecord
+  self.primary_key = :id
   # update_index('account_entry') { self if index_record? }
 
   include WithCustomField

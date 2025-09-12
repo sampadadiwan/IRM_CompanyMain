@@ -27,3 +27,12 @@ every :saturday, at: '1:00 am', roles: [:app] do
   # This time is in UTC 2am IST is 9pm UTC
   command 'sudo reboot'
 end
+
+# This is to ensure next year's partition exists for account_entries table
+every 1.year, at: 'December 15 02:00am' do
+  rake "partitions:ensure_account_entries"
+end
+# This is idempotent, so just run it again to ensure
+every 1.year, at: 'December 15 03:00am' do
+  rake "partitions:ensure_account_entries"
+end

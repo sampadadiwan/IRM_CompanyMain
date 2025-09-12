@@ -1,5 +1,5 @@
 class ImportFormCustomFields < ImportUtil
-  # No custom fields for FormCustomField
+  # Remove the creation of custom fields - FormCustomField does not have custom fields
   step nil, delete: :create_custom_fields
 
   STANDARD_HEADERS = [

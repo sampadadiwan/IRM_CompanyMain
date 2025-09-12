@@ -73,6 +73,9 @@ class AccountEntriesController < ApplicationController
   end
 
   def fetch_rows
+    params[:q] ||= {}
+    # This is forced on the user as account_entries table is partitioned by reporting date, and this will make it efficient.
+    params[:q][:reporting_date_gt] = Time.zone.today - 6.months unless params[:q].keys.any? { |key| key.to_s.include?('reporting_date') }
     @q = AccountEntry.ransack(params[:q])
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
     filter_index(params)
@@ -211,7 +214,13 @@ class AccountEntriesController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_account_entry
-    @account_entry = AccountEntry.find(params[:id])
+    # Find the account entry by ID, but the table is partitioned by reporting_date, so if we have that use it to reduce partition queries
+    @account_entry = if params[:reporting_date].present?
+                       AccountEntry.find_by(id: params[:id], reporting_date: params[:reporting_date])
+                     else
+                       AccountEntry.find(params[:id])
+                     end
+
     authorize @account_entry
     @bread_crumbs = { Funds: funds_path,
                       "#{@account_entry.fund.name}": fund_path(@account_entry.fund) }
