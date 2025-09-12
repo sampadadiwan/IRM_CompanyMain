@@ -75,7 +75,7 @@ class AccountEntriesController < ApplicationController
   def fetch_rows
     params[:q] ||= {}
     # This is forced on the user as account_entries table is partitioned by reporting date, and this will make it efficient.
-    params[:q][:reporting_date_gt] = Time.zone.today - 6.months unless ransack_has_attr?(params[:q], 'reporting_date')
+    params[:q][:reporting_date_gt] = l(Time.zone.today.beginning_of_quarter) unless ransack_has_attr?(params[:q], 'reporting_date')
 
     @q = AccountEntry.ransack(params[:q])
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
