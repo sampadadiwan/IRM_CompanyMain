@@ -68,7 +68,7 @@ module AccountEntryAllocation
         instance_variables: @instance_variables,
         timing: @timing
       }
-      Rails.logger.debug { "Engine: ctx = #{ctx}" }
+      Rails.logger.info { "Engine: ctx = #{ctx}" }
 
       # Start tracing just your Fund query:
       # SqlTracer.start(pattern: /FROM `investor_kycs`/)

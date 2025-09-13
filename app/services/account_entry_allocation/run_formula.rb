@@ -48,7 +48,7 @@ module AccountEntryAllocation
       rollup_name = fund_formula.name
       rollup_entry_type = fund_formula.entry_type
 
-      Rails.logger.debug { "Running formula #{fund_formula.to_json}" }
+      Rails.logger.info { "Running formula #{fund_formula.to_json}" }
 
       # Run sub-operations based on rule_type
       case fund_formula.rule_type
