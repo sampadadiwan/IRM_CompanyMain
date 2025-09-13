@@ -3,15 +3,17 @@
 <%= render "portfolio_scenarios/show", portfolio_scenario: @portfolio_scenario %>
 <div>
   <% if policy(@portfolio_scenario).update? %>
-    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success"} %> 
-    <%= button_to t_common(:delete), @portfolio_scenario, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success ti ti-pencil"} %> 
+    <%= button_to t_common(:delete), @portfolio_scenario, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
+
+  <%= button_to "Finalize", finalize_portfolio_scenario_path(@portfolio_scenario), method: :post, class: "btn btn-outline-primary ti ti-check", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, method: :post,  msg: "This will save the Portfolio Scenario Calculations as fund ratios"}  %>
 
   <div class="btn-group">
     <div class="dropdown">
-      <button class="btn btn-outline-success dropdown-toggle" type="button"
+      <button class="btn btn-outline-success ti ti-automation dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Run Scenarios
+        Run Scenario
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
       
@@ -25,15 +27,24 @@
 
 </div>
 
+<% if @portfolio_scenario.fund_ratios.any? %>
+<div id="fund-ratios" class="associated_entity">
+  <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(portfolio_scenario_id: @portfolio_scenario.id) do %>
+      <%= render "/layouts/loading" %>
+  <% end %>
+</div>
+<% end %>
+
 <div class="associated_entity">
   <%= render "scenario_investments/index", scenario_investments: @portfolio_scenario.scenario_investments, portfolio_scenario: @portfolio_scenario %>
 </div>
 
 
 <div class="associated_entity">
-  <% @pagy, portfolio_investments = pagy(@portfolio_scenario.fund.portfolio_investments
-                                  .includes(:aggregate_portfolio_investment, :fund)
-                                  .page(params[:page])) %>
+  <div id="portfolio-investments" class="associated_entity">
+  <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", loading: :lazy, src: portfolio_investments_path(fund_id: @portfolio_scenario.fund_id) do %>
+      <%= render "/layouts/loading" %>
+  <% end %>
+</div>
 
-  <%= render "portfolio_investments/index", portfolio_investments: portfolio_investments %>
 </div>

@@ -12,6 +12,7 @@ resources :portfolio_scenarios do
   patch 'run', on: :member
   get 'simple_scenario', on: :collection
   post 'simple_scenario', on: :collection
+  post 'finalize', on: :member
 end
 
 resources :fund_reports do

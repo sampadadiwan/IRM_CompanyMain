@@ -628,14 +628,16 @@ Given('I fill the new scenario investment form') do
   fill_in('scenario_investment_transaction_date', with: @date)
   select(@portfolio_company.investor_name, from: "scenario_investment_portfolio_company_id")
   select(@investment_instrument.name, from: "scenario_investment_investment_instrument_id")
-  fill_in('scenario_investment_price', with: 1234)
-  fill_in('scenario_investment_quantity', with: 50)
+  @price = 1000 + rand(2000)
+  @quantity = 100 + rand(200)
+  fill_in('scenario_investment_price', with: @price)
+  fill_in('scenario_investment_quantity', with: @quantity)
   @notes = "Test investment notes #{rand(1000)}"
   fill_in('scenario_investment_notes', with: @notes)
 end
 
 Then('I should see the new investment added on the portfolio scenarios page') do
-  expect(page).to have_content("1,234.00")
+  expect(page).to have_content(money_to_currency(@price))
   expect(page).to have_content(@portfolio_company.investor_name)
   expect(page).to have_content(@notes)
   expect(page).to have_content(@date.strftime("%d/%m/%Y"))
@@ -695,4 +697,27 @@ Given('I fill in the new investment form with different Portfolio Company') do
   fill_in("portfolio_investment_quantity", with: @quantity)
   @notes = "Test investment notes #{rand(1000)}"
   fill_in("portfolio_investment_notes", with: @notes)
+end
+
+Then('The Portfolio Scenario should run successfully') do
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  # This happens too quick before the redirect with notice
+  # expect(page).to have_content("Portfolio Scenario: #{@scenario_name} has been run successfully.", wait: 5)
+  expect(page).to have_content("XIRR")
+  expect(page).to have_content("MOIC")
+  expect(page).to have_content("Portfolio Company Metrics")
+end
+
+Then('The Portfolio Scenario Should be finalized') do
+  @portfolio_scenario ||= PortfolioScenario.where(name: @scenario_name).last
+  expect(page).to have_content("Finalization enqueued for #{@scenario_name}")
+  # This happens too quick before the redirect with notice
+  # expect(page).to have_content("Fund ratios for #{@scenario_name} were successfully created.", wait: 5)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(@portfolio_scenario.fund_ratios.count).to be > 0
+  portfolio_companies_ids = @portfolio_scenario.fund.portfolio_investments.pluck(:portfolio_company_id).uniq
+  per_company_fund_ratios = 2
+  fund_ratios_count = 2
+  expect(@portfolio_scenario.fund_ratios.count).to eq((portfolio_companies_ids.count * per_company_fund_ratios) + fund_ratios_count)
+  expect(page).to have_content("Fund Ratios")
 end

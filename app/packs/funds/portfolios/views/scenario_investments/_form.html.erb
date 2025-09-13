@@ -1,6 +1,6 @@
 <%= turbo_frame_tag "new_scenario_investment" do %>
 
-<%= render FormCard.new(title: "Scenario Investment", controller: "access") do %>
+<%= render FormCard.new(title: "Scenario Investment", controller: "access", css_class: "dynamic_form") do %>
       
   <%= form_with(model: scenario_investment) do |form| %>
     <% if scenario_investment.errors.any? %>

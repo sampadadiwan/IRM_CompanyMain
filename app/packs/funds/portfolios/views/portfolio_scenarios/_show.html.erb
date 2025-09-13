@@ -1,4 +1,4 @@
-<div id="<%= dom_id(portfolio_scenario) %>" class="card shadow mb-4">
+<div id="<%= dom_id(portfolio_scenario) %>" class="portfolio-scenario-div card shadow mb-4">
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
       <h6 class="m-0 font-weight-bold text-primary">Scenario: <%= portfolio_scenario.name %></h6>
       <span>
@@ -43,44 +43,89 @@
         <td>
           Calculations
         </td>
-        <td>
-          
-          <table class="table table-bordered dataTable no_hover_table">
-            <tr>
-              <td>Xirr</td>
-              <td><%= portfolio_scenario.calculations[:xirr] %></td>
-            </tr>
-            
-            <% if portfolio_scenario.calculations[:xirr_cash_flows] %>
-            <tr>
-              <td>Xirr Cash Flows</td>
-              <% table_options = { table_class: "table table-bordered dataTable collapse xirr_cash_flows_table" } %>
-              <td>
-                <small><a class="xirr_cash_flows_table show float-right" data-bs-toggle="collapse" href=".xirr_cash_flows_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
-                <small><a class="xirr_cash_flows_table collapse float-right text-success" data-bs-toggle="collapse" href=".xirr_cash_flows_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
-
-                <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
-              </td>
-            </tr>
-            <% end %>
-
-            <% if portfolio_scenario.calculations[:portfolio_company_irr] %>
-            <tr>
-              <td>Portfolio Irr</td>
-              <% table_options = { table_class: "table table-bordered dataTable collapse show portfolio_company_irr_table" } %>
-              <td>
-                
-                <small><a class="portfolio_company_irr_table collapse float-right" data-bs-toggle="collapse" href=".portfolio_company_irr_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
-                <small><a class="portfolio_company_irr_table show float-right text-success" data-bs-toggle="collapse" href=".portfolio_company_irr_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
-
-                <%= Json2table::get_html_table(portfolio_scenario.calculations[:portfolio_company_irr], table_options).html_safe %>
-              </td>
-            </tr>
-            <% end %>
-          </table>
-          
-        </td>
       </tr>
+
+      <tr>
+        <td>XIRR</td>
+        <% xirr_display_val = portfolio_scenario.calculations[:xirr].present? ? "#{portfolio_scenario.calculations[:xirr]} %" : nil %>
+        <td><%= xirr_display_val %></td>
+        <% if portfolio_scenario.calculations[:xirr_cash_flows] %>
+          <td class="text-end">
+            <small>
+              <a class="toggle-link collapsed" data-bs-toggle="collapse" href="#xirr_cash_flows_<%= portfolio_scenario.id %>" role="button">
+                <span class="show-text">Show Cash Flows <i class="fa-solid fa-caret-down"></i></span>
+                <span class="hide-text">Hide Cash Flows <i class="fa-solid fa-caret-up"></i></span>
+              </a>
+            </small>
+          </td>
+        <% end %>
+      </tr>
+
+      <% if portfolio_scenario.calculations[:xirr_cash_flows] %>
+        <tr class="collapse" id="xirr_cash_flows_<%= portfolio_scenario.id %>">
+          <td colspan="3">
+            <h6 class="fw-bold mb-3 pb-1 d-flex justify-content-between align-items-center">
+              <span>XIRR Cash Flows</span>
+            </h6>
+            <% table_options = { table_class: "table table-bordered dataTable"} %>
+            <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
+          </td>
+        </tr>
+      <% end %>
+
+      <tr>
+        <td>MOIC</td>
+        <% moic_display_val = portfolio_scenario.calculations[:moic].present? ? "#{portfolio_scenario.calculations[:moic]} x" : nil %>
+        <td><%= moic_display_val %></td>
+        <% if portfolio_scenario.calculations[:moic_cash_flows] %>
+          <td class="text-end">
+            <small>
+              <a class="toggle-link collapsed" data-bs-toggle="collapse" href="#moic_cash_flows_<%= portfolio_scenario.id %>" role="button">
+                <span class="show-text">Show Cash Flows <i class="fa-solid fa-caret-down"></i></span>
+                <span class="hide-text">Hide Cash Flows <i class="fa-solid fa-caret-up"></i></span>
+              </a>
+            </small>
+          </td>
+        <% end %>
+      </tr>
+
+      <% if portfolio_scenario.calculations[:moic_cash_flows] %>
+        <tr class="collapse" id="moic_cash_flows_<%= portfolio_scenario.id %>">
+          <td colspan="3">
+            <h6 class="fw-bold mb-3 pb-1 d-flex justify-content-between align-items-center">
+              <span>MOIC Cash Flows</span>
+            </h6>
+            <% table_options = { table_class: "table table-bordered dataTable"} %>
+            <%= Json2table::get_html_table(portfolio_scenario.calculations[:moic_cash_flows], table_options).html_safe %>
+          </td>
+        </tr>
+      <% end %>
+
+      <% if portfolio_scenario.calculations[:portfolio_company_metrics] %>
+        <tr>
+          <td>
+            Portfolio Company Metrics
+          </td>
+          <td>
+          </td>
+          <td class="text-end">
+            <small>
+              <a class="toggle-link collapsed" data-bs-toggle="collapse" href="#portfolio_company_metrics" role="button">
+                <span class="show-text">Show Cash Flows <i class="fa-solid fa-caret-down"></i></span>
+                <span class="hide-text">Hide Cash Flows <i class="fa-solid fa-caret-up"></i></span>
+              </a>
+            </small>
+          </td>
+        </tr>
+
+        <tr class="collapse" id="portfolio_company_metrics">
+          <td colspan="3">
+            <% table_options = { table_class: "table table-bordered dataTable" } %>
+            <%= Json2table::get_html_table((JSON.parse portfolio_scenario.calculations[:portfolio_company_metrics]).values.to_json, table_options).html_safe %>
+          </td>
+        </tr>
+          
+      <% end %>
     </table>
   </div>
 </div>

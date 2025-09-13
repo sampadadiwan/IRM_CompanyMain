@@ -1,5 +1,5 @@
 class PortfolioScenariosController < ApplicationController
-  before_action :set_portfolio_scenario, only: %i[show edit update destroy run]
+  before_action :set_portfolio_scenario, only: %i[show edit update destroy run finalize]
   after_action :verify_authorized, except: %i[index simple_scenario], unless: :devise_controller?
 
   # GET /portfolio_scenarios or /portfolio_scenarios.json
@@ -57,6 +57,17 @@ class PortfolioScenariosController < ApplicationController
     end
   end
 
+  def finalize
+    if Rails.env.test?
+      FinalizePortfolioScenarioJob.perform_now(@portfolio_scenario.id, current_user.id)
+    else
+      FinalizePortfolioScenarioJob.set(wait: 2.seconds).perform_later(@portfolio_scenario.id, current_user.id)
+    end
+
+    redirect_to portfolio_scenario_path(@portfolio_scenario),
+                notice: "Finalization enqueued for #{@portfolio_scenario.name}."
+  end
+
   # DELETE /portfolio_scenarios/1 or /portfolio_scenarios/1.json
   def destroy
     @portfolio_scenario.destroy
@@ -68,7 +79,11 @@ class PortfolioScenariosController < ApplicationController
   end
 
   def run
-    PortfolioScenarioJob.set(wait: 2.seconds).perform_later(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows])
+    if Rails.env.test?
+      PortfolioScenarioJob.perform_now(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows])
+    else
+      PortfolioScenarioJob.set(wait: 2.seconds).perform_later(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows])
+    end
     redirect_to portfolio_scenario_url(@portfolio_scenario), notice: "Portfolio scenario is running."
   end
 

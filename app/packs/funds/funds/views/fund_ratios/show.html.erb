@@ -17,6 +17,18 @@
       <%= link_to @fund_ratio.fund %>
     </td>
   </tr>
+
+  <% if @fund_ratio.portfolio_scenario.present? %>
+  <tr>
+    <td>
+      Portfolio Scenario
+    </td>
+    <td>
+      <%= link_to @fund_ratio.portfolio_scenario %>
+    </td>
+  </tr>
+  <% end %>
+  
   <tr>
     <td>
       Scenario

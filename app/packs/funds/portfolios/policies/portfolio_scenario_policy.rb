@@ -28,6 +28,10 @@ class PortfolioScenarioPolicy < FundBasePolicy
     update?
   end
 
+  def finalize?
+    update?
+  end
+
   def edit?
     update?
   end

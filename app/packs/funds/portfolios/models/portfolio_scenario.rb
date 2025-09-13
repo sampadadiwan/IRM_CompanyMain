@@ -8,6 +8,7 @@ class PortfolioScenario < ApplicationRecord
   serialize :calculations, type: Hash
 
   has_many :scenario_investments, dependent: :destroy
+  has_many :fund_ratios, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 100 }
 

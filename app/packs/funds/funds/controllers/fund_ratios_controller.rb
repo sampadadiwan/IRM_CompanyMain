@@ -5,7 +5,7 @@ class FundRatiosController < ApplicationController
   def index
     # Step 1: Perform Ransack search
     @q = FundRatio.ransack(params[:q])
-    @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment)
+    @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment, :portfolio_scenario)
 
     @fund_ratios = FundRatioSearch.perform(@fund_ratios, current_user, params)
 
@@ -16,6 +16,7 @@ class FundRatiosController < ApplicationController
       @fund_ratios,
       :import_upload_id,
       :capital_commitment_id,
+      :portfolio_scenario_id,
       :owner_type,
       :owner_id,
       :scenario,

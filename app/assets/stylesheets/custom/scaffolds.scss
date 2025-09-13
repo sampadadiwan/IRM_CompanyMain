@@ -1407,3 +1407,23 @@ button:disabled {
     color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color)));
   }
 }
+
+.portfolio-scenario-div .toggle-link .hide-text {
+  display: none;
+}
+
+.portfolio-scenario-div .toggle-link.collapsed .show-text {
+  display: inline;
+}
+
+.portfolio-scenario-div .toggle-link.collapsed .hide-text {
+  display: none;
+}
+
+.portfolio-scenario-div .toggle-link:not(.collapsed) .show-text {
+  display: none;
+}
+
+.portfolio-scenario-div .toggle-link:not(.collapsed) .hide-text {
+  display: inline;
+}

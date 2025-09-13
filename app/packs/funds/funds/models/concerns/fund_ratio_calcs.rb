@@ -7,6 +7,7 @@ class FundRatioCalcs
   delegate :capital_remittance_payments, to: :model
   delegate :capital_distribution_payments, to: :model
   delegate :aggregate_portfolio_investments, to: :model
+  delegate :portfolio_investments, to: :model
 
   def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
@@ -67,7 +68,8 @@ class FundRatioCalcs
     end
 
     # Add financial metrics to cash flow if they are not zero
-    cf << XirrTransaction.new(fmv, date: @end_date, notes: "FMV") if fmv != 0
+    # if adjustment cash is provided, FMV is considered part of it
+    cf << XirrTransaction.new(fmv, date: @end_date, notes: "FMV") if fmv != 0 && adjustment_cash.zero?
     cf << XirrTransaction.new(cih, date: @end_date, notes: "Cash in Hand") if cih != 0
     cf << XirrTransaction.new(nca, date: @end_date, notes: "Net Current Assets") if nca != 0
     cf << XirrTransaction.new(-1 * ec, date: @end_date, notes: "Estimated Carry") if net_irr && ec != 0
@@ -84,7 +86,63 @@ class FundRatioCalcs
     # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)
   end
+
   # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/PerceivedComplexity
   # rubocop:enable Metrics/MethodLength
+
+  def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
+    @model = model
+    cf = XirrCashflow.new
+
+    total_bought = 0.to_d
+    total_sold = 0.to_d
+    total_fmv = 0.to_d
+
+    portfolio_investments.where(portfolio_investments: { investment_date: ..@end_date }).find_each do |pi|
+      pi = pi.as_of(@end_date)
+      amount_cents = convert_amount(@model, pi.amount_cents, pi.investment_date, use_tracking_currency)
+      if pi.quantity.positive?
+        cf << XirrTransaction.new(amount_cents, date: pi.investment_date, notes: pi.to_s)
+        total_bought += amount_cents
+      elsif pi.quantity.negative?
+        cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
+        total_sold += amount_cents
+      end
+      total_fmv += pi.fmv_cents
+    end
+
+    if synthetic_investments.present?
+      temp_synthetic_investments = synthetic_investments.select { |si| si.investment_date <= @end_date }
+
+      temp_synthetic_investments.each do |pi|
+        amount_cents = convert_amount(@model, pi.amount_cents, pi.investment_date, use_tracking_currency)
+        if pi.quantity.positive?
+          cf << XirrTransaction.new(amount_cents, date: pi.investment_date, notes: pi.to_s)
+          total_bought += amount_cents
+        elsif pi.quantity.negative?
+          cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
+          total_sold += amount_cents
+        end
+        total_fmv += pi.compute_fmv_cents_on(pi.investment_date)
+      end
+    end
+
+    cf = nil unless return_cash_flows
+    return 0, cf if total_bought.zero?
+
+    total_amount = synthetic_investments.present? ? total_sold : (total_fmv + total_sold)
+
+    [(total_amount / total_bought).round(2), cf]
+  end
+
+  # Helper for currency conversion
+  def convert_amount(model, amount_cents, date, use_tracking_currency)
+    return amount_cents unless use_tracking_currency
+
+    tracking_exchange_rate = model.get_exchange_rate(model.currency, model.tracking_currency, date)
+    raise "No exchange rate found for #{model.currency} to #{model.tracking_currency} on #{date}" unless tracking_exchange_rate
+
+    (amount_cents * tracking_exchange_rate.rate).round
+  end
 end
