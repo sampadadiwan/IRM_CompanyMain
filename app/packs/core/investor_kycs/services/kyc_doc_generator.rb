@@ -259,10 +259,10 @@ class KycDocGenerator
     end
   end
 
-  def portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
+  def portfolio_company_cumulative_folio_entries(investor_kyc, _start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
     return OpenStruct.new if fund_id.blank?
 
-    raes = investor_kyc.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).where(parent_type: "Investor").includes(parent: :portfolio_company)
+    raes = investor_kyc.account_entries.where(reporting_date: end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).where(parent_type: "Investor").includes(parent: :portfolio_company)
 
     first_commitment = investor_kyc.capital_commitments.where(fund_id: fund_id).first
     portfolio_company_entries_map = {}
@@ -282,7 +282,7 @@ class KycDocGenerator
     fund_entries = first_commitment&.fund&.account_entries&.cumulative
                                    &.where(parent_type: %w[Investor],
                                            entry_type: entry_types,
-                                           reporting_date: start_date..end_date, capital_commitment_id: nil, folio_id: nil, fund_id: fund_id)
+                                           reporting_date: end_date, capital_commitment_id: nil, folio_id: nil, fund_id: fund_id)
                                    &.includes(parent: :portfolio_company)
 
     fund_entries.each do |entry|

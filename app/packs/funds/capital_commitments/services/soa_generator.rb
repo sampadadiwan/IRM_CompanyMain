@@ -169,11 +169,11 @@ class SoaGenerator
   end
 
   # This method is used to generate the portfolio allocation related data by portfolio company
-  def portfolio_company_allocations(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
+  def portfolio_company_allocations(capital_commitment, _start_date, end_date, entry_types: ["Portfolio Allocation"])
     fund = capital_commitment.fund
     entries = capital_commitment.account_entries
                                 .where(parent_type: %w[AggregatePortfolioInvestment PortfolioInvestment],
-                                       entry_type: entry_types, reporting_date: start_date..end_date)
+                                       entry_type: entry_types, reporting_date: end_date)
                                 .includes(parent: :portfolio_company)
 
     # This is used to group the entries by portfolio company
@@ -199,11 +199,11 @@ class SoaGenerator
     portfolio_company_entries_map.values
   end
 
-  def portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date, entry_types: ["Portfolio Allocation"])
+  def portfolio_company_cumulative_folio_entries(capital_commitment, _start_date, end_date, entry_types: ["Portfolio Allocation"])
     entries = capital_commitment.account_entries.cumulative
                                 .where(parent_type: %w[Investor],
                                        entry_type: entry_types,
-                                       reporting_date: start_date..end_date)
+                                       reporting_date: end_date)
                                 .includes(parent: :portfolio_company)
 
     portfolio_company_entries_map = {}
@@ -222,7 +222,7 @@ class SoaGenerator
     fund_entries = capital_commitment.fund.account_entries.cumulative
                                      .where(parent_type: %w[Investor],
                                             entry_type: entry_types,
-                                            reporting_date: start_date..end_date, capital_commitment_id: nil, folio_id: nil)
+                                            reporting_date: end_date, capital_commitment_id: nil, folio_id: nil)
                                      .includes(parent: :portfolio_company)
 
     fund_entries.each do |entry|
