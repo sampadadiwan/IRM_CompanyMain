@@ -1587,12 +1587,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
     t.string "scenario", limit: 40, default: "Default"
     t.bigint "form_type_id"
     t.string "label", limit: 50
+    t.bigint "portfolio_scenario_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
+    t.index ["portfolio_scenario_id"], name: "index_fund_ratios_on_portfolio_scenario_id"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
@@ -3483,6 +3485,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "form_types"
   add_foreign_key "fund_ratios", "funds"
+  add_foreign_key "fund_ratios", "portfolio_scenarios"
   add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "fund_reports", "entities"
   add_foreign_key "fund_reports", "form_types"
