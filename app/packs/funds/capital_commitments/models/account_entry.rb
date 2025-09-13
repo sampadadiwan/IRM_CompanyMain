@@ -30,6 +30,10 @@ class AccountEntry < ApplicationRecord
     joins("INNER JOIN aggregate_portfolio_investments ON account_entries.parent_id = aggregate_portfolio_investments.id AND account_entries.parent_type = 'AggregatePortfolioInvestment'")
   }
 
+  scope :for_parent_account_entries, lambda {
+    joins("INNER JOIN account_entries AS parent_account_entries ON account_entries.parent_id = parent_account_entries.id AND account_entries.parent_type = 'AccountEntry'")
+  }
+
   scope :for_portfolio_investments, lambda {
     joins("INNER JOIN portfolio_investments ON account_entries.parent_id = portfolio_investments.id AND account_entries.parent_type = 'PortfolioInvestment'")
   }
