@@ -14,6 +14,14 @@
 <%= render ToggleCard.new(title: @investor.investor_name, css_class: "show_investors_data_card", state: "show") do %>
 
 <table class="table table-bordered dataTable ">
+  <% logo = investor.documents.where(name: "Logo").first %>
+  <% if logo %>
+    <tr>
+      <td colspan="<%= cols * 2 %>" class="text-left">
+        <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
+      </td>
+    </tr>
+  <% end %>
   <% fields_to_display.each_slice(cols) do |row_fields| %>
     <tr>
       <% row_fields.each do |label, key| %>

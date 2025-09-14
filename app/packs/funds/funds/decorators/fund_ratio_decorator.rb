@@ -12,17 +12,15 @@ class FundRatioDecorator < ApplicationDecorator
   end
 
   def scenario
-    parts = [object.scenario.to_s]
-
-    if object.portfolio_scenario.present?
-      parts << h.link_to(
-        object.portfolio_scenario.name,
-        h.portfolio_scenario_path(object.portfolio_scenario),
+    if object.portfolio_scenario_id.nil?
+      object.scenario
+    else
+      h.link_to(
+        object.scenario,
+        h.portfolio_scenario_path(object.portfolio_scenario_id),
         class: 'mb-1 badge bg-primary-subtle text-primary'
       )
     end
-
-    h.safe_join(parts, '')
   end
 
   def dt_actions

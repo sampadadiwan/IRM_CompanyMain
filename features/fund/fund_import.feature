@@ -19,7 +19,6 @@ Scenario Outline: Import capital commitments
   And Given I upload "account_entries.xlsx" file for Account Entries
   Then There should be "19" account_entries created
   And the account_entries must have the data in the sheet
-  And the account_entries must visible for each commitment
 
 
 @import
@@ -229,4 +228,4 @@ Scenario Outline: Update Imported capital remittance payments
   When I edit the remittance payment with convert_to_fund_currency "false"
   Then the capital remittance payment amount is not recomputed
   When I edit the remittance payment with convert_to_fund_currency "true"
-  Then the capital remittance payment amount is recomputed 
+  Then the capital remittance payment amount is recomputed

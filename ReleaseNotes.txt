@@ -1,3 +1,12 @@
+V9.1.04
+#####################################
+384f026f8 Sync schema
+e9194454e Added scope for_parent_account_entries for AE
+14674db03 now portfolio_company_cumulative_folio_entries aggregates AEs on end_date (#1001)
+a2529b610 Scenarios fund ratio new 1 (#1000)
+674ffd1cb Added beter info logging
+
+
 V9.1.02
 #####################################
 d1c0b14b0 Localized date for filter from AE allocation completion

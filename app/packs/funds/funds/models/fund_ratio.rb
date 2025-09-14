@@ -23,7 +23,8 @@ class FundRatio < ApplicationRecord
   CONDENSED_COLUMNS = {
     "Name" => "name",
     "Display Value" => "display_value",
-    "On" => "end_date"
+    "On" => "end_date",
+    "Scenario" => "scenario"
   }.freeze
 
   validates :display_value, :label, length: { maximum: 50 }
@@ -31,6 +32,11 @@ class FundRatio < ApplicationRecord
 
   scope :latest, -> { where(latest: true) }
   scope :default, -> { where(scenario: "Default") }
+
+  before_create :set_scenario_if_missing
+  def set_scenario_if_missing
+    self.scenario = portfolio_scenario.name if (scenario.blank? || scenario == "Default") && portfolio_scenario.present?
+  end
 
   def to_s
     "#{name} #{value}"
