@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_14_061211) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -78,7 +78,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_090634) do
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
-    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
+    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
+    t.index ["fund_id", "name", "reporting_date"], name: "index_account_entries_on_fund_id_and_name_and_reporting_date"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
