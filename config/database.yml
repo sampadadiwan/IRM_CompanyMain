@@ -31,11 +31,12 @@ development:
   primary:
     <<: *default
     database: IRM_development
+    password: Root1234$
   primary_replica:
     <<: *default_replica
     database: IRM_development
     database_tasks: false
-
+    password: Root1234$
 
 staging:
   primary:
