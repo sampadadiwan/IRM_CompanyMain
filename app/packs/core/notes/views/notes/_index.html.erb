@@ -12,14 +12,16 @@
   <table id="notes" class="table table-bordered dataTable ">
     <thead>
       <tr>
+        <% unless params[:condensed].present? %>
+        <th>
+          <%= sort_link @q, :investor_investor_name, "Stakeholder" %>
+        </th>
         <th>
           <%= sort_link @q, :user_first_name, "User" %>
         </th>
+        <% end %>
         <th>
           <%= sort_link @q, :on, "On" %>
-        </th>
-        <th>
-          <%= sort_link @q, :investor_investor_name, "Stakeholder" %>
         </th>
         <th>
           <%= sort_link @q, :tags %>

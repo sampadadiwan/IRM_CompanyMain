@@ -1,19 +1,23 @@
 <tr id="note_<%= note.id %>">
+
+<% unless params[:condensed].present? %>
+<td>
+    <%= link_to note.investor_name, investor_path(note.investor_id) %>
+</td>
 <td>
     <%= link_to note.user_full_name, notes_path(user_id: note.user_id) %>
 </td>
+<% end %>
+
 <td>
     <%= note.on.is_a?(Date) ? l(note.on) : l(Date.parse(note.on)) %>
-</td>    
-<td>
-    <%= link_to note.investor_name, investor_path(note.investor_id) %>
-</td>  
+</td>
 <td>
     <%= note.tags %>
 </td>
 <td>
     <%= note.details %>
-</td>  
+</td>
 
 <td>
   <%= link_to  t_common(:show), note_path(note.id) , {class: "btn btn-outline-primary ti ti-eye"}%>

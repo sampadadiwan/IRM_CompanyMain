@@ -1,5 +1,6 @@
-<% 
+<%
   uri_params ||= {}
+  uri_params[:condensed] = true
   uri = URI("/notes")
   uri.query = URI.encode_www_form(uri_params) if uri_params.present?
 %>
@@ -12,9 +13,9 @@
         widget_size: widget.widget_size
       )
     ) do %>
-  
+
     <!-- This block becomes the `content` inside the component -->
-    <%= turbo_frame_tag "notes_frame", target: "_top", src: "#{uri.to_s}" do %>            
+    <%= turbo_frame_tag "notes_frame", target: "_top", src: "#{uri.to_s}" do %>
     <%end%>
-  
+
 <% end %>
