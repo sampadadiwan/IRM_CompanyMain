@@ -22,7 +22,7 @@ Sidekiq.configure_server do |config|
 
     # Used to update the tracking currency for all funds
 
-    Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
+    Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')
     # Used to cleanup various models in the DB
     Sidekiq::Cron::Job.create(name: 'DailyMorningJob', cron: 'every day at 01:30', class: 'DailyMorningJob')
@@ -33,11 +33,13 @@ Sidekiq.configure_server do |config|
     # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
 
-    # Snapshot the funds at the end of every quarter March, June, September and December
-    Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 31 3,12 *', class: 'FundSnapshotJob')
-    Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
+    if Rails.env.production?
+      # Snapshot the funds at the end of every quarter March, June, September and December
+      Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 31 3,12 *', class: 'FundSnapshotJob')
+      Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
 
-    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
+      Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
+    end
 
     Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
 
