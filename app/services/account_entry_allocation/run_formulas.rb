@@ -42,7 +42,9 @@ module AccountEntryAllocation
         count = fund_account_entries.count
         idx = 1
         loop do
-          Rails.logger.debug { "Deleting batch #{idx} of fund account entries: #{count}" }
+          msg = "Deleting account entries for #{fund.name}: batch #{idx} count: #{count}"
+          Rails.logger.debug { msg }
+          notify(msg, :info, user_id)
           deleted = fund_account_entries.limit(batch_size).delete_all
           break if deleted.zero?
 

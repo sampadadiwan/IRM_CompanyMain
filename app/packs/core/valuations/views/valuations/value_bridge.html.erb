@@ -15,6 +15,8 @@
         bridge_fields = ["Entry"] + @value_bridge_service.value_bridge_fields
         waterfall_chart_data = []
     %>
+
+    <% unless params[:hide_table] == "true" %>
     <table class="table table-bordered dataTable">
 
         <!-- Header row -->
@@ -66,6 +68,7 @@
         <% end %>
         </tbody>
     </table>
+    <% end %>
 
 
     </div>

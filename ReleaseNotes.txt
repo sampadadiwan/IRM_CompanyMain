@@ -1,3 +1,9 @@
+V9.1.05
+#####################################
+c6252199f Schema sync
+e4e486b87 Aded better indexxes for account_entries
+a306236a1 Added logo to data_card
+
 V9.1.04
 #####################################
 384f026f8 Sync schema
