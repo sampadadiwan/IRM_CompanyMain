@@ -16,8 +16,8 @@
         waterfall_chart_data = []
     %>
 
-    <% unless params[:hide_table] == "true" %>
-    <table class="table table-bordered dataTable">
+    <% dnone = (params[:hide_table] == "true") ? "d-none" : "" %>
+    <table class="table table-bordered dataTable <%= dnone %>">
 
         <!-- Header row -->
         <thead>
@@ -68,7 +68,6 @@
         <% end %>
         </tbody>
     </table>
-    <% end %>
 
 
     </div>
