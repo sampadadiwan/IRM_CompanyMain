@@ -4,12 +4,12 @@
     Please click on the link below to login, note this link will expire in 5 mins.
 </p>
 
-<% 
+<%
     @current_entity ||= nil
-    subdomain = @current_entity && !Rails.env.test? ? @current_entity.sub_domain : nil 
+    subdomain = @current_entity && !Rails.env.test? ? @current_entity.sub_domain : nil
     puts "subdomain: #{subdomain}, current_entity: #{@current_entity.id}"
     # https://kukicola.io/posts/signed-urls-with-ruby/
-    signed_id = @user.signed_id(expires_in: 5.minutes)
+    signed_id = @user.signed_id(expires_in: 15.minutes)
 %>
 
 <p class="btn btn-outline-primary">

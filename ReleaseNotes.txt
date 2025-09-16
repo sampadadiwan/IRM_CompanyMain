@@ -1,3 +1,11 @@
+V9.1.06
+#####################################
+b4b029a4e Fixed some sidekiq cron jobs only for production
+288299ba9 Added condensed notes to widgets
+951194cf0 Fixed bug with Value Bridge hide table
+add3a5b3a Added hide_table for value bridge
+
+
 V9.1.05
 #####################################
 c6252199f Schema sync
