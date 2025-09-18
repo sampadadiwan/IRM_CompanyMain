@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_17_080716) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_18_132336) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1283,6 +1283,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_17_080716) do
     t.integer "customization_flags", default: 0
     t.bigint "root_folder_id"
     t.integer "primary_region_id"
+    t.string "tracking_currency", limit: 4
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
     t.index ["pan"], name: "index_entities_on_pan"

@@ -268,7 +268,6 @@ class KycDocGenerator
     portfolio_company_entries_map = {}
 
     raes.group_by { |ae| [ae.name, ae.parent] }.each do |ae_name_investor_name, aes|
-
       ae_key = ae_name_investor_name[0].strip.parameterize.underscore
       portfolio_company = ae_name_investor_name[1]
       portfolio_company_name = portfolio_company.investor_name

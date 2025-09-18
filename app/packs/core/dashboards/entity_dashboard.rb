@@ -29,6 +29,7 @@ class EntityDashboard < Administrate::BaseDashboard
     activity_details_required_for_na: Field::BooleanEmoji,
     entity_type: Field::Select.with_options(collection: Entity::TYPES),
     currency: Field::Select.with_options(collection: ENV["CURRENCY"].split(",")),
+    tracking_currency: Field::Select.with_options(collection: ENV["CURRENCY"].split(",")),
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
@@ -66,6 +67,7 @@ class EntityDashboard < Administrate::BaseDashboard
     updated_at
     active
     currency
+    tracking_currency
     entity_type
     created_by
     investor_categories
@@ -87,6 +89,7 @@ class EntityDashboard < Administrate::BaseDashboard
     sub_domain
     url
     currency
+    tracking_currency
     category
     active
     entity_type

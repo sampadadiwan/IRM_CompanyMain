@@ -123,7 +123,6 @@ class ValueBridgeService
 
     # If MOIC then divide each number by the Entry
 
-
     bridge
   end
 end
