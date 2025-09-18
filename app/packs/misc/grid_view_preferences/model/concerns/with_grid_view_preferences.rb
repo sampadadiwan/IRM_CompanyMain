@@ -16,7 +16,7 @@ module WithGridViewPreferences
     # Memoizes and retrieves selected columns ordered by sequence
     # Converts preferences into a hash with label/name as key and key as value
     @selected_columns ||= grid_view_preferences.order(:sequence)
-                                               .to_h { |preference| [preference.label.presence || preference.name, preference.key] }
+                                               .to_h { |preference| [preference.name_with_alignment, preference.key_with_alignment] }
 
     # Fallback to standard columns if no preferences are found
     @selected_columns ||= model::STANDARD_COLUMNS.reject { |k, _| k.blank? }

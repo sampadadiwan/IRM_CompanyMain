@@ -159,6 +159,6 @@ class GridViewPreferencesController < ApplicationController
   end
 
   def grid_view_preference_params
-    params.require(:grid_view_preference).permit(:name, :key, :data_type, :label, :selected, :sequence, :derived_field)
+    params.require(:grid_view_preference).permit(:name, :key, :data_type, :label, :selected, :sequence, :derived_field, :alignment)
   end
 end

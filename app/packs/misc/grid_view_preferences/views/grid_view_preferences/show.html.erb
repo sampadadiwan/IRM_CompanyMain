@@ -12,14 +12,14 @@
       <tr>
         <td>DataType</td>
         <td>
-          <% 
+          <%
             data_type = if @grid_view_preference.data_type.present?
                           @grid_view_preference.data_type
                         elsif @grid_view_preference.key.include?("custom_fields.")
                           "String"
                         else
                           @grid_view_preference.owner.name.constantize.columns_hash[@grid_view_preference.key]&.type.to_s.capitalize
-                        end 
+                        end
           %>
           <%= data_type %>
         </td>
@@ -33,6 +33,11 @@
       <tr>
         <td>Sequence</td>
         <td><%= @grid_view_preference.sequence %></td>
+      </tr>
+
+      <tr>
+        <td>Alignment</td>
+        <td><%= @grid_view_preference.alignment %></td>
       </tr>
 
       <tr>

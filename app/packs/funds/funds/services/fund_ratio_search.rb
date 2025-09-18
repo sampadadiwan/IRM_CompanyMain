@@ -1,6 +1,7 @@
 class FundRatioSearch
   def self.perform(fund_ratios, current_user, params)
     fund_ratios = fund_ratios.where(id: search_ids(params, current_user)) if params[:search] && params[:search][:value].present?
+    fund_ratios = fund_ratios.where(end_date: (Time.zone.today - params[:months].to_i.months)..) if params[:months].present? && params[:months].to_i.positive?
     fund_ratios
   end
 

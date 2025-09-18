@@ -7,6 +7,7 @@ class GridViewPreference < ApplicationRecord
 
   # Validations
   validates :key, presence: true
+  validates :alignment, length: { maximum: 10 }, allow_blank: true
 
   # Callbacks
   after_save :touch_entity
@@ -58,6 +59,22 @@ class GridViewPreference < ApplicationRecord
         # If the model is not found or any other error occurs, fallback to the default data type
         DEFAULT_DATA_TYPE
       end
+    end
+  end
+
+  def name_with_alignment
+    if alignment.present?
+      "#{label.presence || name}; #{alignment}"
+    else
+      label.presence || name
+    end
+  end
+
+  def key_with_alignment
+    if alignment.present?
+      "#{key}; #{alignment}"
+    else
+      key
     end
   end
 
