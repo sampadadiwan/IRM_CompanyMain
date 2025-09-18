@@ -4,16 +4,16 @@
 
     <tbody>
         <% @records.each do |record| %>
-        <%= render "#{@partial_base_path}/#{@partial_name}", 
-                    "#{@model.model_name.element}": record.decorate, 
-                    columns: @ransack_table_header.columns %>
+        <%= render "#{@partial_base_path}/#{@partial_name}",
+                    "#{@model.model_name.element}": record.decorate,
+                    columns: @ransack_table_header.columns, actions_column: @ransack_table_header.actions_column %>
         <% end %>
     </tbody>
     </table>
 
     <% if @records.present? && @pagy %>
         <% if @pagy.is_a?(Pagy::Countless)  %>
-            <div class="d-flex justify-content-between align-items-center">                
+            <div class="d-flex justify-content-between align-items-center">
                 <span>Page <%= @pagy.page %></span>  <%# optional current page label %>
                 <%= raw pagy_bootstrap_nav(@pagy, size: 0, anchor_string: %(data-turbo-frame="#{@turbo_frame}" data-remote="true")) %>
             </div>
@@ -24,4 +24,4 @@
             </div>
         <% end %>
     <% end %>
-</div>  
+</div>
