@@ -1,5 +1,6 @@
 <% @columns.each do |column_name, attribute| %>
-    <td>
+    <% attribute, css_class = attribute.split(";").map(&:strip) %>
+    <td class="<%= css_class %>">
       <% if attribute.start_with?("custom_fields.") %>
         <%= @model.json_fields[attribute.gsub("custom_fields.", "")] %>
       <% else %>

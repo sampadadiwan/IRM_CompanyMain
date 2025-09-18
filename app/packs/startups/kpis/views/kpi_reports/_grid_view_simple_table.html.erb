@@ -1,5 +1,5 @@
 <div class="table-responsive" data-controller="datatable">
-    <table id="kpi_reports_grid" class="table table-bordered table-striped dataTable table-grey" data-controller="row-toggle">
+    <table id="kpi_reports_grid" class="table table-bordered table-striped dataTable table-grey numberTable" data-controller="row-toggle">
         <thead>
             <tr>
                 <th></th>
@@ -26,14 +26,14 @@
             <% investor_kpi_mappings.each do |ikm| %>
                 <% row_class = ikm.parent_id.blank? ? 'parent' : 'child' %>
                 <tr class="<%= row_class %>">
-                    <td data-action="click->row-toggle#toggle" data-row-toggle-target="control">
+                    <td data-action="click->row-toggle#toggle" data-row-toggle-target="control" class="text_col">
                         <% if ikm.parent_id.present? %>
                             &nbsp;&nbsp;
-                            <i class="ti ti-chevron-right"></i>
+                            <i class="">&nbsp;&nbsp;</i>
                         <% end %>
                         <%= ikm.standard_kpi_name %>
                         <% if ikm.child_count > 0 %>
-                            <span class="expand">+</span>
+                            <span class="expand">></span>
                         <% end %>
                     </td>
 
@@ -47,9 +47,14 @@
 
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
-                        <td class="value_<%=kpi&.id%>">
+
+                        <td id="value_<%=kpi&.id%>" class="<%= (kpi && kpi.value.negative?) ? 'text-danger' : nil %>">
                             <% if kpi %>
-                                <%= display_kpi(kpi, ikm, params: params) %>
+                                <% if kpi.value.negative? %>
+                                    (<%= display_kpi(kpi, ikm, params: params) %>)
+                                <% else %>
+                                    <%= display_kpi(kpi, ikm, params: params) %>
+                                <% end %>
                             <% else %>
                                 N/A
                             <% end %>

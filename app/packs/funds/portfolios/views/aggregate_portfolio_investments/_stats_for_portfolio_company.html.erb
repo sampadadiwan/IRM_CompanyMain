@@ -2,7 +2,13 @@
 <% if portfolio_company %>
   <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company]), expires_in: 5.day) do %>
     <%
-      target_currency = portfolio_company.entity.currency
+
+      if tracking_currency.present? && portfolio_company.entity.tracking_currency.present?
+        target_currency = portfolio_company.entity.tracking_currency
+      else
+        target_currency = portfolio_company.entity.currency
+      end
+
       params[:force_units] = force_units
       fields ||= []
 

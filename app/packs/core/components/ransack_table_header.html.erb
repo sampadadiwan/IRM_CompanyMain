@@ -1,7 +1,8 @@
 <thead>
   <tr>
     <% @columns.each do |column_name, attribute| %>
-      <th>
+      <% column_name, css_class = column_name.split(";").map(&:strip) %>
+      <th class="<%= css_class %>">
         <% if attribute.present? && !attribute.starts_with?("custom_field") %>
           <%= sortable_header @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
         <% else %>
@@ -9,8 +10,11 @@
         <% end %>
       </th>
     <% end %>
+
+    <% if @actions_column %>
     <th>
       <!-- Actions -->
     </th>
+    <% end %>
   </tr>
 </thead>

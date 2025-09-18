@@ -4,12 +4,15 @@
     investor_kpi_mappings = investor_kpi_mappings.select{|ikm| categories.include?(ikm.category&.downcase)}
   end
   grouped_mappings = investor_kpi_mappings.group_by(&:category)
+
+
 %>
 
 <% grouped_mappings.each do |category, mappings| %>
+  <% title = "#{category}: #{params[:period]}" %>
   <div class="card kpi-category-section">
     <div class="card-header">
-      <h3 class="card-title"><%= category %>: <%= params[:period] %></h3>
+      <h3 class="card-title"><%= title %></h3>
     </div>
     <div class="card-body">
       <%= render 'grid_view_simple_table', kpi_reports: kpi_reports, investor_kpi_mappings: mappings %>

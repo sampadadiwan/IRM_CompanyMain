@@ -14,7 +14,7 @@
 
   <%= form.hidden_field :owner_type, value: grid_view_preference.owner_type, class: "form-control" %>
   <%= form.hidden_field :owner_id, value: grid_view_preference.owner_id, class: "form-control" %>
-  <%= form.hidden_field :derived_field, value: grid_view_preference.derived_field, class: "form-control" 
+  <%= form.hidden_field :derived_field, value: grid_view_preference.derived_field, class: "form-control"
   %>
 
   <% if grid_view_preference.new_record? || grid_view_preference.derived_field %>
@@ -38,6 +38,11 @@
   <div class="form-group">
     <%= form.label :sequence, "Sequence" %>
     <%= form.number_field :sequence, class: "form-control", min: 1 %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :alignment, "Alignment", class: "col-sm-2 col-form-label" %>
+    <%= form.text_field :alignment, class: "form-control", placeholder: "e.g. text-start, text-center, text-end" %>
   </div>
 
   <div class="form-group">

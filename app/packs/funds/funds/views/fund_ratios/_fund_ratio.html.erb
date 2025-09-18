@@ -2,8 +2,10 @@
 
   <%= render RansackTableRow.new(model: fund_ratio, columns:) %>
 
-  <td>
-    <%= link_to  t_common(:show), fund_ratio , {class: "btn btn-outline-primary ti ti-eye"}%>
-  </td>
+  <% if actions_column %>
+    <td>
+      <%= link_to  t_common(:show), fund_ratio , {class: "btn btn-outline-primary ti ti-eye"}%>
+    </td>
+  <% end %>
 
 </tr>

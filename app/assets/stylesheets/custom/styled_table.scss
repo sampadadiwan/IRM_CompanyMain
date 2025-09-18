@@ -23,6 +23,19 @@ table.dataTable>tbody>tr.child ul.dtr-details {
   }
 }
 
+.numberTable {
+  text-align: right;
+  th {
+    font-size: 1.1em;
+    text-align: right !important;
+    padding-right: 16px !important;
+  }
+
+  .text_col {
+    text-align: left;
+  }
+}
+
 table.dataTable {
     border-spacing: 0;
     border-radius: 8px;

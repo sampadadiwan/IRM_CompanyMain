@@ -4,6 +4,7 @@
     if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
         # Create dummy mappings for the startup, which has all the kpi names
         investor_kpi_mappings = investor.investor_kpi_mappings
+        investor_kpi_mappings = investor_kpi_mappings.where(category: params[:categories].split(",")) if params[:categories].present?
     else
         investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, standard_kpi_name: kpi_name, category: "General")}
     end

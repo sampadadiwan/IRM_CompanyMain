@@ -38,10 +38,8 @@ module KpisHelper
   def display_kpi(kpi, investor_kpi_mapping, params: {})
     return if kpi.value.blank?
 
-    value = number_with_delimiter(kpi.value.round(2))
+    number_with_delimiter(kpi.value.round(1))
     percentage_value = (kpi.value.round(4) * 100)
-
-    result = value # Default result
 
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type

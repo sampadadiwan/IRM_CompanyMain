@@ -13,7 +13,7 @@ class FundRatio < ApplicationRecord
     "For" => "owner_name",
     "Type" => "owner_type",
     "Name" => "name",
-    "Display Value" => "display_value",
+    "Display Value;text-end" => "display_value;text-end",
     "On" => "end_date",
     "Scenario" => "scenario"
   }.freeze
@@ -22,7 +22,7 @@ class FundRatio < ApplicationRecord
 
   CONDENSED_COLUMNS = {
     "Name" => "name",
-    "Display Value" => "display_value",
+    "Display Value;text-end" => "display_value;text-end",
     "On" => "end_date",
     "Scenario" => "scenario"
   }.freeze

@@ -62,7 +62,7 @@ module InvestmentStatisticsHelper
         }
       },
       **chart_theme_color
-    }, prefix: "$"
+    }
   end
 
   # 2. Pie Chart for Fully Diluted Holding Across Investors
@@ -103,6 +103,6 @@ module InvestmentStatisticsHelper
         }
       },
       **chart_theme_color
-    }, prefix: "$"
+    }
   end
 end

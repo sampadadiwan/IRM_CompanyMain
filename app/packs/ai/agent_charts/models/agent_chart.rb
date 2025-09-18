@@ -31,18 +31,13 @@ class AgentChart < ApplicationRecord
     raise
   end
 
-
   def get_report_data
     if report_id.present? && report.present?
       # We need to make an api call, but as the user
       u = entity.employees.company_admins.first
-      if u.present?
-
-      else
-        puts "No company admin user found for entity #{entity_id}, cannot fetch report data"
-      end
+      Rails.logger.debug { "No company admin user found for entity #{entity_id}, cannot fetch report data" } if u.blank?
     else
-      puts "No report associated with this chart"
+      Rails.logger.debug "No report associated with this chart"
     end
   end
 

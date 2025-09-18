@@ -70,141 +70,152 @@
          </tr>
 
          <% if current_user && current_user.entity_id == @entity.id %>
-         <tr>
-            <td>
-               Currency
-            </td>
-            <td>
-               <%= @entity.currency %>
-            </td>
-         </tr>
-
-         <tr>
-            <td>
-               Sub Domain
-            </td>
-            <td>
-               <%= @entity.sub_domain %>
-            </td>
-         </tr>
-
-         <tr>
-            <td>
-               Mailbox
-            </td>
-            <td>
-               <%= @entity.mailbox %>
-            </td>
-         </tr>
-
-         <% if @entity.permissions.enable_kycs? %>
             <tr>
                <td>
-                  KYC Document List (Individual)
+                  Currency
                </td>
                <td>
-                  <%= @entity.entity_setting.individual_kyc_doc_list %>
+                  <%= @entity.currency %>
+               </td>
+            </tr>
+
+            <% if @entity.tracking_currency.present? %>
+               <tr>
+                  <td>
+                     Tracking Currency
+                  </td>
+                  <td>
+                     <%= @entity.tracking_currency %>
+                  </td>
+               </tr>
+            <% end %>
+
+            <tr>
+               <td>
+                  Sub Domain
+               </td>
+               <td>
+                  <%= @entity.sub_domain %>
                </td>
             </tr>
 
             <tr>
                <td>
-                  KYC Document List (Non Individual)
+                  Mailbox
                </td>
                <td>
-                  <%= @entity.entity_setting.non_individual_kyc_doc_list %>
+                  <%= @entity.mailbox %>
+               </td>
+            </tr>
+
+            <% if @entity.permissions.enable_kycs? %>
+               <tr>
+                  <td>
+                     KYC Document List (Individual)
+                  </td>
+                  <td>
+                     <%= @entity.entity_setting.individual_kyc_doc_list %>
+                  </td>
+               </tr>
+
+               <tr>
+                  <td>
+                     KYC Document List (Non Individual)
+                  </td>
+                  <td>
+                     <%= @entity.entity_setting.non_individual_kyc_doc_list %>
+                  </td>
+               </tr>
+
+               <tr>
+                  <td>
+                     KYC Documents Note
+                  </td>
+                  <td>
+                     <%= @entity.entity_setting.kyc_docs_note&.html_safe %>
+                  </td>
+               </tr>
+
+            <% end %>
+
+            <% if @entity.permissions.enable_kpis? %>
+               <tr>
+                  <td>
+                     KPI Document List
+                  </td>
+                  <td>
+                     <%= @entity.entity_setting.kpi_doc_list %>
+                  </td>
+               </tr>
+            <% end %>
+
+            <tr>
+               <td>
+                  Sandbox
+               </td>
+               <td>
+                  <%= display_boolean @entity.entity_setting.sandbox %><br>
+                  <small class="text-muted">When sandbox is enabled, all notifications will be directed to sandbox email ids / phone numbers</small>
                </td>
             </tr>
 
             <tr>
                <td>
-                  KYC Documents Note
+                  Sandbox Emails
                </td>
                <td>
-                  <%= @entity.entity_setting.kyc_docs_note&.html_safe %>
+                  <%= @entity.entity_setting.sandbox_emails %>
                </td>
             </tr>
 
-         <% end %>
+            <tr>
+               <td>
+                  cc Emails
+               </td>
+               <td>
+                  <%= @entity.entity_setting.cc %>
+               </td>
+            </tr>
 
-         <% if @entity.permissions.enable_kpis? %>
-         <tr>
-            <td>
-               KPI Document List
-            </td>
-            <td>
-               <%= @entity.entity_setting.kpi_doc_list %>
-            </td>
-         </tr>
-         <% end %>
+            <tr>
+               <td>
+                  Sandbox Numbers
+               </td>
+               <td>
+                  <%= @entity.entity_setting.sandbox_numbers %>
+               </td>
+            </tr>
 
-         <tr>
-            <td>
-               Sandbox
-            </td>
-            <td>
-               <%= display_boolean @entity.entity_setting.sandbox %><br>
-               <small class="text-muted">When sandbox is enabled, all notifications will be directed to sandbox email ids / phone numbers</small>
-            </td>
-         </tr>
+            <tr>
+               <td>
+                  Support Enabled
+               </td>
+               <td>
+                  <%= display_boolean @entity.permissions.enable_support? %>
+               </td>
+            </tr>
 
-         <tr>
-            <td>
-               Sandbox Emails
-            </td>
-            <td>
-               <%= @entity.entity_setting.sandbox_emails %>
-            </td>
-         </tr>
+            <tr>
+               <td>
+                  Access Enabled
+               </td>
+               <td>
+                  <%= "Documents," if @entity.permissions.enable_documents? %>
+                  <%= "Deals," if @entity.permissions.enable_deals? %>
+                  <%= "Funds," if @entity.permissions.enable_funds? %>
+                  <%= "Investment Opportunities," if @entity.permissions.enable_inv_opportunities? %>
+                  <%= "Investments," if @entity.permissions.enable_investments? %>
+                  <%= "Secondary Sale," if @entity.permissions.enable_secondary_sale? %>
+                  <%= "KPIs," if @entity.permissions.enable_kpis? %>
+                  <%= "KYCs," if @entity.permissions.enable_kycs? %>
 
-         <tr>
-            <td>
-               cc Emails
-            </td>
-            <td>
-               <%= @entity.entity_setting.cc %>
-            </td>
-         </tr>
-
-         <tr>
-            <td>
-               Sandbox Numbers
-            </td>
-            <td>
-               <%= @entity.entity_setting.sandbox_numbers %>
-            </td>
-         </tr>
-
-         <tr>
-            <td>
-               Support Enabled
-            </td>
-            <td>
-               <%= display_boolean @entity.permissions.enable_support? %>
-            </td>
-         </tr>
-
-         <tr>
-            <td>
-               Access Enabled
-            </td>
-            <td>
-               <%= "Documents," if @entity.permissions.enable_documents? %>
-               <%= "Deals," if @entity.permissions.enable_deals? %>
-               <%= "Funds," if @entity.permissions.enable_funds? %>
-               <%= "Investment Opportunities," if @entity.permissions.enable_inv_opportunities? %>
-               <%= "Investments," if @entity.permissions.enable_investments? %>
-               <%= "Secondary Sale," if @entity.permissions.enable_secondary_sale? %>
-               <%= "KPIs," if @entity.permissions.enable_kpis? %>
-               <%= "KYCs," if @entity.permissions.enable_kycs? %>
-
-               <%= "Fund Portfolios," if @entity.permissions.enable_fund_portfolios? %>
-               <%= "Units," if @entity.permissions.enable_units? %>
-               <%= "Account Entries," if @entity.permissions.enable_account_entries? %>
-               <%= "Stakeholders," if @entity.permissions.enable_investors? %>
-               <%= "Cap Table," if @entity.permissions.enable_captable? %>
-            </td>
-         </tr>
+                  <%= "Fund Portfolios," if @entity.permissions.enable_fund_portfolios? %>
+                  <%= "Units," if @entity.permissions.enable_units? %>
+                  <%= "Account Entries," if @entity.permissions.enable_account_entries? %>
+                  <%= "Stakeholders," if @entity.permissions.enable_investors? %>
+                  <%= "Cap Table," if @entity.permissions.enable_captable? %>
+               </td>
+            </tr>
 
          <% end %>
 
