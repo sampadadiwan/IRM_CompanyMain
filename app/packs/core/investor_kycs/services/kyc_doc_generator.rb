@@ -262,35 +262,36 @@ class KycDocGenerator
   def portfolio_company_cumulative_folio_entries(investor_kyc, _start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
     return OpenStruct.new if fund_id.blank?
 
-    raes = investor_kyc.account_entries.where(reporting_date: end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).where(parent_type: "Investor").includes(parent: :portfolio_company)
+    raes = investor_kyc.account_entries.for_portfolio_companies.where(reporting_date: end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).includes(:parent)
 
     first_commitment = investor_kyc.capital_commitments.where(fund_id: fund_id).first
     portfolio_company_entries_map = {}
 
-    raes.group_by { |ae| [ae.name, ae.parent.investor_name] }.each do |ae_name_investor_name, aes|
-      portfolio_company_name = ae_name_investor_name[1]
+    raes.group_by { |ae| [ae.name, ae.parent] }.each do |ae_name_investor_name, aes|
+
       ae_key = ae_name_investor_name[0].strip.parameterize.underscore
+      portfolio_company = ae_name_investor_name[1]
+      portfolio_company_name = portfolio_company.investor_name
 
       portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
-      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name, master_fund: portfolio_company.custom_fields.master_fund)
 
       total_amount_cents = aes.sum(&:amount_cents)
       portfolio_company_entry[ae_key] = Money.new(total_amount_cents, first_commitment&.fund&.currency)
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
-    fund_entries = first_commitment&.fund&.account_entries&.cumulative
-                                   &.where(parent_type: %w[Investor],
-                                           entry_type: entry_types,
-                                           reporting_date: end_date, capital_commitment_id: nil, folio_id: nil, fund_id: fund_id)
-                                   &.includes(parent: :portfolio_company)
+    fund_entries = first_commitment&.fund&.account_entries&.for_portfolio_companies&.cumulative
+                                   &.where(entry_type: entry_types, reporting_date: end_date, capital_commitment_id: nil, folio_id: nil, fund_id: fund_id)
+                                   &.includes(:parent)
 
     fund_entries.each do |entry|
-      portfolio_company_name = entry.parent.investor_name
+      portfolio_company = entry.parent
+      portfolio_company_name = portfolio_company.investor_name
       ae_key = "fund_#{entry.name.strip.parameterize.underscore}"
 
       portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
-      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name)
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name, master_fund: portfolio_company.custom_fields.master_fund)
 
       portfolio_company_entry[ae_key] = entry.amount
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry

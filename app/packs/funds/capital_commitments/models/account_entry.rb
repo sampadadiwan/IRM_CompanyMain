@@ -38,6 +38,10 @@ class AccountEntry < ApplicationRecord
     joins("INNER JOIN portfolio_investments ON account_entries.parent_id = portfolio_investments.id AND account_entries.parent_type = 'PortfolioInvestment'")
   }
 
+  scope :for_portfolio_companies, lambda {
+    joins("INNER JOIN investors ON account_entries.parent_id = investors.id AND account_entries.parent_type = 'Investor'")
+  }
+
   # Optional: Add a scope that filters by a field too
   scope :for_api_portfolio_company, lambda { |portfolio_company_id|
     where(aggregate_portfolio_investments: { portfolio_company_id: portfolio_company_id })
@@ -46,6 +50,7 @@ class AccountEntry < ApplicationRecord
   scope :for_pi_portfolio_company, lambda { |portfolio_company_id|
     where(portfolio_investments: { portfolio_company_id: portfolio_company_id })
   }
+
   # Account entries come in 2 flavours, they are either accounting entries or reporting entries.
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
 
