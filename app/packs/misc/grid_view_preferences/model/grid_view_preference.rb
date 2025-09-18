@@ -7,7 +7,7 @@ class GridViewPreference < ApplicationRecord
 
   # Validations
   validates :key, presence: true
-  validates :alignment, length: { maximum: 10 }, allow_blank: true
+  validates :alignment, length: { maximum: 12 }, allow_blank: true
 
   # Callbacks
   after_save :touch_entity

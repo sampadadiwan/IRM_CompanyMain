@@ -1858,7 +1858,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_152532) do
     t.string "data_type"
     t.string "label"
     t.boolean "derived_field"
-    t.string "alignment", limit: 10
+    t.string "alignment", limit: 12
     t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
