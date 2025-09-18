@@ -82,7 +82,7 @@ class PerformanceTableService
   # The KPIs are grouped by metric name and report date for efficient lookup.
   # @return [Hash] A hash where keys are `[metric_name, kpi_date]` and values are Kpi objects.
   def fetch_kpis_for_all_metrics
-    all_metrics = metric_names.presence || @kpi_report.kpis.pluck(:name)
+    all_metrics = @metric_names.presence || @kpi_report.kpis.pluck(:name)
 
     # Fetch KPIs for the current reporting date and up to 23 months prior for TTM calculations
     start_date = (as_of - 23.months).beginning_of_month
