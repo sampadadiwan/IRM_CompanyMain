@@ -1,0 +1,11 @@
+<% span_id = "fund_formula_#{fund_formula.id}_template_text" %>
+<% notice_id = "fund_formula_#{fund_formula.id}_notice" %>
+<span id="<%= span_id %>"><%= fund_formula.template_field_name %></span>
+<i class="far fa-copy text-muted"
+    data-action="click->confirm#copy"
+    data-target="#<%= span_id %>"
+    data-notify="#<%= notice_id %>"
+    data-bs-toggle="tooltip"
+    data-bs-placement="top"
+    title="Copy"></i>
+<span id="<%= notice_id %>" class="copy-notice d-block mt-1 text-success small"></span>

@@ -1,37 +1,6 @@
-<tr id="<%= dom_id fund_formula %>">
-  <td>
-    <%= fund_formula.sequence %>
-  </td>
-  <td>
-    <%= fund_formula.name %>
-  </td>
-  <% if params[:debug].present? %>
-    <td>
-      <%= fund_formula.template_field_name %>
-    </td>
-    <td>
-      <%= fund_formula.execution_time %>
-    </td>
-  <% end %>
-  <td>
-    <%= fund_formula.rule_type %>
-    (<%= fund_formula.rule_for %>) <br>   
-    <% fund_formula.tag_list&.each do |tag| %>
-      <span class="mb-1 badge  bg-primary"><%= link_to tag, fund_formulas_path(fund_id: fund_formula.fund_id, tag:) %></span>
-    <% end %>
-  </td>
-  <td>
-    <%= fund_formula.formula %>
-  </td>
-  <td>
-    <%= fund_formula.entry_type %>
-  </td>
-  <td>
-    <%= display_boolean fund_formula.roll_up %>
-  </td>
-  <td>
-    <%= display_boolean fund_formula.enabled %>
-  </td>
+<tr id="fund_formula_<%=fund_formula.id%>">
+  <%= render RansackTableRow.new(model: fund_formula, columns:) %>
+
   <td>
     <%= link_to  t_common(:show), fund_formula , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_fund_formula_path(fund_formula) , {class: "btn btn-outline-success"} if policy(fund_formula).update? %>

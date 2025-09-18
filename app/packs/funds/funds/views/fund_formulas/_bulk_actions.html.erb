@@ -1,0 +1,28 @@
+<% if params[:q].present? %>
+
+<div class="btn-group">
+<div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle ti ti-checklist" type="button" id="formula_bulk_actions"
+            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Bulk Actions
+    </button>
+
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+    <% msg = "This will Enable each formula in the search results (including results on other pages). Proceed?" %>
+    <%= button_to "Enable",
+    bulk_actions_fund_formulas_path("bulk_action": "Enable", q: params.to_unsafe_h[:q], fund_id: params[:fund_id], all: true),
+    class: "dropdown-item ti ti-check", form_class: "w-100",
+    data: {msg:, action: "click->confirm#popup", method: :post}  %>
+
+    <% msg = "This will Disable each formula in the search results (including results on other pages). Proceed?" %>
+    <%= button_to "Disable",
+    bulk_actions_fund_formulas_path("bulk_action": "Disable", q: params.to_unsafe_h[:q], fund_id: params[:fund_id], all: true),
+    class: "dropdown-item ti ti-x", form_class: "w-100",
+    data: {msg:, action: "click->confirm#popup", method: :post}  %>
+
+    </div>
+</div>
+</div>
+
+<% end %>

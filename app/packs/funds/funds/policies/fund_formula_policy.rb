@@ -28,6 +28,10 @@ class FundFormulaPolicy < FundBasePolicy
     update?
   end
 
+  def generate_ai_description?
+    update?
+  end
+
   def generate_ai_descriptions?
     user.enable_funds || support?
   end

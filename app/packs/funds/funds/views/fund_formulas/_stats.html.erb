@@ -1,11 +1,11 @@
   <% colors = ["success", "warning", "danger", "info"].freeze %>
 
   <% cards_data = [
-    { path: fund_formulas_path(fund_id:), stat: @fund_formulas.count, subtitle: "All", progress_bar_color: "success" },
-    { path: fund_formulas_path(fund_id:, rule_for: 'accounting'), stat: @fund_formulas.accounting.count, subtitle: "Accounting", progress_bar_color: "warning"},
-    { path: fund_formulas_path(fund_id:, rule_for: 'reporting'), stat: @fund_formulas.reporting.count, subtitle: "Reporting", progress_bar_color: "danger"},
-    { path: fund_formulas_path(fund_id:, enabled: true), stat: @fund_formulas.enabled.count, subtitle: "Enabled", progress_bar_color: "success"},
-    { path: fund_formulas_path(fund_id:, enabled: false), stat: @fund_formulas.disabled.count, subtitle: "Disabled", progress_bar_color: "warning"}
+    { path: fund_formulas_path(fund_id:), stat: @fund_formulas_for_stats.count, subtitle: "All", progress_bar_color: "success" },
+    { path: fund_formulas_path(fund_id:, rule_for: 'accounting'), stat: @fund_formulas_for_stats.accounting.count, subtitle: "Accounting", progress_bar_color: "warning"},
+    { path: fund_formulas_path(fund_id:, rule_for: 'reporting'), stat: @fund_formulas_for_stats.reporting.count, subtitle: "Reporting", progress_bar_color: "danger"},
+    { path: fund_formulas_path(fund_id:, enabled: true), stat: @fund_formulas_for_stats.enabled.count, subtitle: "Enabled", progress_bar_color: "success"},
+    { path: fund_formulas_path(fund_id:, enabled: false), stat: @fund_formulas_for_stats.disabled.count, subtitle: "Disabled", progress_bar_color: "warning"}
   ] %>
 
   <div class="row">

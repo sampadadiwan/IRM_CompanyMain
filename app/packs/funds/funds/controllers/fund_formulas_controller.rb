@@ -1,6 +1,6 @@
 class FundFormulasController < ApplicationController
-  before_action :set_fund_formula, only: %i[show edit update destroy]
-  after_action :verify_authorized, except: %i[index enable_formulas generate_formula]
+  before_action :set_fund_formula, only: %i[show edit update destroy generate_ai_description]
+  after_action :verify_authorized, except: %i[index enable_formulas generate_formula bulk_actions]
 
   # GET /fund_formulas or /fund_formulas.json
   def index
@@ -13,15 +13,28 @@ class FundFormulasController < ApplicationController
   end
 
   def fetch_rows
-    @fund_formulas = policy_scope(FundFormula).includes(:fund)
+    @q = FundFormula.ransack(params[:q])
+    @fund_formulas = policy_scope(@q.result).includes(:fund)
+
+    @fund_formulas = FundFormulaSearch.perform(@fund_formulas, current_user, params)
     @fund_formulas = @fund_formulas.merge(FundFormula.with_tags([params[:tag]])) if params[:tag].present?
     @fund_formulas = @fund_formulas.templates if params[:template].present? && params[:template] == 'true'
-
-    @fund_formulas = @fund_formulas.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_formulas = @fund_formulas.where(enabled: true) if params[:enabled].present? && params[:enabled] == 'true'
     @fund_formulas = @fund_formulas.where(enabled: false) if params[:enabled].present? && params[:enabled] == 'false'
-    @fund_formulas = @fund_formulas.where(rule_for: params[:rule_for]) if params[:rule_for].present?
+
+    @fund_formulas = filter_params(
+      @fund_formulas,
+      :import_upload_id,
+      :fund_id,
+      :rule_for
+    )
+
     @fund_formulas = @fund_formulas.order(:fund_id, sequence: :asc)
+    @fund_formulas_for_stats = @fund_formulas
+    params[:per_page] ||= 500
+    @pagy, @fund_formulas = pagy(@fund_formulas, limit: params[:per_page]) if params[:all].blank?
+
+    @fund_formulas
   end
 
   # GET /fund_formulas/1 or /fund_formulas/1.json
@@ -81,18 +94,24 @@ class FundFormulasController < ApplicationController
     end
   end
 
-  def generate_ai_descriptions
-    authorize(FundFormula)
-    fund = Fund.find_by(id: params[:fund_id])
-    if fund
-      GenerateAiDescriptionsJob.perform_later(fund.id, current_user.id)
+  def generate_ai_description
+    authorize(@fund_formula)
+    GenerateAiDescriptionsJob.perform_later([@fund_formula.id], current_user.id)
 
-      respond_to do |format|
-        format.html { redirect_to fund_formulas_path(fund_id: fund.id), notice: "AI descriptions generation enqueued for #{fund.name}" }
-        format.json { head :no_content }
-      end
-    else
-      redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund not found with id #{params[:fund_id]}"
+    respond_to do |format|
+      format.html { redirect_to fund_formula_path(@fund_formula), notice: "AI description generation enqueued for #{@fund_formula.name}" }
+      format.json { head :no_content }
+    end
+  end
+
+  def generate_ai_descriptions
+    fetch_rows
+    authorize(FundFormula)
+    GenerateAiDescriptionsJob.perform_later(@fund_formulas.pluck(:id), current_user.id)
+
+    respond_to do |format|
+      format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "AI description generation enqueued for #{@fund_formulas.count} formulas" }
+      format.json { head :no_content }
     end
   end
 

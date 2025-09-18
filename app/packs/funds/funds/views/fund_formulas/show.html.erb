@@ -64,8 +64,8 @@
       <%= @fund_formula.tag_list %>
     </td>
   </tr>
-  
-  
+
+
   <% if @fund_formula.entry_type.present? %>
   <tr>
     <td>
@@ -85,7 +85,7 @@
       <%= @fund_formula.sequence %>
     </td>
   </tr>
-  
+
   <tr>
     <td>
       AI Description
@@ -131,18 +131,19 @@
 </table>
 
 <div>
-  <%= link_to  t_common(:edit), edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %> 
-  <%= button_to t_common(:delete), @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %> 
+  <%= link_to  t_common(:edit), edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %>
+  <%= button_to t_common(:delete), @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %>
+  <%= link_to "Generate AI Description", generate_ai_description_fund_formula_path(@fund_formula), {class: "btn btn-outline-info ti ti-robot-face"} if policy(@fund_formula).generate_ai_description? %>
   <% if policy(@fund_formula).enable_formulas? %>
     <div class="btn-group">
       <div class="dropdown">
         <% enabled = @fund_formula.enabled ? "Enabled" : "Disabled" %>
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <%= enabled %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        
+
         <% if @fund_formula.enabled %>
           <%= button_to "Disable", fund_formula_path(@fund_formula), method: :patch, params: { fund_formula: { enabled: false } }, class: "dropdown-item" %>
         <% else %>

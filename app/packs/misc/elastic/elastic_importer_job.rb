@@ -25,6 +25,7 @@ class ElasticImporterJob < ApplicationJob
     AggregatePortfolioInvestmentIndex.import
     PortfolioInvestmentIndex.import
     KpiReportIndex.import
+    FundFormulaIndex.import
   end
 
   def reset
@@ -51,6 +52,7 @@ class ElasticImporterJob < ApplicationJob
     AggregatePortfolioInvestmentIndex.reset!
     PortfolioInvestmentIndex.reset!
     KpiReportIndex.reset!
+    FundFormulaIndex.reset!
   end
 
   def create
@@ -77,5 +79,6 @@ class ElasticImporterJob < ApplicationJob
     AggregatePortfolioInvestmentIndex.create
     PortfolioInvestmentIndex.create
     KpiReportIndex.create
+    FundFormulaIndex.create
   end
 end

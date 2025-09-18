@@ -1,3 +1,4 @@
+<% import_upload_id ||= params[:import_upload_id] || nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Formulas</h1>
 
@@ -5,13 +6,13 @@
     <span>
       <%= link_to "New Fund Formula", new_fund_formula_path("fund_formula[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary"}  if policy(FundFormula.new(fund_id: params[:fund_id])).create? %>
 
-      <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id], run_allocations: true), 
-                      class: "btn btn-outline-success ti ti-run"  %> 
-      
+      <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id], run_allocations: true),
+                      class: "btn btn-outline-success ti ti-run"  %>
+
       <%= link_to "Generate AI Descriptions", generate_ai_descriptions_fund_formulas_path(fund_id: params[:fund_id]), {class: "btn btn-outline-info ti ti-robot-face"} if params[:fund_id].present? && policy(FundFormula).generate_ai_descriptions? %>
 
-      <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx), 
-                      class: "btn btn-outline-success ti ti-download"  %>      
+      <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx),
+                      class: "btn btn-outline-success ti ti-download"  %>
 
 
       <%= link_to "Upload",
@@ -20,67 +21,41 @@
                     "import_upload[owner_type]": "Fund",
                     "import_upload[import_type]": "FundFormula",
                     "sample_upload": "FUND_FORMULA_SAMPLE"),
-                    { class: "btn btn-outline-primary ti ti-upload"}  if current_user.support? %>                 
+                    { class: "btn btn-outline-primary ti ti-upload"}  if current_user.support? %>
 
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle ti ti-checks" type="button" 
+          <button class="btn btn-outline-primary dropdown-toggle ti ti-checks" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Enable All
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          
+
           <%= button_to "Enable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: true, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-checks" %>
           <%= button_to "Disable All", enable_formulas_fund_formulas_path, method: :patch, params: { enable: false, fund_id: params[:fund_id] }, class: "dropdown-item ti ti-copy-x" %>
+          <%= link_to "Filter", fund_formulas_path(fund_id: params[:fund_id], q: ransack_query_params(:fund_id, :eq, params[:fund_id])), method: :patch, params: {fund_id: params[:fund_id] }, class: "dropdown-item ti ti-filter" %>
+
           </div>
         </div>
       </div>
+
+      <%= render "fund_formulas/bulk_actions" %>
+
     </span>
   <% end %>
 
 </div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="fund_formulas" class="table table-bordered dataTable jqDataTable" data-responsive="false">
-    <thead>
-      <tr>
-        <th>
-          Sequence
-        </th>
-        <th>
-          Name
-        </th>
-        <% if params[:debug].present? %>
-          <th>
-            Template
-          </th>
-          <th>
-            Execution (ms)
-          </th>
-        <% end %>
-        <th>
-          For
-        </th>
-        <th>
-          Formula
-        </th>
-        <th>
-          Entry Type
-        </th>
-        <th>
-          Roll Up
-        </th>
-        <th>
-          Enabled
-        </th>
-        
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% fund_formulas.each do |fund_formula| %>
-        <%= render fund_formula %>
-      <% end %>
-    </tbody>
-  </table>
+
+<%  fund_formulas_frame = "fund_formulas_frame"
+    default_columns_map = if params[:debug].present?
+            FundFormula::DEBUG_COLUMNS
+          else
+            FundFormula::STANDARD_COLUMNS
+          end
+
+
+%>
+<%=render SearchComponent.new(data_source: fund_formulas_path(params: params.to_unsafe_h, import_upload_id:), turbo_frame: fund_formulas_frame) %>
+<div class="table-responsive">
+  <%= render RansackTable.new(FundFormula, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: fund_formulas, turbo_frame: fund_formulas_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>

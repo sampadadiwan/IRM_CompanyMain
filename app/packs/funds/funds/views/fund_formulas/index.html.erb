@@ -1,3 +1,5 @@
+<%= render "/layouts/filter", associations: [:fund], hidden_fields: {fund_id: params[:fund_id]} %>
+
 <%= render "/fund_formulas/stats", fund_id: params[:fund_id] %>
 
 <%= render "/fund_formulas/index", fund_formulas: @fund_formulas %>

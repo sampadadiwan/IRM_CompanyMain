@@ -5,20 +5,29 @@
 class GenerateAiDescriptionsJob < ApplicationJob
   queue_as :default
 
-  # @param fund_id [Integer] The ID of the fund whose formulas need descriptions.
+  # @param fund_formula_ids [Array] The IDs of the fund formulas that need descriptions.
   # @param user_id [Integer, nil] The ID of the user who initiated the job, for notifications.
-  def perform(fund_id, user_id = nil)
+  def perform(fund_formula_ids, user_id = nil)
     Chewy.strategy(:sidekiq) do
-      fund = Fund.find_by(id: fund_id)
-      raise "Fund with ID #{fund_id} not found." unless fund
+      formulas = FundFormula.where(id: fund_formula_ids).order(sequence: :asc)
+      formulas_wo_descriptions = formulas.without_ai_description
+      # For multiple formulas, only process those without an AI description
+      formulas = formulas_wo_descriptions if formulas.size > 1
 
-      notify_user("🔍 Generating AI Descriptions for formulas under #{fund.name}", :info, user_id)
+      # Show proper notification
+      if formulas.empty?
+        msg = "No Formulas found without descriptions"
+        notify_user(msg, :info, user_id)
+        Rails.logger.info msg
+      else
+        msg = "Generating AI Descriptions for #{formulas.count} formulas"
+        notify_user(msg, :info, user_id)
+      end
 
       # Process each formulas that requires an AI description.
-      formulas = fund.fund_formulas.without_ai_description.order(sequence: :asc)
       process_formulas(formulas, user_id)
 
-      notify_user("✅ AI Descriptions generation completed for #{formulas.size} formulas under #{fund.name}", :success, user_id)
+      notify_user("✅ AI Descriptions generation completed for #{formulas.size} formulas", :success, user_id)
     end
   end
 
@@ -29,17 +38,24 @@ class GenerateAiDescriptionsJob < ApplicationJob
   # @param user_id [Integer, nil] The user to notify of progress and errors.
   def process_formulas(formulas, user_id)
     formulas.each do |formula|
-      notify_user("🧠 Generating AI description for formula #{formula.name}", :info, user_id)
-
-      description = FundFormulaExplainer.explain(formula)
-      formula.update!(ai_description: description)
-      Rails.logger.info "✅ Updated formula #{formula.name}"
-    rescue StandardError => e
-      error_msg = "❌ Error updating formula #{formula.id}: #{e.message}"
-      notify_user(error_msg, :error, user_id)
-      # Re-raise to allow the job to fail and be retried.
-      raise
+      process_formula(formula, user_id)
     end
+  end
+
+  # Processes a single fund formula to generate its AI description.
+  # @param formula [FundFormula] The formula to process.
+  # @param user_id [Integer, nil] The user to notify of progress and errors
+  def process_formula(formula, user_id)
+    notify_user("🧠 Generating AI description for formula #{formula.name}", :info, user_id)
+
+    description = FundFormulaExplainer.explain(formula)
+    formula.update!(ai_description: description)
+    Rails.logger.info "✅ Updated formula #{formula.name}"
+  rescue StandardError => e
+    error_msg = "❌ Error updating formula #{formula.id}: #{e.message}"
+    notify_user(error_msg, :error, user_id)
+    # Re-raise to allow the job to fail and be retried.
+    raise
   end
 
   # Sends a notification to the user and logs the message.

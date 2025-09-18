@@ -1,0 +1,5 @@
+<%= fund_formula.rule_type %>
+(<%= fund_formula.rule_for %>) <br>
+<% fund_formula.tag_list&.each do |tag| %>
+    <span class="mb-1 badge  bg-primary"><%= link_to tag, fund_formulas_path(fund_id: fund_formula.fund_id, tag:) %></span>
+<% end %>
