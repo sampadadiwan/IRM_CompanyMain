@@ -1,0 +1,83 @@
+<%= render FormCard.new(title: "#{@agent_chart}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Title
+      </td>
+      <td>
+        <%= @agent_chart.title %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Prompt
+      </td>
+      <td>
+        <%= @agent_chart.prompt %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Raw Data
+      </td>
+      <td>
+        <%= @agent_chart.raw_data %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Document Ids
+      </td>
+      <td>
+        <%= @agent_chart.document_ids %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Spec
+      </td>
+      <td>
+        <%= @agent_chart.spec %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= @agent_chart.status&.humanize %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Error
+      </td>
+      <td>
+        <%= @agent_chart.error %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@agent_chart).update? %>
+      <%= link_to "Edit", edit_agent_chart_path(@agent_chart), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Regenerate", regenerate_agent_chart_path(@agent_chart), method: :post, class: "btn btn-outline-secondary", data: {action: "click->confirm#popup", msg: "Are you sure you want to regenerate the chart spec?", method: :post } %>
+      <%= button_to "Delete", @agent_chart, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>
+
+
+<% if @agent_chart.spec.present? %>
+  <%= render FormCard.new(title: @agent_chart.title) do %>
+    <div data-controller="chart-renderer"
+         data-chart-renderer-spec-value='<%= @agent_chart.spec.to_json %>'
+         style="width: 100%; margin: 2rem 0;">
+      <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+    </div>
+  <% end %>
+<% else %>
+  <div class="alert alert-info" style="margin-top:1rem;">
+    No chart spec saved yet for this record. Generate one:
+    <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!</code>
+  </div>
+<% end %>

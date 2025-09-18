@@ -120,6 +120,10 @@ class ValueBridgeService
       prev_valuation = valuation
     end
     bridge["Exit"] = @analysis_date_valuation
+
+    # If MOIC then divide each number by the Entry
+
+
     bridge
   end
 end

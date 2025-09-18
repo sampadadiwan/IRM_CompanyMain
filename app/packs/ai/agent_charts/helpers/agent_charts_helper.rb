@@ -1,0 +1,2 @@
+module AgentChartsHelper
+end

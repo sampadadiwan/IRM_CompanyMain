@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resources :agent_charts do
+    post 'regenerate', on: :member
+  end
   resources :blogs
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'

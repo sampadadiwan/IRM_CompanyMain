@@ -24,6 +24,7 @@
       income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
         ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, as_of_date, entity_id) || 0
       end
+      sold_plus_fmv_cents = sold_amount_cents + fmv_cents
     %>
 
     <%
@@ -33,6 +34,7 @@
         { path: nil, stat: money_to_currency(Money.new(fmv_cents, target_currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph" },
         { path: nil, stat: money_to_currency(Money.new(cost_of_remaining_cents, target_currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "warning", text_info: "currency-dollar" },
         { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "currency-dollar" },
+        { path: nil, stat: money_to_currency(Money.new(sold_plus_fmv_cents, target_currency), params), subtitle: "Sold + FMV", progress_bar_color: "info", text_info: "graph" }
       ]
       cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }
     %>

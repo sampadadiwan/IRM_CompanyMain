@@ -259,4 +259,5 @@ gem 'ostruct'
 gem 'doorkeeper'
 gem 'doorkeeper-openid_connect'
 gem 'i18n-tasks', group: :development
+gem 'json_schemer'
 gem 'ruby_llm', git: "https://github.com/ausangshukla/ruby_llm.git"

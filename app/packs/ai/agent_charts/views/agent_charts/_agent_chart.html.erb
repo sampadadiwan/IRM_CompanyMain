@@ -1,0 +1,17 @@
+<tr id="<%= dom_id agent_chart %>">
+  <td>
+    <%= agent_chart.title %>
+  </td>
+  <td>
+    <%= agent_chart.prompt %>
+  </td>
+  <td>
+    <%= agent_chart.status&.humanize %>
+  </td>
+  <td>
+    <%= agent_chart.error %>
+  </td>
+  <td>
+    <%= link_to "Show", agent_chart , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

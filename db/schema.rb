@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_14_061211) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_17_080716) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -208,6 +208,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_061211) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_admin_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
+  end
+
+  create_table "agent_charts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "title"
+    t.text "prompt"
+    t.json "raw_data"
+    t.json "spec"
+    t.string "llm_model", limit: 20
+    t.string "status", limit: 10
+    t.text "error"
+    t.bigint "entity_id", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "document_ids"
+    t.integer "report_id"
+    t.index ["entity_id"], name: "index_agent_charts_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
   create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3339,6 +3358,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_061211) do
   add_foreign_key "account_entries_old", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "agent_charts", "entities"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "aggregate_portfolio_investments", "form_types"
