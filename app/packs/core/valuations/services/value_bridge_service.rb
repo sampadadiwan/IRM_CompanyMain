@@ -27,7 +27,7 @@ class ValueBridgeService
 
   attr_accessor :value_bridge_fields, :key_fields
 
-  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields = VALUE_BRIDGE_FIELDS)
+  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields: VALUE_BRIDGE_FIELDS)
     @investment_date_valuation = investment_date_valuation
     @analysis_date_valuation = analysis_date_valuation
     @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS

@@ -204,8 +204,12 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def updated_notification(msg: nil)
     msg ||= "KYC updated for #{full_name}"
-    entity.employees.each do |user|
-      InvestorKycNotifier.with(record: self, entity_id:, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user) unless user.investor_advisor?
+    entity.employees.active.each do |user|
+      if user.enable_kycs && !user.investor_advisor?
+        InvestorKycNotifier.with(record: self, entity_id:, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user)
+      else
+        Rails.logger.debug { "Not sending KYC updated notification to user #{user.id} as they do not have enable_kycs permission or are an investor_advisor" }
+      end
     end
   end
 

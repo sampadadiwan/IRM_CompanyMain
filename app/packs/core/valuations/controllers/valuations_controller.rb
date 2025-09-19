@@ -135,7 +135,7 @@ class ValuationsController < ApplicationController
         @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
         @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
 
-        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, @value_bridge_fields)
+        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields)
         @bridge = @value_bridge_service.compute_bridge
       else
         @bridge = nil
