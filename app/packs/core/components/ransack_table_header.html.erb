@@ -1,7 +1,14 @@
 <thead>
   <tr>
     <% @columns.each do |column_name, attribute| %>
-      <% column_name, css_class = column_name.split(";").map(&:strip) %>
+      <%
+        # We get the text-align css class with the column name separated by a semicolon
+        # e.g. "Name; text-left"
+        column_name, css_class = column_name.split(";").map(&:strip)
+        # We get the attribute to sort by, ignoring any extra info after a semicolon
+        # e.g. "name; IGNORE" =>
+        attribute, ignore = attribute.split(";").map(&:strip)
+      %>
       <th class="<%= css_class %>">
         <% if attribute.present? && !attribute.starts_with?("custom_field") %>
           <%= sortable_header @q, attribute, column_name, data: { turbo_frame: @turbo_frame } %>
