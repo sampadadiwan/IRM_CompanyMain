@@ -27,7 +27,6 @@ class Valuation < ApplicationRecord
   # return all, but keep other default conditions (e.g., deleted_at: nil)
   scope :with_synthetic, -> { unscope(where: :synthetic) }
 
-
   # Validations
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
@@ -45,7 +44,7 @@ class Valuation < ApplicationRecord
   end
 
   def update_owner
-    if (!synthetic && saved_change_to_valuation_cents? ||
+    if ((!synthetic && saved_change_to_valuation_cents?) ||
        saved_change_to_per_share_value_cents? ||
        saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated) && latest?
       owner.valuation_updated(self)
@@ -64,14 +63,12 @@ class Valuation < ApplicationRecord
   # Check if this is the latest valuation
   # TODO - move to an attribute
   def latest?
-    if !synthetic
-      if owner.present?
-        investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
-      else
-        investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
-      end
-    else
+    if synthetic
       false
+    elsif owner.present?
+      investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
+    else
+      investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
     end
   end
 
@@ -80,7 +77,11 @@ class Valuation < ApplicationRecord
   end
 
   def to_extended_s
-    "#{owner} - #{investment_instrument} - #{valuation_date}"
+    if synthetic
+      "#{owner} - #{investment_instrument} - #{valuation_date} (Synthetic)"
+    else
+      "#{owner} - #{investment_instrument} - #{valuation_date}"
+    end
   end
 
   def currency

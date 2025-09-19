@@ -1,6 +1,9 @@
 <tr id="<%= dom_id valuation %>">
   <td>
     <%= link_to valuation.investment_instrument %>
+    <% if valuation.synthetic %>
+      <span class="mb-1 badge rounded-pill  bg-warning-subtle text-warning">Synthetic</span>
+    <% end %>
   </td>
   <td data-order="<%= valuation.valuation_date.strftime('%Y-%m-%d') %>">
     <%= l valuation.valuation_date %>

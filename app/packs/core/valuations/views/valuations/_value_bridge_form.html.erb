@@ -2,7 +2,7 @@
 <%= render FormCard.new(title: "Value Bridge") do %>
   <%= form_with(model: Valuation.new(entity_id: current_user.entity_id), url: value_bridge_valuations_path, method: :get, data: { turbo_frame: "value_bridge_frame" }) do |form| %>
 
-    <% valuations = @portfolio_company.valuations.order(id: :desc).map { |i| [i.to_extended_s, i.id] } %>
+    <% valuations = @portfolio_company.valuations.with_synthetic.order(id: :desc).map { |i| [i.to_extended_s, i.id] } %>
 
     <%= form.hidden_field :portfolio_company_id, value: @portfolio_company.id, name: :portfolio_company_id %>
     <%= form.hidden_field :show_form, value: show_form, name: :show_form %>
