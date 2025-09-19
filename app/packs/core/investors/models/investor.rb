@@ -252,11 +252,15 @@ class Investor < ApplicationRecord
 
   # callback but only for category = Portfolio Company
   def valuation_updated(valuation)
-    # Ensure the portfolio_investments calculate the fmv
-    pis = entity.portfolio_investments.where(portfolio_company_id: id,
-                                             investment_instrument: valuation.investment_instrument)
-    pis.each do |pi|
-      PortfolioInvestmentUpdate.call(portfolio_investment: pi, valuation: valuation)
+    if !valuation.synthetic
+      # Ensure the portfolio_investments calculate the fmv
+      pis = entity.portfolio_investments.where(portfolio_company_id: id,
+                                              investment_instrument: valuation.investment_instrument)
+      pis.each do |pi|
+        PortfolioInvestmentUpdate.call(portfolio_investment: pi, valuation: valuation)
+      end
+    else
+      Rails.logger.debug { "Not updating portfolio investments for synthetic valuation #{valuation.id}" }
     end
   end
 

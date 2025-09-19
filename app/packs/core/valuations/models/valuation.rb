@@ -22,6 +22,13 @@ class Valuation < ApplicationRecord
     joins(:investment_instrument).where(investment_instrument: { name: instrument_name })
   }
 
+  default_scope { where(synthetic: false) }
+
+  # return all, but keep other default conditions (e.g., deleted_at: nil)
+  scope :with_synthetic, -> { unscope(where: :synthetic) }
+
+
+  # Validations
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
   validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type] }
@@ -38,7 +45,7 @@ class Valuation < ApplicationRecord
   end
 
   def update_owner
-    if (saved_change_to_valuation_cents? ||
+    if (!synthetic && saved_change_to_valuation_cents? ||
        saved_change_to_per_share_value_cents? ||
        saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated) && latest?
       owner.valuation_updated(self)
@@ -57,10 +64,14 @@ class Valuation < ApplicationRecord
   # Check if this is the latest valuation
   # TODO - move to an attribute
   def latest?
-    if owner.present?
-      investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
+    if !synthetic
+      if owner.present?
+        investment_instrument.valuations.where(owner: owner).where("valuation_date > ?", valuation_date).empty?
+      else
+        investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
+      end
     else
-      investment_instrument.valuations.where("valuation_date > ?", valuation_date).empty?
+      false
     end
   end
 
