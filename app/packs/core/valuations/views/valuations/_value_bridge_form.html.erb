@@ -8,14 +8,19 @@
     <%= form.hidden_field :show_form, value: show_form, name: :show_form %>
 
     <div class="row align-items-end">
-      <div class="col-md-5">
+      <div class="col-md-4">
         <%= form.label :initial_valuation_id, "Entry", class: "ms-1 form-label" %>
         <%= form.select :initial_valuation_id, valuations, { selected: params[:initial_valuation_id] }, class: "form-select", name: :initial_valuation_id %>
       </div>
 
-      <div class="col-md-5">
+      <div class="col-md-4">
         <%= form.label :final_valuation_id, "Exit", class: "ms-1 form-label" %>
         <%= form.select :final_valuation_id, valuations, { selected: params[:final_valuation_id] }, class: "form-select", name: :final_valuation_id %>
+      </div>
+
+      <div class="col-md-2">
+        <%= form.label :moic, "Moic", class: "ms-1 form-label" %>
+        <%= form.check_box :moic, checked: params[:moic] == "1",  class: "form-check-input", style: "margin-bottom:10px;margin-left:10px;", name: :moic, value: true %>
       </div>
 
       <div class="col-md-1 d-flex align-items-end">

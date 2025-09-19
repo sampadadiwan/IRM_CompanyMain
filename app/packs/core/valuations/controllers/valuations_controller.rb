@@ -134,8 +134,9 @@ class ValuationsController < ApplicationController
         # Get the value bridge fields from the entity setting if they exist
         @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
         @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
+        moic = params[:moic] == "1"
 
-        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields)
+        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields, moic: moic)
         @bridge = @value_bridge_service.compute_bridge
       else
         @bridge = nil

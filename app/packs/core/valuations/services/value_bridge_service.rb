@@ -27,11 +27,12 @@ class ValueBridgeService
 
   attr_accessor :value_bridge_fields, :key_fields
 
-  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields: VALUE_BRIDGE_FIELDS)
+  def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields: VALUE_BRIDGE_FIELDS, moic: false)
     @investment_date_valuation = investment_date_valuation
     @analysis_date_valuation = analysis_date_valuation
     @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
     @key_fields = @value_bridge_fields + KEY_FIELDS
+    @moic = moic
     Rails.logger.debug { "ValueBridgeService: value_bridge_fields = #{@value_bridge_fields}" }
   end
 
@@ -122,6 +123,16 @@ class ValueBridgeService
     bridge["Exit"] = @analysis_date_valuation
 
     # If MOIC then divide each number by the Entry
+    if @moic
+      entry_ev = bridge["Entry"].json_fields["enterprise_value"].to_f
+      bridge.each_value do |valuation|
+        next if entry_ev.zero?
+
+        valuation.json_fields.each do |field, value|
+          valuation.json_fields[field] = (value / entry_ev).round(2) if value.is_a?(Numeric)
+        end
+      end
+    end
 
     bridge
   end
