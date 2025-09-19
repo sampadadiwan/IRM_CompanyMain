@@ -306,7 +306,7 @@ class FundUnitTransferService < Trailblazer::Operation
       new_payment.tracking_reinvestment_with_fees_cents *= transfer_ratio
 
       # Insert without callbacks
-      CapitalDistributionPayment.insert_all([new_payment])
+      CapitalDistributionPayment.insert_all([new_payment.attributes])
 
       payment.json_fields["Transfer ID"] = ctx[:transfer_token]
       payment.json_fields["Orig Gross Payable"] = payment.gross_payable_cents
