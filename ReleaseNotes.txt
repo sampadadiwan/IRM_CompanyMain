@@ -1,3 +1,11 @@
+V9.1.07
+#####################################
+2b534530f Changes for Kedaara UI (#1007)
+a5b653a9b Added portfolio_company.custom_fields.master_fund to KycDocGen
+e1cdac90e Formulas bulk actions 1 (#1003)
+11457383e Gpt graphs (#1006)
+7f3b6e7f9 Changed magick link timeout to 15 mins
+
 V9.1.06
 #####################################
 b4b029a4e Fixed some sidekiq cron jobs only for production
