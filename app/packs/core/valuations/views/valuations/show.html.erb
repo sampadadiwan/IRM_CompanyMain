@@ -61,6 +61,17 @@
     </td>
   </tr>
 
+  <% if @valuation.synthetic %>
+  <tr>
+    <td>
+      Synthetic
+    </td>
+    <td>
+      <%= display_boolean(@valuation.synthetic) %>
+    </td>
+  </tr>
+  <% end %>
+
   <%= display_custom_fields(@valuation) %>
   <tr>
     <td>

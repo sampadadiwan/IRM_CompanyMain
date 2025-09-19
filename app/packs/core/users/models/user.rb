@@ -85,6 +85,7 @@ class User < ApplicationRecord
   scope :company_admins, -> { joins(:roles).where("roles.name =?", "company_admin") }
   scope :not_investor_advisor_roles, -> { where(advisor_entity_id: nil) }
   scope :syncable, -> { where.not(primary_region: [nil, ""]) }
+  scope :active, -> { where(active: true) }
 
   before_create :setup_defaults
   after_create :update_investor_access

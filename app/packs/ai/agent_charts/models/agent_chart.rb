@@ -46,7 +46,7 @@ class AgentChart < ApplicationRecord
   end
 
   def document_ids=(ids)
-    super(ids.is_a?(Array) ? ids.map(&:to_i) : ids.to_s.split(",").map(&:strip).map(&:to_i))
+    super(ids.is_a?(Array) ? ids.map(&:to_i) : ids.to_s.split(",").map { |x| x.strip.to_i }
   end
 
   def self.test(csv_paths:)

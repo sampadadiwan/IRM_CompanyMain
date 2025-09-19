@@ -11,6 +11,8 @@ class InvestorKycMailer < ApplicationMailer
 
   def notify_kyc_updated
     subject = "KYC updated for #{@investor_kyc.full_name}"
+    # Ensure no one gets cc'ed on this cause its sending too many dup emails to the cc folks
+    @cc = nil
     send_mail(subject:)
   end
 

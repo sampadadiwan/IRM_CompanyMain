@@ -14,7 +14,7 @@ class ValuationsController < ApplicationController
       @valuations = policy_scope(Valuation)
     end
 
-    @valuations = @valuations.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @valuations = @valuations.with_synthetic.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @valuations = @valuations.includes(:entity, :investment_instrument)
   end
 
@@ -122,9 +122,9 @@ class ValuationsController < ApplicationController
 
   def value_bridge
     if params[:initial_valuation_id].present? && params[:final_valuation_id].present?
-      @initial_valuation = Valuation.find(params[:initial_valuation_id])
+      @initial_valuation = Valuation.with_synthetic.find(params[:initial_valuation_id])
       authorize(@initial_valuation)
-      @final_valuation = Valuation.find(params[:final_valuation_id])
+      @final_valuation = Valuation.with_synthetic.find(params[:final_valuation_id])
       authorize(@final_valuation)
 
       @portfolio_company = Investor.find(params[:portfolio_company_id])
@@ -134,8 +134,9 @@ class ValuationsController < ApplicationController
         # Get the value bridge fields from the entity setting if they exist
         @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
         @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
+        moic = params[:moic] == "1"
 
-        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, @value_bridge_fields)
+        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields, moic: moic)
         @bridge = @value_bridge_service.compute_bridge
       else
         @bridge = nil
@@ -155,13 +156,13 @@ class ValuationsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_valuation
-    @valuation = Valuation.find(params[:id])
+    @valuation = Valuation.with_synthetic.where(id: params[:id]).first
     authorize @valuation
     @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id), "#{@valuation.owner&.investor_name}": investor_path(@valuation.owner), "#{@valuation}": valuation_path(@valuation) }
   end
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id, :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, properties: {})
+    params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id, :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, :synthetic, properties: {})
   end
 end

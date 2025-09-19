@@ -47,7 +47,7 @@
             <%= t('investor_details_nav.kyc') %>
         </a>
       <% end %>
-      
+
       <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
               data-action="click->tabdetails#loadData"><%= t('investor_details_nav.commitments') %></a>
@@ -66,7 +66,7 @@
           <%= t('investor_details_nav.tasks') %>
       </a>
 
-      
+
 
     <% end %>
 
@@ -92,7 +92,7 @@
         <div id="valuations-tab" class="tab-pane fade in show active">
           <div id="valuations" class="associated_entity">
             <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
-            <%= render "/valuations/index", valuations: Valuation.where(owner: investor).includes(:investment_instrument, :entity, :owner) %>
+            <%= render "/valuations/index", valuations: Valuation.with_synthetic.where(owner: investor).includes(:investment_instrument, :entity, :owner) %>
           </div>
         </div>
 
