@@ -74,9 +74,9 @@
 
 
 <div class="associated_entity">
-  <%= render "/valuations/index", 
-             valuations: @investment_instrument.valuations, 
-             owner_type: "Investor", 
+  <%= render "/valuations/index",
+             valuations: @investment_instrument.valuations.with_synthetic.order(valuation_date: :desc),
+             owner_type: "Investor",
              owner_id: @investment_instrument.portfolio_company_id %>
 </div>
 

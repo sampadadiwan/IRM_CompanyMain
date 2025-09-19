@@ -156,7 +156,7 @@ class ValuationsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_valuation
-    @valuation = Valuation.with_synthetic.where(id: params[:id]).first
+    @valuation = Valuation.with_synthetic.find(params[:id])
     authorize @valuation
     @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id), "#{@valuation.owner&.investor_name}": investor_path(@valuation.owner), "#{@valuation}": valuation_path(@valuation) }
   end
