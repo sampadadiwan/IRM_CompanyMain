@@ -7,7 +7,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
@@ -26,10 +26,10 @@
 
   <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>
   <script src="/modernize/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-  
+
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
-    
+
     <!-- For playing videos in docs -->
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
 
@@ -40,19 +40,18 @@
     <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
-    
+
     <!-- Tracking -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
-    <script src="/js/clarity.js"></script>
 
     <!-- PDFTron -->
     <script src='/lib/webviewer.min.js'></script>
     <script src='/lib/core/webviewer-core.min.js'></script>
     <script src='/lib/core/pdf/PDFNet.js'></script>
-    
+
     <script src="/js/uppy.min.js"></script>
 
     <link href="https://code.highcharts.com/dashboards/css/dashboards.css" rel="stylesheet">
@@ -66,10 +65,10 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.sheetjs.com/xspreadsheet/xlsxspread.min.js"></script>
 
-    
+
      <!-- Include the JS for AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
-    
+
     <!-- Include the core CSS, this is needed by the grid -->
     <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
@@ -81,7 +80,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
 
     <script src="https://cdn.jsdelivr.net/npm/command-pal"></script>
-    
+
   <title>CapHive</title>
 </head>
 
@@ -95,10 +94,10 @@
     <%= render "/layouts/modernize/sidebar_main" %>
 
     <div class="page-wrapper" data-controller="commandpal">
-      
+
       <%= render "/layouts/modernize/topbar" %>
       <%#= render "/layouts/modernize/sidebar_horizontal" %>
-      
+
       <div class="body-wrapper">
         <div class="container-fluid mw-100">
 
@@ -109,11 +108,11 @@
           <%= render "/layouts/accept_terms" if (current_user && !current_user.accept_terms) %>
 
           <span id="alert"></span>
-          
+
           <%= render "/layouts/alerts" %>
           <%= render "/layouts/breadcrumbs" %>
           <%= render HelpSlideOut.new(class_name: "#{controller_path.classify}", action: controller.action_name, id: params[:id], current_user: current_user) %>
-          
+
           <% if params[:audit_trail].present? && params[:id].present? %>
             <!-- Audit Trail of the record with id -->
             <%= render "/layouts/audit" %>
@@ -127,10 +126,10 @@
             <!-- Page Content -->
             <%= yield %>
           <% end %>
-          
+
         </div>
       </div>
-      
+
       <%#= render "/layouts/modernize/theme_chooser" %>
 
     </div>
@@ -138,7 +137,7 @@
     <%= render "/layouts/modernize/searchbar" %>
     <%#= render "/layouts/modernize/sidebar_offcanvas" %>
 
-    <%= render "/layouts/logout_modal" %>    
+    <%= render "/layouts/logout_modal" %>
     <%= render "/layouts/confirm" %>
     <%= render "/layouts/terms" if (current_user && !current_user.accept_terms) %>
 
@@ -151,8 +150,33 @@
   <script src="/modernize/libs/simplebar/dist/simplebar.min.js"></script>
   <script src="/modernize/js/sidebarmenu.js"></script>
   <script src="/modernize/js/widget/ui-card-init.js"></script>
-  
-    
+
+  <% if ENV["CLARITY_CODE"].present? %>
+    <script>
+      (function(c,l,a,r,i,t,y){
+        // keep localhost off, and skip in test envs
+        if ("<%= Rails.env %>" !== "test") {
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          i="<%= ENV["CLARITY_CODE"] %>";
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        }
+      })(window, document, "clarity", "script");
+    </script>
+  <% end %>
+
+  <% if current_user && current_user.entity_id.present? %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (window.clarity) {
+          clarity("set", "entity_id", "<%= current_user.entity_id %>");
+          clarity("set", "entity", "<%= current_user.entity.name %>");
+          clarity("set", "role", "<%= current_user.curr_role %>");
+        }
+      });
+    </script>
+  <% end %>
+
 </body>
 
 </html>
