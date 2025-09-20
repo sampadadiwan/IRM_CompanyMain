@@ -5,17 +5,18 @@ class ValuationsController < ApplicationController
 
   # GET /valuations or /valuations.json
   def index
+    @q = Valuation.with_synthetic.ransack(params[:q])
     if params[:owner_id].present? && params[:owner_type].present?
       # Ensure user is authorized to see the owner
       owner = Object.const_get(params[:owner_type]).send(:find, params[:owner_id])
       authorize(owner, :show?)
-      @valuations = owner.valuations
+      @valuations = @q.result.where(owner: owner)
     else
-      @valuations = policy_scope(Valuation)
+      @valuations = policy_scope(@q.result)
     end
 
-    @valuations = @valuations.with_synthetic.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
-    @valuations = @valuations.includes(:entity, :investment_instrument)
+    @valuations = @valuations.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @valuations = @valuations.includes(:entity, :investment_instrument, :owner)
   end
 
   # GET /valuations/1 or /valuations/1.json

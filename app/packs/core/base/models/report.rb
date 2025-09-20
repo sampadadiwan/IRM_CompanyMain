@@ -25,7 +25,8 @@ class Report < ApplicationRecord
       'Portfolio Investments': "/portfolio_investments?filter=true",
       'Aggregate Portfolio Investments': "/aggregate_portfolio_investments?filter=true",
       Distributions: "/capital_distributions?filter=true",
-      'Distribution Payments': "/capital_distribution_payments?filter=true" }
+      'Distribution Payments': "/capital_distribution_payments?filter=true",
+      Valuations: "/valuations?filter=true" }.sort.to_h
   end
 
   # rubocop:disable Rails/SkipsModelValidations

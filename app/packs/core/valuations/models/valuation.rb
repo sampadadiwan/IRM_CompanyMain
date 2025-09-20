@@ -3,6 +3,8 @@ class Valuation < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
 
+  include RansackerAmounts.new(fields: %w[per_share_value])
+
   STANDARD_COLUMNS = {
     "Name" => "name",
     "Valuation Date" => "valuation_date",
@@ -21,6 +23,28 @@ class Valuation < ApplicationRecord
   scope :by_instrument, lambda { |instrument_name|
     joins(:investment_instrument).where(investment_instrument: { name: instrument_name })
   }
+
+  scope :for_portfolio_companies, lambda {
+    joins("INNER JOIN investors ON valuations.owner_id = investors.id AND valuations.owner_type = 'Investor'")
+  }
+
+  # Ransacker to search by investor name
+  ransacker :portfolio_company_name do |_parent|
+    # Only works when owner_type is 'Investor'
+    Arel.sql <<-SQL.squish
+      (
+        CASE
+          WHEN valuations.owner_type = 'Investor'
+          THEN (
+            SELECT investors.investor_name
+            FROM investors
+            WHERE investors.id = valuations.owner_id
+            LIMIT 1
+          )
+        END
+      )
+    SQL
+  end
 
   default_scope { where(synthetic: false) }
 
@@ -118,5 +142,13 @@ class Valuation < ApplicationRecord
     fields.each do |field|
       ft.form_custom_fields.create(name: field[0], meta_data: field[1], field_type: field[2])
     end
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[portfolio_company_name per_share_value owner_id owner_type synthetic valuation_date].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investment_instrument]
   end
 end

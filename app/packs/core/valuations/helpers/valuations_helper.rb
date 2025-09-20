@@ -1,7 +1,9 @@
 module ValuationsHelper
-  def valuations_chart(entity, owner_id: nil, owner_type: nil)
-    valuations = entity.valuations.includes(:investment_instrument)
-    valuations = valuations.where(owner_id: owner_id, owner_type: owner_type) if owner_id.present? && owner_type.present?
+  def valuations_chart(entity, owner_id: nil, owner_type: nil, valuations: nil)
+    unless valuations
+      valuations = entity.valuations.includes(:investment_instrument)
+      valuations = valuations.where(owner_id: owner_id, owner_type: owner_type) if owner_id.present? && owner_type.present?
+    end
     valuations = valuations.order(valuation_date: :asc)
 
     # Group valuations by investment_instrument name
