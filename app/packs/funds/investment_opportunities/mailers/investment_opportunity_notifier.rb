@@ -12,7 +12,8 @@ class InvestmentOpportunityNotifier < BaseNotifier
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
       investment_opportunity_id: record.id,
-      from_email: record.custom_fields.from_email
+      from_email: record.custom_fields.from_email,
+      investor_id: params[:investor_id]
     }
   end
 

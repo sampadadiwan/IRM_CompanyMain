@@ -1,20 +1,11 @@
-<tr id="<%= dom_id valuation %>">
-  <td>
-    <%= link_to valuation.investment_instrument %>
-    <% if valuation.synthetic %>
-      <span class="mb-1 badge rounded-pill  bg-warning-subtle text-warning">Synthetic</span>
-    <% end %>
-  </td>
-  <td data-order="<%= valuation.valuation_date.strftime('%Y-%m-%d') %>">
-    <%= l valuation.valuation_date %>
-  </td>
-  <td data-order="<%= valuation.per_share_value_cents %>">
-    <%= money_to_currency valuation.per_share_value, params %>
-  </td>
-  <td>
-    <%= valuation.currency %>
-  </td>
-  <td>
-    <%= link_to  t_common(:show) , valuation , {class: "btn btn-outline-primary ti ti-eye" }%>
-  </td>
+<tr id="valuation_<%= valuation.id %>">
+
+  <%= render RansackTableRow.new(model: valuation, columns:) %>
+
+  <% if actions_column %>
+    <td>
+      <%= link_to  t_common(:show), valuation , {class: "btn btn-outline-primary ti ti-eye"}%>
+    </td>
+  <% end %>
+
 </tr>

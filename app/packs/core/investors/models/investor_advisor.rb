@@ -78,7 +78,7 @@ class InvestorAdvisor < ApplicationRecord
 
   after_create :notify_investor_team
   def notify_investor_team
-    entity.employees.each do |employee|
+    entity.employees.active.company_admins.each do |employee|
       InvestorAdvisorNotifier.with(record: self, entity_id:, owner_name:, email_method: :notify_investor_advisor_addition, msg: "Investor Advisor #{user.full_name} has been added").deliver_later(employee)
     end
   end

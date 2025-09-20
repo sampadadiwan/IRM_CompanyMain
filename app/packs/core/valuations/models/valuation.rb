@@ -12,6 +12,8 @@ class Valuation < ApplicationRecord
     "Currency" => "currency"
   }.freeze
 
+  ADDITIONAL_COLUMNS_FROM = ["investment_instrument"].freeze
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   belongs_to :investment_instrument # , optional: true

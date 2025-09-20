@@ -12,6 +12,7 @@ class OfferNotifier < BaseNotifier
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
       offer_id: record.id,
+      investor_id: record.investor_id,
       custom_notification_id: params[:custom_notification_id]
     }
   end

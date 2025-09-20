@@ -2,6 +2,11 @@ class InvestmentInstrument < ApplicationRecord
   include Trackable.new
   include WithCustomField
 
+  STANDARD_COLUMNS = {
+    "Name" => "name",
+    "Currency" => "currency"
+  }.freeze
+
   # SECTORS = ENV["SECTORS"].split(",").sort
   # rubocop:disable Layout/SpaceAfterComma
   TYPES_OF_INVESTEE_COMPANY = ["Company","LLP","AIF","REIT","InvIT","Mutual Fund (MF)","Venture Capital Undertaking","Startup","Trust set up by an Asset Reconstruction Company (ARC)","ARC","Micro enterprise","Small enterprise","Medium enterprise","SPV","Social Enterprise"].freeze

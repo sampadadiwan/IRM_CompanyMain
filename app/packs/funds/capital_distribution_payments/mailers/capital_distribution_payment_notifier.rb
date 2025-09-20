@@ -15,6 +15,7 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
       fund_id: record.fund_id,
       from_email: record.fund.custom_fields.from_email,
       additional_ccs: record.capital_commitment.cc,
+      investor_id: record.investor_id,
       investor_advisor_id: investor_advisor_id(record.investor.investor_entity_id, notification.recipient_id)
     }
   end

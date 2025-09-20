@@ -8,6 +8,7 @@ class InvestorAccessNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       investor_access_id: record.id,
+      investor_id: record.investor_id,
       entity_id: params[:entity_id]
     }
   end

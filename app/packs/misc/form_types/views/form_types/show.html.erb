@@ -12,7 +12,7 @@
     <%= button_to @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: true, msg: "Delete custom form? Note this will not delete the custom data in saved #{@form_type.name}."} do %>
       <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
-    <% if ["Investor", "PortfolioInvestment", "AggregatePortfolioInvestment", "CapitalCommitment", "InvestorKyc", "FundUnitSetting", "CapitalCall", "CapitalRemittance", "FundReport", "FundRatio", "KpiReport", "Offer"].include?(@form_type.name) && policy(@form_type).configure_grids? %>
+    <% if ["Investor", "PortfolioInvestment", "AggregatePortfolioInvestment", "CapitalCommitment", "InvestorKyc", "FundUnitSetting", "CapitalCall", "CapitalRemittance", "FundReport", "FundRatio", "KpiReport", "Offer", "Valuation"].include?(@form_type.name) && policy(@form_type).configure_grids? %>
       <%= link_to configure_grids_grid_view_preferences_path(owner_type: 'FormType', owner_id: @form_type.id), method: :get, class: "btn btn-outline-secondary" do %>
         <i class="ti ti-settings"></i> Configure Grids
       <% end %>
