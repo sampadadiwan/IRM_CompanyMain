@@ -1,6 +1,10 @@
 <% # sometimes we render the partial directly instead of going through the controller
    # the controller does sorting but when the partial is rendered we sort the valuations here
-    valuations = valuations.order(valuation_date: :desc) if valuations && valuations.respond_to?(:arel) && valuations.arel.orders.blank? %>
+    import_upload_id ||= nil
+    valuations = valuations.order(valuation_date: :desc) if valuations && valuations.respond_to?(:arel) && valuations.arel.orders.blank?
+    data_source ||= valuations_path(params: params.to_unsafe_h, import_upload_id: import_upload_id)
+%>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Valuations</h1>
     <%
@@ -24,43 +28,19 @@
                   "sample_upload": "VALUATION_SAMPLE"),
                   { class: "btn btn-outline-primary ti ti-upload"}   %>
 
-    <% 
-      data_source ||= valuations_path( params: params.to_unsafe_h, all: true, format: :xlsx)
-
-      xl_link = download_xl_link(data_source)
+    <%
+      xl_data_source ||= valuations_path( params: params.to_unsafe_h, import_upload_id: import_upload_id, all: true, format: :xlsx)
+      xl_link = download_xl_link(xl_data_source)
     %>
-    
+
     <%= link_to t_common(:export_all), xl_link, class: "btn btn-outline-primary ti ti-download", data: { turbo: false } %>
-                    
+
     </span>
   </div>
 
-  <div class="table-responsive" data-controller="datatable">
 
-    <table id="valuations" class="table table-bordered dataTable jqDataTable">
-      <thead>
-        <tr>
-          <th>
-            Instrument
-          </th>
-
-          <th>
-            Valuation Date
-          </th>
-          <th>
-            Per Share Value
-          </th>
-          <th>
-            Currency
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-      <% valuations.each do |valuation| %>
-        <%= render valuation %>
-      <% end %>
-      </tbody>
-    </table>
-
-  </div>
+<% q ||=nil %>
+<%=render SearchComponent.new(data_source: data_source, turbo_frame: "valuations_frame") %>
+<div class="table-responsive">
+  <%= render RansackTable.new(Valuation, q: q, current_user: current_user, records: valuations, report_id: params["report_id"], turbo_frame: "valuations_frame", referrer: request.referrer, pagy: @pagy) %>
+</div>

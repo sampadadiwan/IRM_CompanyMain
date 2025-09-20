@@ -12,7 +12,8 @@ class AccessRightNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       access_right_id: record.id,
-      entity_id: params[:entity_id]
+      entity_id: params[:entity_id],
+      investor_id: record.access_to_investor_id
     }
   end
 

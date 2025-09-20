@@ -59,7 +59,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_open_for_interests
     investors.each do |investor|
       investor.notification_users.each do |user|
-        InvestmentOpportunityNotifier.with(record: self, entity_id:, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end
@@ -67,7 +67,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_allocation
     investors.each do |investor|
       investor.notification_users.each do |user|
-        InvestmentOpportunityNotifier.with(record: self, entity_id:, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end

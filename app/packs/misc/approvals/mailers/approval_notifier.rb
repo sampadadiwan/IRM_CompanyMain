@@ -11,7 +11,8 @@ class ApprovalNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       entity_id: params[:entity_id],
-      approval_response_id: record.id
+      approval_response_id: record.id,
+      investor_id: params[:investor_id]
     }
   end
 

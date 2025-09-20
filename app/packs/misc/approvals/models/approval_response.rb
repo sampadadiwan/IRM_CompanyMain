@@ -47,13 +47,13 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.notification_users.each do |user|
           email_method = reminder ? :approval_reminder : :notify_new_approval
-          ApprovalNotifier.with(record: self, entity_id:, email_method:).deliver_later(user) unless notification_sent
+          ApprovalNotifier.with(record: self, investor_id: investor.id, email_method:).deliver_later(user) unless notification_sent
         end
       else
         msg = "Your response for Approval #{approval.title} has been registered as #{status}"
         # msg = "#{approval.entity.name} : #{status} for #{approval.title}"
         investor.notification_users.each do |user|
-          ApprovalNotifier.with(record: self, entity_id:, email_method: :notify_approval_response, msg:).deliver_later(user)
+          ApprovalNotifier.with(record: self, investor_id: investor.id, email_method: :notify_approval_response, msg:).deliver_later(user)
         end
       end
 
