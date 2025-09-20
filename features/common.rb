@@ -18,7 +18,7 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   # Funds need exchange rates for their calculations
   if @entity.is_fund?
     ExchangeRate.create!([
-        {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 10.year}, 
+        {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 10.year},
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 10.year}
     ])
   end
@@ -179,13 +179,13 @@ end
 
 When('I click the tab {string}') do |args|
   # Change this to the last .nav
-  within(all(".nav").last) do
+  within(all(".nav-tabs").last) do
     click_on(args)
   end
 end
 
 Then('when I click the {string} button') do |arg1|
-  click_on(arg1)    
+  click_on(arg1)
 end
 
 Then('sleep {string}') do |arg|
