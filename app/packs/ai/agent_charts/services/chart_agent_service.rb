@@ -11,11 +11,8 @@ class ChartAgentService
     @json_data = json_data
   end
 
-  # Returns a Ruby Hash ready to pass to Chart.js on the frontend
-  def generate_chart!(prompt:)
-    chat = RubyLLM.chat
-
-    system_msg = <<~SYS
+  def build_system_msg
+    <<~SYS
       You are a Chart.js config generator.
       TASK: Output ONLY a single JSON object representing a valid Chart.js config:
         {
@@ -37,9 +34,10 @@ class ChartAgentService
       - Prefer sensible defaults; do not invent extra fields not in Chart.js.
       - If labels are dates, keep them as strings in ISO-8601 where possible.
     SYS
+  end
 
-    # Build the single user message with instructions and JSON (inline)
-    user_msg = <<~USER
+  def build_user_msg
+    <<~USER
       USER PROMPT:
       #{prompt}
 
@@ -49,6 +47,17 @@ class ChartAgentService
       IMPORTANT:
       - Output must be a single JSON object (no backticks).
     USER
+  end
+
+  # Returns a Ruby Hash ready to pass to Chart.js on the frontend
+  def generate_chart!
+    chat = RubyLLM.chat
+
+    # Build the system message with instructions
+    system_msg = build_system_msg
+
+    # Build the single user message with instructions and JSON (inline)
+    user_msg = build_user_msg
 
     Rails.logger.debug user_msg.inspect
 
