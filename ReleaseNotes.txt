@@ -1,3 +1,23 @@
+V9.1.08
+#####################################
+9909e8dd4 Fixed bug with sorting of custom columns with text align
+b909e5737 Added better labels with valuation date for Entry/Exit in VB
+64b74fd01 Added Synthetic valuation
+d92124f87 Added moic to ValueBridge
+ff92a35f6 Fixed bug with transfer
+6cf6d2bbd Now kyc notification goes only to active kyc enabled users, and cc is blank
+a84789d55 Added better support for kyc_update email
+e50e62cdd Fixed Portfolio company stats to use investment date
+5b6de2274 Added simple spec for kyc doc gen (#1008)
+302a3efd8 Added action_columns: true default to RansackTable
+e18e0c255 Added alignment to custom columns
+dc237c007 Removed $ from captable charts
+7e24bb849 Budget vs Actuals now filters on category
+be6bae48c Added better numberTable format for kpis
+92525ea8d Added portfolio_company_custom_fields.master_fund check in KycDocGen
+d4a474990 Added tracking_currency to entity
+
+
 V9.1.07
 #####################################
 2b534530f Changes for Kedaara UI (#1007)
