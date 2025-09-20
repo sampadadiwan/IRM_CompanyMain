@@ -19,7 +19,7 @@
         ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
       end
       sold_amount_cents = portfolio_company.portfolio_investments.sells.sum do |pi|
-        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.sold_amount_cents, pi.investment_date, entity_id) || 0
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
       end
       fmv_cents = portfolio_company.portfolio_investments.sum do |pi|
         ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, pi.investment_date, entity_id) || 0
