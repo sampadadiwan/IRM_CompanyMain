@@ -96,6 +96,9 @@ module WithFilterParams
   #   ransack_has_attr?(params[:q], :reporting_date)
   #   ransack_has_attr?(params[:q], %w[reporting_date posted_on])
   #
+
+  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/PerceivedComplexity
   def ransack_has_attr?(q_param, attrs)
     return false if q_param.blank?
 
@@ -143,4 +146,6 @@ module WithFilterParams
 
     false
   end
+  # rubocop:enable Metrics/PerceivedComplexity
+  # rubocop:enable Metrics/CyclomaticComplexity
 end

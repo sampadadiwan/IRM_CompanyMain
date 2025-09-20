@@ -37,6 +37,7 @@ class CapitalDistribution < ApplicationRecord
 
   validates_uniqueness_of :title, scope: :fund_id
   validates :title, presence: true
+  normalizes :title, with: ->(title) { title.strip.squeeze(" ") }
   validates :title, length: { maximum: 255 }
 
   validates :distribution_date, presence: true

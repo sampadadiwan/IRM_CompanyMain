@@ -11,6 +11,7 @@ module SqlTracer
       begin
         sql = tp.binding.local_variable_get(:sql) if tp.binding.local_variable_defined?(:sql)
       rescue NameError
+        Rails.logger.debug { "Could not get SQL from binding" }
       end
       next if sql && pattern && sql !~ pattern
 
