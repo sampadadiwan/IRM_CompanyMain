@@ -1,3 +1,14 @@
+V9.1.09
+#####################################
+79a1a28a7 Fixed stats for PI sold_amount
+950f21f64 normalize CapitalDistribution title
+ce272e7eb Fixed approval_notification
+375c1c152 Added investor_id to notifier, to fix investor_access cc bug
+d3d97e68b Added separate clarity codes for each env
+4728798ed Added better filters for Valuation
+3a8f9d5f1 Fixed Charts bug
+
+
 V9.1.08
 #####################################
 9909e8dd4 Fixed bug with sorting of custom columns with text align

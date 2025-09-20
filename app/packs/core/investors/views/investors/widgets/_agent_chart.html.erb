@@ -1,0 +1,28 @@
+<%
+  widget_size ||= "col-md-6"
+  name ||= nil
+  args ||= {}
+  uri_params ||= {}
+  agent_chart = AgentChart.where(title: args[:title], owner_type: "Investor", owner_id: @investor.id).last
+  uri = agent_chart_path(agent_chart) if agent_chart
+%>
+
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do
+%>
+    <% if agent_chart %>
+      <%= turbo_frame_tag "agent_chart_#{agent_chart.id}", target: "_top", src: "#{uri.to_s}" do %>
+      <%end%>
+    <% else %>
+      <div class="p-3">
+        <p>No Chart with title <%= args[:title] %> found for this investor.</p>
+      </div>
+    <% end %>
+
+<% end %>

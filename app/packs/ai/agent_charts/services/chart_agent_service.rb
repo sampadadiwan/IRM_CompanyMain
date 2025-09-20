@@ -36,7 +36,7 @@ class ChartAgentService
     SYS
   end
 
-  def build_user_msg
+  def build_user_msg(prompt)
     <<~USER
       USER PROMPT:
       #{prompt}
@@ -50,14 +50,14 @@ class ChartAgentService
   end
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
-  def generate_chart!
+  def generate_chart!(prompt:)
     chat = RubyLLM.chat
 
     # Build the system message with instructions
     system_msg = build_system_msg
 
     # Build the single user message with instructions and JSON (inline)
-    user_msg = build_user_msg
+    user_msg = build_user_msg(prompt)
 
     Rails.logger.debug user_msg.inspect
 

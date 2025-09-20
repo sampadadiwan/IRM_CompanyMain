@@ -16,14 +16,16 @@ class AgentChart < ApplicationRecord
   end
 
   def generate_spec!(csv_paths: [])
+    owner = nil
     if csv_paths.empty? && document_ids.present?
       # Load CSV paths from associated documents if not explicitly provided
       documents.each do |doc|
+        owner = doc.owner
         file = doc.file.download
         csv_paths << file.path if file&.path&.end_with?(".csv")
       end
     end
-    update!(status: "draft", error: nil)
+    update!(status: "draft", error: nil, owner: owner)
     spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:).generate_chart!(prompt: prompt)
     update!(spec: spec_hash, status: "ready")
   rescue StandardError => e
@@ -46,7 +48,7 @@ class AgentChart < ApplicationRecord
   end
 
   def document_ids=(ids)
-    ids.is_a?(Array) ? ids.map(&:to_i) : ids.to_s.split(",").map { |x| x.strip.to_i }
+    self[:document_ids] = ids.is_a?(Array) ? ids.map(&:to_i) : ids.to_s.split(",").map { |x| x.strip.to_i }
   end
 
   def self.test(csv_paths:)

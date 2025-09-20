@@ -16,6 +16,16 @@
         <%= @agent_chart.prompt %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @agent_chart.owner if @agent_chart.owner %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Raw Data
@@ -67,17 +77,19 @@
 <% end %>
 
 
-<% if @agent_chart.spec.present? %>
-  <%= render FormCard.new(title: @agent_chart.title) do %>
-    <div data-controller="chart-renderer"
-         data-chart-renderer-spec-value='<%= @agent_chart.spec.to_json %>'
-         style="width: 100%; margin: 2rem 0;">
-      <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+<%= turbo_frame_tag with_frame("agent_chart_#{@agent_chart.id}"), target: "_top" do %>
+  <% if @agent_chart.spec.present? %>
+    <%= render FormCard.new(title: link_to(@agent_chart.title, @agent_chart)) do %>
+      <div data-controller="chart-renderer"
+          data-chart-renderer-spec-value='<%= @agent_chart.spec.to_json %>'
+          style="width: 100%; margin: 2rem 0;">
+        <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info" style="margin-top:1rem;">
+      No chart spec saved yet for this record. Generate one:
+      <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!</code>
     </div>
   <% end %>
-<% else %>
-  <div class="alert alert-info" style="margin-top:1rem;">
-    No chart spec saved yet for this record. Generate one:
-    <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!</code>
-  </div>
 <% end %>
