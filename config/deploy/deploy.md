@@ -1,4 +1,9 @@
 # How to Deploy the app
+# Prerequisites
+1. Install packer
+2. Install aws cli
+3. Install pulumi
+4. git clone IRM-infra
 
 ## Creating AMIs
 1. Note to run the above you must export the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the env (staging or production)
@@ -7,7 +12,7 @@
 `export AWS_REGION=us-east-1`
 
 ## Build all the AMIs in the region
-2. rake packer:"build_env[dev,us,all]"
+2. RAILS_ENV=production rake packer:"build_env[prod,us,all]"
 
 3. rake "aws:setup_infra[staging,AppServer,DB_Redis_ES,us-east-1,us]"
 

@@ -163,19 +163,21 @@
         }
       })(window, document, "clarity", "script");
     </script>
+
+    <% if current_user && current_user.entity_id.present? %>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          if (window.clarity) {
+            clarity("set", "entity_id", "<%= current_user.entity_id %>");
+            clarity("set", "entity", "<%= current_user.entity.name %>");
+            clarity("set", "role", "<%= current_user.curr_role %>");
+          }
+        });
+      </script>
+    <% end %>
+
   <% end %>
 
-  <% if current_user && current_user.entity_id.present? %>
-    <script>
-      document.addEventListener("DOMContentLoaded", function() {
-        if (window.clarity) {
-          clarity("set", "entity_id", "<%= current_user.entity_id %>");
-          clarity("set", "entity", "<%= current_user.entity.name %>");
-          clarity("set", "role", "<%= current_user.curr_role %>");
-        }
-      });
-    </script>
-  <% end %>
 
 </body>
 
