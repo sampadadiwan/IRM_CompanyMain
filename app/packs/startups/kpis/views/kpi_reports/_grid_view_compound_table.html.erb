@@ -9,7 +9,7 @@
 %>
 
 <% grouped_mappings.each do |category, mappings| %>
-  <% title = "#{category}: #{params[:period]}" %>
+  <% title = "#{category}: #{params[:period]} #{params[:title_suffix]}" %>
   <div class="card kpi-category-section">
     <div class="card-header">
       <h3 class="card-title"><%= title %></h3>
