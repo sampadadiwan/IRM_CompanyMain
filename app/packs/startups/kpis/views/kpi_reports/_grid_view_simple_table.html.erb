@@ -4,7 +4,7 @@
             <tr>
                 <th></th>
                 <% kpi_reports.each do |kpi_report| %>
-                    <th>
+                    <th class="number_col">
                         <%= link_to kpi_report.as_of.strftime("%b %Y"), show_performance_kpi_reports_path(as_of: kpi_report.as_of) %>
                         <span class="d-block">
                         <% if kpi_report.tag_list.present? %>

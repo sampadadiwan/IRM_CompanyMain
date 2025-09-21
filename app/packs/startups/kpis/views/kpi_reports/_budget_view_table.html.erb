@@ -91,12 +91,12 @@
                 <tr>
                     <% quarterly_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
                         <% tag_lists_to_display.each do |tag| %>
-                            <th><%= tag %></th>
+                            <th class="text-center"><%= tag %></th>
                         <% end %>
                     <% end %>
                     <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
                         <% tag_lists_to_display.each do |tag| %>
-                            <th><%= tag %></th>
+                            <th class="text-center"><%= tag %></th>
                         <% end %>
                     <% end %>
                 </tr>
