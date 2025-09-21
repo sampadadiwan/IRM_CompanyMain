@@ -24,10 +24,15 @@ table.dataTable>tbody>tr.child ul.dtr-details {
 }
 
 .numberTable {
-  text-align: right;
+
+  td {
+    text-align: right;
+    padding-right: 6px !important;
+  }
+
   th {
     font-size: 1.1em;
-    text-align: right !important;
+    text-align: right;
     padding-right: 16px !important;
   }
 

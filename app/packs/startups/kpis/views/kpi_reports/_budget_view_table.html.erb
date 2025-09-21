@@ -55,10 +55,10 @@
     %>
 
     <div class="table-responsive" data-controller="datatable">
-        <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey">
+        <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey numberTable">
             <thead>
                 <tr>
-                    <th rowspan="3">Particulars</th>
+                    <th rowspan="3" class="text_col">Particulars</th>
                     <% if quarterly_reports.present? %>
                         <th colspan="<%= quarterly_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
                             Quarter
@@ -106,7 +106,7 @@
 
                 <% investor_kpi_mappings.each do |ikm| %>
                     <tr>
-                        <td>
+                        <td class="text_col">
                             <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
                         </td>
                         <% # Render quarterly reports %>
@@ -118,12 +118,16 @@
                                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
                                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
-                                            <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
+                                            <% if kpi.value.negative? %>
+                                                <span class="text-danger">(<%= display_kpi(kpi, ikm, params: params) %>)</span>
+                                            <% else %>
+                                                <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
+                                            <% end %>
                                         <% else %>
-                                            N/A
+
                                         <% end %>
                                     <% else %>
-                                        N/A
+
                                     <% end %>
                                 </td>
                             <% end %>
@@ -141,7 +145,7 @@
                                     <% elsif actual_kpi_value.present? %>
                                         <%= actual_kpi_value %>
                                     <% else %>
-                                        N/A
+
                                     <% end %>
                                 </td>
                             <% end %>
@@ -158,10 +162,10 @@
                                         <% if kpi %>
                                             <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
                                         <% else %>
-                                            N/A
+
                                         <% end %>
                                     <% else %>
-                                        N/A
+
                                     <% end %>
                                 </td>
                             <% end %>
@@ -179,7 +183,7 @@
                                     <% elsif actual_kpi_value.present? %>
                                         <%= actual_kpi_value %>
                                     <% else %>
-                                        N/A
+
                                     <% end %>
                                 </td>
                             <% end %>

@@ -179,7 +179,8 @@ end
 
 When('I click the tab {string}') do |args|
   # Change this to the last .nav
-  within(all(".nav-tabs").last) do
+  tab = all(".nav-tabs").last || all(".nav-pills").last
+  within(tab) do
     click_on(args)
   end
 end
