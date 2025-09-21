@@ -73,10 +73,20 @@ class ChartAgentService
     # Parse & validate the LLM’s JSON
     config = parse_json(raw)
     validate_chartjs!(config)
+
+    # Cleanup the csv files downloaded
+    cleanup
+
     config
   end
 
   private
+
+  def cleanup
+    @csv_paths.each do |path|
+      File.delete(path) if File.exist?(path)
+    end
+  end
 
   def parse_json(obj)
     case obj
