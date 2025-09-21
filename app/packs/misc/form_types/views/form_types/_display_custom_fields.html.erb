@@ -1,7 +1,7 @@
 <% if form_custom_fields.present? %>
 
     <%# Display Normal custom fields (non-regulatory) first %>
-    <% form_custom_fields.order(position: :asc).each do |custom_field| %>
+    <% form_custom_fields.not_calculations.order(position: :asc).each do |custom_field| %>
         <% if custom_field %>
             <% v = model.properties[custom_field.name] %>
             <% if v.present? %>
@@ -27,13 +27,14 @@
                 <%= fcf.human_label %>
             </td>
             <td>
-                <%= model.perform_custom_calculation(fcf) %>
+                <% value = model.perform_custom_calculation(fcf) %>
+                <%= value.is_a?(Money) ? money_to_currency(value, params) : value %>
                 <div><small class="form-text text-muted"><%= fcf.help_text %></small></div>
             </td>
         </tr>
     <% end %>
 
-<% end %> 
+<% end %>
 
 <% if timestamps_and_snapshot %>
     <% if model.form_type_id.present? %>
@@ -45,7 +46,7 @@
             <%= link_to model.form_type.tag || model.form_type_id, model.form_type %>
         </td>
     </tr>
-    <% end %> 
+    <% end %>
 
 <tr class="">
     <td>
@@ -73,5 +74,5 @@
         <%= l model.snapshot_date %>
     </td>
 </tr>
-<% end %> 
+<% end %>
 <% end %>

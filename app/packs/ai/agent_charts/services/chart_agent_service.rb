@@ -84,7 +84,7 @@ class ChartAgentService
 
   def cleanup
     @csv_paths.each do |path|
-      File.delete(path) if File.exist?(path)
+      FileUtils.rm_f(path)
     end
   end
 

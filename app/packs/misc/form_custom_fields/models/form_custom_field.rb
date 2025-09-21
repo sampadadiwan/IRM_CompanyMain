@@ -25,6 +25,7 @@ class FormCustomField < ApplicationRecord
   scope :writable, -> { where(read_only: false) }
   scope :visible, -> { where.not(field_type: HIDDEN_FIELDS) }
   scope :calculations, -> { where(field_type: "Calculation") }
+  scope :not_calculations, -> { where.not(field_type: "Calculation") }
   # Internal fields are those that are setup by CapHive for SEBI reporting etc. Not changable by the company
   scope :internal, -> { where(internal: true) }
   scope :not_internal, -> { where(internal: false) }
