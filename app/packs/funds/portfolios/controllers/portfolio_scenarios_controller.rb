@@ -79,10 +79,11 @@ class PortfolioScenariosController < ApplicationController
   end
 
   def run
+    cashflows_currency = params[:cashflows_currency] || "default"
     if Rails.env.test?
-      PortfolioScenarioJob.perform_now(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows])
+      PortfolioScenarioJob.perform_now(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows], cashflows_currency: cashflows_currency)
     else
-      PortfolioScenarioJob.set(wait: 2.seconds).perform_later(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows])
+      PortfolioScenarioJob.set(wait: 2.seconds).perform_later(@portfolio_scenario.id, current_user.id, return_cash_flows: params[:return_cash_flows], cashflows_currency: cashflows_currency)
     end
     redirect_to portfolio_scenario_url(@portfolio_scenario), notice: "Portfolio scenario is running."
   end

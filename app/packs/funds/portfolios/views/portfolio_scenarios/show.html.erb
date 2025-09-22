@@ -3,7 +3,7 @@
 <%= render "portfolio_scenarios/show", portfolio_scenario: @portfolio_scenario %>
 <div>
   <% if policy(@portfolio_scenario).update? %>
-    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success ti ti-pencil"} %> 
+    <%= link_to  t_common(:edit), edit_portfolio_scenario_path(@portfolio_scenario), {class: "btn btn-outline-success ti ti-pencil"} %>
     <%= button_to t_common(:delete), @portfolio_scenario, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 
@@ -16,10 +16,16 @@
         Run Scenario
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-      
+
         <%= button_to "Compact: Dont Display Cash Flows", run_portfolio_scenario_path(@portfolio_scenario), method: :patch, class: "dropdown-item", data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "Scenario will be run and you will be notified in a few mins."} %>
 
         <%= button_to "Expanded: Display Cash Flows", run_portfolio_scenario_path(@portfolio_scenario, return_cash_flows: true), method: :patch, class: "dropdown-item", data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "Scenario will be run and you will be notified in a few mins."} %>
+
+        <% if @portfolio_scenario.fund.has_tracking_currency? %>
+          <% tracking_currency = @portfolio_scenario.fund.tracking_currency%>
+          <% button_text = "Expanded: Display Cash Flows (#{tracking_currency})" %>
+          <%= button_to button_text, run_portfolio_scenario_path(@portfolio_scenario, return_cash_flows: true, cashflows_currency: "tracking"), method: :patch, class: "dropdown-item", data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "Scenario will be run and you will be notified in a few mins."} %>
+        <% end %>
 
       </div>
     </div>

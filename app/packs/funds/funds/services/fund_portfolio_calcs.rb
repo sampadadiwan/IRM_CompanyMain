@@ -1,4 +1,6 @@
 class FundPortfolioCalcs < FundRatioCalcs
+  attr_accessor :portfolio_company_irr_map, :portfolio_company_metrics_map, :api_irr_map
+
   def initialize(fund, end_date, synthetic_investments: [])
     @fund = fund
     @end_date = end_date
@@ -244,7 +246,7 @@ class FundPortfolioCalcs < FundRatioCalcs
     [cf, moic_data]
   end
 
-  def portfolio_company_metrics(return_cash_flows: false)
+  def portfolio_company_metrics(return_cash_flows: false, use_tracking_currency: false)
     @portfolio_company_metrics_map ||= {}
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
@@ -257,10 +259,11 @@ class FundPortfolioCalcs < FundRatioCalcs
 
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         api_as_of = api.as_of(@end_date)
-        total_fmv += api_as_of.fmv
-        bought_amount += api_as_of.bought_amount
-        total_sold += api_as_of.sold_amount
-        cost_of_remaining += api_as_of.cost_of_remaining
+
+        total_fmv += convert_amount(@fund, api_as_of.fmv_cents, @end_date, use_tracking_currency)
+        bought_amount += convert_amount(@fund, api_as_of.bought_amount_cents, @end_date, use_tracking_currency)
+        total_sold += convert_amount(@fund, api_as_of.sold_amount_cents, @end_date, use_tracking_currency)
+        cost_of_remaining += convert_amount(@fund, api_as_of.cost_of_remaining_cents, @end_date, use_tracking_currency)
 
         Rails.logger.debug { "API: #{api.id}, FMV: #{api_as_of.fmv}, Bought: #{api_as_of.bought_amount}, Sold: #{api_as_of.sold_amount}" }
       end

@@ -1,3 +1,10 @@
+<% has_tracking_currency = portfolio_scenario.fund.has_tracking_currency? # check if fund has tracking currency to show those calcs
+  tracking_currency = if has_tracking_currency
+    portfolio_scenario.calculations[:tracking_currency]
+  else
+    nil
+  end
+%>
 <div id="<%= dom_id(portfolio_scenario) %>" class="portfolio-scenario-div card shadow mb-4">
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
       <h6 class="m-0 font-weight-bold text-primary">Scenario: <%= portfolio_scenario.name %></h6>
@@ -61,11 +68,23 @@
         <% end %>
       </tr>
 
+      <% if has_tracking_currency %>
+        <tr>
+          <td>XIRR (<%= tracking_currency %>)</td>
+          <% xirr_tracking_curr_display_val = portfolio_scenario.calculations[:xirr_tracking_currency].present? ? "#{portfolio_scenario.calculations[:xirr_tracking_currency]} %" : nil %>
+          <td><%= xirr_tracking_curr_display_val %></td>
+        </tr>
+      <% end %>
+
       <% if portfolio_scenario.calculations[:xirr_cash_flows] %>
         <tr class="collapse" id="xirr_cash_flows_<%= portfolio_scenario.id %>">
           <td colspan="3">
             <h6 class="fw-bold mb-3 pb-1 d-flex justify-content-between align-items-center">
-              <span>XIRR Cash Flows</span>
+              <% if has_tracking_currency %>
+                <span>XIRR Cash Flows (<%= tracking_currency %>)</span>
+              <% else %>
+                <span>XIRR Cash Flows</span>
+              <% end %>
             </h6>
             <% table_options = { table_class: "table table-bordered dataTable"} %>
             <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
@@ -89,11 +108,23 @@
         <% end %>
       </tr>
 
+      <% if has_tracking_currency %>
+        <tr>
+          <td>MOIC (<%= tracking_currency %>)</td>
+          <% moic_tracking_currency_display_val = portfolio_scenario.calculations[:moic_tracking_currency].present? ? "#{portfolio_scenario.calculations[:moic_tracking_currency]} x" : nil %>
+          <td><%= moic_tracking_currency_display_val %></td>
+        </tr>
+      <% end %>
+
       <% if portfolio_scenario.calculations[:moic_cash_flows] %>
         <tr class="collapse" id="moic_cash_flows_<%= portfolio_scenario.id %>">
           <td colspan="3">
             <h6 class="fw-bold mb-3 pb-1 d-flex justify-content-between align-items-center">
-              <span>MOIC Cash Flows</span>
+              <% if has_tracking_currency %>
+                <span>MOIC Cash Flows (<%= tracking_currency %>)</span>
+              <% else %>
+                <span>MOIC Cash Flows</span>
+              <% end %>
             </h6>
             <% table_options = { table_class: "table table-bordered dataTable"} %>
             <%= Json2table::get_html_table(portfolio_scenario.calculations[:moic_cash_flows], table_options).html_safe %>
@@ -124,7 +155,7 @@
             <%= Json2table::get_html_table((JSON.parse portfolio_scenario.calculations[:portfolio_company_metrics]).values.to_json, table_options).html_safe %>
           </td>
         </tr>
-          
+
       <% end %>
     </table>
   </div>

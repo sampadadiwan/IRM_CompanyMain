@@ -126,6 +126,7 @@ class FundRatiosJob < ApplicationJob
     end
 
     if fund.has_tracking_currency?
+      calc.portfolio_company_irr_map = {}
       calc.portfolio_company_irr(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
         FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], cash_flows: values[:cash_flows], display_value: "#{values[:xirr]} %")
       end
@@ -140,6 +141,7 @@ class FundRatiosJob < ApplicationJob
     end
 
     if fund.has_tracking_currency?
+      calc.api_irr_map = {}
       calc.api_irr(return_cash_flows:, use_tracking_currency: true).each do |api_id, values|
         FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], cash_flows: values[:cash_flows], display_value: "#{values[:xirr]} %")
       end
@@ -150,6 +152,7 @@ class FundRatiosJob < ApplicationJob
     calc.portfolio_company_metrics(return_cash_flows:).each do |portfolio_company_id, values|
       FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
     end
+    # TODO: do we need moic for tracking currency?
   end
 
   def _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows)

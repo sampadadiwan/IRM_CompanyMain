@@ -91,6 +91,10 @@ class FundRatioCalcs
   # rubocop:enable Metrics/PerceivedComplexity
   # rubocop:enable Metrics/MethodLength
 
+  # Calculates the Multiple on Invested Capital (MOIC) for the given model.
+  # MOIC is the ratio of total returns (from sales and FMV) to total invested capital.
+  # Optionally includes synthetic investments and supports tracking currency conversion.
+  # Returns the MOIC value rounded to 2 decimals, and optionally the cash flows.
   def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
     @model = model
     cf = XirrCashflow.new
@@ -99,28 +103,34 @@ class FundRatioCalcs
     total_sold = 0.to_d
     total_fmv = 0.to_d
 
+    # Process portfolio investments up to the end date
     portfolio_investments.where(portfolio_investments: { investment_date: ..@end_date }).find_each do |pi|
       pi = pi.as_of(@end_date)
       amount_cents = convert_amount(@model, pi.amount_cents, pi.investment_date, use_tracking_currency)
       if pi.quantity.positive?
+        # Positive quantity: investment (buy)
         cf << XirrTransaction.new(amount_cents, date: pi.investment_date, notes: pi.to_s)
         total_bought += amount_cents
       elsif pi.quantity.negative?
+        # Negative quantity: divestment (sell)
         cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
         total_sold += amount_cents
       end
       total_fmv += pi.fmv_cents
     end
 
+    # Process synthetic investments if provided
     if synthetic_investments.present?
       temp_synthetic_investments = synthetic_investments.select { |si| si.investment_date <= @end_date }
 
       temp_synthetic_investments.each do |pi|
         amount_cents = convert_amount(@model, pi.amount_cents, pi.investment_date, use_tracking_currency)
         if pi.quantity.positive?
+          # Positive quantity: synthetic investment (buy)
           cf << XirrTransaction.new(amount_cents, date: pi.investment_date, notes: pi.to_s)
           total_bought += amount_cents
         elsif pi.quantity.negative?
+          # Negative quantity: synthetic divestment (sell)
           cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
           total_sold += amount_cents
         end
@@ -128,11 +138,15 @@ class FundRatioCalcs
       end
     end
 
+    # Clear cash flows if not requested to return them
     cf = nil unless return_cash_flows
+    # Return 0 if no investments were bought
     return 0, cf if total_bought.zero?
 
+    # Calculate total amount: if synthetic investments present, use total_sold; else, total_fmv + total_sold
     total_amount = synthetic_investments.present? ? total_sold : (total_fmv + total_sold)
 
+    # Return MOIC as ratio rounded to 2 decimals, and cash flows if requested
     [(total_amount / total_bought).round(2), cf]
   end
 
