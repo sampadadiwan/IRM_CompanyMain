@@ -10,7 +10,7 @@ class IncomingEmailsController < ApplicationController
 
     email = IncomingEmail.new(
       from: params[:from],
-      to: params[:to],
+      to: params[:to].truncate(255),
       subject: params[:subject],
       body: params[:html].presence || params[:text]
     )

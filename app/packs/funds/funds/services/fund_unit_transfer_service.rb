@@ -304,6 +304,8 @@ class FundUnitTransferService < Trailblazer::Operation
       new_payment.tracking_net_payable_cents *= transfer_ratio
       new_payment.tracking_gross_payable_cents *= transfer_ratio
       new_payment.tracking_reinvestment_with_fees_cents *= transfer_ratio
+      new_payment.created_at = Time.zone.now
+      new_payment.updated_at = Time.zone.now
 
       # Insert without callbacks
       CapitalDistributionPayment.insert_all([new_payment.attributes])
