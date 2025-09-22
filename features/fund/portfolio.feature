@@ -306,6 +306,52 @@ Scenario Outline: Portfolio Scenario run and finalize
   Then I should see the "Finalization enqueued for"
   And The Portfolio Scenario Should be finalized
 
+Scenario Outline: Portfolio Scenario run and finalize with tracking currency
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1;tracking_currency=USD" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  And Given I upload the portfolio companies
+  And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "8" portfolio investments created
+  And the portfolio investments must have the data in the sheet
+  And the aggregate portfolio investments must have cost of sold computed
+  Given I go to view the fund
+  Given I click the tab "Portfolio"
+  Given I click on "Scenarios"
+  Given I click on "New Scenario"
+  Given I fill the scenario form
+  Given I click on "Save"
+  Then I should see the "Portfolio scenario was successfully created"
+  Given I click on "Edit"
+  Given I fill the scenario form
+  Given I click on "Save"
+  Then I should see the "Portfolio scenario was successfully updated"
+  Given I click on "New Scenario Investment"
+  Given I fill the new scenario investment form
+  Given I click on "Save"
+  Then I should see the new investment added on the portfolio scenarios page
+  Given I click on "New Scenario Investment"
+  Given I fill the new scenario investment form
+  Given I click on "Save"
+  Then I should see the new investment added on the portfolio scenarios page
+  Given I click on "New Scenario Investment"
+  Given I fill the new scenario investment form with different Portfolio Company
+  Given I click on "Save"
+  Then I should see the new investment added on the portfolio scenarios page
+  Given I click on "Run Scenario"
+  Given I click on "Expanded: Display Cash Flows (USD)"
+  Given I click on "Proceed"
+  Then I should see the "Portfolio scenario is running"
+  Then The Portfolio Scenario should run successfully
+  Given I click on "Finalize"
+  Given I click on "Proceed"
+  Then I should see the "Finalization enqueued for"
+  And The Portfolio Scenario Should be finalized in tracking currency
+
 @import
 Scenario Outline: Import portfolio investments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"

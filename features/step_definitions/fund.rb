@@ -1616,6 +1616,8 @@ Then('Given I upload {string} file for Fund Units of the fund') do |file_name|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
+  # status is nil when no errors
+  expect(ImportUpload.last.status.nil?).to be_truthy
 end
 
 Then('There should be {string} fund units created with data in the sheet') do |count|
