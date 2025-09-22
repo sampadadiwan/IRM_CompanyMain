@@ -60,6 +60,9 @@ class ImportUtil < Trailblazer::Operation
     if import_upload.processed_row_count.positive?
       # The custom fields have been created. Now we can update the form_type for newly created records
       import_upload.form_type_names.each do |form_type_name|
+        # Ensure the model has a form_type_id field
+        next unless form_type_name.constantize.method_defined?(:form_type_id)
+
         # Get the records that do not have a form_type set
         records_wo_form_type = form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: nil)
 
