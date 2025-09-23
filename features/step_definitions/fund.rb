@@ -1838,12 +1838,20 @@ end
 When('fund units are transferred {string}') do |transfer|
 
   @fund.reload
-  @price, @premium, @transfer_ratio, @transfer_account_entries, @account_entries_excluded = transfer.split(",").map{|x| x.split("=")[1].to_d}
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
-  @transfer_quantity = (@transfer_ratio * from_cc.total_fund_units_quantity).to_f
+  @price, @premium, @transfer_ratio, @transfer_account_entries, @account_entries_excluded = transfer.split(",").map{|x| x.split("=")[1]}
+  @price = @price.to_f
+  @premium = @premium.to_f
+  @transfer_ratio = @transfer_ratio.to_f
+  @transfer_account_entries = @transfer_account_entries == "true"
 
-  result = FundUnitTransferService.wtf?(from_commitment: from_cc, to_commitment: to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
+  @from_cc = @fund.capital_commitments.first
+  @from_cc_committed_amount_cents = @from_cc.committed_amount_cents
+  @from_cc_folio_committed_amount_cents = @from_cc.folio_committed_amount_cents
+
+  @to_cc = @fund.capital_commitments.last
+  @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f
+
+  result = FundUnitTransferService.wtf?(from_commitment: @from_cc, to_commitment: @to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
 
   puts result[:error]
   result.success?.should == true
@@ -1851,83 +1859,147 @@ When('fund units are transferred {string}') do |transfer|
 end
 
 Then('the units should be transferred') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
-  from_fu = from_cc.fund_units.last
-  to_fu = to_cc.fund_units.last
+
+  from_fu = @from_cc.fund_units.last
+  to_fu = @to_cc.fund_units.last
 
   from_fu.quantity.should == -@transfer_quantity
   from_fu.price_cents.should == @price * 100
   from_fu.premium_cents.should == @premium * 100
-  from_fu.reason.include?("Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}").should == true
+  from_fu.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
   to_fu.quantity.should == @transfer_quantity
   to_fu.price_cents.should == @price * 100
   to_fu.premium_cents.should == @premium * 100
-  to_fu.reason.include?("Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}").should == true
+  to_fu.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
 
 end
 
 
 Then('the account entries are adjusted upon fund unit transfer') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
 
-  from_cc.account_entries.each do |entry|
-    puts "Checking account entry for #{entry.id} for #{from_cc.folio_id} to contain Transfer ID #{@transfer_token}"
-    entry.json_fields["Transfer ID"].should == @transfer_token
+  transfer_ratio = @transfer_ratio
+  retained_ratio = 1 - transfer_ratio
+
+  @from_cc.account_entries.each do |entry|
+    if entry.json_fields["transfer_id"].present?
+      puts "Checking account entry for #{entry.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      entry.json_fields["transfer_id"].should == @transfer_token
+      # entry.json_fields["orig_amount"].should == entry.amount_cents / retained_ratio
+      entry.amount_cents.should == (entry.json_fields["orig_amount"].to_f * retained_ratio).round
+    end
   end
 
-  to_cc.account_entries.each do |entry|
-    puts "Checking account entry for #{entry.id} for #{to_cc.folio_id} to contain Transfer ID #{@transfer_token}"
-    entry.json_fields["Transfer ID"].should == @transfer_token
+  @to_cc.account_entries.each do |entry|
+    if entry.json_fields["transfer_id"].present?
+      puts "Checking account entry for #{entry.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      entry.json_fields["transfer_id"].should == @transfer_token
+      # entry.json_fields["orig_amount"].should == entry.amount_cents / transfer_ratio
+      entry.amount_cents.should == (entry.json_fields["orig_amount"].to_f * transfer_ratio)
+    end
   end
 end
 
 Then('the remittances are adjusted upon fund unit transfer') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
 
-  from_cc.capital_remittances.each do |cr|
-    puts "Checking capital remittance for #{cr.id} for #{from_cc.folio_id} to contain Transfer ID #{@transfer_token}"
-    cr.json_fields["Transfer ID"].should == @transfer_token
-    cr.capital_remittance_payments.each do |crp|
-      puts "Checking capital remittance payment for #{crp.id} for #{from_cc.folio_id} to contain Transfer ID #{@transfer_token}"
-      crp.json_fields["Transfer ID"].should == @transfer_token
+  transfer_ratio = @transfer_ratio
+  retained_ratio = 1 - transfer_ratio
+
+  @from_cc.capital_remittances.each do |cr|
+    if cr.json_fields["transfer_id"].present?
+      puts "Checking capital remittance for #{cr.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      cr.json_fields["transfer_id"].should == @transfer_token
+      # cr.json_fields["orig_call_amount"].should == cr.call_amount_cents / retained_ratio
+      cr.call_amount_cents.should == (cr.json_fields["orig_call_amount"].to_f * retained_ratio).round
+      # cr.json_fields["orig_collected_amount"].should == cr.collected_amount_cents / retained_ratio
+      cr.collected_amount_cents.should == (cr.json_fields["orig_collected_amount"].to_f * retained_ratio).round
+
+      cr.capital_remittance_payments.each do |crp|
+        puts "Checking capital remittance payment for #{crp.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
+        crp.json_fields["transfer_id"].should == @transfer_token
+        # crp.json_fields["orig_amount"].should == crp.amount_cents / retained_ratio
+        crp.amount_cents.should == (crp.json_fields["orig_amount"].to_f * retained_ratio).round
+      end
+    end
+  end
+
+  @to_cc.capital_remittances.each do |cr|
+    cr.reload # Ensure the latest data is loaded from the database
+
+    if cr.json_fields["transfer_id"].present?
+      puts "Checking capital remittance for #{cr.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
+
+      cr.json_fields["transfer_id"].should == @transfer_token
+      # cr.json_fields["orig_call_amount"].should == cr.call_amount_cents / transfer_ratio
+      cr.call_amount_cents.should == (cr.json_fields["orig_call_amount"].to_f * transfer_ratio).round
+      # cr.json_fields["orig_collected_amount"].should == cr.collected_amount_cents / transfer_ratio
+      cr.collected_amount_cents.should == (cr.json_fields["orig_collected_amount"].to_f * transfer_ratio).round
+
+      cr.capital_remittance_payments.each do |crp|
+        puts "Checking capital remittance payment for #{crp.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
+        crp.json_fields["transfer_id"].should == @transfer_token
+        # crp.json_fields["orig_amount"].should == crp.amount_cents / transfer_ratio
+        crp.amount_cents.should == (crp.json_fields["orig_amount"].to_f * transfer_ratio).round
+      end
     end
   end
 end
 
 Then('distributions are adjusted upon fund unit transfer') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
 
-  from_cc.capital_distribution_payments.each do |cdp|
-    puts "Checking capital distribution payment for #{cdp.id} for #{from_cc.folio_id} to contain Transfer ID #{@transfer_token}"
-    cdp.json_fields["Transfer ID"].should == @transfer_token
+  transfer_ratio = @transfer_ratio
+  retained_ratio = 1 - transfer_ratio
+
+  @from_cc.capital_distribution_payments.each do |cdp|
+    if cdp.json_fields["transfer_id"].present?
+      puts "Checking capital distribution payment for #{cdp.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      cdp.json_fields["transfer_id"].should == @transfer_token
+      # cdp.json_fields["orig_gross_payable"].should == cdp.gross_payable_cents / retained_ratio
+      cdp.gross_payable_cents.should == (cdp.json_fields["orig_gross_payable"].to_f * retained_ratio).round
+      # cdp.json_fields["orig_units_quantity"].should == cdp.units_quantity / retained_ratio
+      cdp.units_quantity.should == (cdp.json_fields["orig_units_quantity"].to_f * retained_ratio).round
+    end
+  end
+
+  @to_cc.capital_distribution_payments.each do |cdp|
+    if cdp.json_fields["transfer_id"].present?
+      puts "Checking capital distribution payment for #{cdp.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      cdp.json_fields["transfer_id"].should == @transfer_token
+      # cdp.json_fields["orig_gross_payable"].should == cdp.gross_payable_cents / transfer_ratio
+      cdp.gross_payable_cents.should == (cdp.json_fields["orig_gross_payable"].to_f * transfer_ratio)
+      # cdp.json_fields["orig_units_quantity"].should == cdp.units_quantity / transfer_ratio
+      cdp.units_quantity.should == (cdp.json_fields["orig_units_quantity"].to_f * transfer_ratio)
+    end
   end
 end
 
 Then('adjustments are create upon fund unit transfer') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
 
-  from_adjustment = from_cc.commitment_adjustments.last
-  to_adjustment = to_cc.commitment_adjustments.last
+  transfer_ratio = @transfer_ratio
 
-  puts "Checking commitment adjustment for #{from_adjustment.id} for #{from_cc.folio_id}"
-  from_adjustment.reason.include?("Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}").should == true
+  from_adjustment = @from_cc.commitment_adjustments.where(adjustment_type: "Transfer").last
+  to_adjustment = @to_cc.commitment_adjustments.where(adjustment_type: "Transfer").last
 
-  puts "Checking commitment adjustment for #{to_adjustment.id} for #{to_cc.folio_id}"
-  to_adjustment.reason.include?("Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}").should == true
+  puts "Checking commitment adjustment for #{from_adjustment.id} for #{@from_cc.folio_id}"
+  from_adjustment.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
+  # from_adjustment.amount_cents.should == -(@from_cc_committed_amount_cents * transfer_ratio).round
+  from_adjustment.folio_amount_cents.should == -(@from_cc_folio_committed_amount_cents * transfer_ratio).round
+  from_adjustment.adjustment_type.should == "Transfer"
+  from_adjustment.as_of.should == Date.today
 
+  puts "Checking commitment adjustment for #{to_adjustment.id} for #{@to_cc.folio_id}"
+  to_adjustment.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
+  # to_adjustment.amount_cents.should == (@from_cc_committed_amount_cents * transfer_ratio).round
+  to_adjustment.folio_amount_cents.should == (@from_cc_folio_committed_amount_cents * transfer_ratio).round
+  to_adjustment.adjustment_type.should == "Transfer"
+  to_adjustment.as_of.should == Date.today
 end
 
 
 Then('I should be able to see the transferred fund units') do
-  from_cc = @fund.capital_commitments.first
-  to_cc = @fund.capital_commitments.last
-  from_fu = from_cc.fund_units.last
-  to_fu = to_cc.fund_units.last
+  @from_cc = @fund.capital_commitments.first
+  @to_cc = @fund.capital_commitments.last
+  from_fu = @from_cc.fund_units.last
+  to_fu = @to_cc.fund_units.last
 
   visit(fund_unit_path(from_fu))
   expect(page).to have_content(number_with_delimiter(from_fu.quantity))

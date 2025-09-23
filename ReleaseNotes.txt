@@ -1,3 +1,11 @@
+V9.1.11
+#####################################
+9a447b086 Fund ratio and import fix spec (#1015)
+9cb3e83f8 Fixed import upload bug for models without form type id (#1014)
+b32f6ac49 Fund ratio tracking currency fix (#1013)
+8b55fdf64 Added created at Time to CDP in transfers
+c0451070b Added non_calculation fields scope to FCF
+
 V9.1.10
 #####################################
 e5ee986db Cleanup of csv files after chart generation
