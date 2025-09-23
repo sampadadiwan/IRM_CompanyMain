@@ -38,13 +38,15 @@ module KpisHelper
   def display_kpi(kpi, investor_kpi_mapping, params: {})
     return if kpi.value.blank?
 
-    result = number_with_delimiter(kpi.value.round(1))
-    percentage_value = (kpi.value.round(4) * 100)
+    decimals = params[:decimals]&.to_i || 2
+
+    result = number_with_delimiter(kpi.value.round(decimals))
+    percentage_value = (kpi.value.round(1) * 100)
 
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type
       when "money"
-        result = params[:units].present? && params[:units] == "Common" ? kpi.common_size_value : money_to_currency(kpi.value, params)
+        result = kpi.common_size_value if params[:units].present? && params[:units] == "Common"
       when "percentage"
         result = "#{percentage_value} %"
       end
