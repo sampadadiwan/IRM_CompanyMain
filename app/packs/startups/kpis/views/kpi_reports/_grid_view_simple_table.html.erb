@@ -51,7 +51,7 @@
                         <td id="value_<%=kpi&.id%>" class="<%= (kpi && kpi.value.negative?) ? 'text-danger' : nil %>">
                             <% if kpi %>
                                 <% if kpi.value.negative? %>
-                                    (<%= display_kpi(kpi, ikm, params: params) %>)
+                                    <%= display_kpi(kpi, ikm, params: params) %>
                                 <% else %>
                                     <%= display_kpi(kpi, ikm, params: params) %>
                                 <% end %>
