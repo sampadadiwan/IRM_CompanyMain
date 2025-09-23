@@ -112,12 +112,22 @@ class ValuationsController < ApplicationController
   # DELETE /valuations/1 or /valuations/1.json
   def destroy
     @valuation.destroy
+    if @valuation.deleted? || @valuation.deleted?
+      UpdatePortfolioInvestmentsJob.perform_later(@valuation.investment_instrument&.portfolio_investment_ids)
 
-    respond_to do |format|
-      format.html do
-        redirect_to @valuation.owner || valuations_url, notice: "Valuation was successfully destroyed."
+      respond_to do |format|
+        format.html do
+          redirect_to @valuation.owner || valuations_url, notice: "Valuation was successfully destroyed."
+        end
+        format.json { head :no_content }
       end
-      format.json { head :no_content }
+    else
+      respond_to do |format|
+        format.html do
+          redirect_to @valuation , notice: "Valuation could not be destroyed. #{@valuation.errors.full_messages.join(', ')}"
+        end
+        format.json { render json: @valuation.errors, status: :unprocessable_entity }
+      end
     end
   end
 
