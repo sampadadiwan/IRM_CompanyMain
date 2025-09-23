@@ -19,7 +19,7 @@
       <%= form.text_field :entity_id, class: "form-control", hidden: true %>
       <%= form.text_field :fund_id, class: "form-control", hidden: true %>
       <%= form.text_field :investor_id, class: "form-control", hidden: true %>
-      
+
       <% if account_entry.investor_id.present? %>
       <div class="form-group">
         <%= form.label :folio_id %>
@@ -34,7 +34,7 @@
 
       <div class="form-group">
         <%= form.label :period %>
-        <%= form.text_field :period, class: "form-control"  %>    
+        <%= form.text_field :period, class: "form-control"  %>
       </div>
 
       <div class="form-group" data-controller="docform">
@@ -54,6 +54,25 @@
         <%= form.label :amount %> <span class="formatted_currency"></span>
         <%= form.text_field :amount, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>
       </div>
+
+      <% if params[:debug].present? %>
+
+      <% parent_types = AccountEntry::PARENT_TYPES %>
+      <div class="form-group">
+          <%= form.label :parent_type %>
+          <%= form.text_field :parent_type, list: 'label-list', class: "form-control", maxlength: 50 %>
+          <datalist id="label-list">
+              <% parent_types.each do |label| %>
+              <option value="<%= label %>"></option>
+              <% end %>
+          </datalist>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :parent_id %>
+        <%= form.number_field :parent_id, class: "form-control"  %>
+      </div>
+      <% end %>
 
       <%= custom_form_fields(account_entry, form) %>
 

@@ -18,6 +18,8 @@ class AccountEntry < ApplicationRecord
     "Amount" => "amount"
   }.freeze
 
+  PARENT_TYPES = ["PortfolioInvestment", "AggregatePortfolioInvestment", "Investor", "AccountEntry"].freeze
+
   belongs_to :capital_commitment, optional: true
   belongs_to :entity, inverse_of: :account_entries
   belongs_to :fund, inverse_of: :account_entries

@@ -232,6 +232,6 @@ class AccountEntriesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def account_entry_params
-    params.require(:account_entry).permit(:capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :reporting_date, :entry_type, :name, :amount, :notes, :period, :form_type_id, properties: {})
+    params.require(:account_entry).permit(:capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :reporting_date, :entry_type, :name, :amount, :notes, :period, :form_type_id, :parent_type, :parent_id, properties: {})
   end
 end
