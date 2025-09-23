@@ -23,7 +23,7 @@ module CurrencyHelper
     end
   end
 
-  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil)
+  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: 2)
     sanf = true
     money = money.clone
 
@@ -50,14 +50,14 @@ module CurrencyHelper
       cookies[:currency_units] = units if cookies
     end
     if money.is_a?(Money)
-      display(money, sanf, units)
+      display(money, sanf, units, decimals:)
     else
       # Its just a number
-      number_with_delimiter(money.round(2))
+      number_with_delimiter(money.round(decimals))
     end
   end
 
-  def display(money, sanf, units)
+  def display(money, sanf, units, decimals: 2)
     display_val = case money.currency.iso_code
                   when "INR"
                     money.format(format: FORMAT, south_asian_number_formatting: sanf)

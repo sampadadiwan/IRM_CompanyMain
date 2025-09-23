@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "Dashboard Widgets : #{dashboard_widget.presence || 'New'}") do %>
   <%= form_with(model: dashboard_widget, validate: true) do |form| %>
-    
+
     <% if dashboard_widget.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(dashboard_widget.errors.count, "error") %> prohibited this dashboard_widget from being saved:</h2>
@@ -21,25 +21,25 @@
       <%= form.label :name %>
       <%= form.text_field :name, class: "form-control"  %>
     </div>
-    
+
     <%= form.hidden_field :owner_id %>
     <%= form.hidden_field :owner_type %>
-    
+
     <!-- This is a hidden field to store the widget options in JSON format -->
     <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select.to_json, id: "widget_options_json" %>
     <!-- This is a hidden field to store the selected widget name, used in dashboard_widgets_controller.js -->
     <%= hidden_field_tag "selected_widget_name", dashboard_widget.widget_name, id: "selected_widget_name" %>
 
-    <div class="form-group" 
-          data-controller="dashboard-widgets" 
-          data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>" 
+    <div class="form-group"
+          data-controller="dashboard-widgets"
+          data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>"
           data-dashboard-widgets-param-value="widget_name">
       <%= form.label :widget_name %>
       <%= form.select :widget_name, {}, {prompt: 'Select Widget'}, class: "form-control", id: :widget_name  %>
       <span class="text-muted">Select a widget corresponding to the Dashboard Name sected above</span>
     </div>
 
-    
+
     <div class="form-group">
       <%= form.label :tags %>
       <%= form.text_field :tags, class: "form-control"  %>
@@ -76,6 +76,10 @@
       <%= form.check_box :display_tag, class: "form-check-input"  %>
     </div>
 
+    <div class="form-group">
+      <%= form.label :show_menu %>
+      <%= form.check_box :show_menu, class: "form-check-input"  %>
+    </div>
 
 
     <div class="form-group">
