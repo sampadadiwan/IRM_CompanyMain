@@ -1885,7 +1885,7 @@ Then('the account entries are adjusted upon fund unit transfer') do
       puts "Checking account entry for #{entry.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
       entry.json_fields["transfer_id"].should == @transfer_token
       # entry.json_fields["orig_amount"].should == entry.amount_cents / retained_ratio
-      entry.amount_cents.should == (entry.json_fields["orig_amount"].to_f * retained_ratio).round
+      entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * retained_ratio).round(0)
     end
   end
 
@@ -1894,7 +1894,7 @@ Then('the account entries are adjusted upon fund unit transfer') do
       puts "Checking account entry for #{entry.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
       entry.json_fields["transfer_id"].should == @transfer_token
       # entry.json_fields["orig_amount"].should == entry.amount_cents / transfer_ratio
-      entry.amount_cents.should == (entry.json_fields["orig_amount"].to_f * transfer_ratio)
+      entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * transfer_ratio).round(0)
     end
   end
 end
@@ -1954,9 +1954,9 @@ Then('distributions are adjusted upon fund unit transfer') do
       puts "Checking capital distribution payment for #{cdp.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
       cdp.json_fields["transfer_id"].should == @transfer_token
       # cdp.json_fields["orig_gross_payable"].should == cdp.gross_payable_cents / retained_ratio
-      cdp.gross_payable_cents.should == (cdp.json_fields["orig_gross_payable"].to_f * retained_ratio).round
+      cdp.gross_payable_cents.round(0).should == (cdp.json_fields["orig_gross_payable"].to_f * retained_ratio).round(0)
       # cdp.json_fields["orig_units_quantity"].should == cdp.units_quantity / retained_ratio
-      cdp.units_quantity.should == (cdp.json_fields["orig_units_quantity"].to_f * retained_ratio).round
+      cdp.units_quantity.round(0).should == (cdp.json_fields["orig_units_quantity"].to_f * retained_ratio).round(0)
     end
   end
 
@@ -1965,9 +1965,9 @@ Then('distributions are adjusted upon fund unit transfer') do
       puts "Checking capital distribution payment for #{cdp.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
       cdp.json_fields["transfer_id"].should == @transfer_token
       # cdp.json_fields["orig_gross_payable"].should == cdp.gross_payable_cents / transfer_ratio
-      cdp.gross_payable_cents.should == (cdp.json_fields["orig_gross_payable"].to_f * transfer_ratio)
+      cdp.gross_payable_cents.round(0).should == (cdp.json_fields["orig_gross_payable"].to_f * transfer_ratio).round(0)
       # cdp.json_fields["orig_units_quantity"].should == cdp.units_quantity / transfer_ratio
-      cdp.units_quantity.should == (cdp.json_fields["orig_units_quantity"].to_f * transfer_ratio)
+      cdp.units_quantity.round(0).should == (cdp.json_fields["orig_units_quantity"].to_f * transfer_ratio).round(0)
     end
   end
 end

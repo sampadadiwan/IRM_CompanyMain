@@ -1,9 +1,12 @@
 module DashboardWidgetsHelper
-  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil)
+  def dashboard_widgets(dashboard_name, entity_id, name: "Default", owner: nil, show_menu: nil)
     # These are the available widgets for the dashboard_name
     available_widgets = DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
     # Fetch the enabled widgets for the dashboard_name
     widgets = DashboardWidget.enabled.where(dashboard_name:, name:, entity_id:)
+
+    widgets = widgets.where(show_menu:) if show_menu.present?
+
     # Apply owner filter if provided
     widgets = widgets.where(owner: owner) if owner
     if widgets.empty?
