@@ -1,0 +1,53 @@
+<%= render FormCard.new(title: "#{@support_agent}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @support_agent.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Description
+      </td>
+      <td>
+        <%= @support_agent.description %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @support_agent.entity_id %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Form Type
+      </td>
+      <td>
+        <%= @support_agent.form_type_id %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Agent Type
+      </td>
+      <td>
+        <%= @support_agent.agent_type %>
+      </td>
+    </tr>
+
+    <%= display_custom_fields(@support_agent) %>
+
+  </table>
+  <div class="associated_entity">
+    <% if policy(@support_agent).update? %>
+      <%= link_to "Edit", edit_support_agent_path(@support_agent), {class: "btn btn-outline-primary"} %>
+      <%= button_to "Delete", @support_agent, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

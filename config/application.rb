@@ -57,7 +57,7 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/helpers")
     end
 
-    ai_view_paths = %w[ai_rules ow chats agent_charts]
+    ai_view_paths = %w[ai_rules ow chats agent_charts support_agents]
 
     ai_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/views")

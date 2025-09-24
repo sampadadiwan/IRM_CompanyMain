@@ -1,0 +1,28 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Support Agents</h1>
+  <%= link_to "New Support Agent", new_support_agent_path, {class: "btn btn-outline-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="support_agents" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Name
+        </th>
+        <th>
+          Description
+        </th>
+        <th>
+          Agent Type
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @support_agents.each do |support_agent| %>
+        <%= render support_agent %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
