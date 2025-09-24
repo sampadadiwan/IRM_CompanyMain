@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_19_085009) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_23_130935) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -926,6 +926,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_19_085009) do
     t.boolean "display_name", default: false
     t.boolean "display_tag", default: false
     t.string "name", limit: 20, default: "Default"
+    t.boolean "show_menu", default: true, null: false
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end

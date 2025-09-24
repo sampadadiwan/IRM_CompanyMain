@@ -29,7 +29,7 @@
           <%= link_to @account_entry.capital_commitment %>
         </td>
       </tr>
-      
+
       <tr>
         <td>
           Folio
@@ -77,7 +77,7 @@
       </td>
     </tr>
 
-    
+
     <% if @account_entry.parent %>
     <tr>
       <td>
@@ -95,7 +95,7 @@
         Formula
       </td>
       <td>
-        <%= link_to @account_entry.fund_formula %>      
+        <%= link_to @account_entry.fund_formula %>
       </td>
     </tr>
     <% end %>
@@ -173,11 +173,13 @@
     </tr>
     <% end %>
 
+    <%= display_custom_fields(@account_entry) if current_user %>
+
   </table>
 
 <% end %>
 
 <div>
-    <%= link_to  t_common(:edit), edit_account_entry_path(@account_entry), {class: "btn btn-outline-primary ti ti-eye"} if policy(@account_entry).update? %> 
+    <%= link_to  t_common(:edit), edit_account_entry_path(@account_entry), {class: "btn btn-outline-primary ti ti-eye"} if policy(@account_entry).update? %>
     <%= button_to t_common(:delete), @account_entry, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@account_entry).destroy? %>
 </div>

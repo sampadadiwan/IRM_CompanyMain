@@ -71,6 +71,6 @@ class DashboardWidgetsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def dashboard_widget_params
-    params.require(:dashboard_widget).permit(:dashboard_name, :name, :entity_id, :owner_id, :owner_type, :widget_name, :position, :metadata, :enabled, :tags, :size, :display_name, :display_tag)
+    params.require(:dashboard_widget).permit(:dashboard_name, :name, :entity_id, :owner_id, :owner_type, :widget_name, :position, :metadata, :enabled, :tags, :size, :display_name, :display_tag, :show_menu)
   end
 end

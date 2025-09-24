@@ -44,7 +44,7 @@ class FundUnitTransferService < Trailblazer::Operation
 
   def transfer_units(ctx, transfer_ratio:, transfer_date:, from_commitment:, to_commitment:, fund:, price:, premium:, **)
     # Get the reason for the transfer
-    reason = ctx[:reason].presence || "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}. Transfer ID: #{ctx[:transfer_token]}"
+    reason = ctx[:reason].presence || "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}. transfer_id: #{ctx[:transfer_token]}"
     success = false
     price_cents = price.to_d * 100.0
     premium_cents = premium.to_d * 100.0
@@ -93,23 +93,25 @@ class FundUnitTransferService < Trailblazer::Operation
 
       from_commitment.account_entries.each do |entry|
         if ctx[:account_entries_excluded].blank? || ctx[:account_entries_excluded].exclude?(entry.name)
+
+          orig_amount     = entry.amount_cents
+          orig_folio      = entry.folio_amount_cents
+          orig_tracking   = entry.tracking_amount_cents
+
           new_entry = entry.dup
-          new_entry.json_fields["Transfer ID"] = ctx[:transfer_token]
-          new_entry.json_fields["Orig Amount"] = entry.amount_cents
+          new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
+          new_entry.json_fields["orig_amount"] = entry.amount_cents
           new_entry.capital_commitment_id = to_commitment.id
-          new_entry.amount_cents *= transfer_ratio
-          new_entry.folio_amount_cents *= transfer_ratio
-          new_entry.tracking_amount_cents *= transfer_ratio
+          new_entry.amount_cents = orig_amount * transfer_ratio
+          new_entry.folio_amount_cents = orig_folio * transfer_ratio
+          new_entry.tracking_amount_cents = orig_tracking * transfer_ratio
           new_entry.created_at = Time.zone.now
           new_entry.updated_at = Time.zone.now
-          new_entry.json_fields["Notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, original entry ID: #{entry.id}"
+          new_entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}. #{entry.amount_cents} * #{transfer_ratio} = #{new_entry.amount_cents}"
 
-          entry.json_fields["Transfer ID"] = ctx[:transfer_token]
-          entry.json_fields["Orig Amount"] = entry.amount_cents
-          entry.amount_cents *= retained_ratio
-          entry.folio_amount_cents *= retained_ratio
-          entry.tracking_amount_cents *= retained_ratio
-          entry.json_fields["Notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, original entry ID: #{entry.id}"
+          entry.json_fields["transfer_id"] = ctx[:transfer_token]
+          entry.json_fields["orig_amount"] = entry.amount_cents
+          entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}"
 
           AccountEntry.transaction do
             # Update without callbacks
@@ -143,37 +145,55 @@ class FundUnitTransferService < Trailblazer::Operation
     remittances_transferred = 0
 
     from_commitment.capital_remittances.each do |remittance|
+      orig_call = remittance.call_amount_cents
+      orig_collected  = remittance.collected_amount_cents
+      orig_committed  = remittance.committed_amount_cents
+      orig_folio_call = remittance.folio_call_amount_cents
+      orig_folio_collected = remittance.folio_collected_amount_cents
+      orig_folio_committed = remittance.folio_committed_amount_cents
+      orig_capital_fee = remittance.capital_fee_cents
+      orig_other_fee = remittance.other_fee_cents
+      orig_folio_capital_fee = remittance.folio_capital_fee_cents
+      orig_folio_other_fee = remittance.folio_other_fee_cents
+      orig_computed = remittance.computed_amount_cents
+      orig_percentage = remittance.percentage
+      orig_arrear_folio = remittance.arrear_folio_amount_cents
+      orig_arrear = remittance.arrear_amount_cents
+      orig_tracking_collected = remittance.tracking_collected_amount_cents
+      orig_tracking_call = remittance.tracking_call_amount_cents
+
       new_remittance = remittance.dup
-      new_remittance.json_fields["Transfer ID"] = ctx[:transfer_token]
-      new_remittance.json_fields["Orig Call Amount"] = remittance.call_amount_cents
-      new_remittance.json_fields["Orig Collected Amount"] = remittance.collected_amount_cents
-      new_remittance.json_fields["Orig Committed Amount"] = remittance.committed_amount_cents
+      new_remittance.json_fields["transfer_id"] = ctx[:transfer_token]
+      new_remittance.json_fields["orig_id"] = remittance.id
+      new_remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
+      new_remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
+      new_remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
       new_remittance.capital_commitment_id = to_commitment.id
-      new_remittance.call_amount_cents *= transfer_ratio
-      new_remittance.collected_amount_cents *= transfer_ratio
-      new_remittance.committed_amount_cents *= transfer_ratio
-      new_remittance.folio_call_amount_cents *= transfer_ratio
-      new_remittance.folio_collected_amount_cents *= transfer_ratio
-      new_remittance.folio_committed_amount_cents *= transfer_ratio
-      new_remittance.capital_fee_cents *= transfer_ratio
-      new_remittance.other_fee_cents *= transfer_ratio
-      new_remittance.folio_capital_fee_cents *= transfer_ratio
-      new_remittance.folio_other_fee_cents *= transfer_ratio
-      new_remittance.computed_amount_cents *= transfer_ratio
-      new_remittance.percentage *= transfer_ratio
-      new_remittance.arrear_folio_amount_cents *= transfer_ratio
-      new_remittance.arrear_amount_cents *= transfer_ratio
-      new_remittance.tracking_collected_amount_cents *= transfer_ratio
-      new_remittance.tracking_call_amount_cents *= transfer_ratio
+      new_remittance.call_amount_cents = orig_call * transfer_ratio
+      new_remittance.collected_amount_cents = orig_collected * transfer_ratio
+      new_remittance.committed_amount_cents = orig_committed * transfer_ratio
+      new_remittance.folio_call_amount_cents = orig_folio_call * transfer_ratio
+      new_remittance.folio_collected_amount_cents = orig_folio_collected * transfer_ratio
+      new_remittance.folio_committed_amount_cents = orig_folio_committed * transfer_ratio
+      new_remittance.capital_fee_cents = orig_capital_fee * transfer_ratio
+      new_remittance.other_fee_cents = orig_other_fee * transfer_ratio
+      new_remittance.folio_capital_fee_cents = orig_folio_capital_fee * transfer_ratio
+      new_remittance.folio_other_fee_cents = orig_folio_other_fee * transfer_ratio
+      new_remittance.computed_amount_cents = orig_computed * transfer_ratio
+      new_remittance.percentage = orig_percentage * transfer_ratio
+      new_remittance.arrear_folio_amount_cents = orig_arrear_folio * transfer_ratio
+      new_remittance.arrear_amount_cents = orig_arrear * transfer_ratio
+      new_remittance.tracking_collected_amount_cents = orig_tracking_collected * transfer_ratio
+      new_remittance.tracking_call_amount_cents = orig_tracking_call * transfer_ratio
       new_remittance.created_at = Time.zone.now
       new_remittance.updated_at = Time.zone.now
       new_remittance.notes ||= ""
-      new_remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, original remittance ID: #{remittance.id}"
+      new_remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
 
-      remittance.json_fields["Transfer ID"] = ctx[:transfer_token]
-      remittance.json_fields["Orig Call Amount"] = remittance.call_amount_cents
-      remittance.json_fields["Orig Collected Amount"] = remittance.collected_amount_cents
-      remittance.json_fields["Orig Committed Amount"] = remittance.committed_amount_cents
+      remittance.json_fields["transfer_id"] = ctx[:transfer_token]
+      remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
+      remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
+      remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
       remittance.call_amount_cents *= retained_ratio
       remittance.collected_amount_cents *= retained_ratio
       remittance.committed_amount_cents *= retained_ratio
@@ -191,7 +211,7 @@ class FundUnitTransferService < Trailblazer::Operation
       remittance.tracking_collected_amount_cents *= retained_ratio
       remittance.tracking_call_amount_cents *= retained_ratio
       remittance.notes ||= ""
-      remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}"
+      remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id} , transfer_ratio: #{transfer_ratio}"
 
       CapitalRemittance.transaction do
         # Update without callbacks
@@ -217,45 +237,53 @@ class FundUnitTransferService < Trailblazer::Operation
         )
 
         CapitalRemittance.insert_all([new_remittance.attributes])
-        # Now get back the newly created remittance using the Transfer ID
+        # Now get back the newly created remittance using the transfer_id
         scope = CapitalRemittance.where(capital_call_id: remittance.capital_call_id, capital_commitment_id: to_commitment.id)
 
         scope = case ActiveRecord::Base.connection.adapter_name
                 when /Mysql/i # For prod / staging env
-                  scope.where("json_fields ->> '$.\"Transfer ID\"' = ?", token)
+                  scope.where("json_fields ->> '$.\"transfer_id\"' = ?", token)
                 when /SQLite/i # For the test env
                   # json_extract returns quoted JSON for strings; compare against JSON(value)
                   scope
                 .where(<<~SQL.squish, token)
                   CASE
                     WHEN json_valid(json_fields)
-                      THEN json_extract(json_fields, '$."Transfer ID"')
+                      THEN json_extract(json_fields, '$."transfer_id"')
                     ELSE NULL
                   END = ?
                 SQL
                 else # PostgreSQL, etc.
-                  scope.where("json_fields ->> 'Transfer ID' = ?", token)
+                  scope.where("json_fields ->> 'transfer_id' = ?", token)
                 end
 
         new_remittance_id = scope.pick(:id) # Rails 7+: returns a single value
 
         # Now adjust the capital_remittance_payments
         remittance.capital_remittance_payments.each do |payment|
+          orig_amount = payment.amount_cents
+          orig_folio = payment.folio_amount_cents
+          orig_tracking = payment.tracking_amount_cents
+
           new_payment = payment.dup
-          new_payment.json_fields["Transfer ID"] = ctx[:transfer_token]
-          new_payment.json_fields["Orig Amount"] = payment.amount_cents
+          new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
+          new_payment.json_fields["orig_amount"] = orig_amount
+          new_payment.json_fields["orig_id"] = payment.id
+          new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
           new_payment.capital_remittance_id = new_remittance_id
-          new_payment.amount_cents *= transfer_ratio
-          new_payment.folio_amount_cents *= transfer_ratio
-          new_payment.tracking_amount_cents *= transfer_ratio
+          new_payment.amount_cents = orig_amount * transfer_ratio
+          new_payment.folio_amount_cents = orig_folio * transfer_ratio
+          new_payment.tracking_amount_cents = orig_tracking * transfer_ratio
+
           new_payment.created_at = Time.zone.now
           new_payment.updated_at = Time.zone.now
 
           # Insert without callbacks
           CapitalRemittancePayment.insert_all([new_payment.attributes])
 
-          payment.json_fields["Transfer ID"] = ctx[:transfer_token]
-          payment.json_fields["Orig Amount"] = payment.amount_cents
+          payment.json_fields["transfer_id"] = ctx[:transfer_token]
+          payment.json_fields["orig_amount"] = payment.amount_cents
+          payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
           payment.amount_cents *= retained_ratio
           payment.folio_amount_cents *= retained_ratio
           payment.tracking_amount_cents *= retained_ratio
@@ -280,39 +308,61 @@ class FundUnitTransferService < Trailblazer::Operation
     retained_ratio = 1 - transfer_ratio
 
     from_commitment.capital_distribution_payments.each do |payment|
+      orig_gross_payable = payment.gross_payable_cents
+      orig_units_quantity = payment.units_quantity
+
+      orig_income = payment.income_cents
+      orig_percentage = payment.percentage
+      orig_cost_of_investment = payment.cost_of_investment_cents
+      orig_folio_amount = payment.folio_amount_cents
+      orig_capital_fee = payment.capital_fee_cents
+      orig_other_fee = payment.other_fee_cents
+      orig_net_of_account_entries = payment.net_of_account_entries_cents
+      orig_net_payable = payment.net_payable_cents
+      orig_income_with_fees = payment.income_with_fees_cents
+      orig_cost_of_investment_with_fees = payment.cost_of_investment_with_fees_cents
+      orig_reinvestment = payment.reinvestment_cents
+      orig_reinvestment_with_fees = payment.reinvestment_with_fees_cents
+      orig_gross_of_account_entries = payment.gross_of_account_entries_cents
+      orig_tracking_net_payable = payment.tracking_net_payable_cents
+      orig_tracking_gross_payable = payment.tracking_gross_payable_cents
+      orig_tracking_reinvestment_with_fees = payment.tracking_reinvestment_with_fees_cents
+
       new_payment = payment.dup
-      new_payment.json_fields["Transfer ID"] = ctx[:transfer_token]
-      new_payment.json_fields["Orig Gross Payable"] = payment.gross_payable_cents
-      new_payment.json_fields["Orig Units Quantity"] = payment.units_quantity
+      new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
+      new_payment.json_fields["orig_gross_payable"] = orig_gross_payable
+      new_payment.json_fields["orig_units_quantity"] = orig_units_quantity
+      new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
 
       new_payment.capital_commitment_id = to_commitment.id
-      new_payment.income_cents *= transfer_ratio
-      new_payment.percentage *= transfer_ratio
-      new_payment.units_quantity *= transfer_ratio
-      new_payment.cost_of_investment_cents *= transfer_ratio
-      new_payment.folio_amount_cents *= transfer_ratio
-      new_payment.capital_fee_cents *= transfer_ratio
-      new_payment.other_fee_cents *= transfer_ratio
-      new_payment.net_of_account_entries_cents *= transfer_ratio
-      new_payment.net_payable_cents *= transfer_ratio
-      new_payment.income_with_fees_cents *= transfer_ratio
-      new_payment.cost_of_investment_with_fees_cents *= transfer_ratio
-      new_payment.reinvestment_cents *= transfer_ratio
-      new_payment.reinvestment_with_fees_cents *= transfer_ratio
-      new_payment.gross_payable_cents *= transfer_ratio
-      new_payment.gross_of_account_entries_cents *= transfer_ratio
-      new_payment.tracking_net_payable_cents *= transfer_ratio
-      new_payment.tracking_gross_payable_cents *= transfer_ratio
-      new_payment.tracking_reinvestment_with_fees_cents *= transfer_ratio
+      new_payment.income_cents = orig_income * transfer_ratio
+      new_payment.percentage = orig_percentage * transfer_ratio
+      new_payment.units_quantity = orig_units_quantity * transfer_ratio
+      new_payment.cost_of_investment_cents = orig_cost_of_investment * transfer_ratio
+      new_payment.folio_amount_cents = orig_folio_amount * transfer_ratio
+      new_payment.capital_fee_cents = orig_capital_fee * transfer_ratio
+      new_payment.other_fee_cents = orig_other_fee * transfer_ratio
+      new_payment.net_of_account_entries_cents = orig_net_of_account_entries * transfer_ratio
+      new_payment.net_payable_cents = orig_net_payable * transfer_ratio
+      new_payment.income_with_fees_cents = orig_income_with_fees * transfer_ratio
+      new_payment.cost_of_investment_with_fees_cents = orig_cost_of_investment_with_fees * transfer_ratio
+      new_payment.reinvestment_cents = orig_reinvestment * transfer_ratio
+      new_payment.reinvestment_with_fees_cents = orig_reinvestment_with_fees * transfer_ratio
+      new_payment.gross_payable_cents = orig_gross_payable * transfer_ratio
+      new_payment.gross_of_account_entries_cents = orig_gross_of_account_entries * transfer_ratio
+      new_payment.tracking_net_payable_cents = orig_tracking_net_payable * transfer_ratio
+      new_payment.tracking_gross_payable_cents = orig_tracking_gross_payable * transfer_ratio
+      new_payment.tracking_reinvestment_with_fees_cents = orig_tracking_reinvestment_with_fees * transfer_ratio
       new_payment.created_at = Time.zone.now
       new_payment.updated_at = Time.zone.now
 
       # Insert without callbacks
       CapitalDistributionPayment.insert_all([new_payment.attributes])
 
-      payment.json_fields["Transfer ID"] = ctx[:transfer_token]
-      payment.json_fields["Orig Gross Payable"] = payment.gross_payable_cents
-      payment.json_fields["Orig Units Quantity"] = payment.units_quantity
+      payment.json_fields["transfer_id"] = ctx[:transfer_token]
+      payment.json_fields["orig_gross_payable"] = payment.gross_payable_cents
+      payment.json_fields["orig_units_quantity"] = payment.units_quantity
+      payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
       payment.income_cents *= retained_ratio
       payment.percentage *= retained_ratio
       payment.units_quantity *= retained_ratio
@@ -351,7 +401,8 @@ class FundUnitTransferService < Trailblazer::Operation
         gross_of_account_entries_cents: payment.gross_of_account_entries_cents,
         tracking_net_payable_cents: payment.tracking_net_payable_cents,
         tracking_gross_payable_cents: payment.tracking_gross_payable_cents,
-        tracking_reinvestment_with_fees_cents: payment.tracking_reinvestment_with_fees_cents
+        tracking_reinvestment_with_fees_cents: payment.tracking_reinvestment_with_fees_cents,
+        json_fields: payment.json_fields
       )
     end
     true
@@ -360,16 +411,18 @@ class FundUnitTransferService < Trailblazer::Operation
   def apply_commitment_adjustments(ctx, from_commitment:, to_commitment:, fund:, **)
     transfer_ratio = ctx[:transfer_ratio]
 
+    from_commitment.committed_amount_cents
+    orig_folio_amount = from_commitment.folio_committed_amount_cents
     # Do NOT put this in a transaction, adjustments do not work if put in a transaction, as they have counter_culture which execute_after_commit
 
     to_ca = CommitmentAdjustment.new(
       fund_id: fund.id,
       entity_id: to_commitment.entity_id,
       capital_commitment_id: to_commitment.id,
-      amount_cents: from_commitment.committed_amount_cents * transfer_ratio,
-      folio_amount_cents: from_commitment.folio_committed_amount_cents * transfer_ratio,
+      # amount_cents: orig_amount * transfer_ratio,
+      folio_amount_cents: orig_folio_amount * transfer_ratio,
       adjustment_type: "Transfer",
-      reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, Transfer ID: #{ctx[:transfer_token]}",
+      reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       as_of: ctx[:transfer_date]
     )
 
@@ -379,10 +432,10 @@ class FundUnitTransferService < Trailblazer::Operation
       fund_id: fund.id,
       entity_id: from_commitment.entity_id,
       capital_commitment_id: from_commitment.id,
-      amount_cents: -from_commitment.committed_amount_cents * transfer_ratio,
-      folio_amount_cents: -from_commitment.folio_committed_amount_cents * transfer_ratio,
+      # amount_cents: -orig_amount * transfer_ratio,
+      folio_amount_cents: -orig_folio_amount * transfer_ratio,
       adjustment_type: "Transfer",
-      reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, Transfer ID: #{ctx[:transfer_token]}",
+      reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       as_of: ctx[:transfer_date]
     )
 

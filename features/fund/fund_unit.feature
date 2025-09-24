@@ -103,18 +103,19 @@ Scenario Outline: Import fund units
 
 
 Scenario Outline: Transfer Fund Units
-  Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
   Given the user has role "company_admin"
-  Given there is an existing investor "" with "1" users
-  Given there is an existing investor "" with "1" users
-  Given there is a fund "<fund>" for the entity
-  Given the investors are added to the fund
-  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000;unit_type=A" from each investor
-  Given there is a capital call "<call>"
-  Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;unit_type=A" for the last investor
-  Given the investors are added to the fund
-  Given the remittances are paid and verified
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   Given the units are generated
   When fund units are transferred "<transfer>"
   Then the units should be transferred
