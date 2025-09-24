@@ -149,6 +149,15 @@ Then('the fmv must be calculated for the portfolio') do
   end
 end
 
+Given('The old valuations are deleted') do
+  Valuation.all[0..-2].each do |val|
+    visit(valuation_path(val))
+    click_on("Delete")
+    click_on("Proceed")
+    sleep 0.5
+  end
+  sleep 1
+end
 
 Then('There should be {string} portfolio investments created') do |count|
   PortfolioInvestment.count.should == count.to_i
