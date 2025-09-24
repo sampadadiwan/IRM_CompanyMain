@@ -1,3 +1,4 @@
+<% if params[:hide_search].blank? || params[:hide_search] != "true" %>
 <div class="nested-fields">
   <%= form_tag @data_source, method: :get, data: { controller: "search", turbo_frame: @turbo_frame }, class: "search-form d-flex justify-content-between align-items-center" do %>
     <div class="d-flex align-items-center search-form-per-page">
@@ -23,3 +24,4 @@
     <%= submit_tag "Submit", hidden: true, id: "submit", data: { target: "search.submit" } %>
   <% end %>
 </div>
+<% end %>

@@ -1,3 +1,10 @@
+V9.1.12
+#####################################
+0ad641f59 Added decimals to kpi widget
+c4cc03514 Fixed the sticky header
+eb38f134c Added show_menu to dashboard widgets
+54bebcfb9 Added better tests for Fund Unit Transfers
+
 V9.1.11
 #####################################
 9a447b086 Fund ratio and import fix spec (#1015)
