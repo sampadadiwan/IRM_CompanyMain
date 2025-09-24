@@ -15,9 +15,6 @@ Scenario Outline: Create new investor
   	|user	      |entity               |investor     |msg	|
   	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
     |  	        |entity_type=Company  |category=LP |Investor was successfully created|
-    |  	        |entity_type=Company  |category=LP;primary_email=abcg@gmail.com,xyz@yahoo.com |cannot contain commas, colons, or semicolons|
-    |  	        |entity_type=Company  |category=LP;primary_email=abcg@gmail.com:xyz@yahoo.com |cannot contain commas, colons, or semicolons|
-
 
 Scenario Outline: Investor email validation error
   Given Im logged in as a user "<user>" for an entity "<entity>"
