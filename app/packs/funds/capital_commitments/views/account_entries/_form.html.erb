@@ -57,13 +57,12 @@
 
       <% if params[:debug].present? %>
 
-      <% parent_types = AccountEntry::PARENT_TYPES %>
       <div class="form-group">
           <%= form.label :parent_type %>
-          <%= form.text_field :parent_type, list: 'label-list', class: "form-control", maxlength: 50 %>
-          <datalist id="label-list">
-              <% parent_types.each do |label| %>
-              <option value="<%= label %>"></option>
+          <%= form.text_field :parent_type, list: 'parent-type-list', class: "form-control", maxlength: 50 %>
+          <datalist id="parent-type-list">
+              <% AccountEntry::PARENT_TYPES.each do |parent_type| %>
+              <option value="<%= parent_type %>"></option>
               <% end %>
           </datalist>
       </div>
