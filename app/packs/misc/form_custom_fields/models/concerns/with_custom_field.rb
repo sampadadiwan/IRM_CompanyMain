@@ -155,16 +155,30 @@ module WithCustomField
   # and only returns the fields which are required based on the conditions
   # Example: If a field is required only if another field has a certain value
   # then it checks for that condition and returns the field only if the condition is met
-  def required_fields_for(field_type: nil)
-    json_fields = self.json_fields || {}
+  # Returns required fields for given type.
+  # By default applies condition_on logic, but can ignore conditions to match DB query
+  def required_fields_for(field_type: nil, ignore_conditions: false)
+    json_fields || {}
 
     form_custom_fields.select do |fcf|
       next false unless fcf.required?
       next false if field_type && fcf.field_type != field_type
 
+      debug_prefix = "#{fcf.name} (id=#{fcf.id}, type=#{fcf.field_type}, required=#{fcf.required?})"
+
       if fcf.condition_on.present?
-        satisfies_condition?(fcf, json_fields)
+        cond_val = json_fields[fcf.condition_on]
+        Rails.logger.debug { "  -> Has condition_on: #{fcf.condition_on}, criteria=#{fcf.condition_criteria}, params=#{fcf.condition_params}, value_in_json=#{cond_val.inspect}" }
+        if cond_val.present?
+          result = satisfies_condition?(fcf, json_fields)
+          Rails.logger.debug { "  -> #{debug_prefix} Condition evaluated, result=#{result ? 'including' : 'excluding'}" }
+          result
+        else
+          Rails.logger.debug { "  -> #{debug_prefix} Driving field not set, result=including" }
+          true
+        end
       else
+        Rails.logger.debug { "  -> #{debug_prefix} No condition_on, result=including" }
         true
       end
     end

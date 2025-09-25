@@ -62,19 +62,25 @@ class KycOnboardingAgent < AgentBaseService
     #
     invalid_tokens = ["N/A", "NA", "UNKNOWN", "UNK", "NONE", "TEST", "--"].map(&:downcase)
 
-    # Check DB-backed attributes - but only if their type is string
-    investor_kyc.attributes.each do |attr, value|
+    # Determine required DB-backed attributes by schema and presence validators
+    required_db_columns = investor_kyc.class.columns.select { |c| !c.null && c.default.nil? }.map(&:name)
+    required_validated_fields = investor_kyc.class._validators.select do |_, validators|
+      validators.any?(ActiveModel::Validations::PresenceValidator)
+    end.keys.map(&:to_s)
+    required_attrs = (required_db_columns | required_validated_fields)
+
+    required_attrs.each do |attr|
+      value = investor_kyc.public_send(attr)
       next unless value.is_a?(String)
       next if value.nil?
 
       str_val = value.strip
       if str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        Rails.logger.debug { "[KycOnboardingAgent] Invalid field detected: #{attr}=#{value.inspect}" }
+        Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
         ctx[:issues][:field_issues] << { type: :invalid_field_value, field: attr, value: value, severity: :blocking }
       end
     end
 
-    # Figure out the required custom fields from the form type
     # Figure out the required custom fields from the form type
     investor_kyc.required_fields_for.each do |fcf|
       # Get the value from json_fields
@@ -166,55 +172,75 @@ class KycOnboardingAgent < AgentBaseService
   end
 
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
-    # Here we extract the fields from a specific document, and compare it with the data in the KYC
-    validate_fields_with_documents = support_agent.json_fields["validate_fields_with_documents"]
-    # This is of the form Doc1=doc_field:kyc_field,doc_field2:kyc_field2;Doc2=doc_field3:kyc_field3. Parse it out
-    document_field_map = {}
-    validate_fields_with_documents.split(";").each do |doc_mapping|
-      doc_name, field_mappings = doc_mapping.split("=")
-      document_field_map[doc_name] = field_mappings.split(",").to_h { |f| f.split(":") }
-    end
-
+    mappings = parse_field_document_mappings(support_agent)
     llm = ctx[:llm]
-    document_field_map.each do |doc_name, field_map|
-      # Find the document with this name
-      doc = investor_kyc.documents.find { |d| d.name == doc_name }
-      next if doc.nil?
 
-      Rails.logger.debug { "[KycOnboardingAgent] Starting field-to-document consistency check for #{doc.name} #{field_map.keys.join(', ')} InvestorKyc ID=#{investor_kyc.id}" }
-
-      # Extract the fields from the document using the LLM
-      prompt = <<~PROMPT
-        Extract the following fields from the document:
-        #{field_map.keys.join(', ')}
-        Reply strictly in JSON with the format:
-        {"field1": "value1", "field2": "value2", ...}
-      PROMPT
-
-      raw = llm.ask(prompt, with: [doc.file.url])
-      begin
-        content = if raw.is_a?(RubyLLM::Message)
-                    raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
-                  else
-                    raw.to_s
-                  end
-        result = JSON.parse(content)
-        # Compare extracted fields with KYC fields
-        field_map.each do |doc_field, kyc_field|
-          if result[doc_field] == investor_kyc[kyc_field]
-            Rails.logger.debug { "[KycOnboardingAgent] Field matched: #{doc_field} matches #{kyc_field}" }
-          else
-            ctx[:issues][:document_issues] << { type: :field_mismatch, name: doc.name, severity: :blocking, explanation: "#{doc_field} (#{result[doc_field]}) does not match #{kyc_field} (#{investor_kyc[kyc_field]})" }
-            Rails.logger.debug { "[KycOnboardingAgent] Field mismatch in #{doc.name}: #{doc_field}=#{result[doc_field].inspect}, expected #{kyc_field}=#{investor_kyc[kyc_field].inspect}" }
-          end
-        end
-      rescue JSON::ParserError
-        ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, severity: :warning, raw: raw }
-        Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{doc.name}, raw=#{raw.inspect}")
-      end
+    mappings.each do |doc_name, field_map|
+      process_document_consistency(ctx, llm, investor_kyc, doc_name, field_map)
     end
 
     Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
+  end
+
+  def parse_field_document_mappings(support_agent)
+    validate_fields_with_documents = support_agent.json_fields["validate_fields_with_documents"].to_s
+    document_field_map = {}
+    validate_fields_with_documents.split(";").each do |doc_mapping|
+      doc_name, field_mappings = doc_mapping.split("=")
+      next if doc_name.blank? || field_mappings.blank?
+
+      document_field_map[doc_name] = field_mappings.split(",").to_h { |f| f.split(":") }
+    end
+    document_field_map
+  end
+
+  def process_document_consistency(ctx, llm, investor_kyc, doc_name, field_map)
+    doc = investor_kyc.documents.find { |d| d.name == doc_name }
+    return if doc.nil?
+
+    Rails.logger.debug { "[KycOnboardingAgent] Starting field-to-document consistency check for #{doc.name} (#{field_map.keys.join(', ')}) InvestorKyc ID=#{investor_kyc.id}" }
+
+    extracted = extract_fields_from_document(llm, doc, field_map.keys)
+    return unless extracted
+
+    compare_extracted_with_kyc(ctx, doc, investor_kyc, extracted, field_map)
+  end
+
+  def extract_fields_from_document(llm, doc, fields)
+    prompt = <<~PROMPT
+      Extract the following fields from the document:
+      #{fields.join(', ')}
+      Reply strictly in JSON with the format:
+      {"field1": "value1", "field2": "value2", ...}
+    PROMPT
+
+    raw = llm.ask(prompt, with: [doc.file.url])
+    content = if raw.is_a?(RubyLLM::Message)
+                raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
+              else
+                raw.to_s
+              end
+    JSON.parse(content)
+  rescue JSON::ParserError
+    ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, severity: :warning, raw: raw }
+    Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{doc.name}, raw=#{raw.inspect}")
+    nil
+  end
+
+  def compare_extracted_with_kyc(ctx, doc, investor_kyc, extracted, field_map)
+    field_map.each do |doc_field, kyc_field|
+      if extracted[doc_field] == investor_kyc[kyc_field]
+        Rails.logger.debug { "[KycOnboardingAgent] Field matched: #{doc_field} matches #{kyc_field}" }
+      else
+        ctx[:issues][:document_issues] << {
+          type: :field_mismatch,
+          name: doc.name,
+          severity: :blocking,
+          explanation: "#{doc_field} (#{extracted[doc_field]}) does not match #{kyc_field} (#{investor_kyc[kyc_field]})"
+        }
+        Rails.logger.debug { "[KycOnboardingAgent] Field mismatch in #{doc.name}: #{doc_field}=#{extracted[doc_field].inspect}, expected #{kyc_field}=#{investor_kyc[kyc_field].inspect}" }
+      end
+    end
   end
 
   def perform_ad_hoc_checks(ctx, investor_kyc:, support_agent:, **)
