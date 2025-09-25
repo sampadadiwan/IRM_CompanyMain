@@ -1,4 +1,12 @@
 class KycOnboardingAgent < AgentBaseService
+  # KycOnboardingAgent orchestrates a multi-step verification pipeline
+  # for InvestorKYC records. It checks fields, validates documents
+  # against expected content/labels, ensures consistency, creates reports,
+  # sends necessary reminders, and triggers AML screening if complete.
+  #
+  # This service inherits from AgentBaseService, leveraging Trailblazer's
+  # `step` construct to define a linear pipeline of operations with
+  # shared execution context.
   step :initialize_agent
 
   # == Triggers ==
@@ -32,11 +40,17 @@ class KycOnboardingAgent < AgentBaseService
   # - No investor marked complete with missing fields/docs
   # - Mismatches consistently detected
   # - Reports auto-reflect trends
-  # - Reminders correctly triggered and ctxual
+  # - Reminders correctly triggered and contextual
   # - AML checks auto-triggered on completion
 
   private
 
+  # Initializes the agent with the investor_kyc under review.
+  # Sets up the shared context including issue tracking hashes.
+  #
+  # @param ctx [Hash] Trailblazer execution context
+  # @param investor_kyc [InvestorKyc] record under verification
+  # @return [Boolean] truthy if KYC is completed and eligible for processing
   def initialize_agent(ctx, investor_kyc:, **)
     super
     # Initialize execution ctx with a single investor_kyc
@@ -44,25 +58,36 @@ class KycOnboardingAgent < AgentBaseService
     Rails.logger.debug { "[KycOnboardingAgent] Initializing agent for InvestorKyc ID=#{investor_kyc.id}" }
     ctx[:investor_kyc] = investor_kyc
     ctx[:issues] = { field_issues: [], document_issues: [] }
-    # We only process completed kycs
+    # Only process if submitted by investor
     investor_kyc.completed_by_investor
   end
 
+  # Verifies required attributes and custom fields are populated
+  # with valid values that are not placeholders (N/A, UNKNOWN, etc.).
+  #
+  # @param ctx [Hash] execution context including issues
+  # @param investor_kyc [InvestorKyc] record being checked
+  # @return [Hash] updated context
   def check_field_completeness(ctx, investor_kyc:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Starting field completeness check for InvestorKyc ID=#{investor_kyc.id}" }
-    # Verify mandatory KYC fields are filled in and valid
-    # Conditions to flag:
-    # - Value is blank, only spaces, or nil
-    # - Value matches known placeholders like "N/A", "NA", "Unknown", "Test", "--"
-    # - Value has obviously invalid content (could extend with regex rules)
-    #
-    # We need to check:
-    #   1. All model attributes of investor_kyc
-    #   2. Dynamic json_fields hash for additional data
-    #
-    invalid_tokens = ["N/A", "NA", "UNKNOWN", "UNK", "NONE", "TEST", "--"].map(&:downcase)
 
-    # Determine required DB-backed attributes by schema and presence validators
+    # Common invalid tokens used as placeholders that must be treated as invalid
+    invalid_tokens = %w[N/A NA UNKNOWN UNK NONE TEST --].map(&:downcase)
+
+    validate_required_attributes(ctx, investor_kyc, invalid_tokens)
+    validate_custom_fields(ctx, investor_kyc, invalid_tokens)
+
+    Rails.logger.debug { "[KycOnboardingAgent] Field completeness check completed. Issues found: #{ctx[:issues][:field_issues].count}" }
+    ctx
+  end
+
+  # Validates all required DB attributes (from schema or validators)
+  # ensuring they are not empty or invalid tokens.
+  #
+  # @param ctx [Hash] execution context
+  # @param investor_kyc [InvestorKyc]
+  # @param invalid_tokens [Array<String>] recognized invalid values
+  def validate_required_attributes(ctx, investor_kyc, invalid_tokens)
     required_db_columns = investor_kyc.class.columns.select { |c| !c.null && c.default.nil? }.map(&:name)
     required_validated_fields = investor_kyc.class._validators.select do |_, validators|
       validators.any?(ActiveModel::Validations::PresenceValidator)
@@ -72,7 +97,6 @@ class KycOnboardingAgent < AgentBaseService
     required_attrs.each do |attr|
       value = investor_kyc.public_send(attr)
       next unless value.is_a?(String)
-      next if value.nil?
 
       str_val = value.strip
       if str_val.empty? || invalid_tokens.include?(str_val.downcase)
@@ -80,48 +104,42 @@ class KycOnboardingAgent < AgentBaseService
         ctx[:issues][:field_issues] << { type: :invalid_field_value, field: attr, value: value, severity: :blocking }
       end
     end
+  end
 
-    # Figure out the required custom fields from the form type
+  # Validates custom form fields according to type-specific logic.
+  # For select fields, ensures value belongs to defined options.
+  # For text/other, ensures non-empty and not in invalid tokens.
+  def validate_custom_fields(ctx, investor_kyc, invalid_tokens)
     investor_kyc.required_fields_for.each do |fcf|
-      # Get the value from json_fields
       value = investor_kyc.json_fields[fcf.name]
       str_val = value.to_s.strip
 
-      # If it's a select field, ensure the value is one of the options
       if fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
           ctx[:issues][:field_issues] << { type: :invalid_select_field_value, field: fcf.name, value: value, severity: :blocking }
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
         end
-        next
-      end
-
-      # For other field types, just check for blank or invalid tokens
-      if str_val.empty? || invalid_tokens.include?(str_val.downcase)
+      elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
         ctx[:issues][:field_issues] << { type: :invalid_json_field_value, field: fcf.name, value: value, severity: :blocking }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
       end
     end
-
-    Rails.logger.debug { "[KycOnboardingAgent] Field completeness check completed. Issues found: #{ctx[:issues][:field_issues].count}" }
-    ctx
   end
 
+  # Verifies all required documents (from form fields and support_agent config)
+  # are uploaded by the investor.
   def check_document_presence(ctx, investor_kyc:, support_agent:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Starting document presence check for InvestorKyc ID=#{investor_kyc.id}" }
-    # Get the list of required File fields for the form type
+    # List of required documents from form and support agent json fields
     required_docs = investor_kyc.required_fields_for(field_type: "File").map(&:label)
-    # We may also get additional required docs from the support_agent fields
     required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
     required_docs.uniq!
 
     Rails.logger.debug { "Required documents: #{required_docs.inspect}" }
 
-    # Get the uploaded documents for this investor_kyc
     uploaded_docs = investor_kyc.documents.pluck(:name).uniq
 
-    # Check for missing documents
     required_docs.each do |name|
       unless uploaded_docs.include?(name)
         ctx[:issues][:document_issues] << { type: :missing_document, name: name, severity: :blocking }
@@ -132,10 +150,9 @@ class KycOnboardingAgent < AgentBaseService
     Rails.logger.debug { "[KycOnboardingAgent] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
   end
 
+  # Uses LLM to validate each uploaded document against its label.
+  # Records mismatched or unparsable responses as issues.
   def check_document_validity(ctx, investor_kyc:, **)
-    # Here we send each document and its label to the LLM and get it to judge if the document matches the label
-    #
-    # We instruct the LLM to validate whether each uploaded document’s content matches its expected label.
     llm = ctx[:llm]
 
     investor_kyc.documents.each do |doc|
@@ -174,42 +191,40 @@ class KycOnboardingAgent < AgentBaseService
     Rails.logger.debug { "[KycOnboardingAgent] Document label consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
   end
 
+  # Delegates consistency verification between documents and fields
+  # to the SupportAgent instance already configured.
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
     support_agent.check_field_to_document_consistency(ctx, investor_kyc)
     Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
   end
 
+  # Optional additional checks executed on-demand based on configuration.
+  # Results may add info/warnings/blocking issues to context.
   def perform_ad_hoc_checks(ctx, investor_kyc:, support_agent:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Performing ad-hoc checks if configured for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-    # Run optional additional checks based on provided prompts
-    # - E.g., source of funds, jurisdiction-specific restrictions
-    # - Record output as informational, warning, or blocking issues
     ctx
   end
 
+  # Generates per-investor/fund reports summarizing issues and state.
+  # Stores report as persisted SupportAgentReport record.
   def generate_progress_reports(ctx, investor_kyc:, support_agent:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Generating progress report for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-    # Generate per-investor and per-fund reports
-    # - InvestorKycCompletionReport: field/doc status, consistency, ad-hoc results
-    # - FundCompletionReport: daily summaries, % completion, bottlenecks, trends
 
     report = SupportAgentReport.new(owner: investor_kyc, support_agent: support_agent, json_fields: ctx[:issues])
     report.save
     Rails.logger.debug { "[KycOnboardingAgent] Report generated and saved (Report ID=#{report.id})" }
   end
 
+  # Schedules reminder notifications when blocking issues are identified.
+  # Actual sending handled by external Reminder API integration.
   def send_reminders(ctx, investor_kyc:, support_agent:, **)
-    # Schedule or send reminders via Reminder API
-    # - Trigger reminders on configured dates or unresolved blocking issues
-    # - Tailor reminder content to missing items (e.g., “Please upload proof of address”)
     Rails.logger.debug { "[KycOnboardingAgent] Preparing reminders for InvestorKyc ID=#{investor_kyc.id}, support_agent=#{support_agent.id}, blocking issues=#{ctx[:issues].inspect}" }
     ctx
   end
 
+  # Triggers AML workflow if KYC process is complete.
+  # Invokes external AML check integration logic downstream.
   def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
-    # Once verification is marked complete:
-    # - Trigger existing AML function automatically
-    # - Record AML status in investor’s completion report
     Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
     ctx
   end
