@@ -69,16 +69,22 @@ class KycOnboardingAgent < AgentBaseService
   # @param investor_kyc [InvestorKyc] record being checked
   # @return [Hash] updated context
   def check_field_completeness(ctx, investor_kyc:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Starting field completeness check for InvestorKyc ID=#{investor_kyc.id}" }
+    if enabled?("validate_fields")
 
-    # Common invalid tokens used as placeholders that must be treated as invalid
-    invalid_tokens = %w[N/A NA UNKNOWN UNK NONE TEST --].map(&:downcase)
+      Rails.logger.debug { "[KycOnboardingAgent] Starting field completeness check for InvestorKyc ID=#{investor_kyc.id}" }
 
-    validate_required_attributes(ctx, investor_kyc, invalid_tokens)
-    validate_custom_fields(ctx, investor_kyc, invalid_tokens)
+      # Common invalid tokens used as placeholders that must be treated as invalid
+      invalid_tokens = %w[N/A NA UNKNOWN UNK NONE TEST --].map(&:downcase)
 
-    Rails.logger.debug { "[KycOnboardingAgent] Field completeness check completed. Issues found: #{ctx[:issues][:field_issues].count}" }
-    ctx
+      validate_required_attributes(ctx, investor_kyc, invalid_tokens)
+      validate_custom_fields(ctx, investor_kyc, invalid_tokens)
+
+      Rails.logger.debug { "[KycOnboardingAgent] Field completeness check completed. Issues found: #{ctx[:issues][:field_issues].count}" }
+      ctx
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] Field validation is disabled, skipping check." }
+      true
+    end
   end
 
   # Validates all required DB attributes (from schema or validators)
@@ -114,7 +120,9 @@ class KycOnboardingAgent < AgentBaseService
       value = investor_kyc.json_fields[fcf.name]
       str_val = value.to_s.strip
 
-      if fcf.field_type == "Select"
+      if fcf.field_type == "File"
+        next # Skip file fields here, handled in document presence check
+      elsif fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
           ctx[:issues][:field_issues] << { type: :invalid_select_field_value, field: fcf.name, value: value, severity: :blocking }
@@ -130,72 +138,84 @@ class KycOnboardingAgent < AgentBaseService
   # Verifies all required documents (from form fields and support_agent config)
   # are uploaded by the investor.
   def check_document_presence(ctx, investor_kyc:, support_agent:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Starting document presence check for InvestorKyc ID=#{investor_kyc.id}" }
-    # List of required documents from form and support agent json fields
-    required_docs = investor_kyc.required_fields_for(field_type: "File").map(&:label)
-    required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
-    required_docs.uniq!
+    if enabled?("validate_documents")
 
-    Rails.logger.debug { "Required documents: #{required_docs.inspect}" }
+      Rails.logger.debug { "[KycOnboardingAgent] Starting document presence check for InvestorKyc ID=#{investor_kyc.id}" }
+      # List of required documents from form and support agent json fields
+      required_docs = investor_kyc.required_fields_for(field_type: "File").map(&:label)
+      required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
+      required_docs.uniq!
 
-    uploaded_docs = investor_kyc.documents.pluck(:name).uniq
+      Rails.logger.debug { "Required documents: #{required_docs.inspect}" }
 
-    required_docs.each do |name|
-      unless uploaded_docs.include?(name)
-        ctx[:issues][:document_issues] << { type: :missing_document, name: name, severity: :blocking }
-        Rails.logger.debug { "[KycOnboardingAgent] Missing document detected: #{name}" }
+      uploaded_docs = investor_kyc.documents.pluck(:name).uniq
+
+      required_docs.each do |name|
+        unless uploaded_docs.include?(name)
+          ctx[:issues][:document_issues] << { type: :missing_document, name: name, severity: :blocking }
+          Rails.logger.debug { "[KycOnboardingAgent] Missing document detected: #{name}" }
+        end
       end
+      Rails.logger.debug { "[KycOnboardingAgent] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping check." }
     end
-
-    Rails.logger.debug { "[KycOnboardingAgent] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
   end
 
   # Uses LLM to validate each uploaded document against its label.
   # Records mismatched or unparsable responses as issues.
   def check_document_validity(ctx, investor_kyc:, **)
-    llm = ctx[:llm]
+    if enabled?("validate_documents")
+      llm = ctx[:llm]
 
-    investor_kyc.documents.each do |doc|
-      Rails.logger.debug { "[KycOnboardingAgent] Starting document #{doc.name} consistency check for InvestorKyc ID=#{investor_kyc.id}" }
+      investor_kyc.documents.each do |doc|
+        Rails.logger.debug { "[KycOnboardingAgent] Starting document #{doc.name} consistency check for InvestorKyc ID=#{investor_kyc.id}" }
 
-      label = doc.name
-      prompt = <<~PROMPT
-        The document is labeled as "#{label}".
-        Based on its contents, does it match this label?
-        Reply strictly in JSON with the format:
-        {"matches": true/false, "explanation": "<short reason>"}
-      PROMPT
+        label = doc.name
+        prompt = <<~PROMPT
+          The document is labeled as "#{label}".
+          Based on its contents, does it match this label?
+          Reply strictly in JSON with the format:
+          {"matches": true/false, "explanation": "<short reason>"}
+        PROMPT
 
-      raw = llm.ask(prompt, with: [doc.file.url])
-      begin
-        content = if raw.is_a?(RubyLLM::Message)
-                    raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
-                  else
-                    raw.to_s
-                  end
+        raw = llm.ask(prompt, with: [doc.file.url])
+        begin
+          content = if raw.is_a?(RubyLLM::Message)
+                      raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
+                    else
+                      raw.to_s
+                    end
 
-        content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
-        result = JSON.parse(content)
-        if result["matches"]
-          Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
-        else
-          ctx[:issues][:document_issues] << { type: :mismatched_document, name: label, severity: :blocking, explanation: result["explanation"] }
-          Rails.logger.debug { "[KycOnboardingAgent] Document mismatch detected: #{label}, explanation=#{result['explanation']}" }
+          content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
+          result = JSON.parse(content)
+          if result["matches"]
+            Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
+          else
+            ctx[:issues][:document_issues] << { type: :mismatched_document, name: label, severity: :blocking, explanation: result["explanation"] }
+            Rails.logger.debug { "[KycOnboardingAgent] Document mismatch detected: #{label}, explanation=#{result['explanation']}" }
+          end
+        rescue JSON::ParserError
+          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: label, severity: :warning, raw: raw }
+          Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
         end
-      rescue JSON::ParserError
-        ctx[:issues][:document_issues] << { type: :llm_parse_error, name: label, severity: :warning, raw: raw }
-        Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
       end
-    end
 
-    Rails.logger.debug { "[KycOnboardingAgent] Document label consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
+      Rails.logger.debug { "[KycOnboardingAgent] Document label consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping check." }
+    end
   end
 
   # Delegates consistency verification between documents and fields
   # to the SupportAgent instance already configured.
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
-    support_agent.check_field_to_document_consistency(ctx, investor_kyc)
-    Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
+    if enabled?("validate_documents")
+      support_agent.check_field_to_document_consistency(ctx, investor_kyc)
+      Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping field-to-document consistency check." }
+    end
   end
 
   # Optional additional checks executed on-demand based on configuration.
@@ -218,14 +238,20 @@ class KycOnboardingAgent < AgentBaseService
   # Schedules reminder notifications when blocking issues are identified.
   # Actual sending handled by external Reminder API integration.
   def send_reminders(ctx, investor_kyc:, support_agent:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Preparing reminders for InvestorKyc ID=#{investor_kyc.id}, support_agent=#{support_agent.id}, blocking issues=#{ctx[:issues].inspect}" }
-    ctx
+    if enabled?("send_reminder")
+      Rails.logger.debug { "[KycOnboardingAgent] Preparing reminders for InvestorKyc ID=#{investor_kyc.id}, support_agent=#{support_agent.id}, blocking issues=#{ctx[:issues].inspect}" }
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] Reminder sending is disabled, skipping." }
+    end
   end
 
   # Triggers AML workflow if KYC process is complete.
   # Invokes external AML check integration logic downstream.
-  def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-    ctx
+  def trigger_aml_if_complete(_ctx, investor_kyc:, support_agent:, **)
+    if enabled?("trigger_aml")
+      Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
+    else
+      Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
+    end
   end
 end
