@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_24_121049) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_25_012809) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3084,6 +3084,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_121049) do
     t.index ["to_portfolio_investment_id"], name: "index_stock_conversions_on_to_portfolio_investment_id"
   end
 
+  create_table "support_agent_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "owner_name", limit: 50
+    t.bigint "support_agent_id", null: false
+    t.string "support_agent_name", limit: 50
+    t.json "json_fields"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_type", "owner_id"], name: "index_support_agent_reports_on_owner"
+    t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
+  end
+
   create_table "support_agents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", limit: 30
     t.string "description"
@@ -3696,6 +3709,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_121049) do
   add_foreign_key "stock_conversions", "investment_instruments", column: "to_instrument_id"
   add_foreign_key "stock_conversions", "portfolio_investments", column: "from_portfolio_investment_id"
   add_foreign_key "stock_conversions", "portfolio_investments", column: "to_portfolio_investment_id"
+  add_foreign_key "support_agent_reports", "support_agents"
   add_foreign_key "support_agents", "entities"
   add_foreign_key "support_agents", "folders", column: "document_folder_id"
   add_foreign_key "support_agents", "form_types"

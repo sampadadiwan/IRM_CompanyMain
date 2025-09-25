@@ -149,6 +149,68 @@ module WithCustomField
     save(validate: false) if updated
     updated
   end
+
+  # This is used to get the required fields for the form type
+  # It also checks for any conditions on the fields
+  # and only returns the fields which are required based on the conditions
+  # Example: If a field is required only if another field has a certain value
+  # then it checks for that condition and returns the field only if the condition is met
+  def required_fields_for(field_type: nil)
+    json_fields = self.json_fields || {}
+
+    form_custom_fields.select do |fcf|
+      next false unless fcf.required?
+      next false if field_type && fcf.field_type != field_type
+
+      if fcf.condition_on.present?
+        satisfies_condition?(fcf, json_fields)
+      else
+        true
+      end
+    end
+  end
+
+  private
+
+  def satisfies_condition?(fcf, json_fields)
+    actual_value = json_fields[fcf.condition_on]&.to_s&.downcase
+    data_match_value = fcf.condition_params.to_s.downcase
+    criteria = fcf.condition_criteria
+    state = fcf.condition_state
+
+    matched =
+      if actual_value.present? && criteria == "contains"
+        actual_value.include?(data_match_value) || data_match_value.include?(actual_value)
+      elsif %w[gt lt gte lte].include?(criteria)
+        if actual_value =~ /\A-?\d+(\.\d+)?\z/ && data_match_value =~ /\A-?\d+(\.\d+)?\z/
+          num_val = actual_value.to_f
+          num_match = data_match_value.to_f
+          case criteria
+          when "gt" then num_val > num_match
+          when "lt" then num_val < num_match
+          when "gte" then num_val >= num_match
+          when "lte" then num_val <= num_match
+          end
+        else
+          false
+        end
+      else
+        actual_value == data_match_value
+      end
+
+    case [matched, criteria, state]
+    when [true, "eq", "show"],
+         [true, "contains", "show"],
+         [false, "not_eq", "show"],
+         [true, "gt", "show"],
+         [true, "lt", "show"],
+         [true, "gte", "show"],
+         [true, "lte", "show"]
+      true
+    else
+      false
+    end
+  end
 end
 
 # This is a class that is required for word templates which is used for document generation
