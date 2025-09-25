@@ -172,75 +172,8 @@ class KycOnboardingAgent < AgentBaseService
   end
 
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
-    mappings = parse_field_document_mappings(support_agent)
-    llm = ctx[:llm]
-
-    mappings.each do |doc_name, field_map|
-      process_document_consistency(ctx, llm, investor_kyc, doc_name, field_map)
-    end
-
+    support_agent.check_field_to_document_consistency(ctx, investor_kyc)
     Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
-  end
-
-  def parse_field_document_mappings(support_agent)
-    validate_fields_with_documents = support_agent.json_fields["validate_fields_with_documents"].to_s
-    document_field_map = {}
-    validate_fields_with_documents.split(";").each do |doc_mapping|
-      doc_name, field_mappings = doc_mapping.split("=")
-      next if doc_name.blank? || field_mappings.blank?
-
-      document_field_map[doc_name] = field_mappings.split(",").to_h { |f| f.split(":") }
-    end
-    document_field_map
-  end
-
-  def process_document_consistency(ctx, llm, investor_kyc, doc_name, field_map)
-    doc = investor_kyc.documents.find { |d| d.name == doc_name }
-    return if doc.nil?
-
-    Rails.logger.debug { "[KycOnboardingAgent] Starting field-to-document consistency check for #{doc.name} (#{field_map.keys.join(', ')}) InvestorKyc ID=#{investor_kyc.id}" }
-
-    extracted = extract_fields_from_document(llm, doc, field_map.keys)
-    return unless extracted
-
-    compare_extracted_with_kyc(ctx, doc, investor_kyc, extracted, field_map)
-  end
-
-  def extract_fields_from_document(llm, doc, fields)
-    prompt = <<~PROMPT
-      Extract the following fields from the document:
-      #{fields.join(', ')}
-      Reply strictly in JSON with the format:
-      {"field1": "value1", "field2": "value2", ...}
-    PROMPT
-
-    raw = llm.ask(prompt, with: [doc.file.url])
-    content = if raw.is_a?(RubyLLM::Message)
-                raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
-              else
-                raw.to_s
-              end
-    JSON.parse(content)
-  rescue JSON::ParserError
-    ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, severity: :warning, raw: raw }
-    Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{doc.name}, raw=#{raw.inspect}")
-    nil
-  end
-
-  def compare_extracted_with_kyc(ctx, doc, investor_kyc, extracted, field_map)
-    field_map.each do |doc_field, kyc_field|
-      if extracted[doc_field] == investor_kyc[kyc_field]
-        Rails.logger.debug { "[KycOnboardingAgent] Field matched: #{doc_field} matches #{kyc_field}" }
-      else
-        ctx[:issues][:document_issues] << {
-          type: :field_mismatch,
-          name: doc.name,
-          severity: :blocking,
-          explanation: "#{doc_field} (#{extracted[doc_field]}) does not match #{kyc_field} (#{investor_kyc[kyc_field]})"
-        }
-        Rails.logger.debug { "[KycOnboardingAgent] Field mismatch in #{doc.name}: #{doc_field}=#{extracted[doc_field].inspect}, expected #{kyc_field}=#{investor_kyc[kyc_field].inspect}" }
-      end
-    end
   end
 
   def perform_ad_hoc_checks(ctx, investor_kyc:, support_agent:, **)
