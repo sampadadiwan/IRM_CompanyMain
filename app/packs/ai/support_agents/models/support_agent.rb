@@ -58,7 +58,7 @@ class SupportAgent < ApplicationRecord
       {"field1": "value1", "field2": "value2", ...}
     PROMPT
 
-    Rails.logger.debug { "Prompt sent to LLM for document #{doc.name}:\n#{prompt}" }
+    # Rails.logger.debug { "Prompt sent to LLM for document #{doc.name}:\n#{prompt}" }
 
     raw = llm.ask(prompt, with: [doc.file.url])
     content = if raw.is_a?(RubyLLM::Message)
@@ -80,16 +80,34 @@ class SupportAgent < ApplicationRecord
 
   def compare_extracted_with_model(ctx, doc, model, extracted, field_map)
     field_map.each_key do |attribute_name|
-      if extracted[attribute_name] == model[attribute_name]
+      extracted_val = extracted[attribute_name]
+      model_val = model[attribute_name]
+
+      matched = case model_val
+                when String
+                  extracted_val.gsub(/\s+/, "").casecmp?(model_val.gsub(/\s+/, ""))
+                when Date, Time, DateTime, ActiveSupport::TimeWithZone
+                  begin
+                    Date.parse(extracted_val.to_s) == model_val.to_date
+                  rescue ArgumentError, TypeError
+                    false
+                  end
+                when Numeric, Integer, Float, BigDecimal
+                  extracted_val.to_f == model_val.to_f
+                else
+                  extracted_val.to_s == model_val.to_s
+                end
+
+      if matched
         Rails.logger.debug { "[SupportAgent] Field matched: #{doc.name} matches #{attribute_name}" }
       else
         ctx[:issues][:document_issues] << {
           type: :field_mismatch,
           name: doc.name,
           severity: :blocking,
-          explanation: "#{attribute_name} (#{extracted[attribute_name]}) does not match #{model.class.name} (#{model[attribute_name]})"
+          explanation: "#{attribute_name} (#{extracted_val}) does not match #{model.class.name} (#{model_val})"
         }
-        Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted[attribute_name].inspect}, expected #{attribute_name}=#{model[attribute_name].inspect}" }
+        Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted_val.inspect}, expected #{attribute_name}=#{model_val.inspect}" }
       end
     end
   end

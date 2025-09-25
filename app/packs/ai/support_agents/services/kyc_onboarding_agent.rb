@@ -14,9 +14,9 @@ class KycOnboardingAgent < AgentBaseService
   # - Reminder configuration
 
   # == Core Functions ==
-  # step :check_field_completeness
-  # step :check_document_presence
-  # step :check_document_validity
+  step :check_field_completeness
+  step :check_document_presence
+  step :check_document_validity
   step :check_field_to_document_consistency
   step :perform_ad_hoc_checks
   step :generate_progress_reports
@@ -111,6 +111,7 @@ class KycOnboardingAgent < AgentBaseService
   def check_document_presence(ctx, investor_kyc:, support_agent:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Starting document presence check for InvestorKyc ID=#{investor_kyc.id}" }
     # Get the list of required File fields for the form type
+    required_docs = investor_kyc.required_fields_for(field_type: "File").map(&:label)
     # We may also get additional required docs from the support_agent fields
     required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
     required_docs.uniq!
@@ -155,6 +156,8 @@ class KycOnboardingAgent < AgentBaseService
                   else
                     raw.to_s
                   end
+
+        content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
         result = JSON.parse(content)
         if result["matches"]
           Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
