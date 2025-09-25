@@ -59,6 +59,29 @@ Given('I add a new account entry') do
 	click_on("Save")
 end
 
+Then('I edit the account entry with debug {string}') do |debug_string|
+  @account_entry ||= AccountEntry.where(generated: false).last
+	@parent = @capital_commitment.investor
+	debug = debug_string == "true"
+	puts "######## ACCOUNT ENTRY ##########"
+	puts @account_entry.inspect
+	visit(edit_account_entry_path(@account_entry, debug: debug))
+	fill_in("account_entry_name", with: "Test Account Entry Updated")
+	fill_in("account_entry_parent_type", with: @parent.class.name)
+	fill_in("account_entry_parent_id", with: @parent.id)
+	click_on("Save")
+end
+
+Then('the account entry parent is updated') do
+	expect(page).to have_text("Account entry was successfully updated.")
+  @parent ||= @capital_commitment.investor
+	@account_entry ||= AccountEntry.where(generated: false).last
+	puts "######## ACCOUNT ENTRY ##########"
+	puts @account_entry.reload.inspect
+	expect(@account_entry.reload.parent).to(eq(@parent))
+end
+
+
 Then('an account entry is created for the commitment') do
 	expect(page).to have_text("Account entry was successfully created.")
 	ae = AccountEntry.last
