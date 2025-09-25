@@ -22,6 +22,9 @@
       </td>
       <td>
         <%= InvestorKyc.kyc_types[investor_kyc.kyc_type] %>
+        <% if investor_kyc.form_type_id.present? %>
+          (<%= link_to investor_kyc.form_type.tag || investor_kyc.form_type_id, investor_kyc.form_type %>)
+        <% end %>
       </td>
     </tr>
 
