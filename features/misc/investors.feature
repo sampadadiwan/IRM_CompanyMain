@@ -16,6 +16,34 @@ Scenario Outline: Create new investor
   	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
     |  	        |entity_type=Company  |category=LP |Investor was successfully created|
 
+Scenario Outline: Investor email validation error
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  Then I should see the "<msg>"
+
+  Examples:
+  	|user	      |entity               |investor     |msg	|
+    |  	        |entity_type=Company  |category=LP;primary_email=abcg@gmail.com,xyz@yahoo.com |is invalid|
+    |  	        |entity_type=Company  |category=LP;primary_email=abcg@gmail.com:xyz@yahoo.com |is invalid|
+    |  	        |entity_type=Company  |category=LP;primary_email=abcg|is invalid|
+
+Scenario Outline: Create new investor
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  Then I should see the "<msg>"
+  And an investor should be created
+  And an investor entity should be created
+  And I should see the investor details on the details page
+
+  Examples:
+  	|user	      |entity               |investor     |msg	|
+  	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
+    |  	        |entity_type=Company  |category=LP |Investor was successfully created|
+
 
 Scenario Outline: Update investor
   Given Im logged in as a user "<user>" for an entity "<entity>"
