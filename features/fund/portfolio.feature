@@ -73,6 +73,25 @@ Scenario Outline: Create valuation and FMV
     |entity_type=Investment Fund;       |name=Test fund      |
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
+Scenario Outline: Delete valuation to recompute PI numbers
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there is a fund "<fund>" for the entity
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given there are "3" portfolio investments "quantity=-100;category=Unlisted;"
+  Given there is a valuation "per_share_value_cents=12000" for the portfolio company
+  Then the fmv must be calculated for the portfolio
+  Given there is a valuation "per_share_value_cents=8000;valuation_date=20/01/2021" for the portfolio company
+  Given The old valuations are deleted
+  Then the fmv must be calculated for the portfolio
+
+
+  Examples:
+    |entity                             |fund                |
+    |entity_type=Investment Fund;       |name=Test fund      |
+
 Scenario Outline: Generate Fund Reports
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
