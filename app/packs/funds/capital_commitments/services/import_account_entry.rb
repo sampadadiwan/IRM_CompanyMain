@@ -96,9 +96,9 @@ class ImportAccountEntry < ImportUtil
         ae_fund_id = account_entry.fund_id
         parent_fund_id = account_entry.parent.fund_id
 
-        if parent_fund_id != ae_fund_id
+        if (parent_fund_id != ae_fund_id) && (account_entry.fund.master_fund_id != parent_fund_id)
           # ae and parent should be in the same fund or parent's fund should be the master fund of ae's fund
-          raise "Parent does not belong to Fund" if account_entry.fund.master_fund_id != parent_fund_id
+          raise "Parent does not belong to Fund"
         end
       end
     end

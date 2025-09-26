@@ -24,6 +24,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
+  monetize :tracking_bought_amount_cents, :tracking_sold_amount_cents, :tracking_fmv_cents,
+           with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+
   # Define monetized fields using fund's currency
   monetize :unrealized_gain_cents, :gain_cents, :bought_amount_cents, :net_bought_amount_cents,
            :sold_amount_cents, :transfer_amount_cents, :avg_cost_cents, :cost_of_sold_cents,

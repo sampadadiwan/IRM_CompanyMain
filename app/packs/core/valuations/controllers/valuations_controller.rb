@@ -113,7 +113,7 @@ class ValuationsController < ApplicationController
   def destroy
     @valuation.destroy
     if @valuation.deleted? || @valuation.destroyed?
-      UpdatePortfolioInvestmentsJob.perform_later(@valuation.investment_instrument.portfolio_investment_ids)  if @valuation.investment_instrument.present?
+      UpdatePortfolioInvestmentsJob.perform_later(@valuation.investment_instrument.portfolio_investment_ids) if @valuation.investment_instrument.present?
 
       respond_to do |format|
         format.html do
@@ -124,7 +124,7 @@ class ValuationsController < ApplicationController
     else
       respond_to do |format|
         format.html do
-          redirect_to @valuation , notice: "Valuation could not be destroyed. #{@valuation.errors.full_messages.join(', ')}"
+          redirect_to @valuation, notice: "Valuation could not be destroyed. #{@valuation.errors.full_messages.join(', ')}"
         end
         format.json { render json: @valuation.errors, status: :unprocessable_entity }
       end
