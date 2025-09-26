@@ -1,3 +1,15 @@
+V9.1.14
+#####################################
+f14d18228 (origin/inv-advisor-minor-updates) Updated IA folio form labels to Advisor first last name, added is inv adv filtering in inv access ransack
+8087cc2b5 VB now hide_table is part of the form
+136e0f249 Added tracking amounts to API
+756c1b357 (origin/ae-api) Order Ae by reporting date, added fetch specs
+bec62735d Account Entries api limited to 10k entries
+2f233dc73 (origin/kyc-form-type-link) Minor query improvement
+580daa2a7 Added form type display on kycs show page
+f61c1d48d (agent_framework) Merge branch 'main' into agent_framework
+272c3f357 Deleted unwanted files
+
 V9.1.13
 #####################################
 f0083ec3c check destroyed and minor condition fix

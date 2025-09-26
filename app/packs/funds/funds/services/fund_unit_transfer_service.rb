@@ -366,7 +366,6 @@ class FundUnitTransferService < Trailblazer::Operation
       payment.units_quantity *= retained_ratio
       payment.cost_of_investment_cents *= retained_ratio
       payment.folio_amount_cents *= retained_ratio
-      payment.capital_fee_cents *= retained_ratio
       payment.other_fee_cents *= retained_ratio
       payment.net_of_account_entries_cents *= retained_ratio
       payment.net_payable_cents *= retained_ratio
@@ -387,7 +386,6 @@ class FundUnitTransferService < Trailblazer::Operation
         units_quantity: payment.units_quantity,
         cost_of_investment_cents: payment.cost_of_investment_cents,
         folio_amount_cents: payment.folio_amount_cents,
-        capital_fee_cents: payment.capital_fee_cents,
         other_fee_cents: payment.other_fee_cents,
         net_of_account_entries_cents: payment.net_of_account_entries_cents,
         net_payable_cents: payment.net_payable_cents,
