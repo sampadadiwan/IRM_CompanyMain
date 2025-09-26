@@ -1,0 +1,40 @@
+<%= render FormCard.new(title: "Support Agents : #{support_agent.presence || 'New'}") do %>
+  <%= form_with(model: support_agent, validate: true) do |form| %>
+    <% if support_agent.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(support_agent.errors.count, "error") %> prohibited this support_agent from being saved:</h2>
+        <ul>
+          <% support_agent.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :description %>
+      <%= form.text_field :description, class: "form-control"  %>
+    </div>
+
+    <% form_types = FormType.where(name: "SupportAgent") %>
+    <div class="form-group">
+      <%= form.label :form_type_id %>
+      <%= form.select :form_type_id, form_types.map { |f| ["#{f.name} - #{f.tag}", f.id] }, {},  class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :agent_type %>
+      <%= form.select :agent_type, SupportAgent::AGENT_TYPES, {}, class: "form-control"  %>
+    </div>
+
+
+    <%= custom_form_fields(@support_agent, form) %>
+
+    <div class="form-group">
+      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+<% end %>

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :support_agents
   resources :agent_charts do
     post 'regenerate', on: :member
   end

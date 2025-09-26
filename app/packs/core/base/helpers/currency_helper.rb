@@ -58,6 +58,8 @@ module CurrencyHelper
   end
 
   def display(money, sanf, units, decimals: 2)
+    Rails.logger.debug { "Money: #{money.inspect}, sanf: #{sanf}, units: #{units}, decimals: #{decimals}" }
+
     display_val = case money.currency.iso_code
                   when "INR"
                     money.format(format: FORMAT, south_asian_number_formatting: sanf)

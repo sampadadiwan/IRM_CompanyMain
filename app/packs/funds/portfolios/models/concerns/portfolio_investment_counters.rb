@@ -64,5 +64,18 @@ module PortfolioInvestmentCounters
     counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? && r.non_proforma? ? "instrument_currency_unrealized_gain_cents" : nil }, delta_column: 'instrument_currency_unrealized_gain_cents', column_names: {
       ["portfolio_investments.quantity > ? and portfolio_investments.proforma = ?", 0, false] => 'instrument_currency_unrealized_gain_cents'
     }
+
+    # Counters for tracking amounts
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.non_proforma? && r.buy? ? "tracking_bought_amount_cents" : nil }, delta_column: 'tracking_amount_cents', column_names: {
+      ["portfolio_investments.proforma = ? and portfolio_investments.quantity > 0", false] => 'tracking_bought_amount_cents'
+    }
+
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.non_proforma? && r.sell? ? "tracking_sold_amount_cents" : nil }, delta_column: 'tracking_amount_cents', column_names: {
+      ["portfolio_investments.proforma = ? and portfolio_investments.quantity < 0", false] => 'tracking_sold_amount_cents'
+    }
+
+    counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.non_proforma? ? "tracking_fmv_cents" : nil }, delta_column: 'tracking_fmv_cents', column_names: {
+      ["portfolio_investments.proforma = ?", false] => 'tracking_fmv_cents'
+    }
   end
 end

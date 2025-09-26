@@ -1,3 +1,11 @@
+V9.1.13
+#####################################
+f0083ec3c check destroyed and minor condition fix
+2a6564975 Added better icon to Sold+FMV
+499984930 Valuation Deletion recomputes numbers for PIs, Investor email cannot contain , : ;
+ccdcd661a allow editing AE parent on debug
+
+
 V9.1.12
 #####################################
 0ad641f59 Added decimals to kpi widget

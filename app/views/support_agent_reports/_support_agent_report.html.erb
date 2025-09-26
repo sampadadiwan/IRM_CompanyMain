@@ -1,0 +1,40 @@
+<%= render ToggleCard.new(title: "Support Agent Report", css_class: "show_support_agent_report") do %>
+
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>Owner</td>
+      <td><%= support_agent_report.owner_type %> (ID: <%= support_agent_report.owner_id %>)</td>
+    </tr>
+
+    <% if support_agent_report.owner_name.present? %>
+      <tr>
+        <td>Owner Name</td>
+        <td><%= support_agent_report.owner_name %></td>
+      </tr>
+    <% end %>
+
+    <tr>
+      <td>Support Agent</td>
+      <td><%= support_agent_report.support_agent.name || support_agent_report.support_agent_id %></td>
+    </tr>
+
+    <% if support_agent_report.json_fields.present? %>
+      <tr>
+        <td>Details</td>
+        <td>
+          <%= Json2table.get_html_table(support_agent_report.json_fields, JsonTable::TABLE_OPTIONS).html_safe %>
+        </td>
+      </tr>
+    <% end %>
+
+    <tr>
+      <td>Created at</td>
+      <td><%= l(support_agent_report.created_at, format: :long) %></td>
+    </tr>
+    <tr>
+      <td>Updated at</td>
+      <td><%= l(support_agent_report.updated_at, format: :long) %></td>
+    </tr>
+  </table>
+
+<% end %>

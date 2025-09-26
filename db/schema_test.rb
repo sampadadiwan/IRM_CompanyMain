@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_23_130935) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_26_105345) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -217,6 +217,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_130935) do
     t.decimal "instrument_currency_cost_of_remaining_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "instrument_currency_unrealized_gain_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_fmv_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "tracking_bought_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
+    t.decimal "tracking_sold_amount_cents", precision: 20, scale: 2, default: "0.0", null: false
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_aggregate_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -623,7 +626,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_130935) do
     t.bigint "exchange_rate_id"
     t.json "json_fields"
     t.bigint "import_upload_id"
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"

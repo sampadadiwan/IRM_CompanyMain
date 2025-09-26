@@ -1,0 +1,24 @@
+<% ordered_days = valuations.map(&:valuation_date).uniq.sort %>
+<% instruments = valuations.map(&:investment_instrument).uniq %>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Instrument</th>
+      <% ordered_days.each do |day| %>
+        <th><%= l day %></th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% instruments.each do |instrument| %>
+      <tr>
+        <td><%= instrument&.name %></td>
+        <% ordered_days.each do |day| %>
+          <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
+          <td><%= money_to_currency(valuation.per_share_value, params) if valuation.present? %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

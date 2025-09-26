@@ -51,7 +51,7 @@
         </td>
       </tr>
 
-      
+
       <tr>
         <td>
           Current Quantity
@@ -88,6 +88,17 @@
           <%= money_to_currency aggregate_portfolio_investment.bought_amount, params %>
         </td>
       </tr>
+
+      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+        <tr>
+          <td>
+            Bought Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
+          </td>
+          <td>
+            <%= money_to_currency aggregate_portfolio_investment.tracking_bought_amount %>
+          </td>
+        </tr>
+      <% end %>
 
 
       <tr>
@@ -126,6 +137,17 @@
         </td>
       </tr>
 
+      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+        <tr>
+          <td>
+            Sold Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
+          </td>
+          <td>
+            <%= money_to_currency aggregate_portfolio_investment.tracking_sold_amount %>
+          </td>
+        </tr>
+      <% end %>
+
 
       <tr>
         <td>
@@ -144,6 +166,17 @@
           <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
         </td>
       </tr>
+
+      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+        <tr>
+          <td>
+            FMV (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
+          </td>
+          <td>
+            <%= money_to_currency aggregate_portfolio_investment.tracking_fmv %>
+          </td>
+        </tr>
+      <% end %>
 
       <tr>
         <td>
