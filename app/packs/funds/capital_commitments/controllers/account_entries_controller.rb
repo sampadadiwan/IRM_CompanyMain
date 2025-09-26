@@ -120,10 +120,12 @@ class AccountEntriesController < ApplicationController
       cond.attributes.any? { |attr| attr.name == 'capital_commitment_id' }
     end
 
+    per_page = params[:per_page] || 10
+    per_page = 10_000 if per_page.to_i > 10_000
     if capital_commitment_filter || folio_filter
-      @pagy, @account_entries = pagy(@account_entries, limit: params[:per_page] || 10) if params[:all].blank?
+      @pagy, @account_entries = pagy(@account_entries, limit: per_page) if params[:all].blank?
     elsif params[:all].blank?
-      @pagy, @account_entries = pagy_countless(@account_entries, limit: params[:per_page] || 10)
+      @pagy, @account_entries = pagy_countless(@account_entries, limit: per_page)
     end
   end
 
@@ -145,6 +147,11 @@ class AccountEntriesController < ApplicationController
         render xlsx: template, filename: "account_entries.xlsx"
       end
       format.json
+      #  do
+      #   page = params[:page] || 1
+      #   per_page = params[:per_page] || 1000
+      #   @account_entries = @account_entries.order(:reporting_date).page(page).per(per_page)
+      # end
     end
   end
 
