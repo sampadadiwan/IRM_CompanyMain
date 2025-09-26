@@ -674,7 +674,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_105345) do
     t.bigint "exchange_rate_id"
     t.json "json_fields"
     t.bigint "import_upload_id"
-    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"

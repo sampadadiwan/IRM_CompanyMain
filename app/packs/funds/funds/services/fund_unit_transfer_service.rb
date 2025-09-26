@@ -315,7 +315,6 @@ class FundUnitTransferService < Trailblazer::Operation
       orig_percentage = payment.percentage
       orig_cost_of_investment = payment.cost_of_investment_cents
       orig_folio_amount = payment.folio_amount_cents
-      orig_capital_fee = payment.capital_fee_cents
       orig_other_fee = payment.other_fee_cents
       orig_net_of_account_entries = payment.net_of_account_entries_cents
       orig_net_payable = payment.net_payable_cents
@@ -340,7 +339,6 @@ class FundUnitTransferService < Trailblazer::Operation
       new_payment.units_quantity = orig_units_quantity * transfer_ratio
       new_payment.cost_of_investment_cents = orig_cost_of_investment * transfer_ratio
       new_payment.folio_amount_cents = orig_folio_amount * transfer_ratio
-      new_payment.capital_fee_cents = orig_capital_fee * transfer_ratio
       new_payment.other_fee_cents = orig_other_fee * transfer_ratio
       new_payment.net_of_account_entries_cents = orig_net_of_account_entries * transfer_ratio
       new_payment.net_payable_cents = orig_net_payable * transfer_ratio
