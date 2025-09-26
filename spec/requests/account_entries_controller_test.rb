@@ -61,7 +61,6 @@ RSpec.describe "AccountEntries API", type: :request do
     it "filters by commitment nil" do
       get "/account_entries?fund_id=#{fund.id}&q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=capital_commitment_id&q%5Bc%5D%5B0%5D%5Bp%5D=null&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=true&q%5Bc%5D%5B1%5D%5Ba%5D%5B0%5D%5Bname%5D=reporting_date&q%5Bc%5D%5B1%5D%5Bp%5D=gt&q%5Bc%5D%5B1%5D%5Bv%5D%5B0%5D%5Bvalue%5D=01%2F07%2F2021&pivot=false&show_chart=false&hide_parent=false&hide_commitment=false&show_breakdown=false&template=index_group&group_by=name&agg_type=sum&agg_type=sum&agg_field=amount&button=", headers: auth_headers
       expect(response).to have_http_status(:ok)
-      byebug
       json = JSON.parse(response.body)
       expect(json.map { |ae| ae["id"] }).not_to include(account_entry1.id, account_entry2.id)
       expect(json.map { |ae| ae["id"] }).to include(account_entry3.id)
@@ -71,7 +70,6 @@ RSpec.describe "AccountEntries API", type: :request do
     it "filters by commitment present" do
       get "/account_entries?fund_id=#{fund.id}&q%5Bc%5D%5B0%5D%5Ba%5D%5B0%5D%5Bname%5D=capital_commitment_id&q%5Bc%5D%5B0%5D%5Bp%5D=null&q%5Bc%5D%5B0%5D%5Bv%5D%5B0%5D%5Bvalue%5D=false&q%5Bc%5D%5B1%5D%5Ba%5D%5B0%5D%5Bname%5D=reporting_date&q%5Bc%5D%5B1%5D%5Bp%5D=gt&q%5Bc%5D%5B1%5D%5Bv%5D%5B0%5D%5Bvalue%5D=01%2F07%2F2021&pivot=false&show_chart=false&hide_parent=false&hide_commitment=false&show_breakdown=false&template=index_group&group_by=name&agg_type=sum&agg_type=sum&agg_field=amount&button=", headers: auth_headers
       expect(response).to have_http_status(:ok)
-      byebug
       json = JSON.parse(response.body)
       expect(json.map { |ae| ae["id"] }).to include(account_entry1.id, account_entry2.id)
       expect(json.map { |ae| ae["id"] }).not_to include(account_entry3.id)
