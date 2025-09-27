@@ -99,6 +99,10 @@ class FundUnitTransferService < Trailblazer::Operation
           orig_tracking   = entry.tracking_amount_cents
 
           new_entry = entry.dup
+          new_entry.folio_id = to_commitment.folio_id
+          new_entry.investor_id = to_commitment.investor_id
+          new_entry.commitment_name = to_commitment.to_s
+
           new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
           new_entry.json_fields["orig_amount"] = entry.amount_cents
           new_entry.capital_commitment_id = to_commitment.id
@@ -168,6 +172,10 @@ class FundUnitTransferService < Trailblazer::Operation
       new_remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
       new_remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
       new_remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
+
+      new_remittance.investor_id = to_commitment.investor_id
+      new_remittance.folio_id = to_commitment.folio_id
+      new_remittance.investor_name = to_commitment.investor_name
       new_remittance.capital_commitment_id = to_commitment.id
       new_remittance.call_amount_cents = orig_call * transfer_ratio
       new_remittance.collected_amount_cents = orig_collected * transfer_ratio
@@ -270,6 +278,8 @@ class FundUnitTransferService < Trailblazer::Operation
           new_payment.json_fields["orig_amount"] = orig_amount
           new_payment.json_fields["orig_id"] = payment.id
           new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
+
+          new_payment.investor_id = to_commitment.investor_id
           new_payment.capital_remittance_id = new_remittance_id
           new_payment.amount_cents = orig_amount * transfer_ratio
           new_payment.folio_amount_cents = orig_folio * transfer_ratio
@@ -332,6 +342,10 @@ class FundUnitTransferService < Trailblazer::Operation
       new_payment.json_fields["orig_gross_payable"] = orig_gross_payable
       new_payment.json_fields["orig_units_quantity"] = orig_units_quantity
       new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
+
+      new_payment.investor_id = to_commitment.investor_id
+      new_payment.folio_id = to_commitment.folio_id
+      new_payment.investor_name = to_commitment.investor_name
 
       new_payment.capital_commitment_id = to_commitment.id
       new_payment.income_cents = orig_income * transfer_ratio

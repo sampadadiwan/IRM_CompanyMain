@@ -1893,6 +1893,9 @@ Then('the account entries are adjusted upon fund unit transfer') do
     if entry.json_fields["transfer_id"].present?
       puts "Checking account entry for #{entry.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
       entry.json_fields["transfer_id"].should == @transfer_token
+      entry.investor_id.should == @to_cc.investor_id
+      entry.folio_id.should == @to_cc.folio_id
+      entry.commitment_name.should == @to_cc.to_s
       # entry.json_fields["orig_amount"].should == entry.amount_cents / transfer_ratio
       entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * transfer_ratio).round(0)
     end
@@ -1928,6 +1931,9 @@ Then('the remittances are adjusted upon fund unit transfer') do
     if cr.json_fields["transfer_id"].present?
       puts "Checking capital remittance for #{cr.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
 
+      cr.investor_id.should == @to_cc.investor_id
+      cr.folio_id.should == @to_cc.folio_id
+      cr.investor_name.should == @to_cc.investor_name
       cr.json_fields["transfer_id"].should == @transfer_token
       # cr.json_fields["orig_call_amount"].should == cr.call_amount_cents / transfer_ratio
       cr.call_amount_cents.should == (cr.json_fields["orig_call_amount"].to_f * transfer_ratio).round
@@ -1964,6 +1970,7 @@ Then('distributions are adjusted upon fund unit transfer') do
     if cdp.json_fields["transfer_id"].present?
       puts "Checking capital distribution payment for #{cdp.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
       cdp.json_fields["transfer_id"].should == @transfer_token
+      cdp.investor_id.should == @to_cc.investor_id
       # cdp.json_fields["orig_gross_payable"].should == cdp.gross_payable_cents / transfer_ratio
       cdp.gross_payable_cents.round(0).should == (cdp.json_fields["orig_gross_payable"].to_f * transfer_ratio).round(0)
       # cdp.json_fields["orig_units_quantity"].should == cdp.units_quantity / transfer_ratio

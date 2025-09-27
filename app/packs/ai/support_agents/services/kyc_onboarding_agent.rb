@@ -230,7 +230,8 @@ class KycOnboardingAgent < AgentBaseService
   def generate_progress_reports(ctx, investor_kyc:, support_agent:, **)
     Rails.logger.debug { "[KycOnboardingAgent] Generating progress report for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
 
-    report = SupportAgentReport.new(owner: investor_kyc, support_agent: support_agent, json_fields: ctx[:issues])
+    report = SupportAgentReport.find_or_initialize_by(owner: investor_kyc, support_agent: support_agent)
+    report.json_fields = ctx[:issues]
     report.save
     Rails.logger.debug { "[KycOnboardingAgent] Report generated and saved (Report ID=#{report.id})" }
   end

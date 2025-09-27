@@ -6,6 +6,8 @@
             kra_data = kra_enabled ? @investor_kyc.kra_data : nil %>
 <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
+<%= render "/investor_kycs/kyc_onboarding_agent", investor_kyc: @investor_kyc if @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) && @investor_kyc.support_agent_report.present? %>
+
 <div>
 
   <% if policy(@investor_kyc).update? %>
