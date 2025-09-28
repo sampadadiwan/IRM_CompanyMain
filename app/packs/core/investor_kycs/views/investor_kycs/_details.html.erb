@@ -17,7 +17,6 @@
 
     <% if policy(@investor_kyc).validate_docs_with_ai? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-validation-tab" >Doc Validations</a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#support-agent-tab" >Support Agent</a>
     <% end %>
 
   </nav>
@@ -39,12 +38,6 @@
         <div id="docs-validation-tab" class="tab-pane fade in show">
           <div id="docs_validation" class="associated_entity">
             <%= Json2table.get_html_table(@investor_kyc.doc_question_answers, JsonTable::TABLE_OPTIONS).html_safe if @investor_kyc.doc_question_answers.present? %>
-          </div>
-        </div>
-
-        <div id="support-agent-tab" class="tab-pane fade in show">
-          <div id="support_agent_report" class="associated_entity">
-            <%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner: @investor_kyc) }  %>
           </div>
         </div>
 

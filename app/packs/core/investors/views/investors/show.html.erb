@@ -1,5 +1,9 @@
 
+<%
+  show_portfolio_company_agent = @investor.entity.support_agents.set?(:portfolio_company_agent) && @investor.support_agent_report.present?
+%>
 
+<%= render "/investors/portfolio_company_agent", investor: @investor if show_portfolio_company_agent %>
 <%= render "investors/show" %>
 
 

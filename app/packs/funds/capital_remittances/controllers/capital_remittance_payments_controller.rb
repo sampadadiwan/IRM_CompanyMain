@@ -5,7 +5,7 @@ class CapitalRemittancePaymentsController < ApplicationController
   def index
     @q = CapitalRemittancePayment.ransack(params[:q])
 
-    @capital_remittance_payments = policy_scope(@q.result).includes(:capital_remittance, :fund)
+    @capital_remittance_payments = policy_scope(@q.result).includes(:fund, :investor, capital_remittance: :capital_commitment)
     @capital_remittance_payments = @capital_remittance_payments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_remittance_payments = @capital_remittance_payments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end

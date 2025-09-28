@@ -1,0 +1,23 @@
+<div class="row g-3 mb-3">
+<% cards = [
+  {
+    icon: "ti ti-chart-histogram",
+    value: investor.support_agent_report.json_fields["kpi_issues"].size,
+    type: :numeric,
+    subtitle: "Missing KPIs"
+  },
+  {
+    icon: "ti ti-device-analytics",
+    value: investor.support_agent_report.json_fields["valuation_issues"].size,
+    type: :numeric,
+    subtitle: "Missing Valuations"
+  },
+  {
+    icon: "ti ti-files",
+    value: investor.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing_document" },
+    type: :numeric,
+    subtitle: "Missing Documents"
+  },
+] %>
+
+<%= render partial: "/support_agents/report", locals: { cards:, owner: @investor } %>

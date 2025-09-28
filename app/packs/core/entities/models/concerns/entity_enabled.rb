@@ -15,7 +15,7 @@ module EntityEnabled
     flag :customization_flags, %i[investor_kyc_custom_cols capital_commitment_custom_cols capital_remittance_custom_cols capital_distribution_payment_custom_cols investor_custom_cols enable_exchange_rate_commitment_adjustment]
 
     # List of agents enabled for this entity. Add new support agent flags to the end of this list
-    flag :support_agents, %i[kyc_onboarding_agent]
+    flag :support_agents, %i[kyc_onboarding_agent portfolio_company_agent]
 
     validate :validate_critical_flags
   end

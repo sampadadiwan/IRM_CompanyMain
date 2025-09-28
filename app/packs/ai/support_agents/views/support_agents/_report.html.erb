@@ -1,0 +1,37 @@
+<div class="row g-3 mb-3 justify-content-center">
+  <% cards.each do |card| %>
+    <% color_class =
+      if card[:type] == :numeric
+        card[:value].to_i == 0 ? "success" : "danger"
+      else
+        card[:value] == "Yes" ? "success" : "danger"
+      end
+    %>
+    <div class="col-xxl-2 col-md-6">
+      <div class="card border-start border-<%= color_class %>" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#support_agent_reports" aria-expanded="false" aria-controls="support_agent_reports">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-<%= color_class %> display-6">
+              <i class="<%= card[:icon] %>"></i>
+            </span>
+            <div>
+              <h4 class="card-title fs-6 text-center">
+                <%= card[:value] %>
+              </h4>
+              <p class="card-subtitle">
+                <% if card[:type] == :numeric %>
+                  <%= card[:value].to_i == 1 ? card[:subtitle].singularize : card[:subtitle] %>
+                <% else %>
+                  <%= card[:subtitle] %>
+                <% end %>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+
+<%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner:), hidden: true }  %>

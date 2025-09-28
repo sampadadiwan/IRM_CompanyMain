@@ -1,12 +1,18 @@
 
- <% ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc?
-              ckyc_data = ckyc_enabled ? @investor_kyc.ckyc_data : nil
-  %>
-  <% kra_enabled = @investor_kyc.entity.permissions.enable_kra?
-            kra_data = kra_enabled ? @investor_kyc.kra_data : nil %>
+<%
+  ckyc_enabled = @investor_kyc.entity.permissions.enable_ckyc?
+  ckyc_data = ckyc_enabled ? @investor_kyc.ckyc_data : nil
+  kra_enabled = @investor_kyc.entity.permissions.enable_kra?
+  kra_data = kra_enabled ? @investor_kyc.kra_data : nil
+  show_onboarding_agent = @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) && @investor_kyc.support_agent_report.present?
+%>
+
+<!-- Show the KYC Onboarding Agent details if set -->
+<%= render "/investor_kycs/kyc_onboarding_agent", investor_kyc: @investor_kyc if show_onboarding_agent %>
+<!-- Show the main KYC details -->
 <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
-<%= render "/investor_kycs/kyc_onboarding_agent", investor_kyc: @investor_kyc if @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) && @investor_kyc.support_agent_report.present? %>
+
 
 <div>
 

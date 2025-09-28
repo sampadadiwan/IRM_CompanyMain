@@ -34,7 +34,8 @@ class EntityDashboard < Administrate::BaseDashboard
     investor_categories: Field::String,
     instrument_types: Field::String,
     permissions: ActiveFlagField,
-    customization_flags: ActiveFlagField
+    customization_flags: ActiveFlagField,
+    support_agents: ActiveFlagField
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -62,6 +63,7 @@ class EntityDashboard < Administrate::BaseDashboard
     url
     category
     permissions
+    support_agents
     customization_flags
     created_at
     updated_at
@@ -98,6 +100,7 @@ class EntityDashboard < Administrate::BaseDashboard
     activity_docs_required_for_completion
     activity_details_required_for_na
     permissions
+    support_agents
     customization_flags
     entity_setting
 

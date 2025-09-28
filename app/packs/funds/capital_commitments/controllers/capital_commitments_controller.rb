@@ -78,43 +78,42 @@ class CapitalCommitmentsController < ApplicationController
 
   def transfer_fund_units
     if request.post?
-      fund = @capital_commitment.fund
       from_commitment = @capital_commitment
-      price = params[:price].to_d
-      premium = params[:premium].to_d
-      transfer_ratio = params[:transfer_ratio].to_f / 100
-      transfer_date = Date.parse(params[:transfer_date])
-      to_folio_id = params[:to_folio_id]
-      transfer_account_entries = params[:transfer_account_entries] == "1"
-      account_entries_excluded = params[:account_entries_excluded]
-
-      valid_params = params.to_unsafe_h.slice(:to_folio_id, :transfer_ratio, :price, :premium, :transfer_date, :transfer_account_entries, :account_entries_excluded)
-
       # Check if the to_folio_id is valid
-      to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: to_folio_id)
+      to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: params[:to_folio_id])
 
       if to_commitment.blank?
         # Redirect back to the form with an error message
-        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: "Invalid folio #{params[:to_folio_id]}"
+        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params), alert: "Invalid folio #{params[:to_folio_id]}"
       else
-        valid_params = {
-          transfer_ratio: transfer_ratio,
-          price: price,
-          premium: premium,
-          transfer_date: transfer_date,
-          transfer_account_entries: transfer_account_entries,
-          account_entries_excluded: account_entries_excluded
-        }
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
+
+        transfer = FundUnitTransfer.create(entity_id: @capital_commitment.entity_id,
+                                           fund_id: @capital_commitment.fund_id,
+                                           from_commitment_id: @capital_commitment.id,
+                                           to_commitment_id: to_commitment.id,
+                                           transfer_ratio: params[:transfer_ratio].to_f,
+                                           transfer_date: Date.parse(params[:transfer_date]),
+                                           price: params[:price].to_f,
+                                           premium: params[:premium].to_f,
+                                           transfer_account_entries: params[:transfer_account_entries] == "1",
+                                           account_entries_excluded: params[:account_entries_excluded])
+
         # Transfer fund units using the TB
-        result = FundUnitTransferService.call(from_commitment:, to_commitment:, fund:, **valid_params)
+        result = nil
+        from_commitment.transaction do
+          result = FundUnitTransferService.call(transfer:)
+          # If there was an error, rollback the transaction
+          raise ActiveRecord::Rollback if result.failure?
+        end
+
         if result.success?
           # Redirect to the fund units tab
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"
         else
           # Redirect back to the form with an error message
-          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: result[:error]
+          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params), alert: result[:error]
         end
       end
     end

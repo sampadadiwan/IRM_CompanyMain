@@ -1851,7 +1851,10 @@ When('fund units are transferred {string}') do |transfer|
   @to_cc = @fund.capital_commitments.last
   @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f
 
-  result = FundUnitTransferService.wtf?(from_commitment: @from_cc, to_commitment: @to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
+
+  @transfer = FundUnitTransfer.create(entity_id: @from_cc.entity_id, from_commitment: @from_cc, to_commitment: @to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio * 100, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
+
+  result = FundUnitTransferService.wtf?(transfer: @transfer)
 
   puts result[:error]
   result.success?.should == true
@@ -1872,6 +1875,9 @@ Then('the units should be transferred') do
   to_fu.premium_cents.should == @premium * 100
   to_fu.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
 
+
+  @transfer.reload
+  @transfer.status.should == "completed"
 end
 
 

@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_26_170744) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_28_094341) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1679,7 +1679,28 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_170744) do
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
   end
 
-  create_table "fund_units", force: :cascade do |t|
+  create_table "fund_unit_transfers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "from_commitment_id", null: false
+    t.bigint "to_commitment_id", null: false
+    t.integer "transfer_ratio"
+    t.date "transfer_date"
+    t.decimal "price", precision: 10
+    t.decimal "premium", precision: 10
+    t.boolean "transfer_account_entries"
+    t.string "account_entries_excluded"
+    t.string "transfer_token"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fund_unit_transfers_on_entity_id"
+    t.index ["from_commitment_id"], name: "index_fund_unit_transfers_on_from_commitment_id"
+    t.index ["fund_id"], name: "index_fund_unit_transfers_on_fund_id"
+    t.index ["to_commitment_id"], name: "index_fund_unit_transfers_on_to_commitment_id"
+  end
+
+  create_table "fund_units", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "capital_commitment_id", null: false
     t.bigint "investor_id", null: false
@@ -2132,6 +2153,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_170744) do
     t.boolean "compliant", default: false
     t.string "aml_status"
     t.boolean "completed_by_investor", default: false
+    t.boolean "reminder_sent", default: false
+    t.datetime "reminder_sent_date"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"

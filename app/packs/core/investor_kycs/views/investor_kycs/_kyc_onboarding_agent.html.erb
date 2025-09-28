@@ -1,62 +1,43 @@
 <div class="row g-3 mb-3">
-<div class="col-xxl-3 col-md-6">
-  <div class="card border-start border-danger">
-    <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between">
-        <span class="text-danger display-6">
-          <i class="ti ti-notes"></i>
-        </span>
-        <div>
-          <h4 class="card-title fs-7 text-center"><%=investor_kyc.support_agent_report.json_fields["field_issues"]&.size %></h4>
-          <p class="card-subtitle text-danger">Missing Fields</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-xxl-3 col-md-6">
-  <div class="card border-start border-info">
-    <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between">
-        <span class="text-info display-6">
-          <i class="ti ti-files"></i>
-        </span>
-        <div>
-          <h4 class="card-title fs-7 text-center"><%=investor_kyc.support_agent_report.json_fields["document_issues"]&.size %></h4>
-          <p class="card-subtitle text-info">Missing Documents</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-xxl-3 col-md-6">
-  <div class="card border-start border-primary">
-    <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between">
-        <span class="text-primary display-6">
-          <i class="ti ti-cancel"></i>
-        </span>
-        <div>
-          <h4 class="card-title fs-7 text-center"><%=investor_kyc.support_agent_report.json_fields["document_issues"]&.size %></h4>
-          <p class="card-subtitle text-primary">Mismatch Data </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-xxl-3 col-md-6">
-  <div class="card border-start border-success">
-    <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between">
-        <span class="text-success display-6">
-          <i class="ti ti-bell"></i>
-        </span>
-        <div>
-          <h4 class="card-title fs-7 text-center">Yes</h4>
-          <p class="card-subtitle text-success">Reminder Sent</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
+<% cards = [
+  {
+    icon: "ti ti-notes",
+    value: investor_kyc.support_agent_report.json_fields["field_issues"]&.size,
+    type: :numeric,
+    subtitle: "Missing Fields"
+  },
+  {
+    icon: "ti ti-files",
+    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing_document" },
+    type: :numeric,
+    subtitle: "Missing Documents"
+  },
+  {
+    icon: "ti ti-files",
+    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "mismatched_document" },
+    type: :numeric,
+    subtitle: "Bad Documents"
+  },
+  {
+    icon: "ti ti-cancel",
+    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "field_mismatch" },
+    type: :numeric,
+    subtitle: "Mismatched Fields"
+  },
+  {
+    icon: "ti ti-bell",
+    value: investor_kyc.reminder_sent? ? "Yes" : "No",
+    date: investor_kyc.reminder_sent_date,
+    type: :boolean,
+    subtitle: "Reminder Sent"
+  },
+  {
+    icon: "ti ti-shield-check",
+    value: investor_kyc.aml_reports.present? ? "Yes" : "No",
+    date: investor_kyc.aml_reports&.last&.created_at,
+    type: :boolean,
+    subtitle: "AML Report"
+  }
+] %>
+
+<%= render partial: "/support_agents/report", locals: { cards:, owner: @investor_kyc } %>

@@ -12,10 +12,22 @@ class FundUnitTransferService < Trailblazer::Operation
   step :apply_commitment_adjustments
   step :counter_culture_fix_counts
   step :send_notification
+  step :completed
   left :handle_errors, Output(:failure) => End(:failure)
 
-  def generate_transfer_token(ctx, **)
+  def generate_transfer_token(ctx, transfer:, **)
     ctx[:transfer_token] = SecureRandom.uuid
+    ctx[:transfer_ratio] = transfer.transfer_ratio.to_f / 100.0
+    ctx[:from_commitment] = transfer.from_commitment
+    ctx[:to_commitment] = transfer.to_commitment
+    ctx[:fund] = transfer.fund
+    ctx[:transfer_date] = transfer.transfer_date
+    ctx[:price] = transfer.price || 0.0
+    ctx[:premium] = transfer.premium || 0.0
+    ctx[:transfer_account_entries] = transfer.transfer_account_entries
+    ctx[:account_entries_excluded] = transfer.account_entries_excluded.present? ? transfer.account_entries_excluded.split(",").map(&:strip) : []
+    transfer.transfer_token = ctx[:transfer_token]
+    transfer.save
   end
 
   def validate_transfer(ctx, transfer_ratio:, from_commitment:, to_commitment:, fund:, **)
@@ -74,8 +86,13 @@ class FundUnitTransferService < Trailblazer::Operation
     true
   end
 
-  def handle_errors(ctx, **)
+  def handle_errors(ctx, transfer:, **)
     ctx[:error] ||= "Error transferring units"
+    Rails.logger.error(ctx[:error])
+
+    transfer.status = "Failed: #{ctx[:error]}"
+    transfer.save
+
     false
   end
 
@@ -85,53 +102,50 @@ class FundUnitTransferService < Trailblazer::Operation
       # Transfer the account entries
       from_commitment = ctx[:from_commitment]
       to_commitment = ctx[:to_commitment]
-      transfer_ratio = ctx[:transfer_ratio]
-      retained_ratio = 1 - transfer_ratio
-
-      account_entries_transferred = 0
-      account_entries_ignored = 0
 
       from_commitment.account_entries.each do |entry|
         if ctx[:account_entries_excluded].blank? || ctx[:account_entries_excluded].exclude?(entry.name)
-
-          orig_amount     = entry.amount_cents
-          orig_folio      = entry.folio_amount_cents
-          orig_tracking   = entry.tracking_amount_cents
-
-          new_entry = entry.dup
-          new_entry.folio_id = to_commitment.folio_id
-          new_entry.investor_id = to_commitment.investor_id
-          new_entry.commitment_name = to_commitment.to_s
-
-          new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
-          new_entry.json_fields["orig_amount"] = entry.amount_cents
-          new_entry.capital_commitment_id = to_commitment.id
-          new_entry.amount_cents = orig_amount * transfer_ratio
-          new_entry.folio_amount_cents = orig_folio * transfer_ratio
-          new_entry.tracking_amount_cents = orig_tracking * transfer_ratio
-          new_entry.created_at = Time.zone.now
-          new_entry.updated_at = Time.zone.now
-          new_entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}. #{entry.amount_cents} * #{transfer_ratio} = #{new_entry.amount_cents}"
-
-          entry.json_fields["transfer_id"] = ctx[:transfer_token]
-          entry.json_fields["orig_amount"] = entry.amount_cents
-          entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}"
-
-          AccountEntry.transaction do
-            # Update without callbacks
-            entry.update_columns(
-              amount_cents: (entry.amount_cents * retained_ratio),
-              folio_amount_cents: (entry.folio_amount_cents * retained_ratio),
-              tracking_amount_cents: (entry.tracking_amount_cents * retained_ratio),
-              json_fields: entry.json_fields,
-              updated_at: Time.current # omit if you truly don't want to touch timestamps
-            )
-            # Insert without callbacks
-            AccountEntry.insert_all!([new_entry.attributes.except("generated_deleted")])
-          end
-          account_entries_transferred += 1
+          transfer_ratio = ctx[:transfer_ratio]
+          retained_ratio = 1 - transfer_ratio
         else
-          account_entries_ignored += 1
+          transfer_ratio = 1
+          retained_ratio = 1
+        end
+
+        orig_amount     = entry.amount_cents
+        orig_folio      = entry.folio_amount_cents
+        orig_tracking   = entry.tracking_amount_cents
+
+        new_entry = entry.dup
+        new_entry.folio_id = to_commitment.folio_id
+        new_entry.investor_id = to_commitment.investor_id
+        new_entry.commitment_name = to_commitment.to_s
+
+        new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
+        new_entry.json_fields["orig_amount"] = entry.amount_cents
+        new_entry.capital_commitment_id = to_commitment.id
+        new_entry.amount_cents = orig_amount * transfer_ratio
+        new_entry.folio_amount_cents = orig_folio * transfer_ratio
+        new_entry.tracking_amount_cents = orig_tracking * transfer_ratio
+        new_entry.created_at = Time.zone.now
+        new_entry.updated_at = Time.zone.now
+        new_entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}. #{entry.amount_cents} * #{transfer_ratio} = #{new_entry.amount_cents}"
+
+        entry.json_fields["transfer_id"] = ctx[:transfer_token]
+        entry.json_fields["orig_amount"] = entry.amount_cents
+        entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}"
+
+        AccountEntry.transaction do
+          # Update without callbacks
+          entry.update_columns(
+            amount_cents: (entry.amount_cents * retained_ratio),
+            folio_amount_cents: (entry.folio_amount_cents * retained_ratio),
+            tracking_amount_cents: (entry.tracking_amount_cents * retained_ratio),
+            json_fields: entry.json_fields,
+            updated_at: Time.current # omit if you truly don't want to touch timestamps
+          )
+          # Insert without callbacks
+          AccountEntry.insert_all!([new_entry.attributes.except("generated_deleted")])
         end
       end
     end
@@ -325,7 +339,6 @@ class FundUnitTransferService < Trailblazer::Operation
       orig_percentage = payment.percentage
       orig_cost_of_investment = payment.cost_of_investment_cents
       orig_folio_amount = payment.folio_amount_cents
-      orig_other_fee = payment.other_fee_cents
       orig_net_of_account_entries = payment.net_of_account_entries_cents
       orig_net_payable = payment.net_payable_cents
       orig_income_with_fees = payment.income_with_fees_cents
@@ -353,7 +366,6 @@ class FundUnitTransferService < Trailblazer::Operation
       new_payment.units_quantity = orig_units_quantity * transfer_ratio
       new_payment.cost_of_investment_cents = orig_cost_of_investment * transfer_ratio
       new_payment.folio_amount_cents = orig_folio_amount * transfer_ratio
-      new_payment.other_fee_cents = orig_other_fee * transfer_ratio
       new_payment.net_of_account_entries_cents = orig_net_of_account_entries * transfer_ratio
       new_payment.net_payable_cents = orig_net_payable * transfer_ratio
       new_payment.income_with_fees_cents = orig_income_with_fees * transfer_ratio
@@ -380,7 +392,6 @@ class FundUnitTransferService < Trailblazer::Operation
       payment.units_quantity *= retained_ratio
       payment.cost_of_investment_cents *= retained_ratio
       payment.folio_amount_cents *= retained_ratio
-      payment.other_fee_cents *= retained_ratio
       payment.net_of_account_entries_cents *= retained_ratio
       payment.net_payable_cents *= retained_ratio
       payment.income_with_fees_cents *= retained_ratio
@@ -400,7 +411,6 @@ class FundUnitTransferService < Trailblazer::Operation
         units_quantity: payment.units_quantity,
         cost_of_investment_cents: payment.cost_of_investment_cents,
         folio_amount_cents: payment.folio_amount_cents,
-        other_fee_cents: payment.other_fee_cents,
         net_of_account_entries_cents: payment.net_of_account_entries_cents,
         net_payable_cents: payment.net_payable_cents,
         income_with_fees_cents: payment.income_with_fees_cents,
@@ -460,6 +470,12 @@ class FundUnitTransferService < Trailblazer::Operation
     CapitalDistributionPayment.counter_culture_fix_counts where: { 'capital_distribution_payments.fund_id': fund.id }
     FundUnit.counter_culture_fix_counts where: { 'fund_units.fund_id': fund.id }
     CapitalCommitment.counter_culture_fix_counts where: { 'capital_commitments.fund_id': fund.id }
+  end
+
+  def completed(_ctx, transfer:, **)
+    transfer.status = "completed"
+    transfer.save
+    true
   end
 end
 # rubocop:enable Metrics/ClassLength

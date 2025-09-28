@@ -30,4 +30,8 @@ class SupportAgent < ApplicationRecord
   def to_s
     name
   end
+
+  def enabled?
+    %w[true 1 enabled yes].include? json_fields["enabled"]&.downcase
+  end
 end

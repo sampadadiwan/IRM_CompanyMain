@@ -26,6 +26,14 @@
               val: val, id: "permissions_#{val}", class: "form-check-input"}, val %>
         </div>
     <% end %>
+  <% elsif f.object.class.name == "Entity" && field.attribute == :support_agents %>
+    <% Entity.support_agents.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :support_agents, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :support_agents, {name: "entity[support_agents][]",
+              val: val, id: "support_agents_#{val}", class: "form-check-input"}, val %>
+        </div>
+    <% end %>
   <% elsif f.object.class.name == "Entity" && field.attribute == :customization_flags %>
     <% Entity.customization_flags.pairs.each do |key, val| %>
         <div class="form-group col">

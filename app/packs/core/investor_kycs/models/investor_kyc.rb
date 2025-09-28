@@ -52,7 +52,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   belongs_to :entity
   # These are the capital_commitments that are linked to this KYC
   has_many :capital_commitments
-  has_one :support_agent_report, as: :owner, dependent: :nullify
+  has_one :support_agent_report, as: :owner, dependent: :destroy
 
   has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
@@ -184,7 +184,11 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
       # Ensure the flag is set to false after sending the KYC form
       # rubocop:disable Rails/SkipsModelValidations
-      update_column(:send_kyc_form_to_user, false)
+      if reminder
+        update_columns(:reminder_sent, true, :reminder_sent_date, Time.zone.now, :send_kyc_form_to_user, false)
+      else
+        update_column(:send_kyc_form_to_user, false)
+      end
       # rubocop:enable Rails/SkipsModelValidations
     end
   end

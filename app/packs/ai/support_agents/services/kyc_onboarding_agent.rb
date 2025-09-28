@@ -1,4 +1,4 @@
-class KycOnboardingAgent < AgentBaseService
+class KycOnboardingAgent < SupportAgentService
   # KycOnboardingAgent orchestrates a multi-step verification pipeline
   # for InvestorKYC records. It checks fields, validates documents
   # against expected content/labels, ensures consistency, creates reports,
@@ -26,7 +26,6 @@ class KycOnboardingAgent < AgentBaseService
   step :check_document_presence
   step :check_document_validity
   step :check_field_to_document_consistency
-  step :perform_ad_hoc_checks
   step :generate_progress_reports
   step :send_reminders
   step :trigger_aml_if_complete
@@ -58,8 +57,8 @@ class KycOnboardingAgent < AgentBaseService
     Rails.logger.debug { "[KycOnboardingAgent] Initializing agent for InvestorKyc ID=#{investor_kyc.id}" }
     ctx[:investor_kyc] = investor_kyc
     ctx[:issues] = { field_issues: [], document_issues: [] }
-    # Only process if submitted by investor
-    investor_kyc.completed_by_investor
+    # Only process if completed by investor and agent is enabled
+    investor_kyc.completed_by_investor && @support_agent.enabled?
   end
 
   # Verifies required attributes and custom fields are populated
@@ -129,7 +128,7 @@ class KycOnboardingAgent < AgentBaseService
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
         end
       elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        ctx[:issues][:field_issues] << { type: :invalid_json_field_value, field: fcf.name, value: value, severity: :blocking }
+        ctx[:issues][:field_issues] << { type: :invalid, field: fcf.name, value: value, severity: :blocking }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
       end
     end
@@ -138,28 +137,7 @@ class KycOnboardingAgent < AgentBaseService
   # Verifies all required documents (from form fields and support_agent config)
   # are uploaded by the investor.
   def check_document_presence(ctx, investor_kyc:, support_agent:, **)
-    if enabled?("validate_documents")
-
-      Rails.logger.debug { "[KycOnboardingAgent] Starting document presence check for InvestorKyc ID=#{investor_kyc.id}" }
-      # List of required documents from form and support agent json fields
-      required_docs = investor_kyc.required_fields_for(field_type: "File").map(&:label)
-      required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
-      required_docs.uniq!
-
-      Rails.logger.debug { "Required documents: #{required_docs.inspect}" }
-
-      uploaded_docs = investor_kyc.documents.pluck(:name).uniq
-
-      required_docs.each do |name|
-        unless uploaded_docs.include?(name)
-          ctx[:issues][:document_issues] << { type: :missing_document, name: name, severity: :blocking }
-          Rails.logger.debug { "[KycOnboardingAgent] Missing document detected: #{name}" }
-        end
-      end
-      Rails.logger.debug { "[KycOnboardingAgent] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
-    else
-      Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping check." }
-    end
+    super(ctx, model: investor_kyc, support_agent: support_agent)
   end
 
   # Uses LLM to validate each uploaded document against its label.
@@ -218,22 +196,10 @@ class KycOnboardingAgent < AgentBaseService
     end
   end
 
-  # Optional additional checks executed on-demand based on configuration.
-  # Results may add info/warnings/blocking issues to context.
-  def perform_ad_hoc_checks(ctx, investor_kyc:, support_agent:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Performing ad-hoc checks if configured for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-    ctx
-  end
-
   # Generates per-investor/fund reports summarizing issues and state.
   # Stores report as persisted SupportAgentReport record.
   def generate_progress_reports(ctx, investor_kyc:, support_agent:, **)
-    Rails.logger.debug { "[KycOnboardingAgent] Generating progress report for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-
-    report = SupportAgentReport.find_or_initialize_by(owner: investor_kyc, support_agent: support_agent)
-    report.json_fields = ctx[:issues]
-    report.save
-    Rails.logger.debug { "[KycOnboardingAgent] Report generated and saved (Report ID=#{report.id})" }
+    super(ctx, model: investor_kyc, support_agent: support_agent)
   end
 
   # Schedules reminder notifications when blocking issues are identified.
@@ -248,9 +214,22 @@ class KycOnboardingAgent < AgentBaseService
 
   # Triggers AML workflow if KYC process is complete.
   # Invokes external AML check integration logic downstream.
-  def trigger_aml_if_complete(_ctx, investor_kyc:, support_agent:, **)
+  def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
     if enabled?("trigger_aml")
       Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
+      if ctx[:issues][:field_issues].none? { |i| i[:severity] == :blocking } && ctx[:issues][:document_issues].none? { |i| i[:severity] == :blocking }
+        Rails.logger.info { "[KycOnboardingAgent] KYC complete with no blocking issues, triggering AML check for InvestorKyc ID=#{investor_kyc.id}" }
+        # TODO: - which user should be passed into triggering the AML?
+        GenerateAmlReportJob.perform_later(investor_kyc.id, investor_kyc.entity.employees.active.first.id)
+        report = ctx[:support_agent_report]
+        report.json_fields[:aml_triggered_at] = Time.current
+        report.save
+      else
+        report = ctx[:support_agent_report]
+        report.json_fields[:aml_report] = "Not triggered - KYC incomplete or blocking issues present"
+        report.save
+        Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
+      end
     else
       Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
     end
