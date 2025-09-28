@@ -123,6 +123,7 @@ class FundUnitTransferService < Trailblazer::Operation
 
         new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
         new_entry.json_fields["orig_amount"] = entry.amount_cents
+        new_entry.json_fields["orig_id"] = entry.id
         new_entry.capital_commitment_id = to_commitment.id
         new_entry.amount_cents = orig_amount * transfer_ratio
         new_entry.folio_amount_cents = orig_folio * transfer_ratio
@@ -352,6 +353,7 @@ class FundUnitTransferService < Trailblazer::Operation
 
       new_payment = payment.dup
       new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
+      new_payment.json_fields["orig_id"] = payment.id
       new_payment.json_fields["orig_gross_payable"] = orig_gross_payable
       new_payment.json_fields["orig_units_quantity"] = orig_units_quantity
       new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
