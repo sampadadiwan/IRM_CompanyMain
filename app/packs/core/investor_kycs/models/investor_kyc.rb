@@ -185,7 +185,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
       # Ensure the flag is set to false after sending the KYC form
       # rubocop:disable Rails/SkipsModelValidations
       if reminder
-        update_columns(:reminder_sent, true, :reminder_sent_date, Time.zone.now, :send_kyc_form_to_user, false)
+        update_columns(reminder_sent: true, reminder_sent_date: Time.zone.now, send_kyc_form_to_user: false)
       else
         update_column(:send_kyc_form_to_user, false)
       end
