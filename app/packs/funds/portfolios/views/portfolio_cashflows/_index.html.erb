@@ -10,6 +10,9 @@
           "import_upload[import_type]": "PortfolioCashflow",
           "sample_upload": "PORTFOLIO_INCOME_SAMPLE"),
           { class: "btn btn-outline-primary ti ti-upload"}   %>
+
+
+    <%= link_to "Download", portfolio_cashflows_path(params: params.to_unsafe_h, format: :xlsx), { class: "btn btn-outline-primary ti ti-download"}   %>
   </span>
 
 </div>

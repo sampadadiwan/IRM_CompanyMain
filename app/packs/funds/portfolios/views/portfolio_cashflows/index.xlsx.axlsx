@@ -1,0 +1,14 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("PortfolioCashflow")
+
+wb.add_worksheet(name: "PortfolioCashflow") do |sheet|
+  # Create the header row
+  sheet.add_row(["Portfolio Company", "Instrument", "Payment Date", "Amount", "Tag", "Notes"] + custom_headers)
+
+  # Create entries for each item
+  @portfolio_cashflows.each do |pc|
+    custom_field_values = get_custom_values(pc, form_type, custom_field_names)
+    sheet.add_row [pc.portfolio_company.investor_name, pc.investment_instrument.name, l(pc.payment_date), pc.amount.to_d, pc.tag, pc.notes] + custom_field_values
+  end
+end
