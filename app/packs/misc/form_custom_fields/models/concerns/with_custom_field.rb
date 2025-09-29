@@ -157,7 +157,7 @@ module WithCustomField
   # then it checks for that condition and returns the field only if the condition is met
   # Returns required fields for given type.
   # By default applies condition_on logic, but can ignore conditions to match DB query
-  def required_fields_for(field_type: nil, ignore_conditions: false)
+  def required_fields_for(field_type: nil)
     json_fields || {}
 
     form_custom_fields.select do |fcf|

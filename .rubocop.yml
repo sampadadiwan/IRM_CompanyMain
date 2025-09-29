@@ -188,6 +188,7 @@ Metrics/CyclomaticComplexity:
     - "app/packs/core/base/services/xlsx_to_template.rb"
     - "app/packs/core/entities/models/entity.rb"
     - "app/packs/funds/funds/services/fund_portfolio_calcs.rb"
+    - "app/packs/core/investor_kycs/services/kyc_doc_generator.rb"
 
 Metrics/PerceivedComplexity:
   Max: 20
@@ -214,6 +215,8 @@ Metrics/ClassLength:
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
     - "app/packs/core/base/services/xlsx_to_template.rb"
     - "app/packs/core/entities/models/entity.rb"
+    - "app/packs/funds/funds/services/fund_portfolio_calcs.rb"
+
 Metrics/ModuleLength:
   Description: "Avoid modules longer than 100 lines of code."
   Max: 200

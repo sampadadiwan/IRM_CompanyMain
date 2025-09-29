@@ -1,4 +1,4 @@
-<%= render "/layouts/filter", associations: [:investment_instrument], hidden_fields: {owner_id: params[:owner_id], owner_type: params[:owner_type]} %>
+<%= render "/layouts/filter", associations: [:investment_instrument], hidden_fields: {owner_id: params[:owner_id], owner_type: params[:owner_type], timeseries: params[:timeseries], attributes: params[:attributes]} %>
 
 <%= turbo_frame_tag with_frame("valuations_frame"), target: "_top" do %>
   <% if params[:timeseries].present? %>

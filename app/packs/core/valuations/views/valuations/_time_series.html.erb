@@ -1,10 +1,14 @@
-<% ordered_days = valuations.map(&:valuation_date).uniq.sort %>
-<% instruments = valuations.map(&:investment_instrument).uniq %>
+<%
+  ordered_days = valuations.map(&:valuation_date).uniq.sort
+  instruments = valuations.map(&:investment_instrument).uniq
+  attributes ||= params[:attributes]&.split(",")&.map(&:strip) || [:per_share_value]
+%>
 
 <table class="table table-bordered">
   <thead>
     <tr>
       <th>Instrument</th>
+      <th>Attribute</th>
       <% ordered_days.each do |day| %>
         <th><%= l day %></th>
       <% end %>
@@ -12,13 +16,26 @@
   </thead>
   <tbody>
     <% instruments.each do |instrument| %>
-      <tr>
-        <td><%= instrument&.name %></td>
-        <% ordered_days.each do |day| %>
-          <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
-          <td><%= money_to_currency(valuation.per_share_value, params) if valuation.present? %></td>
-        <% end %>
-      </tr>
+      <% attributes.each do |attr| %>
+        <tr>
+          <td><%= instrument&.name %></td>
+          <td><%= attr.to_s.split(".")[-1].humanize %></td>
+          <% ordered_days.each do |day| %>
+            <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
+            <td class="text-end">
+              <% if valuation.present? %>
+                <%
+                  parts = attr.to_s.split(".")
+                  value = parts.reduce(valuation) do |obj, method|
+                    obj.present? ? obj.public_send(method) : nil
+                  end
+                %>
+                <%= value.is_a?(Numeric) ? money_to_currency(value, params) : value %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
     <% end %>
   </tbody>
 </table>

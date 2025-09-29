@@ -1,3 +1,12 @@
+V9.1.15
+#####################################
+02a314248 Bug fix for kyc reminder update
+ff8a45545 Added orig_id during transfers
+d50406ccd (origin/main, origin/HEAD) Agent framework (#1026)
+ae4879816 Fixed tests for transfer to check cached values updated (#1025)
+00e2e2fd8 Fixed fund unit transfers, deleted capital_fee_cents
+
+
 V9.1.14
 #####################################
 f14d18228 (origin/inv-advisor-minor-updates) Updated IA folio form labels to Advisor first last name, added is inv adv filtering in inv access ransack
