@@ -9,6 +9,9 @@
     <%= support_agent.agent_type %>
   </td>
   <td>
+    <%= display_boolean support_agent.enabled %>
+  </td>
+  <td>
     <%= link_to "Show", support_agent , {class: "btn btn-outline-primary"}%>
     <%= link_to "Edit", edit_support_agent_path(support_agent), {class: "btn btn-outline-success"} if policy(support_agent).edit? %>
   </td>

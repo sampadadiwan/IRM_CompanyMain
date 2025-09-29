@@ -1,3 +1,4 @@
+resources :investments
 resources :portfolio_cashflows
 resources :stock_adjustments
 resources :stock_conversions do

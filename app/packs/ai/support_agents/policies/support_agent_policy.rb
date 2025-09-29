@@ -37,7 +37,8 @@ class SupportAgentPolicy < ApplicationPolicy
     update?
   end
 
-  def regenerate?
+  def run?
     update?
   end
+
 end

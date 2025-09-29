@@ -30,8 +30,12 @@
       <%= form.select :agent_type, SupportAgent::AGENT_TYPES, {}, class: "form-control"  %>
     </div>
 
-
     <%= custom_form_fields(@support_agent, form) %>
+
+    <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-check-input" %>
+    </div>
 
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

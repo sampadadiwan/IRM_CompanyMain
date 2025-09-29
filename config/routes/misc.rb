@@ -1,3 +1,5 @@
+resources :blogs
+
 get "/health_check/redis_check", to: "health_check#redis_check"
 get "/health_check/db_check", to: "health_check#db_check"
 get "/health_check/elastic_check", to: "health_check#elastic_check"

@@ -81,6 +81,12 @@
           <i class="ti ti-file-text"></i> Portfolio Investment Report
         <% end %>
 
+        <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
+            <%= button_to run_support_agents_path(agent_type: "PortfolioCompanyAgent", target_id: @investor.id, method: :post), class: "dropdown-item" do %>
+              <i class="ti ti-robot"></i> Run Portfolio Company Agent
+            <% end %>
+        <% end %>
+
       </div>
     </div>
   </div>

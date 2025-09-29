@@ -1,26 +1,12 @@
 Rails.application.routes.draw do
-  resources :support_agents
-  resources :agent_charts do
-    post 'regenerate', on: :member
-  end
-  resources :blogs
+
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
 
   resources :portfolio_reports
   resources :excused_investors
-  resources :investments
 
-  resources :ai_checks do
-    post 'run_checks', on: :collection
-    get 'run_checks', on: :collection
-  end
 
-  resources :chats do
-    post :send_message, on: :member
-  end
-
-  resources :ai_rules
   resources :rm_mappings
   resources :key_biz_metrics
 
@@ -33,6 +19,7 @@ Rails.application.routes.draw do
   draw :startup
   draw :misc
   draw :core
+  draw :ai
 
   devise_for :users, controllers: {
     # We no longer allow users to register on their own

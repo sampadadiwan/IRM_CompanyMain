@@ -42,6 +42,10 @@ class KycOnboardingAgent < SupportAgentService
   # - Reminders correctly triggered and contextual
   # - AML checks auto-triggered on completion
 
+  def targets(entity_id)
+    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor)
+  end
+
   private
 
   # Initializes the agent with the investor_kyc under review.
@@ -50,8 +54,9 @@ class KycOnboardingAgent < SupportAgentService
   # @param ctx [Hash] Trailblazer execution context
   # @param investor_kyc [InvestorKyc] record under verification
   # @return [Boolean] truthy if KYC is completed and eligible for processing
-  def initialize_agent(ctx, investor_kyc:, **)
+  def initialize_agent(ctx, target:, **)
     super
+    investor_kyc = target
     # Initialize execution ctx with a single investor_kyc
     # Setup history, logging, or state tracking for this run
     Rails.logger.debug { "[KycOnboardingAgent] Initializing agent for InvestorKyc ID=#{investor_kyc.id}" }

@@ -47,6 +47,15 @@ class SupportAgentsController < ApplicationController
     redirect_to support_agents_url, notice: "Support agent was successfully destroyed.", status: :see_other
   end
 
+  def run
+    @support_agent = SupportAgent.find_by(agent_type: params[:agent_type], entity_id: current_user.entity_id)
+    authorize @support_agent
+    # Enqueue the job to run the support agent
+    SupportAgentJob.perform_later(support_agent_id: @support_agent.id, target_id: params[:target_id], user_id: current_user.id)
+    # Redirect to referrer or support_agents_path if no referrer
+    redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.")
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.

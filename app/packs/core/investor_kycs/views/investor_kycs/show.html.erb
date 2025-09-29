@@ -129,6 +129,12 @@
             <% end %>
           <% end %>
 
+          <% if @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) %>
+            <%= button_to run_support_agents_path(agent_type: "KycOnboardingAgent", target_id: @investor_kyc.id, method: :post), class: "dropdown-item" do %>
+              <i class="ti ti-robot"></i> Run Kyc Onboarding Agent
+            <% end %>
+          <% end %>
+
         </div>
       </div>
     </div>

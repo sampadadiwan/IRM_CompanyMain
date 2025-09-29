@@ -34,6 +34,7 @@ class Entity < ApplicationRecord
   has_one :entity_setting, dependent: :destroy
   accepts_nested_attributes_for :entity_setting, allow_destroy: true
 
+  has_many :agents, class_name: "SupportAgent", dependent: :destroy
   has_many :kpi_reports, dependent: :destroy
   has_many :kpis, dependent: :destroy
   has_many :investor_kpi_mappings, dependent: :destroy

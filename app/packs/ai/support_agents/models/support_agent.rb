@@ -14,14 +14,16 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = ["SupportAgent"].freeze
+  AGENT_TYPES = ["KycOnboardingAgent", "PortfolioCompanyAgent"].freeze
 
   belongs_to :entity
+
+  scope :enabled, -> { where(enabled: true) }
 
   validates :name, presence: true
   validates :name, length: { maximum: 30 }
   validates :agent_type, presence: true
-  validates :agent_type, length: { maximum: 20 }
+  validates :agent_type, length: { maximum: 30 }
 
   # Returns the human-readable representation of the SupportAgent
   # In this case, simply the name string.
@@ -31,7 +33,8 @@ class SupportAgent < ApplicationRecord
     name
   end
 
-  def enabled?
-    %w[true 1 enabled yes].include? json_fields["enabled"]&.downcase
+  def agent
+    self.agent_type.constantize
   end
+
 end

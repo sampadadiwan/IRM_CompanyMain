@@ -6,19 +6,24 @@ class PortfolioCompanyAgent < SupportAgentService
   step :check_valuations
   step :generate_progress_reports
 
+  def targets(entity_id)
+    Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
+  end
+
   private
 
   # Initializes the agent with the portfolio_company under review.
   # Sets up the shared context including issue tracking hashes.
   #
   # @param ctx [Hash] Trailblazer execution context
-  # @param portfolio_company [Investor] record under verification
-  def initialize_agent(ctx, portfolio_company:, **)
+  # @param target portfolio_company [Investor] record under verification
+  def initialize_agent(ctx, target:, **)
     super
+    portfolio_company = target
+    ctx[:portfolio_company] = portfolio_company
     # Initialize execution ctx with a single portfolio_company
     # Setup history, logging, or state tracking for this run
     Rails.logger.debug { "[#{self.class.name}] Initializing agent for Investor ID=#{portfolio_company.id}" }
-    ctx[:portfolio_company] = portfolio_company
     ctx[:issues] = { kpi_issues: [], document_issues: [], valuation_issues: [] }
     # Only process if completed by investor and agent is enabled
     portfolio_company.category == "Portfolio Company" && @support_agent.enabled?

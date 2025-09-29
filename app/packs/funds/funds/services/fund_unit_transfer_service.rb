@@ -478,6 +478,7 @@ class FundUnitTransferService < Trailblazer::Operation
   def completed(_ctx, transfer:, **)
     transfer.status = "completed"
     transfer.save
+    true
   end
 end
 # rubocop:enable Metrics/ClassLength
