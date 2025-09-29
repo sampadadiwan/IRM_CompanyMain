@@ -50,16 +50,19 @@
                     <%= form.select :category, Fund::CATEGORIES, {include_blank: true}, class: "form-control"  %>
                   </div>
 
-                  <% currencies = fund.entity.exchange_rates.pluck(:from) << fund.entity.currency %>
+                  <%
+                    currencies = fund.entity.exchange_rates.pluck(:from) << fund.entity.currency
+                    currency_disabled = !fund.new_record?
+                  %>
                   <div class="form-group">
                     <%= form.label :currency %>
-                    <%= form.select :currency, currencies.uniq, {}, class: "form-control"  %>
+                    <%= form.select :currency, currencies.uniq, {}, class: "form-control", disabled: currency_disabled  %>
                   </div>
 
 
                   <div class="form-group">
                     <%= form.label :tracking_currency %>
-                    <%= form.select :tracking_currency, currencies.uniq, {include_blank: true}, class: "form-control"  %>
+                    <%= form.select :tracking_currency, currencies.uniq, {include_blank: true}, class: "form-control", disabled: currency_disabled  %>
                     <small>If you want to track the fund in a different currency, leave blank if not applicable</small>
                   </div>
 
@@ -86,7 +89,7 @@
                   <div class="form-group">
                     <%= form.label :tag_list %>
                     <%= form.text_field :tag_list, class: "form-control"  %>
-                  </div>                  
+                  </div>
 
                   <%= custom_form_fields(fund, form, step: :one) %>
 
