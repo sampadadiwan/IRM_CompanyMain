@@ -1849,8 +1849,9 @@ When('fund units are transferred {string}') do |transfer|
   @from_cc_folio_committed_amount_cents = @from_cc.folio_committed_amount_cents
 
   @to_cc = @fund.capital_commitments.last
+  @to_cc_committed_amount_cents = @to_cc.committed_amount_cents
+  @to_cc_folio_committed_amount_cents = @to_cc.folio_committed_amount_cents
   @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f
-
 
   @transfer = FundUnitTransfer.create(entity_id: @from_cc.entity_id, from_commitment: @from_cc, to_commitment: @to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio * 100, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
 
@@ -1878,6 +1879,11 @@ Then('the units should be transferred') do
 
   @transfer.reload
   @transfer.status.should == "completed"
+
+
+  @from_cc.reload
+  @from_cc.committed_amount_cents.should == @from_cc_committed_amount_cents * (1 - @transfer_ratio)
+
 end
 
 

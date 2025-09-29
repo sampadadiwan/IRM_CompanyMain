@@ -460,9 +460,9 @@ class FundUnitTransferService < Trailblazer::Operation
       as_of: ctx[:transfer_date]
     )
 
-    AdjustmentCreate.call(commitment_adjustment: from_ca)
+    result = AdjustmentCreate.call(commitment_adjustment: from_ca)
 
-    true
+    result.success?
   end
 
   def counter_culture_fix_counts(_ctx, fund:, **)
@@ -471,12 +471,13 @@ class FundUnitTransferService < Trailblazer::Operation
     CapitalDistributionPayment.counter_culture_fix_counts where: { 'capital_distribution_payments.fund_id': fund.id }
     FundUnit.counter_culture_fix_counts where: { 'fund_units.fund_id': fund.id }
     CapitalCommitment.counter_culture_fix_counts where: { 'capital_commitments.fund_id': fund.id }
+    CommitmentAdjustment.counter_culture_fix_counts where: { 'commitment_adjustments.fund_id': fund.id }
+    true
   end
 
   def completed(_ctx, transfer:, **)
     transfer.status = "completed"
     transfer.save
-    true
   end
 end
 # rubocop:enable Metrics/ClassLength
