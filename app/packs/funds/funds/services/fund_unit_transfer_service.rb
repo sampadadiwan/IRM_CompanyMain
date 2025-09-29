@@ -123,6 +123,7 @@ class FundUnitTransferService < Trailblazer::Operation
 
         new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
         new_entry.json_fields["orig_amount"] = entry.amount_cents
+        new_entry.json_fields["orig_id"] = entry.id
         new_entry.capital_commitment_id = to_commitment.id
         new_entry.amount_cents = orig_amount * transfer_ratio
         new_entry.folio_amount_cents = orig_folio * transfer_ratio
@@ -186,6 +187,7 @@ class FundUnitTransferService < Trailblazer::Operation
       new_remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
       new_remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
       new_remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
+      new_remittance.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
 
       new_remittance.investor_id = to_commitment.investor_id
       new_remittance.folio_id = to_commitment.folio_id
@@ -209,13 +211,13 @@ class FundUnitTransferService < Trailblazer::Operation
       new_remittance.tracking_call_amount_cents = orig_tracking_call * transfer_ratio
       new_remittance.created_at = Time.zone.now
       new_remittance.updated_at = Time.zone.now
-      new_remittance.notes ||= ""
-      new_remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
 
       remittance.json_fields["transfer_id"] = ctx[:transfer_token]
       remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
       remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
       remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
+      remittance.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
+
       remittance.call_amount_cents *= retained_ratio
       remittance.collected_amount_cents *= retained_ratio
       remittance.committed_amount_cents *= retained_ratio
@@ -232,8 +234,6 @@ class FundUnitTransferService < Trailblazer::Operation
       remittance.arrear_amount_cents *= retained_ratio
       remittance.tracking_collected_amount_cents *= retained_ratio
       remittance.tracking_call_amount_cents *= retained_ratio
-      remittance.notes ||= ""
-      remittance.notes += " Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id} , transfer_ratio: #{transfer_ratio}"
 
       CapitalRemittance.transaction do
         # Update without callbacks
@@ -352,6 +352,7 @@ class FundUnitTransferService < Trailblazer::Operation
 
       new_payment = payment.dup
       new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
+      new_payment.json_fields["orig_id"] = payment.id
       new_payment.json_fields["orig_gross_payable"] = orig_gross_payable
       new_payment.json_fields["orig_units_quantity"] = orig_units_quantity
       new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
@@ -459,9 +460,9 @@ class FundUnitTransferService < Trailblazer::Operation
       as_of: ctx[:transfer_date]
     )
 
-    AdjustmentCreate.call(commitment_adjustment: from_ca)
+    result = AdjustmentCreate.call(commitment_adjustment: from_ca)
 
-    true
+    result.success?
   end
 
   def counter_culture_fix_counts(_ctx, fund:, **)
@@ -470,12 +471,13 @@ class FundUnitTransferService < Trailblazer::Operation
     CapitalDistributionPayment.counter_culture_fix_counts where: { 'capital_distribution_payments.fund_id': fund.id }
     FundUnit.counter_culture_fix_counts where: { 'fund_units.fund_id': fund.id }
     CapitalCommitment.counter_culture_fix_counts where: { 'capital_commitments.fund_id': fund.id }
+    CommitmentAdjustment.counter_culture_fix_counts where: { 'commitment_adjustments.fund_id': fund.id }
+    true
   end
 
   def completed(_ctx, transfer:, **)
     transfer.status = "completed"
     transfer.save
-    true
   end
 end
 # rubocop:enable Metrics/ClassLength

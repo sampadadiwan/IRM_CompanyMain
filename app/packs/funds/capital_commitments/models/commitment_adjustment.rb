@@ -38,56 +38,49 @@ class CommitmentAdjustment < ApplicationRecord
                                        delta_column: 'tracking_amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.adjustment_type in (?)", ADJUST_COMMITMENT_TYPES] => 'tracking_adjustment_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up adjustment amount to capital commitment for "Top Up" and "Exchange Rate" types
   counter_culture :capital_commitment, column_name: proc { |r| r.update_committed_amounts? ? 'adjustment_amount_cents' : nil },
                                        delta_column: 'amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.adjustment_type in (?)", ADJUST_COMMITMENT_TYPES] => 'adjustment_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up adjustment folio amount to capital commitment for "Top Up" and "Exchange Rate" types
   counter_culture :capital_commitment, column_name: proc { |r| r.update_committed_amounts? ? 'adjustment_folio_amount_cents' : nil },
                                        delta_column: 'folio_amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.adjustment_type in (?)", ADJUST_COMMITMENT_TYPES] => 'adjustment_folio_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up arrear amount to capital commitment for "Arrear" type
   counter_culture :capital_commitment, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_amount_cents' : nil },
                                        delta_column: 'amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.adjustment_type in (?)", ADJUST_ARREAR_TYPES] => 'arrear_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up arrear folio amount to capital commitment for "Arrear" type
   counter_culture :capital_commitment, column_name: proc { |r| r.update_arrear_amounts? ? 'arrear_folio_amount_cents' : nil },
                                        delta_column: 'folio_amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.adjustment_type in (?)", ADJUST_ARREAR_TYPES] => 'arrear_folio_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up arrear amount to owner for "Arrear" type
   counter_culture :capital_remittance, column_name: proc { |r| r.update_arrear_amounts? && r.owner_type == "CapitalRemittance" ? 'arrear_amount_cents' : nil },
                                        delta_column: 'amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.owner_type=? and commitment_adjustments.adjustment_type in (?)", "CapitalRemittance", ADJUST_ARREAR_TYPES] => 'arrear_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   # Roll up arrear folio amount to owner for "Arrear" type
   counter_culture :capital_remittance, column_name: proc { |r| r.update_arrear_amounts? && r.owner_type == "CapitalRemittance" ? 'arrear_folio_amount_cents' : nil },
                                        delta_column: 'folio_amount_cents',
                                        column_names: {
                                          ["commitment_adjustments.owner_type=? and commitment_adjustments.adjustment_type in (?)", "CapitalRemittance", ADJUST_ARREAR_TYPES] => 'arrear_folio_amount_cents'
-                                       },
-                                       execute_after_commit: true
+                                       }
 
   def update_committed_amounts
     logger.debug "Updating committed amounts for #{capital_commitment.folio_id}"
