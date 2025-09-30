@@ -221,7 +221,7 @@ class KycOnboardingAgent < SupportAgentService
   # Invokes external AML check integration logic downstream.
   def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
     if enabled?("trigger_aml")
-      binding.pry
+
       Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
       if ctx[:issues][:field_issues].none? { |i| i[:severity] == :blocking } && ctx[:issues][:document_issues].none? { |i| i[:severity] == :blocking }
         Rails.logger.info { "[KycOnboardingAgent] KYC complete with no blocking issues, triggering AML check for InvestorKyc ID=#{investor_kyc.id}" }

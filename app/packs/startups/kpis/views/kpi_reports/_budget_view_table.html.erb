@@ -1,4 +1,5 @@
 <%
+    precision = params[:decimals]&.to_i || 2
     investor = Investor.where(id: params[:portfolio_company_id]).first
 
     if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
@@ -118,11 +119,7 @@
                                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
                                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
-                                            <% if kpi.value.negative? %>
-                                                <span class="text-danger">(<%= display_kpi(kpi, ikm, params: params) %>)</span>
-                                            <% else %>
-                                                <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
-                                            <% end %>
+                                            <span class="<%= kpi.value.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
                                         <% else %>
 
                                         <% end %>
@@ -143,7 +140,7 @@
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
                                         <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
                                     <% elsif actual_kpi_value.present? %>
-                                        <%= actual_kpi_value %>
+                                        <span class="<%= actual_kpi_value.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision: 2, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>
