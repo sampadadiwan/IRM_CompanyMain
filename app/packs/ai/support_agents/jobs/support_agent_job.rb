@@ -23,6 +23,7 @@ class SupportAgentJob < ApplicationJob
         error_msg = "#{support_agent.agent_type} error processing Target ID=#{target.id}: #{e.message}"
         send_notification(error_msg, user_id, "danger")
         Rails.logger.error { error_msg }
+        Rails.logger.error { e.backtrace.join("\n") }
         errors << { support_agent: support_agent.agent_type, target_id: target.id, error: error_msg }
       end
     end

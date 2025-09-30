@@ -23,9 +23,9 @@ class KycOnboardingAgent < SupportAgentService
 
   # == Core Functions ==
   step :check_field_completeness
-  step :check_document_presence
-  step :check_document_validity
-  step :check_field_to_document_consistency
+  # step :check_document_presence
+  # step :check_document_validity
+  # step :check_field_to_document_consistency
   step :generate_progress_reports
   step :send_reminders
   step :trigger_aml_if_complete
@@ -111,7 +111,7 @@ class KycOnboardingAgent < SupportAgentService
       str_val = value.strip
       if str_val.empty? || invalid_tokens.include?(str_val.downcase)
         Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
-        ctx[:issues][:field_issues] << { type: :invalid_field_value, field: attr, value: value, severity: :blocking }
+        ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking }
       end
     end
   end
@@ -129,11 +129,11 @@ class KycOnboardingAgent < SupportAgentService
       elsif fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
-          ctx[:issues][:field_issues] << { type: :invalid_select_field_value, field: fcf.name, value: value, severity: :blocking }
+          ctx[:issues][:field_issues] << { type: :invalid_select_field_value, message: fcf.name, value: value, severity: :blocking }
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
         end
       elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        ctx[:issues][:field_issues] << { type: :invalid, field: fcf.name, value: value, severity: :blocking }
+        ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
       end
     end
@@ -221,17 +221,18 @@ class KycOnboardingAgent < SupportAgentService
   # Invokes external AML check integration logic downstream.
   def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
     if enabled?("trigger_aml")
+      binding.pry
       Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
       if ctx[:issues][:field_issues].none? { |i| i[:severity] == :blocking } && ctx[:issues][:document_issues].none? { |i| i[:severity] == :blocking }
         Rails.logger.info { "[KycOnboardingAgent] KYC complete with no blocking issues, triggering AML check for InvestorKyc ID=#{investor_kyc.id}" }
         # TODO: - which user should be passed into triggering the AML?
         GenerateAmlReportJob.perform_later(investor_kyc.id, investor_kyc.entity.employees.active.first.id)
         report = ctx[:support_agent_report]
-        report.json_fields[:aml_report] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
+        report.json_fields["aml_report"] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
         report.save
       else
         report = ctx[:support_agent_report]
-        report.json_fields[:aml_report] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
+        report.json_fields["aml_report"] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
         report.save
         Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
       end
