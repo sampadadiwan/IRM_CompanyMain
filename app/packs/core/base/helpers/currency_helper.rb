@@ -44,7 +44,7 @@ module CurrencyHelper
               when "millions", "million" # inconsistent in some places
                 money /= 1_000_000
                 sanf = false
-                raw_units
+                "Million"
               end
 
       cookies[:currency_units] = units if cookies
