@@ -91,7 +91,8 @@ class FormType < ApplicationRecord
   def update_models
     cn = name.constantize
     cn.where(entity_id:, form_type_id: nil).update_all(form_type_id: id)
-    FormTypeJob.perform_later(id)
+    # We do not enforce the json_fields via the FormTypeJob anymore, its not required.
+    # FormTypeJob.perform_later(id) unless self.name == "AccountEntry" # Dont run for AccountEntry as it has too many records
   end
 
   # Ensure that all the custom fields defined in the form type are present in the json_fields of the models

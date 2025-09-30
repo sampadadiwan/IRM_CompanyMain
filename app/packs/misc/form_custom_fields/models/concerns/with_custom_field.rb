@@ -139,20 +139,23 @@ module WithCustomField
     TemplateDecorator.decorate(custom_calcs)
   end
 
+  # rubocop:disable Rails/SkipsModelValidations
   def ensure_json_fields
     return unless form_type && json_fields
 
     updated = false
     form_type.form_custom_fields.visible.each do |cf|
-      json_fields ||= {}
-      unless json_fields.key?(cf.name)
-        json_fields[cf.name] ||= nil
+      self.json_fields ||= {}
+      unless self.json_fields.key?(cf.name)
+        self.json_fields[cf.name] ||= nil
         updated = true
       end
     end
-    save(validate: false) if updated
+
+    update_column(:json_fields, self.json_fields) if updated
     updated
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   # This is used to get the required fields for the form type
   # It also checks for any conditions on the fields
