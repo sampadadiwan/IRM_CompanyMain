@@ -10,7 +10,7 @@
 
 %>
 
-<table class="table table-bordered">
+<table class="table table-bordered table-striped datatable">
   <thead>
     <tr>
       <th>Instrument</th>
@@ -40,7 +40,7 @@
                     obj.present? ? obj.public_send(method) : nil
                   end
                 %>
-                <span class="<%= value.negative? ? 'text-danger' : nil %>"><%= number_with_precision(value, precision:, delimiter: ',') %></span>
+                <span class="<%= value.is_a?(Numeric) && value.negative? ? 'text-danger' : nil %>"><%= number_with_precision(value, precision:, delimiter: ',') %></span>
               <% end %>
             </td>
           <% end %>

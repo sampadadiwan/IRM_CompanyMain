@@ -1,3 +1,16 @@
+V9.1.17
+#####################################
+d09ba1cfa (HEAD -> main, origin/main, origin/HEAD) Removed the FormTypeJob invocation, no longer required
+7f5370656 Fixed bug of SEBI fields replacing the investor KYC fields
+30e3841e9 Decimals and red negative text for Budget/Actual
+3bc9ed719 Added decimals to performance table
+4dee105ac Computes FMV based on last_valuation date
+d2d27de3d Changed to Million
+6683d2636 Fixed support agent report display
+c5450fda3 Better UI for support agent reports
+1e08b559b Added better custom grid columns for API
+
+
 V9.1.16
 #####################################
 992b8f684 Agent framework (#1028)
