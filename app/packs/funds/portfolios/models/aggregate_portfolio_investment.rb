@@ -49,6 +49,12 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Avg Cost / Share" => "avg_cost"
   }.freeze
 
+  ADDITIONAL_COLUMNS = {
+    "Tracking Bought Amount" => "tracking_bought_amount",
+    "Tracking FMV" => "tracking_fmv",
+    "Tracking Sold Amount" => "tracking_sold_amount"
+  }.freeze
+
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company").freeze
 

@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = ["KycOnboardingAgent", "PortfolioCompanyAgent"].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent].freeze
 
   belongs_to :entity
 
@@ -34,7 +34,6 @@ class SupportAgent < ApplicationRecord
   end
 
   def agent
-    self.agent_type.constantize
+    agent_type.constantize
   end
-
 end

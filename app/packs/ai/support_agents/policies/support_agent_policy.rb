@@ -40,5 +40,4 @@ class SupportAgentPolicy < ApplicationPolicy
   def run?
     update?
   end
-
 end

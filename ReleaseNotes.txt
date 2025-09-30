@@ -1,3 +1,12 @@
+V9.1.16
+#####################################
+992b8f684 Agent framework (#1028)
+d03f88d1a Added xlsx for portfolio cashflow
+8a277cb0c Fund currency cannot be edited
+105a4f234 (origin/kedaara5, kedaara5) Now CommitmentAdjustment counters are not after_commit, as this was causing issues with transfers
+a6b8facee Added better timeseries attributes for valuation
+
+
 V9.1.15
 #####################################
 02a314248 Bug fix for kyc reminder update

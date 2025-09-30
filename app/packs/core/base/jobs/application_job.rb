@@ -15,7 +15,7 @@ class ApplicationJob < ActiveJob::Base
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
 
-  def self.run_from_console(queue="default")
+  def self.run_from_console(queue = "default")
     # Get the last job enqueued (from the default queue, change if needed)
     job = Sidekiq::Queue.new(queue).to_a.first
 
@@ -28,7 +28,7 @@ class ApplicationJob < ActiveJob::Base
       # Run it immediately in the console
       job.klass.constantize.new.perform(*job.args)
     else
-      puts "No jobs in the #{queue} queue"
+      Rails.logger.debug { "No jobs in the #{queue} queue" }
     end
   end
 end

@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_09_28_094341) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_29_134452) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3064,7 +3064,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_094341) do
     t.index ["to_portfolio_investment_id"], name: "index_stock_conversions_on_to_portfolio_investment_id"
   end
 
-  create_table "support_client_mappings", force: :cascade do |t|
+  create_table "support_agent_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "owner_name", limit: 50
+    t.bigint "support_agent_id", null: false
+    t.string "support_agent_name", limit: 50
+    t.json "json_fields"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_type", "owner_id"], name: "index_support_agent_reports_on_owner"
+    t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
+  end
+
+  create_table "support_agents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", limit: 30
+    t.string "description"
+    t.bigint "entity_id", null: false
+    t.bigint "form_type_id"
+    t.string "agent_type", limit: 30
+    t.json "json_fields"
+    t.bigint "document_folder_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.index ["document_folder_id"], name: "index_support_agents_on_document_folder_id"
+    t.index ["entity_id"], name: "index_support_agents_on_entity_id"
+    t.index ["form_type_id"], name: "index_support_agents_on_form_type_id"
+  end
+
+  create_table "support_client_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.date "end_date"

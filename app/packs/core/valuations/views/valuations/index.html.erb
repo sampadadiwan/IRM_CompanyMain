@@ -8,10 +8,14 @@
   <% end %>
 <% end %>
 
-<%= turbo_frame_tag with_frame("valuations_charts_frame"), target: "_top" do %>
-<div class="associated_entity">
-    <%= render "/valuations/charts", entity: current_user.entity, owner_id: params[:owner_id], owner_type: params[:owner_type] %>
-</div>
+<% if params[:show_charts] != "false" %>
+
+  <%= turbo_frame_tag with_frame("valuations_charts_frame"), target: "_top" do %>
+  <div class="associated_entity">
+      <%= render "/valuations/charts", entity: current_user.entity, owner_id: params[:owner_id], owner_type: params[:owner_type] %>
+  </div>
+  <% end %>
+
 <% end %>
 
 
