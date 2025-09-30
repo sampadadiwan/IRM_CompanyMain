@@ -41,7 +41,12 @@ class PortfolioCompanyAgent < SupportAgentService
     if portfolio_company.kpi_reports.exists?(as_of: last_kpi_submission_months.months.ago)
       Rails.logger.debug { "[#{self.class.name}] Last quarter KPIs submitted for Investor ID=#{portfolio_company.id}" }
     else
-      ctx[:issues][:kpi_issues] << { type: :missing, message: "Last quarter KPIs not submitted", severity: :warning }
+      ctx[:issues][:kpi_issues] << {
+        key: :kpi,
+        type: :missing,
+        message: "Last quarter KPIs not submitted",
+        severity: :warning
+      }
       Rails.logger.warn { "[#{self.class.name}] Last quarter KPIs missing for Investor ID=#{portfolio_company.id}" }
     end
     true
@@ -66,8 +71,13 @@ class PortfolioCompanyAgent < SupportAgentService
     if portfolio_company.valuations.exists?(["valuation_date >= ?", last_valuation_check_days.days.ago])
       Rails.logger.debug { "[#{self.class.name}] Recent valuations found for Investor ID=#{portfolio_company.id}" }
     else
-      ctx[:issues][:valuation_issues] << { type: :stale, message: "No valuations in the past #{last_valuation_check_days} days", severity: :warning }
-      Rails.logger.warn { "[#{self.class.name}] Stale valuations for Investor ID=#{portfolio_company.id}" }
+      ctx[:issues][:valuation_issues] << {
+        key: :valuation,
+        type: :missing,
+        message: "No valuations in the past #{last_valuation_check_days} days",
+        severity: :warning
+      }
+      Rails.logger.warn { "[#{self.class.name}] Missing valuations for Investor ID=#{portfolio_company.id}" }
     end
     true
   end

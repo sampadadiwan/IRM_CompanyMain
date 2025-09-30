@@ -1,6 +1,6 @@
 <%= render ToggleCard.new(title: "Support Agent Report", css_class: "show_support_agent_report") do %>
 
-  <table class="table table-bordered dataTable">
+  <table class="table table-bordered dataTable no_hover_table">
     <tr>
       <td>Owner</td>
       <td><%= support_agent_report.owner_type %> (ID: <%= support_agent_report.owner_id %>)</td>
@@ -18,15 +18,6 @@
       <td><%= support_agent_report.support_agent.name || support_agent_report.support_agent_id %></td>
     </tr>
 
-    <% if support_agent_report.json_fields.present? %>
-      <tr>
-        <td>Details</td>
-        <td>
-          <%= Json2table.get_html_table(support_agent_report.json_fields, JsonTable::TABLE_OPTIONS).html_safe %>
-        </td>
-      </tr>
-    <% end %>
-
     <tr>
       <td>Created at</td>
       <td><%= l(support_agent_report.created_at) %></td>
@@ -35,6 +26,39 @@
       <td>Updated at</td>
       <td><%= l(support_agent_report.updated_at) %></td>
     </tr>
+
+
+    <% if support_agent_report.json_fields.present? %>
+      <tr>
+        <td colspan="2">
+          <% json_data = support_agent_report.json_fields.with_indifferent_access %>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% json_data.each do |category, issues| %>
+                <% issues.each do |issue| %>
+                  <tr>
+                    <td><%= category.to_s.humanize %></td>
+                    <td><%= issue["type"] %></td>
+                    <td><%= issue["message"] %></td>
+                    <td><%= issue["severity"] %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    <% end %>
+
+
   </table>
 
 <% end %>

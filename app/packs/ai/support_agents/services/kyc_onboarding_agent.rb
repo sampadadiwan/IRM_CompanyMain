@@ -61,7 +61,7 @@ class KycOnboardingAgent < SupportAgentService
     # Setup history, logging, or state tracking for this run
     Rails.logger.debug { "[KycOnboardingAgent] Initializing agent for InvestorKyc ID=#{investor_kyc.id}" }
     ctx[:investor_kyc] = investor_kyc
-    ctx[:issues] = { field_issues: [], document_issues: [] }
+    ctx[:issues] = { field_issues: [], document_issues: [], aml_report: [] }
     # Only process if completed by investor and agent is enabled
     investor_kyc.completed_by_investor && @support_agent.enabled?
   end
@@ -227,11 +227,11 @@ class KycOnboardingAgent < SupportAgentService
         # TODO: - which user should be passed into triggering the AML?
         GenerateAmlReportJob.perform_later(investor_kyc.id, investor_kyc.entity.employees.active.first.id)
         report = ctx[:support_agent_report]
-        report.json_fields[:aml_triggered_at] = Time.current
+        report.json_fields[:aml_report] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
         report.save
       else
         report = ctx[:support_agent_report]
-        report.json_fields[:aml_report] = "Not triggered - KYC incomplete or blocking issues present"
+        report.json_fields[:aml_report] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
         report.save
         Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
       end

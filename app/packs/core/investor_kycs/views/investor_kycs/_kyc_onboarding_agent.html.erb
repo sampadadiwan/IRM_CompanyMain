@@ -10,26 +10,26 @@
     icon: "ti ti-files",
     value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing_document" },
     type: :numeric,
-    subtitle: "Missing Documents"
+    subtitle: "Missing Docs"
   },
   {
     icon: "ti ti-files",
     value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "mismatched_document" },
     type: :numeric,
-    subtitle: "Bad Documents"
+    subtitle: "Bad Docs"
   },
   {
     icon: "ti ti-cancel",
     value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "field_mismatch" },
     type: :numeric,
-    subtitle: "Mismatched Fields"
+    subtitle: "Mismatched"
   },
   {
     icon: "ti ti-bell",
     value: investor_kyc.reminder_sent? ? "Yes" : "No",
     date: investor_kyc.reminder_sent_date,
     type: :boolean,
-    subtitle: "Reminder Sent"
+    subtitle: "Reminder"
   },
   {
     icon: "ti ti-shield-check",

@@ -90,7 +90,7 @@ module SupportAgentHelper
     JSON.parse(content)
   rescue JSON::ParserError
     # Record issue if LLM output cannot be parsed
-    ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, severity: :warning, raw: raw }
+    ctx[:issues][:document_issues] << { type: :error, message: "Error extracting data from #{doc.name}", severity: :warning, raw: raw }
     Rails.logger.warn("[SupportAgent] LLM parse error for document #{doc.name}, raw=#{raw.inspect}")
     nil
   end
@@ -133,7 +133,7 @@ module SupportAgentHelper
           type: :field_mismatch,
           name: doc.name,
           severity: :blocking,
-          explanation: "#{attribute_name} (#{extracted_val}) does not match #{model.class.name} (#{model_val})"
+          message: "#{doc.name}, #{attribute_name} (#{extracted_val}) does not match #{model.class.name} (#{model_val})"
         }
         Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted_val.inspect}, expected #{attribute_name}=#{model_val.inspect}" }
       end
