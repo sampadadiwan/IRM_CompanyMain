@@ -1,7 +1,13 @@
 <%
+  precision = params[:decimals]&.to_i || 2
+  # valuations is passed in from the controller, get unique days and instruments
   ordered_days = valuations.map(&:valuation_date).uniq.sort
   instruments = valuations.map(&:investment_instrument).uniq
+  # attributes can be passed in as a comma separated list, default to per_share_value
   attributes ||= params[:attributes]&.split(",")&.map(&:strip) || [:per_share_value]
+  # Eager load associations to avoid N+1 queries
+  valuations = valuations.includes(:investment_instrument, form_type: :form_custom_fields)
+
 %>
 
 <table class="table table-bordered">
@@ -18,8 +24,12 @@
     <% instruments.each do |instrument| %>
       <% attributes.each do |attr| %>
         <tr>
-          <td><%= instrument&.name %></td>
-          <td><%= attr.to_s.split(".")[-1].humanize %></td>
+          <td><%= link_to instrument.name, instrument if instrument %></td>
+          <td>
+            <!-- Use the first valuation to get the custom field label -->
+            <% first_valuation = valuations[0] %>
+            <%= first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+          </td>
           <% ordered_days.each do |day| %>
             <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
             <td class="text-end">
@@ -30,7 +40,7 @@
                     obj.present? ? obj.public_send(method) : nil
                   end
                 %>
-                <%= value.is_a?(Numeric) ? money_to_currency(value, params) : value %>
+                <span class="<%= value.negative? ? 'text-danger' : nil %>"><%= number_with_precision(value, precision:, delimiter: ',') %></span>
               <% end %>
             </td>
           <% end %>

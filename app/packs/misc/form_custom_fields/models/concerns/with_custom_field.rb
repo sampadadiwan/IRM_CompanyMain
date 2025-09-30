@@ -91,6 +91,10 @@ module WithCustomField
     end
   end
 
+  def custom_field_label(field_name)
+    map_custom_fields[field_name]&.label || field_name.humanize
+  end
+
   def map_custom_fields
     @map_custom_fields ||= form_custom_fields.visible.index_by(&:name)
   end

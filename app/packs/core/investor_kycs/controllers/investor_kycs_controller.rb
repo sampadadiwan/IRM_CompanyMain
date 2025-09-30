@@ -382,7 +382,7 @@ class InvestorKycsController < ApplicationController
   # This action updates the reporting fields of an InvestorKyc and nothing else
   def update_reporting_fields
     investor_user = current_user.curr_role_investor?
-    @investor_kyc.assign_attributes(investor_kyc_params)
+    @investor_kyc.json_fields.merge!(investor_kyc_params["properties"] || {})
 
     respond_to do |format|
       if @investor_kyc.save(validate: investor_user)
