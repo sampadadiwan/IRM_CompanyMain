@@ -1,4 +1,4 @@
-
+<% precision = params[:decimals]&.to_i || 2 %>
 <%= turbo_frame_tag "performance_table_frame" do %>
   <div class="card table-responsive">
     <div class="card-header">
@@ -55,22 +55,22 @@
                   </div>
                 </td>
 
-                <td><%= r.monthly_prev_kpi ? link_to(number_with_delimiter(r.monthly_prev_kpi.value, delimiter: ','), r.monthly_prev_kpi) : nil %></td>
-                <td><%= r.monthly_curr_kpi ? link_to(number_with_delimiter(r.monthly_curr_kpi.value, delimiter: ','), r.monthly_curr_kpi) : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly, precision: 1), class: (r.growth_monthly.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly_py, precision: 1), class: (r.growth_monthly_py.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly_py %></td>
+                <td><%= r.monthly_prev_kpi ? link_to(number_with_precision(r.monthly_prev_kpi.value, delimiter: ',', precision:), r.monthly_prev_kpi) : nil %></td>
+                <td><%= r.monthly_curr_kpi ? link_to(number_with_precision(r.monthly_curr_kpi.value, delimiter: ',', precision:), r.monthly_curr_kpi) : nil %></td>
+                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly, precision:), class: (r.growth_monthly.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly %></td>
+                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly_py, precision:), class: (r.growth_monthly_py.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly_py %></td>
 
-                <td><%= r.quarterly_prev_kpi ? number_with_delimiter(r.quarterly_prev_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= r.quarterly_curr_kpi ? number_with_delimiter(r.quarterly_curr_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_quarterly, precision: 1), class: (r.growth_quarterly.negative? ? 'text-danger' : 'text-success')) if r.growth_quarterly %></td>
+                <td><%= r.quarterly_prev_kpi ? number_with_precision(r.quarterly_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= r.quarterly_curr_kpi ? number_with_precision(r.quarterly_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= content_tag(:span, number_to_percentage(r.growth_quarterly, precision:), class: (r.growth_quarterly.negative? ? 'text-danger' : 'text-success')) if r.growth_quarterly %></td>
 
-                <td><%= r.ytd_prev_kpi ? number_with_delimiter(r.ytd_prev_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= r.ytd_curr_kpi ? number_with_delimiter(r.ytd_curr_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_ytd_py, precision: 1), class: (r.growth_ytd_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ytd_py %></td>
+                <td><%= r.ytd_prev_kpi ? number_with_precision(r.ytd_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= r.ytd_curr_kpi ? number_with_precision(r.ytd_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= content_tag(:span, number_to_percentage(r.growth_ytd_py, precision:), class: (r.growth_ytd_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ytd_py %></td>
 
-                <td><%= r.ttm_prev_kpi ? number_with_delimiter(r.ttm_prev_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= r.ttm_curr_kpi ? number_with_delimiter(r.ttm_curr_kpi.value, delimiter: ',') : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_ttm_py, precision: 1), class: (r.growth_ttm_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ttm_py %></td>
+                <td><%= r.ttm_prev_kpi ? number_with_precision(r.ttm_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= r.ttm_curr_kpi ? number_with_precision(r.ttm_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                <td><%= content_tag(:span, number_to_percentage(r.growth_ttm_py, precision:), class: (r.growth_ttm_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ttm_py %></td>
               </tr>
             <% end %>
           </tbody>
