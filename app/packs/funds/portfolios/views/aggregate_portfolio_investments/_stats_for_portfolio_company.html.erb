@@ -15,17 +15,17 @@
       as_of_date = Date.current
       entity_id = portfolio_company.entity.id
 
-      bought_amount_cents = portfolio_company.portfolio_investments.buys.sum do |pi|
-        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+      bought_amount_cents = portfolio_company.portfolio_investments.buys.includes(:valuation).sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.valuation.valuation_date, entity_id) || 0
       end
-      sold_amount_cents = portfolio_company.portfolio_investments.sells.sum do |pi|
-        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+      sold_amount_cents = portfolio_company.portfolio_investments.sells.includes(:valuation).sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.valuation.valuation_date, entity_id) || 0
       end
-      fmv_cents = portfolio_company.portfolio_investments.sum do |pi|
-        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, pi.investment_date, entity_id) || 0
+      fmv_cents = portfolio_company.portfolio_investments.includes(:valuation).sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, pi.valuation.valuation_date, entity_id) || 0
       end
-      cost_of_remaining_cents = portfolio_company.portfolio_investments.sum do |pi|
-        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, entity_id) || 0
+      cost_of_remaining_cents = portfolio_company.portfolio_investments.includes(:valuation).sum do |pi|
+        ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.valuation.valuation_date, entity_id) || 0
       end
       income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
         ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, entity_id) || 0
@@ -38,9 +38,9 @@
         { path: nil, stat: money_to_currency(Money.new(bought_amount_cents, target_currency), params), subtitle: "Bought Amount", progress_bar_color: "success", text_info: "plus" },
         { path: nil, stat: money_to_currency(Money.new(sold_amount_cents, target_currency), params), subtitle: "Sold Amount", progress_bar_color: "danger", text_info: "minus" },
         { path: nil, stat: money_to_currency(Money.new(fmv_cents, target_currency), params), subtitle: "FMV", progress_bar_color: "info", text_info: "graph" },
-        { path: nil, stat: money_to_currency(Money.new(cost_of_remaining_cents, target_currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "success", text_info: "currency-dollar" },
-        { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params), subtitle: "Income", progress_bar_color: "warning", text_info: "cash" },
-        { path: nil, stat: money_to_currency(Money.new(sold_plus_fmv_cents, target_currency), params), subtitle: "Sold + FMV", progress_bar_color: "success", text_info: "coins" }
+        { path: nil, stat: money_to_currency(Money.new(cost_of_remaining_cents, target_currency), params), subtitle: "Cost Of Remaining", progress_bar_color: "danger", text_info: "currency-dollar" },
+        { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params), subtitle: "Income", progress_bar_color: "success", text_info: "cash" },
+        { path: nil, stat: money_to_currency(Money.new(sold_plus_fmv_cents, target_currency), params), subtitle: "Sold + FMV", progress_bar_color: "warning", text_info: "coins" }
       ]
       cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }
     %>
