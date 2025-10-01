@@ -7,7 +7,6 @@ class ImportKpiWorkbookJob < ApplicationJob
       # The workbook which contains the kpis to be imported
       kpi_file = kpi_report.documents.where(name: "KPIs").first
 
-      kpi_report.entity
       user = User.find(user_id)
 
       # The portfolio company for which the kpi report is created

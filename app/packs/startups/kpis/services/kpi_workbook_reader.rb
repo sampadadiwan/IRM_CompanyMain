@@ -34,6 +34,9 @@ class KpiWorkbookReader
     @kpi_report = kpi_report
     @document = document
     @kpi_mappings = kpi_mappings
+    @user = user
+    # We need to cleanup the file before processing it to remove blank/hidden rows & cols. Note this will update the file on S3
+    ConvertKpiToCsvJob.perform_now(@kpi_report.id, @user.id, @document.id, action: 'cleanup')
 
     # Index the @kpi_mappings by normalized KPI names for quick lookup
     @kpi_name_to_kpi_mappings = @kpi_mappings.index_by { |mapping| normalize_kpi_name(mapping.reported_kpi_name) }
@@ -42,7 +45,6 @@ class KpiWorkbookReader
     # Normalize reported_kpi_name for consistent matching
     @target_kpis = kpi_mappings.map { |kpi_mapping| normalize_kpi_name(kpi_mapping.reported_kpi_name) }
     Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
-    @user = user
 
     @portfolio_company = portfolio_company
     @portfolio_company_id = portfolio_company.id

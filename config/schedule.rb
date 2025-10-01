@@ -15,7 +15,7 @@ every :reboot, roles: [:app] do
   bundle "sidekiq"
   bundle "prometheus_exporter -b 0.0.0.0"
   bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"
-  command 'sudo docker run -d --rm --name xirr_py -p 8000:80 -v /tmp:/tmp thimmaiah/xirr_py:v2.4'
+  command 'sudo docker run -d --rm --name xirr_py -p 8000:80 -v /tmp:/tmp thimmaiah/xirr_py:v2.5'
   command 'sudo docker run -d --rm --name=node-exporter -p 9100:9100  prom/node-exporter'
 end
 
