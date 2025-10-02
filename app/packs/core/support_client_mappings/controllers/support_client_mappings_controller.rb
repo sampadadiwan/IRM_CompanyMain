@@ -63,13 +63,13 @@ class SupportClientMappingsController < ApplicationController
   # PATCH /support_client_mappings/1/switch
   def switch
     @support_client_mapping.switch
-    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping switched (enabled)."
+    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping switched (enabled). User is now acting as #{current_user.reload.entity.name}."
   end
 
   # PATCH /support_client_mappings/1/revert
   def revert
     @support_client_mapping.revert
-    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping reverted (disabled)."
+    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping reverted (disabled). User is now acting as #{current_user.reload.entity.name}."
   end
 
   private
@@ -82,6 +82,8 @@ class SupportClientMappingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def support_client_mapping_params
-    params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled, :enable_user_login, :user_emails)
+    if current_user.super?
+      params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled, :enable_user_login, :user_emails)
+    end
   end
 end
