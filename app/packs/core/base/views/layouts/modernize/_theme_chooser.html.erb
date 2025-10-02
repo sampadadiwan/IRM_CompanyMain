@@ -1,7 +1,13 @@
-<button class="btn btn-primary p-0 rounded-circle d-flex align-items-center justify-content-center customizer-btn"
-        type="button" data-bs-toggle="offcanvas" data-bs-target="#settings-offcanvas" aria-controls="settings-offcanvas">
-  <i class="icon ti ti-settings fs-7"></i>
-</button>
+<% unless Rails.env.production? %>
+
+  <!-- Theme Customizer -->
+  <button class="btn btn-primary p-0 rounded-circle d-flex align-items-center justify-content-center customizer-btn"
+          type="button" data-bs-toggle="offcanvas" data-bs-target="#settings-offcanvas" aria-controls="settings-offcanvas">
+    <i class="icon ti ti-settings fs-7"></i>
+  </button>
+
+<% end %>
+
 <div class="offcanvas customizer offcanvas-end" tabindex="-1" id="settings-offcanvas"
         aria-labelledby="offcanvasExampleLabel">
   <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
