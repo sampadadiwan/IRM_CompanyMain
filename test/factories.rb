@@ -157,6 +157,9 @@ FactoryBot.define do
     user { nil }
     entity { nil }
     end_date { "2024-04-03" }
+    enabled { true }
+    user_emails { "" }
+    enable_user_login { false }
   end
 
   factory :investment_instrument do
