@@ -31,7 +31,8 @@ module ApplicationHelper
   end
 
   def chart_theme_color
-    if cookies[:theme] == "dark"
+    admin_settings = parse_json(cookies[:adminSettings]) || {}
+    if admin_settings["Theme"] == "dark"
       { chart: { backgroundColor: "#2a3447" },
         xAxis: {
           lineColor: "#7c8fac",
@@ -62,7 +63,10 @@ module ApplicationHelper
 
   def cache_key(key, include_theme: false)
     key = [key, current_user, current_user&.entity, current_user&.curr_role, params[:page], params[:units]]
-    key << cookies[:theme] if include_theme
+    if include_theme
+      admin_settings = parse_json(cookies[:adminSettings]) || {}
+      key << admin_settings["Theme"]
+    end
     key
   end
 

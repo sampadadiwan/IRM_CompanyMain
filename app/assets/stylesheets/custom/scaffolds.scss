@@ -1427,3 +1427,18 @@ button:disabled {
 .portfolio-scenario-div .toggle-link:not(.collapsed) .hide-text {
   display: inline;
 }
+
+
+.card {
+  .card-title{
+    font-weight: 700 !important;
+  }
+}
+
+.dashboard-nav {
+  background-color: var(--bs-primary); /* fallback to dark gray */
+}
+
+.customizer-btn .ti {
+  margin-right: 0 !important;
+}

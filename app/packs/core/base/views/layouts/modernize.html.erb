@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<% theme = cookies[:theme] || "light" %>
-<html lang="en" dir="ltr" data-bs-theme="<%= theme %>" data-color-theme="Blue_Theme">
+
+<html lang="en" dir="ltr" data-bs-theme="" data-color-theme="Blue_Theme">
 
 <head>
   <!-- Required meta tags -->
@@ -84,7 +84,7 @@
   <title>CapHive</title>
 </head>
 
-<body data-controller="confirm" data-turbo-prefetch="false">
+<body data-controller="confirm" data-turbo-prefetch="false" data-density="">
   <!-- Preloader -->
   <div class="preloader">
     <img src="/img/loading.gif" alt="loader" class="lds-ripple img-fluid" />
@@ -130,7 +130,7 @@
         </div>
       </div>
 
-      <%#= render "/layouts/modernize/theme_chooser" %>
+      <%= render "/layouts/modernize/theme_chooser" unless Rails.env.production? %>
 
     </div>
 
@@ -176,7 +176,6 @@
     <% end %>
 
   <% end %>
-
 
 </body>
 

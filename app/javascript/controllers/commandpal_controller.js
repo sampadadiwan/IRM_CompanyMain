@@ -25,7 +25,7 @@ export default class extends Controller {
         // Format is parent => name: shortcut: handler, name: shortcut: handler; parent => name: shortcut: handler, name: shortcut: handler
         let hotkeys = $("#hotkeys").val();
         let hotkeys_parent = $("#hotkeys_parent").val();
-        
+
 
         if(hotkeys) {
           let hotkey_list = hotkeys.split(";");
@@ -39,16 +39,16 @@ export default class extends Controller {
                   name: name,
                   // shortcut: shortcut,
                   handler: () => { window.location = loc; }
-              }        
-              children.push(child);      
-          }    
+              }
+              children.push(child);
+          }
           // Add this to the front of the commands list
           let command = {
             name: hotkeys_parent,
             shortcut: "ctrl+1",
             children: children,
           }
-          commands.unshift(command);    
+          commands.unshift(command);
         }
     }
 
@@ -57,50 +57,57 @@ export default class extends Controller {
         {
             name: "Funds",
             shortcut: "ctrl+u",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/funds";
             }
-        },            
+        },
         {
             name: "All Reports",
             shortcut: "ctrl+shift+a",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/reports";
             }
         },
         {
             name: "Stakeholders",
             shortcut: "ctrl+s",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/investors";
             }
         },
         {
             name: "Approvals",
             shortcut: "ctrl+a",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/approvals";
             }
         },
         {
             name: "Documents",
             shortcut: "ctrl+d",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/documents";
             }
         },
+
+        {
+          name: "Layouts",
+          shortcut: "ctrl+l",
+          handler: () => { this.layouts(); }
+        },
+
         {
             name: "Opportunities",
             shortcut: "ctrl+o",
-            handler: () => {                    
+            handler: () => {
                 window.location = "/investment_opportunities";
             }
         },
-        
+
         {
             name: "KYCs",
             shortcut: "ctrl+k",
-            handler: () => {  window.location = "/investor_kycs"; }            
+            handler: () => {  window.location = "/investor_kycs"; }
           },
 
           {
@@ -126,7 +133,7 @@ export default class extends Controller {
       }
 
       // If the path is in the mapping, add a report menu
-      let report_category = report_categories[path.split("/")[1]];      
+      let report_category = report_categories[path.split("/")[1]];
 
       if (report_category) {
         // Add it to the children list at index 1
@@ -134,21 +141,32 @@ export default class extends Controller {
           {
             name: report_category + " Reports",
             shortcut: "ctrl+shift+r",
-            handler: () => {  
+            handler: () => {
                   window.location = "/reports?category=" + report_category;
             }
-          }          
+          }
         );
       }
 
       return children;
     }
 
+    layouts() {
+
+      // Programmatically open the offcanvas for theme chooser
+      const offcanvasElement = document.getElementById("settings-offcanvas");
+      if (offcanvasElement) {
+        const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
+        bsOffcanvas.show();
+      }
+
+    }
+
     misc() {
       // Get the path part of the URL
-      const path = window.location.pathname;          
+      const path = window.location.pathname;
 
-      let children = [        
+      let children = [
         {
           name: "Notifications",
           handler: () => {  window.location = "/notifications"; }
@@ -164,7 +182,7 @@ export default class extends Controller {
         {
           name: "Logout",
           // Click on the Logout button
-          handler: () => {  
+          handler: () => {
             console.log("Logging out");
             const logoutButton = document.getElementById('logout');
             if (logoutButton) {
@@ -179,7 +197,7 @@ export default class extends Controller {
 
       // Test if the path matches the pattern
       const matches = regex.test(path);
-      
+
       // alert(matches);
       // alert(path);
 
@@ -189,7 +207,7 @@ export default class extends Controller {
           {
             name: "Calendar",
             // from the url, get the path and id and use that to create the calendar url
-            handler: () => {  
+            handler: () => {
               let url = new URL(window.location.href);
               let path = url.pathname.split("/")[1];
               let id = url.pathname.split("/").pop();
@@ -200,7 +218,7 @@ export default class extends Controller {
         children.unshift(
           {name: "Audit Trail",
             // Add the parameter audit_trail=true to the existing URL and reload the page
-            handler: () => {  
+            handler: () => {
               let url = new URL(window.location.href);
               url.searchParams.set('audit_trail', 'true');
               window.location = url;
@@ -210,7 +228,7 @@ export default class extends Controller {
         children.unshift(
           {name: "Compliance Checks",
             // Add the parameter audit_trail=true to the existing URL and reload the page
-            handler: () => {  
+            handler: () => {
               let url = new URL(window.location.href);
               url.searchParams.set('ai_checks', 'true');
               url.searchParams.set('rule_type', 'compliance');
@@ -224,7 +242,7 @@ export default class extends Controller {
           {
             name: "Filter",
             // Add the parameter filter=true to the existing URL and reload the page
-            handler: () => {  
+            handler: () => {
               let url = new URL(window.location.href);
               url.searchParams.set('filter', 'true');
               window.location = url;
@@ -233,7 +251,7 @@ export default class extends Controller {
         );
       }
 
-      
+
 
       return children;
 
