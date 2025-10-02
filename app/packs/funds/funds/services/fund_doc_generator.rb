@@ -14,7 +14,7 @@ class FundDocGenerator
       fund_doc_template_path = tempfile.path
       create_working_dir(fund)
       generate(fund, fund_doc_template_path)
-      upload(fund_doc_template, fund)
+      upload(fund_doc_template, fund, user_id: user_id)
       notify(fund_doc_template, fund, user_id) if user_id
     ensure
       cleanup

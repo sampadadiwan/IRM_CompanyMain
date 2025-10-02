@@ -20,7 +20,7 @@ class PortfolioReportDocGenerator
     folder ||= portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: portfolio_company.entity_id)
 
     # Upload the generated document
-    upload(template, portfolio_company, start_date, end_date, folder, generated_document_name, file_extension: 'docx')
+    upload(template, portfolio_company, start_date, end_date, folder, generated_document_name, file_extension: 'docx', user_id: user_id)
   ensure
     cleanup
   end

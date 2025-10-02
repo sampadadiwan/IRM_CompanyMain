@@ -82,8 +82,6 @@ class SupportClientMappingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def support_client_mapping_params
-    if current_user.super?
-      params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled, :enable_user_login, :user_emails)
-    end
+    params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled, :enable_user_login, :user_emails) if current_user.super?
   end
 end

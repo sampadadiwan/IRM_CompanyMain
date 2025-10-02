@@ -109,7 +109,7 @@ module DocumentGeneratorBase
     UserAlert.new(user_id:, message:, level:).broadcast
   end
 
-  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil, generated_document_name = nil, file_extension: "pdf")
+  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil, generated_document_name = nil, user_id: nil, file_extension: "pdf")
     file_name = "#{generated_file_name(model)}.#{file_extension}"
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
@@ -135,6 +135,7 @@ module DocumentGeneratorBase
     generated_document.owner_tag = "Generated"
     generated_document.send_email = false
     generated_document.folder = folder if folder
+    generated_document.user_id = user_id if user_id.present?
 
     # Add the e-signatures and stamp papers if available
     generated_document.e_signatures = doc_template.e_signatures_for(model) || []

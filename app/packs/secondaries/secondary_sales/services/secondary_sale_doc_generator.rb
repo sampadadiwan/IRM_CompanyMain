@@ -9,7 +9,7 @@ class SecondarySaleDocGenerator
     template_path ||= download_template(template)
     generate(secondary_sale, template, template_path)
     generated_document_name = "#{template.name} #{secondary_sale.name}"
-    upload(template, secondary_sale, nil, nil, nil, generated_document_name)
+    upload(template, secondary_sale, nil, nil, nil, generated_document_name, user_id: user_id)
   ensure
     cleanup
   end

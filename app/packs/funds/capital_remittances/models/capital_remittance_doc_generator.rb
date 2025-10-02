@@ -22,7 +22,7 @@ class CapitalRemittanceDocGenerator
     fund_doc_template.file.download do |tempfile|
       create_working_dir(capital_remittance)
       generate(capital_remittance, tempfile.path)
-      upload(fund_doc_template, capital_remittance)
+      upload(fund_doc_template, capital_remittance, user_id: user_id)
       notify(fund_doc_template, capital_remittance, user_id) if user_id
     ensure
       cleanup

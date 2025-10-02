@@ -10,7 +10,7 @@ class AllocationSpaGenerator
     template_path ||= download_template(template)
     generate(allocation, template, template_path)
     generated_document_name = "#{template.name} #{allocation.offer.full_name} #{allocation.interest.buyer_entity_name}"
-    upload(template, allocation, nil, nil, nil, generated_document_name)
+    upload(template, allocation, nil, nil, nil, generated_document_name, user_id: user_id)
   ensure
     cleanup
   end

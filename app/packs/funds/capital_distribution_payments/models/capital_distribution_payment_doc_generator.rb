@@ -22,7 +22,7 @@ class CapitalDistributionPaymentDocGenerator
     fund_doc_template.file.download do |tempfile|
       create_working_dir(capital_distribution_payment)
       generate(capital_distribution_payment, tempfile.path)
-      upload(fund_doc_template, capital_distribution_payment)
+      upload(fund_doc_template, capital_distribution_payment, user_id: user_id)
       notify(fund_doc_template, capital_distribution_payment, user_id) if user_id
     ensure
       cleanup

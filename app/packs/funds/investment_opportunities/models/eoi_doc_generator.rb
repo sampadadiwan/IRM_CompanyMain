@@ -15,7 +15,7 @@ class EoiDocGenerator
       io_doc_template_path = tempfile.path
       create_working_dir(expression_of_interest)
       generate(expression_of_interest, io_doc_template_path)
-      upload(io_doc_template, expression_of_interest)
+      upload(io_doc_template, expression_of_interest, user_id: user_id)
       notify(io_doc_template, expression_of_interest, user_id) if user_id
     ensure
       cleanup

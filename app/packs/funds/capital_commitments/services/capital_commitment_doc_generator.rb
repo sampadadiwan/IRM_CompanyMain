@@ -15,7 +15,7 @@ class CapitalCommitmentDocGenerator
       fund_doc_template_path = tempfile.path
       create_working_dir(capital_commitment)
       generate(capital_commitment, fund_doc_template_path)
-      upload(fund_doc_template, capital_commitment)
+      upload(fund_doc_template, capital_commitment, user_id: user_id)
       notify(fund_doc_template, capital_commitment, user_id) if user_id
     ensure
       cleanup

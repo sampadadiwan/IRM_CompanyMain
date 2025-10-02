@@ -1,6 +1,6 @@
 class SupportClientMappingPolicy < ApplicationPolicy
   def switch?
-    show? && record.enabled? && record.status != 'Switched'
+    show? && record.enabled? && record.status != 'Switched' && record.entity.enable_support
   end
 
   def revert?

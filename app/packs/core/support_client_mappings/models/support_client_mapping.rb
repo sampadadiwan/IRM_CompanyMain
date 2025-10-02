@@ -61,7 +61,7 @@ class SupportClientMapping < ApplicationRecord
   # - Grants company_admin role and removes support role.
   # Raises error if mapping is currently disabled.
   def switch
-    if enabled
+    if enabled && entity.enable_support
       user.json_fields ||= {}
       user.json_fields['orig_entity_id'] ||= user.entity_id
       user.json_fields['orig_roles'] ||= user.roles.pluck(:name)

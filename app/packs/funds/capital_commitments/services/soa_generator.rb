@@ -19,7 +19,7 @@ class SoaGenerator
         generate(capital_commitment, start_date, end_date, fund_doc_template_path)
 
         # Upload the generated document
-        upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder)
+        upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder, user_id: user_id)
 
         # Notify the user if user_id is provided
         notify(fund_doc_template, capital_commitment, user_id) if user_id

@@ -11,7 +11,7 @@ class InterestDocGenerator
     template_path ||= download_template(template)
     generate(interest, template, template_path)
     generated_document_name = "#{template.name} #{interest.buyer_entity_name}"
-    upload(template, interest, nil, nil, nil, generated_document_name)
+    upload(template, interest, nil, nil, nil, generated_document_name, user_id: user_id)
   ensure
     cleanup
   end
