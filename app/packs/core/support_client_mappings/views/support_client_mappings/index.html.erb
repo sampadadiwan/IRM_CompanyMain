@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Support Client Mappings</h1>
-  <%= link_to "New Support Client Mapping", new_support_client_mapping_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to "New Support Client Mapping", new_support_client_mapping_path, {class: "btn btn-outline-primary"}  if current_user.super? %>
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="support_client_mappings" class="table table-bordered dataTable jqDataTable">

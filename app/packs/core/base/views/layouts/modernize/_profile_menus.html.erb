@@ -75,19 +75,30 @@
         </a>
         <% end %>
 
-        </div>
-        <div class="message-body py-1 mx-7 border-bottom">
-
-            <div class="gap-3 customizer-box align-items-center py-8 px-7 d-flex align-items-center" role="group">
-                <input type="radio" class="btn-check" name="theme-layout" id="light-layout" autocomplete="off" />
-                <label class="btn p-9 btn-outline-primary" for="light-layout"><i
-                            class="icon ti ti-brightness-up fs-7 me-2"></i><%= t('top_menus.light_theme') %></label>
-                <input type="radio" class="btn-check" name="theme-layout" id="dark-layout" autocomplete="off" />
-                <label class="btn p-9 btn-outline-primary" for="dark-layout"><i
-                            class="icon ti ti-moon fs-7 me-2"></i><%= t('top_menus.dark_theme') %></label>
+        <a href="#" class="py-8 px-7 d-flex align-items-center" data-bs-toggle="offcanvas" data-bs-target="#settings-offcanvas" aria-controls="settings-offcanvas">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <img src="/modernize/images/svgs/icon-dd-lifebuoy.svg" alt="" width="24" height="24" />
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.settings') %></h6>
+            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.settings_with_caphive') %></span>
             </div>
+        </a>
+
+        <% if current_user.has_cached_role?(:support) %>
+            <a href="/support_client_mappings" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+                <img src="/modernize/images/svgs/icon-dd-message-box.svg" alt="" width="24" height="24" />
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.support') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.support_mappings') %></span>
+                </div>
+            </a>
+        <% end %>
 
         </div>
+
 
         <div class="d-grid py-4 px-7 pt-8">
 

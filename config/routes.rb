@@ -10,7 +10,13 @@ Rails.application.routes.draw do
 
   mount ActionCable.server => '/cable'
 
-  resources :support_client_mappings
+  resources :support_client_mappings do
+    member do
+      patch :switch
+      patch :revert
+    end
+  end
+
   draw :admin
   draw :fund
   draw :secondary

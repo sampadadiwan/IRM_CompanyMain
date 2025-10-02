@@ -13,7 +13,7 @@
         Entity
       </td>
       <td>
-        <%= link_to @support_client_mapping.entity.name, 
+        <%= link_to @support_client_mapping.entity.name,
             "/admin/entities/#{@support_client_mapping.entity.id}" %>
       </td>
     </tr>
@@ -33,9 +33,50 @@
         <%= display_boolean @support_client_mapping.enabled %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Enable User Login
+      </td>
+      <td>
+        <%= display_boolean @support_client_mapping.enable_user_login %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Allowed User Emails
+      </td>
+      <td>
+        <%= @support_client_mapping.user_emails.presence || 'All users in the entity' %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= @support_client_mapping.status %>
+        <% if @support_client_mapping.status == 'Switched' %>
+          (Currently company admin in <%= @support_client_mapping.entity.name %>)
+        <% end %>
+      </td>
+    </tr>
+
   </table>
   <div class="associated_entity">
-    <%= link_to  t_common(:edit), edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %> 
-    <%= button_to t_common(:delete), @support_client_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% if policy(:support_client_mapping).edit? %>
+      <%= link_to  t_common(:edit), edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %>
+      <%= button_to t_common(:delete), @support_client_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+
+    <% if policy(@support_client_mapping).switch? %>
+      <%= button_to "Switch (Enable)", switch_support_client_mapping_path(@support_client_mapping), method: :patch, class: "btn btn-outline-success" %>
+    <% end %>
+
+    <% if policy(@support_client_mapping).revert? %>
+      <%= button_to "Revert (Disable)", revert_support_client_mapping_path(@support_client_mapping), method: :patch, class: "btn btn-outline-warning" %>
+    <% end %>
   </div>
 <% end %>

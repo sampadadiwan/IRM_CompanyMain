@@ -65,93 +65,105 @@
 
         <% if current_user.curr_role != "investor" %>
 
-        <a href="<%= access_rights_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-lock-access"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.access_rights') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.provide_access') %></span>
-            </div>
-        </a>
+            <a href="<%= access_rights_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-lock-access"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.access_rights') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.provide_access') %></span>
+                </div>
+            </a>
 
-        <% if current_user.enable_form_types %>
-        <a href="<%= form_types_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-forms"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.customize_forms') %></h6>
-            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.design_personalized_form') %></span>
-            </div>
-        </a>
+            <% if current_user.enable_form_types %>
+            <a href="<%= form_types_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-forms"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.customize_forms') %></h6>
+                <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.design_personalized_form') %></span>
+                </div>
+            </a>
+            <% end %>
+
+            <a href="<%= investor_notices_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-layers-difference"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.notices') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.personalize_investor_notices') %></span>
+                </div>
+            </a>
+
+            <% if current_user.enable_import_uploads %>
+            <a href="<%= import_uploads_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-upload"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.imports') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.bulk_upload_data') %></span>
+                </div>
+            </a>
+            <% end %>
+
+            <a href="<%= exchange_rates_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-currency-dollar"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.exchange_rates') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.manage_exchange_rates') %></span>
+                </div>
+            </a>
+
+            <a href="<%= audits_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-route"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.audit_trail') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.download_audit_trail') %></span>
+                </div>
+            </a>
+
+            <% if current_user.enable_compliance %>
+            <a href="<%= ai_rules_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-report"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_rules') %></h6>
+                <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.setup_compliance_rules') %></span>
+                </div>
+            </a>
+
+            <a href="<%= ai_checks_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-list-check"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_checks') %></h6>
+                <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.view_all_checks') %></span>
+                </div>
+            </a>
+            <% end %>
+
+
         <% end %>
 
-        <a href="<%= investor_notices_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-layers-difference"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.notices') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.personalize_investor_notices') %></span>
-            </div>
-        </a>
-
-        <% if current_user.enable_import_uploads %>
-        <a href="<%= import_uploads_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-upload"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.imports') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.bulk_upload_data') %></span>
-            </div>
-        </a>
-        <% end %>
-
-        <a href="<%= exchange_rates_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-currency-dollar"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.exchange_rates') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.manage_exchange_rates') %></span>
-            </div>
-        </a>
-
-        <a href="<%= audits_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-route"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.audit_trail') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.download_audit_trail') %></span>
-            </div>
-        </a>
-
-        <% if current_user.enable_compliance %>
-        <a href="<%= ai_rules_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-report"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_rules') %></h6>
-            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.setup_compliance_rules') %></span>
-            </div>
-        </a>
-
-        <a href="<%= ai_checks_path(filter: true) %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
-            <i class="ti ti-list-check"></i>
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.compliance_checks') %></h6>
-            <span class="fs-2 d-block text-body-secondary"> <%= t('top_menus.view_all_checks') %></span>
-            </div>
-        </a>
-        <% end %>
-
-
+        <% if current_user.entity.support_agents.any? %>
+            <a href="<%= support_agents_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-robot"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.agents') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.support_agents') %></span>
+                </div>
+            </a>
         <% end %>
 
 

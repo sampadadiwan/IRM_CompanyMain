@@ -1,5 +1,5 @@
 class SupportClientMappingsController < ApplicationController
-  before_action :set_support_client_mapping, only: %i[show edit update destroy]
+  before_action :set_support_client_mapping, only: %i[show edit update destroy switch revert]
 
   # GET /support_client_mappings or /support_client_mappings.json
   def index
@@ -60,6 +60,18 @@ class SupportClientMappingsController < ApplicationController
     end
   end
 
+  # PATCH /support_client_mappings/1/switch
+  def switch
+    @support_client_mapping.switch
+    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping switched (enabled)."
+  end
+
+  # PATCH /support_client_mappings/1/revert
+  def revert
+    @support_client_mapping.revert
+    redirect_to support_client_mapping_url(@support_client_mapping), notice: "Support client mapping reverted (disabled)."
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -70,6 +82,6 @@ class SupportClientMappingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def support_client_mapping_params
-    params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled)
+    params.require(:support_client_mapping).permit(:user_id, :entity_id, :end_date, :enabled, :enable_user_login, :user_emails)
   end
 end

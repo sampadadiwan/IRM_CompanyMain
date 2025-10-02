@@ -38,8 +38,13 @@ as well as a link to its edit page.
       data: { confirm: t("administrate.actions.confirm") }
     ) if accessible_action?(page.resource, :destroy) %>
 
-    <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support %>
-    
+    <%
+      user = page.resource
+      support_client_mapping = SupportClientMapping.where(user_id: current_user.id, entity_id: user.entity_id, enabled: true).last
+    %>
+
+    <%= link_to 'Click To Login', no_password_login_users_url(signed_id: user.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support && support_client_mapping.allow_login_as(user.email) %>
+
   </div>
 </header>
 

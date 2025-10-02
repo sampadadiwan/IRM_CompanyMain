@@ -252,7 +252,7 @@ en:
     view_sale: View Sale
     view_sale_upload_docs: View Sale & Upload Docs
     wait_communication: Wait for communication from %{entity_name}
-    withdraw: Withdraw    
+    withdraw: Withdraw
     approve: Approve
     unapprove: UnApprove
     secondary_sale: Secondary Sale
@@ -349,6 +349,8 @@ en:
     user: User
     user_profile: User Profile
     view_all_checks: View All Checks
+    settings: Settings
+    settings_with_caphive: Layouts & Colors
   user:
     create: User was created
     destroy: User was deleted
@@ -361,4 +363,3 @@ en:
       previous: "&lsaquo;"
       truncate: "&hellip;"
 
-  

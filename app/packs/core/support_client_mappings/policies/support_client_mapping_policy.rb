@@ -1,16 +1,28 @@
 class SupportClientMappingPolicy < ApplicationPolicy
+  def switch?
+    show? && record.enabled? && record.status != 'Switched'
+  end
+
+  def revert?
+    show? && record.enabled? && record.status == 'Switched'
+  end
+
   class Scope < Scope
     def resolve
-      scope.all
+      if user.super?
+        scope.all
+      else
+        scope.where(user_id: user.id)
+      end
     end
   end
 
   def index?
-    super_user?
+    true
   end
 
   def show?
-    super_user?
+    super_user? || (record.user_id == user.id && record.enabled?)
   end
 
   def create?
@@ -30,6 +42,6 @@ class SupportClientMappingPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?
+    update?
   end
 end

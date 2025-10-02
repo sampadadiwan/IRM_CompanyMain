@@ -14,6 +14,6 @@
   </td>
   <td>
     <%= link_to  t_common(:show), support_client_mapping , {class: "btn btn-outline-primary"}%>
-    <%= link_to  t_common(:edit), edit_support_client_mapping_path(support_client_mapping) , {class: "btn btn-outline-success"}%>
+    <%= link_to  t_common(:edit), edit_support_client_mapping_path(support_client_mapping) , {class: "btn btn-outline-success"} if policy(:support_client_mapping).edit? %>
   </td>
 </tr>
