@@ -5,7 +5,8 @@ class DashboardWidgetsController < ApplicationController
   # GET /dashboard_widgets
   def index
     @q = DashboardWidget.ransack(params[:q])
-    @pagy, @dashboard_widgets = pagy(policy_scope(@q.result).includes(:owner))
+    @dashboard_widgets = policy_scope(@q.result).includes(:owner)
+    @pagy, @dashboard_widgets = pagy(@dashboard_widgets) unless request.format == "xlsx"
   end
 
   def metadata_help

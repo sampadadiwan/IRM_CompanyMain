@@ -1,0 +1,11 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "DashboardWidgets") do |sheet|
+  # Create the header row
+  sheet.add_row(["Id", "Dashboard Name", "Widget Name", "Position", "Tags", "Metadata", "Size", "Enabled", "Display Name", "Display Tag", "Name", "Show Menu"])
+
+  # Create entries for each item
+  @dashboard_widgets.each do |dw|
+    sheet.add_row [dw.id, dw.dashboard_name, dw.widget_name, dw.position, dw.tags, dw.metadata, dw.size, dw.enabled, dw.display_name, dw.display_tag, dw.name, dw.show_menu]
+  end
+end
