@@ -1,3 +1,14 @@
+V9.1.18
+#####################################
+1cd38acbc Added tests for SupportClientMapping
+aa37463f9 Added user_id to newly generated document
+209756fde Better switch SupportClientMapping notice
+928059136 Hide theme chooser in prod
+f0822df1e Fixed pagination style
+5c9486a99 Support mappings (#1031)
+64c7ac2df Compact css (#1030)
+107f4a4a3 Cleanup kpi xlsx (#1029)
+
 V9.1.17
 #####################################
 d09ba1cfa (HEAD -> main, origin/main, origin/HEAD) Removed the FormTypeJob invocation, no longer required
