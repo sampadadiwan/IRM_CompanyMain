@@ -2543,3 +2543,36 @@ end
 Given('there is a custom notification for the capital distribution with subject {string} with email_method {string}') do |subject, email_method|
   @custom_notification = CustomNotification.create!(entity: @capital_distribution.entity, subject: subject, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_distribution, email_method: "send_notification")
 end
+
+
+
+Given('the dashboard widgets must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/dashboard_widgets.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+
+    widget = DashboardWidget.where(dashboard_name: row_data["Dashboard Name"].strip, widget_name: row_data["Widget Name"].strip, tags: row_data["Tags"].strip).first
+    binding.pry if widget.nil?
+    puts "Checking import of #{widget.widget_name} in dashboard #{widget.dashboard_name} at position #{widget.position}"
+
+    widget.dashboard_name.should == row_data["Dashboard Name"].strip
+    widget.widget_name.should == row_data["Widget Name"].strip
+    # widget.position.should == row_data["Position"].to_i
+    widget.tags.should == row_data["Tags"].strip
+    widget.metadata.should == row_data["Metadata"].strip.gsub("\t", "") if row_data["Metadata"].present?
+    widget.size.should == row_data["Size"]
+    widget.enabled.should == (row_data["Enabled"].to_s.strip.downcase == "true")
+    widget.display_name.should == row_data["Display Name"]
+    widget.display_tag.should == row_data["Display Tag"]
+    widget.name.should == row_data["Name"]
+    widget.show_menu.should == (row_data["Show Menu"].to_s.strip.downcase == "true")
+
+
+  end
+end

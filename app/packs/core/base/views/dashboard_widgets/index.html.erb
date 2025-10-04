@@ -1,60 +1,8 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Dashboard Widgets</h1>
-  <span>
-    <%= link_to "New Dashboard Widget", new_dashboard_widget_path, {class: "btn btn-outline-primary"}  %>
-    <%= link_to "Filter", dashboard_widgets_path(filter: true), {class: "btn btn-outline-success"}  %>
-  </span>
-</div>
-
 <%= render "dashboard_widgets/stats" %>
-
 <%= render "/layouts/filter", associations: [] %>
 
-<div class="table-responsive" data-controller="datatable">
+<turbo-frame id="dashboard_widgets_frame"target="_top">
 
-  <table id="dashboard_widgets" class="table table-bordered dataTable">
+  <%= render "/dashboard_widgets/index" %>
 
-    <thead>
-      <tr>
-        <th>
-          <%= sort_link @q, :dashboard_name %>
-        </th>
-        <th>
-          <%= sort_link @q, :name %>
-        </th>
-        <th>
-          <%= sort_link @q, :owner_type, "Owner" %>
-        </th>
-        <th>
-          <%= sort_link @q, :widget_name %>
-        </th>
-        <th>
-          <%= sort_link @q, :tags %>
-        </th>
-        <th>
-          <%= sort_link @q, :size %>
-        </th>
-        <th>
-          <%= sort_link @q, :position %>
-        </th>
-        <th>
-          Metadata
-        </th>
-        <th>
-          <%= sort_link @q, :enabled %>
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-
-    <tbody>
-    <% @dashboard_widgets.each do |dashboard_widget| %>
-      <%= render dashboard_widget %>
-    <% end %>
-    </tbody>
-  </table>
-
-  <%= raw pagy_bootstrap_nav(@pagy) %>
-
-</div>
+</turbo-frame>

@@ -6,6 +6,7 @@ class DashboardWidgetsController < ApplicationController
   def index
     @q = DashboardWidget.ransack(params[:q])
     @dashboard_widgets = policy_scope(@q.result).includes(:owner)
+    @dashboard_widgets = @dashboard_widgets.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @pagy, @dashboard_widgets = pagy(@dashboard_widgets) unless request.format == "xlsx"
   end
 
