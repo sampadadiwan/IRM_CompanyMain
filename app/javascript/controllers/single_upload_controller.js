@@ -35,12 +35,12 @@ export default class extends Controller {
         locale: { strings: { chooseFiles: 'Choose file' } },
       })
       .use(Informer, {
-        target: this.inputTarget.parentNode,        
+        target: this.inputTarget.parentNode,
       })
       .use(StatusBar, {
         target: `.${this.inputTarget.id}_progress`,
         hideUploadButton: false,
-        hideAfterFinish: false,    
+        hideAfterFinish: false,
       })
       .use(ThumbnailGenerator, {
         thumbnailWidth: 600,
@@ -52,6 +52,13 @@ export default class extends Controller {
       console.log("Upload success", file, response);
       // Remove the required attribute from the input file field to allow the form to submit
       $(this.inputTarget).removeAttr('required');
+
+      this.element.dispatchEvent(new CustomEvent("upload:complete", {
+        bubbles: true,
+        detail: {
+          file: file.data // Not file.meta, not file.response, not just file
+        }
+      }));
     })
 
     uppy.on('thumbnail:generated', (file, preview) => {

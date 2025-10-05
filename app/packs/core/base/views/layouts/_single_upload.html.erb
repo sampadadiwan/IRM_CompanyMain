@@ -1,10 +1,11 @@
 <% allowed_types ||= FileUploader::ALLOWED_TYPES %>
-<div data-controller="single-upload" 
-    data-single-upload-types-value="<%= allowed_types.to_json %>" 
+<div data-controller="single-upload"
+    id="xlsx-upload"
+    data-single-upload-types-value="<%= allowed_types.to_json %>"
     data-single-upload-server-value="<%= upload_server %>">
 
     <div class="mb-3">
- 
+
       <%= form.label field_name.to_sym, field_label, class: "form-label" %>
 
       <!-- for storing cover photo uploaded file data -->
@@ -23,7 +24,7 @@
 
     <div class="d-inline-block mt-1 mb-3">
       <!-- static link to the thumbnail generated on attachment -->
-      <% image_src = model.public_send("#{field_name}_url") ? 
+      <% image_src = model.public_send("#{field_name}_url") ?
                            model.public_send("#{field_name}_url") : "" %>
       <%= image_tag image_src,
         width: 300,

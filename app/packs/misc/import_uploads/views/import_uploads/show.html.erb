@@ -1,5 +1,3 @@
-
-
 <%= render ToggleCard.new(title: "Import Upload: #{@import_upload.to_s || 'New'}", css_class: "import_upload_card") do %>
 
   <%= turbo_stream_from @import_upload %>
@@ -39,3 +37,6 @@
       <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
     <% end %>
   </div>
+
+
+

@@ -1,3 +1,9 @@
+V9.1.19
+#####################################
+5c9180745 Added tests for DW import
+ef5feb043 Download of DashboardWidgets
+acdea0562 (agents2) Added release notes
+
 V9.1.18
 #####################################
 1cd38acbc Added tests for SupportClientMapping

@@ -3,24 +3,20 @@ import "@hotwired/turbo-rails"
 import "@rails/actiontext"
 import "@rails/activestorage"
 import "trix"
-import "controllers"
+import "controllers";
+
 import "channels"
 import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
 import "turbo_progress_bar"
 
-
-import "vega"
-import "vega-lite"
-import "vega-embed"
-
-window.dispatchEvent(new Event("vega:load"))
-
 import Highcharts from "highcharts"
 import "highcharts-more"
 import "highcharts/modules/exporting"
 import "highcharts/modules/offline-exporting"
+
+
 
 window.Highcharts = Highcharts
 

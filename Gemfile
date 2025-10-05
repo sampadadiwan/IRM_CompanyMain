@@ -249,7 +249,6 @@ gem 'prometheus_exporter'
 gem 'redcarpet'
 gem "ruby-openai", git: "https://github.com/alexrudall/ruby-openai.git"
 gem 'sendgrid-ruby'
-gem 'vega'
 gem 'wikipedia-client'
 
 gem "ferrum_pdf", "~> 0.3.0"

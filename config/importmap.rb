@@ -19,9 +19,6 @@ pin_all_from "app/javascript/channels", under: "channels"
 pin "uppy", to: "uppy.min.js"
 
 # For polars graphing
-pin "vega", to: "vega.js"
-pin "vega-lite", to: "vega-lite.js"
-pin "vega-embed", to: "vega-embed.js"
 pin "playwright" # @1.49.0
 pin "assert" # @2.1.0
 pin "async_hooks" # @2.1.0
@@ -74,3 +71,4 @@ pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/hi
 # config/importmap.rb
 # Remove ANY pins for "chart.js/auto"
 pin "chart.js", to: "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm", preload: true
+pin "xlsx", to: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"

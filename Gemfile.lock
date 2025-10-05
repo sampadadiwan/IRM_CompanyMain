@@ -1076,7 +1076,6 @@ GEM
       roda (>= 2.27, < 4)
     uri (1.0.3)
     useragent (0.16.11)
-    vega (0.4.0)
     version_gem (1.1.8)
     view_component (3.23.2)
       activesupport (>= 5.2.0, < 8.1)
@@ -1267,7 +1266,6 @@ DEPENDENCIES
   turbo-rails
   tzinfo-data
   uppy-s3_multipart
-  vega
   view_component
   web-console
   webdrivers

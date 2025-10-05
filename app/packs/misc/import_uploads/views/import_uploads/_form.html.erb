@@ -30,19 +30,19 @@
   <% else %>
     <%= form.text_field :import_type, class: "form-control", hidden: true  %>
   <% end %>
-  
-  <% 
+
+  <%
     if import_upload.import_type.present?
       ImportUpload::DOC_TYPES.include?(import_upload.import_type) ? allowed_types = ['.zip'].freeze : allowed_types = ['.xlsx'].freeze
     else
-      allowed_types = ['.xlsx', '.zip'].freeze 
-    end    
-    
+      allowed_types = ['.xlsx', '.zip'].freeze
+    end
+
   %>
   <div class="field" class="form-group" id="document_upload">
-    <%= render "layouts/single_upload", form: form, 
-                            field_label: "Import Data (#{allowed_types.join(', ')})", 
-                            for_model: "import_upload", field_name: "import_file", 
+    <%= render "layouts/single_upload", form: form,
+                            field_label: "Import Data (#{allowed_types.join(', ')})",
+                            for_model: "import_upload", field_name: "import_file",
                             model: import_upload, allowed_types: %>
 
     <small class="text-muted">
@@ -55,4 +55,24 @@
       <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
     <% end %>
   </div>
+
+
+
+  <!-- Stimulus XLSX Preview Controller -->
+  <div id="xlsx-preview" class="table-responsive"
+      data-controller="xlsx-preview"
+      data-headers='<%= import_upload.headers %>'>
+
+    <div data-xlsx-preview-target="card" class="mt-3 d-none">
+      <div class="card-header fw-bold">
+        <span class="h3" data-xlsx-preview-target="filename"></span>
+      </div>
+      <div class="" data-controller="datatable">
+        <div data-xlsx-preview-target="status"></div>
+        <div data-xlsx-preview-target="table"></div>
+      </div>
+    </div>
+
+  </div>
+
 <% end %>

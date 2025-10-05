@@ -97,4 +97,8 @@ class ImportUpload < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     ["user"]
   end
+
+  def headers
+    import_type.present? ? "Import#{import_type}".constantize.new.standard_headers : []
+  end
 end
