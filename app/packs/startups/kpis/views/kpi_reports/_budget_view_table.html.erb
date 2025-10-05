@@ -119,7 +119,7 @@
                                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
                                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
-                                            <span class="<%= kpi.value.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
+                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
                                         <% else %>
 
                                         <% end %>
@@ -138,9 +138,9 @@
                                         budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
-                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision:) %>
                                     <% elsif actual_kpi_value.present? %>
-                                        <span class="<%= actual_kpi_value.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision: 2, delimiter: ',') %></span>
+                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>
@@ -157,7 +157,7 @@
                                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
                                         <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
-                                            <%= link_to display_kpi(kpi, ikm, params: params), kpi %>
+                                            <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
                                         <% else %>
 
                                         <% end %>
@@ -176,9 +176,9 @@
                                         budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
-                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision: 2) %>
+                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision:) %>
                                     <% elsif actual_kpi_value.present? %>
-                                        <%= actual_kpi_value %>
+                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= actual_kpi_value %></span>
                                     <% else %>
 
                                     <% end %>

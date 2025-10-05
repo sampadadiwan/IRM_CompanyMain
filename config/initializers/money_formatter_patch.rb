@@ -5,9 +5,9 @@ class Money
 
     # override the decimal formatter to respect :precision
     def format_decimal_part(value)
-      return nil if currency.decimal_places == 0 && !Money.default_infinite_precision
+      return nil if currency.decimal_places.zero? && !Money.default_infinite_precision
       return nil if rules[:no_cents]
-      return nil if rules[:no_cents_if_whole] && value.to_i == 0
+      return nil if rules[:no_cents_if_whole] && value.to_i.zero?
 
       precision = rules[:precision] || currency.decimal_places
 

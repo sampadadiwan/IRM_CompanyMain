@@ -60,7 +60,6 @@ module CurrencyHelper
   end
 
   def display(money, sanf, units, decimals:)
-
     display_val = case money.currency.iso_code
                   when "INR"
                     money.format(format: FORMAT, south_asian_number_formatting: sanf, precision: decimals)
