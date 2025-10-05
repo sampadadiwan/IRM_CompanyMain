@@ -23,7 +23,9 @@ module CurrencyHelper
     end
   end
 
-  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: 2)
+  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: nil)
+    decimals ||= params[:decimals]&.to_i || 2
+
     sanf = true
     money = money.clone
 
@@ -57,14 +59,13 @@ module CurrencyHelper
     end
   end
 
-  def display(money, sanf, units, decimals: 2)
-    Rails.logger.debug { "Money: #{money.inspect}, sanf: #{sanf}, units: #{units}, decimals: #{decimals}" }
+  def display(money, sanf, units, decimals:)
 
     display_val = case money.currency.iso_code
                   when "INR"
-                    money.format(format: FORMAT, south_asian_number_formatting: sanf)
+                    money.format(format: FORMAT, south_asian_number_formatting: sanf, precision: decimals)
                   else
-                    money.format(format: FORMAT)
+                    money.format(format: FORMAT, precision: decimals)
                   end
 
     units.present? ? "#{display_val} #{units}" : display_val
