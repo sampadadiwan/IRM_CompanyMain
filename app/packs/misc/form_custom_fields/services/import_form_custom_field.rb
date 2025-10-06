@@ -1,4 +1,4 @@
-class ImportFormCustomFields < ImportUtil
+class ImportFormCustomField < ImportUtil
   # Remove the creation of custom fields - FormCustomField does not have custom fields
   step nil, delete: :create_custom_fields
 

@@ -1,3 +1,11 @@
+V9.1.21
+#####################################
+9ce6a9490 Fixed xlsx preview missing fields alignment
+148c51360 Removed explanation from AE downloads
+e4b779fec Added template_docs_to_append (#1035)
+22be0607c Better handling of unbounded XLSX for preview
+
+
 V9.1.20
 #####################################
 a2dfe56dd React xlsx upload (#1033)
