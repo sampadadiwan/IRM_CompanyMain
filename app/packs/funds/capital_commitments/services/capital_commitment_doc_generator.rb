@@ -54,7 +54,7 @@ class CapitalCommitmentDocGenerator
     # E.x Kyc PAN, KYC address proof etc
     additional_footers = []
 
-    append_to_commitment_agreement = capital_commitment.entity.entity_setting.append_to_commitment_agreement
+
     if fund_doc_template.template_docs_to_append.present?
       doc_names = fund_doc_template.template_docs_to_append.downcase.split(",").map(&:strip)
       # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement

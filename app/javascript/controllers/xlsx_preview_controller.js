@@ -72,6 +72,30 @@ export default class extends Controller {
     console.log(`✅ Final capped !ref: ${sheet["!ref"]}`);
   }
 
+  normalizeSheetData(sheet) {
+    const rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+    if (rawData.length === 0) return rawData;
+
+    const [headers, ...rows] = rawData;
+    const colCount = headers.length;
+
+    const processed = [
+      headers,
+      ...rows.map((row) => {
+        const newRow = [];
+        for (let i = 0; i < colCount; i++) {
+          if (i < headers.length && headers[i] !== undefined && headers[i] !== null && headers[i] !== "") {
+            newRow[i] = row[i] ?? "";
+          } else {
+            newRow[i] = row[i] ?? null;
+          }
+        }
+        return newRow;
+      }),
+    ];
+    return processed;
+  }
+
 
 
 
@@ -106,26 +130,7 @@ export default class extends Controller {
       // ✅ Cap to 10k rows
       this.capSheetRange(sheet);
 
-
-      // === Trim !ref before parsing ===
-      if (sheet["!ref"]) {
-        const range = XLSXLib.utils.decode_range(sheet["!ref"]);
-        while (range.e.r > range.s.r) {
-          let hasData = false;
-          for (let c = range.s.c; c <= range.e.c; c++) {
-            const cell = sheet[XLSXLib.utils.encode_cell({ r: range.e.r, c })];
-            if (cell && cell.v != null && cell.v.toString().trim() !== "") {
-              hasData = true;
-              break;
-            }
-          }
-          if (hasData) break;
-          range.e.r--; // shrink bottom
-        }
-        sheet["!ref"] = XLSXLib.utils.encode_range(range);
-      }
-
-      const jsonData = XLSXLib.utils.sheet_to_json(sheet, { header: 1 });
+      const jsonData = this.normalizeSheetData(sheet);
       console.log(`Parsed ${jsonData.length} rows from sheet: ${workbook.SheetNames[0]}`);
       this.validateAndRender(jsonData, expectedHeaders);
     };
@@ -190,7 +195,7 @@ export default class extends Controller {
       // ✅ Cap to 10k rows
       this.capSheetRange(sheet);
 
-      const jsonData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+      const jsonData = this.normalizeSheetData(sheet);
 
       const filenameEl = this.filenameElement;
       if (filenameEl) {

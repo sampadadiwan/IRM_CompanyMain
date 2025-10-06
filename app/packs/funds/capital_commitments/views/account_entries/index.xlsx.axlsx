@@ -1,6 +1,4 @@
 wb = xlsx_package.workbook
-wrap = wb.styles.add_style alignment: { wrap_text: true }
-
 form_type, custom_field_names, custom_headers = get_form_type("AccountEntry")
 
 wb.add_worksheet(name: "AccountEntries") do |sheet|
