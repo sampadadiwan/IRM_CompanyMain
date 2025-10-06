@@ -173,18 +173,15 @@ class KycDocGenerator
     convert(template, context, file_name)
 
     additional_footers = []
-    if doc_template.tag_list.downcase.include?("commitment agreement")
-      append_to_commitment_agreement = investor_kyc.entity.entity_setting.append_to_commitment_agreement
-      if append_to_commitment_agreement.present?
-        doc_names = append_to_commitment_agreement.downcase.split(",")
-        # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement
-        # Precompute a hash map for doc_names indices for O(1) lookup
-        doc_name_indices = doc_names.each_with_index.to_h
-        # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement
-        footer_docs = investor_kyc.documents.where(name: doc_names).to_a.sort_by { |doc| doc_name_indices[doc.name.downcase] || Float::INFINITY }
-        Rails.logger.debug { "Appending #{footer_docs.map(&:name)} to the commitment agreement" }
-        additional_footers += footer_docs
-      end
+    if doc_template.template_docs_to_append.present?
+      doc_names = doc_template.template_docs_to_append.downcase.split(",").map(&:strip)
+      # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement
+      # Precompute a hash map for doc_names indices for O(1) lookup
+      doc_name_indices = doc_names.each_with_index.to_h
+      # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement
+      footer_docs = investor_kyc.documents.where(name: doc_names).to_a.sort_by { |doc| doc_name_indices[doc.name.downcase] || Float::INFINITY }
+      Rails.logger.debug { "Appending #{footer_docs.map(&:name)} to the commitment agreement" }
+      additional_footers += footer_docs
     end
 
     additional_footers += investor_kyc.documents.where(name: ["#{doc_template.name} Footer", "#{doc_template.name} Signature"])

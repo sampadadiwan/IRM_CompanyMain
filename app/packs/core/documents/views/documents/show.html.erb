@@ -193,6 +193,18 @@
                   <% end %>
 
 
+                  <% if @document.template_docs_to_append.present? %>
+                     <tr>
+                        <td>
+                           Documents to Append
+                        </td>
+                        <td>
+                           <%= @document.template_docs_to_append %>
+                        </td>
+                     </tr>
+                  <% end %>
+
+
                </table>
 
             </div>

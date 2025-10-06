@@ -14,7 +14,7 @@ class CapitalCommitmentDocGenerator
     fund_doc_template.file.download do |tempfile|
       fund_doc_template_path = tempfile.path
       create_working_dir(capital_commitment)
-      generate(capital_commitment, fund_doc_template_path)
+      generate(capital_commitment, fund_doc_template_path, fund_doc_template)
       upload(fund_doc_template, capital_commitment, user_id: user_id)
       notify(fund_doc_template, capital_commitment, user_id) if user_id
     ensure
@@ -28,7 +28,7 @@ class CapitalCommitmentDocGenerator
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
-  def generate(capital_commitment, fund_doc_template_path)
+  def generate(capital_commitment, fund_doc_template_path, fund_doc_template)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
 
     context = {
@@ -55,8 +55,8 @@ class CapitalCommitmentDocGenerator
     additional_footers = []
 
     append_to_commitment_agreement = capital_commitment.entity.entity_setting.append_to_commitment_agreement
-    if append_to_commitment_agreement.present?
-      doc_names = append_to_commitment_agreement.downcase.split(",")
+    if fund_doc_template.template_docs_to_append.present?
+      doc_names = fund_doc_template.template_docs_to_append.downcase.split(",").map(&:strip)
       # Ensure the additional_footers are in the order specified in the append_to_commitment_agreement
       footer_docs = capital_commitment.investor_kyc.documents.where(name: doc_names).to_a.sort_by { |doc| doc_names.index(doc.name.downcase) || Float::INFINITY }
       Rails.logger.debug { "Appending #{footer_docs.map(&:name)} to the commitment agreement" }

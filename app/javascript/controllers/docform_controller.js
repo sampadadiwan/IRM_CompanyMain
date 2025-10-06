@@ -57,12 +57,14 @@ export default class extends Controller {
       $("#add_stamp_paper_btn").show();
       $("#stamp_papers").show();
       $("#e_signatures").show();
+      $("#template_docs_to_append_div").show();
     } else {
       $("#add_signature_btn").hide();
       $("#sign_display_on_page").hide();
       $("#add_stamp_paper_btn").hide();
       $("#stamp_papers").hide();
       $("#e_signatures").hide();
+      $("#template_docs_to_append_div").hide();
     }
   }
 

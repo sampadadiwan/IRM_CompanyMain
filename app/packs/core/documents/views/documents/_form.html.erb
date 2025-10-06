@@ -111,6 +111,13 @@
           </div>
 
 
+          <div class="form-group" id="template_docs_to_append_div">
+            <%= form.label :template_docs_to_append, "Template: Docs to append" %>
+            <%= form.text_field :template_docs_to_append, class: "form-control"  %>
+            <small class="text-muted">Comma separated list of documents to append to generate document</small>
+          </div>
+
+
         <% end %>
 
           <%= custom_form_fields(document, form) %>
