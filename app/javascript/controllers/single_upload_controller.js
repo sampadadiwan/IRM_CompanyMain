@@ -59,6 +59,8 @@ export default class extends Controller {
           file: file.data // Not file.meta, not file.response, not just file
         }
       }));
+
+      console.log(`Dispatched upload:complete event with file data`);
     })
 
     uppy.on('thumbnail:generated', (file, preview) => {

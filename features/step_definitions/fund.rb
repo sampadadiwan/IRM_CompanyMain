@@ -637,6 +637,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
     click_on("Upload")
   end
 
+
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(2)
