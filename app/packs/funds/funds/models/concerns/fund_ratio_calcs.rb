@@ -95,7 +95,7 @@ class FundRatioCalcs
   # MOIC is the ratio of total returns (from sales and FMV) to total invested capital.
   # Optionally includes synthetic investments and supports tracking currency conversion.
   # Returns the MOIC value rounded to 2 decimals, and optionally the cash flows.
-  def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
+  def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false) # rubocop:disable Metrics/MethodLength
     @model = model
     cf = XirrCashflow.new
 
@@ -116,7 +116,8 @@ class FundRatioCalcs
         cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
         total_sold += amount_cents
       end
-      total_fmv += pi.fmv_cents
+      fmv_cents = convert_amount(@model, pi.fmv_cents, @end_date, use_tracking_currency)
+      total_fmv += fmv_cents
     end
 
     # Process synthetic investments if provided
@@ -134,17 +135,21 @@ class FundRatioCalcs
           cf << XirrTransaction.new(-1 * amount_cents, date: pi.investment_date, notes: pi.to_s)
           total_sold += amount_cents
         end
-        total_fmv += pi.compute_fmv_cents_on(pi.investment_date)
+        fmv_cents = pi.compute_fmv_cents_on(pi.investment_date)
+        total_fmv += convert_amount(@model, fmv_cents, @end_date, use_tracking_currency)
       end
     end
 
-    # Clear cash flows if not requested to return them
-    cf = nil unless return_cash_flows
-    # Return 0 if no investments were bought
-    return 0, cf if total_bought.zero?
-
     # Calculate total amount: if synthetic investments present, use total_sold; else, total_fmv + total_sold
     total_amount = synthetic_investments.present? ? total_sold : (total_fmv + total_sold)
+    # Only consider FMV if no synthetic investments are provided
+    cf << XirrTransaction.new(total_fmv, date: @end_date, notes: "FMV") if synthetic_investments.blank?
+
+    # Clear cash flows if not requested to return them
+    cf = nil unless return_cash_flows
+
+    # Return 0 if no investments were bought
+    return 0, cf if total_bought.zero?
 
     # Return MOIC as ratio rounded to 2 decimals, and cash flows if requested
     [(total_amount / total_bought).round(2), cf]

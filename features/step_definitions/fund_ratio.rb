@@ -150,3 +150,15 @@ Then('each computed XIRR should match the expected output') do
       "XIRR mismatch on sheet #{result[:sheet]}: expected #{result[:expected]}, got #{result[:actual]}"
   end
 end
+
+
+Then('the fund ratios must be computed in tracking currency also') do
+  tracking_currency = @fund.tracking_currency
+  @fund.investors.portfolio_companies.each do |pc|
+    expect(FundRatio.where(owner: pc).where("name like ?", "IRR (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "IRR%").count/2)
+    expect(FundRatio.where(owner: pc).where("name like ?", "MOIC (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "MOIC%").count/2)
+  end
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR%").count/2)
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC%").count/2)
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR%").count/2)
+end

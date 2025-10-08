@@ -55,6 +55,7 @@ class FundRatiosJob < ApplicationJob
     calc = _initialize_calculator(fund, capital_commitment, end_date)
 
     _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
+    _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
     _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date)
@@ -77,6 +78,18 @@ class FundRatiosJob < ApplicationJob
     if fund.has_tracking_currency?
       tracking_xirr, cash_flows = calc.xirr(return_cash_flows:, use_tracking_currency: true)
       FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR (#{fund.tracking_currency})", value: tracking_xirr, cash_flows:, display_value: "#{tracking_xirr} %")
+    end
+  end
+
+  def _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
+    return if calc.is_a?(CapitalCommitmentCalcs)
+
+    moic, cash_flows = calc.moic(return_cash_flows:)
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: moic, cash_flows:, display_value: "#{moic} x")
+
+    if fund.has_tracking_currency?
+      tracking_moic, cash_flows = calc.moic(return_cash_flows:, use_tracking_currency: true)
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: tracking_moic, cash_flows:, display_value: "#{tracking_moic} x")
     end
   end
 
@@ -151,6 +164,13 @@ class FundRatiosJob < ApplicationJob
   def _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
     calc.portfolio_company_metrics(return_cash_flows:).each do |portfolio_company_id, values|
       FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
+    end
+
+    if fund.has_tracking_currency?
+      calc.portfolio_company_metrics_map = {}
+      calc.portfolio_company_metrics(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
+        FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
+      end
     end
     # TODO: do we need moic for tracking currency?
   end
