@@ -41,7 +41,7 @@ module KpisHelper
     decimals = params[:decimals]&.to_i || 2
 
     result = number_with_delimiter(kpi.value.round(decimals))
-    percentage_value = (kpi.value.round(1) * 100)
+    percentage_value = (kpi.value * 100).round(decimals)
 
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type
