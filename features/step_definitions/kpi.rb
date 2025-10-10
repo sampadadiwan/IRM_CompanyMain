@@ -205,3 +205,59 @@ Then('the Investor Kpi Mappings must have the data in the sheet') do
       kpi_map.upper_threshold.should == user_data["Upper Threshold"] if user_data["Upper Threshold"].present?
   end
 end
+
+Given('the following KPI mappings exist for the portfolio company:') do |table|
+  table.hashes.each do |row|
+    FactoryBot.create(:investor_kpi_mapping,
+                      investor: @portfolio_company,
+                      entity: @portfolio_company.entity,
+                      reported_kpi_name: row['reported_kpi_name'],
+                      standard_kpi_name: row['reported_kpi_name'])
+  end
+end
+
+Given('I am on the KPI upload page for the portfolio company') do
+
+  visit(investor_path(@portfolio_company))
+  within("#investor_tabs") do
+    click_on("Kpis")
+    sleep(1)
+  end
+
+  click_on("Actions")
+  click_on("New")
+  sleep(1)
+
+end
+
+When('I upload the kpi workbook {string} for validation') do |workbook_file|
+  @import_file = workbook_file
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+end
+
+Then('I should see a validation report with the message {string}') do |message|
+  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
+    expect(page).to have_content(message, wait: 10)
+  end
+
+  sleep(5)
+
+end
+
+And('the report should list {string} found KPIs') do |count|
+  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
+    expect(page).to have_css('table tbody tr td span[style="color:green;"]', count: count.to_i, wait: 10)
+  end
+end
+
+And('the report should list {string} missing KPIs') do |count|
+  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
+    expect(page).to have_css('table tbody tr td span[style="color:red;"]', count: count.to_i, wait: 10)
+  end
+end
+
+Then('I should see a validation error with the message {string}') do |error_message|
+  within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
+    expect(page).to have_content(error_message, wait: 10)
+  end
+end

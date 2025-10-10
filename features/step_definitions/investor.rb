@@ -109,8 +109,8 @@ end
 
 Given('there is an existing portfolio company {string}') do |arg1|
   steps %(
-        Given there is an existing investor entity "#{arg1}"
-    )
+    Given there is an existing investor entity "#{arg1}"
+  )
   @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id, category: "Portfolio Company")
 
   puts "\n####Portfolio Company####\n"

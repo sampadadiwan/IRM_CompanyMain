@@ -170,6 +170,10 @@ export default class extends Controller {
       const headerRow = data[0] || [];
       const dateLikeCount = headerRow.slice(1).filter((v) => {
         if (!v) return false;
+
+        // Recognize numeric Excel date serials (e.g., 45689 -> 2025-02-15) as valid
+        if (!isNaN(v) && v > 10000 && v < 60000) return true;
+
         const s = v.toString().trim().toUpperCase();
 
         // Match the detailed Ruby KpiDateUtils.date_like? patterns
@@ -207,8 +211,11 @@ export default class extends Controller {
 
       const headers = headerRow.map((h) => (h ? h.toString().trim().toLowerCase() : ""));
       reportedKpis.forEach((kpiObj) => {
-        const name = (kpiObj.reported_kpi_name || "").toString().trim().toLowerCase();
-        const row = data.find((r) => (r[0] || "").toString().trim().toLowerCase() === name);
+        const normalize = (str) =>
+          (str || "").toString().replace(/\s+/g, "").toLowerCase();
+
+        const name = normalize(kpiObj.reported_kpi_name);
+        const row = data.find((r) => normalize(r[0]) === name);
 
         if (!row) {
           console.log(`❌ KPI '${name}' not found in ${sheetName}`);

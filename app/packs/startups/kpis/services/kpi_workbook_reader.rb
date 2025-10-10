@@ -300,18 +300,33 @@ end
 
 # Checks for target KPIs that were not found in any sheet and logs errors
 def log_missing_target_kpis
-  # Determine which target KPIs were not found in the processed sheets
-  missing_kpis = @target_kpis - @found_kpis.to_a
+  # Determine which target KPIs were not found in the processed sheets (normalize both sides)
+  missing_kpis = @target_kpis.map { |k| normalize_kpi_name(k) } - @found_kpis.to_a.map { |k| normalize_kpi_name(k) }
 
   if missing_kpis.any?
     missing_kpis.each do |missing_kpi|
-      # Find the original reported KPI name for the missing normalized KPI
-      original_kpi_mapping = @kpi_mappings.find { |mapping| normalize_kpi_name(mapping.reported_kpi_name) == missing_kpi }
+      # Find the original reported KPI name for the missing normalized KPI (case-insensitive, space-insensitive)
+      original_kpi_mapping = @kpi_mappings.find do |mapping|
+        normalize_kpi_name(mapping.reported_kpi_name) == normalize_kpi_name(missing_kpi)
+      end
       original_kpi_name = original_kpi_mapping&.reported_kpi_name || missing_kpi
 
       msg = "Target KPI '#{original_kpi_name}' not found in any sheet of the KPI import file."
       Rails.logger.error(msg)
-      @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name, document_id: @document.id, kpi_name: original_kpi_name, sheet: nil, period: nil, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
+      @error_msg << {
+        msg: msg,
+        portfolio_company: @portfolio_company.name,
+        document: @document.name,
+        document_id: @document.id,
+        kpi_name: original_kpi_name,
+        sheet: nil,
+        period: nil,
+        parsed_period: nil,
+        old_value: nil,
+        new_value: nil,
+        row: nil,
+        col: nil
+      }
     end
   end
 end

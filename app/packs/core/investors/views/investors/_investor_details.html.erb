@@ -4,7 +4,7 @@
     label = t('investor_details_nav.users')
   %>
 
-  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+  <nav id="investor_tabs" class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
     <% if investor.category == "Portfolio Company" %>
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">

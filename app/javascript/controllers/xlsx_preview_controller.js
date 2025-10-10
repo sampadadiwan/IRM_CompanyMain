@@ -74,46 +74,80 @@ export default class extends Controller {
   }
 
   normalizeSheetData(sheet) {
-    const rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "" });
-    if (rawData.length === 0) return rawData;
+    var rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "" });
+    if (!rawData || rawData.length === 0) {
+      return [];
+    }
 
-    let [headers, ...rows] = rawData;
-    const maxCols = Math.max(headers?.length || 0, ...rows.map((r) => r.length));
-
-    // Ensure header and rows are normalized to the same column count
-    headers = Array.from({ length: maxCols }, (_, i) => headers[i] ?? "");
-
-    headers = headers.map((h, i) => {
-      if (h === undefined || h === null || h === "") {
-        return "";
+    var headers = [];
+    var rows = [];
+    if (rawData.length > 0) {
+      headers = rawData[0] ? rawData[0] : [];
+    }
+    if (rawData.length > 1) {
+      for (var i = 1; i < rawData.length; i++) {
+        rows.push(rawData[i]);
       }
-      if (typeof h === "number" && h > 40000 && h < 60000) {
-        try {
-          const jsDate = XLSXLib.SSF.parse_date_code(h);
-          if (jsDate) {
-            const dateObj = new Date(jsDate.y, jsDate.m - 1, jsDate.d);
-            return dateObj.toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            });
-          }
-        } catch (e) {
-          console.warn("Failed to parse Excel date header", e);
-        }
-      }
-      return h;
-    });
+    }
 
-    const processed = [
-      headers,
-      ...rows.map((row) => {
-        // Pad or trim each row to match maxCols
-        const normalizedRow = Array.from({ length: maxCols }, (_, i) => row[i] ?? "");
-        return normalizedRow;
-      }),
-    ];
-    return processed;
+    var maxCols = 0;
+    for (var r = 0; r < rawData.length; r++) {
+      if (rawData[r] && rawData[r].length > maxCols) {
+        maxCols = rawData[r].length;
+      }
+    }
+
+    var normalizedHeaders = [];
+    for (var c = 0; c < maxCols; c++) {
+      if (headers[c]) {
+        normalizedHeaders.push(headers[c]);
+      } else {
+        normalizedHeaders.push("");
+      }
+    }
+
+    var normalizedRows = [];
+    for (var rr = 0; rr < rows.length; rr++) {
+      var row = [];
+      for (var cc = 0; cc < maxCols; cc++) {
+        row.push(rows[rr][cc] ? rows[rr][cc] : "");
+      }
+      normalizedRows.push(row);
+    }
+
+    var finalData = [];
+    finalData.push(normalizedHeaders);
+    for (var ri2 = 0; ri2 < normalizedRows.length; ri2++) {
+      finalData.push(normalizedRows[ri2]);
+    }
+
+    return finalData;
+    // remove trailing invalid TS/ESNext block
+    var headers = rawData[0] || [];
+    var rows = [];
+    for (var ri = 1; ri < rawData.length; ri++) {
+      rows.push(rawData[ri]);
+    }
+
+    var maxCols = 0;
+    for (var i = 0; i < rawData.length; i++) {
+      if (rawData[i].length > maxCols) {
+        maxCols = rawData[i].length;
+      }
+    }
+
+    var normalizedHeaders = [];
+    for (var ci = 0; ci < maxCols; ci++) {
+      normalizedHeaders.push(headers[ci] ? headers[ci] : "");
+    }
+    headers = normalizedHeaders;
+
+    var output = [];
+    output.push(headers);
+    for (var j = 0; j < rows.length; j++) {
+      output.push(rows[j]);
+    }
+    return output;
   }
 
 
