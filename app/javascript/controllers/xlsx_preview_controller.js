@@ -79,11 +79,8 @@ export default class extends Controller {
       return [];
     }
 
-    var headers = [];
+    var headers = rawData[0] || [];
     var rows = [];
-    if (rawData.length > 0) {
-      headers = rawData[0] ? rawData[0] : [];
-    }
     if (rawData.length > 1) {
       for (var i = 1; i < rawData.length; i++) {
         rows.push(rawData[i]);
@@ -99,12 +96,9 @@ export default class extends Controller {
 
     var normalizedHeaders = [];
     for (var c = 0; c < maxCols; c++) {
-      if (headers[c]) {
-        normalizedHeaders.push(headers[c]);
-      } else {
-        normalizedHeaders.push("");
-      }
+      normalizedHeaders.push(headers[c] ? headers[c] : "");
     }
+    headers = normalizedHeaders;
 
     var normalizedRows = [];
     for (var rr = 0; rr < rows.length; rr++) {
@@ -115,13 +109,44 @@ export default class extends Controller {
       normalizedRows.push(row);
     }
 
-    var finalData = [];
-    finalData.push(normalizedHeaders);
-    for (var ri2 = 0; ri2 < normalizedRows.length; ri2++) {
-      finalData.push(normalizedRows[ri2]);
+    // ✅ Remove completely blank columns (no header and all rows empty)
+    var nonEmptyColumnIndices = [];
+    for (var col = 0; col < headers.length; col++) {
+      var headerHasContent = headers[col] && headers[col].toString().trim() !== "";
+      var anyRowHasContent = false;
+      for (var rowIdx = 0; rowIdx < normalizedRows.length; rowIdx++) {
+        var val = normalizedRows[rowIdx][col];
+        if (val && val.toString().trim() !== "") {
+          anyRowHasContent = true;
+          break;
+        }
+      }
+      if (headerHasContent || anyRowHasContent) {
+        nonEmptyColumnIndices.push(col);
+      }
     }
 
-    return finalData;
+    var cleanedHeaders = [];
+    for (var x = 0; x < nonEmptyColumnIndices.length; x++) {
+      cleanedHeaders.push(headers[nonEmptyColumnIndices[x]]);
+    }
+
+    var cleanedRows = [];
+    for (var y = 0; y < normalizedRows.length; y++) {
+      var filteredRow = [];
+      for (var z = 0; z < nonEmptyColumnIndices.length; z++) {
+        filteredRow.push(normalizedRows[y][nonEmptyColumnIndices[z]]);
+      }
+      cleanedRows.push(filteredRow);
+    }
+
+    var result = [];
+    result.push(cleanedHeaders);
+    for (var rr2 = 0; rr2 < cleanedRows.length; rr2++) {
+      result.push(cleanedRows[rr2]);
+    }
+
+    return result;
     // remove trailing invalid TS/ESNext block
     var headers = rawData[0] || [];
     var rows = [];
