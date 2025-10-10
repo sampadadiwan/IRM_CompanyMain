@@ -1,3 +1,5 @@
 <%= render NewCard.new do %>
     <%= render "form", kpi_report: @kpi_report %>
 <% end %>
+
+<%= render "/kpi_reports/xlsx_preview", kpi_report: @kpi_report %>

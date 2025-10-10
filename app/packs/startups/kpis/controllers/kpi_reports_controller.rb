@@ -62,6 +62,8 @@ class KpiReportsController < ApplicationController
     @kpi_report.user_id = current_user.id
     @kpi_report.as_of = Time.zone.today
     authorize @kpi_report
+
+    @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
     setup_custom_fields(@kpi_report)
     @kpi_report.custom_kpis
   end
@@ -69,6 +71,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports/1/edit
   def edit
     setup_custom_fields(@kpi_report)
+    @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
     @kpi_report.custom_kpis
   end
 
@@ -159,6 +162,6 @@ class KpiReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_report_params
-    params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :update_existing_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

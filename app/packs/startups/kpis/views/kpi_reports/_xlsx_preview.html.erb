@@ -1,0 +1,31 @@
+  <!-- KPI XLSX Report Analyzer Controller -->
+  <div id="kpi-xlsx-report" class="mt-4"
+        data-controller="kpi-xlsx-report"
+        data-upload-id="custom_file_kp_is"
+        data-reported-kpis='<%= @kpi_mappings.to_json(only: [:reported_kpi_name]) if defined?(@kpi_mappings) %>'>
+
+    <div data-kpi-xlsx-report-target="output" class="border p-3 bg-light">
+
+    </div>
+  </div>
+
+
+
+
+  <!-- Stimulus XLSX Preview Controller -->
+  <div id="xlsx-preview" class="table-responsive"
+      data-controller="xlsx-preview"
+      data-upload-id="custom_file_kp_is"
+      data-headers='<%= @kpi_report.headers if @kpi_report.respond_to?(:headers) %>'
+      data-xlsx-preview-tabs="true">
+
+    <div data-xlsx-preview-target="card" class="card mt-3 d-none">
+      <div class="card-header fw-bold">
+        <span class="h3" data-xlsx-preview-target="filename"></span>
+      </div>
+      <div class="card-body" data-controller="datatable">
+        <div data-xlsx-preview-target="status"></div>
+        <div data-xlsx-preview-target="table"></div>
+      </div>
+    </div>
+  </div>

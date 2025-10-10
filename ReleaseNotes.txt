@@ -1,3 +1,9 @@
+V9.1.22
+#####################################
+9f23f1512 Now portfolio company moic is also computed in tracking currency (#1020)
+959b15fa6 Fixed % display of kpi
+019f44d3f Fixed FCF import
+
 V9.1.21
 #####################################
 9ce6a9490 Fixed xlsx preview missing fields alignment

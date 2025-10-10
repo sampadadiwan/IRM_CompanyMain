@@ -28,7 +28,7 @@
       <%= form.date_field :as_of, class: "form-control"  %>
     </div>
 
-    
+
     <div class="form-group col">
       <%= form.label :period %>
       <%= form.select :period, KpiReport::PERIODS, {}, class: "form-control" %>
@@ -51,19 +51,18 @@
       <div class="form-group">
         <%= form.label :upload_new_kpis, "Upload new KPIs"%>
         <%= form.check_box :upload_new_kpis, class: "form-check-input", value: false  %>
-        <small class="form-text text-muted">Check this box to upload the KPIs from the file selected above.</small>
-      </div>   
-
-      <div class="form-group">
-        <%= form.label :delete_kpis, "Delete existing KPIs"%>
-        <%= form.check_box :delete_kpis, class: "form-check-input", value: false  %>
-        <small class="form-text text-danger">Check this box to delete all existing KPIs for this report.</small>
-      </div>   
+        <small class="form-text text-muted">Check this box to upload the KPIs from the file selected above (if the file has changed).</small>
+      </div>
     <% else %>
       <%= form.hidden_field :upload_new_kpis, class: "form-check-input", value: true  %>
-      <%= form.hidden_field :delete_kpis, class: "form-check-input", value: false %>
     <% end %>
-    
+
+    <div class="form-group">
+      <%= form.label :update_existing_kpis, "Update existing KPIs"%>
+      <%= form.check_box :update_existing_kpis, class: "form-check-input", value: false  %>
+      <small class="form-text text-danger">Check this box to update existing KPIs with data from the file above. If unchecked only new values will be added.</small>
+    </div>
+
     <%= custom_form_fields(@kpi_report, form) %>
 
     <div class="form-group">

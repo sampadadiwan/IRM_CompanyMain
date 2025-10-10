@@ -1,6 +1,7 @@
 class Kpi < ApplicationRecord
   include WithCustomField
   include ForInvestor
+  include Trackable.new(on: %i[create update], audit_fields: %i[value display_value notes percentage_change])
 
   belongs_to :entity
   belongs_to :owner, class_name: "Entity", optional: true

@@ -4,7 +4,7 @@ class KpiReport < ApplicationRecord
   include WithFolder
   include Trackable.new
 
-  attr_accessor :delete_kpis, :upload_new_kpis
+  attr_accessor :delete_kpis, :upload_new_kpis, :update_existing_kpis
 
   PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
@@ -33,6 +33,8 @@ class KpiReport < ApplicationRecord
 
   validates :period, length: { maximum: 12 }
   validates :as_of, presence: true
+  # validates unique kpi report for the entity, period and portfolio_company combination
+  validates_uniqueness_of :as_of, scope: %i[entity_id portfolio_company_id period tag_list as_of], message: "A KPI Report for this period already exists for this entity", if: -> { entity_id.present? && period.present? }
 
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
@@ -52,10 +54,12 @@ class KpiReport < ApplicationRecord
       Rails.logger.info "Deleted existing KPIs for KpiReport #{id}"
     end
 
+    self.update_existing_kpis = true if %w[1 true].include?(update_existing_kpis)
+
     if %w[1 true].include?(upload_new_kpis)
       self.upload_new_kpis = false
       kpi_file = documents.where(name: "KPIs").first
-      ImportKpiWorkbookJob.perform_later(id, user_id) if kpi_file.present?
+      ImportKpiWorkbookJob.perform_later(id, user_id, update_existing_kpis: update_existing_kpis) if kpi_file.present?
 
       # Delete any prev csv files
       documents.where(name: "KPIs.csv").delete_all
@@ -169,57 +173,6 @@ class KpiReport < ApplicationRecord
     { input: "CY-2024", output: "01-01-2024" },
     { input: "CY-2025", output: "01-01-2025" }
   ].freeze
-
-  CONVERT_TO_DATE = {}.freeze
-
-  def self.convert_to_date(query)
-    date = CONVERT_TO_DATE[query]
-    if date.nil?
-      # Use few shot prompt template to generate a report url
-      prompt = Langchain::Prompt::FewShotPromptTemplate.new(
-        # The prefix is the text should contain the model class and the searchable attributes
-        prefix: "You are a financial analyst who can convert dates in different formats to a standard date format. Convert the given date to a standard date format, dont provide additional info, just the date in dd-mm-yyyy format.",
-        suffix: "Input: {query}\nOutput:",
-        example_prompt: Langchain::Prompt::PromptTemplate.new(
-          input_variables: %w[input output],
-          template: "Input: {input}\nOutput: {output}"
-        ),
-        examples: DATES_MAP,
-        input_variables: ["query"]
-      )
-
-      llm_prompt = prompt.format(query:)
-
-      @llm ||= Langchain::LLM::OpenAI.new(api_key: Rails.application.credentials["OPENAI_API_KEY"])
-      llm_response = @llm.chat(messages: [{ role: "user", content: llm_prompt }]).completion
-      Rails.logger.debug llm_response
-      response = llm_response.sub(/^Output:\s*/, '')
-      date = Date.parse(response)
-      CONVERT_TO_DATE[query] = date
-    end
-    date
-  end
-
-  def self.convert_to_date2(input_string)
-    if input_string.match?(/\AQ[1-4] \d{4}\z/)
-      # Handle quarter strings like "Q1 2024"
-      quarter, year = input_string.split
-      year = year.to_i
-
-      # Map the quarter to the start month
-      month = QUARTER_TO_MONTH[quarter]
-
-      Date.new(year, month, 1)
-
-    elsif input_string.match?(/\ACY \d{4}\z/)
-      # Handle calendar year strings like "CY-2024"
-      year = input_string.split('-')[1].to_i
-      Date.new(year, 1, 1) # Start of the calendar year (January 1st)
-
-    else
-      raise ArgumentError, "Invalid format #{input_string}. Expected format: 'Q1 YYYY' or 'CY-YYYY'"
-    end
-  end
 
   def label
     if tag_list.present?

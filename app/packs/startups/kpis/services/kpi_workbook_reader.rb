@@ -30,16 +30,20 @@
 class KpiWorkbookReader
   attr_reader :error_msg
 
-  def initialize(kpi_report, document, kpi_mappings, user, portfolio_company)
+  def initialize(kpi_report, document, kpi_mappings, user, portfolio_company, update_existing_kpis: true)
     @kpi_report = kpi_report
     @document = document
     @kpi_mappings = kpi_mappings
     @user = user
+    @update_existing_kpis = update_existing_kpis
     # We need to cleanup the file before processing it to remove blank/hidden rows & cols. Note this will update the file on S3
     ConvertKpiToCsvJob.perform_now(@kpi_report.id, @user.id, @document.id, action: 'cleanup')
 
     # Index the @kpi_mappings by normalized KPI names for quick lookup
-    @kpi_name_to_kpi_mappings = @kpi_mappings.index_by { |mapping| normalize_kpi_name(mapping.reported_kpi_name) }
+    # Normalize kpi_mappings to be case-/space-insensitive
+    @kpi_name_to_kpi_mappings = @kpi_mappings.index_by do |mapping|
+      normalize_kpi_name(mapping.reported_kpi_name)
+    end
 
     Rails.logger.debug { "Document: #{@document.name}" }
     # Normalize reported_kpi_name for consistent matching
@@ -76,13 +80,13 @@ class KpiWorkbookReader
             # Log a warning if no valid header row is found
             msg = "No valid header found in KPI import file for sheet: #{sheet}"
             Rails.logger.warn(msg)
-            @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+            @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name, document_id: @document.id, kpi_name: nil, sheet: sheet, period: nil, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
             next
           end
 
           Rails.logger.debug { "Header row index: #{header_row_index}" }
           # Clean and normalize the header row
-          header = clean_row(@workbook.row(header_row_index))
+          header = clean_row(@workbook.row(header_row_index)).map { |h| normalize_kpi_name(h) }
           # Process the data rows below the header
           process_data_rows(sheet, header_row_index + 1, header)
         rescue StandardError => e
@@ -90,7 +94,7 @@ class KpiWorkbookReader
           # Log an error if processing the sheet fails
           msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
           Rails.logger.error(msg)
-          @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+          @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name, document_id: @document.id, kpi_name: nil, sheet: sheet, period: nil, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
           next
         end
       end
@@ -167,7 +171,7 @@ class KpiWorkbookReader
         # Log a warning if the period format is unrecognized
         msg = "Unrecognized period format: '#{period}' in sheet '#{sheet}', skipping"
         Rails.logger.debug msg
-        @error_msg << { msg:, document: @document.name, document_id: @document.id }
+        @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: raw_kpi_name, sheet: sheet, period: period, parsed_period: parsed_period, old_value: nil, new_value: nil, row: row_index, col: col_index }
         next
       end
 
@@ -192,7 +196,7 @@ class KpiWorkbookReader
   def log_duplicate_period_warning(sheet, period, header)
     msg = "Warning: Duplicate period '#{period}' in sheet '#{sheet}', skipping. Header: #{header.join(', ')}"
     Rails.logger.debug msg
-    @error_msg << { msg:, document: @document.name, document_id: @document.id }
+    @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: nil, sheet: sheet, period: period, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
   end
 
   # Finds or creates a KPI report for the given period
@@ -235,20 +239,31 @@ class KpiWorkbookReader
 
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row} #{col_index}" }
 
-    # Check if the value has changed
-    if kpi.persisted? && kpi.value != value.to_d
-      msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row_index} col #{col_index}"
-      Rails.logger.debug msg
-      @error_msg << { msg:, document: @document.name, document_id: @document.id }
+    save_kpi = true
+
+    if kpi.persisted?
+      # Only update if the value has changed and update_existing_kpis is true
+      if kpi.value.round(6) != value.to_d.round(6) && @update_existing_kpis
+        msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row_index} col #{col_index}"
+        Rails.logger.debug msg
+        @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: kpi.name, sheet: sheet, period: period, parsed_period: parsed_period, old_value: kpi.value, new_value: value, row: row_index, col: col_index }
+
+        save_kpi = true
+      else
+        Rails.logger.debug { "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} unchanged, skipping save" }
+        save_kpi = false
+      end
     end
-    # Assign attributes to the KPI entry
-    kpi.assign_attributes(
-      value: value,
-      display_value: value,
-      notes: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
-    )
-    # Save the KPI entry
-    kpi.save
+    if save_kpi
+      # Assign attributes to the KPI entry
+      kpi.assign_attributes(
+        value: value,
+        display_value: value,
+        notes: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
+      )
+      # Save the KPI entry
+      kpi.save
+    end
   end
   # rubocop:enable Metrics/ParameterLists
 
@@ -296,7 +311,7 @@ def log_missing_target_kpis
 
       msg = "Target KPI '#{original_kpi_name}' not found in any sheet of the KPI import file."
       Rails.logger.error(msg)
-      @error_msg << { msg:, portfolio_company: @portfolio_company, document: @document.name, document_id: @document.id }
+      @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name, document_id: @document.id, kpi_name: original_kpi_name, sheet: nil, period: nil, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
     end
   end
 end

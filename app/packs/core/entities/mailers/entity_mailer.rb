@@ -44,4 +44,25 @@ class EntityMailer < ApplicationMailer
     subject = params[:subject].presence || "INFO"
     mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
   end
+
+  def send_report
+    setup_defaults
+    add_support_to_cc
+    @report_data = begin
+      JSON.parse(params[:report_data])
+    rescue StandardError
+      []
+    end
+    @title = params[:subject].presence
+
+    Rails.logger.info("[EntityMailer] Sending report email with #{@report_data.size} rows.")
+    Rails.logger.debug(@report_data.inspect)
+
+    mail(
+      from: @from,
+      to: @to,
+      cc: @cc,
+      subject: @title
+    )
+  end
 end
