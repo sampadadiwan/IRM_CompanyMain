@@ -1,6 +1,9 @@
 class AddFolioInvestorAdvisor < Trailblazer::Operation
+  AdvisorPresent = Class.new(Trailblazer::Activity::Signal)
   # Step-by-step operation to add an investor advisor for a fund
   # Each step performs a specific task, and errors are handled gracefully.
+  step :check_investor_advisor_presence,
+       Output(AdvisorPresent, :advisor_present) => Id(:save) # If advisor exists, skip to save step directly - we need to save in case we have added some permissions
   step :fetch_or_create_advisor_entity
   left :handle_entity_errors, Output(:failure) => End(:failure)
   step :fetch_or_create_user
@@ -12,11 +15,35 @@ class AddFolioInvestorAdvisor < Trailblazer::Operation
   step :create_investor_access
   left :handle_investor_access_errors, Output(:failure) => End(:failure)
 
+  def check_investor_advisor_presence(ctx, investor_advisor:, params:, **)
+    user = User.find_by(email: investor_advisor.email)
+    ctx[:user] = user if user.present?
+
+    # If user is not present then IA cannot exist so go to next step
+    return true if user.blank?
+
+    # Find existing IA
+    existing_advisor = InvestorAdvisor.find_by(entity_id: investor_advisor.entity_id, user_id: user.id)
+    return true unless existing_advisor # continue normal path
+
+    # Update permissions if needed
+    investor_advisor.permissions.each do |permission|
+      existing_advisor.permissions.set(permission)
+    end
+    %i[investor_kyc_read investor_read].each do |ext_permission|
+      existing_advisor.extended_permissions.set(ext_permission)
+    end
+
+    ctx[:investor_advisor] = existing_advisor
+
+    # Emit the special output signal AdvisorPresent to jump to the `:save` step
+    AdvisorPresent.new
+  end
+
   # Fetches or creates an entity for the investor advisor.
   # If the entity already exists, it returns true.
   def fetch_or_create_advisor_entity(ctx, investor_advisor:, params:, **)
-    user = User.find_by(email: investor_advisor.email)
-    return true if user.present?
+    return true if ctx[:user].present?
 
     entity_result = CreateInvestorAdvisorEntity.call(name: params[:investor_advisor][:advisor_entity_name], primary_email: investor_advisor.email)
     ctx[:entity] = entity_result[:entity]

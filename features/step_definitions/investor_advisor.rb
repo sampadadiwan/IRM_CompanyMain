@@ -48,7 +48,7 @@
   end
 
 
-  
+
   Then('I switch to becoming the advisor for {string}') do |investor_name|
     #sleep(2)
     # Select the investor_name from the drop down with id investor_advisor
@@ -56,7 +56,7 @@
       select(investor_name, from: "id")
     end
   end
-  
+
 
 Given('I go to Add Investor Advisor page for commmitment') do
   @capital_commitment ||= CapitalCommitment.first
@@ -122,4 +122,30 @@ Given('I fill IA form with details of a user that does not exist with details {s
   end
   p "Creating Investor Advisor with params: #{params}"
   click_on("Save")
+end
+
+
+Given('I delete the InvestorAccess of this User on the investors page') do
+  @capital_commitment ||= CapitalCommitment.first
+  @investor_advisor ||= InvestorAdvisor.last
+  @existing_investor_advisor ||= @investor_advisor
+  investor_access =  @investor_advisor.user.investor_accesses.order(created_at: :desc).first
+  @user_investor_accesses = @investor_advisor.user.investor_accesses.pluck(:id)
+  visit(investor_path(@capital_commitment.investor))
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content(@investor_advisor.email, wait: 5)
+  within("#investor_access_#{investor_access.id}") do
+    click_on("Actions")
+     within(".dropdown-menu") do
+      click_button("Delete")
+    end
+  end
+  click_on("Proceed")
+  sleep 0.5
+  expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count - 1)
+end
+
+Then('Its the same InvestorAdvisor with the InvestorAccess created again') do
+  @existing_investor_advisor.reload
+  expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count)
 end

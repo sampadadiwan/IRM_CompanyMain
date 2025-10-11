@@ -16,7 +16,7 @@ Scenario Outline: Import Investor Advisors
   Given the fund has "1" capital distribution
   Given the capital distributions are approved
   And Given I upload "investor_advisors.xlsx" file for Investment Advisors
-  Then the investor advisors should be added to each investor  
+  Then the investor advisors should be added to each investor
   Given I log out
   Given I log in with email "terrie@hansen-inc.com"
   And I switch to becoming the advisor for "Investor 1"
@@ -69,7 +69,7 @@ Scenario Outline: Create new investor advisor for capital commitment
   Then Investor Advisor is successfully created
   Given I go to Add Investor Advisor page for commmitment
   And I fill IA form with details of a user that is already an Investor Advisor for this fund
-  Then Investor Advisor creation fails with error "Email has already been taken"
+  Then Investor Advisor is successfully created
   Given I go to Add Investor Advisor page for commmitment
   And I fill IA form with details of a user that exists with role ""
   Then Investor Advisor creation fails with error "User has not been setup as an investor advisor"
@@ -96,6 +96,33 @@ Scenario Outline: Create new investor advisor for capital commitment
   Then Investor Advisor creation fails with error "Entity could not be created. Name can't be blank"
   And I fill IA form with details of a user that does not exist with details "advisor_entity_name,first_name,last_name"
   Then Investor Advisor is successfully created
+
+  Examples:
+  	|user	    |entity                                 |fund                 |msg	|
+  	|  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+
+Scenario Outline: Create new investor advisor for capital commitment
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=A1" with "2" users
+  Given there is an existing investor "name=A2" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the fund has capital commitment template
+  Given the investors are added to the fund
+  When I add a capital commitment "1000000" for investor "A1"
+  Then I should see the capital commitment details
+  Then the fund total committed amount must be "1000000"
+  When I add a capital commitment "1000000" for investor "A2"
+  Then I should see the capital commitment details
+  Then the fund total committed amount must be "2000000"
+  Given I go to Add Investor Advisor page for commmitment
+  And I fill IA form with details of a user that exists with role "investor_advisor"
+  Then Investor Advisor is successfully created
+  Given I delete the InvestorAccess of this User on the investors page
+  Given I go to Add Investor Advisor page for commmitment
+  And I fill IA form with details of a user that is already an Investor Advisor for this fund
+  Then Investor Advisor is successfully created
+  And Its the same InvestorAdvisor with the InvestorAccess created again
 
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
