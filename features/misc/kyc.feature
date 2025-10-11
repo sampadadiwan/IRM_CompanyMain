@@ -29,3 +29,16 @@ Scenario Outline: Import KYCs - No Form Tag
   And there are "1" records for the form type "IndividualKyc"
   And there are "1" records for the form type "NonIndividualKyc"
 
+Scenario Outline: Cannot create KYC without Stakeholder
+  Given Im logged in as a user "first_name=Testuser" for an entity "name=Urban1;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor "investor_name=Investor 11"
+  When I navigate to the new "Individual" KYC page
+  And I click the "Next" button
+  Then I get the error that StakeHolder cant be blank
+  Then I select the investor for the KYC
+  And I click the "Next" button
+  And I click the "Next" button
+  And I click the "Save" button
+  Then I should see the "Investor kyc was successfully saved"

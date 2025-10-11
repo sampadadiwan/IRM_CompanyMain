@@ -13,7 +13,7 @@ export default class extends Controller {
         let validateSection = this.validateSection;
 
         let submitBtn = $(".wizard_form").find("input[type='submit']");
-        submitBtn.click(function(e) {
+        submitBtn.click(function (e) {
             validateSection(this, validateFields);
         });
 
@@ -54,13 +54,32 @@ export default class extends Controller {
             nextStepWizard = $('div.setup-panel div a[href="#' + curStepBtn + '"]').parent().next().children("a"),
             curInputs = curStep.find("input[type='checkbox'],input[type='file'],input[type='text'],input[type='number'],input[type='date'],select,textarea");
 
+        let investorInput = $(".wizard_form").find("select[id$='_kyc_investor_id']");
+        let investorFormGroup = investorInput.closest(".form-group");
 
-        if($(".wizard_form").attr("data-client-side-validations")) {
-            if ( $(".wizard_form")[0].ClientSideValidations ) {
+        if ($(".wizard_form").attr("data-client-side-validations")) {
+            if ($(".wizard_form")[0].ClientSideValidations) {
                 isValid = validateFields(curInputs);
             }
         } else {
             console.log("No client side validations");
+
+            if (investorInput.length) {
+                // remove old error messages
+                investorFormGroup.find(".help-block.error").remove();
+
+                if (!investorInput.val()) {
+                    isValid = false;
+                    investorFormGroup.addClass("field_with_errors");
+
+                    // inject message like Rails client_side_validations does
+                    investorFormGroup.append('<span class="help-block error"><strong>can\'t be blank</strong></span>');
+
+                    $('html, body').animate({ scrollTop: investorInput.offset().top - 140 }, 100);
+                } else {
+                    investorFormGroup.removeClass("field_with_errors");
+                }
+            }
         }
 
         if (isValid)
@@ -82,15 +101,15 @@ export default class extends Controller {
             if (!$(curInputs[i]).hasClass("custom_field") && !$(curInputs[i]).isValid(validators)) {
                 console.log(`Not valid: ${input_id} ${input_type}`);
                 isValid = false;
-            } else if ( input_type == "file" || $(curInputs[i]).hasClass("custom_field")) {
+            } else if (input_type == "file" || $(curInputs[i]).hasClass("custom_field")) {
                 // Special handling for file inputs created by us using _file.html.erb
                 // And for custom fields which are not under client_side_validations perview
-                if(!curInputs[i].validity.valid) {
+                if (!curInputs[i].validity.valid) {
                     console.log(`Not valid: ${input_id} ${input_type}`);
                     isValid = false;
                     $(jq_input_id).closest(".form-group").addClass("field_with_errors");
                     scrollTop: $(jq_input_id).focus();
-                    $('html, body').animate({                        
+                    $('html, body').animate({
                         scrollTop: $(jq_input_id).offset().top - 140
                     }, 100);
 

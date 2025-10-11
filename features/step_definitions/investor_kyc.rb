@@ -82,4 +82,21 @@ Then('there are {string} records for the form type {string}') do |count, name|
   FormType.where(name: name, entity_id: @entity.id).count.should == count.to_i
 end
 
+When('I navigate to the new {string} KYC page') do |kyc_type|
+  @kyc_type = kyc_type
+  visit(investor_kycs_path)
+  click_on("New KYC")
+  click_on(kyc_type)
+end
 
+Then('I get the error that StakeHolder cant be blank') do
+  expect(page).to have_content("Stakeholder")
+  expect(page).to have_content("can't be blank")
+end
+
+Then('I select the investor for the KYC') do
+  @investor ||= Investor.last 
+  @kyc_type ||= "Individual"
+  class_name = "#{@kyc_type.underscore}_kyc"
+  select(@investor.investor_name, from: "#{class_name}_investor_id")
+end
