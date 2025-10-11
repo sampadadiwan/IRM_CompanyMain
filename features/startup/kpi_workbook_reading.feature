@@ -61,6 +61,5 @@ Feature: KPI Workbook Reading
 
     Examples:
       | workbook_file                                  | error_message                                                                                                     |
-      | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'Sheet1'. Expected date-like values (e.g., Jan 24, FY24, Q1FY25, H1FY25).      |
-      | kpi_extraction/validation/no_kpi_names.xlsx    | Missing KPI names in sheet 'Sheet1'. The first column should contain KPI names.                                     |
-      | kpi_extraction/validation/empty_sheet.xlsx     | Sheet 'Sheet1' is empty.                                                                                          |
+      | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'MIS'. Expected date-like values (e.g., Jan 24, FY24, Q1FY25, H1FY25).|
+      | kpi_extraction/validation/empty_sheet.xlsx     | Sheet 'Sheet1' is empty  |

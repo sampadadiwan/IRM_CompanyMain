@@ -68,7 +68,7 @@
         # Create dummy mappings for the startup, which has all the kpi names
         investor_kpi_mappings = investor.investor_kpi_mappings
     else
-        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, standard_kpi_name: kpi_name, category: "General")}
+        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")}
     end
 
     # Filter investor_kpi_mappings based on the category if provided

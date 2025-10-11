@@ -240,8 +240,6 @@ Then('I should see a validation report with the message {string}') do |message|
     expect(page).to have_content(message, wait: 10)
   end
 
-  sleep(5)
-
 end
 
 And('the report should list {string} found KPIs') do |count|

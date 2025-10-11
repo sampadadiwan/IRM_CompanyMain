@@ -231,7 +231,7 @@ export default class extends Controller {
     });
 
     if (errors.length > 0) {
-      const html = `<div class="alert alert-danger"><strong>Validation Errors Found:</strong><ul>${errors
+      const html = `<div class="alert alert-danger">Errors:<ul>${errors
         .map((e) => `<li>${e}</li>`)
         .join("")}</ul></div>`;
       this.outputTarget.innerHTML = html;
