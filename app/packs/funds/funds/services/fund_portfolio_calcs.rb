@@ -256,15 +256,18 @@ class FundPortfolioCalcs < FundRatioCalcs
       total_fmv = 0
       total_sold = 0
       cost_of_remaining = 0
-
+      cash_flows = []
       @fund.aggregate_portfolio_investments.where(portfolio_company_id:).find_each do |api|
         api_as_of = api.as_of(@end_date)
-
-        total_fmv += convert_amount(@fund, api_as_of.fmv_cents, @end_date, use_tracking_currency)
-        bought_amount += convert_amount(@fund, api_as_of.bought_amount_cents, @end_date, use_tracking_currency)
-        total_sold += convert_amount(@fund, api_as_of.sold_amount_cents, @end_date, use_tracking_currency)
-        cost_of_remaining += convert_amount(@fund, api_as_of.cost_of_remaining_cents, @end_date, use_tracking_currency)
-
+        api_fmv = convert_amount(@fund, api_as_of.fmv_cents, @end_date, use_tracking_currency)
+        total_fmv += api_fmv
+        api_bought = convert_amount(@fund, api_as_of.bought_amount_cents, @end_date, use_tracking_currency)
+        bought_amount += api_bought
+        api_sold = convert_amount(@fund, api_as_of.sold_amount_cents, @end_date, use_tracking_currency)
+        total_sold += api_sold
+        api_cost_of_remaining = convert_amount(@fund, api_as_of.cost_of_remaining_cents, @end_date, use_tracking_currency)
+        cost_of_remaining += api_cost_of_remaining
+        cash_flows << { api: api.to_s, fmv: api_fmv, bought_amount: api_bought, sold_amount: api_sold, cost_of_remaining: api_cost_of_remaining }
         Rails.logger.debug { "API: #{api.id}, FMV: #{api_as_of.fmv}, Bought: #{api_as_of.bought_amount}, Sold: #{api_as_of.sold_amount}" }
       end
 
@@ -275,14 +278,7 @@ class FundPortfolioCalcs < FundRatioCalcs
       value_to_cost = total_fmv / cost_of_remaining.to_f
       moic = (total_fmv + total_sold) / bought_amount.to_f
 
-      cash_flows = if return_cash_flows
-                     {
-                       bought_amount: bought_amount,
-                       total_fmv: total_fmv,
-                       total_sold: total_sold,
-                       cost_of_remaining: cost_of_remaining
-                     }
-                   end
+      cash_flows = [] unless return_cash_flows
 
       @portfolio_company_metrics_map[portfolio_company_id] = {
         name: portfolio_company.investor_name,

@@ -162,3 +162,23 @@ Then('the fund ratios must be computed in tracking currency also') do
   @fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC%").count/2)
   @fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR%").count/2)
 end
+
+Then('The Portfolio company MOIC ratio can be viewed properly') do
+  tracking_currency = @fund.tracking_currency
+  owner = @fund.investors.portfolio_companies.last
+  fr = FundRatio.find_by(owner:, name: "MOIC (#{tracking_currency})")
+  visit(fund_ratio_path(fr))
+  expect(page).to have_content("MOIC (#{tracking_currency})")
+  expect(page).to have_content("Cost Of Remaining")
+  expect(page).to have_content("Fmv")
+  expect(page).to have_content("Sold Amount")
+  expect(page).to have_content("Bought Amount")
+end
+
+Given('I log in as user {string}') do |first_name|
+  @user = User.find_by_first_name(first_name)
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end

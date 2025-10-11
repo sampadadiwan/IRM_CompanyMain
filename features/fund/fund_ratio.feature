@@ -34,6 +34,8 @@ Scenario Outline: Compute Fund Ratios in tracking currency
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   And given the fund_ratios are computed for the date "31-03-2024"
   Then the fund ratios must be computed in tracking currency also
+  Given I log in as user "Test"
+  And The Portfolio company MOIC ratio can be viewed properly
 
 @import
 Scenario Outline: Import Fund Ratio
