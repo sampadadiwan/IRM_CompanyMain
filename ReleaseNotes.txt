@@ -1,3 +1,13 @@
+V9.1.23
+#####################################
+55316b6d1 Kyc stakeholder validation 1 (#991)
+7cee40ed2 Inv adv exist fix (#1032)
+3f824b28c Portfolio MOIC has proper cashflows (#1037)
+290a3951b Added tests for kpi report xlsx uploads
+6c3313933 Fixed balnk cols in xlsx preview
+1f3e447db Better tests for xlsx preview and validation for kpi reports
+55f3dc9ba Kpi preview (#1039)
+
 V9.1.22
 #####################################
 9f23f1512 Now portfolio company moic is also computed in tracking currency (#1020)

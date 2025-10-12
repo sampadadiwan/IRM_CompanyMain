@@ -47,12 +47,12 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include WithIncomingEmail
   include InvestorKycConcern
   include WithDocQuestions
+  include WithSupportAgent
 
   belongs_to :investor
   belongs_to :entity
   # These are the capital_commitments that are linked to this KYC
   has_many :capital_commitments
-  has_one :support_agent_report, as: :owner, dependent: :destroy
 
   has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
