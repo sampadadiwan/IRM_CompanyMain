@@ -8,6 +8,7 @@ class Investor < ApplicationRecord
   include Pundit::Authorization
   include WithDocQuestions
   include ForInvestor
+  include WithSupportAgent
 
   update_index('investor') { self if index_record? }
 
@@ -23,7 +24,6 @@ class Investor < ApplicationRecord
   has_many :portfolio_kpi_reports, class_name: "KpiReport", foreign_key: :portfolio_company_id
   has_many :portfolio_kpis, class_name: "Kpi", through: :portfolio_kpi_reports, source: :kpis
   has_many :portfolio_report_extracts, dependent: :destroy, foreign_key: :portfolio_company_id
-  has_one :support_agent_report, as: :owner, dependent: :destroy
 
   belongs_to :entity, touch: true
   counter_culture :entity
