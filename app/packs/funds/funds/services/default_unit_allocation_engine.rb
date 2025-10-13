@@ -123,7 +123,7 @@ class DefaultUnitAllocationEngine
     if  capital_distribution_payment.completed &&
         capital_distribution_payment.cost_of_investment_with_fees_cents.positive? &&
         capital_distribution.unit_prices.present? &&
-        capital_commitment.unit_type.present?
+        capital_commitment.unit_type.present? && capital_distribution_payment.fund_units.blank?
 
       # Get the price for the unit type
       unit_type = capital_commitment.unit_type
@@ -151,6 +151,7 @@ class DefaultUnitAllocationEngine
       msg << "No payment amount" unless capital_distribution_payment.cost_of_investment_with_fees_cents.positive?
       msg << "No unit prices in distribution" if capital_distribution.unit_prices.blank?
       msg << "No unit type in commitment" if capital_commitment.unit_type.blank?
+      msg << "Fund units already redeemed" if capital_distribution_payment.fund_units.present?
       Rails.logger.debug msg.join(", ")
       [nil, msg]
     end

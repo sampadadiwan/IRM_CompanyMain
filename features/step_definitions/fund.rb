@@ -1292,6 +1292,9 @@ Then('there should be correct units for the distribution payments for each inves
       fu.quantity.should == -(fu.owner.cost_of_investment_cents / (fu.price_cents))
     end
   end
+
+  # No duplicate fund units for the same distribution payment
+  FundUnit.where(owner_type: "CapitalDistributionPayment").pluck(:owner_id).tally.select{|k,v| v > 1}.count.should == 0
 end
 
 
