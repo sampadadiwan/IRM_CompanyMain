@@ -1,6 +1,6 @@
-<% 
-  widget_size ||= "col-md-12" 
-  name ||= nil 
+<%
+  widget_size ||= "col-md-12"
+  name ||= nil
   args ||= {}
   uri_params ||= {}
 %>
@@ -16,10 +16,10 @@
             args: args,
             widget_size: widget.widget_size
         )
-        ) do 
+        ) do
     %>
-      
-    
+
+
 
         <% section_data = JSON.parse(portfolio_report_extract.data) %>
 
@@ -37,9 +37,11 @@
             <% section_data.each_with_index do |(name, list_of_points), idx| %>
                 <div class="tab-pane fade show <%= idx == 0 ? 'active' : ''%>" id="<%= name.gsub(" ", "").underscore %>-tab">
                     <% if list_of_points %>
+                        <!-- Sometimes the AI returns a string instead of an array, so we just convert to array here. -->
+                        <% list_of_points = [list_of_points] unless list_of_points.is_a?(Array) %>
                         <% list_of_points.each do |point| %>
-                            <div class="hstack p-3 position-relative border-bottom">                                
-                                <i class="ti ti-player-play fs-5"></i>                                
+                            <div class="hstack p-3 position-relative border-bottom">
+                                <i class="ti ti-player-play fs-5"></i>
                                 <div class="ms-3">
                                     <%= point %>
                                 </div>
@@ -52,13 +54,13 @@
                                 <span class="text-muted">No data available</span>
                             </div>
                         </div>
-                    <% end %>                    
+                    <% end %>
                 </div>
             <% end %>
         </div>
 
     <% end %>
-        
-  
+
+
 <% end %>
 
