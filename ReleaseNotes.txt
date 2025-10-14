@@ -1,3 +1,10 @@
+V9.1.24
+#####################################
+1642d0ce5 Dist Payment units can only be redeemed once (#1040)
+d6162af3a Changed docs for to allow public visibility and orig format
+bed408f18 Fixed the portfolio report if AI returns string instead of array
+4e62acb2e Added WithSupportAgent
+
 V9.1.23
 #####################################
 55316b6d1 Kyc stakeholder validation 1 (#991)

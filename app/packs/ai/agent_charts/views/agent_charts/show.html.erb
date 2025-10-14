@@ -42,14 +42,7 @@
         <%= @agent_chart.document_ids %>
       </td>
     </tr>
-    <tr>
-      <td>
-        Spec
-      </td>
-      <td>
-        <pre><%= JSON.pretty_generate @agent_chart.spec %></pre>
-      </td>
-    </tr>
+
     <tr>
       <td>
         Status
@@ -66,6 +59,20 @@
         <%= @agent_chart.error %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        <a class="btn btn-link p-0" data-bs-toggle="collapse" href="#collapseSpec" role="button" aria-expanded="false" aria-controls="collapseSpec">
+          Spec
+        </a>
+      </td>
+      <td>
+        <div class="collapse" id="collapseSpec">
+          <pre><%= JSON.pretty_generate @agent_chart.spec %></pre>
+        </div>
+      </td>
+    </tr>
+
   </table>
   <div class="associated_entity">
     <% if policy(@agent_chart).update? %>
