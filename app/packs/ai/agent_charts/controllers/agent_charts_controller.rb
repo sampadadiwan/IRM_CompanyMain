@@ -5,6 +5,7 @@ class AgentChartsController < ApplicationController
   def index
     @q = AgentChart.ransack(params[:q])
     @agent_charts = policy_scope(@q.result)
+    @agent_charts = @agent_charts.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
   # GET /agent_charts/1
