@@ -15,7 +15,7 @@ class AddFolioInvestorAdvisor < Trailblazer::Operation
   step :create_investor_access
   left :handle_investor_access_errors, Output(:failure) => End(:failure)
 
-  def check_investor_advisor_presence(ctx, investor_advisor:, params:, **)
+  def check_investor_advisor_presence(ctx, investor_advisor:, **)
     user = User.find_by(email: investor_advisor.email)
     ctx[:user] = user if user.present?
 

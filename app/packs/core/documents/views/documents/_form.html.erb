@@ -176,8 +176,22 @@
           <% end %>
 
           <div class="form-group">
-            <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-success", id: "add_signature_btn" %>
-            <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers, class: "btn btn-outline-success", id: "add_stamp_paper_btn" if esign_provider_digio%>
+            <%= link_to_add_association 'Add Signature', form, :e_signatures,
+                data: {
+                  association: 'e_signatures',
+                  association_insertion_node: '#e_signatures',
+                  association_insertion_method: 'append'
+                },
+                class: 'btn btn-outline-success',
+                id: "add_signature_btn" %>
+            <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers,
+                data: {
+                  association: 'stamp_papers',
+                  association_insertion_node: '#stamp_papers',
+                  association_insertion_method: 'append'
+                },
+                class: 'btn btn-outline-success',
+                id: "add_stamp_paper_btn" if esign_provider_digio %>
             <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
             <%= form.submit "Save & Upload More", {class: "btn btn-outline-primary"}%>
           </div>

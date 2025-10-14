@@ -877,6 +877,35 @@ Then('the {string} is successfully generated') do |name|
   generated_doc.name.include?(@capital_commitment.investor_kyc.full_name).should == true
 end
 
+Given('the first capital commitment has params {string}') do |string|
+  @first_cc = CapitalCommitment.first
+  key_values(@first_cc, string)
+  @first_cc.save!
+  puts @first_cc.to_json
+end
+
+Given('the template has esignatures {string}') do |string|
+  @template ||= Document.where(template: true).last
+  esigns = string.split(",")
+  esigns.each_with_index do |label, idx|
+    if label.ends_with?("signatories")
+      FactoryBot.create(:e_signature, document: @template, label: label,entity: @template.entity, position: idx+1)
+    else
+      # label is other
+      email = label.split(":").last.strip
+      FactoryBot.create(:e_signature, document: @template, label: "Other", entity: @template.entity, notes: email, position: idx+1)
+    end
+  end
+end
+
+Then('The document generation fails with error {string}') do |error|
+  doc = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample, owner: @first_cc, folder: @first_cc.document_folder, name: "Temp Doc", owner_tag: "Generated")
+  doc.e_signatures = @template.e_signatures_for(@first_cc)
+  expect(doc.valid?).to be false
+  expect(doc.errors.full_messages.join(",")).to include error
+end
+
+
 Then('the document has {string} e_signatures') do |string|
   allow_any_instance_of(DigioEsignHelper).to receive(:hit_digio_esign_api).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)

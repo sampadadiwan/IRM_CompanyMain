@@ -8,6 +8,16 @@ module WithESignatures
     # Template can be setup with e_signatures required for generated docs
     accepts_nested_attributes_for :e_signatures, :stamp_papers, allow_destroy: true
     validates_associated :e_signatures, :stamp_papers
+    validate :no_duplicate_esign_emails
+  end
+
+  def no_duplicate_esign_emails
+    emails = e_signatures.reject(&:marked_for_destruction?)
+                         .map { |e| e.email.to_s.strip.downcase }
+    # checks if any email appears more than once
+    # ignores blank emails
+    dups = emails.compact_blank.group_by { |e| e }.select { |_k, v| v.size > 1 }.keys
+    errors.add(:e_signatures, "contain duplicate emails: #{dups.join(', ')}") if dups.any?
   end
 
   def esign?
@@ -37,11 +47,7 @@ module WithESignatures
     e_signatures_created = []
     model.send(method)&.each do |email|
       email = email&.strip&.downcase
-      if e_signatures_created.pluck(:email).compact.map(&:downcase).include?(email)
-        Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
-      else
-        e_signatures_created << create_e_signature(email, e_signature.label&.singularize, model, e_signature)
-      end
+      e_signatures_created << create_e_signature(email, e_signature.label&.singularize, model, e_signature)
     end
     e_signatures_created
   end
@@ -49,11 +55,7 @@ module WithESignatures
   def process_other_labels(model, e_signature)
     e_signatures_created = []
     email = e_signature.notes
-    if e_signatures_created.pluck(:email).compact.map(&:downcase).include?(email)
-      Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
-    else
-      e_signatures_created << create_e_signature(email, e_signature.label, model, e_signature)
-    end
+    e_signatures_created << create_e_signature(email, e_signature.label, model, e_signature)
     e_signatures_created
   end
 

@@ -123,6 +123,10 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   validates :bank_name, length: { maximum: 100 }
   validates :phone, length: { is: 10 }, allow_blank: true
 
+  # remove spaces in esign_emails
+  normalizes :esign_emails, with: ->(v) { v&.gsub(/\s+/, '') }
+  validate :esign_emails_must_be_valid, if: -> { esign_emails.present? }
+
   validate :birth_date_cannot_be_in_the_future
   def birth_date_cannot_be_in_the_future
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current

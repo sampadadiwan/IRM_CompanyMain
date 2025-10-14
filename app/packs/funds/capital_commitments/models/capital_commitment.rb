@@ -110,6 +110,9 @@ class CapitalCommitment < ApplicationRecord
   validate :allowed_unit_type
   validate :allowed_feeder_fund, if: proc { |c| c.feeder_fund_id.present? }
 
+  normalizes :esign_emails, with: ->(v) { v&.gsub(/\s+/, '') }
+  validate :esign_emails_must_be_valid, if: -> { esign_emails.present? }
+
   delegate :currency, to: :fund
 
   # This is used to improve the performance of the formulas, in allocations

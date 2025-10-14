@@ -10,7 +10,9 @@ class ESignature < ApplicationRecord
   validates :label, length: { maximum: 50 }
 
   # validates_presence_of :email, if: -> { !document.template }
-  validates_format_of :email, with: URI::MailTo::EMAIL_REGEXP, multiline: true, if: -> { email.present? }
+  normalizes :email, with: ->(v) { v&.gsub(/\s+/, '') }
+  normalizes :notes, with: ->(v) { v&.strip }
+  validate :email_must_be_valid, if: -> { email.present? }
   validates_uniqueness_of :email, scope: :document_id, allow_blank: true, allow_nil: true, if: -> { email.present? }
   validates_uniqueness_of :label, scope: %i[document_id signature_type],
                                   if: -> { document.template? && label.present? && label != "Other" }
@@ -34,6 +36,11 @@ class ESignature < ApplicationRecord
   def update_document
     document.signature_enabled = true
     document.save
+  end
+
+  # added email in the error message
+  def email_must_be_valid
+    errors.add(:email, "#{email} is not valid") unless email.match?(URI::MailTo::EMAIL_REGEXP)
   end
 
   def add_api_update(update_data)

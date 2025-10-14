@@ -72,6 +72,9 @@ class Fund < ApplicationRecord
   # Unique name for the fund, unless its a snapshot
   validate :name_must_be_unique_for_non_snapshots, unless: :snapshot?
 
+  normalizes :esign_emails, with: ->(v) { v&.gsub(/\s+/, '') }
+  validate :esign_emails_must_be_valid, if: -> { esign_emails.present? }
+
   validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }

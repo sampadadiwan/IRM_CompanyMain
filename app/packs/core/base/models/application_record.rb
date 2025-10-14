@@ -66,4 +66,13 @@ class ApplicationRecord < ActiveRecord::Base
       find_by(id: id)
     end
   end
+
+  def esign_emails_must_be_valid
+    return if esign_emails.blank?
+
+    emails = esign_emails.split(',')
+
+    invalid = emails.grep_v(URI::MailTo::EMAIL_REGEXP)
+    errors.add(:esign_emails, "contains invalid email(s): #{invalid.join(', ')}") if invalid.any?
+  end
 end

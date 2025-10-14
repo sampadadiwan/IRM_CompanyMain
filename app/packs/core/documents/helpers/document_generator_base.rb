@@ -139,10 +139,15 @@ module DocumentGeneratorBase
 
     # Add the e-signatures and stamp papers if available
     generated_document.e_signatures = doc_template.e_signatures_for(model) || []
+    errors = []
     generated_document.e_signatures.each do |esign|
       esign.document = generated_document
       esign.entity = model.entity
+      errors << esign.errors.full_messages.join(", ") unless esign.valid?
     end
+    # shows proper error messages
+    raise errors.join(", ") if errors.any?
+
     generated_document.stamp_papers = doc_template.stamp_papers_for(model) || []
 
     generated_document.save!
