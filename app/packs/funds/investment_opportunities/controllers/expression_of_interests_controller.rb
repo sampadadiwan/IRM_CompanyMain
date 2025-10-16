@@ -3,7 +3,8 @@ class ExpressionOfInterestsController < ApplicationController
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
-    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, user: [:roles])
+    @q = ExpressionOfInterest.ransack(params[:q])
+    @expression_of_interests = policy_scope(@q.result).includes(:investor, user: [:roles])
     @expression_of_interests = @expression_of_interests.where(investment_opportunity_id: params[:investment_opportunity_id]) if params[:investment_opportunity_id].present?
   end
 

@@ -44,6 +44,9 @@ class ExpressionOfInterest < ApplicationRecord
 
   # === Scopes ===
   scope :approved, -> { where(approved: true) }
+  scope :unapproved, -> { where(approved: false) }
+  scope :verified, -> { where(verified: true) }
+  scope :unverified, -> { where(verified: false) }
 
   # === Callbacks ===
   before_save :update_approval
@@ -58,6 +61,14 @@ class ExpressionOfInterest < ApplicationRecord
     errors.add(:amount, "Should be greater than #{investment_opportunity.min_ticket_size}") if amount < investment_opportunity.min_ticket_size
 
     errors.add(:amount, "Should be less than #{investment_opportunity.fund_raise_amount}") if amount > investment_opportunity.fund_raise_amount
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[allocation_amount allocation_percentage amount approved comment esign_completed investor_email investor_name show_data_room verified]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor investment_opportunity]
   end
 
   # === Callback Methods ===
