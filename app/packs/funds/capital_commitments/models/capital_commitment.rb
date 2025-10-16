@@ -329,7 +329,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def soa_folder
-    get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
+    get_or_create_folder("Investor Statements", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
   end
 
   def grant_access_to_fund

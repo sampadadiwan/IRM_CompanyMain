@@ -45,7 +45,7 @@ class LlmChat
         if document.present?
           "Here is the document #{document.name}. " + document.file.url
         else
-          "No SOA found for the fund #{fund_name}"
+          "No Investor Statement found for the fund #{fund_name}"
         end
       else
         "You are not an investor in the fund #{fund_name}"

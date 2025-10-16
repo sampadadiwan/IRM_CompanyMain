@@ -18,7 +18,7 @@ module CommitmentDocuments
     documents.where(owner_tag: "Generated", approved: true).or(documents.where.not(owner_tag: "Generated")).or(documents.where(owner_tag: nil)).not_template
   end
 
-  # Retrieves the templates to be used for rendering as SOA, FRA etc.
+  # Retrieves the templates to be used for rendering as Investor Statement, FRA etc.
   def templates(owner_tag, name: nil, id: nil)
     fund_templates = fund.documents.templates.where(owner_tag:)
     fund_templates = fund_templates.where(name:) if name

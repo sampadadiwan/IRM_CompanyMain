@@ -258,7 +258,7 @@ Given('user goes to add a new template {string} for the fund') do |doc_name|
   click_on("New Template")
   #sleep(2)
   fill_in("document_name", with: doc_name)
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
   sleep(2)
   # check checkbox id id="document_template"
   check('document_template')
@@ -314,7 +314,7 @@ Given('user goes to add a new document {string} for the fund') do |doc_name|
   find("#doc_actions").click
   click_on("New Document")
   fill_in("document_name", with: doc_name)
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/Investor Statement Template.docx'), make_visible: true)
   sleep(2)
   # check checkbox id id="document_template"
   check('document_template')
@@ -352,7 +352,7 @@ Given('the template has permissions {string}') do |permissions|
   @template.save
 end
 
-Then('the generated SOA has permissions {string}') do |permissions|
+Then('the generated Investor Statement has permissions {string}') do |permissions|
   @document = Document.where(owner_tag: "Generated").last
   key_val = permissions.split(";").to_h { |kv| kv.split("=") }
   key_val.each do |k, v|

@@ -33,13 +33,13 @@ class KycDocGenerator
       fund_id, capital_commitment_id, file_name = parse_options(options)
       generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name:)
 
-      # Use a regular expression to check if this is an SOA template
-      is_soa_template = (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('soa')}\b/)
+      # Use a regular expression to check if this is an Investor Statement template
+      is_soa_template = (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/)
 
       if is_soa_template
         # Now in certain cases the doc is generated for a KYC and in certain cases for a commitment
         # 1. The normal case is when the doc is generated for a KYC, mostly for Angel funds. In this case, we want to attach it to the KYC
-        # 2. The other case is when the doc is generated for a commitment, when we want to generate the SOA at the Investing Entity level, but is triggered at the commitment level. In this case we need to attach it to the commitment
+        # 2. The other case is when the doc is generated for a commitment, when we want to generate the Investor Statement at the Investing Entity level, but is triggered at the commitment level. In this case we need to attach it to the commitment
         if capital_commitment_id.present?
           # Attach the generated document to the capital commitment
           capital_commitment = CapitalCommitment.find(options[:capital_commitment_id])

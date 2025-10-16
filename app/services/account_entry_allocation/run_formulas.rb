@@ -143,19 +143,19 @@ module AccountEntryAllocation
       if ctx[:generate_soa]
         begin
           CapitalCommitmentSoaJob.perform_later(fund.id, nil, start_date.to_s, end_date.to_s, user_id, template_id:)
-          msg = "Done generating SOA for #{start_date} - #{end_date}"
+          msg = "Done generating Investor Statement for #{start_date} - #{end_date}"
           Rails.logger.info msg
           notify(msg, :success, user_id)
           true
         rescue Exception => e
           Rails.logger.error e.backtrace
-          msg = "Error generating SOA for #{start_date} - #{end_date}: #{e.message}"
+          msg = "Error generating Investor Statement for #{start_date} - #{end_date}: #{e.message}"
           Rails.logger.error msg
           notify(msg, :danger, user_id)
           false
         end
       else
-        Rails.logger.info "Skipping SOA generation"
+        Rails.logger.info "Skipping Investor Statement generation"
         true
       end
     end
