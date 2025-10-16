@@ -17,8 +17,8 @@
     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
     <div class="form-group">
-      <% 
-        disabled = !belongs_to_entity_id?(current_user, expression_of_interest.entity_id) 
+      <%
+        disabled = !belongs_to_entity_id?(current_user, expression_of_interest.entity_id)
         investors = expression_of_interest.entity.investors
       %>
       <%= form.label :investor_id %>
@@ -26,7 +26,7 @@
 
       <%= form.text_field :investor_id, hidden: true if disabled %>
     </div>
-    
+
     <% if current_user.has_cached_role?(:rm) %>
       <div class="form-group">
         <%= form.label :investor_name %>
@@ -39,25 +39,33 @@
         <span class="text-muted">Email identifying the Investor / Investor Group</span>
       </div>
     <% end %>
-    
-    
+
+
     <% if expression_of_interest.investor && expression_of_interest.investor.investor_kycs.present? %>
-    
+
       <div class="form-group">
         <%= form.label :investor_kyc %>
         <% investor_kycs = expression_of_interest.investor ? expression_of_interest.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
-        
+
         <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
         <span class="text-muted">Select pre existing KYC or create on the next page.</span>
-      </div>        
-    
+      </div>
+
     <% end %>
 
     <div class="form-group" data-controller="currencyformat">
       <%= form.label :amount %> <span class="formatted_currency"></span>
       <%= form.number_field :amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-      <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 
+      <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small>
     </div>
+
+    <% if policy(expression_of_interest.investment_opportunity).update? %>
+      <div class="form-group">
+        <%= form.label :show_data_room %>
+        <%= form.check_box :show_data_room, class: "form-check-input"  %>
+        <span class="text-muted">Allow access to Data Room</span>
+      </div>
+    <% end %>
 
 
     <div class="form-group">

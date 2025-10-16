@@ -4,7 +4,7 @@
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
       <h6 class="m-0 font-weight-bold text-primary">Interest: <%= @expression_of_interest.investor.investor_name %></h6>
       <span>
-        
+
       </span>
   </div>
   <div class="card-body show_details">
@@ -18,7 +18,7 @@
           <%= @expression_of_interest.entity.name %>
         </td>
       </tr>
-      
+
       <tr>
         <td>
           Investment Opportunity
@@ -58,7 +58,7 @@
         </td>
       </tr>
 
-      
+
       <tr>
         <td>
           Signatory
@@ -67,7 +67,7 @@
           <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
         </td>
       </tr>
-      
+
       <tr>
         <td>
           Amount
@@ -84,6 +84,7 @@
           <%= display_boolean @expression_of_interest.approved %>
         </td>
       </tr>
+
       <tr>
         <td>
           Verified
@@ -92,6 +93,16 @@
           <%= display_boolean @expression_of_interest.verified %>
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Show Data Room
+        </td>
+        <td>
+          <%= display_boolean @expression_of_interest.show_data_room %>
+        </td>
+      </tr>
+
       <tr>
         <td>
           Allocation Percentage
@@ -126,7 +137,7 @@
           <%= @expression_of_interest.user.full_name %>
         </td>
       </tr>
-      
+
 
 
     </table>
@@ -136,16 +147,16 @@
 
   <div>
     <% if policy(@expression_of_interest).update? %>
-      <%= link_to  t_common(:edit) , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-outline-primary" } %> 
+      <%= link_to  t_common(:edit) , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-outline-primary" } %>
       <%= button_to t_common(:delete) , @expression_of_interest, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
 
       <%= link_to  "New KYC" , new_investor_kyc_path(owner_id: @expression_of_interest, owner_type: "ExpressionOfInterest", "investor_kyc[investor_id]": @expression_of_interest.investor_id, "investor_kyc[entity_id]": @expression_of_interest.entity_id), {class: "btn btn-outline-primary" } if @expression_of_interest.investor_kyc.nil? %>
     <% end %>
 
-    <%= button_to "Generate Documents", 
-        generate_documentation_expression_of_interest_path(@expression_of_interest), 
-        method: :patch, class: "btn btn-outline-success" , 
+    <%= button_to "Generate Documents",
+        generate_documentation_expression_of_interest_path(@expression_of_interest),
+        method: :patch, class: "btn btn-outline-success" ,
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate Documents for this EOI from kyc and opportunity info. This will delete any previously generated documentation for this EOI. Proceed?"} if policy(@expression_of_interest).generate_documentation? %>
 

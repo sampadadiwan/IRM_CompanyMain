@@ -17,8 +17,13 @@
     <%= display_boolean expression_of_interest.verified %>
   </td>
   <td>
+    <%= display_boolean expression_of_interest.show_data_room %>
+  </td>
+
+  <td>
     <%= expression_of_interest.allocation_percentage %> %
   </td>
+
   <td>
     <%= money_to_currency expression_of_interest.allocation_amount, params %>
   </td>
