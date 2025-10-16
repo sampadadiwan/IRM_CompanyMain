@@ -203,7 +203,8 @@ class ImportUtil < Trailblazer::Operation
   end
 
   def setup_exchange_rate(model, user_data)
-    ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
+    as_of = Date.local_parse(user_data["As Of"]) if user_data["As Of"].present?
+    ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of:, rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
   end
 
   def get_exchange_rates(file, _import_upload)
@@ -218,7 +219,7 @@ class ImportUtil < Trailblazer::Operation
       next if idx.zero?
 
       exchange_rate = [headers, row].transpose.to_h
-      exchange_rate["As Of"] = Date.parse(exchange_rate["As Of"].to_s)
+      exchange_rate["As Of"] = Date.local_parse(exchange_rate["As Of"].to_s)
       exchange_rates << exchange_rate
     end
 

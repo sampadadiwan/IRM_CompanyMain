@@ -94,7 +94,7 @@ class CapitalCommitmentsController < ApplicationController
                                            from_commitment_id: @capital_commitment.id,
                                            to_commitment_id: to_commitment.id,
                                            transfer_ratio: params[:transfer_ratio].to_f,
-                                           transfer_date: Date.parse(params[:transfer_date]),
+                                           transfer_date: Date.local_parse(params[:transfer_date]),
                                            price: params[:price].to_f,
                                            premium: params[:premium].to_f,
                                            transfer_account_entries: params[:transfer_account_entries] == "1",
@@ -149,7 +149,7 @@ class CapitalCommitmentsController < ApplicationController
   def generate_soa
     if params[:start_date].present? &&
        params[:end_date].present? &&
-       Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+       Date.local_parse(params[:start_date]) <= Date.local_parse(params[:end_date])
 
       if params[:for] == "Investing Entity"
         # Generate Investor Statement combining all the commitments of the investing entity

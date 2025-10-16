@@ -1,5 +1,8 @@
 ---
 en:
+  date:
+    formats:
+      default: "%d/%m/%Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"

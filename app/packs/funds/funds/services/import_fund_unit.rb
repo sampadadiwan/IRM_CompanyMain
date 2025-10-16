@@ -34,7 +34,7 @@ class ImportFundUnit < ImportUtil
         # Update only, but we dont have a pre-existing fund_unit
         raise "Skipping: FundUnit not found for update"
       end
-    elsif fund_unit.nil? || FundUnit.where(owner:).where(issue_date: Date.parse(row_data["Issue Date"])).blank?
+    elsif fund_unit.nil? || FundUnit.where(owner:).where(issue_date: Date.local_parse(row_data["Issue Date"])).blank?
       fund_unit = FundUnit.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
       save_fu(fund_unit, fund, capital_commitment, owner, row_data, custom_field_headers)
       # No update, and we dont have a pre-existing fund_unit or the issue date of the fund unit is different
@@ -75,7 +75,7 @@ class ImportFundUnit < ImportUtil
     unit_type = row_data["Unit Type"]
     row_data["Folio No"]&.to_s
 
-    fund_unit.assign_attributes(fund:, capital_commitment:, owner:, investor_id: capital_commitment.investor_id, unit_type:, quantity: row_data["Quantity"], price: row_data["Price"], reason: row_data["Reason"], premium: row_data["Premium"], issue_date: row_data["Issue Date"])
+    fund_unit.assign_attributes(fund:, capital_commitment:, owner:, investor_id: capital_commitment.investor_id, unit_type:, quantity: row_data["Quantity"], price: row_data["Price"], reason: row_data["Reason"], premium: row_data["Premium"], issue_date: Date.local_parse(row_data["Issue Date"]))
 
     setup_custom_fields(row_data, fund_unit, custom_field_headers)
 

@@ -48,7 +48,7 @@ class DocumentApprovalJob < ApplicationJob
     end
 
     # Get all the generated documents in the date range which are not aproved yet
-    eod = Date.parse(end_date).end_of_day
+    eod = Date.local_parse(end_date).end_of_day
     documents = documents.generated.where(created_at: start_date..eod, approved: false)
     # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
     documents = documents.where(owner_type:) if owner_type.present?

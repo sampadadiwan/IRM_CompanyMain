@@ -72,7 +72,7 @@
                     <% end %>
                 </tr>
                 <tr>
-                    <% quarterly_reports.map { |r| r.as_of.is_a?(String) ? Date.parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
+                    <% quarterly_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
                         <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
@@ -80,7 +80,7 @@
                             <th rowspan="2" class="text-center">Actual / Budget</th>
                         <% end %>
                     <% end %>
-                    <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
+                    <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
                         <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>

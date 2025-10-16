@@ -1,6 +1,6 @@
 module SimpleScenarioHelper
   def api_irr(params, scenarios: nil)
-    scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Time.zone.today
+    scenario_date = params[:scenario_date].present? ? Date.local_parse(params[:scenario_date]) : Time.zone.today
     fpc = FundPortfolioCalcs.new(@fund, scenario_date)
     fpc.api_irr(scenarios:)
     # Rails.logger.debug "############# COMPUTE PORTFOLIO IRR #############"
@@ -43,7 +43,7 @@ module SimpleScenarioHelper
   end
 
   def compute_fund_irr(params, scenarios: nil)
-    scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Time.zone.today
+    scenario_date = params[:scenario_date].present? ? Date.local_parse(params[:scenario_date]) : Time.zone.today
     fpc = FundPortfolioCalcs.new(@fund, scenario_date)
     fpc.xirr(scenarios:)
   end

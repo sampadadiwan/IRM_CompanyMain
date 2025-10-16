@@ -90,7 +90,7 @@ Then('the resulting date should be {string}') do |expected_date_string|
   if expected_date_string.blank?
     expect(@parsed_date).to be_nil, "Expected nil date for input, but got #{@parsed_date.inspect}"
   else
-    expected_date = Date.parse(expected_date_string)
+    expected_date = Date.local_parse(expected_date_string)
     expect(@parsed_date).to eq(expected_date), "Expected date #{expected_date} for input, but got #{@parsed_date.inspect}"
   end
 end

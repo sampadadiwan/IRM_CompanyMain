@@ -98,7 +98,7 @@ Given('the Allocation Run {string} is created for the {string}') do |args, fund_
 	allocation_run = AllocationRun.create!(fund: fund, entity_id: fund.entity_id, start_date: key_val["start_date"], end_date: key_val["end_date"], run_allocations: true, user_id: User.first.id)
 
 
-	AccountEntryAllocationJob.perform_now(fund.id, Date.parse(key_val["start_date"]), Date.parse(key_val["end_date"]), rule_for: "", tag_list: nil, run_allocations: true, explain: true, user_id: User.first.id, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: allocation_run.id)
+	AccountEntryAllocationJob.perform_now(fund.id, Date.local_parse(key_val["start_date"]), Date.local_parse(key_val["end_date"]), rule_for: "", tag_list: nil, run_allocations: true, explain: true, user_id: User.first.id, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: allocation_run.id)
 
 end
 
@@ -141,7 +141,7 @@ Then('the account entries generated match the account entries in {string}') do |
 		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8))
 	else
-		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
+		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 

@@ -415,7 +415,7 @@ class InvestorKycsController < ApplicationController
   def generate_docs
     if params["_method"] == "patch"
 
-      if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+      if params[:document_template_ids].present? && Date.local_parse(params[:start_date]) <= Date.local_parse(params[:end_date])
         KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
                                    params[:start_date], params[:end_date], current_user.id)
 
@@ -432,7 +432,7 @@ class InvestorKycsController < ApplicationController
     # Get the kycs for the query
     @investor_kycs = policy_scope(@q.result.distinct).includes(:entity, :investor)
     if request.post?
-      if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+      if params[:document_template_ids].present? && Date.local_parse(params[:start_date]) <= Date.local_parse(params[:end_date])
         # Send the kyc ids, document template ids, start date and end date to the job
         KycDocGenJob.perform_later(@investor_kycs.pluck(:id), params[:document_template_ids], params[:start_date], params[:end_date], current_user.id, entity_id: params[:entity_id])
 

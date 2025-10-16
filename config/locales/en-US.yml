@@ -1,4 +1,7 @@
 en-US:
+  date:
+    formats:
+      default: "%m/%d/%Y"
   investor_kyc:
     tax_id: "Tax ID"
     bank_routing_number: "Swift Code"

@@ -337,7 +337,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def committed_amount_cents_before(date)
-    date = Date.parse(date) if date.is_a?(String)
+    date = Date.local_parse(date) if date.is_a?(String)
 
     if commitment_date.blank? || commitment_date > date
       # If the commitment date is after the date, then there is no commitment before the date

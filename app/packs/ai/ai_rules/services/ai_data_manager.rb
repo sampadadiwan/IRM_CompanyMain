@@ -150,7 +150,7 @@ class AiDataManager
 
   def date_difference_in_days(start_date:, end_date:)
     Rails.logger.debug { "CDM: date_difference called with start_date: #{start_date} and end_date: #{end_date}" }
-    response = (Date.parse(end_date) - Date.parse(start_date)).to_i
+    response = (Date.local_parse(end_date) - Date.local_parse(start_date)).to_i
     @audit_log[:date_difference_in_days] = response
     response
   end

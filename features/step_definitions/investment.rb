@@ -323,7 +323,7 @@ Then('{string} Investments should be created for the portfolio company with expe
     cc.category.should == user_data["Category"].strip
     cc.currency.should == user_data["Currency"]
     cc.investor_name.should == user_data["Investor Name"]
-    cc.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
+    cc.investment_date.should == Date.local_parse(user_data["Investment Date"].to_s)
     cc.investment_type.should == user_data["Investment Type"]
     cc.funding_round.should == user_data["Funding Round"]
     cc.quantity.should == user_data["Quantity"].to_i
@@ -350,7 +350,7 @@ Then('Investments should have the updated data from {string}') do |file_name|
     cc.category.should == user_data["Category"].strip
     cc.currency.should == user_data["Currency"]
     cc.investor_name.should == user_data["Investor Name"]
-    cc.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
+    cc.investment_date.should == Date.local_parse(user_data["Investment Date"].to_s)
     cc.investment_type.should == user_data["Investment Type"]
     cc.funding_round.should == user_data["Funding Round"]
     cc.quantity.should == user_data["Quantity"].to_i

@@ -84,7 +84,7 @@ class ImportFundRatio < ImportUtil
   end
 
   def parse_date(date_string)
-    Date.parse(date_string)
+    Date.local_parse(date_string)
   rescue ArgumentError
     raise "Invalid date format for #{date_string}"
   end

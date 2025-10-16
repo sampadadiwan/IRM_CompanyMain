@@ -31,7 +31,7 @@
     </tr>
     <% end %>
 
-    
+
     <tr class="">
       <td>
         Stakeholder
@@ -40,7 +40,7 @@
         <%= link_to capital_commitment.investor_name, investor_path(id: capital_commitment.investor_id) %>
       </td>
     </tr>
-    
+
     <% if capital_commitment.commitment_date %>
       <tr class="">
         <td>
@@ -51,7 +51,7 @@
         </td>
       </tr>
     <% end %>
-    
+
       <tr class="">
         <td>
           Folio Id
@@ -60,7 +60,7 @@
           <%= capital_commitment.folio_id %>
         </td>
       </tr>
-    
+
     <% if capital_commitment.virtual_bank_account.present? %>
       <tr class="">
         <td>
@@ -80,7 +80,7 @@
         <%= capital_commitment.fund_close %>
       </td>
     </tr>
-    
+
     <tr class="">
       <td>
         Linked KYC
@@ -100,9 +100,9 @@
       </td>
     </tr>
 
-    
+
     <% if capital_commitment.fund.unit_types.present? %>
-    
+
     <tr class="">
       <td>
         Unit Type
@@ -124,7 +124,7 @@
     <% end %>
 
     <% if capital_commitment.adjustment_amount_cents > 0 || capital_commitment.foreign_currency? %>
-    
+
       <tr class="">
         <td>
           Folio Currency
@@ -142,7 +142,7 @@
           <%= money_to_currency capital_commitment.folio_committed_amount, params %>
         </td>
       </tr>
-      
+
       <% if capital_commitment.adjustment_amount_cents != 0 %>
 
         <tr class="">
@@ -186,8 +186,8 @@
           <br>
           Adjustments + Original
           <br>
-          <%= money_to_currency(capital_commitment.adjustment_amount, params) %> + 
-          <%= money_to_currency(capital_commitment.orig_committed_amount, params) %> 
+          <%= money_to_currency(capital_commitment.adjustment_amount, params) %> +
+          <%= money_to_currency(capital_commitment.orig_committed_amount, params) %>
         <% end %>
       </td>
     </tr>
@@ -207,7 +207,7 @@
         Collected Amount
       </td>
       <td>
-        <%= money_to_currency capital_commitment.collected_amount, params %>      
+        <%= money_to_currency capital_commitment.collected_amount, params %>
       </td>
     </tr>
 
@@ -271,7 +271,7 @@
           <%= money_to_currency capital_commitment.tracking_committed_amount, params %>
         </td>
       </tr>
-      
+
     <% end %>
 
     <tr class="">
@@ -303,8 +303,8 @@
         </td>
       </tr>
     <% end %>
-    
-    
+
+
     <%= display_custom_fields(capital_commitment) if current_user %>
 
     <tr class="">
@@ -316,7 +316,7 @@
       </td>
     </tr>
 
-    
+
     <tr  class="">
       <td>
         Notes
@@ -331,9 +331,9 @@
       <td colspan="2">
       </td>
     </tr>
-    
-    <% 
-      end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
+
+    <%
+      end_date = params[:end_date].present? ? Date.local_parse(params[:end_date]) : Time.zone.today
       cc_calcs = CapitalCommitmentCalcs.new(capital_commitment, end_date)
     %>
 
@@ -364,7 +364,7 @@
             </td>
           </tr>
 
-          
+
 
           <tr class="">
             <td>
@@ -411,7 +411,7 @@
             </td>
           </tr>
 
-          
+
           <tr class="">
             <td>
               Gross XIRR

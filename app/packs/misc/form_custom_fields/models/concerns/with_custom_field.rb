@@ -119,7 +119,7 @@ module WithCustomField
     # We convert DateField to Date, Money to Money object, so that the template can use it
     form_type.form_custom_fields.visible.each do |cf|
       if cf.field_type == 'DateField'
-        struct[cf.name] = Date.parse(json_fields[cf.name]) if json_fields[cf.name].present?
+        struct[cf.name] = Date.local_parse(json_fields[cf.name]) if json_fields[cf.name].present?
       elsif cf.field_type == 'Money'
         struct[cf.name] = Money.new(json_fields[cf.name].to_d * 100, currency) if json_fields[cf.name].present?
       else
