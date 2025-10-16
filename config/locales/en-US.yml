@@ -1,0 +1,7 @@
+en-US:
+  investor_kyc:
+    tax_id: "Tax ID"
+    bank_routing_number: "Swift Code"
+    individual_address_proof_docs: "Any one of: Passport, Driving License, Other Govt ID"
+    non_individual_address_proof_docs: "Any one of: Incoporation Certificate, Bank Statement or Utility Bill"
+    bank_instructions: "I / We confirm that the subscription is made through my bank account / joint account where first account holder is one of the joint account holders of the bank account. Investor will receive redemption or any proceeds directly into bank account provided here"

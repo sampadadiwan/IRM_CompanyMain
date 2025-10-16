@@ -1,7 +1,7 @@
 <%
   reg_env = current_user ? current_user.entity.entity_setting.regulatory_env : ""
-  pan_label = Labels.get(reg_env, "Tax ID")
-  ifsc_label = Labels.get(reg_env, "Bank Routing number")
+  pan_label = sys_t('investor_kyc.tax_id')
+  ifsc_label = sys_t('investor_kyc.bank_routing_number')
 %>
 <%= render ToggleCard.new(title: "KYC #{investor_kyc.full_name}", css_class: "show_inv_entities") do %>
 
