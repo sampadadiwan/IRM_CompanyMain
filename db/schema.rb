@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_14_040032) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_16_050303) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1450,6 +1450,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_040032) do
     t.bigint "investor_kyc_id"
     t.string "investor_name", limit: 100
     t.string "investor_email"
+    t.boolean "show_data_room", default: false, null: false
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
@@ -2041,6 +2042,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_040032) do
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.boolean "shareable", default: false
+    t.bigint "data_room_folder_id"
+    t.index ["data_room_folder_id"], name: "index_investment_opportunities_on_data_room_folder_id"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
@@ -3617,6 +3620,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_040032) do
   add_foreign_key "investment_instruments", "form_types"
   add_foreign_key "investment_instruments", "investors", column: "portfolio_company_id"
   add_foreign_key "investment_opportunities", "entities"
+  add_foreign_key "investment_opportunities", "folders", column: "data_room_folder_id"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
   add_foreign_key "investments", "form_types"

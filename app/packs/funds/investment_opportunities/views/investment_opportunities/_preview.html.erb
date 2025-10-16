@@ -15,7 +15,7 @@
 <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
 <%= render "/ci_widgets/preview_widgets2", owner: investment_opportunity %>
 
-<div class="row">
+<div class="row justify-content-center">
     <% investment_opportunity.documents.each do |doc| %>
         <div class="col-md-3"><%= render "/investment_opportunities/preview_document", document: doc %></div>
     <% end %>
@@ -35,4 +35,17 @@
         <% end %>
 
     </div>
+<% end %>
+
+<% if current_user && current_user.curr_role == "investor" %>
+    <% eoi = policy_scope(ExpressionOfInterest).find_by(investment_opportunity_id: investment_opportunity.id) %>
+    <% if eoi and eoi.show_data_room? %>
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder.id, show_root_docs: true) do %>
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        <% end %>
+    <% end %>
 <% end %>

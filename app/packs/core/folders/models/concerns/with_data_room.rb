@@ -17,6 +17,7 @@ module WithDataRoom
     "Data Room"
   end
 
+  # When an access right is created/updated/deleted on the fund or investment opportunity, we need to reflect that on the data room folder
   def access_rights_changed(access_right)
     ar = AccessRight.where(id: access_right.id).first
     if ar && ar.entity_id == entity_id
