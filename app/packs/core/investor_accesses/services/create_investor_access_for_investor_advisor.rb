@@ -7,6 +7,7 @@ class CreateInvestorAccessForInvestorAdvisor < Trailblazer::Operation
       investor_access = investor.investor_accesses.new(email: user.email, first_name: user.first_name, last_name: user.last_name, email_enabled: true, approved: true, send_confirmation: false, entity_id: entity_id, granted_by: granted_by_user_id)
       unless investor_access.save
         ctx[:errors] = investor_access.errors.full_messages.join(", ")
+        ctx[:investor_access] = investor_access
         return false
       end
     end
