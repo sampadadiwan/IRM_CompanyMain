@@ -36,7 +36,7 @@
       <div class="row">
 
         <div class="form-group col">
-          <% scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Date.today %>
+          <% scenario_date = params[:scenario_date].present? ? Date.local_parse(params[:scenario_date]) : Date.today %>
           <%= label_tag :scenario_date %>
           <%= date_field_tag :scenario_date, scenario_date, class: "form-control"  %>
         </div>

@@ -73,7 +73,7 @@ class ImportKpi < ImportUtil
   def get_data(user_data)
     name = user_data['Name'].strip
     value = user_data['Value']
-    as_of = Date.parse(user_data['As Of'].to_s)
+    as_of = Date.local_parse(user_data['As Of'].to_s)
     notes = user_data['Notes']
     period = user_data['Period']
 

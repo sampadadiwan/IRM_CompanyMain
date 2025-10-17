@@ -645,7 +645,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   # sleep(2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  # binding.pry if ImportUpload.last.failed_row_count > 0
+  binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
 end
 
@@ -695,7 +695,7 @@ Then('the capital commitments must have the data in the sheet') do
     puts "Checking import of #{cc.investor.investor_name}"
     cc.investor.investor_name.should == user_data["Investor"].strip
     cc.fund.name.should == user_data["Fund"]
-    cc.commitment_date.should == Date.parse(user_data["Commitment Date"].to_s)
+    cc.commitment_date.should == Date.local_parse(user_data["Commitment Date"].to_s)
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount (Folio Currency)"].to_i * 100
     cc.committed_amount_cents.should == user_data["Committed Amount (Fund Currency)"].to_i * 100 if user_data["Committed Amount (Fund Currency)"].present?
@@ -731,7 +731,7 @@ Then('the capital calls must have the data in the sheet') do
     cc.name.should == user_data["Name"].strip
     cc.fund.name.should == user_data["Fund"]
     cc.close_percentages["First Close"] == user_data["Percentage Called"].to_d
-    cc.due_date.should == user_data["Due Date"]
+    cc.due_date.should == Date.local_parse(user_data["Due Date"])
     user_data["Unit Price/Premium"].split(",").each do |unit_price|
       puts "Checking unit price #{unit_price}"
       unit_type, price, premium = unit_price.split(":")
@@ -764,7 +764,7 @@ Then('the capital distributions must have the data in the sheet') do
     cc.fund.name.should == user_data["Fund"]
     cc.income_cents.should == user_data["Income"].to_i * 100
     cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
-    cc.distribution_date.should == user_data["Date"]
+    cc.distribution_date.should == Date.local_parse(user_data["Date"])
     cc.gross_amount_cents.round(0).should == (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents - cc.reinvestment_cents).round(0)
     cc.import_upload_id.should == ImportUpload.last.id
   end
@@ -1373,7 +1373,7 @@ Then('the account_entries must have the data in the sheet') do
       cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_f * 100
       cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_f * 100 if user_data["Amount (Folio Currency)"].present?
       cc.entry_type.should == user_data["Entry Type"]
-      cc.reporting_date.should == user_data["Reporting Date"]
+      cc.reporting_date.should == Date.local_parse(user_data["Reporting Date"]) if user_data["Reporting Date"].present?
       cc.notes.should == user_data["Notes"]
       cc.import_upload_id.should == ImportUpload.where(import_type: "AccountEntry").last.id
     end
@@ -1453,7 +1453,7 @@ Then('the capital remittance payments must have the data in the sheet') do
 
 
       cc.reference_no.should == user_data["Reference No"].to_s
-      cc.payment_date.should == user_data["Payment Date"]
+      cc.payment_date.should == Date.local_parse(user_data["Payment Date"])
       cc.import_upload_id.should == ImportUpload.last.id
 
 
@@ -1644,7 +1644,7 @@ Then('There should be {string} fund units created with data in the sheet') do |c
     fund_unit.unit_type.should == row_data["Unit Type"]
     fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
     fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
-    fund_unit.issue_date.should == row_data["Issue Date"]
+    fund_unit.issue_date.should == Date.local_parse(row_data["Issue Date"])
     fund_unit.reason.should == row_data["Reason"]
     fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
 
@@ -1693,7 +1693,7 @@ Then('the capital distribution payments must have the data in the sheet {string}
     cdp.investor_name.should == row_data["Investor"]
     cdp.income.to_d.should == row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
-    cdp.payment_date.should == Date.parse(row_data["Payment Date"].to_s)
+    cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)
     cdp.completed.should == (row_data["Completed"] == "Yes")
     cdp.income_with_fees.to_d.should == cdp.income.to_d
     cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
@@ -2446,7 +2446,7 @@ Then('There should be {string} fund units created with data in the {string} shee
     fund_unit.unit_type.should == row_data["Unit Type"]
     fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
     fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
-    fund_unit.issue_date.should == row_data["Issue Date"]
+    fund_unit.issue_date.should == Date.local_parse(row_data["Issue Date"])
     fund_unit.reason.should == row_data["Reason"]
     fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
 

@@ -15,6 +15,12 @@ class AgentChart < ApplicationRecord
     title || "AgentChart ##{id}"
   end
 
+  after_save :generate_job
+
+  def generate_job
+    AgentChartJob.perform_later(id, nil)
+  end
+
   def generate_spec!(csv_paths: [])
     owner = nil
     if csv_paths.empty? && document_ids.present?

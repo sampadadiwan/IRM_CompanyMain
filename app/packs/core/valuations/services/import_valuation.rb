@@ -7,7 +7,7 @@ class ImportValuation < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     # puts "processing #{user_data}"
-    valuation_date = user_data['Valuation Date']
+    valuation_date = Date.local_parse(user_data['Valuation Date'])
     valuation_cents = user_data['Valuation'].to_d * 100
     per_share_value_cents = user_data['Per Share Value'].to_d * 100
     investor_name = user_data['Portfolio Company']

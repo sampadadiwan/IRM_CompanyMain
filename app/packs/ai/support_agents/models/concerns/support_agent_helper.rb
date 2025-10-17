@@ -115,7 +115,7 @@ module SupportAgentHelper
                   extracted_val.gsub(/\s+/, "").casecmp?(model_val.gsub(/\s+/, ""))
                 when Date, Time, DateTime, ActiveSupport::TimeWithZone
                   begin
-                    Date.parse(extracted_val.to_s) == model_val.to_date
+                    Date.local_parse(extracted_val.to_s) == model_val.to_date
                   rescue ArgumentError, TypeError
                     false
                   end

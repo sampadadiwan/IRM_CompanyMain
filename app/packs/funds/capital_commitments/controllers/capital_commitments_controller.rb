@@ -94,7 +94,7 @@ class CapitalCommitmentsController < ApplicationController
                                            from_commitment_id: @capital_commitment.id,
                                            to_commitment_id: to_commitment.id,
                                            transfer_ratio: params[:transfer_ratio].to_f,
-                                           transfer_date: Date.parse(params[:transfer_date]),
+                                           transfer_date: Date.local_parse(params[:transfer_date]),
                                            price: params[:price].to_f,
                                            premium: params[:premium].to_f,
                                            transfer_account_entries: params[:transfer_account_entries] == "1",
@@ -142,20 +142,20 @@ class CapitalCommitmentsController < ApplicationController
     redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
   end
 
-  # Only for generating SOA form for the selected commitment
+  # Only for generating Investor Statement form for the selected commitment
   def generate_soa_form; end
 
   # Generate the for the selected commitment, based on the start and end dates
   def generate_soa
     if params[:start_date].present? &&
        params[:end_date].present? &&
-       Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+       Date.local_parse(params[:start_date]) <= Date.local_parse(params[:end_date])
 
       if params[:for] == "Investing Entity"
-        # Generate SOA combining all the commitments of the investing entity
+        # Generate Investor Statement combining all the commitments of the investing entity
         KycDocGenJob.perform_later(@capital_commitment.investor_kyc_id, params[:template_id], params[:start_date], params[:end_date], current_user.id, entity_id: @capital_commitment.entity_id, options: { fund_id: @capital_commitment.fund_id, capital_commitment_id: @capital_commitment.id })
       else
-        # Generate SOA for the selected commitment only
+        # Generate Investor Statement for the selected commitment only
         CapitalCommitmentSoaJob.perform_later(@capital_commitment.fund_id, @capital_commitment.id, params[:start_date], params[:end_date], current_user.id, template_id: params[:template_id])
       end
 

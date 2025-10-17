@@ -37,7 +37,7 @@ And("I should find Fund Ratios created with correct data for API") do
   expect(fund_ratio.name).to(eq("RVPI"))
   expect(fund_ratio.value).to(eq("0.14273e1".to_d))
   expect(fund_ratio.display_value).to(eq("1.43 x"))
-  expect(fund_ratio.end_date).to(eq(Date.parse("2022-03-31")))
+  expect(fund_ratio.end_date).to(eq(Date.local_parse("2022-03-31")))
 end
 
 And("I should find Fund Ratios created with correct data for Capital Commitment") do
@@ -57,7 +57,7 @@ end
 
 
 Given('given the fund_ratios are computed for the date {string}') do |end_date|
-  FundRatiosJob.perform_now(@fund.id, nil, Date.parse(end_date), User.first.id, true, return_cash_flows: true)
+  FundRatiosJob.perform_now(@fund.id, nil, Date.local_parse(end_date), User.first.id, true, return_cash_flows: true)
 end
 
 Then('the fund ratios computed must match the ratios in {string}') do |file_name|
@@ -75,7 +75,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
     investor_name = user_data["Investor"]&.strip
     name = user_data["Name"]
     end_date = user_data["End Date"]
-    end_date = end_date.is_a?(String) ? Date.parse(end_date) : end_date
+    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
 
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     owner = user_data["Owner Id"].present? ? user_data["Owner Type"].constantize.find(user_data["Owner Id"]) : nil
@@ -127,7 +127,7 @@ When('I read all sheets and compute XIRR') do
         @expected_xirr = amount.round(2)
         break
       else
-        cashflows << XirrTransaction.new(amount, date: Date.parse(date.to_s), notes: type.to_s)
+        cashflows << XirrTransaction.new(amount, date: Date.local_parse(date.to_s), notes: type.to_s)
       end
     end
 

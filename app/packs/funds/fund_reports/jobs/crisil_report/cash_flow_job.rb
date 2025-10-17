@@ -117,7 +117,7 @@ class CashFlowJob
     data.each do |date, values|
       if values["Remittance Payments Cash Flow"]["Value"].present?
         row = []
-        row << Date.parse(date).strftime("%d-%b-%y")
+        row << Date.local_parse(date).strftime("%d-%b-%y")
         row << scheme_name
         row << ""
         row << values["Remittance Payments Cash Flow"]["Value"]
@@ -128,7 +128,7 @@ class CashFlowJob
       # next if values["Distribution Payments Cash Flow"]["Value"].blank?
 
       # row = []
-      # row << Date.parse(date).strftime("%d-%b-%y")
+      # row << Date.local_parse(date).strftime("%d-%b-%y")
       # row << scheme_name
       # row << ""
       # row << values["Distribution Payments Cash Flow"]["Value"]
@@ -138,7 +138,7 @@ class CashFlowJob
 
       if values["Distribution Payments Cash Flow"]["Income Distribution"]["Value"].present?
         row = []
-        row << Date.parse(date).strftime("%d-%b-%y")
+        row << Date.local_parse(date).strftime("%d-%b-%y")
         row << scheme_name
         row << ""
         row << values["Distribution Payments Cash Flow"]["Income Distribution"]["Value"]
@@ -149,7 +149,7 @@ class CashFlowJob
       next if values["Distribution Payments Cash Flow"]["Principal Repayment"]["Value"].blank?
 
       row = []
-      row << Date.parse(date).strftime("%d-%b-%y")
+      row << Date.local_parse(date).strftime("%d-%b-%y")
       row << scheme_name
       row << ""
       row << values["Distribution Payments Cash Flow"]["Principal Repayment"]["Value"]

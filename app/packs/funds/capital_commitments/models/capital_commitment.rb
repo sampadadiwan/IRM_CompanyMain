@@ -329,7 +329,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def soa_folder
-    get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
+    get_or_create_folder("Investor Statements", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
   end
 
   def grant_access_to_fund
@@ -337,7 +337,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def committed_amount_cents_before(date)
-    date = Date.parse(date) if date.is_a?(String)
+    date = Date.local_parse(date) if date.is_a?(String)
 
     if commitment_date.blank? || commitment_date > date
       # If the commitment date is after the date, then there is no commitment before the date

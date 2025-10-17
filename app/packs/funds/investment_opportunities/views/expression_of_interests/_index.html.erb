@@ -1,20 +1,22 @@
+  <%= render "/expression_of_interests/stats", expression_of_interests: @expression_of_interests %>
+
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Expression Of Interests</h1>
     <span>
-      <%= link_to "New Interest", 
-          new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": 
+      <%= link_to "New Interest",
+          new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]":
               params[:investment_opportunity_id] ), {class: "btn btn-outline-primary ti ti-plus"} if params[:investment_opportunity_id]  %>
 
-      <%= link_to "Download", 
-          expression_of_interests_path(format: :xlsx, "investment_opportunity_id": 
+      <%= link_to "Download",
+          expression_of_interests_path(format: :xlsx, "investment_opportunity_id":
               params[:investment_opportunity_id] ), {class: "btn btn-outline-success ti ti-download"} if params[:investment_opportunity_id]  %>
     </span>
   </div>
-  
-  <div class="table-responsive">
-  
+
+  <div class="table-responsive" data-controller="datatable">
+
     <table id="expression_of_interests" class="table table-bordered dataTable jqDataTable">
-  
+
       <thead>
         <tr>
           <th>
@@ -24,7 +26,7 @@
             Stakeholder
           </th>
           <th>
-            Amount 
+            Amount
           </th>
           <th>
             Approved
@@ -33,22 +35,25 @@
             Verified
           </th>
           <th>
+            Data Room Access
+          </th>
+          <th>
             Allocation Percentage
           </th>
           <th>
-            Allocation Amount 
+            Allocation Amount
           </th>
-      
+
           <th>
           </th>
         </tr>
       </thead>
-      
+
       <tbody>
       <% expression_of_interests.each do |expression_of_interest| %>
         <%= render expression_of_interest %>
       <% end %>
       </tbody>
     </table>
-  
+
   </div>

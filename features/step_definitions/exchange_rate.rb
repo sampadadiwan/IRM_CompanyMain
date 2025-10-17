@@ -17,5 +17,5 @@ Then("There should be 2 exchange rates created") do
   row_count = find_by_id('exchange_rates').all("tr").count
   # One for headers
   expect(row_count).to(eq(3))
-  expect(ExchangeRate.where(as_of: Date.parse("14/05/2024")).count).to(eq(2))
+  expect(ExchangeRate.where(as_of: Date.local_parse("14/05/2024")).count).to(eq(2))
 end

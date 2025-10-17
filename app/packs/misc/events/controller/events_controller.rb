@@ -60,7 +60,7 @@ class EventsController < ApplicationController
   private
 
   def set_date_ranges
-    @current_month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Time.zone.today.beginning_of_month
+    @current_month = params[:month].present? ? Date.local_parse("#{params[:month]}-01") : Time.zone.today.beginning_of_month
     @previous_month = @current_month.prev_month
     @next_month = @current_month.next_month
   end
@@ -70,7 +70,7 @@ class EventsController < ApplicationController
   end
 
   def handle_month_view
-    @current_month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Time.zone.today.beginning_of_month
+    @current_month = params[:month].present? ? Date.local_parse("#{params[:month]}-01") : Time.zone.today.beginning_of_month
     @previous_month = @current_month.prev_month
     @next_month = @current_month.next_month
 
@@ -91,7 +91,7 @@ class EventsController < ApplicationController
   end
 
   def handle_week_view
-    @current_week = params[:week].present? ? Date.parse(params[:week]) : Time.zone.today.beginning_of_week(:sunday)
+    @current_week = params[:week].present? ? Date.local_parse(params[:week]) : Time.zone.today.beginning_of_week(:sunday)
     @start_date = @current_week.beginning_of_week(:sunday)
     @end_date = @current_week.end_of_week(:sunday)
 
@@ -110,7 +110,7 @@ class EventsController < ApplicationController
   end
 
   def handle_day_view
-    @current_day = params[:day].present? ? Date.parse(params[:day]) : Time.zone.today
+    @current_day = params[:day].present? ? Date.local_parse(params[:day]) : Time.zone.today
     @start_date = @current_day.beginning_of_day
     @end_date = @current_day.end_of_day
 

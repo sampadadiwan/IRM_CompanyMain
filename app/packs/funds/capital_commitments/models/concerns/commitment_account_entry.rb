@@ -1,7 +1,7 @@
 module CommitmentAccountEntry
   extend ActiveSupport::Concern
 
-  # These are set by the SOA generator
+  # These are set by the Investor Statement generator
   attr_accessor :start_date, :end_date
 
   def reset_committed_amount(new_folio_committed_amount)

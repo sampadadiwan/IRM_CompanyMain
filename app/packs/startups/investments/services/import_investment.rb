@@ -116,7 +116,7 @@ class ImportInvestment < ImportUtil
     funding_round = user_data['Funding Round']
     quantity = user_data['Quantity'].to_d
     price = user_data['Price'].to_d
-    investment_date = user_data['Investment Date']
+    investment_date = Date.local_parse(user_data['Investment Date'])
     notes = user_data['Notes'].presence
 
     [portfolio_company_name, category, currency, investor_name, investment_type, funding_round, quantity, price, investment_date, notes]

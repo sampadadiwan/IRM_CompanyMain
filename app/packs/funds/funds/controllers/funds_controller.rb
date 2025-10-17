@@ -115,10 +115,10 @@ class FundsController < ApplicationController
 
       case params[:type]
       when "fund"
-        FundRatiosJob.perform_later(@fund.id, nil, Date.parse(params[:end_date]), current_user.id, generate_for_commitments, return_cash_flows: params[:return_cash_flows] == "1")
+        FundRatiosJob.perform_later(@fund.id, nil, Date.local_parse(params[:end_date]), current_user.id, generate_for_commitments, return_cash_flows: params[:return_cash_flows] == "1")
 
       when "cross-fund", "cross-portfolio"
-        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], portfolio_companies_tags: params[:portfolio_companies_tags], currency: params[:currency], type: params[:type])
+        FundRatiosScenarioJob.perform_later(@fund.id, params[:scenario], Date.local_parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], portfolio_companies_tags: params[:portfolio_companies_tags], currency: params[:currency], type: params[:type])
       else
         # Invalid type, handle accordingly
         notice = "Invalid type specified for fund ratios generation."
@@ -153,8 +153,8 @@ class FundsController < ApplicationController
     end_date = nil
 
     begin
-      start_date = Date.parse(params[:start_date])
-      end_date = Date.parse(params[:end_date])
+      start_date = Date.local_parse(params[:start_date])
+      end_date = Date.local_parse(params[:end_date])
       template_id = params[:template_id]
       generate_soa = params[:generate_soa] == "1"
       fund_ratios = params[:fund_ratios] == "1"

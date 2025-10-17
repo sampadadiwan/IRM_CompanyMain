@@ -1,5 +1,5 @@
 class ImportInvestor < ImportUtil
-  STANDARD_HEADERS = ["Name", "Pan", "Primary Email", "Category", "Tags", "City"].freeze
+  STANDARD_HEADERS = ["Name", "Primary Email", "Category", "Tags", "City"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -14,10 +14,9 @@ class ImportInvestor < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    investor_name, pan, primary_email, category, update_only, force_different_name = get_data(user_data, custom_field_headers)
+    investor_name, primary_email, category, update_only, force_different_name = get_data(user_data, custom_field_headers)
 
-    investor = pan.present? ? Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first : nil
-    investor ||= Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
+    investor = Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
 
     if update_only
       if investor.blank?
@@ -25,7 +24,7 @@ class ImportInvestor < ImportUtil
         raise "Investor #{investor_name} not found for entity #{import_upload.entity_id}"
       else
         # Update the existing investor
-        investor.assign_attributes(pan:, tag_list: user_data["Tags"],
+        investor.assign_attributes(tag_list: user_data["Tags"],
                                    category:, city: user_data["City"], primary_email:,
                                    import_upload_id: import_upload.id,
                                    entity_id: import_upload.entity_id, imported: true, force_different_name:)
@@ -36,7 +35,7 @@ class ImportInvestor < ImportUtil
     else
       # Create a new investor
       Rails.logger.debug user_data
-      investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
+      investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
                               category:, city: user_data["City"], primary_email:,
                               import_upload_id: import_upload.id,
                               entity_id: import_upload.entity_id, imported: true, force_different_name:)
@@ -56,7 +55,6 @@ class ImportInvestor < ImportUtil
   def get_data(user_data, _custom_field_headers)
     # puts "processing #{user_data}"
     investor_name = user_data['Name']
-    pan = user_data['Pan']
     primary_email = user_data['Primary Email']
     category = user_data['Category']
     update_only = user_data['Update Only'] == "Yes"
@@ -64,7 +62,7 @@ class ImportInvestor < ImportUtil
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields
 
-    [investor_name, pan, primary_email, category, update_only, force_different_name]
+    [investor_name, primary_email, category, update_only, force_different_name]
   end
 
   def add_to_fund(user_data, import_upload, investor)

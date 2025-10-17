@@ -15,7 +15,7 @@ class SoaGenerator
         # Create a working directory for the capital commitment
         create_working_dir(capital_commitment)
 
-        # Generate the SOA document
+        # Generate the Investor Statement document
         generate(capital_commitment, start_date, end_date, fund_doc_template_path)
 
         # Upload the generated document
@@ -28,7 +28,7 @@ class SoaGenerator
         cleanup
       end
     else
-      msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
+      msg = "Investor Statement generation failed. KYC not found for #{capital_commitment.investor_name}."
       send_notification(msg, user_id) if user_id
       Rails.logger.error msg
     end
@@ -37,7 +37,7 @@ class SoaGenerator
   private
 
   def notify(fund_doc_template, capital_commitment, user_id)
-    msg = "SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page."
+    msg = "Investor Statement #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page."
     send_notification(msg, user_id)
   end
 

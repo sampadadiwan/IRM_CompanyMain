@@ -61,7 +61,7 @@ class ImportAccountEntry < ImportUtil
     folio_id = user_data["Folio No"]&.to_s
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
-    reporting_date = user_data["Reporting Date"].presence
+    reporting_date = Date.local_parse(user_data["Reporting Date"]) if user_data["Reporting Date"].present?
     investor_name = user_data["Investor"]
     folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
     fund_amount_cents = user_data["Amount (Fund Currency)"].to_d * 100

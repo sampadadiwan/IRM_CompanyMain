@@ -1,0 +1,32 @@
+# PR Writer (diff‑based)
+
+1.  **Overview**: This PR introduces locale-aware date parsing and enhances internationalization support across the application, alongside refactoring and terminology updates.
+2.  **Motivation**: The primary motivation is to improve date parsing robustness for different locales and to centralize internationalization configurations. This addresses potential `ArgumentError` issues when parsing dates in varying formats and streamlines the management of localized content. Additionally, it refactors certain controller concerns for better code organization and updates terminology for clarity.
+3.  **What Changed**:
+    *   **New `Date.local_parse` method**: A new class method `Date.local_parse` has been introduced in [`config/initializers/date_localized_parse.rb`](config/initializers/date_localized_parse.rb) to parse date strings using the current (or specified) I18n locale, with a fallback to `Date.parse` if `strptime` fails.
+    *   **I18n Configuration**: [`config/initializers/i18n.rb`](config/initializers/i18n.rb) was added to configure I18n fallbacks and explicitly set `available_locales` to `[:en, :en-US, :ja]` and `default_locale` based on `APP_LOCALE` environment variable.
+    *   **Locale Files**: A new locale file [`config/locales/en-US.yml`](config/locales/en-US.yml) was added, defining `en-US` specific date formats and `investor_kyc` labels. [`config/locales/en.yml`](config/locales/en.yml) was updated with default date formats and `investor_kyc` labels.
+    *   **`Date.parse` Replacements**: Numerous instances of `Date.parse` were replaced with `Date.local_parse` across various services, controllers, and Cucumber step definitions to leverage locale-aware parsing. This includes files in `app/packs/ai`, `app/packs/core`, `app/packs/startups`, and `features/step_definitions`.
+    *   **Controller Concern Refactoring**: The `with_owner_access` and `get_q_param` methods were moved from [`app/packs/core/base/controllers/concerns/with_locale.rb`](app/packs/core/base/controllers/concerns/with_locale.rb) to [`app/packs/core/base/controllers/concerns/with_filter_params.rb`](app/packs/core/base/controllers/concerns/with_filter_params.rb) for better logical grouping.
+    *   **`Labels` Class Removal**: The [`app/packs/core/entities/models/labels.rb`](app/packs/core/entities/models/labels.rb) file was deleted, and its functionality for managing labels was migrated to the I18n locale files.
+    *   **Locale Helper**: A new helper [`app/packs/core/base/helpers/locale_helper.rb`](app/packs/core/base/helpers/locale_helper.rb) was introduced with `user_t`, `sys_t`, and `sys_l` methods for explicit locale-based translations and formatting.
+    *   **Terminology Update**: "SOA" (Statement of Account) was updated to "Investor Statement" in [`app/services/account_entry_allocation/run_formulas.rb`](app/services/account_entry_allocation/run_formulas.rb), [`features/misc/doc_gen.feature`](features/misc/doc_gen.feature), and [`features/step_definitions/document.rb`](features/step_definitions/document.rb) for improved clarity and consistency.
+    *   **Application Configuration**: `config.i18n.available_locales` and `config.i18n.default_locale` were removed from [`config/application.rb`](config/application.rb) as their configuration is now handled in `config/initializers/i18n.rb`.
+4.  **Refactoring / Behavior Changes**:
+    *   **Internationalization**: The application now has enhanced internationalization capabilities, allowing for locale-specific date parsing and more flexible translation management.
+    *   **Date Parsing**: The change from `Date.parse` to `Date.local_parse` ensures that date strings are interpreted correctly based on the active I18n locale's date format, reducing parsing errors for users in different regions.
+    *   **Code Organization**: Moving controller methods to `WithFilterParams` improves the modularity and maintainability of the controller concerns.
+    *   **Labels Management**: Centralizing labels in I18n files simplifies their management and makes them part of the standard internationalization workflow.
+    *   **Terminology**: The update from "SOA" to "Investor Statement" provides a more accurate and universally understood term for the generated documents.
+5.  **Testing**:
+    *   Existing Cucumber feature files under `features/` were updated to reflect the new "Investor Statement" terminology and to ensure that scenarios involving date parsing continue to function correctly with `Date.local_parse`. This includes updates in `features/misc/doc_gen.feature`, `features/step_definitions/account_entries.rb`, `features/step_definitions/document.rb`, `features/step_definitions/exchange_rate.rb`, `features/step_definitions/fund.rb`, `features/step_definitions/fund_ratio.rb`, `features/step_definitions/investment.rb`, `features/step_definitions/investor.rb`, `features/step_definitions/kpi_workbook_steps.rb`, and `features/step_definitions/portfolio.rb`.
+6.  **Impact**:
+    *   **Compatibility**: While `Date.local_parse` includes a fallback to `Date.parse`, there might be subtle changes in how certain ambiguous date strings are interpreted if they previously relied on `Date.parse`'s default behavior and are now matched by a specific locale format.
+    *   **Internationalization**: Significant improvement in handling locale-specific date inputs and translations.
+    *   **Codebase**: Widespread changes in date parsing logic, requiring careful review to ensure all relevant instances are updated correctly.
+7.  **Review Focus**:
+    *   Verify that all instances where `Date.parse` was replaced with `Date.local_parse` are appropriate and correctly handle expected date formats for all supported locales.
+    *   Review the new `en-US.yml` and updated `en.yml` for accuracy in date formats and `investor_kyc` labels.
+    *   Confirm the correct usage of `user_t`, `sys_t`, and `sys_l` from `LocaleHelper` where explicit locale control is needed for translations and formatting.
+    *   Ensure the "SOA" to "Investor Statement" terminology change is consistently applied throughout the application, especially in user-facing texts and documentation.
+    *   Check for any unintended side effects or regressions due to the refactoring of controller concerns and the removal of the `Labels` class.

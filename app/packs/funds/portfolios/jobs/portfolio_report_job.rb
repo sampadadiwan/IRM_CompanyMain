@@ -156,7 +156,7 @@ class PortfolioReportJob < LlmReportJob
     kpi_reports_map.each do |entry|
       next if entry[:add_docs].blank?
 
-      as_of = Date.parse(entry[:as_of])
+      as_of = Date.local_parse(entry[:as_of])
       kpi_reports_add_docs_or_clause = kpi_reports_add_docs_or_clause.or(
         KpiReport.where(period: entry[:period], as_of: as_of.all_month)
       )

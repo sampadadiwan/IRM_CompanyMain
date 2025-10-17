@@ -16,7 +16,7 @@
     <%
         if struct[field.name].present?
             begin
-                val = Date.parse(struct[field.name])
+                val = Date.local_parse(struct[field.name])
             rescue StandardError
                 val = nil
             end

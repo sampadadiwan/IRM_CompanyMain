@@ -1,16 +1,16 @@
 
 <%= render NewCard.new do %>
 
-  <%= render FormCard.new(title: "Generate SOA For : #{@capital_commitment.investor_name}") do %>
+  <%= render FormCard.new(title: "Generate Investor Statement For : #{@capital_commitment.investor_name}") do %>
 
     <%= form_with(model: @capital_commitment, url: generate_soa_capital_commitment_path(@capital_commitment), method: :patch) do |form| %>
-      
+
       <%= form.text_field :id, class: "form-control", hidden: true  %>
-      
-      
+
+
       <div class="form-group">
         <%= form.label :template_name %>
-        <%= form.select :template_name, @capital_commitment.templates("SOA Template").map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
+        <%= form.select :template_name, @capital_commitment.templates(["SOA Template", "Investor Statement Template"]).map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
       </div>
 
       <div class="form-group">
@@ -29,10 +29,10 @@
       </div>
 
       <div class="form-group">
-        <%= form.submit "Generate SOA Now", {class: "btn btn-outline-primary"}%>
+        <%= form.submit "Generate Investor Statement", {class: "btn btn-outline-primary"}%>
       </div>
     <% end %>
 
   <% end %>
-  
+
 <% end %>

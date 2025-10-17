@@ -1,6 +1,7 @@
 class InvestmentOpportunity < ApplicationRecord
   include ForInvestor
   include WithFolder
+  include WithDataRoom
   include WithCustomField
   include InvestorsGrantedAccess
 

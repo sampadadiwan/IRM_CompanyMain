@@ -1,9 +1,9 @@
 class CapitalCommitmentSoaJob < DocGenJob
   def templates(model = nil)
     if model.present?
-      model.templates("SOA Template", id: @template_id)
+      model.templates(["SOA Template", "Investor Statement Template"], id: @template_id)
     else
-      @fund.documents.templates.where(owner_tag: "SOA Template")
+      @fund.documents.templates.where(owner_tag: ["SOA Template", "Investor Statement Template"])
     end
   end
 

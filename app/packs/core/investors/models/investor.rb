@@ -95,7 +95,7 @@ class Investor < ApplicationRecord
   validates :primary_email, presence: true, if: proc { |e| e.new_record? }
   validates_format_of :primary_email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
 
-  validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
+  validates_uniqueness_of :primary_email, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
   validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
 
   validates :tag_list, length: { maximum: 120 }

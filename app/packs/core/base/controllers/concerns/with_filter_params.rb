@@ -65,6 +65,31 @@ module WithFilterParams
     end
   end
 
+  def with_owner_access(relation, raise_error: true)
+    if params[:owner_id].present? && params[:owner_type].present?
+      unless current_user.company_admin?
+        # If owner is passed, check if user is authorized to view the owner
+        @owner = params[:owner_type].constantize.find(params[:owner_id])
+        authorize(@owner, :show?)
+      end
+      relation.where(owner_id: params[:owner_id], owner_type: params[:owner_type])
+    elsif !current_user.company_admin? && raise_error
+      # Raise AccessDenied if user is an employee and no owner is passed
+      raise Pundit::NotAuthorizedError
+    else
+      relation
+    end
+  end
+
+  def get_q_param(name)
+    value = nil
+    @q.conditions.each do |condition|
+      #   # Check if the condition's attribute (name) is 'interest_id'
+      value = condition.values.map(&:value).first if condition.attributes.map(&:name).include?(name.to_s)
+    end
+    value
+  end
+
   # Renders the given records as an XLSX (Excel) file using the specified template.
   #
   # @param records [ActiveRecord::Relation, Array] The collection of records to be exported to XLSX.

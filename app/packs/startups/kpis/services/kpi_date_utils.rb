@@ -39,9 +39,9 @@ class KpiDateUtils
 
     return true if patterns.any? { |pat| normalized =~ pat }
 
-    # Fallback to Date.parse
+    # Fallback to Date.local_parse
     begin
-      Date.parse(normalized)
+      Date.local_parse(normalized)
       true
     rescue StandardError
       false
@@ -256,7 +256,7 @@ class KpiDateUtils
         if /\A[A-Za-z]{3,9}\s+\d{2}\z/.match?(normalized)
           Date.strptime(normalized, "%b %y")
         else
-          Date.parse(normalized)
+          Date.local_parse(normalized)
         end
 
       # Always return the end of the month

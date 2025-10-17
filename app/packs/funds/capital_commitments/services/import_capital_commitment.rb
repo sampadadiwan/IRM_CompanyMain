@@ -89,7 +89,7 @@ class ImportCapitalCommitment < ImportUtil
   def get_params(user_data, import_upload)
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
-    commitment_date = user_data["Commitment Date"].presence
+    commitment_date = Date.local_parse(user_data["Commitment Date"]) if user_data["Commitment Date"].present?
     folio_currency = user_data["Folio Currency"].presence
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
     feeder_fund_name = user_data["Feeder Fund"].presence

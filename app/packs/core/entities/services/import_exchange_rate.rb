@@ -38,7 +38,7 @@ class ImportExchangeRate < ImportUtil
       import_upload_id: import_upload.id,
       rate: user_data["Rate"],
       entity_id: import_upload.entity_id,
-      as_of: Date.parse(user_data["As Of"]),
+      as_of: Date.local_parse(user_data["As Of"]),
       notes: user_data["Notes"]
     }
   end

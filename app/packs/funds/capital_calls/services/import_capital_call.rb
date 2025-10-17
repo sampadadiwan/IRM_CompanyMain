@@ -46,7 +46,8 @@ class ImportCapitalCall < ImportUtil
 
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
-                                       fund:, due_date: user_data["Due Date"], call_date: user_data["Call Date"],
+                                       fund:, due_date: Date.local_parse(user_data["Due Date"]),
+                                       call_date: Date.local_parse(user_data["Call Date"]),
                                        import_upload_id: import_upload.id, fund_closes:,
                                        send_call_notice_flag:, close_percentages:,
                                        manual_generation: true, call_basis: user_data["Call Basis"],

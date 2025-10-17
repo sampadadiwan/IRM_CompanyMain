@@ -23,7 +23,7 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
     user = User.find(user_id)
     entity = user.entity
     currency = entity.currency
-    as_of = Date.parse(as_of)
+    as_of = Date.local_parse(as_of)
 
     aggregate_portfolio_investments = entity.aggregate_portfolio_investments
     if portfolio_company_id.present?

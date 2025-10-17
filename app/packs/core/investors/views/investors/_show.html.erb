@@ -34,15 +34,6 @@
       </td>
     </tr>
 
-    <tr>
-      <td>
-        <%= Labels.get(current_user.entity.entity_setting.regulatory_env, "Tax ID") %>
-      </td>
-      <td>
-        <%= @investor.pan %>
-      </td>
-    </tr>
-
 
     <% if params[:debug].present? %>
 

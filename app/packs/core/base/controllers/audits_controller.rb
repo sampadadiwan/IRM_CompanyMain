@@ -8,8 +8,8 @@ class AuditsController < ApplicationController
     @audits = @audits.where(auditable_type: params[:auditable_type]) if params[:auditable_type].present?
     @audits = @audits.where(auditable_id: params[:auditable_id]) if params[:auditable_id].present?
     @audits = @audits.where(user_id: params[:user_id]) if params[:user_id].present?
-    @audits = @audits.where(created_at: ..Date.parse(params[:created_at_before])) if params[:created_at_before].present?
-    @audits = @audits.where(created_at: Date.parse(params[:created_at_after])..) if params[:created_at_after].present?
+    @audits = @audits.where(created_at: ..Date.local_parse(params[:created_at_before])) if params[:created_at_before].present?
+    @audits = @audits.where(created_at: Date.local_parse(params[:created_at_after])..) if params[:created_at_after].present?
     # Paginate if no xlsx
     if params[:format] == 'xlsx' && (params[:created_at_before].blank? || params[:created_at_after].blank?)
       @audits = @audits.limit(1000)

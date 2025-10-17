@@ -1,7 +1,7 @@
-Feature: SOA Generation
-  Can create a SOA for Capital Commitment
+Feature: Investor Statement Generation
+  Can create a Investor Statement for Capital Commitment
 
-Scenario Outline: Generate SOA for a Capital Commitment
+Scenario Outline: Generate Investor Statement for a Capital Commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -16,15 +16,15 @@ Scenario Outline: Generate SOA for a Capital Commitment
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "Commitment level SOA" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "Commitment level SOA" is successfully generated
+  Given the fund has a template "Commitment level Investor Statement" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Commitment level Investor Statement" is successfully generated
 
   Examples:
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-Scenario Outline: Generated SOA must have templates permssions
+Scenario Outline: Generated Investor Statement must have templates permssions
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     Given there is an existing investor "entity_type=Family Office"
@@ -39,11 +39,11 @@ Scenario Outline: Generated SOA must have templates permssions
     Given the capital calls are approved
     Given the fund has "2" capital distribution
     Given the capital distributions are approved
-    Given the fund has a template "Commitment level SOA" of type "SOA Template"
+    Given the fund has a template "Commitment level Investor Statement" of type "Investor Statement Template"
     And the template has permissions "<permissions>"
-    And we Generate SOA for the first capital commitment
-    Then the "Commitment level SOA" is successfully generated
-    And the generated SOA has permissions "<permissions>"
+    And we Generate Investor Statement for the first capital commitment
+    Then the "Commitment level Investor Statement" is successfully generated
+    And the generated Investor Statement has permissions "<permissions>"
 
     Examples:
       |user	    |entity                         |role       |given  |should	|access | crud | permissions |
@@ -153,7 +153,7 @@ Scenario Outline: Footer error in Generating Commitment Agreement
     |user	    |entity                         |role       |given  |should	|access | crud |email|footer_error|header_error|
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|Error adding Footer:|Error adding Header:|
 
-Scenario Outline: Unapproved SOA is replaced for a Capital Commitment
+Scenario Outline: Unapproved Investor Statement is replaced for a Capital Commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -168,24 +168,24 @@ Scenario Outline: Unapproved SOA is replaced for a Capital Commitment
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "Commitment level SOA" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "Commitment level SOA" is successfully generated
-  And we Generate SOA for the first capital commitment again
-  Then the "Commitment level SOA" is successfully generated
-  And the unapproved SOA is replaced
-  Given the generated SOA is approved
-  Then we Generate SOA for the first capital commitment again
+  Given the fund has a template "Commitment level Investor Statement" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Commitment level Investor Statement" is successfully generated
+  And we Generate Investor Statement for the first capital commitment again
+  Then the "Commitment level Investor Statement" is successfully generated
+  And the unapproved Investor Statement is replaced
+  Given the generated Investor Statement is approved
+  Then we Generate Investor Statement for the first capital commitment again
   Then we get the email with approved document exists error
-  Then we Generate SOA for the first capital commitment with different time
-  Then the "Commitment level SOA" is successfully generated
+  Then we Generate Investor Statement for the first capital commitment with different time
+  Then the "Commitment level Investor Statement" is successfully generated
 
   Examples:
     |user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
 
-Scenario Outline: Send Generated SOA for Esign
+Scenario Outline: Send Generated Investor Statement for Esign
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -200,9 +200,9 @@ Scenario Outline: Send Generated SOA for Esign
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "SOA Template" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "SOA Template" is successfully generated
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Investor Statement Template" is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures
   And the document is signed by the signatories
@@ -214,7 +214,7 @@ Scenario Outline: Send Generated SOA for Esign
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-Scenario Outline: Generate SOA duplicate emails
+Scenario Outline: Generate Investor Statement duplicate emails
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -229,7 +229,7 @@ Scenario Outline: Generate SOA duplicate emails
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "SOA Template" of type "SOA Template"
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
   Given the first capital commitment has params "esign_emails=abcg@demo.com,xyz@demo.com"
   Given the template has esignatures "investor_signatories,fund_signatories,other:xyz@demo.com,other:mnop@demo.com"
   Then The document generation fails with error "E signatures contain duplicate emails: abcg@demo.com, xyz@demo.com"
@@ -238,7 +238,7 @@ Scenario Outline: Generate SOA duplicate emails
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-Scenario Outline: Send Generated SOA for Esign with status requested
+Scenario Outline: Send Generated Investor Statement for Esign with status requested
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -253,9 +253,9 @@ Scenario Outline: Send Generated SOA for Esign with status requested
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "SOA Template" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "SOA Template" is successfully generated
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Investor Statement Template" is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures with status "requested"
   And the document is signed by the signatories
@@ -266,7 +266,7 @@ Scenario Outline: Send Generated SOA for Esign with status requested
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-Scenario Outline: Send Generated SOA for Esign with status empty
+Scenario Outline: Send Generated Investor Statement for Esign with status empty
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "entity_type=Family Office"
@@ -281,9 +281,9 @@ Scenario Outline: Send Generated SOA for Esign with status empty
   Given the capital calls are approved
   Given the fund has "2" capital distribution
   Given the capital distributions are approved
-  Given the fund has a template "SOA Template" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "SOA Template" is successfully generated
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Investor Statement Template" is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures with status ""
   And the document is signed by the signatories
@@ -294,7 +294,7 @@ Scenario Outline: Send Generated SOA for Esign with status empty
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-Scenario Outline: Send Generated SOA for Esign with callbacks
+Scenario Outline: Send Generated Investor Statement for Esign with callbacks
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     Given there is an existing investor "entity_type=Family Office"
@@ -309,9 +309,9 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     Given the capital calls are approved
     Given the fund has "2" capital distribution
     Given the capital distributions are approved
-    Given the fund has a template "SOA Template" of type "SOA Template"
-    And we Generate SOA for the first capital commitment
-    Then the "SOA Template" is successfully generated
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    And we Generate Investor Statement for the first capital commitment
+    Then the "Investor Statement Template" is successfully generated
     Then when the document is approved
     And the document has "2" e_signatures
     And the document get digio callbacks
@@ -384,9 +384,9 @@ Scenario Outline: Docusign Esign for a document
   Given the esign provider is "Docusign"
   Given the fund has capital commitments from each investor
   And each Investor has an approved Investor Kyc
-  Given the fund has a template "SOA Template" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "SOA Template" is successfully generated
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Investor Statement Template" is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures by Docusign
   And the document is signed by the docusign signatories
@@ -408,9 +408,9 @@ Scenario Outline: Docusign Esign for a document
   Given the esign provider is "Docusign"
   Given the fund has capital commitments from each investor
   And each Investor has an approved Investor Kyc
-  Given the fund has a template "SOA Template" of type "SOA Template"
-  And we Generate SOA for the first capital commitment
-  Then the "SOA Template" is successfully generated
+  Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Investor Statement Template" is successfully generated
   Then when the document is approved
   And the document is partially signed by Docusign
   And the docusign document esign is cancelled

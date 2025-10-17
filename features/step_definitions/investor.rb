@@ -21,7 +21,6 @@ When('I create a new investor {string}') do |arg1|
     find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
-  fill_in('investor_pan', with: @investor_entity.pan)
   fill_in('investor_primary_email', with: @investor_entity.primary_email)
   select("Founder", from: "investor_category")
 
@@ -35,7 +34,6 @@ When('I update the investor {string}') do |args|
   visit(edit_investor_path(@investor))
 
   fill_in('investor_investor_name', with: @investor.investor_name)
-  # fill_in('investor_pan', with: @investor.pan)
   select("Founder", from: "investor_category")
   fill_in('investor_tag_list', with: @investor.tag_list)
   # fill_in('investor_primary_email', with: @investor_entity.primary_email)
@@ -182,7 +180,6 @@ When('I create a new investor {string} for the existing investor entity') do |ar
 
   fill_in('investor_investor_name', with: @investor_entity.name)
   first('.ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
-  fill_in('investor_pan', with: @new_investor.pan)
   fill_in('investor_primary_email', with: @new_investor.primary_email)
   select("Founder", from: "investor_category")
 
@@ -717,31 +714,31 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   #sleep(2)
 end
 
-Given('we Generate SOA for the first capital commitment') do
+Given('we Generate Investor Statement for the first capital commitment') do
   @capital_commitment = CapitalCommitment.last
   @capital_commitment.investor_kyc = InvestorKyc.last
   @capital_commitment.save!
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
   #sleep(1)
-  click_on("Generate SOA")
-  @start_date = Date.parse "01/01/2020"
-  @end_date = Date.parse "01/01/2021"
+  click_on("Generate Investor Statement")
+  @start_date = Date.local_parse "01/01/2020"
+  @end_date = Date.local_parse "01/01/2021"
   fill_in('start_date', with: @start_date)
   fill_in('end_date', with: @end_date)
   #sleep(1)
-  click_on("Generate SOA Now")
+  click_on("Generate Investor Statement")
   #sleep(2)
 end
 
-Then('we Generate SOA for the first capital commitment again') do
+Then('we Generate Investor Statement for the first capital commitment again') do
   @og_soa_created_at = @capital_commitment.documents.generated.last.created_at
   steps %(
-    Given we Generate SOA for the first capital commitment
+    Given we Generate Investor Statement for the first capital commitment
   )
 end
 
-Then('we Generate SOA for the first capital commitment with different time') do
+Then('we Generate Investor Statement for the first capital commitment with different time') do
   @og_soa_created_at = @capital_commitment.documents.generated.last.created_at
   @capital_commitment = CapitalCommitment.last
   @capital_commitment.investor_kyc = InvestorKyc.last
@@ -749,19 +746,19 @@ Then('we Generate SOA for the first capital commitment with different time') do
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
   #sleep(1)
-  click_on("Generate SOA")
-  @start_date = Date.parse "01/02/2020"
-  @end_date = Date.parse "01/02/2021"
+  click_on("Generate Investor Statement")
+  @start_date = Date.local_parse "01/02/2020"
+  @end_date = Date.local_parse "01/02/2021"
   fill_in('start_date', with: @start_date)
   fill_in('end_date', with: @end_date)
-  click_on("Generate SOA Now")
+  click_on("Generate Investor Statement")
 end
 
-Then('the unapproved SOA is replaced') do
+Then('the unapproved Investor Statement is replaced') do
   expect(@capital_commitment.documents.generated.last.created_at).to be > @og_soa_created_at
 end
 
-Given('the generated SOA is approved') do
+Given('the generated Investor Statement is approved') do
   @generated_soa = @capital_commitment.documents.generated.last
   @generated_soa.approved = true
   @generated_soa.save!
@@ -868,7 +865,7 @@ Then('the {string} is successfully generated') do |name|
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   expect(page).to have_content("Generated")
   generated_doc = Document.where(owner_tag: "Generated").last
-  if name.include?("SOA")
+  if name.include?("Investor Statement")
     generated_doc.name.should == "#{name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{@capital_commitment}"
   else
     generated_doc.name.should == "#{name} - #{@capital_commitment}"
