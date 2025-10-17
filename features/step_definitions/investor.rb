@@ -21,7 +21,6 @@ When('I create a new investor {string}') do |arg1|
     find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
-  fill_in('investor_pan', with: @investor_entity.pan)
   fill_in('investor_primary_email', with: @investor_entity.primary_email)
   select("Founder", from: "investor_category")
 
@@ -35,7 +34,6 @@ When('I update the investor {string}') do |args|
   visit(edit_investor_path(@investor))
 
   fill_in('investor_investor_name', with: @investor.investor_name)
-  # fill_in('investor_pan', with: @investor.pan)
   select("Founder", from: "investor_category")
   fill_in('investor_tag_list', with: @investor.tag_list)
   # fill_in('investor_primary_email', with: @investor_entity.primary_email)
@@ -182,7 +180,6 @@ When('I create a new investor {string} for the existing investor entity') do |ar
 
   fill_in('investor_investor_name', with: @investor_entity.name)
   first('.ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
-  fill_in('investor_pan', with: @new_investor.pan)
   fill_in('investor_primary_email', with: @new_investor.primary_email)
   select("Founder", from: "investor_category")
 
