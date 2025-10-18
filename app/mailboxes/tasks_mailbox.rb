@@ -30,6 +30,8 @@ class TasksMailbox < ApplicationMailbox
   end
 
   def user
-    @user ||= User.find_by(email: mail.from[0])
+    return @user if defined?(@user)
+
+    @user = User.find_by(email: mail.from[0])
   end
 end

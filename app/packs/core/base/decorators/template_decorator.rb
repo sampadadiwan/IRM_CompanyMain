@@ -121,7 +121,7 @@ class TemplateDecorator < ApplicationDecorator
                         end
 
       # Divide by sububit to return the amount
-      return (sum(attr_name.to_sym) / subunit_to_unit)
+      return sum(attr_name.to_sym) / subunit_to_unit
 
     elsif method_name.to_s.starts_with?("sum_")
       attr_name = method_name.to_s.gsub("sum_", "")

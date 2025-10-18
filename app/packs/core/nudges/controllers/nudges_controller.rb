@@ -3,7 +3,7 @@ class NudgesController < ApplicationController
 
   # GET /nudges or /nudges.json
   def index
-    @nudges = policy_scope(Nudge).order("id desc").limit(50)
+    @nudges = policy_scope(Nudge).order(id: :desc).limit(50)
   end
 
   # GET /nudges/1 or /nudges/1.json

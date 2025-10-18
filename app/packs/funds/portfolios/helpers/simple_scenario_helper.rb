@@ -49,7 +49,7 @@ module SimpleScenarioHelper
   end
 
   def portfolio_company_irr_chart(fund, orig_xirr, scenario_xirr, fund_orig_xirr, fund_scenario_xirr)
-    apis = fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc")
+    apis = fund.aggregate_portfolio_investments.where(quantity: 1..).order(:portfolio_company_name)
 
     oxirr_data = apis.to_h { |api| [api.to_s, orig_xirr[api.id] ? orig_xirr[api.id][:xirr] : 0] }
     oxirr_data[fund.name] = fund_orig_xirr

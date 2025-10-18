@@ -1,6 +1,6 @@
 class PageCount < ViewComponent::Base
   def initialize(objects)
-    super
+    super()
     @objects = objects
   end
 end

@@ -3,7 +3,7 @@ class HelpSlideOut < ViewComponent::Base
   include Rails.application.routes.url_helpers # for tasks_path and other routes
 
   def initialize(class_name:, current_user:, action: "show", id: nil, css_class: "")
-    super
+    super()
     @class_name = class_name
     @action = action
     @id = id

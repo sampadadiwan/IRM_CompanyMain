@@ -3,7 +3,7 @@ class AuditsController < ApplicationController
 
   def index
     @q = Audit.ransack(params[:q])
-    @audits = policy_scope(@q.result).includes(:user).order("id desc")
+    @audits = policy_scope(@q.result).includes(:user).order(id: :desc)
     # Filter
     @audits = @audits.where(auditable_type: params[:auditable_type]) if params[:auditable_type].present?
     @audits = @audits.where(auditable_id: params[:auditable_id]) if params[:auditable_id].present?

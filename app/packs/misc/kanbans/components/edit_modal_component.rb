@@ -1,6 +1,6 @@
 class EditModalComponent < ViewComponent::Base
   def initialize(title: "", modal_id: "")
-    super
+    super()
     @title = title
     @modal_id = modal_id
   end

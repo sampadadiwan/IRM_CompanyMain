@@ -28,7 +28,7 @@ class KpiDateUtils
 
       # Month ranges like Jan-Mar 2021, Apr-Jun 2022
       /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)
-         [-](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+\d{4}\b/ix,
+         -(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+\d{4}\b/ix,
 
       # Date format like 01-11-2023 or 03/11/2022
       %r{\b\d{2}[-/]\d{2}[-/]\d{2,4}\b},

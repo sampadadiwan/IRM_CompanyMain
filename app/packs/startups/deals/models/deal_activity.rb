@@ -24,8 +24,8 @@ class DealActivity < ApplicationRecord
   validates :status, length: { maximum: 20 }
   validates :completed, length: { maximum: 5 }
 
-  scope :templates, ->(deal) { where(deal_id: deal.id).where(deal_investor_id: nil).order("sequence asc") }
-  scope :not_templates, ->(deal) { where(deal_id: deal.id).where.not(deal_investor_id: nil).order("sequence asc") }
+  scope :templates, ->(deal) { where(deal_id: deal.id).where(deal_investor_id: nil).order(:sequence) }
+  scope :not_templates, ->(deal) { where(deal_id: deal.id).where.not(deal_investor_id: nil).order(:sequence) }
 
   before_save :set_defaults
   after_commit :recreate_activities, unless: :destroyed?
