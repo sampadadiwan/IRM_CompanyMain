@@ -21,6 +21,9 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
           data-action="click->tabdetails#loadData">Access Rights</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notifications-tab"
+          data-action="click->tabdetails#loadData">Notifications</a>
     </nav>
 
     <div class="tab-content" data-controller="datatable">
@@ -87,6 +90,14 @@
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
+          </div>
+        </div>
+
+        <div id="custom-notifications-tab" class="tab-pane fade">
+          <div id="custom_notifications" class="associated_entity">
+
+              <%= render "custom_notifications/index", custom_notifications: investment_opportunity.entity.custom_notifications.where(for_type: "InvestmentOpportunity"), owner: investment_opportunity.entity, for_type: "InvestmentOpportunity" %>
+
           </div>
         </div>
 

@@ -5,6 +5,7 @@
 class ExpressionOfInterest < ApplicationRecord
   include WithFolder
   include ForInvestor
+  include WithCustomField
 
   # === Associations ===
   belongs_to :entity

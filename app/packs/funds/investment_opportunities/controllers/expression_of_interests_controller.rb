@@ -21,10 +21,13 @@ class ExpressionOfInterestsController < ApplicationController
     end
     @expression_of_interest.amount = @expression_of_interest.investment_opportunity.min_ticket_size
     authorize @expression_of_interest
+    setup_custom_fields(@expression_of_interest)
   end
 
   # GET /expression_of_interests/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@expression_of_interest)
+  end
 
   # POST /expression_of_interests or /expression_of_interests.json
   def create
@@ -128,6 +131,6 @@ class ExpressionOfInterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def expression_of_interest_params
-    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_name, :investor_id, :investor_kyc_id, :investment_opportunity_id, :amount, :approved, :verified, :show_data_room, :investor_email, :allocation_percentage, :comment, :investor_signatory_id, :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_name, :investor_id, :investor_kyc_id, :investment_opportunity_id, :amount, :approved, :verified, :show_data_room, :investor_email, :allocation_percentage, :comment, :investor_signatory_id, :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

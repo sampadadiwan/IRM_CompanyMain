@@ -15,7 +15,7 @@
           Logo
         </td>
         <td>
-          <%= image_tag investment_opportunity.logo_url, 
+          <%= image_tag investment_opportunity.logo_url,
             style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investment_opportunity.logo.present? %>
         </td>
       </tr>
@@ -46,7 +46,7 @@
           Approved EOI Amount
         </td>
         <td>
-          <%= money_to_currency investment_opportunity.eoi_amount, params %>        
+          <%= money_to_currency investment_opportunity.eoi_amount, params %>
         </td>
       </tr>
 
@@ -93,15 +93,6 @@
         </td>
       </tr>
 
-      <tr>
-        <td>
-          Buyer Docs
-        </td>
-        <td>
-          <%= investment_opportunity.buyer_docs_list %>
-        </td>
-      </tr>
-
       <%= display_custom_fields(investment_opportunity) if current_user %>
 
       <tr>
@@ -126,78 +117,99 @@
 
 <% end %>
 
-  <%= render "layouts/video", 
-      url: investment_opportunity.video_url if investment_opportunity.video_url.present? %>
-
-
   <div>
     <% if policy(investment_opportunity).update? %>
 
-    <%= link_to  t_common(:edit) , edit_investment_opportunity_path(investment_opportunity), {class: "btn btn-outline-primary" } %> 
+    <%= link_to  t_common(:edit) , edit_investment_opportunity_path(investment_opportunity), {class: "btn btn-outline-primary" } %>
     <%= button_to t_common(:delete) , investment_opportunity, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
 
-    <%= link_to "Preview", investment_opportunity_path(investment_opportunity, preview: 'true'), {class: "btn btn-outline-info"} %> 
+    <%= link_to "Preview", investment_opportunity_path(investment_opportunity, preview: 'true'), {class: "btn btn-outline-info"} %>
 
     &nbsp;&nbsp;&nbsp;
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Allocation
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          
 
-          <% 
-            lock_eoi_label = investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs" 
-            lock_eoi_msg = investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."       
+
+          <%
+            lock_eoi_label = investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs"
+            lock_eoi_msg = investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."
           %>
-          <%= button_to lock_eoi_label , toggle_investment_opportunity_path(investment_opportunity, 
-              lock_eoi: true), {class: "dropdown-item", method: :patch, 
-              data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %> 
-              
-          <%= button_to "Allocate" , allocate_investment_opportunity_path(investment_opportunity), 
-              {class: "dropdown-item", form_class: "deleteButton", 
-              data: {action: "click->confirm#popup",  
-              msg: "Kick off allocation process? This will take some time to complete, please be patient.", 
-              method: "post"} } %> 
+          <%= button_to lock_eoi_label , toggle_investment_opportunity_path(investment_opportunity,
+              lock_eoi: true), {class: "dropdown-item", method: :patch,
+              data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %>
+
+          <%= button_to "Allocate" , allocate_investment_opportunity_path(investment_opportunity),
+              {class: "dropdown-item", form_class: "deleteButton",
+              data: {action: "click->confirm#popup",
+              msg: "Kick off allocation process? This will take some time to complete, please be patient.",
+              method: "post"} } %>
 
           <%= link_to "View Allocations", finalize_allocation_investment_opportunity_path(investment_opportunity),
               class: "dropdown-item" %>
-    
+
           <%= link_to "Investors", investors_path(owner_type: "InvestmentOpportunity", owner_id: investment_opportunity.id), {class: "dropdown-item" } if current_user.enable_investors %>
-                    
+
         </div>
       </div>
     </div>
 
-    
+
 
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-outline-success dropdown-toggle" type="button" 
+        <button class="btn btn-outline-success dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Notifications
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          
-          <%= button_to "Send Investment Opportunity Open : To LPs", 
-              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_open_for_interests"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all LPs notifying that the investment opportunity is open", 
-                      method: :patch }  %>   
 
-          <%= button_to "Send Investment Opportunity Allocated : To LPs", 
-              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_allocation"),    
-              class: "dropdown-item", 
-              data: { action: "click->confirm#popup", 
-                      msg: "Send email to all LPs notifying that the investment opportunity is now allocated", 
-                      method: :patch }  %>   
-   
-          
+          <%= button_to "Send Investment Opportunity Open : To LPs",
+              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_open_for_interests"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all LPs notifying that the investment opportunity is open.<br>Proceed?<br>
+                      #{link_to 'View Who Gets Notified', show_email_list_investment_opportunity_path(investment_opportunity), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}",
+                      method: :patch }  %>
+
+          <%= button_to "Send Investment Opportunity Allocated : To LPs",
+              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_allocation"),
+              class: "dropdown-item",
+              data: { action: "click->confirm#popup",
+                      msg: "Send email to all LPs notifying that the investment opportunity is now allocated.<br>Proceed?<br>
+                      #{link_to 'View Who Gets Notified', show_email_list_investment_opportunity_path(investment_opportunity), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}",
+                      method: :patch }  %>
+
+          <% query_params = ransack_query_params_multiple([
+                                                            ['for_type', :eq, "InvestmentOpportunity"]
+                                                         ])
+          %>
+          <% current_user.entity.custom_notifications.enabled.where(for_type: "InvestmentOpportunity").each do |cust_not| %>
+              <%
+              msg = "This will send an email to the recipients who have access to this InvestmentOpportunity using custom notification
+              <br><strong>#{link_to cust_not.subject, custom_notification_path(cust_not), target: '_blank'}</strong><br>Proceed?<br>
+              #{link_to 'View Who Gets Notified', show_email_list_investment_opportunity_path(investment_opportunity), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}
+              #{link_to 'View Custom Notifications', custom_notifications_path(entity_id: investment_opportunity.entity_id, filter: true, q: query_params), class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank'}"
+              %>
+              <%= button_to "Send #{cust_not.subject}",
+              send_notification_investment_opportunity_path(investment_opportunity, custom_notification_id: cust_not.id, email_method: cust_not.email_method),
+              method: :patch,
+              form_class: "deleteButton d-inline",
+              data: {
+                action: "click->confirm#popup",
+                msg: msg,
+                method: :patch,
+                turbo: false
+              },
+              class: "dropdown-item flex-grow-1 text-start"
+              %>
+          <% end %>
         </div>
       </div>
     </div>

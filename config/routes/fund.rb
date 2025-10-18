@@ -147,6 +147,7 @@ resources :investment_opportunities do
   patch 'send_notification', on: :member
   get 'finalize_allocation', on: :member
   get 'no_password_show', on: :collection
+  get 'show_email_list', on: :member
 end
 
 resources :allocation_runs do

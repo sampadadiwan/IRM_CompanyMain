@@ -1,11 +1,13 @@
-<% 
-  owner ||= nil #current_user.entity 
+<%
+  owner ||= nil #current_user.entity
   entity_id = owner&.entity_id || current_user.entity_id
+  for_type ||= params[:for_type]
+  custom_notification ||= CustomNotification.new(entity_id: entity_id, owner: owner, for_type: for_type)
 %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Custom Notifications</h1>
-  <%= link_to "New Custom Notification", new_custom_notification_path("custom_notification[entity_id]": entity_id, "custom_notification[owner_id]": owner.id, "custom_notification[owner_type]": owner.class.name), {id: "create_custom_notification", class: "btn btn-outline-primary"}  if owner %>
+  <%= link_to "New Custom Notification", new_custom_notification_path("custom_notification[entity_id]": custom_notification.entity_id, "custom_notification[owner_id]": custom_notification.owner_id, "custom_notification[owner_type]": custom_notification.owner_type, "custom_notification[for_type]": custom_notification.for_type), {id: "create_custom_notification", class: "btn btn-outline-primary"} if owner %>
 </div>
 <div class="table-responsive" data-controller="datatable">
 
@@ -26,10 +28,10 @@
         </th>
         <th>
           Enabled
-        </th>    
+        </th>
         <th>
           Latest
-        </th>        
+        </th>
         <th>
         </th>
       </tr>
@@ -43,5 +45,5 @@
 
   </table>
 
-  
+
 </div>

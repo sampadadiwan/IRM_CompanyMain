@@ -20,11 +20,14 @@ class InvestmentOpportunityNotifier < BaseNotifier
   notification_methods do
     def message
       @investment_opportunity = record
-      params[:msg] || "Investment Opportunity: #{@investment_opportunity&.name}"
+      @custom_notification ||= custom_notification
+      @custom_notification&.subject || params[:msg] || "Investment Opportunity: #{@investment_opportunity&.name}"
     end
 
     def custom_notification
-      nil
+      @investment_opportunity ||= record
+      @custom_notification ||= @investment_opportunity&.entity&.custom_notification(params[:email_method], custom_notification_id: params[:custom_notification_id])
+      @custom_notification
     end
 
     def url

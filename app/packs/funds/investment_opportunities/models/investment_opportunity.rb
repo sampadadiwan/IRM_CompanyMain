@@ -5,6 +5,8 @@ class InvestmentOpportunity < ApplicationRecord
   include WithCustomField
   include InvestorsGrantedAccess
 
+  NOTIFICATION_METHODS = %w[notify_open_for_interests notify_allocation].freeze
+
   update_index('investment_opportunity') { self if index_record? }
 
   belongs_to :entity, touch: true
@@ -60,7 +62,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_open_for_interests
     investors.each do |investor|
       investor.notification_users.each do |user|
-        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, entity_id: entity_id, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end
@@ -68,7 +70,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_allocation
     investors.each do |investor|
       investor.notification_users.each do |user|
-        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(record: self, investor_id: investor.id, entity_id: entity_id, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end

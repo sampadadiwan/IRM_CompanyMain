@@ -184,7 +184,7 @@ class Investor < ApplicationRecord
     self.investor_entity = e
 
     self.investor_name = investor_entity.name if investor_name.blank?
-    self.pan ||= investor_entity.pan
+    # self.pan ||= investor_entity.pan
   end
 
   def setup_permissions(investor_entity)
@@ -271,7 +271,7 @@ class Investor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[pan city category investor_name tag_list investor_access_count unapproved_investor_access_count].sort
+    %w[city category investor_name tag_list investor_access_count unapproved_investor_access_count].sort
   end
 
   def update_investor_name(name)

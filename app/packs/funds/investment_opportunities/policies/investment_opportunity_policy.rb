@@ -46,4 +46,8 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   def finalize_allocation?
     update?
   end
+
+  def show_email_list?
+    send_notification?
+  end
 end

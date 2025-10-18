@@ -55,6 +55,8 @@ class CustomNotification < ApplicationRecord
                        "InvestorKycMailer".constantize.instance_methods(false).map(&:to_s)
                      elsif for_type == "Send Document"
                        %w[send_document]
+                     elsif for_type == "InvestmentOpportunity"
+                       InvestmentOpportunity::NOTIFICATION_METHODS
                      elsif owner_type == "CapitalCall"
                        "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s) +
                          "CapitalRemittancePaymentMailer".constantize.instance_methods(false).map(&:to_s)

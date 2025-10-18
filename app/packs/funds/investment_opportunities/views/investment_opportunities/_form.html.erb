@@ -27,8 +27,8 @@
 
     <div class="form-group">
 
-      <%= render "layouts/single_upload", form: form, field_label: "Upload Logo", 
-                              for_model: "investment_opportunity", field_name: "logo", 
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Logo",
+                              for_model: "investment_opportunity", field_name: "logo",
                               model: investment_opportunity, allowed_types: ["image/jpeg", "image/png", "image/gif", "image/bmp"] %>
 
       <small class="text-muted"> Upload Logo. </small>
@@ -52,22 +52,6 @@
     <div class="form-group">
       <%= form.label :currency %>
       <%= form.text_field :currency, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :buyer_docs_list, "List of documents for Buyers" %>
-      <%= form.text_field :buyer_docs_list, class: "form-control"  %>
-      <small class="text-muted"> Comma seprated list of documents buyers need to upload. </small>
-    </div>
-
-
-    <div class="form-group">
-
-      <%= render "layouts/single_upload", form: form, field_label: "Upload Video", 
-                              for_model: "investment_opportunity", field_name: "video", 
-                              model: investment_opportunity %>
-
-      <small class="text-muted"> Upload Video. </small>
     </div>
 
     <%= custom_form_fields(investment_opportunity, form) %>

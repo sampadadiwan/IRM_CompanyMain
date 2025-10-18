@@ -1,6 +1,6 @@
 class InvestmentOpportunitiesController < ApplicationController
   before_action :authenticate_user!, except: %i[no_password_show]
-  before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification finalize_allocation]
+  before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification finalize_allocation show_email_list]
 
   skip_after_action :verify_authorized, only: [:no_password_show]
   # GET /investment_opportunities or /investment_opportunities.json
@@ -105,9 +105,9 @@ class InvestmentOpportunitiesController < ApplicationController
   end
 
   def send_notification
-    @investment_opportunity.send(params[:notification]) if %w[notify_open_for_interests notify_allocation].include? params[:notification]
+    InvestmentOpportunitySender.send(@investment_opportunity, params, current_user)
     respond_to do |format|
-      format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Notification sent successfully." }
+      format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Notification will be sent to the email addresses as requested." }
       format.json { render :show, status: :ok, location: @investment_opportunity }
     end
   end
@@ -133,6 +133,13 @@ class InvestmentOpportunitiesController < ApplicationController
     render "finalize_allocation"
   end
 
+  def show_email_list
+    @notification_users = []
+    @investment_opportunity.investors.each do |investor|
+      @notification_users += investor.notification_users
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -143,6 +150,6 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_opportunity_params
-    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details, :buyer_docs_list, :shareable, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :tag_list, :details, :shareable, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end
