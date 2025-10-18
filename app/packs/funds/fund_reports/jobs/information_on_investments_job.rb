@@ -32,7 +32,7 @@ class InformationOnInvestmentsJob
 
       data[index]["Name of Scheme"]["Value"] = @fund.name
       data[index]["Name of Investee Company"]["Value"] = api.portfolio_company_name
-      data[index]["PAN of Investee Company if available"]["Value"] = api.portfolio_company.pan
+      data[index]["PAN of Investee Company if available"]["Value"] = "" # api.portfolio_company.pan # pan is removed from investor
 
       data[index]["Type of Investee Company"]["Value"] = inv_instrument.custom_fields.sebi_type_of_investee_company
       data[index]["Type of Security"]["Value"] = inv_instrument.custom_fields.sebi_type_of_security
