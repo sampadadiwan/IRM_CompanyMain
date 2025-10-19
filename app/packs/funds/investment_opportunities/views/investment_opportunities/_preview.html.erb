@@ -28,33 +28,35 @@
 
 <div class="mt-5">
 
-<% if current_user && current_user.has_cached_role?(:rm) %>
+    <% if current_user && current_user.has_cached_role?(:rm) %>
 
-    <div id="eois" class="associated_entity">
+        <div id="eois" class="associated_entity">
 
-        <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
-                                all: true)  do %>
-            <%= render "/layouts/loading" %>
+            <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
+                                    all: true)  do %>
+                <%= render "/layouts/loading" %>
+            <% end %>
+
+        </div>
+    <% end %>
+
+    <% if current_user && current_user.curr_role == "investor" %>
+        <% eois = policy_scope(ExpressionOfInterest).where(investment_opportunity_id: investment_opportunity.id) %>
+
+        <% eois.each do |eoi| %>
+          <%= render "/expression_of_interests/card", expression_of_interest: eoi if eoi %>
         <% end %>
 
-    </div>
-<% end %>
-
-<% if current_user && current_user.curr_role == "investor" %>
-    <% eoi = policy_scope(ExpressionOfInterest).find_by(investment_opportunity_id: investment_opportunity.id) %>
-
-
-    <%= render "/expression_of_interests/card", expression_of_interest: eoi if eoi %>
-
-    <% if eoi and eoi.show_data_room? %>
-        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder.id, show_root_docs: true) do %>
-            <div class="text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
+        <% eoi = eois.where(show_data_room: true).first %>
+        <% if eoi and eoi.show_data_room? %>
+            <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder.id, show_root_docs: true) do %>
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
                 </div>
-            </div>
+            <% end %>
         <% end %>
     <% end %>
-<% end %>
 
 </div>
