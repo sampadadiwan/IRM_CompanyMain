@@ -59,8 +59,10 @@ Given('the string {string}') do |input|
   @input_string = input
 end
 
-When('I check if it is date-like') do
+When('I check if it is date-like {string}') do |locale|
+  I18n.locale = locale.to_sym
   @result = KpiDateUtils.date_like?(@input_string)
+  I18n.locale = I18n.default_locale
 end
 
 Then('the result should be {word}') do |expected|

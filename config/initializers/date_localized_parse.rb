@@ -15,7 +15,7 @@ class Date
       Date.strptime(str, format)
     end
   rescue StandardError => e
-    Rails.logger.debug { "Date.local_parse date: #{str}, format: #{fmt_key}, error: #{e.message}" }
+    Rails.logger.debug { "Date.local_parse date: #{str}, format: #{format}, error: #{e.message}" }
     Date.parse(str) # Fallback to default parse if strptime fails
   end
 end

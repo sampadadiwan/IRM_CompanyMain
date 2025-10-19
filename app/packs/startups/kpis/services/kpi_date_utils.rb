@@ -3,7 +3,7 @@ class KpiDateUtils
   def self.date_like?(string)
     return false if string.blank?
 
-    normalized = string.strip.squeeze(" ")
+    normalized = string.strip.squeeze(" ").upcase
 
     patterns = [
       # Half-year formats like H1 2023, H2FY23, H1 FY2023
@@ -19,16 +19,16 @@ class KpiDateUtils
       /\b(?:FY|CY)\s?\d{2,4}\b/i,
 
       # Month + year (short and full)
-      /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|
+      /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|
           Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|
-          Nov(?:ember)?|Dec(?:ember)?)\s+\d{2,4}\b/ix,
+          Nov(?:ember)?|Dec(?:ember)?)\s*\d{2,4}/ix,
 
       # Quarter shorthands like JFM 2021, AMJ 2022
-      /\b(?:JFM|AMJ|JAS|OND)\s+\d{4}\b/i,
+      /(?:JFM|AMJ|JAS|OND)\s*\d{2,4}/i,
 
       # Month ranges like Jan-Mar 2021, Apr-Jun 2022
-      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)
-         -(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+\d{4}\b/ix,
+      /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)
+         -(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s*\d{4}/ix,
 
       # Date format like 01-11-2023 or 03/11/2022
       %r{\b\d{2}[-/]\d{2}[-/]\d{2,4}\b},
