@@ -94,7 +94,7 @@ module AccountEntryAllocation
     end
 
     def display_generated_links(ctx, fund:, start_date:, end_date:, user_id:, run_start_time:)
-      time_taken = ((Time.zone.now - run_start_time)).to_i
+      time_taken = (Time.zone.now - run_start_time).to_i
       msg = "Done running #{ctx[:formula_count]} formulas for #{start_date} - #{end_date} in #{time_taken} seconds"
 
       entry_types = [

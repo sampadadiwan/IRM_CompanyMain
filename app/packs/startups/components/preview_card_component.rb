@@ -1,6 +1,6 @@
 class PreviewCardComponent < ViewComponent::Base
   def initialize(title: "", path: "", model: nil, object: nil, logo: nil)
-    super
+    super()
     @title = title
     @path = path
     @model = model

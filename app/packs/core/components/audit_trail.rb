@@ -1,6 +1,6 @@
 class AuditTrail < ViewComponent::Base
   def initialize(model, title: nil, css_class: "", state: "show", allow_toggle: true)
-    super
+    super()
     @model = model
     @title = title
     @css_class = css_class

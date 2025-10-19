@@ -3,7 +3,7 @@ class RansackTableHeader < ViewComponent::Base
   include ApplicationHelper
 
   def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true)
-    super
+    super()
     @model = model
     @q = q.presence || @model.ransack
     @id = id

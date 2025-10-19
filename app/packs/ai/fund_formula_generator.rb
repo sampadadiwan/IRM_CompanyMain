@@ -54,7 +54,7 @@ class FundFormulaGenerator
                WHEN entry_type = #{ActiveRecord::Base.connection.quote(entry_type)} THEN 2
                ELSE 3
              END AS priority")
-                    .order("priority ASC")
+                    .order(:priority)
                     .limit(EXAMPLE_FORMULAS_COUNT)
 
       prioritized.map do |formula|

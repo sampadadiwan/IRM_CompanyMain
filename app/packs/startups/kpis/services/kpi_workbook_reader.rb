@@ -70,12 +70,12 @@ class KpiWorkbookReader
       # Iterate through each sheet in the workbook
       @workbook.sheets.each do |sheet|
         Rails.logger.debug { "KpiWorkbookReader: Processing sheet: #{sheet}" }
-
         begin
           # Set the current sheet as the default sheet
           @workbook.default_sheet = sheet
           # Detect the header row in the sheet
           header_row_index = detect_header_row
+
           unless header_row_index
             # Log a warning if no valid header row is found
             msg = "No valid header found in KPI import file for sheet: #{sheet}"
@@ -90,9 +90,12 @@ class KpiWorkbookReader
           # Process the data rows below the header
           process_data_rows(sheet, header_row_index + 1, header)
         rescue StandardError => e
+          msg = if e.message.include?("invalid value for Float():")
+                  "The xlsx sheet you are trying to import seems to be invalid. Please correct and try again. Sheet: '#{sheet}'"
+                else
+                  "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
+                end
           Rails.logger.debug e.backtrace
-          # Log an error if processing the sheet fails
-          msg = "Failed to process sheet '#{sheet}' in KPI import file: #{e.message}"
           Rails.logger.error(msg)
           @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name, document_id: @document.id, kpi_name: nil, sheet: sheet, period: nil, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
           next

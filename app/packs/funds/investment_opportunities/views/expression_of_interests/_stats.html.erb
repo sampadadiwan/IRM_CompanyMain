@@ -1,33 +1,32 @@
-<% cache_if(current_user != nil, cache_key("eoi_stats"), expires_in: 5.day) do %>
+
   <% eoi_types = {
-      all: { path: expression_of_interests_path, subtitle: "Total", progress_bar_color: "primary", icon: "ti ti-list" },
-      approved: { path: expression_of_interests_path(q: ransack_query_params("approved", :eq, true)), subtitle: "Approved", progress_bar_color: "success", icon: "ti ti-check" },
-      verified: { path: expression_of_interests_path(q: ransack_query_params("verified", :eq, true)), subtitle: "Verified", progress_bar_color: "info", icon: "ti ti-certificate" },
-      unapproved: { path: expression_of_interests_path(q: ransack_query_params("approved", :eq, false)), subtitle: "Unapproved", progress_bar_color: "danger", icon: "ti ti-x" },
-      unverified: { path: expression_of_interests_path(q: ransack_query_params("verified", :eq, false)), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" }
+      all: { path: expression_of_interests_path(investment_opportunity_id: params[:investment_opportunity_id]), subtitle: "Total", progress_bar_color: "primary", icon: "ti ti-list" },
+      approved: { path: expression_of_interests_path(investment_opportunity_id: params[:investment_opportunity_id], q: ransack_query_params("approved", :eq, true)), subtitle: "Approved", progress_bar_color: "success", icon: "ti ti-check" },
+      verified: { path: expression_of_interests_path(investment_opportunity_id: params[:investment_opportunity_id], q: ransack_query_params("verified", :eq, true)), subtitle: "Verified", progress_bar_color: "info", icon: "ti ti-certificate" },
+      unapproved: { path: expression_of_interests_path(investment_opportunity_id: params[:investment_opportunity_id], q: ransack_query_params("approved", :eq, false)), subtitle: "Unapproved", progress_bar_color: "danger", icon: "ti ti-x" },
+      unverified: { path: expression_of_interests_path(investment_opportunity_id: params[:investment_opportunity_id], q: ransack_query_params("verified", :eq, false)), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" }
     }
   %>
 
-  <div class="row">
-    <% eoi_types.each do |type, data| %>
-      <div class="col">
-        <a href="<%= data[:path] %>" data-turbo-frame="expression_of_interests_list">
-          <div class="card">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-3">
-                <div>
-                  <h3 class="fs-8"><%= policy_scope(current_user.entity.expression_of_interests.send(type)).count %></h3>
-                  <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
-                </div>
-                <div class="ms-auto">
-                  <span class="text-<%= data[:progress_bar_color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
-                </div>
+<div class="row">
+  <% eoi_types.each do |type, data| %>
+    <div class="col">
+      <a href="<%= data[:path] %>" data-turbo-frame="expression_of_interests_list">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= policy_scope(@expression_of_interests.send(type)).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
               </div>
-              <div class="progress-bar text-bg-<%= data[:progress_bar_color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+              <div class="ms-auto">
+                <span class="text-<%= data[:progress_bar_color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+              </div>
             </div>
+            <div class="progress-bar text-bg-<%= data[:progress_bar_color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
           </div>
-        </a>
-      </div>
-    <% end %>
-  </div>
-<% end %>
+        </div>
+      </a>
+    </div>
+  <% end %>
+</div>

@@ -2,7 +2,7 @@
 
 class DisplayBooleanComponent < ViewComponent::Base
   def initialize(bool:)
-    super
+    super()
     @bool = bool
   end
 end

@@ -1,5 +1,5 @@
 class InvestmentOpportunitySender
-  def self.send(investment_opportunity, params, user)
+  def self.send(investment_opportunity, params, _user)
     if params[:notification].present? && InvestmentOpportunity::NOTIFICATION_METHODS.include?(params[:notification])
       investment_opportunity.send(params[:notification])
     elsif params[:custom_notification_id].present?

@@ -4,7 +4,7 @@ class FoldersController < ApplicationController
 
   # GET /folders or /folders.json
   def index
-    @folders = policy_scope(Folder).order("full_path").includes(:parent)
+    @folders = policy_scope(Folder).order(:full_path).includes(:parent)
     @folders = @folders.not_system if params[:all].blank?
   end
 

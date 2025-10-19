@@ -2,7 +2,7 @@ class ToggleCard < ViewComponent::Base
   renders_one :header
 
   def initialize(title:, css_class: "", controller: nil, state: "show", allow_toggle: true)
-    super
+    super()
     @title = title
     # Any additional css classes to be attached to the card
     @css_class = css_class

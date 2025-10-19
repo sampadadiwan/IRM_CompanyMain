@@ -20,20 +20,54 @@
     <%= display_boolean expression_of_interest.show_data_room %>
   </td>
 
-  <td>
+  <td class="text-end">
     <%= expression_of_interest.allocation_percentage %> %
   </td>
 
-  <td>
+  <td class="text-end">
     <%= money_to_currency expression_of_interest.allocation_amount, params %>
   </td>
   <td>
-    <%= link_to  t_common(:show) , expression_of_interest , {class: "btn btn-outline-primary ti ti-eye" }%>
-    <% label = expression_of_interest.approved ?  "UnApprove" : "Approve" %>
-    <% label_icons = expression_of_interest.approved ?  "ti ti-circle-x" : "ti ti-check" %>
+    <div class="dropdown">
+      <button class="btn btn-outline-primary dropdown-toggle" type="button" id="eoiActionsDropdown"
+              data-bs-toggle="dropdown" aria-expanded="false">
+        Actions
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="eoiActionsDropdown">
+        <li>
+          <%= link_to t_common(:show), expression_of_interest,
+              class: "dropdown-item ti ti-eye" %>
+        </li>
 
-    <% disabled = expression_of_interest.investor_kyc.nil? && expression_of_interest.user.has_cached_role?(:rm) %>
-    <%= button_to label , approve_expression_of_interest_path(expression_of_interest), method: :patch, class: "btn btn-outline-success #{label_icons}", disabled:, form_class: "deleteButton" if policy(expression_of_interest).approve? %>
+        <% label = expression_of_interest.approved ? "UnApprove" : "Approve" %>
+        <% label_icons = expression_of_interest.approved ? "ti ti-circle-x text-danger" : "ti ti-check text-success" %>
+        <% disabled = expression_of_interest.investor_kyc.nil? && expression_of_interest.user.has_cached_role?(:rm) %>
+        <% if policy(expression_of_interest).approve? %>
+          <li>
+            <%= button_to label, approve_expression_of_interest_path(expression_of_interest),
+                method: :patch, class: "dropdown-item #{label_icons}",
+                disabled:, form_class: "deleteButton" %>
+          </li>
+        <% end %>
 
+        <% if policy(expression_of_interest).update? %>
+          <% if expression_of_interest.show_data_room %>
+            <li>
+              <%= button_to "Hide Data Room",
+                  expression_of_interest_path(expression_of_interest, expression_of_interest: { show_data_room: false }),
+                  method: :patch, class: "dropdown-item text-danger ti ti-folder-off",
+                  form_class: "deleteButton", data: { method: :patch, action: "click->confirm#popup", msg: "Hide Data Room for this Expression of Interest?" } %>
+            </li>
+          <% else %>
+            <li>
+              <%= button_to "Show Data Room",
+                  expression_of_interest_path(expression_of_interest, expression_of_interest: { show_data_room: true }),
+                  method: :patch, class: "dropdown-item text-success ti ti-folder-check",
+                  form_class: "deleteButton", data: { method: :patch, action: "click->confirm#popup", msg: "Show Data Room for this Expression of Interest?" } %>
+            </li>
+          <% end %>
+        <% end %>
+      </ul>
+    </div>
   </td>
 </tr>

@@ -2,7 +2,7 @@
 
 class WidgetCardComponent < ViewComponent::Base
   def initialize(widget:, widget_size: nil, name: nil, args: {})
-    super
+    super()
     @widget = widget
     @widget_size = widget_size || widget.widget_size
     @name = name || widget.widget_name

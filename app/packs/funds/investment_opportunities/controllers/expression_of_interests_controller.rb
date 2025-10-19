@@ -54,6 +54,11 @@ class ExpressionOfInterestsController < ApplicationController
   def update
     respond_to do |format|
       if @expression_of_interest.update(expression_of_interest_params)
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace(@expression_of_interest)
+          ]
+        end
         format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "Expression of interest was successfully updated." }
         format.json { render :show, status: :ok, location: @expression_of_interest }
       else

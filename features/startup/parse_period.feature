@@ -6,7 +6,9 @@ Feature: KPI Period Parsing
 
   Scenario Outline: Check if string is date-like
     Given the string "<input>"
-    When I check if it is date-like
+    When I check if it is date-like "en"
+    Then the result should be <expected>
+    When I check if it is date-like "en-US"
     Then the result should be <expected>
 
     Examples:
@@ -28,6 +30,9 @@ Feature: KPI Period Parsing
       | Q3 FY2021        | true     |
       | Q3 FY21          | true     |
       | JAS 2023         | true     |
+      | jas 2023         | true     |
+      | JAS2023         | true     |
+      | jas2023         | true     |
       | Oct-Dec 2020     | true     |
       | OND 2020         | true     |
       | Jan 21          | true     |

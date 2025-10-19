@@ -3,7 +3,7 @@ class RansackTableRow < ViewComponent::Base
   include CurrencyHelper
 
   def initialize(model:, columns:)
-    super
+    super()
     @columns = columns
     @model = model
   end

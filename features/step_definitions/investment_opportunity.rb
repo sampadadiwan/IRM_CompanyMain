@@ -157,12 +157,13 @@
     visit(investment_opportunity_path(@investment_opportunity))
     click_on "Interests"
     within("#expression_of_interest_#{@expression_of_interest.id}") do
+      click_on "Actions"
       click_on "Approve"
     end
     within(".eoi_approved") do
       expect(page).to have_content("Yes")
     end
-    
+
     #sleep(1)
   end
 
@@ -260,7 +261,7 @@
     @expression_of_interest.investor_kyc = @kyc
     @expression_of_interest.save!
   end
-  
+
   When('a new investor should be created from the EOI') do
     @new_investor = Investor.last
     @new_investor.entity_id.should == @expression_of_interest.entity_id
