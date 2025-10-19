@@ -1,3 +1,30 @@
+V9.1.25
+#####################################
+293d77175 Fix for IO data room creation with image
+33174e8c5 Added fix for EOI action button getting hidden
+54c739d4f Fixed stats for EOI
+b9798ed1e Added EOI card to preview
+a0eab1f61 Added show hide data room in EOI list
+544fa7891 Better logging of invalid xlsx sheets for import in kpi
+656e46a1d Bumped up the xirr_py ver to 2.6 in the schedule.rb
+2427b144a Fixed KpiDateUtils.date_like? To support en-US locale
+45d78c4db Upgraded gems
+ccf9da2a7 Io custom notifications (#1049)
+3ba9b5ddf Fixed sebi report spec - no pan in portfolio companies (#1048)
+4005af2ff Fixed issue where inv adv's inv access creation errors are not visible
+7af19ba93 Removed pan from investor UI and uploads
+aa0cb14d0 Date.local_parse for all imports and other places
+a3bb611b1 Temp setting up india dev as us locale
+c75413d16 Added US specific lables into en-US.yml, and LocalHelper to force labels to system locale
+e9b72c7bf Renamed SOA to Investor Statement
+b559a449e Added stats for EOI
+107beab2a Added Data Room to IO
+2d6df785f Added import upload for agent charts
+503bccc76 Esign emails validation (#1036)
+2d687c57f Added import upload for agent charts
+4276094c6 Added agent charts download
+
+
 V9.1.24
 #####################################
 1642d0ce5 Dist Payment units can only be redeemed once (#1040)

@@ -4,6 +4,7 @@ set :rails_env, fetch(:stage)
 set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
+set :whenever_roles, -> :all
 
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true
