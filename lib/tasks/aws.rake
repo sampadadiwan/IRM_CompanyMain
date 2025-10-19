@@ -78,4 +78,63 @@ namespace :aws do
       # Additional configuration like credentials could be added here
     })
   end
+
+
+  desc "Provision and replicate S3 buckets"
+  task provision_s3_buckets: :environment do
+    require "aws-sdk-s3"
+
+    source_bucket  = ENV.fetch("AWS_S3_BUCKET")
+    replica_bucket = ENV.fetch("AWS_S3_BUCKET_REPLICA")
+
+    # Allow source & replica to live in different regions
+    source_region  = ENV.fetch("AWS_S3_REGION")                            # e.g., "us-east-1"
+    replica_region = ENV.fetch("AWS_REPLICA_REGION", source_region)     # e.g., "us-east-1"
+
+
+    # Build per-region clients
+    s3 = {
+      source:  Aws::S3::Client.new(region: source_region),
+      replica: Aws::S3::Client.new(region: replica_region)
+    }
+
+    def ensure_bucket!(client:, bucket:, region:)
+      begin
+        client.head_bucket(bucket: bucket)
+        puts "✅ Bucket '#{bucket}' already exists in (client) region #{region}."
+      rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchBucket
+        # Create with correct us-east-1 handling
+        if region == "us-east-1"
+          client.create_bucket(bucket: bucket)
+        else
+          client.create_bucket(
+            bucket: bucket,
+            create_bucket_configuration: { location_constraint: region }
+          )
+        end
+        puts "🪣 Created bucket '#{bucket}' in #{region}."
+      rescue Aws::S3::Errors::Http301Error => e
+        # Existing bucket but different region than client; show the actual region to fix envs
+        actual = e.context.http_response.headers["x-amz-bucket-region"] rescue nil
+        raise "Bucket '#{bucket}' exists in region '#{actual}'. Use a client in that region."
+      end
+
+      # Versioning is required for replication
+      client.put_bucket_versioning(
+        bucket: bucket,
+        versioning_configuration: { status: "Enabled" }
+      )
+      puts "📜 Enabled versioning on '#{bucket}'."
+    end
+
+    # Ensure both buckets exist + versioning on
+    ensure_bucket!(client: s3[:source],  bucket: source_bucket,  region: source_region)
+    ensure_bucket!(client: s3[:replica], bucket: replica_bucket, region: replica_region)
+
+    puts "✅ Both buckets are provisioned and versioning enabled."
+    puts "ℹ️  Note: CORS policies and other settings must be configured manually as needed."
+    puts "⚠️  Warning: without proper CORS settings, web apps will face issues accessing the buckets."
+    puts "ℹ️  Note: Replication must be setup manually"
+    puts "⚠️  Warning: without replication setup, objects will not be auto-replicated between buckets."
+  end
 end
