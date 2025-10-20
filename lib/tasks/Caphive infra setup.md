@@ -60,3 +60,17 @@ Ex ouput is below
 4.	Then the script will deploy this branch to the new infra
 5.	Setup replica using rake db:reset_replication on the appserver box
 6.	Note: That if the last backup is before the last deployment to prod, it may not have the required migrations. This has to be run manually as the backup DB will be loaded
+
+
+## Additional Notes
+1. Setup the S3 buckets and replication of S3 buckets
+    On the prod box run
+    `RAILS_ENV=production bundle exec rake aws:provision_s3_buckets`
+    This will create the buckets but the replication has to be setup manually
+
+2. Setup the SES server and verify the email identity
+    This will have to be setup manually
+    Ensure the domain identity is verified post setup
+
+3. Setup the DB backup by installing the backup_db.sh script on the prod DB server
+    Add the full and incr backup to the crontab

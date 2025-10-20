@@ -36,7 +36,8 @@ class EntityMailer < ApplicationMailer
   def notify_errors
     @error_msg = params[:error_msg]
     subject = params[:subject].presence || "Errors"
-    mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
+    to = params[:to].presence || ENV.fetch('SUPPORT_EMAIL', nil)
+    mail(to:, subject:)
   end
 
   def notify_info

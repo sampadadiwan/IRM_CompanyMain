@@ -22,7 +22,7 @@ class S3CheckJob < ApplicationJob
     client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: 'ap-southeast-1' # Singapore
+      region: ENV.fetch('AWS_S3_REPLICA_REGION', nil)
     )
 
     destination_s3 = Aws::S3::Resource.new(client:)

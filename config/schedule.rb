@@ -4,8 +4,6 @@
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
 
-
-
 every :reboot, roles: [:app] do
   bundle "sidekiq"
   bundle "prometheus_exporter -b 0.0.0.0"
@@ -23,7 +21,6 @@ every :saturday, at: '1:00 am', roles: [:app] do
   command 'sudo reboot'
 end
 
-
 every 1.week, at: '02:00 am', roles: [:primary] do
   # Ensure AMIs are created and backed up
   rake '"aws:create_and_copy_ami[AppServer]"'
@@ -39,4 +36,3 @@ end
 every 1.year, at: 'December 15 03:00am', roles: [:primary] do
   rake "partitions:ensure_account_entries"
 end
-

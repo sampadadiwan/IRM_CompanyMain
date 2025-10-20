@@ -11,19 +11,13 @@ IFS=$'\n\t'
 # RAILS_ENV=production rake xtrabackup:generate_backup_script
 # This generates a file with all vars setup
 
-# This is the sequence to restore replica
-# PROD Primary DB
-# * ./db_backup.sh full
-# * ./db_backup.sh incr
 
+# Ensure this is in the crontab of the primary DB server. Note the file in prod is called backup_db.sh (change if diff)
+# # Runs at 23:00 only
+# 0 23 * * * /home/ubuntu/backup_db.sh full >> /tmp/mysql_backup_incr.log 2>&1
 
-# PROD Replica DB
-# 	./db_backup.sh restore_primary
-
-# PROD App Server
-# 	RAILS_ENV=production bundle exec rake db:reset_replication
-
-
+# # Runs every hour except at 23:00
+# 0,30 0-22 * * * /home/ubuntu/backup_db.sh incr >> /tmp/mysql_backup_incr.log 2>&1
 
 
 # To setup these ENVs run on the prod box
@@ -37,8 +31,6 @@ export AWS_SECRET_ACCESS_KEY="__AWS_SECRET_ACCESS_KEY__"
 export MYSQL_PASSWORD="__MYSQL_PASSWORD__"
 export MYSQL_USER="__MYSQL_USER__"
 export DATABASE_NAME="__DATABASE_NAME__"
-
-
 
 
 # Required ENV
@@ -454,6 +446,8 @@ EOF
 
 main() {
   cleanup # Initialize: Clean up any previous temporary files
+  mkdir -p "$TMPDIR"
+
   case "${1:-}" in
     full)
       full_backup

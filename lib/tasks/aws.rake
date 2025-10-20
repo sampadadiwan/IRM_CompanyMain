@@ -85,6 +85,7 @@ namespace :aws do
     require "aws-sdk-s3"
 
     source_bucket  = ENV.fetch("AWS_S3_BUCKET")
+    db_backup_xtra_bucket = "#{source_bucket}-backup-xtra"
     replica_bucket = ENV.fetch("AWS_S3_BUCKET_REPLICA")
 
     # Allow source & replica to live in different regions
@@ -95,7 +96,8 @@ namespace :aws do
     # Build per-region clients
     s3 = {
       source:  Aws::S3::Client.new(region: source_region),
-      replica: Aws::S3::Client.new(region: replica_region)
+      replica: Aws::S3::Client.new(region: replica_region),
+      db_backup_xtra: Aws::S3::Client.new(region: source_region)
     }
 
     def ensure_bucket!(client:, bucket:, region:)
@@ -130,6 +132,7 @@ namespace :aws do
     # Ensure both buckets exist + versioning on
     ensure_bucket!(client: s3[:source],  bucket: source_bucket,  region: source_region)
     ensure_bucket!(client: s3[:replica], bucket: replica_bucket, region: replica_region)
+    ensure_bucket!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, region: source_region)
 
     puts "✅ Both buckets are provisioned and versioning enabled."
     puts "ℹ️  Note: CORS policies and other settings must be configured manually as needed."
