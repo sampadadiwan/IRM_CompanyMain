@@ -33,6 +33,12 @@
                 <i class="ti ti-question-mark"></i>
               </button>
 
+              <% if ENV['OPEN_WEB_UI_URL'].present? %>
+                <%= link_to ENV['OPEN_WEB_UI_URL'], target: "caphive_support_bot", class: "fs-5 btn mb-1 btn-info rounded-circle round d-inline-flex align-items-center justify-content-center", "data-bs-toggle": "tooltip", title: "Support Bot" do %>
+                  <i class="ti ti-robot"></i>
+                <% end %>
+              <% end %>
+
             <% end %>
         </div>
 

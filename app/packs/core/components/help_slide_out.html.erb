@@ -4,23 +4,23 @@
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
-    
+
     <% if @class_name && @id %>
-    
-      <%= turbo_frame_tag "tasks_frame", target: "_top", loading: :lazy, 
+
+      <%= turbo_frame_tag "tasks_frame", target: "_top", loading: :lazy,
           src: tasks_path(owner_id: @id, owner_type: @class_name, timeline: true, for_class: @class_name, for_class_id: @id, tag_list: controller.action_name) do %>
         <%= render "/layouts/loading" %>
-      <% end %> 
-    
-    <% end %>    
+      <% end %>
 
-    <div style="width: 100%; height: 85vh; overflow: hidden;">
-      <iframe src="<%= ENV['OPEN_WEB_UI_URL'] %>" 
-              style="width: 100%; height: 100%; border: none;" 
+    <% end %>
+
+    <!-- div style="width: 100%; height: 85vh; overflow: hidden;">
+      <iframe src="<%= ENV['OPEN_WEB_UI_URL'] %>"
+              style="width: 100%; height: 100%; border: none;"
               allowfullscreen>
       </iframe>
-    </div>
-    
+    </div -->
+
     <div class="text-center alert alert-info">
       Contact support at support@caphive.com
     </div>

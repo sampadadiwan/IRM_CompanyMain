@@ -1,3 +1,15 @@
+V9.1.26
+#####################################
+597feaabb Fixed IO preview docs show
+acdc82353 Added domain to ExceptionNotifier
+b1dd4010d Added Base domain to all error emails
+41d933167 Fixed issues with S3 buckets regions
+6cd5f16c4 Fixed S3CheckJob to use the right S3 backup region
+605e0de34 Fixed caphive.us domain in .env
+317dcf19d Added better buckets to us deployment
+2f3145aec Added bucket setup
+2224b30ef Prod us 19 10 2025 (#1051)
+
 V9.1.25
 #####################################
 293d77175 Fix for IO data room creation with image
