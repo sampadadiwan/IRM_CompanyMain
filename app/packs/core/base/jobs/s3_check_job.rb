@@ -34,6 +34,15 @@ class S3CheckJob < ApplicationJob
     destination_bucket = destination_s3.bucket(destination_bucket_name)
     destination_objects = destination_bucket.objects
     destination_latest_file = destination_objects.max_by(&:last_modified)
+
+    if destination_latest_file.nil?
+      msg = "The destination bucket #{destination_bucket_name} is empty. Latest file '#{source_latest_file.key}' is not present."
+      Rails.logger.debug msg
+      e = StandardError.new msg
+      ExceptionNotifier.notify_exception(e)
+      return
+    end
+
     Rails.logger.debug { "Latest file found: #{destination_latest_file.key}" }
 
     if destination_latest_file.key == source_latest_file.key

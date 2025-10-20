@@ -104,7 +104,7 @@ module CapHive
     if ENV['VULN_SCAN'].blank?
       Rails.application.config.middleware.use ExceptionNotification::Rack,
                                               email: {
-                                                email_prefix: "[Error] #{Rails.env}: ",
+                                                email_prefix: "[Error] #{Rails.env}: #{ENV['BASE_DOMAIN']}",
                                                 sender_address: ENV.fetch("SUPPORT_EMAIL", nil),
                                                 exception_recipients: ENV.fetch('ERROR_EMAIL')
                                               }
