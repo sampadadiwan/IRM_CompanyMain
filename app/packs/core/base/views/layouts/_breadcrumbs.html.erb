@@ -29,14 +29,16 @@
                 <i class="ti ti-calendar"></i>
               <% end %>
 
-              <button class="fs-5 btn mb-1 btn-primary rounded-circle round d-inline-flex align-items-center justify-content-center" data-bs-toggle="offcanvas" href="#help_slide_out" role="button" aria-controls="help_slide_out" title="Show Help">
-                <i class="ti ti-question-mark"></i>
-              </button>
+
 
               <% if ENV['OPEN_WEB_UI_URL'].present? %>
                 <%= link_to ENV['OPEN_WEB_UI_URL'], target: "caphive_support_bot", class: "fs-5 btn mb-1 btn-info rounded-circle round d-inline-flex align-items-center justify-content-center", "data-bs-toggle": "tooltip", title: "Support Bot" do %>
                   <i class="ti ti-robot"></i>
                 <% end %>
+              <% else %>
+                <button class="fs-5 btn mb-1 btn-primary rounded-circle round d-inline-flex align-items-center justify-content-center" data-bs-toggle="offcanvas" href="#help_slide_out" role="button" aria-controls="help_slide_out" title="Show Help">
+                  <i class="ti ti-question-mark"></i>
+                </button>
               <% end %>
 
             <% end %>
