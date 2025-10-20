@@ -4,14 +4,14 @@ class S3CheckJob < ApplicationJob
     client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: 'ap-south-1' # Mumbai
+      region: ENV.fetch('AWS_S3_REGION', nil)
     )
 
     source_s3 = Aws::S3::Resource.new(client:)
 
     # Get the latest file from the source bucket
     source_bucket_name = ENV.fetch('AWS_S3_BUCKET', nil).to_s
-    Rails.logger.debug { "Checking for the latest file in the source bucket #{source_bucket_name}" }
+    Rails.logger.debug { "Checking for the latest file in the source bucket #{source_bucket_name} in region #{ENV.fetch('AWS_S3_REGION', nil)}" }
 
     source_bucket = source_s3.bucket(source_bucket_name)
     source_objects = source_bucket.objects
@@ -26,9 +26,10 @@ class S3CheckJob < ApplicationJob
     )
 
     destination_s3 = Aws::S3::Resource.new(client:)
-
     # Check if the latest file exists in the destination bucket
     destination_bucket_name = ENV.fetch("AWS_S3_BUCKET_REPLICA", nil).to_s
+    Rails.logger.debug { "Checking for the latest file in the destination bucket #{destination_bucket_name} in region #{ENV.fetch('AWS_S3_REPLICA_REGION', nil)}" }
+
 
     destination_bucket = destination_s3.bucket(destination_bucket_name)
     destination_objects = destination_bucket.objects

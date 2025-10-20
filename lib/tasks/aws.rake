@@ -87,17 +87,19 @@ namespace :aws do
     source_bucket  = ENV.fetch("AWS_S3_BUCKET")
     db_backup_xtra_bucket = "#{source_bucket}-backup-xtra"
     replica_bucket = ENV.fetch("AWS_S3_BUCKET_REPLICA")
+    replica_db_backup_xtra_bucket = "#{replica_bucket}-backup-xtra"
 
     # Allow source & replica to live in different regions
     source_region  = ENV.fetch("AWS_S3_REGION")                            # e.g., "us-east-1"
-    replica_region = ENV.fetch("AWS_REPLICA_REGION", source_region)     # e.g., "us-east-1"
+    replica_region = ENV.fetch("AWS_S3_REPLICA_REGION", source_region)     # e.g., "us-east-1"
 
 
     # Build per-region clients
     s3 = {
       source:  Aws::S3::Client.new(region: source_region),
       replica: Aws::S3::Client.new(region: replica_region),
-      db_backup_xtra: Aws::S3::Client.new(region: source_region)
+      db_backup_xtra: Aws::S3::Client.new(region: source_region),
+      replica_db_backup_xtra: Aws::S3::Client.new(region: replica_region)
     }
 
     def ensure_bucket!(client:, bucket:, region:)
@@ -133,6 +135,7 @@ namespace :aws do
     ensure_bucket!(client: s3[:source],  bucket: source_bucket,  region: source_region)
     ensure_bucket!(client: s3[:replica], bucket: replica_bucket, region: replica_region)
     ensure_bucket!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, region: source_region)
+    ensure_bucket!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, region: replica_region)
 
     puts "✅ Both buckets are provisioned and versioning enabled."
     puts "ℹ️  Note: CORS policies and other settings must be configured manually as needed."
