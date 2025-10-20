@@ -16,7 +16,7 @@
 <%= render "/ci_widgets/preview_widgets2", owner: investment_opportunity %>
 
 <div class="row justify-content-center">
-    <% investment_opportunity.documents.each do |doc| %>
+    <% investment_opportunity.document_folder.documents.each do |doc| %>
         <div class="col-md-3"><%= render "/investment_opportunities/preview_document", document: doc %></div>
     <% end %>
 </div>
@@ -56,6 +56,14 @@
                     </div>
                 </div>
             <% end %>
+        <% end %>
+    <% elsif current_user && current_user.entity_id == investment_opportunity.entity_id %>
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
         <% end %>
     <% end %>
 

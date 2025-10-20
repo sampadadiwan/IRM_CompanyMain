@@ -30,7 +30,6 @@ class S3CheckJob < ApplicationJob
     destination_bucket_name = ENV.fetch("AWS_S3_BUCKET_REPLICA", nil).to_s
     Rails.logger.debug { "Checking for the latest file in the destination bucket #{destination_bucket_name} in region #{ENV.fetch('AWS_S3_REPLICA_REGION', nil)}" }
 
-
     destination_bucket = destination_s3.bucket(destination_bucket_name)
     destination_objects = destination_bucket.objects
     destination_latest_file = destination_objects.max_by(&:last_modified)

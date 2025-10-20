@@ -2,21 +2,21 @@ class EntityMailer < ApplicationMailer
   def notify_created
     @entity = Entity.find params[:id]
     mail(to: ENV.fetch('SUPPORT_EMAIL', nil),
-         subject: "#{ENV['BASE_DOMAIN']} New Entity created #{@entity.name}")
+         subject: "#{ENV.fetch('BASE_DOMAIN', nil)} New Entity created #{@entity.name}")
   end
 
   def doc_gen_errors
     setup_defaults
     add_support_to_cc
     @error_msg = params[:error_msg]
-    subject = params[:subject].presence || "#{ENV['BASE_DOMAIN']} Errors"
+    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
   def spa_job_errors
     add_support_to_cc
     @error_msg = params[:error_msg]
-    subject = params[:subject].presence || "#{ENV['BASE_DOMAIN']} Errors"
+    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
@@ -35,14 +35,14 @@ class EntityMailer < ApplicationMailer
 
   def notify_errors
     @error_msg = params[:error_msg]
-    subject = "#{ENV['BASE_DOMAIN']} #{params[:subject].presence || "Errors"}"
+    subject = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence || 'Errors'}"
     to = params[:to].presence || ENV.fetch('SUPPORT_EMAIL', nil)
     mail(to:, subject:)
   end
 
   def notify_info
     @msg = params[:msg]
-    subject = params[:subject].presence || "#{ENV['BASE_DOMAIN']} INFO"
+    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} INFO"
     mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
   end
 
@@ -54,7 +54,7 @@ class EntityMailer < ApplicationMailer
     rescue StandardError
       []
     end
-    @title = "#{ENV['BASE_DOMAIN']} #{params[:subject].presence}"
+    @title = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence}"
 
     Rails.logger.info("[EntityMailer] Sending report email with #{@report_data.size} rows.")
     Rails.logger.debug(@report_data.inspect)

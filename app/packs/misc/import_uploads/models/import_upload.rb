@@ -100,7 +100,7 @@ class ImportUpload < ApplicationRecord
   end
 
   def headers
-    return [] unless import_type.present?
+    return [] if import_type.blank?
 
     importer = "Import#{import_type}".constantize.new
     importer.respond_to?(:standard_headers) ? importer.standard_headers : []
