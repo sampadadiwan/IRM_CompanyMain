@@ -37,7 +37,7 @@ class KpiWorkbookReader
     @user = user
     @update_existing_kpis = update_existing_kpis
     # We need to cleanup the file before processing it to remove blank/hidden rows & cols. Note this will update the file on S3
-    ConvertKpiToCsvJob.perform_now(@kpi_report.id, @user.id, @document.id, action: 'cleanup')
+    # ConvertKpiToCsvJob.perform_now(@kpi_report.id, @user.id, @document.id, action: 'cleanup')
 
     # Index the @kpi_mappings by normalized KPI names for quick lookup
     # Normalize kpi_mappings to be case-/space-insensitive
