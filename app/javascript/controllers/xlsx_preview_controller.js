@@ -74,138 +74,56 @@ export default class extends Controller {
   }
 
   normalizeSheetData(sheet) {
-    // Fix: interpret Excel serial numbers as dates if they represent months/years (e.g., 45017 -> Apr-23)
-    const rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", cellDates: true });
+    // Use `raw: false` to get the formatted text for each cell, as it appears in Excel.
+    // This avoids manual date conversion and ensures numbers and dates are displayed correctly.
+    const rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", raw: false });
     if (!rawData || rawData.length === 0) {
       return [];
     }
 
-    // Helper to convert Excel serial date numbers to formatted string "Mon-YY" or locale date
-    const excelDateToString = (val) => {
-      if (typeof val === "number" && val > 40000 && val < 60000) {
-        const date = XLSXLib.SSF.parse_date_code(val);
-        if (date && date.y && date.m) {
-          const jsDate = new Date(Date.UTC(date.y, date.m - 1, date.d || 1));
-          const y = jsDate.getFullYear().toString().slice(-2);
-          const m = jsDate.toLocaleString('default', { month: 'short' });
-          return `${m}-${y}`;
-        }
-      } else if (val instanceof Date) {
-        const y = val.getFullYear().toString().slice(-2);
-        const m = val.toLocaleString('default', { month: 'short' });
-        return `${m}-${y}`;
-      }
-      return val;
-    };
-
-    for (let r = 0; r < rawData.length; r++) {
-      for (let c = 0; c < rawData[r].length; c++) {
-        rawData[r][c] = excelDateToString(rawData[r][c]);
-      }
-    }
-
-    if (!rawData || rawData.length === 0) {
-      return [];
-    }
-
-    var headers = rawData[0] || [];
-    var rows = [];
+    const headers = rawData[0] || [];
+    let rows = [];
     if (rawData.length > 1) {
-      for (var i = 1; i < rawData.length; i++) {
-        rows.push(rawData[i]);
+      rows = rawData.slice(1);
+    }
+
+    let maxCols = headers.length;
+    for (const row of rows) {
+      if (row.length > maxCols) {
+        maxCols = row.length;
       }
     }
 
-    var maxCols = 0;
-    for (var r = 0; r < rawData.length; r++) {
-      if (rawData[r] && rawData[r].length > maxCols) {
-        maxCols = rawData[r].length;
-      }
+    // Normalize headers to maxCols
+    const normalizedHeaders = [...headers];
+    while (normalizedHeaders.length < maxCols) {
+      normalizedHeaders.push("");
     }
 
-    var normalizedHeaders = [];
-    for (var c = 0; c < maxCols; c++) {
-      normalizedHeaders.push(headers[c] ? headers[c] : "");
-    }
-    headers = normalizedHeaders;
-
-    var normalizedRows = [];
-    for (var rr = 0; rr < rows.length; rr++) {
-      var row = [];
-      for (var cc = 0; cc < maxCols; cc++) {
-        row.push(rows[rr][cc] ? rows[rr][cc] : "");
+    // Normalize rows to maxCols
+    const normalizedRows = rows.map(row => {
+      const newRow = [...row];
+      while (newRow.length < maxCols) {
+        newRow.push("");
       }
-      normalizedRows.push(row);
-    }
+      return newRow;
+    });
 
-    // ✅ Remove completely blank columns (no header and all rows empty)
-    var nonEmptyColumnIndices = [];
-    for (var col = 0; col < headers.length; col++) {
-      var headerHasContent = headers[col] && headers[col].toString().trim() !== "";
-      var anyRowHasContent = false;
-      for (var rowIdx = 0; rowIdx < normalizedRows.length; rowIdx++) {
-        var val = normalizedRows[rowIdx][col];
-        if (val && val.toString().trim() !== "") {
-          anyRowHasContent = true;
-          break;
-        }
-      }
+    // Remove completely blank columns
+    const nonEmptyColumnIndices = [];
+    for (let col = 0; col < maxCols; col++) {
+      const headerHasContent = normalizedHeaders[col]?.toString().trim() !== "";
+      const anyRowHasContent = normalizedRows.some(row => row[col]?.toString().trim() !== "");
       if (headerHasContent || anyRowHasContent) {
         nonEmptyColumnIndices.push(col);
       }
     }
 
-    var cleanedHeaders = [];
-    for (var x = 0; x < nonEmptyColumnIndices.length; x++) {
-      cleanedHeaders.push(headers[nonEmptyColumnIndices[x]]);
-    }
+    const cleanedHeaders = nonEmptyColumnIndices.map(i => normalizedHeaders[i]);
+    const cleanedRows = normalizedRows.map(row => nonEmptyColumnIndices.map(i => row[i]));
 
-    var cleanedRows = [];
-    for (var y = 0; y < normalizedRows.length; y++) {
-      var filteredRow = [];
-      for (var z = 0; z < nonEmptyColumnIndices.length; z++) {
-        filteredRow.push(normalizedRows[y][nonEmptyColumnIndices[z]]);
-      }
-      cleanedRows.push(filteredRow);
-    }
-
-    var result = [];
-    result.push(cleanedHeaders);
-    for (var rr2 = 0; rr2 < cleanedRows.length; rr2++) {
-      result.push(cleanedRows[rr2]);
-    }
-
-    return result;
-    // remove trailing invalid TS/ESNext block
-    var headers = rawData[0] || [];
-    var rows = [];
-    for (var ri = 1; ri < rawData.length; ri++) {
-      rows.push(rawData[ri]);
-    }
-
-    var maxCols = 0;
-    for (var i = 0; i < rawData.length; i++) {
-      if (rawData[i].length > maxCols) {
-        maxCols = rawData[i].length;
-      }
-    }
-
-    var normalizedHeaders = [];
-    for (var ci = 0; ci < maxCols; ci++) {
-      normalizedHeaders.push(headers[ci] ? headers[ci] : "");
-    }
-    headers = normalizedHeaders;
-
-    var output = [];
-    output.push(headers);
-    for (var j = 0; j < rows.length; j++) {
-      output.push(rows[j]);
-    }
-    return output;
+    return [cleanedHeaders, ...cleanedRows];
   }
-
-
-
 
   handleUpload(event) {
     const file = event.detail.file;
@@ -512,16 +430,4 @@ export default class extends Controller {
 
     console.log(`Loading completed and rendered XLSX from URL: ${url}`);
   }
-
-  buildTableHtml(headers, rows) {
-    const thead = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
-    const tbody = `<tbody>${rows
-      .map(
-        (row) =>
-          `<tr>${row.map((cell) => `<td>${cell ?? ""}</td>`).join("")}</tr>`
-      )
-      .join("")}</tbody>`;
-    return `<table class="table table-bordered datatable jqDataTable">${thead}${tbody}</table>`;
-  }
-
 }
