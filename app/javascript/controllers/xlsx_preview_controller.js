@@ -74,7 +74,36 @@ export default class extends Controller {
   }
 
   normalizeSheetData(sheet) {
-    var rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "" });
+    // Fix: interpret Excel serial numbers as dates if they represent months/years (e.g., 45017 -> Apr-23)
+    const rawData = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", cellDates: true });
+    if (!rawData || rawData.length === 0) {
+      return [];
+    }
+
+    // Helper to convert Excel serial date numbers to formatted string "Mon-YY" or locale date
+    const excelDateToString = (val) => {
+      if (typeof val === "number" && val > 40000 && val < 60000) {
+        const date = XLSXLib.SSF.parse_date_code(val);
+        if (date && date.y && date.m) {
+          const jsDate = new Date(Date.UTC(date.y, date.m - 1, date.d || 1));
+          const y = jsDate.getFullYear().toString().slice(-2);
+          const m = jsDate.toLocaleString('default', { month: 'short' });
+          return `${m}-${y}`;
+        }
+      } else if (val instanceof Date) {
+        const y = val.getFullYear().toString().slice(-2);
+        const m = val.toLocaleString('default', { month: 'short' });
+        return `${m}-${y}`;
+      }
+      return val;
+    };
+
+    for (let r = 0; r < rawData.length; r++) {
+      for (let c = 0; c < rawData[r].length; c++) {
+        rawData[r][c] = excelDateToString(rawData[r][c]);
+      }
+    }
+
     if (!rawData || rawData.length === 0) {
       return [];
     }
@@ -227,17 +256,28 @@ export default class extends Controller {
     const sheetNames = workbook.SheetNames;
     const statusEl = this.statusElement;
 
+    console.log("📚 [DEBUG] renderWorkbookTabsOrSingle called");
+    console.log("✅ useTabs:", useTabs, "📄 sheetNames:", sheetNames);
+    console.log("💾 element.dataset:", this.element.dataset);
+
     if (useTabs && sheetNames.length > 1) {
-      let tabs = `<nav class="nav nav-pills nav-justified mb-3 rounded align-items-center flex-row" role="tablist">`;
+      console.log("🧩 [DEBUG] Multiple sheets detected, building tabs...");
+      let tabs = `<nav class="nav nav-pills nav-justified mb-3 align-items-center flex-row" role="tablist">`;
       let tabContents = `<div class="tab-content">`;
       sheetNames.forEach((sheetName, index) => {
+        console.log(`➡️ [DEBUG] Processing sheet ${index + 1}/${sheetNames.length}:`, sheetName);
         const sheet = workbook.Sheets[sheetName];
+        if (!sheet) {
+          console.warn(`⚠️ [DEBUG] Sheet '${sheetName}' not found in workbook!`);
+          return;
+        }
         this.capSheetRange(sheet);
         const jsonData = this.normalizeSheetData(sheet);
+        console.log(`📊 [DEBUG] Sheet '${sheetName}' parsed with ${jsonData.length} rows.`);
         const isActive = index === 0 ? "active" : "";
         const tabId = `sheet-${index}`;
         tabs += `<li class="nav-item" role="presentation">
-                   <button class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="tab" data-bs-target="#${tabId}" type="button" role="tab">${sheetName}</button>
+                   <a class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="pill" data-bs-target="#${tabId}" role="tab">${sheetName}</a>
                  </li>`;
         tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
                           <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
@@ -246,31 +286,25 @@ export default class extends Controller {
       tabs += `</nav>`;
       tabContents += `</div>`;
 
-      // ✅ Wrap tabs & tables inside Bootstrap card
-      const cardHtml = `
-        <div class="card mt-3">
-          <div class="card-header fw-bold">
-            <span class="h3" data-xlsx-preview-target="filename">${this.filenameElement?.textContent || "XLSX Preview"}</span>
-          </div>
-          <div class="card-body">
-            <div data-xlsx-preview-target="status"></div>
-            <div class="table-responsive">
-              ${tabs}
-              ${tabContents}
-            </div>
-          </div>
-        </div>`;
+      console.log("✅ [DEBUG] Tab HTML generated, injecting into DOM...");
 
-      // ✅ Populate targets directly, not replace them
       this.tableTarget.innerHTML = `${tabs}${tabContents}`;
       this.cardTarget.classList.remove("d-none");
 
-      if (statusEl)
+      if (statusEl) {
         statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${sheetNames.length} sheets with tabs</div>`;
+      }
+      console.log("✅ [DEBUG] Multi-tab rendering complete.");
     } else {
+      console.log("ℹ️ [DEBUG] Single sheet mode or useTabs disabled.");
       const sheet = workbook.Sheets[sheetNames[0]];
+      if (!sheet) {
+        console.error("❌ [DEBUG] No sheet available to render!");
+        return;
+      }
       this.capSheetRange(sheet);
       const jsonData = this.normalizeSheetData(sheet);
+      console.log(`📊 [DEBUG] Single sheet '${sheetNames[0]}' parsed with ${jsonData.length} rows.`);
       this.validateAndRender(jsonData, expectedHeaders, workbook);
     }
   }
@@ -306,7 +340,7 @@ export default class extends Controller {
         const isActive = index === 0 ? "active" : "";
         const tabId = `validate-sheet-${index}`;
         tabs += `<li class="nav-item" role="presentation">
-                   <button class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="tab" data-bs-target="#${tabId}" type="button" role="tab">${sheetName}</button>
+                   <a class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="pill" data-bs-target="#${tabId}" role="tab">${sheetName}</a>
                  </li>`;
         tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
                           <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
@@ -366,8 +400,26 @@ export default class extends Controller {
       const data = new Uint8Array(arrayBuffer);
 
       const workbook = XLSXLib.read(data, { type: "array" });
-      const useTabs = this.element.dataset.xlsxPreviewTabs === "true";
+      let useTabs = this.element.dataset.xlsxPreviewTabs === "true";
       const sheetNames = workbook.SheetNames;
+
+      // 🧩 Auto-enable tabbed view for multiple sheets
+      if (sheetNames.length > 1 && !useTabs) {
+        console.warn("⚙️ [DEBUG] Auto-enabling tabbed view: Multiple sheets detected but xlsxPreviewTabs was false.");
+        useTabs = true;
+      }
+
+      console.log("📚 [DEBUG] loadFromUrl called with workbook:", workbook);
+      console.log("✅ [DEBUG] useTabs:", useTabs, "📄 sheetNames:", sheetNames);
+      console.log("💾 [DEBUG] element.dataset:", this.element.dataset);
+
+      if (!sheetNames || sheetNames.length === 0) {
+        console.error("❌ [DEBUG] No sheets found in workbook!");
+        if (statusEl) {
+          statusEl.innerHTML = `<div class="alert alert-danger">No sheets found in file!</div>`;
+        }
+        return;
+      }
 
       const filenameEl = this.filenameElement;
       if (filenameEl) {
@@ -375,29 +427,71 @@ export default class extends Controller {
       }
 
       if (useTabs && sheetNames.length > 1) {
-        let tabs = `<ul class="nav nav-tabs" role="tablist">`;
+        console.log("🧩 [DEBUG] Multiple sheets detected, building tabs...");
+        let tabs = `<nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">`;
         let tabContents = `<div class="tab-content">`;
+
         sheetNames.forEach((sheetName, index) => {
+          console.log(`➡️ [DEBUG] Processing sheet ${index + 1}/${sheetNames.length}:`, sheetName);
           const sheet = workbook.Sheets[sheetName];
+          if (!sheet) {
+            console.warn(`⚠️ [DEBUG] Sheet '${sheetName}' not found!`);
+            return;
+          }
           this.capSheetRange(sheet);
           const jsonData = this.normalizeSheetData(sheet);
+          console.log(`📊 [DEBUG] Sheet '${sheetName}' parsed with ${jsonData.length} rows.`);
           const isActive = index === 0 ? "active" : "";
           const tabId = `sheet-${index}`;
-          tabs += `<li class="nav-item" role="presentation">
-                     <button class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="tab" data-bs-target="#${tabId}" type="button" role="tab">${sheetName}</button>
-                   </li>`;
-          tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
+
+          tabs += `<a class="nav-link ${isActive}" data-bs-toggle="pill" href="#${tabId}">${sheetName}</a>`;
+
+          tabContents += `<div id="${tabId}" class="tab-pane fade ${isActive} show">
                             <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
                           </div>`;
         });
-        tabs += `</ul>`;
+
+        tabs += `</nav>`;
         tabContents += `</div>`;
+
+        console.log("✅ [DEBUG] Fund-like style tabs constructed successfully.");
         this.tableTarget.innerHTML = `${tabs}${tabContents}`;
+
+        if (statusEl) {
+          statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${sheetNames.length} sheets as tabs</div>`;
+        }
+        console.log("✅ [DEBUG] Tab rendering completed successfully.");
+
+        // ✅ Ensure cardTarget is visible when multiple tabs rendered
+        if (this.cardTarget) {
+          this.cardTarget.classList.remove("d-none");
+        } else {
+          console.warn("⚠️ [DEBUG] cardTarget missing. Tabs may not display correctly.");
+        }
       } else {
+        console.log("ℹ️ [DEBUG] Single sheet mode triggered or useTabs disabled.");
         const sheet = workbook.Sheets[sheetNames[0]];
+        if (!sheet) {
+          console.error("❌ [DEBUG] Workbook missing first sheet content.");
+          if (statusEl) {
+            statusEl.innerHTML = `<div class="alert alert-danger">Workbook has no readable sheets.</div>`;
+          }
+          return;
+        }
+
         this.capSheetRange(sheet);
         const jsonData = this.normalizeSheetData(sheet);
-        this.renderTable(jsonData[0], jsonData.slice(1));
+        console.log(`📊 [DEBUG] Single sheet parsed, rows=${jsonData.length}`);
+
+        try {
+          this.renderTable(jsonData[0], jsonData.slice(1));
+          if (this.cardTarget) this.cardTarget.classList.remove("d-none");
+        } catch (renderErr) {
+          console.error("❌ [DEBUG] Error while rendering table:", renderErr);
+          if (statusEl) {
+            statusEl.innerHTML = `<div class="alert alert-danger">Error rendering table: ${renderErr.message}</div>`;
+          }
+        }
       }
 
       const message = useTabs && sheetNames.length > 1
@@ -406,6 +500,8 @@ export default class extends Controller {
       if (statusEl) {
         statusEl.innerHTML = `<div class="alert alert-success">${message}</div>`;
       }
+
+      console.log("🏁 [DEBUG] Workbook render process complete.");
 
     } catch (error) {
       const statusEl = this.statusElement;
