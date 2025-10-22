@@ -143,4 +143,97 @@ namespace :aws do
     puts "ℹ️  Note: Replication must be setup manually"
     puts "⚠️  Warning: without replication setup, objects will not be auto-replicated between buckets."
   end
+  desc "Generate Prometheus configuration (prometheus.yml) with EC2 instance IPs"
+  task :generate_prometheus_yml => [:environment] do
+    require "yaml"
+
+    ec2 = Aws::EC2::Client.new
+
+    def fetch_instance_ips(ec2, filters)
+      resp = ec2.describe_instances(filters: filters)
+      resp.reservations.flat_map do |res|
+        res.instances.map(&:private_ip_address).compact
+      end
+    end
+
+    app_ips = fetch_instance_ips(ec2, [{ name: "tag:Name", values: ["AppServer"] }])
+    db_ips  = fetch_instance_ips(ec2, [{ name: "tag:Name", values: ["DB-Redis-ES"] }])
+
+    puts "📝 Generating Prometheus config with the following IPs:"
+    puts "📦 App Server IPs: #{app_ips.join(", ")}"
+    puts "📦 DB Server IPs: #{db_ips.join(", ")}"
+
+    prometheus_config = {
+      "global" => { "scrape_interval" => "15s" },
+      "scrape_configs" => [
+        {
+          "job_name" => "rails_app",
+          "static_configs" => [
+            { "targets" => app_ips.map { |ip| "#{ip}:9394" } }
+          ]
+        },
+        {
+          "job_name" => "node",
+          "static_configs" => [
+            { "targets" => (app_ips + db_ips).uniq.map { |ip| "#{ip}:9100" } }
+          ]
+        },
+        {
+          "job_name" => "db_server",
+          "static_configs" => [
+            { "targets" => db_ips.flat_map { |ip| ["#{ip}:9104", "#{ip}:9114", "#{ip}:9121"] } }
+          ]
+        }
+      ]
+    }
+
+    output_path = "config/initializers/observability/prometheus.yml"
+    FileUtils.mkdir_p(File.dirname(output_path))
+    require "yaml"
+
+    # Building formatted YAML content manually for clarity and conventions
+    yaml_lines = []
+    yaml_lines << "global:"
+    yaml_lines << "  scrape_interval: 15s  # How frequently to scrape targets (default is every 15s)"
+    yaml_lines << ""
+    yaml_lines << "scrape_configs:"
+
+    rails_app_targets = app_ips.map { |ip| "'#{ip}:9394'" }.join(', ')
+    node_targets = (app_ips + db_ips).uniq.map { |ip| "'#{ip}:9100'" }.join(', ')
+    db_server_targets = db_ips.flat_map { |ip| ["'#{ip}:9104'", "'#{ip}:9114'", "'#{ip}:9121'"] }.join(', ')
+
+    yaml_lines << "  - job_name: 'rails_app'"
+    yaml_lines << "    static_configs:"
+    yaml_lines << "      - targets: [#{rails_app_targets}]"
+    yaml_lines << ""
+    yaml_lines << "  - job_name: 'node'"
+    yaml_lines << "    static_configs:"
+    yaml_lines << "      - targets: [#{node_targets}]"
+    yaml_lines << ""
+    yaml_lines << "  - job_name: 'db_server'"
+    yaml_lines << "    static_configs:"
+    yaml_lines << "      - targets: [#{db_server_targets}]"
+
+    formatted_yaml = yaml_lines.join("\n") + "\n"
+
+    File.open(output_path, "w") do |f|
+      f.puts "# Prometheus Configuration File"
+      f.puts "# Generated automatically via rake aws:generate_prometheus_yml"
+      f.puts "#"
+      f.puts "# Port Reference:"
+      f.puts "# 9394  - Rails Prometheus Exporter"
+      f.puts "# 9100  - Node Exporter"
+      f.puts "# 9104  - MySQL Exporter"
+      f.puts "# 9114  - Elasticsearch Exporter"
+      f.puts "# 9121  - Redis Exporter"
+      f.puts "#"
+      f.puts "# EC2 Instance Mapping:"
+      f.puts "# AppServer IPs: #{app_ips.join(', ')}"
+      f.puts "# DB_Redis_ES IPs: #{db_ips.join(', ')}"
+      f.puts ""
+      f.puts formatted_yaml
+    end
+
+    puts "✅ Generated annotated Prometheus config file at #{output_path}"
+  end
 end
