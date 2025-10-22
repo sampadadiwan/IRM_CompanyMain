@@ -190,15 +190,13 @@ export default class extends Controller {
           return;
         }
         this.capSheetRange(sheet);
-        const jsonData = this.normalizeSheetData(sheet);
-        console.log(`📊 [DEBUG] Sheet '${sheetName}' parsed with ${jsonData.length} rows.`);
         const isActive = index === 0 ? "active" : "";
         const tabId = `sheet-${index}`;
         tabs += `<li class="nav-item" role="presentation">
                    <a class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="pill" data-bs-target="#${tabId}" role="tab">${sheetName}</a>
                  </li>`;
         tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
-                          <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
+                          <div>${this.buildTableHtml(sheet)}</div>
                         </div>`;
       });
       tabs += `</nav>`;
@@ -221,13 +219,13 @@ export default class extends Controller {
         return;
       }
       this.capSheetRange(sheet);
-      const jsonData = this.normalizeSheetData(sheet);
-      console.log(`📊 [DEBUG] Single sheet '${sheetNames[0]}' parsed with ${jsonData.length} rows.`);
-      this.validateAndRender(jsonData, expectedHeaders, workbook);
+      console.log(`📊 [DEBUG] Single sheet '${sheetNames[0]}' ready for validation and rendering.`);
+      this.validateAndRender(sheet, expectedHeaders, workbook);
     }
   }
 
-  validateAndRender(data, expectedHeaders, workbook = null) {
+  validateAndRender(sheet, expectedHeaders, workbook = null) {
+    const data = this.normalizeSheetData(sheet);
     const [headers, ...rows] = data;
     const actual = headers
       .map((h) => h?.toString().replace("*", "").trim().toLowerCase());
@@ -254,14 +252,13 @@ export default class extends Controller {
       workbook.SheetNames.forEach((sheetName, index) => {
         const sheet = workbook.Sheets[sheetName];
         this.capSheetRange(sheet);
-        const jsonData = this.normalizeSheetData(sheet);
         const isActive = index === 0 ? "active" : "";
         const tabId = `validate-sheet-${index}`;
         tabs += `<li class="nav-item" role="presentation">
                    <a class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="pill" data-bs-target="#${tabId}" role="tab">${sheetName}</a>
                  </li>`;
         tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
-                          <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
+                          <div>${this.buildTableHtml(sheet)}</div>
                         </div>`;
       });
       tabs += `</nav>`;
@@ -271,36 +268,24 @@ export default class extends Controller {
       if (statusEl)
         statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${workbook.SheetNames.length} sheets with tabs</div>`;
     } else {
-      this.renderTable(headers, rows);
+      this.renderTable(sheet);
     }
   }
 
-  renderTable(headers, rows) {
-    const thead = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
-    const tbody = `<tbody>${rows
-      .map(
-        (row) =>
-          `<tr>${row.map((cell) => `<td>${cell ?? ""}</td>`).join("")}</tr>`
-      )
-      .join("")}</tbody>`;
-
+  renderTable(sheet) {
     // ✅ Update only the table within the card body and show card
-    const tableHtml = `<table class="table table-bordered datatable jqDataTable">${thead}${tbody}</table>`;
+    const tableHtml = this.buildTableHtml(sheet);
     this.tableTarget.innerHTML = tableHtml;
 
     // Make sure the card element (defined in HTML) shows
     this.cardTarget.classList.remove("d-none");
   }
 
-  buildTableHtml(headers, rows) {
-    const thead = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
-    const tbody = `<tbody>${rows
-      .map(
-        (row) =>
-          `<tr>${row.map((cell) => `<td>${cell ?? ""}</td>`).join("")}</tr>`
-      )
-      .join("")}</tbody>`;
-    return `<table class="table table-bordered datatable jqDataTable">${thead}${tbody}</table>`;
+  buildTableHtml(sheet) {
+    const html = XLSXLib.utils.sheet_to_html(sheet);
+    // The generated table may not have the classes we want, so we add them.
+    // This is a simple way to ensure our styling is applied.
+    return html.replace("<table", '<table class="table table-bordered datatable jqDataTable"');
   }
 
   async loadFromUrl(url) {
@@ -357,15 +342,13 @@ export default class extends Controller {
             return;
           }
           this.capSheetRange(sheet);
-          const jsonData = this.normalizeSheetData(sheet);
-          console.log(`📊 [DEBUG] Sheet '${sheetName}' parsed with ${jsonData.length} rows.`);
           const isActive = index === 0 ? "active" : "";
           const tabId = `sheet-${index}`;
 
           tabs += `<a class="nav-link ${isActive}" data-bs-toggle="pill" href="#${tabId}">${sheetName}</a>`;
 
           tabContents += `<div id="${tabId}" class="tab-pane fade ${isActive} show">
-                            <div>${this.buildTableHtml(jsonData[0], jsonData.slice(1))}</div>
+                            <div>${this.buildTableHtml(sheet)}</div>
                           </div>`;
         });
 
@@ -398,11 +381,10 @@ export default class extends Controller {
         }
 
         this.capSheetRange(sheet);
-        const jsonData = this.normalizeSheetData(sheet);
-        console.log(`📊 [DEBUG] Single sheet parsed, rows=${jsonData.length}`);
+        console.log(`📊 [DEBUG] Single sheet parsed, preparing to render.`);
 
         try {
-          this.renderTable(jsonData[0], jsonData.slice(1));
+          this.renderTable(sheet);
           if (this.cardTarget) this.cardTarget.classList.remove("d-none");
         } catch (renderErr) {
           console.error("❌ [DEBUG] Error while rendering table:", renderErr);
