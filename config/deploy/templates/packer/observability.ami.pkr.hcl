@@ -136,7 +136,10 @@ build {
       "sudo apt install --yes logrotate",
 
       // Install OhMyZsh
-      "yes | sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" \"\" --unattended",
+      "sudo -u ubuntu sh -c 'RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\"'",
+      "sudo cp /home/ubuntu/.oh-my-zsh/templates/zshrc.zsh-template /home/ubuntu/.zshrc",
+      "sudo chown ubuntu:ubuntu /home/ubuntu/.zshrc",
+      "sudo chsh -s $(which zsh) ubuntu",
 
 
     ]

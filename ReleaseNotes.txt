@@ -1,3 +1,17 @@
+V9.1.28
+#####################################
+a2c3b7103 Now imports the formatting into the grid (#1053)
+82d4ad3a4 Fixed the display of tabs in the preview
+a80e44043 Added better error handling for portfolio stats widget
+158d4d9a5 Removed python xlsx cleanup from kpi import
+
+
+V9.1.27
+#####################################
+358b74772 Fixed tests for ERror emails
+bfb247a22 Added config/initializers/parser_current.rb
+06e53ec59 Added new support bot link
+
 V9.1.26
 #####################################
 597feaabb Fixed IO preview docs show
