@@ -285,7 +285,7 @@ export default class extends Controller {
     const html = XLSXLib.utils.sheet_to_html(sheet);
     // The generated table may not have the classes we want, so we add them.
     // This is a simple way to ensure our styling is applied.
-    return html.replace("<table", '<table class="table table-bordered datatable jqDataTable"');
+    return html.replace("<table", '<table class="table table-bordered datatable"');
   }
 
   async loadFromUrl(url) {
