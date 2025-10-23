@@ -503,4 +503,14 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def undrawn_comm_incl_curr_notice_investor_percent
     percentage(undrawn_comm_incl_curr_notice_investor, undrawn_comm_incl_curr_notice_total)
   end
+
+  # Remittance Payments associated to the capital commitment
+  def remittance_payments = @capital_commitment.capital_remittance_payments.where(payment_date: ..@as_of_date)
+  memoize :remittance_payments
+
+  def unpaid_prior_notice_investor
+    prior_remittance_payments = remittance_payments.where(payment_date: ..@as_of_date.yesterday.end_of_day)
+
+    money_sum(@capital_commitment.capital_remittances.where(remittance_date: ..@as_of_date.yesterday.end_of_day), :call_amount_cents) - money_sum(prior_remittance_payments, :amount_cents)
+  end
 end
