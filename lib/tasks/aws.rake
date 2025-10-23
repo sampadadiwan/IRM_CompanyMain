@@ -236,4 +236,112 @@ namespace :aws do
 
     puts "✅ Generated annotated Prometheus config file at #{output_path}"
   end
+
+  desc "Find and optionally delete unused security groups"
+  task :cleanup_unused_security_groups => [:environment] do
+    ec2 = Aws::EC2::Client.new(region: Aws.config[:region])
+    puts "🔍 Fetching all security groups..."
+    all_groups = ec2.describe_security_groups.security_groups
+
+    used_group_ids = []
+    puts "🔍 Collecting in-use security groups from network interfaces..."
+    ec2.describe_network_interfaces.network_interfaces.each do |ni|
+      used_group_ids.concat(ni.groups.map(&:group_id))
+    end
+
+    used_group_ids.uniq!
+    unused = all_groups.reject do |sg|
+      used_group_ids.include?(sg.group_id) || sg.group_name == "default"
+    end
+
+    if unused.empty?
+      puts "✅ No unused security groups found."
+      next
+    end
+
+    puts "⚠️  Found the following unused security groups:"
+    unused.each do |sg|
+      puts "- #{sg.group_id} (#{sg.group_name})"
+    end
+
+    print "❓ Do you want to delete these security groups? (y/N): "
+    confirm = $stdin.gets.chomp
+    if confirm.downcase == "y"
+      unused.each do |sg|
+        begin
+          ec2.delete_security_group(group_id: sg.group_id)
+          puts "🗑️  Deleted #{sg.group_id} (#{sg.group_name})"
+        rescue Aws::EC2::Errors::DependencyViolation => e
+          puts "⚠️  Could not delete #{sg.group_id} (in use or dependency violation)"
+        end
+      end
+      puts "✅ Cleanup complete."
+    else
+      puts "❎ Cleanup aborted by user."
+    end
+  end
+
+  desc "Find and optionally delete unused VPCs and subnets"
+  task :cleanup_unused_vpcs_and_subnets => [:environment] do
+    ec2 = Aws::EC2::Client.new(region: Aws.config[:region])
+
+    # --- Find Unused Subnets ---
+    puts "🔍 Fetching all subnets and network interfaces..."
+    all_subnets = ec2.describe_subnets.subnets
+    all_network_interfaces = ec2.describe_network_interfaces.network_interfaces
+    used_subnet_ids = all_network_interfaces.map(&:subnet_id).uniq
+    unused_subnets = all_subnets.reject { |s| used_subnet_ids.include?(s.subnet_id) }
+
+    # --- Find Unused VPCs ---
+    puts "🔍 Fetching all VPCs..."
+    all_vpcs = ec2.describe_vpcs.vpcs.reject(&:is_default)
+    # A VPC is considered in use if it has any network interfaces associated with it.
+    # This is a strong indicator of active resources (instances, LBs, etc.).
+    used_vpc_ids = all_network_interfaces.map(&:vpc_id).uniq
+    unused_vpcs = all_vpcs.reject { |v| used_vpc_ids.include?(v.vpc_id) }
+
+    if unused_subnets.empty? && unused_vpcs.empty?
+      puts "✅ No unused subnets or VPCs found."
+      next
+    end
+
+    puts "⚠️  Found the following unused resources:"
+    unused_subnets.each do |s|
+      subnet_name = s.tags.find { |t| t.key == "Name" }&.value || "N/A"
+      puts "- Subnet: #{s.subnet_id} (Name: #{subnet_name}, VPC: #{s.vpc_id}, CIDR: #{s.cidr_block})"
+    end
+    unused_vpcs.each do |v|
+      vpc_name = v.tags.find { |t| t.key == "Name" }&.value || "N/A"
+      puts "- VPC: #{v.vpc_id} (Name: #{vpc_name}, CIDR: #{v.cidr_block})"
+    end
+
+    print "❓ Do you want to delete these resources? (y/N): "
+    confirm = $stdin.gets.chomp
+    if confirm.downcase == "y"
+      # Delete subnets first
+      unused_subnets.each do |s|
+        begin
+          ec2.delete_subnet(subnet_id: s.subnet_id)
+          puts "🗑️  Deleted Subnet #{s.subnet_id}"
+        rescue => e
+          puts "⚠️  Could not delete Subnet #{s.subnet_id}: #{e.message}"
+        end
+      end
+
+      # Then delete VPCs
+      unused_vpcs.each do |v|
+        begin
+          ec2.delete_vpc(vpc_id: v.vpc_id)
+          puts "🗑️  Deleted VPC #{v.vpc_id}"
+        rescue Aws::EC2::Errors::DependencyViolation => e
+          puts "⚠️  Could not delete VPC #{v.vpc_id}. It may still have dependencies (like Internet Gateways or Route Tables) that must be removed manually."
+        rescue => e
+          puts "⚠️  Could not delete VPC #{v.vpc_id}: #{e.message}"
+        end
+      end
+      puts "✅ Cleanup complete."
+    else
+      puts "❎ Cleanup aborted by user."
+    end
+  end
 end
