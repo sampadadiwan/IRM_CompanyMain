@@ -17,16 +17,16 @@ class ReplicationHealthJob < ApplicationJob
         # Its there cause we read and write from the primary today. See UserReplica however reads from replica (see base class ReplicaRecord)
         user_replica = UserReplica.find(user.id)
         if user_replica.json_fields["replication_health"] == time
-          Rails.logger.debug("Replication is Ok")
-          user.json_fields["replication_health_status"] = "Ok"
+          Rails.logger.debug("✅ Replication is Ok")
+          user.json_fields["replication_health_status"] = "✅ Ok"
         else
-          msg = "Replication is lagging"
-          Rails.logger.debug(msg)
-          user.json_fields["replication_health_status"] = msg
-          ExceptionNotifier.notify_exception(StandardError.new(msg))
+          msg = "Lagging"
+          Rails.logger.debug("️⚠️ Replication is #{msg}")
+          user.json_fields["replication_health_status"] = "⚠️ #{msg}"
+          ExceptionNotifier.notify_exception(StandardError.new("Replication is #{msg}"))
         end
       end
-      Rails.logger.debug("Replication check completed")
+      Rails.logger.debug("ℹ️  Replication check completed")
       user.save!
     end
   end
