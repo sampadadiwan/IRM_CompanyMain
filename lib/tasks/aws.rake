@@ -1,5 +1,8 @@
 # Rakefile
+require 'dotenv'
 require 'aws-sdk-ec2'
+require 'net/http'
+require 'uri'
 require 'rake'
 require_relative 'aws_utils'
 
@@ -20,18 +23,24 @@ namespace :aws do
   end
 
   # This is the task that will be called whenever we need to do a complete DR into another region
-  task :setup_infra, [:stack, :web_server_name, :db_server_name, :region, :env_variant] => [:environment] do |t, args|
+  task :setup_infra, [:stack, :web_server_name, :db_server_name, :region, :env_variant, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
     setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
-  task :get_latest_ami, [:name_tag, :region] => [:environment] do |t, args|
+  task :get_latest_ami, [:name_tag, :region, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
     latest_ami = latest_ami(args[:name_tag], args[:region])
   end
 
   desc "Copy an AMI to a different region"
-  task :copy_ami, [:ami_id, :destination_region] => [:environment] do |t, args|
+  task :copy_ami, [:ami_id, :destination_region, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     # Prioritize ami_id from args, then from environment variable
     ami_id = args[:ami_id] || ENV["ami_id"]
     destination_region = args[:destination_region] || ENV["AWS_BACKUP_REGION"] # Default destination region
@@ -45,7 +54,9 @@ namespace :aws do
   end
 
   desc "Create an AMI and copy it to another region"
-  task :create_and_copy_ami, [:instance_name, :destination_region] => [:environment] do |t, args|
+  task :create_and_copy_ami, [:instance_name, :destination_region, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(destination_region: ENV["AWS_BACKUP_REGION"])
 
     # Create an AMI from the instance name
@@ -60,28 +71,59 @@ namespace :aws do
 
 
   desc "Delete old AMIs with the same name pattern"
-  task :delete_old_amis, [:name_tag, :region] => [:environment] do |t, args|
+  task :delete_old_amis, [:name_tag, :region, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
     cleanup_amis(args[:name_tag], args[:region])
   end
 
   desc "Create an AMI from a named EC2 instance"
-  task :create_ami, [:instance_name] => [:environment] do |t, args|
+  task :create_ami, [:instance_name, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     create_ami_from_snapshot(args)
   end
 
-  task :environment do
+  task :environment, [:env_name] do |t, args|
+    env_name = args[:env_name]
+
+    if env_name
+      env_file = ".env.#{env_name}"
+      if File.exist?(env_file)
+        Dotenv.overload(env_file)
+        puts "✅ Overloaded environment variables from #{env_file}"
+      else
+        puts "⚠️  Environment file not found: #{env_file}"
+      end
+    end
+
+    credentials = if env_name
+                    key_path = Rails.root.join("config", "credentials", "#{env_name}.key")
+                    unless File.exist?(key_path)
+                      raise "Key file not found for environment '#{env_name}' at #{key_path}"
+                    end
+                    Rails.application.encrypted(
+                      Rails.root.join("config", "credentials", "#{env_name}.yml.enc"),
+                      key_path: key_path
+                    )
+                  else
+                    Rails.application.credentials
+                  end
+
+    puts "🔑 Configuring AWS SDK for region #{ENV['AWS_REGION']}"
     Aws.config.update({
       region: ENV["AWS_REGION"],
-      :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
-      :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      # Additional configuration like credentials could be added here
+      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
+      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
     })
   end
 
 
   desc "Provision and replicate S3 buckets"
-  task provision_s3_buckets: :environment do
+  task :provision_s3_buckets, [:env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     require "aws-sdk-s3"
 
     source_bucket  = ENV.fetch("AWS_S3_BUCKET")
@@ -144,7 +186,9 @@ namespace :aws do
     puts "⚠️  Warning: without replication setup, objects will not be auto-replicated between buckets."
   end
   desc "Generate Prometheus configuration (prometheus.yml) with EC2 instance IPs"
-  task :generate_prometheus_yml => [:environment] do
+  task :generate_prometheus_yml, [:env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     require "yaml"
 
     ec2 = Aws::EC2::Client.new
@@ -238,7 +282,9 @@ namespace :aws do
   end
 
   desc "Find and optionally delete unused security groups"
-  task :cleanup_unused_security_groups => [:environment] do
+  task :cleanup_unused_security_groups, [:env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     ec2 = Aws::EC2::Client.new(region: Aws.config[:region])
     puts "🔍 Fetching all security groups..."
     all_groups = ec2.describe_security_groups.security_groups
@@ -282,7 +328,9 @@ namespace :aws do
   end
 
   desc "Find and optionally delete unused VPCs and subnets"
-  task :cleanup_unused_vpcs_and_subnets => [:environment] do
+  task :cleanup_unused_vpcs_and_subnets, [:env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
     ec2 = Aws::EC2::Client.new(region: Aws.config[:region])
 
     # --- Find Unused Subnets ---
@@ -342,6 +390,104 @@ namespace :aws do
       puts "✅ Cleanup complete."
     else
       puts "❎ Cleanup aborted by user."
+    end
+  end
+  def find_groups_with_open_port(ec2_client, port)
+    open_groups = []
+    ec2_client.describe_security_groups.security_groups.each do |sg|
+      sg.ip_permissions.each do |perm|
+        next unless perm.from_port == port && perm.to_port == port && perm.ip_protocol == "tcp"
+
+        if perm.ip_ranges.any? { |range| range.cidr_ip == "0.0.0.0/0" }
+          open_groups << { id: sg.group_id, name: sg.group_name }
+          break
+        end
+      end
+    end
+    open_groups
+  end
+
+  desc "Manage SSH access (port 22). Actions: list, suspend, resume ex: bundle exec rake 'aws:manage_ssh[suspend,staging.in]'"
+  task :manage_ssh, [:action, :env_name] do |t, args|
+    # Manually invoke the environment task with the provided env_name
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
+
+    action = args[:action] || "list"
+    puts "🔑 Managing SSH access with action: #{action} for region #{ENV['AWS_REGION']}"
+    ec2 = Aws::EC2::Client.new()
+
+    case action
+    when "list"
+      puts "🔍 Finding security groups with SSH (port 22) open to 0.0.0.0/0..."
+      open_groups = find_groups_with_open_port(ec2, 22)
+
+      if open_groups.empty?
+        puts "✅ No security groups with unrestricted SSH access found."
+      else
+        puts "⚠️  Found the following security groups with open SSH access:"
+        open_groups.each do |sg|
+          puts "- #{sg[:id]} (#{sg[:name]})"
+        end
+      end
+
+    when "suspend"
+      puts "🔍 Finding security groups with SSH open to suspend..."
+      open_groups = find_groups_with_open_port(ec2, 22)
+
+      if open_groups.empty?
+        puts "✅ No security groups with unrestricted SSH access to suspend."
+        next
+      end
+
+      puts "⚠️  The following security groups have SSH open to the world:"
+      open_groups.each { |sg| puts "- #{sg[:id]} (#{sg[:name]})" }
+
+      print "❓ Do you want to suspend SSH access (move to port 22222) for these groups? (y/N): "
+      if $stdin.gets.chomp.downcase == "y"
+        open_groups.each do |sg|
+          begin
+            ec2.revoke_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22, to_port: 22, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
+            ec2.authorize_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22222, to_port: 22222, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
+            puts "🔒 Suspended SSH for #{sg[:id]} (#{sg[:name]})"
+          rescue => e
+            puts "❌ Failed to suspend SSH for #{sg[:id]}: #{e.message}"
+          end
+        end
+        puts "✅ SSH suspension complete."
+      else
+        puts "❎ Aborted by user."
+      end
+
+    when "resume"
+      puts "🔍 Finding security groups with suspended SSH to resume..."
+      suspended_groups = find_groups_with_open_port(ec2, 22222)
+
+      if suspended_groups.empty?
+        puts "✅ No security groups with suspended SSH access found."
+        next
+      end
+
+      puts "⚠️  The following security groups have suspended SSH access (on port 22222):"
+      suspended_groups.each { |sg| puts "- #{sg[:id]} (#{sg[:name]})" }
+
+      print "❓ Do you want to resume SSH access (move back to port 22) for these groups? (y/N): "
+      if $stdin.gets.chomp.downcase == "y"
+        suspended_groups.each do |sg|
+          begin
+            ec2.revoke_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22222, to_port: 22222, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
+            ec2.authorize_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22, to_port: 22, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
+            puts "🔓 Resumed SSH for #{sg[:id]} (#{sg[:name]})"
+          rescue => e
+            puts "❌ Failed to resume SSH for #{sg[:id]}: #{e.message}"
+          end
+        end
+        puts "✅ SSH resumption complete."
+      else
+        puts "❎ Aborted by user."
+      end
+    else
+      puts "❌ Invalid action '#{action}'. Available actions: list, suspend, resume."
     end
   end
 end
