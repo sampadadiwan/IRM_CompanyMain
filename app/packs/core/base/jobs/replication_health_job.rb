@@ -18,11 +18,11 @@ class ReplicationHealthJob < ApplicationJob
         user_replica = UserReplica.find(user.id)
         if user_replica.json_fields["replication_health"] == time
           Rails.logger.debug("✅ Replication is Ok")
-          user.json_fields["replication_health_status"] = "✅ Ok"
+          user.json_fields["replication_health_status"] = "Ok"
         else
           msg = "Lagging"
           Rails.logger.debug("️⚠️ Replication is #{msg}")
-          user.json_fields["replication_health_status"] = "⚠️ #{msg}"
+          user.json_fields["replication_health_status"] = "#{msg}"
           ExceptionNotifier.notify_exception(StandardError.new("Replication is #{msg}"))
         end
       end

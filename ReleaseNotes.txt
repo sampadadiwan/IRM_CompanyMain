@@ -1,3 +1,12 @@
+V9.1.29
+#####################################
+51c4233ac Added better logging for replication_health_job.rb
+c3236d31e Added cleanup of SG and VPCs
+39eeb2569 Added unpaid_prior_notice_investor in fund template decorator (#1055)
+b3c5ca256 Fixed datatable
+412968085 Added rake aws:generate_prometheus_yml
+e86c32c2b Better oh-my-zsh install in packer files
+
 V9.1.28
 #####################################
 a2c3b7103 Now imports the formatting into the grid (#1053)
