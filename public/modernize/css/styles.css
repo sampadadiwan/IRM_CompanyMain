@@ -15966,7 +15966,7 @@ html[data-boxed-layout=boxed] .container-fluid, html[data-boxed-layout=boxed] .c
 }
 
 .message-body {
-  max-height: 400px;
+  max-height: 420px;
 }
 
 .hover-dd {

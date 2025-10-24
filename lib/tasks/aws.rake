@@ -407,8 +407,8 @@ namespace :aws do
     open_groups
   end
 
-  desc "Manage SSH access (port 22). Actions: list, suspend, resume ex: bundle exec rake 'aws:manage_ssh[suspend,staging.in]'"
-  task :manage_ssh, [:action, :env_name] do |t, args|
+  desc "Manage SSH access (port 22). Actions: list, suspend, resume. Use force=true for non-interactive mode. ex: bundle exec rake 'aws:manage_ssh[suspend,staging.in,true]'"
+  task :manage_ssh, [:action, :env_name, :force] do |t, args|
     # Manually invoke the environment task with the provided env_name
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
@@ -443,8 +443,15 @@ namespace :aws do
       puts "⚠️  The following security groups have SSH open to the world:"
       open_groups.each { |sg| puts "- #{sg[:id]} (#{sg[:name]})" }
 
-      print "❓ Do you want to suspend SSH access (move to port 22222) for these groups? (y/N): "
-      if $stdin.gets.chomp.downcase == "y"
+      force = args[:force].to_s.downcase == 'true'
+      confirmed = if force
+                    true
+                  else
+                    print "❓ Do you want to suspend SSH access (move to port 22222) for these groups? (y/N): "
+                    $stdin.gets.chomp.downcase == "y"
+                  end
+
+      if confirmed
         open_groups.each do |sg|
           begin
             ec2.revoke_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22, to_port: 22, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
@@ -471,8 +478,15 @@ namespace :aws do
       puts "⚠️  The following security groups have suspended SSH access (on port 22222):"
       suspended_groups.each { |sg| puts "- #{sg[:id]} (#{sg[:name]})" }
 
-      print "❓ Do you want to resume SSH access (move back to port 22) for these groups? (y/N): "
-      if $stdin.gets.chomp.downcase == "y"
+      force = args[:force].to_s.downcase == 'true'
+      confirmed = if force
+                    true
+                  else
+                    print "❓ Do you want to resume SSH access (move back to port 22) for these groups? (y/N): "
+                    $stdin.gets.chomp.downcase == "y"
+                  end
+
+      if confirmed
         suspended_groups.each do |sg|
           begin
             ec2.revoke_security_group_ingress(group_id: sg[:id], ip_permissions: [{ ip_protocol: "tcp", from_port: 22222, to_port: 22222, ip_ranges: [{ cidr_ip: "0.0.0.0/0" }] }])
