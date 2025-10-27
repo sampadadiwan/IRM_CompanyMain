@@ -40,20 +40,28 @@ module AccountEntryAllocation
                                 portfolio_investments.where(investment_date: ..end_date)
                               end
 
+      # in some cases we want to use the investment date as the reporting date
+      use_investment_date = fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["reporting_date"]&.strip == "investment_date"
+
       fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments.each do |portfolio_investment|
           # result = RubyProf.profile do
 
+          reporting_date = if use_investment_date
+                             portfolio_investment.investment_date
+                           else
+                             end_date
+                           end
           ae = AccountEntry.new(
             name: fund_formula.name,
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
             fund: fund,
             parent: portfolio_investment,
-            reporting_date: end_date,
-            period: "As of #{end_date}",
+            reporting_date: reporting_date,
+            period: "As of #{reporting_date}",
             generated: true,
             fund_formula: fund_formula
           )

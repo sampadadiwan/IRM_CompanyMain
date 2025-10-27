@@ -175,8 +175,12 @@ class CapitalCommitment < ApplicationRecord
     fund.fund_unit_settings.where(name: unit_type).last
   end
 
-  def compute_hurdle(end_date)
-    capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.custom_fields.hurdle_rate.to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
+  def compute_hurdle(end_date, use_tracking_currency: false)
+    if use_tracking_currency
+      capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.tracking_amount_cents * (fund_unit_setting.custom_fields.hurdle_rate.to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
+    else
+      capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.custom_fields.hurdle_rate.to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
+    end
   end
 
   # This is only excuted to setup the orig amounts
