@@ -1,7 +1,7 @@
 class TemplateDecorator < ApplicationDecorator
   include CurrencyHelper
 
-  METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_ doc_exists_].freeze
+  METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_ doc_exists_ skip_].freeze
 
   def add_filter_clause(association, filter_field, filter_value)
     object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
@@ -42,6 +42,15 @@ class TemplateDecorator < ApplicationDecorator
       rescue NoMethodError => e
         Rails.logger.error { "Undefined method error in TemplateDecorator for method: #{method_name}  - #{e.message}" }
         return false
+      end
+    # used in portfolio_company_cumulative_folio_entries when the account entry doesnt exist it doesnt give an error
+    elsif method_name.to_s.starts_with?("skip_")
+      underlying_method = method_name.to_s.sub(/^skip_/, "")
+      begin
+        return send(underlying_method)
+      rescue StandardError => e
+        Rails.logger.error { "Undefined method error in TemplateDecorator for method: #{method_name}  - #{e.message}" }
+        return ""
       end
     elsif method_name.to_s.starts_with?("where_")
       # This is used in the template to filter a collection based on a field

@@ -269,9 +269,10 @@ class KycDocGenerator
       portfolio_company = ae_name_investor_name[1]
       portfolio_company_name = portfolio_company.investor_name
       is_master_fund = portfolio_company.custom_fields.master_fund == "Yes" ? true : nil
+      is_feeder_investment = portfolio_company.custom_fields.feeder_investment == "Yes" ? true : nil
 
       portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
-      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name, master_fund: is_master_fund)
+      portfolio_company_entry ||= OpenStruct.new(portfolio_company: portfolio_company_name, master_fund: is_master_fund, feeder_investment: is_feeder_investment)
 
       total_amount_cents = aes.sum(&:amount_cents)
       portfolio_company_entry[ae_key] = Money.new(total_amount_cents, first_commitment&.fund&.currency)
