@@ -1,14 +1,31 @@
 <div>
-    The following errors were detected:
-    <ol>
-        <% @error_msg.each do |error| %>
-            <li>
-                <ul>
-                    <% error.each do |k, v| %>
-                        <li><%= k.to_s.humanize %>: <%= v %></li>
-                    <% end %>
-                </ul>
-            </li>
+    <%= @main_error || "Errors were detected:" %>
+    <% if defined?(@show_btn) && @show_btn %>
+        <a class="btn btn-sm btn-outline-danger" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#errorList"
+                aria-expanded="false"
+                aria-controls="errorList">
+            Show/Hide Errors
+        </a>
+    <% end %>
+    <div class="collapse" id="errorList">
+        <% @error_msg.each_with_index do |error, idx| %>
+            <div class="card border-danger mb-2">
+                <div class="card-header fw-bold">
+                    Error <%= idx + 1 %>
+                </div>
+                <div class="card-body p-2">
+                    <ul class="list-group list-group-flush">
+                        <% error.each do |k, v| %>
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <span class="fw-semibold text-capitalize"><%= k.to_s.humanize %></span>
+                                <span class="text-secondary"><%= v %></span>
+                            </li>
+                        <% end %>
+                    </ul>
+                </div>
+            </div>
         <% end %>
-    </ol>
+    </div>
 </div>

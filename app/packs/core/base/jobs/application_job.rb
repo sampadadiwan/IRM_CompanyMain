@@ -15,6 +15,21 @@ class ApplicationJob < ActiveJob::Base
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
 
+  def send_errors_notification(main_error, error_msg, user_id, _level = "success")
+    @show_btn = true
+    @error_msg = error_msg
+    @user_id = user_id
+    @main_error = main_error
+
+    # Render the /entity_mailer/doc_gen_errors email template and capture the output as a string
+    msg = ApplicationController.render(
+      template: "entity_mailer/doc_gen_errors",
+      assigns: { main_error: @main_error, error_msg: @error_msg, user_id: @user_id, show_btn: @show_btn },
+      layout: false
+    )
+    send_notification(msg, user_id, "danger")
+  end
+
   def self.run_from_console(queue = "default")
     # Get the last job enqueued (from the default queue, change if needed)
     job = Sidekiq::Queue.new(queue).to_a.first

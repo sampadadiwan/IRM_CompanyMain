@@ -111,6 +111,7 @@ class DocGenJob < ApplicationJob
     # Send email if there are any errors
     if @error_msg.present?
       email_errors
+      send_errors_notification("Document generation completed with #{@error_msg.length} errors. Error email sent with details.", @error_msg, user_id, "danger")
     else
       msg = "#{pluralize(succeeded, 'document')} generated successfully."
       logger.info msg
@@ -125,10 +126,10 @@ class DocGenJob < ApplicationJob
     user_id = @user_id
 
     if error_msg.present?
-      msg = "Document generation completed with #{error_msg.length} errors. Errors will be sent via email"
-      logger.info msg
-      send_notification(msg, user_id, :danger)
-      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
+      @main_error = "Document generation completed with #{error_msg.length} errors."
+      logger.info @main_error
+      send_notification(@main_error, user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:, main_error: @main_error).doc_gen_errors.deliver_now
     end
   end
 end

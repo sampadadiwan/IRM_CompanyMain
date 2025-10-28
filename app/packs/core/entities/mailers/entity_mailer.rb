@@ -9,7 +9,8 @@ class EntityMailer < ApplicationMailer
     setup_defaults
     add_support_to_cc
     @error_msg = params[:error_msg]
-    subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
+    @main_error = params[:main_error]
+    subject = params[:subject].presence || params[:main_error].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} Errors"
     mail(from: @from, to: @to, cc: @cc, subject:)
   end
 
