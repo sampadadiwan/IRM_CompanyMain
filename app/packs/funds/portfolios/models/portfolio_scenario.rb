@@ -23,4 +23,10 @@ class PortfolioScenario < ApplicationRecord
                          locals: { portfolio_scenario: self },
                          target: "portfolio_scenario_#{id}"
   end
+
+
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["name", "updated_at"]
+  end
 end

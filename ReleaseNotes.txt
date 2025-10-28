@@ -1,3 +1,11 @@
+V9.1.30
+#####################################
+72118e32c Skip template decorator method (#1058)
+611ffd1ea Investment date as reporting date (#1059)
+38fc2ad67 Better styles for user dropdown
+3e93294b0 Added better support for suspend/resume of ssh ports (#1057)
+77fc62b5e Fixed replication job status
+
 V9.1.29
 #####################################
 51c4233ac Added better logging for replication_health_job.rb
