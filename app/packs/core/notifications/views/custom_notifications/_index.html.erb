@@ -8,6 +8,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Custom Notifications</h1>
   <%= link_to "New Custom Notification", new_custom_notification_path("custom_notification[entity_id]": custom_notification.entity_id, "custom_notification[owner_id]": custom_notification.owner_id, "custom_notification[owner_type]": custom_notification.owner_type, "custom_notification[for_type]": custom_notification.for_type), {id: "create_custom_notification", class: "btn btn-outline-primary"} if owner %>
+
+  <%= link_to "Document Notification", new_custom_notification_path(
+                            "custom_notification[for_type]": "Send Document",
+                            "custom_notification[entity_id]": current_user.entity_id),
+                          class: "btn btn-outline-primary ti ti-mail-plus" unless owner %>
 </div>
 <div class="table-responsive" data-controller="datatable">
 
