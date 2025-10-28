@@ -87,7 +87,7 @@ class SoaGenerator
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
-      remittance_fund_units_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.fund_units.for_remittances.where(issue_date: ..end_date)),
+      remittance_fund_units_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.fund_units.for_remittances.where(issue_date: ..end_date).order(issue_date: :asc)),
 
       commitment_adjustments: TemplateDecorator.decorate_collection(adjustments),
       commitment_adjustments_between_dates: TemplateDecorator.decorate_collection(adjustments.where(as_of: start_date..end_date)),
@@ -271,7 +271,7 @@ class SoaGenerator
     transfer_in_amount = Money.new(0)
     transfer_amount = Money.new(0)
     transfer_out_amount = Money.new(0)
-    capital_commitment.fund_units.where(issue_date: ..end_date, transfer: %w[out in]).find_each do |fu|
+    capital_commitment.fund_units.where(issue_date: ..end_date, transfer: %w[out in]).order(issue_date: :asc).find_each do |fu|
       transfer_amount += fu.amount
       if fu.transfer == "in"
         transfer_in_amount += fu.amount

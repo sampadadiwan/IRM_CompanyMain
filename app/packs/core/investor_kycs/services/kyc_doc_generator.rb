@@ -222,7 +222,7 @@ class KycDocGenerator
 
   def fund_units(investor_kyc, start_date, end_date, fund_id)
     fund_units = investor_kyc.fund_units
-    fund_units = fund_units.where(fund_id: fund_id) if fund_id
+    fund_units = fund_units.where(fund_id: fund_id).order(issue_date: :asc) if fund_id
 
     OpenStruct.new({
                      current: fund_units.sum(:quantity),
