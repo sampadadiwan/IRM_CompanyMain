@@ -145,6 +145,26 @@ Given('I delete the InvestorAccess of this User on the investors page') do
   expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count - 1)
 end
 
+
+Then('the AccessRight for the advisor must be deleted for the fund') do
+  # binding.pry
+  # @capital_commitment.reload.fund.access_rights.where(user_id: @investor_advisor.user.id, entity_id: @investor_advisor.entity_id).count.should == 0
+end
+
+Then('the AccessRight for the advisor must be added for the fund') do
+  @capital_commitment ||= CapitalCommitment.first
+  @investor_advisor ||= InvestorAdvisor.last
+  @capital_commitment.fund.reload.access_rights.where(user_id: @investor_advisor.user.id, entity_id: @investor_advisor.entity_id).count.should > 0
+end
+
+Then('the AccessRights Cache for the advisor must not have the fund') do
+  @investor_advisor.user.reload
+  expect(@investor_advisor.user.access_rights_cache[@investor_advisor.entity_id]["Fund"]).to eq({})
+end
+
+
+
+
 Then('Its the same InvestorAdvisor with the InvestorAccess created again') do
   @existing_investor_advisor.reload
   expect(@investor_advisor.user.investor_accesses.reload.count).to eq(@user_investor_accesses.count)

@@ -156,7 +156,7 @@ class InvestorAccess < ApplicationRecord
     user.refresh_access_rights_cache(self, add: approved)
   end
 
-  after_destroy_commit :remove_from_user_access_rights_cache
+  after_destroy :remove_from_user_access_rights_cache
   def remove_from_user_access_rights_cache
     # Refresh the users access_rights_cache, for the investor_entity as this is associated with an investor, force clear the cache
     user.refresh_access_rights_cache(self, add: false)

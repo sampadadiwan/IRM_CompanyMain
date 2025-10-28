@@ -118,7 +118,10 @@ Scenario Outline: Create new investor advisor for capital commitment
   Given I go to Add Investor Advisor page for commmitment
   And I fill IA form with details of a user that exists with role "investor_advisor"
   Then Investor Advisor is successfully created
+  Then the AccessRight for the advisor must be added for the fund
   Given I delete the InvestorAccess of this User on the investors page
+  Then the AccessRight for the advisor must be deleted for the fund
+  And the AccessRights Cache for the advisor must not have the fund
   Given I go to Add Investor Advisor page for commmitment
   And I fill IA form with details of a user that is already an Investor Advisor for this fund
   Then Investor Advisor is successfully created
