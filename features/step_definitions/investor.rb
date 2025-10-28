@@ -834,8 +834,9 @@ Then('we get the email with error {string}') do |error|
   current_email = nil
   emails_sent_to(@user.email).each do |email|
     puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-    current_email = email if email.subject.include?("Errors")
+    current_email = email if email.subject.downcase.include?("errors")
   end
+  puts "No email found for #{@user.email} with subject 'Errors'" if current_email.nil?
   expect(current_email.body).to include error
 end
 
