@@ -1,0 +1,69 @@
+
+<%
+    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
+    @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id]) if params[:secondary_sale_id].present?
+    @bread_crumbs = {}
+
+    if @fund.present?
+      @bread_crumbs["Funds"] = funds_path
+      @bread_crumbs[@fund.name] = fund_path(@fund)
+      @bread_crumbs["eSignatures Report"] = nil
+      @documents = @documents.sent_for_esign.joins(capital_commitment: :investor).includes(:e_signatures, capital_commitment: :investor)
+    elsif @secondary_sale.present?
+      @bread_crumbs["Secondary Sales"] = secondary_sales_path
+      @bread_crumbs[@secondary_sale.name] = secondary_sale_path(@secondary_sale)
+      @bread_crumbs["eSignatures Report"] = nil
+      @documents = @documents.sent_for_esign.joins(offer: :secondary_sale).includes(:e_signatures, offer: :secondary_sale)
+    elsif @entity.present?
+      @bread_crumbs["KYCs"] = investor_kycs_path
+      @bread_crumbs["eSignatures Report"] = nil
+      @documents = @documents.sent_for_esign.joins(investor_kyc: :investor).includes(:e_signatures, investor_kyc: :investor)
+    end
+%>
+
+
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">eSignatures</h1>
+</div>
+
+<%= render "/e_signatures/e_signature_stats" %>
+
+<% if params[:fund_id].present? %>
+    <%= render "/layouts/filter", associations: [:folder, :capital_commitment], hidden_fields: {no_folders: true, folder_id: params[:folder_id], fund_id: params[:fund_id], template: params[:template]} %>
+<% elsif params[:entity_id].present? %>
+    <%= render "/layouts/filter", associations: [:folder, :investor_kyc], hidden_fields: {no_folders: true, folder_id: params[:folder_id], entity_id: params[:entity_id], template: params[:template]} %>
+<% end %>
+<div class="table-responsive" data-controller="datatable">
+    <table id="fund_document_esigns_table" class="table table-bordered dataTable jqDataTable">
+        <thead>
+        <tr>
+            <th>Investor Name</th>
+            <% if @fund.present? %>
+                <th>Folio ID</th>
+            <% elsif @entity.present? %>
+                <th>KYC Name</th>
+            <% end %>
+            <th>Document Name</th>
+            <th>Owner Tag</th>
+            <th>eSign Status</th>
+            <th>eSignatures</th>
+            <th></th>
+        </tr>
+        </thead>
+
+        <tbody>
+            <% @documents.each do |doc| %>
+                <% if @fund.present? %>
+                    <%= render "documents/capital_commitment_esign_status",document: doc %>
+                <% elsif @secondary_sale.present? %>
+                    <%= render "documents/offer_esign_status",document: doc %>
+                <% elsif @entity.present? %>
+                    <%= render "documents/investor_kyc_esign_status",document: doc %>
+                <% end %>
+            <% end %>
+        </tbody>
+
+    </table>
+</div>

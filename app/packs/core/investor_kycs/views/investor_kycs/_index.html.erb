@@ -108,9 +108,9 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <% if policy(ESignature).index? %>
-                <%= link_to report_entity_path(id: entity_id, report: "dashboard/e_signatures"),
-                            class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-signature"></i> eSignatures Report
+
+                <%= link_to documents_path(entity_id: entity_id, q: ransack_query_params_multiple([ [:owner_type, :eq, "InvestorKyc"]]), template: "/e_signatures/e_signatures"), class: "dropdown-item" do %>
+                    <i class="ti ti-signature"></i>eSignatures Report
                 <% end %>
               <% end %>
 

@@ -33,6 +33,28 @@ class Document < ApplicationRecord
   has_many :generated_documents, class_name: "Document", foreign_key: "from_template_id"
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
+
+  belongs_to :capital_commitment,
+             -> { where(documents: { owner_type: "CapitalCommitment" }) },
+             class_name: "CapitalCommitment",
+             foreign_key: :owner_id,
+             optional: true,
+             inverse_of: :documents
+
+  belongs_to :investor_kyc,
+             -> { where(documents: { owner_type: "InvestorKyc" }) },
+             class_name: "InvestorKyc",
+             foreign_key: :owner_id,
+             optional: true,
+             inverse_of: :documents
+
+  belongs_to :offer,
+             -> { where(documents: { owner_type: "Offer" }) },
+             class_name: "Offer",
+             foreign_key: :owner_id,
+             optional: true,
+             inverse_of: :documents
+
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
@@ -63,6 +85,11 @@ class Document < ApplicationRecord
   scope :not_template, -> { where(template: false) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
   scope :not_sent_for_esign, -> { where(sent_for_esign: false) }
+  scope :esign_status_completed, -> { where(esign_status: "completed") }
+  scope :esign_status_failed, -> { where(esign_status: "failed") }
+  scope :esign_status_requested, -> { where(esign_status: "requested") }
+  scope :esign_status_all, -> { where.not(esign_status: nil) }
+
   scope :signed, -> { where(owner_tag: "Signed") }
   scope :generated_approved_or_others, lambda { |model|
     model.documents.includes(:folder).where(owner_tag: "Generated", approved: true).or(model.documents.where.not(owner_tag: "Generated")).or(model.documents.where(owner_tag: nil))
@@ -272,6 +299,6 @@ class Document < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[approved_by folder]
+    %w[approved_by folder e_signatures capital_commitment investor_kyc]
   end
 end

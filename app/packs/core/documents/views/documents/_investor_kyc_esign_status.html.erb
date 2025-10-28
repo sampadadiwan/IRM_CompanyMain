@@ -2,9 +2,10 @@
 
 <% if document.present? %>
     <tr id="<%= dom_id document %>">
-      <td><%= link_to(document&.owner&.investor_name, document&.owner&.investor) %></td>
-      <td><%= link_to(document&.owner&.full_name, document.owner) %></td>
+      <td><%= link_to(document&.investor_kyc&.investor_name, document&.investor_kyc&.investor) %></td>
+      <td><%= link_to(document&.investor_kyc&.full_name, document&.investor_kyc) %></td>
       <td><%= link_to(document.name, document) %></td>
+      <td><%= document.owner_tag %></td>
       <td><%= document.esign_status&.titleize %></td>
       <td>
         <% document.e_signatures.each do |esign| %>

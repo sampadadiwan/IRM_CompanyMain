@@ -24,6 +24,8 @@ class DocumentsController < ApplicationController
   # GET /documents or /documents.json
   def index
     fetch_rows
+    # Render the template sent via params else index
+    render params[:template].presence || "index"
   end
 
   def folder

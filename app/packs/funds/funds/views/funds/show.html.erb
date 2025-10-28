@@ -38,7 +38,8 @@ commands = [
               </a>
               <ul class="dropdown-menu">
                 <li>
-                  <%= link_to report_fund_path(@fund, report: "dashboard/e_signatures"), class: "dropdown-item" do %>
+
+                  <%= link_to documents_path(fund_id: @fund.id, q: ransack_query_params_multiple([[:capital_commitment_fund_id, :eq, @fund.id], [:owner_type, :eq, "CapitalCommitment"]]), template: "/e_signatures/e_signatures"), class: "dropdown-item" do %>
                     <i class="ti ti-signature"></i>eSignatures Report
                   <% end %>
                 </li>
@@ -149,7 +150,7 @@ commands = [
               <%= link_to portfolio_investments_report_all_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
                 <i class="ti ti-chart-pie"></i>Portfolio Investment Report
               <% end %>
-              
+
             </div>
           </div>
         </div>

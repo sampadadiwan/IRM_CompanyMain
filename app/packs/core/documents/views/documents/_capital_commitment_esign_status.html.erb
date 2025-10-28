@@ -1,9 +1,9 @@
-<%document ||=nil%>
+<% document ||= nil %>
 
 <% if document.present? %>
     <tr id="<%= dom_id document %>">
-      <td><%= link_to(document&.owner&.investor_name, document&.owner&.investor) %></td>
-      <td><%= link_to(document&.owner&.folio_id, document.owner) %></td>
+      <td><%= document&.capital_commitment&.investor_name %></td>
+      <td><%= link_to(document&.capital_commitment&.folio_id, document.capital_commitment) %></td>
       <td><%= link_to(document.name, document) %></td>
       <td><%= document.owner_tag %></td>
       <td><%= document.esign_status&.titleize %></td>

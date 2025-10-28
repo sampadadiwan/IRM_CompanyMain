@@ -21,8 +21,8 @@ class ReplicationHealthJob < ApplicationJob
           user.json_fields["replication_health_status"] = "Ok"
         else
           msg = "Lagging"
-          Rails.logger.debug("️⚠️ Replication is #{msg}")
-          user.json_fields["replication_health_status"] = "#{msg}"
+          Rails.logger.debug { "️⚠️ Replication is #{msg}" }
+          user.json_fields["replication_health_status"] = msg.to_s
           ExceptionNotifier.notify_exception(StandardError.new("Replication is #{msg}"))
         end
       end
