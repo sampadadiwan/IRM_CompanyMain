@@ -6,8 +6,9 @@ class DbRestoreJob < ApplicationJob
   def perform(instance_name: 'DbCheckInstance')
     DbRestoreService.run!(instance_name: instance_name)
   rescue StandardError => e
-    Rails.logger.error("[DbRestoreJob] Failed: #{e.message}")
+    msg = "✗ DbRestoreJob failed: #{e.message}"
+    Rails.logger.error(msg)
     # optionally notify via email, Slack, Sentry, etc.
-    ExceptionNotifier.notify_exception(e, data: { env: Rails.env, context: 'DbRestoreJob', instance_name: instance_name })
+    EntityMailer.with(subject: "#{Rails.env}: DbRestoreJob FAILED", msg: { process: "DbRestoreJob", result: "FAILED", message: msg, instance_name: instance_name }).notify_info.deliver_now
   end
 end
