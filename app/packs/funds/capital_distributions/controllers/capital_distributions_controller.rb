@@ -1,5 +1,5 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications]
+  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications recompute_fees]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -116,6 +116,11 @@ class CapitalDistributionsController < ApplicationController
     end
 
     redirect_to capital_distribution_url(@capital_distribution), notice: "#{count} payments out of #{payments.count} marked as completed."
+  end
+
+  def recompute_fees
+    CapitalDistributionPaymentRecomputeFeesJob.perform_later(@capital_distribution.id, current_user.id)
+    redirect_to capital_distribution_path(@capital_distribution), notice: "Recomputation of distribution fees started, please check back in a few mins."
   end
 
   private

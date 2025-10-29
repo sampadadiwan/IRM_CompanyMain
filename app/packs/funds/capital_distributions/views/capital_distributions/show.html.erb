@@ -193,6 +193,14 @@
                 <% end %>
               <% end %>
 
+              <% if policy(@capital_distribution).recompute_fees? %>
+                <%= button_to recompute_fees_capital_distribution_path(@capital_distribution), id: "capital_distribution_recompute_fees_btn", method: :patch, class: "dropdown-item ti ti-calculator", form_class: "deleteButton",
+                    data: {action: "click->confirm#popup", turbo: false, method: :patch,
+                          msg: "This will recompute the fees for each payment in this distribution. Proceed?"} do %>
+                  Recompute Fees
+                <% end %>
+              <% end %>
+
               <%= button_to "Send Payment Notifications", send_payment_notifications_capital_distribution_path(@capital_distribution),
                   method: :patch, class: "dropdown-item ti ti-mail",
                   data: { action: "click->confirm#popup",

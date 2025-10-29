@@ -82,6 +82,7 @@ resources :capital_distributions do
   get 'add_pis_to_capital_distribution', on: :collection
   patch 'generate_docs', on: :member
   patch 'send_payment_notifications', on: :member
+  patch 'recompute_fees', on: :member
 end
 
 resources :capital_remittances do

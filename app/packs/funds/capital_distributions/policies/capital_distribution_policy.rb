@@ -27,6 +27,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     update? && record.approved
   end
 
+  def recompute_fees?
+    update?
+  end
+
   def mark_payments_completed?
     update? && record.approved
   end
