@@ -23,6 +23,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     update?
   end
 
+  def send_payment_notifications?
+    update? && record.approved
+  end
+
   def mark_payments_completed?
     update? && record.approved
   end

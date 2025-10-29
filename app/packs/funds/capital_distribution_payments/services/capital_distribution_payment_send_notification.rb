@@ -1,0 +1,3 @@
+class CapitalDistributionPaymentSendNotification < CapitalDistributionPaymentAction
+  step :send_notification
+end

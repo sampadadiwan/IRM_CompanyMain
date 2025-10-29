@@ -30,6 +30,18 @@ class ApplicationJob < ActiveJob::Base
     send_notification(msg, user_id, "danger")
   end
 
+  # email errors to the user
+  def email_errors
+    error_msg = @error_msg
+    user_id = @user_id
+
+    if error_msg.present?
+      logger.info @main_error
+      send_notification(@main_error, user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:, main_error: @main_error).doc_gen_errors.deliver_now
+    end
+  end
+
   def self.run_from_console(queue = "default")
     # Get the last job enqueued (from the default queue, change if needed)
     job = Sidekiq::Queue.new(queue).to_a.first

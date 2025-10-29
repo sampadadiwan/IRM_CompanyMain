@@ -1,5 +1,5 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed generate_docs]
+  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed generate_docs send_payment_notifications]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -75,6 +75,11 @@ class CapitalDistributionsController < ApplicationController
   def generate_docs
     CapitalDistributionPaymentDocJob.perform_later(@capital_distribution.id, nil, current_user.id)
     redirect_to capital_distribution_path(@capital_distribution), notice: "Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached"
+  end
+
+  def send_payment_notifications
+    CapitalDistributionPaymentNotificationJob.perform_later(@capital_distribution.id, current_user.id)
+    redirect_to capital_distribution_path(@capital_distribution), notice: "Notification sending process started, please check back in a few mins."
   end
 
   # DELETE /capital_distributions/1 or /capital_distributions/1.json

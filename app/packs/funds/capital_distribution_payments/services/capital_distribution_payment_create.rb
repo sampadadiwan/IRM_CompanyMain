@@ -4,6 +4,5 @@ class CapitalDistributionPaymentCreate < CapitalDistributionPaymentAction
   step :setup_distribution_fees
   step :save
   left :handle_errors, Output(:failure) => End(:failure)
-  step :send_notification
   step :touch_investor_entity
 end

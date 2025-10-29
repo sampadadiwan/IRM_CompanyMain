@@ -28,6 +28,10 @@ class CapitalDistributionPaymentPolicy < FundBasePolicy
     update?
   end
 
+  def send_notification?
+    update? && record.completed
+  end
+
   def destroy?
     permissioned_employee?(:destroy)
   end

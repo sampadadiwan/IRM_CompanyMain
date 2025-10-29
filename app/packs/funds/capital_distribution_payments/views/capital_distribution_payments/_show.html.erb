@@ -26,7 +26,7 @@
             <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
           </td>
         </tr>
-        
+
 
         <tr>
           <td>
@@ -91,7 +91,7 @@
           <td>
             <%= money_to_currency capital_distribution_payment.income, params %>
           </td>
-        </tr>        
+        </tr>
 
         <% if capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents %>
 
@@ -106,13 +106,13 @@
 
         <tr>
           <td>
-            Net Income 
+            Net Income
           </td>
           <td>
             <%= money_to_currency capital_distribution_payment.income_with_fees, params %>
           </td>
         </tr>
-        <% end %>      
+        <% end %>
 
 
         <tr>
@@ -145,7 +145,7 @@
         </tr>
         <% end %>
 
-        
+
         <% if false && capital_distribution_payment.net_of_account_entries_cents > 0 %>
           <tr>
             <% # Have added styles here as it's not working by adding this class %>
@@ -167,7 +167,7 @@
           </tr>
         <% end %>
 
-        
+
 
 
         <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
@@ -238,6 +238,17 @@
             <%= display_boolean capital_distribution_payment.completed %>
           </td>
         </tr>
+
+        <tr>
+          <td>
+            Notification Sent
+          </td>
+          <td>
+            <%= display_boolean capital_distribution_payment.notification_sent %>
+          </td>
+        </tr>
+
+
 
         <% if capital_distribution_payment.exchange_rate %>
         <tr>
