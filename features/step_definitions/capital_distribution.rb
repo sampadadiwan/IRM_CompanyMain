@@ -10,13 +10,13 @@ When("I create a Capital Distribution {string}") do |args|
   fill_in 'capital_distribution_cost_of_investment', with: @capital_distribution.cost_of_investment.to_d
   fill_in 'capital_distribution_reinvestment', with: @capital_distribution.reinvestment.to_d
   fill_in 'capital_distribution_distribution_date', with: @capital_distribution.distribution_date.strftime("%Y-%m-%d")
-  
-  
+
+
   CapitalCommitment.first.account_entries.all.each do |ae|
     # For each account entry, add a distribution fee
     puts "Adding distribution fee for account entry #{ae}"
-    click_link 'Add Account Entries' 
- 
+    click_link 'Add Account Entries'
+
     within all('.nested-fields').last do
       select ae.name, from: 'fee_name'
       fill_in 'fee_start_date', with: (ae.reporting_date - 1.month).strftime("%Y-%m-%d")
@@ -52,8 +52,8 @@ Then('it should create Capital Distribution') do
   total_amount_cents +=  AccountEntry.where(fund_id: @fund.id).where.not(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
   # total_amount_cents -=  AccountEntry.where(fund_id: @fund.id).where(entry_type: ["Tax", "Expense"]).sum(:amount_cents)
 
-  expect(distribution.gross_amount_cents).to(eq(distribution.capital_distribution_payments.sum(:gross_payable_cents)))  
-  expect(distribution.completed_distribution_amount_cents).to(eq(distribution.capital_distribution_payments.completed.sum(:net_payable_cents)))  
+  expect(distribution.gross_amount_cents).to(eq(distribution.capital_distribution_payments.sum(:gross_payable_cents)))
+  expect(distribution.completed_distribution_amount_cents).to(eq(distribution.capital_distribution_payments.completed.sum(:net_payable_cents)))
 end
 
 Then('the data should be correctly displayed for each Capital Distribution Payment') do
@@ -71,18 +71,23 @@ Then('the data should be correctly displayed for each Capital Distribution Payme
 
     expect(page).to have_content(money_to_currency cdp.net_payable, {})
     expect(page).to have_content(money_to_currency cdp.income, {})
-    expect(page).to have_content(money_to_currency cdp.income_with_fees, {})    
+    expect(page).to have_content(money_to_currency cdp.income_with_fees, {})
     expect(page).to have_content(money_to_currency cdp.cost_of_investment, {})
     expect(page).to have_content(money_to_currency cdp.cost_of_investment_with_fees, {})
-    expect(page).to have_content(money_to_currency cdp.reinvestment, {})    
+    expect(page).to have_content(money_to_currency cdp.reinvestment, {})
 
     expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(cdp.capital_distribution.to_s)
     expect(page).to have_content(cdp.capital_commitment.to_s)
-    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).each do |ae|    
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).each do |ae|
       name = FormCustomField.to_name(ae.name)
       puts "checking details of #{name} in #{cdp.json_fields}"
-      expect(cdp.json_fields[name]).to(eq(money_to_currency(ae.amount, {})))        
+      expect(cdp.json_fields[name]).to(eq(money_to_currency(ae.amount, {})))
     end
   end
+end
+
+
+When('the capital distribution notifications are sent') do
+  CapitalDistributionPaymentNotificationJob.perform_now(@capital_distribution.id, @user.id)
 end
