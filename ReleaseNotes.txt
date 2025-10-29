@@ -1,3 +1,22 @@
+V9.1.31
+#####################################
+031a94ad6 Fixed fund_unit feature post distribution notification changes
+767fb7722 Added notify_errors to dbrestorejob, replaced entitymailer with raise errors in restore service
+02466c648 DB restore service uses the s3 bucket from env, updated prod us key name, updated exception notifier to entity mailer to be consistent
+c049e99c6 Added recompute fees
+98d2fa28a Fixed tests for CDP notifications
+9b851080a Added notifications distinct from completion of CDP
+c76c76b55 Fixed minor compact layout badges padding
+42454e552 Removed unwanted items from profile menus
+77365ca8d Fixed error emails tests
+46f51e25d Added Send Document btn to Custom Notifications list page
+272e6f4ed Order fund units in doc gen by issue date
+0933a1f4e Now investor access delete removes the access_right_cache for the user correctly
+4b449ec2c Fixed ckyc kra spec (#1063)
+ca71abf24 Doc gen errors display (#1065)
+899641d1a Esign filters (#1064)
+7fde7439f Better Fund Ratio Filters
+
 V9.1.30
 #####################################
 72118e32c Skip template decorator method (#1058)

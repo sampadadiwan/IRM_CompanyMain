@@ -37,10 +37,9 @@ Sidekiq.configure_server do |config|
       # Snapshot the funds at the end of every quarter March, June, September and December
       Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 31 3,12 *', class: 'FundSnapshotJob')
       Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
-
-      Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
     end
 
+    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob')
     Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
