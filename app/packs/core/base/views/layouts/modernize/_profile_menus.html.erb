@@ -53,28 +53,6 @@
             </div>
         </a>
 
-        <a href="/favorites" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
-            <img src="/modernize/images/svgs/icon-star.svg" alt="" width="24" height="24" />
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.favorites') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.favorites_bookmarks') %></span>
-            </div>
-        </a>
-
-        <% if current_user.enable_user_llm_chat %>
-        <a href="/users/chat" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
-            <img src="/modernize/images/svgs/icon-dd-chat.svg" alt="" width="24" height="24" />
-            </span>
-            <div class="w-75 d-inline-block v-middle ps-3">
-            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.chat') %></h6>
-            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.chat_with_caphive') %></span>
-            </div>
-        </a>
-        <% end %>
-
         <a href="#" class="py-8 px-7 d-flex align-items-center" data-bs-toggle="offcanvas" data-bs-target="#settings-offcanvas" aria-controls="settings-offcanvas">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
             <img src="/modernize/images/svgs/icon-dd-lifebuoy.svg" alt="" width="24" height="24" />
