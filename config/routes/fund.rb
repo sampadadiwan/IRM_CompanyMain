@@ -72,6 +72,7 @@ resources :capital_distribution_payments do
   get "preview", on: :member
   patch 'generate_docs', on: :member
   patch 'payments_completed', on: :member
+  patch 'send_notification', on: :member
 end
 
 resources :capital_distributions do
@@ -80,6 +81,8 @@ resources :capital_distributions do
   patch 'payments_completed', on: :member
   get 'add_pis_to_capital_distribution', on: :collection
   patch 'generate_docs', on: :member
+  patch 'send_payment_notifications', on: :member
+  patch 'recompute_fees', on: :member
 end
 
 resources :capital_remittances do

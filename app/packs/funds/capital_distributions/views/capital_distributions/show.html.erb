@@ -54,13 +54,13 @@
       <td>Face Value For Redemption</td>
       <td><%= money_to_currency @capital_distribution.cost_of_investment, params %></td>
     </tr>
-    
+
     <tr>
       <td>Income</td>
       <td><%= money_to_currency @capital_distribution.income, params %></td>
     </tr>
 
-    
+
     <% if @capital_distribution.distribution_fees.order(fee_type: :asc).present? %>
       <tr class="d-none d-sm-table-row">
         <td>Account Entries</td>
@@ -87,7 +87,7 @@
       </tr>
     <% end %>
 
-    
+
 
     <tr>
       <td>Reinvestment</td>
@@ -102,7 +102,7 @@
             "account_entry[amount]": @capital_distribution.reinvestment,
             "account_entry[entry_type]": "Reinvestment") %>
       </td>
-    </tr>    
+    </tr>
 
     <tr>
       <td>Distribution Date</td>
@@ -169,10 +169,10 @@
 
               <% if policy(@capital_distribution).mark_payments_completed? %>
 
-                <% 
-                  payments_completed_msg = "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users.. 
-                  <br> 
-                  #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_distribution.fund, capital_distribution_id: @capital_distribution.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"             
+                <%
+                  payments_completed_msg = "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users..
+                  <br>
+                  #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_distribution.fund, capital_distribution_id: @capital_distribution.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"
                 %>
                 <%= button_to payments_completed_capital_distribution_path(@capital_distribution),
                       method: :patch, class: "dropdown-item", form_class: "deleteButton",
@@ -192,10 +192,24 @@
                   <i class="ti ti-arrow-back-up"></i>Redeem Units
                 <% end %>
               <% end %>
-                
-              <%= button_to "Generate Documents" , 
-                  generate_docs_capital_distribution_path(@capital_distribution),    
-                  method: :patch, class: "dropdown-item ti ti-files", 
+
+              <% if policy(@capital_distribution).recompute_fees? %>
+                <%= button_to recompute_fees_capital_distribution_path(@capital_distribution), id: "capital_distribution_recompute_fees_btn", method: :patch, class: "dropdown-item ti ti-calculator", form_class: "deleteButton",
+                    data: {action: "click->confirm#popup", turbo: false, method: :patch,
+                          msg: "This will recompute the fees for each payment in this distribution. Proceed?"} do %>
+                  Recompute Fees
+                <% end %>
+              <% end %>
+
+              <%= button_to "Send Payment Notifications", send_payment_notifications_capital_distribution_path(@capital_distribution),
+                  method: :patch, class: "dropdown-item ti ti-mail",
+                  data: { action: "click->confirm#popup",
+                          msg: "This will send payment notification to all investors in this distribution, who have not been notified. It will not resend notifications to those who have already received it. Proceed?",
+                          method: :patch } if policy(@capital_distribution).send_payment_notifications? %>
+
+              <%= button_to "Generate Documents" ,
+                  generate_docs_capital_distribution_path(@capital_distribution),
+                  method: :patch, class: "dropdown-item ti ti-files",
                   form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notices for all payments in this distribution. Proceed?"} if policy(@capital_distribution).generate_docs? %>
             </div>
         </div>

@@ -13,14 +13,11 @@ class CapitalDistributionPaymentAction < Trailblazer::Operation
     true
   end
 
-  def send_notification(_ctx, capital_distribution_payment:, **)
-    if capital_distribution_payment.completed && !capital_distribution_payment.destroyed?
-      Rails.logger.debug { "Sending notification for capital_distribution_payment #{capital_distribution_payment.id}" }
-      capital_distribution_payment.send_notification
-    else
-      Rails.logger.debug { "Not sending notification for capital_distribution_payment #{capital_distribution_payment.id}" }
-    end
-    true
+  def send_notification(ctx, capital_distribution_payment:, **)
+    msg = capital_distribution_payment.send_notification(force: ctx[:force_notification])
+    ctx[:notification_message] = msg || "Notification sent successfully."
+
+    capital_distribution_payment.notification_sent
   end
 
   def save(_ctx, capital_distribution_payment:, **)

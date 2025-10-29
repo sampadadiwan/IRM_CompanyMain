@@ -93,6 +93,8 @@ class CapitalDistributionPayment < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
+  scope :notification_sent, -> { where(notification_sent: true) }
+  scope :notification_not_sent, -> { where(notification_sent: false) }
 
   before_validation :ensure_commitment
   def ensure_commitment
@@ -111,16 +113,35 @@ class CapitalDistributionPayment < ApplicationRecord
                                                net_payable_cents, payment_date)
   end
 
-  # after_commit :send_notification, if: ->(cdp) { cdp.completed && !cdp.destroyed? }
-  def send_notification
-    if  saved_change_to_completed? && completed && capital_distribution.send_notification_on_complete &&
-        capital_distribution.approved && !capital_distribution.manual_generation
+  #rubocop:disable Rails/SkipsModelValidations
+  def send_notification(force: false)
+    msg = nil
 
-      investor.notification_users(fund).each do |user|
-        CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
+    if force || !notification_sent
+      if  completed && capital_distribution.send_notification_on_complete &&
+          capital_distribution.approved && !capital_distribution.manual_generation
+
+        investor.notification_users(fund).each do |user|
+          CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
+        end
+
+        update_column(:notification_sent, true)
+        msg = "Notification sent for Distribution Payment #{id}"
+      else
+        msg = "Conditions not met for sending notification for Distribution Payment #{id}"
+        msg += " (not completed)" unless completed
+        msg += " (notification on complete not set)" unless capital_distribution.send_notification_on_complete
+        msg += " (capital distribution not approved)" unless capital_distribution.approved
+        msg += " (manual generation)" if capital_distribution.manual_generation
       end
+    else
+      msg = "Skipping notification for Distribution Payment #{id} as it is already sent."
     end
+    Rails.logger.debug { msg }
+
+    msg
   end
+  #rubocop:enable Rails/SkipsModelValidations
 
   # after_commit :update_investor_entity
   # rubocop:disable Rails/SkipsModelValidations

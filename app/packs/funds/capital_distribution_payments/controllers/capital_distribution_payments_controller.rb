@@ -1,5 +1,5 @@
 class CapitalDistributionPaymentsController < ApplicationController
-  before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview generate_docs payments_completed]
+  before_action :set_capital_distribution_payment, only: %i[show edit update destroy preview generate_docs payments_completed send_notification]
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
@@ -98,6 +98,20 @@ class CapitalDistributionPaymentsController < ApplicationController
   def generate_docs
     CapitalDistributionPaymentDocJob.perform_later(@capital_distribution_payment.capital_distribution_id, @capital_distribution_payment.id, current_user.id)
     redirect_to capital_distribution_payment_path(@capital_distribution_payment), notice: "Documentation generation started, please check back in a few mins."
+  end
+
+  def send_notification
+    result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: @capital_distribution_payment, force_notification: true)
+    msg = result[:notification_message]
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: msg }
+        format.json { render :show, status: :ok, location: @capital_distribution_payment }
+      else
+        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), alert: "#{msg}. #{@capital_distribution_payment.errors.full_messages.join(', ')}" }
+        format.json { render json: @capital_distribution_payment.errors, status: :unprocessable_entity }
+      end
+    end
   end
 
   # DELETE /capital_distribution_payments/1 or /capital_distribution_payments/1.json
