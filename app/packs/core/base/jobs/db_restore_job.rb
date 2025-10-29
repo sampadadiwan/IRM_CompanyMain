@@ -9,6 +9,10 @@ class DbRestoreJob < ApplicationJob
     msg = "✗ DbRestoreJob failed: #{e.message}"
     Rails.logger.error(msg)
     # optionally notify via email, Slack, Sentry, etc.
-    EntityMailer.with(subject: "#{Rails.env}: DbRestoreJob FAILED", msg: { process: "DbRestoreJob", result: "FAILED", message: msg, instance_name: instance_name }).notify_info.deliver_now
+    notify_errors(msg)
+  end
+
+  def notify_errors(msg)
+    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK", result: "FAILED", message: msg }).notify_info.deliver_now
   end
 end

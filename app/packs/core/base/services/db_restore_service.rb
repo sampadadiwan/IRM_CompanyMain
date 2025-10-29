@@ -85,7 +85,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     if result
       EntityMailer.with(subject: "#{Rails.env}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{(total_duration / 60).round(1)} minutes" }).notify_info.deliver_now
     else
-      EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK", result: "FAILED", message: msg, time_taken: "#{(total_duration / 60).round(1)} minutes" }).notify_info.deliver_now
+      raise msg
     end
   end
 
@@ -221,15 +221,15 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   rescue Aws::EC2::Errors::InvalidInstanceIDNotFound => e
     msg = "✗ Error: Instance ID not found - #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - stop instance", result: "FAILED", message: msg }).notify_info.deliver_now
+    raise msg
   rescue Aws::Waiters::Errors::WaiterFailed => e
     msg = "✗ Timeout: Instance #{instance_id} did not stop in expected time - #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - stop instance", result: "FAILED", message: msg, instance_id: instance_id }).notify_info.deliver_now
+    raise msg
   rescue StandardError => e
     msg = "✗ Unexpected error stopping instance #{instance_id}: #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - stop instance", result: "FAILED", message: msg, instance_id: instance_id }).notify_info.deliver_now
+    raise msg
   end
 
   def ec2
@@ -298,11 +298,10 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
         ssh.open_channel do |channel|
           channel.exec("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary") do |_ch, success|
             unless success
-              msg = "❌ Failed to execute command"
+              msg = "❌ Failed to execute command. action: run_remote_script"
               f.write msg
               Rails.logger.error msg
-              EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - run_remote_script", action: 'execute_restore_primary', result: "FAILED", message: msg, ip: ip }).notify_info.deliver_now
-              next
+              raise msg
             end
 
             channel.on_data do |_ch, data|
@@ -350,10 +349,9 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   # Validates that the timestamp is present.
   def validate_timestamp_presence(timestamp)
     if timestamp.blank?
-      msg = "✗ Failed: Empty timestamp"
+      msg = "✗ Failed: Empty timestamp. action: validate_timestamp_presence"
       Rails.logger.debug msg
-      EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - validate_timestamp_presence", result: "FAILED", message: msg }).notify_info.deliver_now
-      return false
+      raise msg
     end
     true
   end
@@ -362,10 +360,9 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   def parse_timestamp(timestamp)
     Time.zone.parse(timestamp)
   rescue ArgumentError
-    msg = "✗ Failed: Invalid timestamp format '#{timestamp}'"
+    msg = "✗ Failed: Invalid timestamp format '#{timestamp}'. action: parse_timestamp"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - parse_timestamp", result: "FAILED", message: msg }).notify_info.deliver_now
-    nil
+    raise msg
   end
 
   # Validates that the timestamp is within the allowed threshold.
@@ -407,7 +404,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   rescue StandardError => e
     msg = "✗ Remote services cleanup failed: #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - cleanup_remote_services", result: "FAILED", message: msg, ip: ip }).notify_info.deliver_now
+    raise msg
   end
 
   # Stops and disables a specified service on the remote instance.
@@ -468,7 +465,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   rescue StandardError => e
     msg = "✗ Failed to drop database: #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - drop_mysql_database", result: "FAILED", message: msg, database_name: database_name }).notify_info.deliver_now
+    raise msg
   end
 
   # Cleans up temporary files on the remote instance after the restore process.
@@ -481,7 +478,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   rescue StandardError => e
     msg = "✗ Cleanup failed: #{e.message}"
     Rails.logger.debug { msg }
-    EntityMailer.with(subject: "#{Rails.env}: DB Check FAILED", msg: { process: "DB RESTORE CHECK - cleanup", result: "FAILED", message: msg, ip: ip }).notify_info.deliver_now
+    raise msg
   end
 
   # Initializes the IAM client for AWS operations.
