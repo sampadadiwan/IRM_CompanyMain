@@ -24,7 +24,7 @@ module ValuationsHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } }, **chart_theme_color
     }, prefix: "#{entity.currency}:"
   end
 end
