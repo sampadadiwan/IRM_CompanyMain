@@ -58,13 +58,13 @@ mcp.json
 yarn-debug.log*
 .yarn-integrity
 
-/config/credentials/staging.key
+/config/credentials/staging*.key
 
-/config/credentials/production.key
+/config/credentials/production*.key
 
-/config/credentials/development.key
+/config/credentials/development*.key
 
-/config/credentials/sandbox.key
+/config/credentials/sandbox*.key
 
 /config/credentials/test.key
 

@@ -27,3 +27,26 @@ ElasticImporterJob.new.reset
 http://localhost:3001
 Login using
 fm1@ian.com / password
+
+
+
+
+
+New To the codebase? Try understanding the code in this sequence
+
+
+    1. Entity, User, Roles and Permissions
+    2. FormTypes and CustomFormFields and GridPreference (WithCustomFields)
+    3. Stakeholders, Types of stakeholders, InvestorAccess
+    4. AccessRights
+    5. Documents and Folders (WithFolder, WithDataRoom, Shrine, S3)
+    6. Jobs, Sidekiq, Sidekiq Cron, Queues in Sidekiq and sidekiq web console
+    7. Packs (Core,Funds,Misc etc)
+    8. ImportUploads
+    9. Admin login, Support login and admin screens
+    10. ViewComponents
+    11. Funds,Commitments,Calls etc
+    12. Reports
+    13. DocGen
+    14. Testing
+    15. Deployment and Environments
