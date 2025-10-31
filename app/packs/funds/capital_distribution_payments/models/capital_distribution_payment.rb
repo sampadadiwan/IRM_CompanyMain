@@ -113,7 +113,7 @@ class CapitalDistributionPayment < ApplicationRecord
                                                net_payable_cents, payment_date)
   end
 
-  #rubocop:disable Rails/SkipsModelValidations
+  # rubocop:disable Rails/SkipsModelValidations
   def send_notification(force: false)
     msg = nil
 
@@ -141,7 +141,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
     msg
   end
-  #rubocop:enable Rails/SkipsModelValidations
+  # rubocop:enable Rails/SkipsModelValidations
 
   # after_commit :update_investor_entity
   # rubocop:disable Rails/SkipsModelValidations

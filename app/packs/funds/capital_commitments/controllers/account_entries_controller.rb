@@ -72,14 +72,50 @@ class AccountEntriesController < ApplicationController
     @time_series_error.join(" ") if @time_series_error.present?
   end
 
+  def sort_by_id_then_existing
+    # Pull whatever ORDER BY ransack already applied
+    existing_orders = @account_entries.order_values
+    # e.g. [#<Arel::Nodes::Ascending ...>, #<Arel::Nodes::Descending ...>, ...]
+    # or sometimes [] / [nil] / [""]
+
+    # Clean obvious junk like nil/"" so we don't pass them back
+    clean_orders = existing_orders.reject { |frag| frag.respond_to?(:blank?) ? frag.blank? : frag.nil? }
+
+    if clean_orders.present?
+      # Does the primary sort already include id? (either as symbol or SQL/Arel)
+      includes_id =
+        clean_orders.any? do |frag|
+          frag.to_s.match?(/\baccount_entries\.id\b/i) || frag == :id || frag == "id"
+        end
+
+      @account_entries = if includes_id
+                           # We already have id in the sort, so just reapply ransack's order
+                           @account_entries.reorder(clean_orders)
+                         else
+                           # Reapply ransack's full order first, then add id as a stable tiebreaker
+                           @account_entries.reorder(clean_orders).order("account_entries.id ASC")
+                         end
+    else
+      # Ransack gave us no order at all → default to id
+      @account_entries = @account_entries.reorder(nil).order("account_entries.id ASC")
+    end
+  end
+
   def fetch_rows
     params[:q] ||= {}
-    # This is forced on the user as account_entries table is partitioned by reporting date, and this will make it efficient.
+
+    # Force reporting_date filter for perf if user didn't constrain reporting_date
     params[:q][:reporting_date_gt] = l(Time.zone.today.beginning_of_quarter) unless ransack_has_attr?(params[:q], 'reporting_date')
 
     @q = AccountEntry.ransack(params[:q])
+
+    # Start with policy scope + includes
     @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
+    # Sort the results by id and the ransack ordering
+    sort_by_id_then_existing
+    # Apply additional filters
     filter_index(params)
+    # Check for fund filter
     @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
 
     if params[:group_fields].present?

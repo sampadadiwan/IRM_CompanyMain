@@ -9,6 +9,7 @@ class AccountEntry < ApplicationRecord
   include RansackerAmounts.new(fields: %w[amount])
 
   STANDARD_COLUMNS = {
+    "ID" => "id",
     "Folio" => "folio_id",
     "Reporting Date" => "reporting_date",
     "Period" => "period",
