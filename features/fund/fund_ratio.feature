@@ -85,3 +85,48 @@ Scenario: Calculate XIRR from XLS sheets
   Given I have an Excel file "public/sample_uploads/xirr/xirr_scenarios.xlsx"
   When I read all sheets and compute XIRR
   Then each computed XIRR should match the expected output
+
+@import
+Scenario Outline: Import Fund Ratio with Portfolio Scenario
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And there is a fund "<fund>" for the entity
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given my firm is an investor in the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there is a CapitalCommitment with "folio_id=DF1"
+  Given there is a PortfolioScenario "name=Base Case" for the fund
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios_portfolio_scenario.xlsx"
+  Then the FundRatios should be linked to the PortfolioScenario "Base Case" from file "fund_ratios_portfolio_scenario.xlsx"
+  Given there is a PortfolioScenario "name=Bull Case" for the fund
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios_update_portfolio_scenario.xlsx"
+  Then the FundRatios should be linked to the PortfolioScenario "Bull Case" from file "fund_ratios_update_portfolio_scenario.xlsx"
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
+
+@import
+Scenario Outline: Import Fund Ratio for portfolio company
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And there is a fund "<fund>" for the entity
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given my firm is an investor in the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there is a CapitalCommitment with "folio_id=DF1"
+  Given there is a PortfolioScenario "name=Base Case" for the fund
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios_portfolio_company.xlsx"
+  Then the FundRatios should be have owner from file "fund_ratios_portfolio_company.xlsx"
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |

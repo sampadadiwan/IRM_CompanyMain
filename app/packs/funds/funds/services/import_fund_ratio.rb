@@ -17,6 +17,11 @@ class ImportFundRatio < ImportUtil
     entity = import_upload.entity
     owner = find_owner(fund, user_data, entity)
 
+    portfolio_scenario_name = user_data["Portfolio Scenario"]&.strip
+    portfolio_scenario_id = fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)&.id
+    raise "Portfolio Scenario not found for #{portfolio_scenario_name}" if portfolio_scenario_name.present? && portfolio_scenario_id.nil?
+
+    scenario = user_data["Scenario"]&.strip || "Default"
     attributes = {
       fund: fund,
       entity: entity,
@@ -25,8 +30,10 @@ class ImportFundRatio < ImportUtil
       value: parse_value(user_data["Value"]),
       display_value: format_display_value(user_data["Value"], user_data["Ratio Name"]),
       end_date: parse_date(user_data["End Date"]),
-      import_upload: import_upload
+      import_upload: import_upload,
+      scenario: scenario
     }
+    attributes[:portfolio_scenario_id] = portfolio_scenario_id if portfolio_scenario_id
 
     if user_data["Update Only"].to_s.downcase == "yes"
       update_fund_ratio(attributes)
@@ -45,6 +52,11 @@ class ImportFundRatio < ImportUtil
   end
 
   # For now. We want to disable investor fund ratios as this is unclear from product perspective.
+  # Owner will be -
+  # CapitalCommitment if folio id is given
+  # PortfolioCompany (Investor) if only portfolio company is given
+  # AggregatePortfolioInvestment if portfolio company and instrument is given
+  # Fund if none of the above is given
   def find_owner(fund, user_data, entity)
     # Validate that if "Folio No" is present, "Portfolio Company" and "Instrument" are blank
     raise "Invalid Owner: If 'Folio No' is present, 'Portfolio Company' and 'Instrument' must be blank." if user_data["Folio No"].present? && (user_data["Portfolio Company"].present? || user_data["Instrument"].present?)
@@ -53,16 +65,21 @@ class ImportFundRatio < ImportUtil
       fund.capital_commitments.find_by(folio_id: user_data["Folio No"]).tap do |capital_commitment|
         raise "Capital Commitment not found for #{user_data['Folio No']}" if capital_commitment.nil?
       end
-    elsif user_data["Instrument"].present? && user_data["Portfolio Company"].present?
+    elsif user_data["Portfolio Company"].present?
       investor = entity.investors.find_by(investor_name: user_data["Portfolio Company"])
       raise "Portfolio Company not found for #{user_data['Portfolio Company']}" if investor.nil?
 
-      instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
-      raise "Instrument not found for #{user_data['Instrument']}" if instrument.nil?
+      if user_data["Instrument"].present?
+        instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
+        raise "Instrument #{user_data['Instrument']} not found for #{user_data['Portfolio Company']}" if instrument.nil?
 
-      instrument.aggregate_portfolio_investment.find_by(fund_id: fund.id)
-    elsif user_data["Portfolio Company"].present? && user_data["Instrument"].blank?
-      raise "Portfolio Company Fund Ratio not permitted"
+        api = instrument.aggregate_portfolio_investment.find_by(fund_id: fund.id)
+        raise "Aggregate Portfolio Investment not found for instrument #{user_data['Instrument']} and fund #{fund.name}" if api.nil?
+
+        api
+      else
+        investor
+      end
     else
       fund
     end
@@ -106,7 +123,9 @@ class ImportFundRatio < ImportUtil
       end_date: attrs[:end_date],
       import_upload_id: attrs[:import_upload].id,
       notes: attrs[:user_data]["Note"],
-      label: attrs[:user_data]["Label"]
+      label: attrs[:user_data]["Label"],
+      scenario: attrs[:scenario],
+      portfolio_scenario_id: attrs[:portfolio_scenario_id]
     )
     fund_ratio.save!
   end
@@ -117,6 +136,7 @@ class ImportFundRatio < ImportUtil
       fund_id: attrs[:fund].id,
       entity_id: attrs[:entity].id,
       name: attrs[:user_data]["Ratio Name"],
+      portfolio_scenario_id: attrs[:portfolio_scenario_id],
       owner_type: attrs[:owner].class.name,
       owner_id: attrs[:owner].id,
       end_date: attrs[:end_date]
@@ -135,7 +155,9 @@ class ImportFundRatio < ImportUtil
       end_date: attrs[:end_date],
       import_upload_id: attrs[:import_upload].id,
       notes: attrs[:user_data]["Note"],
-      label: attrs[:user_data]["Label"]
+      label: attrs[:user_data]["Label"],
+      scenario: attrs[:scenario],
+      portfolio_scenario_id: attrs[:portfolio_scenario_id]
     )
 
     fund_ratio.capital_commitment_id = attrs[:owner].id if attrs[:owner].is_a?(CapitalCommitment)

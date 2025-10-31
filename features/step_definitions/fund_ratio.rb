@@ -182,3 +182,79 @@ Given('I log in as user {string}') do |first_name|
     When I fill and submit the login page
   )
 end
+
+Given('there is a PortfolioScenario {string} for the fund') do |portfolio_scenario_args|
+  @user ||= User.first
+  @portfolio_scenario = @fund.portfolio_scenarios.new(entity: @entity, fund: @fund, user: @user)
+  key_values(@portfolio_scenario, portfolio_scenario_args)
+  @portfolio_scenario.save!
+end
+
+Then('the FundRatios should be linked to the PortfolioScenario {string} from file {string}') do |portfolio_scenario_name, file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    user_data = [headers, row].transpose.to_h
+    # puts "Checking import of #{user_data}"
+    folio_id = user_data["Folio No"]
+    name = user_data["Ratio Name"]
+    end_date = user_data["End Date"]
+    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
+    portfolio_scenario_name = user_data["Portfolio Scenario"]
+    portfolio_scenario = @fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)
+
+    cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
+    fund_ratio = FundRatio.find_by(name:, capital_commitment: cc, end_date:)
+    owner = if cc.present?
+      cc
+    elsif user_data["Portfolio Company"].present?
+      investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
+      if user_data["Instrument"].present?
+        instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
+        instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
+      else
+        investor
+      end
+    else
+      @fund
+    end
+    fund_ratio.value.should == user_data["Value"].to_d
+    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id
+    fund_ratio.scenario.should == user_data["Scenario"]&.strip
+    fund_ratio.owner.should == owner
+
+  end
+end
+
+
+Then('the FundRatios should be have owner from file {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    user_data = [headers, row].transpose.to_h
+    # puts "Checking import of #{user_data}"
+    folio_id = user_data["Folio No"]
+    name = user_data["Ratio Name"]
+    end_date = user_data["End Date"]
+    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
+    portfolio_scenario_name = user_data["Portfolio Scenario"]
+    portfolio_scenario = @fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)
+
+    cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
+    fund_ratio = FundRatio.find_by(name:, capital_commitment: cc, end_date:)
+    owner = cc || Investor.find_by(investor_name: user_data["Portfolio Company"])
+
+    fund_ratio.value.should == user_data["Value"].to_d
+    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id
+    fund_ratio.scenario.should == user_data["Scenario"]&.strip
+    fund_ratio.owner.should == owner
+  end
+end
