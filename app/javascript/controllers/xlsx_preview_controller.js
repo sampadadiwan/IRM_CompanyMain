@@ -282,10 +282,44 @@ export default class extends Controller {
   }
 
   buildTableHtml(sheet) {
-    const html = XLSXLib.utils.sheet_to_html(sheet);
-    // The generated table may not have the classes we want, so we add them.
-    // This is a simple way to ensure our styling is applied.
-    return html.replace("<table", '<table class="table table-bordered datatable"');
+    // Safely escape HTML to prevent broken markup
+    const escapeHtml = (unsafe) => {
+      if (unsafe === null || unsafe === undefined) return "";
+      return String(unsafe)
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    const data = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", raw: false });
+    if (!data || data.length === 0) {
+      return '<table class="table table-bordered datatable"></table>';
+    }
+
+    const headers = data[0] || [];
+    const rows = data.slice(1);
+
+    const maxCols = Math.max(headers.length, ...rows.map(r => r.length));
+
+    let html = '<table class="table table-bordered datatable">';
+    html += '<thead><tr>';
+    for (let i = 0; i < maxCols; i++) {
+      html += `<th>${escapeHtml(headers[i] || "")}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    rows.forEach(row => {
+      html += '<tr>';
+      for (let i = 0; i < maxCols; i++) {
+        html += `<td>${escapeHtml(row[i] || "")}</td>`;
+      }
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
   }
 
   async loadFromUrl(url) {

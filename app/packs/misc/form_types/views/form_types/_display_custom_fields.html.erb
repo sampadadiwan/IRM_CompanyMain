@@ -3,7 +3,7 @@
     <%# Display Normal custom fields (non-regulatory) first %>
     <% form_custom_fields.not_calculations.order(position: :asc).each do |custom_field| %>
         <% if custom_field %>
-            <% v = model.properties[custom_field.name] %>
+            <% v = model.properties ? model.properties[custom_field.name] : nil %>
             <% if v.present? %>
                 <tr>
                     <td>
