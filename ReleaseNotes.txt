@@ -1,3 +1,12 @@
+V9.1.33
+#####################################
+dd770c547 Fixed Remittances grid spacing issue
+78fbc9b73 Added sorting by id and other ransack sort for account entries
+d20e51e4b Added portfolio scenario to fund ratio upload (#1072)
+5bd17da91 Removed scenario from Fund Ratio
+72b987d6d DBCheckJob now runs only for prod not staging
+45591f387 Enabled dark theme for valuations chart
+
 V9.1.31
 #####################################
 031a94ad6 Fixed fund_unit feature post distribution notification changes
