@@ -44,7 +44,7 @@ class KpiReportSearch
 
     KpiReportIndex
       .filter(terms: { id: kpi_ids.map(&:to_s) }) # Convert to string for keyword matching
-      .query(query_string: {
+      .query(simple_query_string: {
                fields: KpiReportIndex::SEARCH_FIELDS,
                query: query,
                default_operator: 'and'

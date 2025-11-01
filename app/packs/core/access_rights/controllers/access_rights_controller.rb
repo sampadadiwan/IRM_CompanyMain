@@ -49,12 +49,12 @@ class AccessRightsController < ApplicationController
       @access_rights = if @owner
                          AccessRightIndex.filter(term: { owner_id: @owner.id })
                                          .query(match: { owner_type: params[:owner_type] })
-                                         .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
+                                         .query(simple_query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                                       query:, default_operator: 'and' })
                        else
                          AccessRightIndex.filter(term:)
-                                         .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
+                                         .query(simple_query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                                       query:, default_operator: 'and' })
                        end
 
       @pagy, @access_rights = pagy(@access_rights.page(params[:page]).objects)

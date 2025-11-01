@@ -86,8 +86,8 @@ class InvestorsController < ApplicationController
     query = params[:query]
     if query.present?
       @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
-                                .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' }).objects
+                                .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                              query:, default_operator: 'and' }).objects
 
       render "index"
     else

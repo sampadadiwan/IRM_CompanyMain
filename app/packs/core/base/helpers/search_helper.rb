@@ -39,4 +39,8 @@ module SearchHelper
 
     result
   end
+
+  def self.sanitize_text_for_search(text)
+    text&.gsub(/[^\p{L}\p{N}\s'-]/u, '')&.squish
+  end
 end

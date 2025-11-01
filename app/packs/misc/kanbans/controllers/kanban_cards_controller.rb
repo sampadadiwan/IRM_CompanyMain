@@ -126,8 +126,8 @@ class KanbanCardsController < ApplicationController
     if params[:query].present?
       @filtered_results = true
       kanban_card_ids = KanbanCardIndex.filter(term: { entity_id: @entity.id })
-                                       .query(query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
-                                                              query: "*#{params[:query]}*", default_operator: 'and' }).objects.compact.pluck(:id)
+                                       .query(simple_query_string: { fields: KanbanCardIndex::SEARCH_FIELDS,
+                                                                     query: "*#{params[:query]}*", default_operator: 'and' }).objects.compact.pluck(:id)
       @searched_kanban_cards = KanbanCard.where(id: kanban_card_ids)
     end
     kanban_board = KanbanBoard.find(params[:kanban_board])

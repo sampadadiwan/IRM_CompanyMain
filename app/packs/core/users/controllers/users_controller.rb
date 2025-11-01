@@ -36,8 +36,8 @@ class UsersController < ApplicationController
     query = params[:query]
     if query.present?
       @users = UserIndex.filter(term: { entity_id: current_user.entity_id })
-                        .query(query_string: { fields: %i[first_name last_name email],
-                                               query:, default_operator: 'and' })
+                        .query(simple_query_string: { fields: %i[first_name last_name email],
+                                                      query:, default_operator: 'and' })
 
       render "index"
     else

@@ -24,7 +24,7 @@ class OfferSearchService
     query = "#{params[:search][:value]}*"
     entity_ids = [current_user.entity_id]
     OfferIndex.filter(terms: { entity_id: entity_ids })
-              .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
-                                     query:, default_operator: 'and' }).per(100).map(&:id)
+              .query(simple_query_string: { fields: OfferIndex::SEARCH_FIELDS,
+                                            query:, default_operator: 'and' }).per(100).map(&:id)
   end
 end

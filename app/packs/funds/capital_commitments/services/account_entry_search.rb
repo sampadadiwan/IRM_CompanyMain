@@ -11,7 +11,7 @@ class AccountEntrySearch
 
       # Note we have disabled AccountEntryIndex, its too much data
       # Use filters to search for AccountEntry
-      search_results = AccountEntryIndex.filter(terms: { entity_id: entity_ids }).query(query_string: { fields: AccountEntryIndex::SEARCH_FIELDS, query:, default_operator: 'and' })
+      search_results = AccountEntryIndex.filter(terms: { entity_id: entity_ids }).query(simple_query_string: { fields: AccountEntryIndex::SEARCH_FIELDS, query:, default_operator: 'and' })
 
       search_results = search_results.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
       search_results = search_results.filter(term: { capital_commitment_id: params[:capital_commitment_id] }) if params[:capital_commitment_id].present?

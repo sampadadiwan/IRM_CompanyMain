@@ -17,8 +17,8 @@ class InvestmentOpportunitiesController < ApplicationController
     query = params[:query]
     if query.present?
       @investment_opportunities = InvestmentOpportunityIndex.filter(term: { entity_id: current_user.entity_id })
-                                                            .query(query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
-                                                                                   query:, default_operator: 'and' })
+                                                            .query(simple_query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
+                                                                                          query:, default_operator: 'and' })
 
       @pagy, @investment_opportunities = pagy(@investment_opportunities.page(params[:page]).objects)
       render "index"

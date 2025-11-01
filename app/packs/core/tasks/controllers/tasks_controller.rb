@@ -22,8 +22,8 @@ class TasksController < ApplicationController
     if query.present?
       @tasks = TaskIndex.filter(term: { entity_id: current_user.entity_id })
                         .or(TaskIndex.filter(term: { for_entity_id: current_user.entity_id })
-                      .query(query_string: { fields: TaskIndex::SEARCH_FIELDS,
-                                             query:, default_operator: 'and' }))
+                      .query(simple_query_string: { fields: TaskIndex::SEARCH_FIELDS,
+                                                    query:, default_operator: 'and' }))
 
       @pagy, @tasks = pagy(@tasks.page(params[:page]).objects)
       render "index"

@@ -43,8 +43,8 @@ class CapitalRemittancesController < ApplicationController
     # Here we search for all the CapitalCommitments that belong to the entity of the current user
     # Only return first 100 results
     index_search = CapitalRemittanceIndex.filter(term:)
-                                         .query(query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' }).per(100)
+                                         .query(simple_query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
+                                                                       query:, default_operator: 'and' }).per(100)
 
     # Filter by fund, capital_distribution and capital_commitment
     index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?

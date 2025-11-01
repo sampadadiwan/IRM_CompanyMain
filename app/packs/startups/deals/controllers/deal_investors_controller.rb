@@ -26,8 +26,8 @@ class DealInvestorsController < ApplicationController
     query = params[:query]
     if query.present?
       @deal_investors = DealInvestorIndex.filter(term: { entity_id: @entity.id })
-                                         .query(query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' }).objects
+                                         .query(simple_query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
+                                                                       query:, default_operator: 'and' }).objects
 
       render "index"
     else
@@ -44,8 +44,8 @@ class DealInvestorsController < ApplicationController
                         # @deal_investors
                       else
                         deal_investor_ids = DealInvestorIndex.filter(term: { entity_id: @entity.id })
-                                                             .query(query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
-                                                                                    query: "*#{params[:query]}*", default_operator: 'and' }).objects.pluck(:id)
+                                                             .query(simple_query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
+                                                                                           query: "*#{params[:query]}*", default_operator: 'and' }).objects.pluck(:id)
                         DealInvestor.where(id: deal_investor_ids) # @deal_investors.where
                       end
 

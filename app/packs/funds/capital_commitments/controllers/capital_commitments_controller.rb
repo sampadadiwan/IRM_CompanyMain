@@ -61,14 +61,14 @@ class CapitalCommitmentsController < ApplicationController
 
   def search_ids
     # This is only when the datatable sends a search query
-    query = "#{params[:search][:value]}*"
+    query = "#{SearchHelper.sanitize_text_for_search(params[:search][:value])}*"
     term = { entity_id: current_user.entity_id }
 
     # Here we search for all the CapitalCommitments that belong to the entity of the current user
     # Only return first 100 results
     index_search = CapitalCommitmentIndex.filter(term:)
-                                         .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
+                                         .query(simple_query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
+                                                                       query:, default_operator: 'and' })
 
     index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
     index_search = index_search.per(100)

@@ -17,10 +17,10 @@ class KycSearch
 
   def self.search_ids(params, current_user)
     # This is only when the datatable sends a search query
-    query = "#{params[:search][:value]}*"
+    query = "#{SearchHelper.sanitize_text_for_search(params[:search][:value])}*"
     entity_ids = [current_user.entity_id]
     InvestorKycIndex.filter(terms: { entity_id: entity_ids })
-                    .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
-                                           query:, default_operator: 'and' }).per(100).map(&:id)
+                    .query(simple_query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
+                                                  query:, default_operator: 'and' }).per(100).map(&:id)
   end
 end

@@ -31,8 +31,8 @@ class NotesController < ApplicationController
     query = params[:query]
     if query.present?
       @notes = NoteIndex.filter(term: { entity_id: current_user.entity_id })
-                        .query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
-                                               query:, default_operator: 'and' })
+                        .query(simple_query_string: { fields: NoteIndex::SEARCH_FIELDS,
+                                                      query:, default_operator: 'and' })
 
       @pagy, @notes = pagy(@notes.page(params[:page]))
       render "index"

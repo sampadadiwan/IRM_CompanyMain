@@ -20,8 +20,8 @@ class InvestorAccessesController < ApplicationController
     if query.present?
 
       InvestorAccessIndex.filter(term: { entity_id: @entity.id })
-                         .query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS,
-                                                query:, default_operator: 'and' }).objects
+                         .query(simple_query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS,
+                                                       query:, default_operator: 'and' }).objects
 
       render "index"
     else

@@ -19,8 +19,8 @@ class DealsController < ApplicationController
     query = params[:query]
     if query.present?
       @deals = DealIndex.filter(term: { entity_id: @entity.id })
-                        .query(query_string: { fields: DealIndex::SEARCH_FIELDS,
-                                               query:, default_operator: 'and' }).objects
+                        .query(simple_query_string: { fields: DealIndex::SEARCH_FIELDS,
+                                                      query:, default_operator: 'and' }).objects
     else
       redirect_to deals_path
     end
@@ -44,8 +44,8 @@ class DealsController < ApplicationController
     query = params[:search][:value] if params[:search] && params[:search][:value].present?
     if query.present?
       ids = AccessRightIndex.filter(term: { entity_id: current_user.entity_id })
-                            .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                   query:, default_operator: 'and' }).per(100).map(&:id)
+                            .query(simple_query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                          query:, default_operator: 'and' }).per(100).map(&:id)
 
       @access_rights = @access_rights.where(id: ids)
     end

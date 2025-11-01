@@ -20,7 +20,7 @@ class KycDatasController < ApplicationController
       entity_ids = [current_user.entity_id]
 
       @kyc_datas = KycData.filter(terms: { entity_id: entity_ids })
-                          .query(query_string: {
+                          .query(simple_query_string: {
                                    fields: KycDataIndex::SEARCH_FIELDS,
                                    query: params[:query],
                                    default_operator: 'and'

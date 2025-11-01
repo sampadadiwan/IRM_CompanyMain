@@ -4,7 +4,7 @@ class ElasticImporterJob < ApplicationJob
   def perform(*_args)
     UserIndex.import
     EntityIndex.import
-    InvestmentIndex.import
+    # InvestmentIndex.import
     AccessRightIndex.import
     DealInvestorIndex.import
     DocumentIndex.import
@@ -26,6 +26,7 @@ class ElasticImporterJob < ApplicationJob
     PortfolioInvestmentIndex.import
     KpiReportIndex.import
     FundFormulaIndex.import
+    FundRatioIndex.import
   end
 
   def reset
@@ -53,6 +54,7 @@ class ElasticImporterJob < ApplicationJob
     PortfolioInvestmentIndex.reset!
     KpiReportIndex.reset!
     FundFormulaIndex.reset!
+    FundRatioIndex.reset!
   end
 
   def create
@@ -80,5 +82,6 @@ class ElasticImporterJob < ApplicationJob
     PortfolioInvestmentIndex.create
     KpiReportIndex.create
     FundFormulaIndex.create
+    FundRatioIndex.create
   end
 end

@@ -51,8 +51,8 @@ class OffersController < ApplicationController
     if query.present?
 
       @pagy, @offers = pagy(OfferIndex.filter(term: search_term)
-                          .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' }).page(params[:page]).objects)
+                          .query(simple_query_string: { fields: OfferIndex::SEARCH_FIELDS,
+                                                        query:, default_operator: 'and' }).page(params[:page]).objects)
 
       render "index"
 

@@ -82,8 +82,8 @@ class DocumentsController < ApplicationController
     query = params[:query]
     if query.present?
       @documents = DocumentIndex.filter(term: { entity_id: @entity.id })
-                                .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' })
+                                .query(simple_query_string: { fields: DocumentIndex::SEARCH_FIELDS,
+                                                              query:, default_operator: 'and' })
 
       @pagy, @documents = pagy(@documents.page(params[:page]).objects)
       # @no_folders = true

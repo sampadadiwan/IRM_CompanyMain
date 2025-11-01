@@ -86,8 +86,8 @@ class Folder < ApplicationRecord
 
   def self.search(query, entity_id)
     FolderIndex.filter(term: { entity_id: })
-               .query(query_string: { fields: FolderIndex::SEARCH_FIELDS,
-                                      query:, default_operator: 'and' }).objects
+               .query(simple_query_string: { fields: FolderIndex::SEARCH_FIELDS,
+                                             query:, default_operator: 'and' }).objects
   end
 
   scope :for_investor, lambda { |user, entity|

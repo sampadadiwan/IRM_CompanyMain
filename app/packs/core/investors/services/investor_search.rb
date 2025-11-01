@@ -1,5 +1,5 @@
 class InvestorSearch
-  def self.search(investors, params, current_user)
+  def self.search(investors, params, current_user) # rubocop:disable Metrics/CyclomaticComplexity
     investors = investors.where(category: params[:category]) if params[:category].present?
     investors = investors.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     investors = investors.not_interacted(params[:not_interacted].to_i) if params[:not_interacted].present?
@@ -21,11 +21,11 @@ class InvestorSearch
     if params[:search] && params[:search][:value].present?
       # This is only when the datatable sends a search query
       # If we have @ then its an email, so dont wildcard it
-      query = params[:search][:value].index("@") ? params[:search][:value] : "#{params[:search][:value]}*"
+      query = params[:search][:value].index("@") ? params[:search][:value] : "#{SearchHelper.sanitize_text_for_search(params[:search][:value])}*"
 
       ids = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
-                         .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                query:, default_operator: 'and' }).per(100).map(&:id)
+                         .query(simple_query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                       query:, default_operator: 'and' }).per(100).map(&:id)
 
       investors = investors.where(id: ids)
     end

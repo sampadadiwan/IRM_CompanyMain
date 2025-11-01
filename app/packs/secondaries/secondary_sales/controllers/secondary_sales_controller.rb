@@ -117,8 +117,8 @@ class SecondarySalesController < ApplicationController
     query = params[:query]
     if query.present?
       @secondary_sales = SecondarySaleIndex.filter(term: { entity_id: @entity.id })
-                                           .query(query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
-                                                                  query:, default_operator: 'and' }).objects
+                                           .query(simple_query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
+                                                                         query:, default_operator: 'and' }).objects
 
       render "index"
     else
