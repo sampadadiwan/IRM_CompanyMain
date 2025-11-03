@@ -13,6 +13,6 @@ class DbRestoreJob < ApplicationJob
   end
 
   def notify_errors(msg)
-    EntityMailer.with(subject: "#{ENV['BASE_DOMAIN']}: DB Check FAILED", msg: { process: "DB RESTORE CHECK", result: "FAILED", message: msg }).notify_info.deliver_now
+    EntityMailer.with(subject: "#{ENV.fetch('BASE_DOMAIN', nil)}: DB Check FAILED", msg: { process: "DB RESTORE CHECK", result: "FAILED", message: msg }).notify_info.deliver_now
   end
 end

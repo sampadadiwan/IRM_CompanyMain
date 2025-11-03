@@ -1,6 +1,15 @@
-<% 
+<%
   days = args[:days] || 30
-  categories = args[:categories] 
+  categories = args[:categories] || ""
+  require "uri"
+  safe_categories = categories.present? ? categories : nil
+  params_hash = {
+    not_interacted: days,
+    title: "Investors: No Interaction"
+  }
+  params_hash[:categories] = safe_categories if safe_categories
+  query = URI.encode_www_form(params_hash)
+  src = URI::Generic.build(path: "/investors", query: query).to_s
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -9,7 +18,8 @@
         widget_size: widget.widget_size
       )
     ) do %>
+
   <!-- This block becomes the `content` inside the component -->
-  <%= turbo_frame_tag "investors_frame", target: "_top", src: "/investors?categories=#{categories}&not_interacted=#{days}&title=Investors: No Interaction" do %>            
+  <%= turbo_frame_tag "investors_frame", target: "_top", src: src do %>
   <%end%>
 <% end %>
