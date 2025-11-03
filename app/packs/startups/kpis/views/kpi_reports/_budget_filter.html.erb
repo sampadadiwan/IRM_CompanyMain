@@ -1,6 +1,9 @@
 <%
   @portfolio_company ||= nil
   portfolio_company_id = params[:portfolio_company_id].presence || @portfolio_company&.id
+  @portfolio_company ||= policy_scope(Investor).find_by(id: portfolio_company_id) if portfolio_company_id.present?
+  categories = @portfolio_company.investor_kpi_mappings.pluck(:category).uniq if @portfolio_company.present?
+  categories ||= InvestorKpiMapping::CATEGORIES
   model ||= current_user
 %>
 <%= form_with(model: model, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_budget"} ) do |form| %>
@@ -21,7 +24,7 @@
 
   <div class="form-group col-md-1">
     <% category = params[:category].presence %>
-    <%= form.select :category, InvestorKpiMapping::CATEGORIES, {selected: category, include_blank: true}, class: "form-control", name: "category" %>
+    <%= form.select :category, categories, {selected: category, include_blank: true}, class: "form-control", name: "category" %>
   </div>
 
   <div class="form-group col-md-1">
