@@ -248,7 +248,7 @@ FactoryBot.define do
     entity { nil }
     name { Faker::Company.name }
     value { "9.99" }
-    display_value { Faker::Company.name }
+    display_value { Faker::Company.name.truncate(30) }
     notes { Faker::Company.name }
     kpi_report { nil }
   end

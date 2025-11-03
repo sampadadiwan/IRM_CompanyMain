@@ -25,6 +25,7 @@ class Kpi < ApplicationRecord
 
   # Attach the parent report so date filters hit SQL, not Ruby.
   scope :with_report, -> { joins(:kpi_report) }
+  scope :cumulatable, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { cumulate: true }) }
 
   # --- Time helpers ----------------------------------------------------
   scope :for_date, lambda { |date|
@@ -116,19 +117,19 @@ class Kpi < ApplicationRecord
 
   # Method to compute and set RAG status
   def set_rag_status_from_ratio(tagged_kpi_tag_list)
-    Rails.logger.debug { "--- set_rag_status_from_ratio called for KPI: #{name}, value: #{value}, report_as_of: #{kpi_report.as_of}, pc_id: #{portfolio_company_id}" }
-    Rails.logger.debug { "--- Looking for tagged KPI with tag: #{tagged_kpi_tag_list}" }
+    Rails.logger.debug { "Kpi:  set_rag_status_from_ratio called for KPI: #{name}, value: #{value}, report_as_of: #{kpi_report.as_of}, pc_id: #{portfolio_company_id}" }
+    Rails.logger.debug { "Kpi:  Looking for tagged KPI with tag: #{tagged_kpi_tag_list}" }
 
     tagged_kpi = find_tagged_kpi(tagged_kpi_tag_list)
 
-    Rails.logger.debug { "--- Found tagged_kpi: #{tagged_kpi.present? ? tagged_kpi.to_s : 'nil'}" }
-    Rails.logger.debug { "--- tagged_kpi.value: #{tagged_kpi&.value}" }
-    Rails.logger.debug { "--- investor_kpi_mapping&.rag_rules.present?: #{investor_kpi_mapping&.rag_rules.present?}" }
+    Rails.logger.debug { "Kpi:  Found tagged_kpi: #{tagged_kpi.present? ? tagged_kpi.to_s : 'nil'}" }
+    Rails.logger.debug { "Kpi:  tagged_kpi.value: #{tagged_kpi&.value}" }
+    Rails.logger.debug { "Kpi:  investor_kpi_mapping&.rag_rules.present?: #{investor_kpi_mapping&.rag_rules.present?}" }
 
     if tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value != 0 && investor_kpi_mapping&.rag_rules.present?
       ratio = value.to_f / tagged_kpi.value
       self.rag_status = determine_rag_status_from_rules(ratio, investor_kpi_mapping.rag_rules)
-      Rails.logger.debug { "--- RAG status determined: #{rag_status}" }
+      Rails.logger.debug { "Kpi:  RAG status determined: #{rag_status}" }
     elsif tagged_kpi && tagged_kpi.value.present? && tagged_kpi.value.zero?
       self.rag_status = 'red'
       Rails.logger.debug "--- RAG status set to 'red' due to division by zero."
@@ -137,5 +138,72 @@ class Kpi < ApplicationRecord
       Rails.logger.debug "--- RAG status set to nil (conditions not met)."
     end
     save if changed?
+  end
+
+  # This is used to cumulate the KPI values over time periods like Quarterly and YTD
+  def cumulate
+    Rails.logger.info "--- [#{name}] Starting cumulate for KPI '#{name}' for entity #{entity_id}, pc_id: #{portfolio_company_id}"
+
+    related_kpis = entity.kpis.joins(:kpi_report).includes(:kpi_report)
+                         .where(name:, portfolio_company_id: portfolio_company_id)
+                         .where("kpi_reports.period = 'Month'")
+                         .order("kpi_reports.as_of ASC")
+
+    Rails.logger.info "--- [#{name}] Found #{related_kpis.size} related monthly KPIs"
+    return if related_kpis.empty?
+
+    # Group KPIs by year and quarter to calculate sums efficiently
+    kpis_by_quarter = related_kpis.group_by { |kpi| [kpi.kpi_report.as_of.year, ((kpi.kpi_report.as_of.month - 1) / 3) + 1] }
+    kpis_by_year = related_kpis.group_by { |kpi| kpi.kpi_report.as_of.year }
+
+    # Process each quarter's cumulative value once
+    kpis_by_quarter.each do |(year, quarter), kpis_in_quarter|
+      quarterly_sum = kpis_in_quarter.sum { |kpi| kpi.value.to_f }
+      last_kpi_in_quarter = kpis_in_quarter.last
+      quarter_start = Date.new(year, ((quarter - 1) * 3) + 1, 1)
+      quarter_end = quarter_start.end_of_quarter
+      process_cumulative_kpi(last_kpi_in_quarter, quarterly_sum, 'Quarter', quarter_start, quarter_end)
+    end
+
+    # Process each year's cumulative value once
+    kpis_by_year.each do |year, kpis_in_year|
+      ytd_sum = kpis_in_year.sum { |kpi| kpi.value.to_f }
+      last_kpi_in_year = kpis_in_year.last
+      year_start = Date.new(year, 1, 1)
+      year_end = Date.new(year, 12, 31)
+      process_cumulative_kpi(last_kpi_in_year, ytd_sum, 'YTD', year_start, year_end)
+    end
+
+    Rails.logger.info "--- [#{name}] Cumulate complete for KPI '#{name}'"
+  end
+
+  private
+
+  def process_cumulative_kpi(monthly_kpi, cumulative_sum, period, start_date, end_date)
+    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{start_date} to #{end_date}, cumulative sum: #{cumulative_sum}" }
+
+    cumulative_kpi = Kpi.joins(:kpi_report)
+                        .where(entity_id: entity_id, name:, portfolio_company_id: portfolio_company_id)
+                        .where(kpi_reports: { period: period })
+                        .where("kpi_reports.as_of BETWEEN ? AND ?", start_date, end_date)
+                        .last
+
+    if cumulative_kpi
+      Rails.logger.debug { "Kpi:  [#{name}] Existing #{period} KPI found (id=#{cumulative_kpi.id}), current value=#{cumulative_kpi.value}, new value=#{cumulative_sum}" }
+      cumulative_kpi.value = cumulative_sum
+      if cumulative_kpi.changed?
+        Rails.logger.info "--- [#{name}] Overwriting #{period} KPI #{cumulative_kpi.id} with new value #{cumulative_sum}"
+        cumulative_kpi.save
+      else
+        Rails.logger.debug { "Kpi:  [#{name}] Skipping save for #{period} KPI #{cumulative_kpi.id} (unchanged)" }
+      end
+    else
+      Rails.logger.info "--- [#{name}] Creating new #{period} KPI with value #{cumulative_sum}"
+      user_id = monthly_kpi.kpi_report.user_id
+      kpi_report = KpiReport.create!(period: period, as_of: monthly_kpi.kpi_report.as_of,
+                                     entity_id:, portfolio_company_id:, user_id:)
+      Kpi.create(entity_id: entity_id, name:, portfolio_company_id: portfolio_company_id,
+                 value: cumulative_sum, kpi_report: kpi_report)
+    end
   end
 end

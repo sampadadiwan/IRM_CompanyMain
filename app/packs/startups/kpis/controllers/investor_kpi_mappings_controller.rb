@@ -87,6 +87,6 @@ class InvestorKpiMappingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kpi_mapping_params
-    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :parent_id, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
+    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :cumulate, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :parent_id, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
   end
 end

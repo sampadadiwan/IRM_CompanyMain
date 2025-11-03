@@ -50,6 +50,12 @@
 
 
   <div class="form-group">
+    <%= form.label :cumulate %>
+    <%= form.check_box :cumulate, class: "form-check-input"  %>
+    <small class="form-text text-muted">Check this if this KPI should be cumulated over time periods. Quarterly and YTD</small>
+  </div>
+
+  <div class="form-group">
     <%= form.label :show_in_report %>
     <%= form.check_box :show_in_report, class: "form-check-input"  %>
   </div>
