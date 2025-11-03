@@ -83,7 +83,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     Rails.logger.info { "[DbRestoreService] Total process duration: #{total_duration.round(2)} seconds" }
 
     if result
-      EntityMailer.with(subject: "#{Rails.env}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{(total_duration / 60).round(1)} minutes" }).notify_info.deliver_now
+      EntityMailer.with(subject: "#{ENV['BASE_DOMAIN']}: DB Check PASSED", msg: { process: "DB RESTORE CHECK", result: "PASSED", message: msg, time_taken: "#{(total_duration / 60).round(1)} minutes" }).notify_info.deliver_now
     else
       raise msg
     end
