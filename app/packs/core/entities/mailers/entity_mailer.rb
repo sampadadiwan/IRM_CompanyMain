@@ -1,7 +1,7 @@
 class EntityMailer < ApplicationMailer
   def notify_created
     @entity = Entity.find params[:id]
-    mail(to: ENV.fetch('SUPPORT_EMAIL', nil),
+    mail(to: ENV.fetch('SUPPORT_EMAIL_TO', nil),
          subject: "#{ENV.fetch('BASE_DOMAIN', nil)} New Entity created #{@entity.name}")
   end
 
@@ -30,21 +30,21 @@ class EntityMailer < ApplicationMailer
   end
 
   def add_support_to_cc
-    support_email = ENV.fetch('SUPPORT_EMAIL', nil)
+    support_email = ENV.fetch('SUPPORT_EMAIL_TO', nil)
     @cc.present? ? @cc += ",#{support_email}" : @cc = support_email
   end
 
   def notify_errors
     @error_msg = params[:error_msg]
     subject = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence || 'Errors'}"
-    to = params[:to].presence || ENV.fetch('SUPPORT_EMAIL', nil)
+    to = params[:to].presence || ENV.fetch('SUPPORT_EMAIL_TO', nil)
     mail(to:, subject:)
   end
 
   def notify_info
     @msg = params[:msg]
     subject = params[:subject].presence || "#{ENV.fetch('BASE_DOMAIN', nil)} INFO"
-    mail(to: ENV.fetch('SUPPORT_EMAIL', nil), subject:)
+    mail(to: ENV.fetch('SUPPORT_EMAIL_TO', nil), subject:)
   end
 
   def send_report

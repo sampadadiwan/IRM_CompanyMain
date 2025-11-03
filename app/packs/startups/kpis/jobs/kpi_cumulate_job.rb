@@ -17,9 +17,7 @@ class KpiCumulateJob < ApplicationJob
 
       # Cumulate KPIs for each report
       kpi_reports.each do |kpi_report|
-        kpi_report.kpis.joins(:investor_kpi_mapping).cumulatable.each do |kpi|
-          kpi.cumulate
-        end
+        kpi_report.kpis.joins(:investor_kpi_mapping).cumulatable.each(&:cumulate)
       rescue StandardError => e
         Rails.logger.error "Failed to cumulate KPI data for KpiReport #{kpi_report.id}: #{e.message}"
         send_notification("Failed to cumulate KPI data: #{e.message}", user_id, :error)

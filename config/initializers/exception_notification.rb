@@ -13,7 +13,7 @@ if ENV['VULN_SCAN'].blank?
     # Email notifier sends notifications by email.
     config.add_notifier :email, {
       email_prefix: "[ERROR] #{Rails.env}: ",
-      sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
+      sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL_FROM', nil)}>),
       exception_recipients: ENV.fetch('ERROR_EMAIL', nil)
     }
   end

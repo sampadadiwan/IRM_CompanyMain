@@ -105,8 +105,8 @@ module CapHive
       Rails.application.config.middleware.use ExceptionNotification::Rack,
                                               email: {
                                                 email_prefix: "[Error] #{Rails.env}:(#{ENV.fetch('BASE_DOMAIN', nil)})",
-                                                sender_address: ENV.fetch("SUPPORT_EMAIL", nil),
-                                                exception_recipients: ENV.fetch('ERROR_EMAIL')
+                                                sender_address: ENV.fetch("SUPPORT_EMAIL_FROM", nil),
+                                                exception_recipients: ENV.fetch('ERROR_EMAIL', nil).split(',')
                                               }
 
     end

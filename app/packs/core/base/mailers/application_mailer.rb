@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: ENV.fetch("SUPPORT_EMAIL", nil)
+  default from: ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   layout "mailer"
 
   after_deliver :mark_delivered
@@ -87,7 +87,7 @@ class ApplicationMailer < ActionMailer::Base
 
   def from_email(entity)
     @current_entity ||= entity
-    @current_entity.entity_setting.from_email.presence || ENV.fetch("SUPPORT_EMAIL", nil)
+    @current_entity.entity_setting.from_email.presence || ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   end
 
   def attach_custom_notification_documents

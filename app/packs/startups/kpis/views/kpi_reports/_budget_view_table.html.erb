@@ -178,7 +178,7 @@
                                     <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
                                         <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision:) %>
                                     <% elsif actual_kpi_value.present? %>
-                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= actual_kpi_value %></span>
+                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>
