@@ -2297,6 +2297,23 @@ Then('the total units should be {string}') do |count|
   FundUnit.count.should == count.to_i
 end
 
+Given('Given I upload fund formulas update only sheet for the fund') do
+  visit(fund_url(@fund))
+  click_on("Actions")
+  menu = find('#basic_reports', text: "Account Entries")  # Replace with actual selector
+  menu.hover
+  click_on("Allocation Formulas")
+  sleep(1)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Fund Formulas Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/fund_formulas_update_only.xlsx"), make_visible: true)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  ImportUpload.last.failed_row_count.should == 0
+end
+
 Given('Given I upload fund formulas for the fund') do
   @user.add_role :support # only support user can upload fund formulas
   @user.save!
@@ -2340,6 +2357,33 @@ Then('the fund formulas must have the data in the sheet') do
     ff.tag_list.should == user_data["Tag List"].split(",").map(&:strip)
     ff.rule_type.should == user_data["Rule Type"]
     ff.formula.should == user_data["Formula"]
+  end
+end
+
+Then('the fund formulas must have the data in the update only sheet') do
+  file = File.open("./public/sample_uploads/fund_formulas_update_only.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    ff = @fund.fund_formulas.find(user_data['Id'])
+    p "VALIDATING FUND FORMULA #{ff.id}"
+    p [ff.id, ff.sequence, ff.name]
+
+    ff.name.should == user_data["Name"]
+    ff.rule_for.should == user_data["Rule For"]
+    ff.description.should == user_data["Description"]
+    ff.generate_ytd_qtly.should == (user_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes")
+    ff.tag_list.should == user_data["Tag List"].split(",").map(&:strip)
+    ff.rule_type.should == user_data["Rule Type"]
+    ff.formula.should == user_data["Formula"]
+    ff.meta_data.should == user_data["Metadata"]
+    ff.enabled.should == (user_data["Enabled"]&.downcase == "yes")
+    ff.roll_up.should == (user_data["Rollup"]&.downcase == "yes")
+    ff.sequence.should == user_data["Sequence"].to_i
   end
 end
 

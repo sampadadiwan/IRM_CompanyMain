@@ -2,7 +2,7 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "FundFormula") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Sequence", "Name", "Template", "Execution Time (ms)", "Rule Type", "Rule For", "Formula", "Entry Type", "Generate YTD, Quarterly, Since Inception numbers", "Rollup", "Enabled", "Tag List", "Metadata"])
+  sheet.add_row(["Id", "Fund", "Sequence", "Name", "Rule Type", "Rule For", "Generate YTD, Quarterly, Since Inception numbers", "Tag List", "Formula", "Entry Type", "Description", "Rollup", "Enabled", "Metadata", "Template", "Execution Time (ms)"])
 
   # Create entries for each item
   @fund_formulas.each do |fu|
@@ -10,6 +10,6 @@ wb.add_worksheet(name: "FundFormula") do |sheet|
     generate_ytd_qtly = fu.generate_ytd_qtly ? "Yes" : "No"
     enabled = fu.enabled ? "Yes" : "No"
 
-    sheet.add_row [fu.fund.name, fu.sequence, fu.name, fu.template_field_name, fu.execution_time, fu.rule_type, fu.rule_for, fu.formula, fu.entry_type, generate_ytd_qtly, roll_up, enabled, fu.tag_list&.join(","), fu.meta_data]
+    sheet.add_row [fu.id, fu.fund.name, fu.sequence, fu.name, fu.rule_type, fu.rule_for, generate_ytd_qtly, fu.tag_list&.join(","), fu.formula, fu.entry_type, fu.description, roll_up, enabled, fu.meta_data, fu.template_field_name, fu.execution_time]
   end
 end

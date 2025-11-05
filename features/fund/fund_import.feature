@@ -210,6 +210,9 @@ Scenario Outline: Import Fund Formulas
   Then I should see the "Import in progress"
   Then There should be "9" fund formulas created
   And the fund formulas must have the data in the sheet
+  And Given I upload fund formulas update only sheet for the fund
+  Then There should be "9" fund formulas created
+  And the fund formulas must have the data in the update only sheet
 
 
 @import
