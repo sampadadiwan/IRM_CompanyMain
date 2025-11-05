@@ -28,7 +28,17 @@ export default class extends Controller {
       series: [{
         name: "Value Bridge",
         data: chartData,
-        dataLabels: { enabled: true }
+        dataLabels: {
+          enabled: true,
+          inside: true,
+          backgroundColor: 'transparent', // removes white background
+          borderWidth: 0,                 // remove border if any
+          style: {
+            textOutline: 'none',          // removes white halo
+            color: '#ffffffff',                // set text color manually if needed
+            fontWeight: 'bold'
+          }
+      }
       }]
     });
 
