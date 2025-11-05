@@ -1,5 +1,5 @@
-
-<%= render "/layouts/filter", associations: [] %>
+<% associations = params[:support_agent_report].present? ? [:support_agent_report] : [] %>
+<%= render "/layouts/filter", associations: associations %>
 
 <%= render "/investors/stats" %>
 

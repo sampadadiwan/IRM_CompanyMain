@@ -1,64 +1,68 @@
 <%= render ToggleCard.new(title: "Support Agent Report", css_class: "show_support_agent_report") do %>
 
   <table class="table table-bordered dataTable no_hover_table">
-    <tr>
-      <td>For</td>
-      <td><%= support_agent_report.owner_type %> (ID: <%= support_agent_report.owner_id %>)</td>
-    </tr>
-
-    <% if support_agent_report.owner_name.present? %>
-      <tr>
-        <td>Owner Name</td>
-        <td><%= support_agent_report.owner_name %></td>
-      </tr>
-    <% end %>
 
     <tr>
-      <td>Support Agent</td>
+      <td>Agent</td>
       <td><%= support_agent_report.support_agent.name || support_agent_report.support_agent_id %></td>
     </tr>
+
+
+    <tr>
+      <td>Status</td>
+      <td> <span class="badge <%= support_agent_report.status == "completed" ? "bg-success" : "bg-warning" %>"> <%= support_agent_report.status&.humanize %></span> </td>
+    </tr>
+
 
     <tr>
       <td>Created at</td>
       <td><%= l(support_agent_report.created_at) %></td>
     </tr>
+
     <tr>
       <td>Updated at</td>
       <td><%= l(support_agent_report.updated_at) %></td>
     </tr>
 
-
-    <% if support_agent_report.json_fields.present? %>
-      <tr>
-        <td colspan="2">
-          <% json_data = support_agent_report.json_fields.with_indifferent_access %>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Type</th>
-                <th>Message</th>
-                <th>Severity</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% json_data.each do |category, issues| %>
-                <% issues.each do |issue| %>
-                  <tr>
-                    <td><%= category.to_s.humanize %></td>
-                    <td><%= issue["type"] %></td>
-                    <td><%= issue["message"] %></td>
-                    <td><%= issue["severity"] %></td>
-                  </tr>
-                <% end %>
-              <% end %>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    <% end %>
-
-
   </table>
+
+
+  <% if support_agent_report.json_fields.present? %>
+    <% json_data = support_agent_report.json_fields.with_indifferent_access %>
+    <table class="table table-striped datatable jqDataTable">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Message</th>
+          <th>Severity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% json_data.each do |category, issues| %>
+          <% issues.each do |issue| %>
+            <tr>
+              <td><%= category.to_s.humanize %></td>
+              <td><%= issue["type"]&.humanize %></td>
+              <td><%= issue["message"] %></td>
+              <%
+                # Badge color based on severity blocking is danger, success is success, others are warning
+                badge_color = case issue["severity"]&.downcase
+                              when "blocking"
+                                "bg-danger text-white"
+                              when "success"
+                                "bg-success-subtle text-success"
+                              else
+                                "bg-warning-subtle text-warning"
+                              end
+              %>
+              <td><span class="mb-1 badge <%= badge_color %>"><%= issue["severity"]&.humanize %></span></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+
+  <% end %>
 
 <% end %>

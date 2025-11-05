@@ -1,5 +1,5 @@
-
-<%= render "/layouts/filter", associations: [:investor, :capital_commitments, :funds] %>
+<% associations = params[:support_agent_report].present? ? [:investor, :capital_commitments, :funds, :support_agent_report] : [:investor, :capital_commitments, :funds] %>
+<%= render "/layouts/filter", associations: , hidden_fields: {support_agent_report: params[:support_agent_report]} %>
 <%= render "/investor_kycs/stats" if current_user.curr_role_employee?  %>
 <%= render ReportingComponent.new do %>
     <%= turbo_frame_tag with_frame("investor_kycs_frame"), target: "_top" do %>

@@ -14,7 +14,12 @@ class SupportAgentService < Trailblazer::Operation
       if model.present?
         Rails.logger.debug { "[#{self.class.name}] Starting document presence check for InvestorKyc ID=#{model.id}" }
         # List of required documents from form and support agent json fields
-        required_docs = model.required_fields_for(field_type: "File").map(&:label)
+        check_all_docs = ctx[:check_all_docs].present?
+        required_docs = if check_all_docs
+                          model.form_custom_fields.where(field_type: "File").map(&:label)
+                        else
+                          model.required_fields_for(field_type: "File").map(&:label)
+                        end
         required_docs += support_agent.json_fields["required_docs"].to_s.split(",").map(&:strip)
         required_docs.uniq!
 
@@ -28,9 +33,10 @@ class SupportAgentService < Trailblazer::Operation
             Rails.logger.debug { "[#{self.class.name}] Missing document detected: #{name}" }
           end
         end
+        ctx[:issues][:document_issues] << { type: :info, message: "All required documents are present", severity: :success } if ctx[:issues][:document_issues].empty?
         Rails.logger.debug { "[#{self.class.name}] Document presence check completed. Issues found: #{ctx[:issues][:document_issues].count}" }
       else
-        ctx[:issues][:document_issues] << { type: :missing, message: "No record found for document check", severity: :warning }
+        ctx[:issues][:document_issues] << { type: :missing, message: "No record found for document check", severity: :blocking }
         Rails.logger.warn { "[#{self.class.name}] No model provided for document presence check." }
       end
     else
@@ -44,7 +50,14 @@ class SupportAgentService < Trailblazer::Operation
     Rails.logger.debug { "[#{self.class.name}] Generating progress report for InvestorKyc ID=#{model.id} for #{support_agent.id}" }
 
     report = SupportAgentReport.find_or_initialize_by(owner: model, support_agent: support_agent)
+
+    # WE need to cleanup issues where the message is nil or empty
+    ctx[:issues].each_value do |issues|
+      issues.reject! { |issue| issue[:message].blank? }
+    end
+
     report.json_fields = ctx[:issues]
+    report.status = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking } ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.save
 
     ctx[:support_agent_report] = report

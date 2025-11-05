@@ -26,7 +26,8 @@ module SupportAgentHelper
       Rails.logger.debug { "Extracted fields from document #{doc.name}: #{extracted.inspect}" }
       next unless extracted
 
-      compare_extracted_with_model(ctx, doc, model, extracted, field_map)
+      invalid_count = compare_extracted_with_model(ctx, doc, model, extracted, field_map)
+      ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "All fields match for #{doc.name}", severity: :success } if invalid_count.zero?
     end
   end
 
@@ -105,6 +106,8 @@ module SupportAgentHelper
   # @param field_map [Hash] mapping of model attributes to extraction prompts
   # @return [void]
   def compare_extracted_with_model(ctx, doc, model, extracted, field_map)
+    invalid_count = 0
+
     field_map.each_key do |attribute_name|
       extracted_val = extracted[attribute_name]
       model_val = model[attribute_name]
@@ -128,6 +131,7 @@ module SupportAgentHelper
       if matched
         Rails.logger.debug { "[SupportAgent] Field matched: #{doc.name} matches #{attribute_name}" }
       else
+        invalid_count += 1
         # Record mismatch issue for later reporting/handling
         ctx[:issues][:document_issues] << {
           type: :field_mismatch,
@@ -138,5 +142,7 @@ module SupportAgentHelper
         Rails.logger.debug { "[SupportAgent] Field mismatch in #{doc.name}: #{attribute_name}=#{extracted_val.inspect}, expected #{attribute_name}=#{model_val.inspect}" }
       end
     end
+
+    invalid_count
   end
 end

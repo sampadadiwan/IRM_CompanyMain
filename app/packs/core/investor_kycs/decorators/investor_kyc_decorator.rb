@@ -1,5 +1,13 @@
 class InvestorKycDecorator < ApplicationDecorator
+  def onboarding_status
+    return if object.blank?
+
+    h.render partial: "investor_kycs/kyc_onboarding_agent", locals: { investor_kyc: object, display_type: "badge" }, formats: [:html]
+  end
+
   def expired
+    return if object.blank?
+
     h.render partial: "investor_kycs/expired", locals: { investor_kyc: object }, formats: [:html]
   end
 

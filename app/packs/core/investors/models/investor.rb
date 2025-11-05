@@ -147,6 +147,9 @@ class Investor < ApplicationRecord
   scope :no_perms, ->(p) { joins(:investor_entity).merge(Entity.no_perms(p)) }
 
   STANDARD_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Access" => "investor_access_count", "City" => "city" }.freeze
+
+  PC_AGENT_REPORT_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Status" => "kpi_reporting_status" }.freeze
+
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)
@@ -267,7 +270,7 @@ class Investor < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    []
+    [:support_agent_report].sort
   end
 
   def self.ransackable_attributes(_auth_object = nil)

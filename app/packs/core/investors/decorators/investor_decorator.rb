@@ -1,4 +1,10 @@
 class InvestorDecorator < ApplicationDecorator
+  def kpi_reporting_status
+    return if object.blank?
+
+    h.render partial: "investors/portfolio_company_agent", locals: { investor: object, display_type: "badge" }, formats: [:html]
+  end
+
   def tag_list
     h.raw object.tag_list&.split(",")&.collect { |tag| h.link_to(tag, h.search_investors_path(query: tag)) }&.join(", ") if object.tag_list
   end

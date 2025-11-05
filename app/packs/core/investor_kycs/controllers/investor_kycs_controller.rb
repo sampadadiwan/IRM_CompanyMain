@@ -26,6 +26,7 @@ class InvestorKycsController < ApplicationController
     authorize(InvestorKyc)
     @q = InvestorKyc.ransack(params[:q])
     @investor_kycs = policy_scope(@q.result).includes(:entity, :investor)
+    @investor_kycs = @investor_kycs.includes(:support_agent_report) if params[:support_agent_report].present?
     @investor_kycs = apply_scopes(@investor_kycs)
 
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?

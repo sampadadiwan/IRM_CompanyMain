@@ -93,6 +93,17 @@
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center ti ti-mail-plus" %>
 
+
+
+              <div class="dropdown-divider"></div>
+              <%= link_to "Onboarding Agent: Completed",
+                            investor_kycs_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Completed")),
+                            class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
+
+              <%= link_to "Onboarding Agent: Failed",
+                            investor_kycs_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Failed")),
+                            class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
+
             </div>
           </div>
         </div>
@@ -194,6 +205,8 @@
           else
             if params.include?("investor_id")
               InvestorKyc::INVESTOR_TAB_STANDARD_COLUMNS
+            elsif params["support_agent_report"].present?
+              InvestorKyc::ONBOARDING_AGENT_REPORT_COLUMNS
             else
               InvestorKyc::STANDARD_COLUMNS
             end

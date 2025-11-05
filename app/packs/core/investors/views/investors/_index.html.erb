@@ -56,6 +56,8 @@
             <% end %>
           <% end %>
 
+          <div class="dropdown-divider"></div>
+
           <%= link_to portfolio_reports_path,
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
@@ -76,6 +78,18 @@
             <i class="ti ti-bell-plus"></i> Add Stakeholder Notice
           <% end %>
 
+
+          <div class="dropdown-divider"></div>
+
+          <%= link_to "Portfolio Company Agent: Completed",
+                            investors_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Completed")),
+                            class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
+
+              <%= link_to "Portfolio Company  Agent: Failed",
+                            investors_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Failed")),
+                            class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
+
+
         </div>
       </div>
     </div>
@@ -84,8 +98,16 @@
 
 </div>
 
-<% investors_frame = "investors_frame" %>
+<%
+  investors_frame = "investors_frame"
+  default_columns_map = if params["support_agent_report"].present?
+                          Investor::PC_AGENT_REPORT_COLUMNS
+                        else
+                          Investor::STANDARD_COLUMNS
+                        end
+
+%>
 <%=render SearchComponent.new(data_source: investors_path( params: params.to_unsafe_h, import_upload_id:), turbo_frame: investors_frame) %>
 <div class="table-responsive">
-  <%= render RansackTable.new(Investor, q: @q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer, pagy: @pagy) %>    
+  <%= render RansackTable.new(Investor, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>

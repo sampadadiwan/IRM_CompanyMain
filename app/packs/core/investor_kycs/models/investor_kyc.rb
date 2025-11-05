@@ -6,6 +6,16 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
                        "Kyc Verified" => "verified",
                        "Expired" => "expired" }.freeze
 
+  ONBOARDING_AGENT_REPORT_COLUMNS = {
+    "Investor" => "investor_name",
+    "Investing Entity" => "full_name",
+    "Type" => "kyc_type",
+    "Completed" => "completed_by_investor",
+    "Kyc Verified" => "verified",
+    "Expired" => "expired",
+    "Status" => "onboarding_status"
+  }.freeze
+
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor").freeze
 
   INVESTOR_STANDARD_COLUMNS = { "Entity" => "entity_name",
@@ -317,7 +327,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_commitments investor funds]
+    %w[capital_commitments investor funds support_agent_report]
   end
 
   def self.ransackable_scopes(_auth_object = nil)

@@ -1,3 +1,7 @@
+<%
+  return if investor_kyc.support_agent_report.blank?
+  display_type ||= "card"
+%>
 <div class="row g-3 mb-3">
 <% cards = [
   {
@@ -8,7 +12,7 @@
   },
   {
     icon: "ti ti-files",
-    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing_document" },
+    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing" },
     type: :numeric,
     subtitle: "Missing Docs"
   },
@@ -16,20 +20,13 @@
     icon: "ti ti-files",
     value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "mismatched_document" },
     type: :numeric,
-    subtitle: "Bad Docs"
+    subtitle: "Invalid Docs"
   },
   {
     icon: "ti ti-cancel",
     value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "field_mismatch" },
     type: :numeric,
     subtitle: "Mismatched"
-  },
-  {
-    icon: "ti ti-bell",
-    value: investor_kyc.reminder_sent? ? "Yes" : "No",
-    date: investor_kyc.reminder_sent_date,
-    type: :boolean,
-    subtitle: "Reminder"
   },
   {
     icon: "ti ti-shield-check",
@@ -40,4 +37,4 @@
   }
 ] %>
 
-<%= render partial: "/support_agents/report", locals: { cards:, owner: @investor_kyc } %>
+<%= render partial: "/support_agents/report", locals: { cards:, owner: investor_kyc, display_type:  } %>

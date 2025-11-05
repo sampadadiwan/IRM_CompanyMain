@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_072316) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_063324) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3085,6 +3085,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_072316) do
     t.json "json_fields"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status", limit: 10
     t.index ["owner_type", "owner_id"], name: "index_support_agent_reports_on_owner"
     t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
   end

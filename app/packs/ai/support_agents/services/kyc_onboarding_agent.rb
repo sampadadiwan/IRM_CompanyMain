@@ -23,9 +23,9 @@ class KycOnboardingAgent < SupportAgentService
 
   # == Core Functions ==
   step :check_field_completeness
-  # step :check_document_presence
-  # step :check_document_validity
-  # step :check_field_to_document_consistency
+  step :check_document_presence
+  step :check_document_validity
+  step :check_field_to_document_consistency
   step :generate_progress_reports
   step :send_reminders
   step :trigger_aml_if_complete
@@ -103,23 +103,30 @@ class KycOnboardingAgent < SupportAgentService
       validators.any?(ActiveModel::Validations::PresenceValidator)
     end.keys.map(&:to_s)
     required_attrs = (required_db_columns | required_validated_fields)
-
+    invalid_count = 0
     required_attrs.each do |attr|
       value = investor_kyc.public_send(attr)
       next unless value.is_a?(String)
 
       str_val = value.strip
-      if str_val.empty? || invalid_tokens.include?(str_val.downcase)
-        Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
-        ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking }
-      end
+      next unless str_val.empty? || invalid_tokens.include?(str_val.downcase)
+
+      Rails.logger.debug { "[KycOnboardingAgent] Invalid required field detected: #{attr}=#{value.inspect}" }
+      ctx[:issues][:field_issues] << { type: :invalid_field_value, message: attr, value: value, severity: :blocking }
+      invalid_count += 1
     end
+
+    ctx[:issues][:field_issues] << { type: :info, message: "All required attributes are valid", severity: :success } if invalid_count.zero?
+
+    true
   end
 
   # Validates custom form fields according to type-specific logic.
   # For select fields, ensures value belongs to defined options.
   # For text/other, ensures non-empty and not in invalid tokens.
   def validate_custom_fields(ctx, investor_kyc, invalid_tokens)
+    invalid_count = 0
+
     investor_kyc.required_fields_for.each do |fcf|
       value = investor_kyc.json_fields[fcf.name]
       str_val = value.to_s.strip
@@ -129,14 +136,18 @@ class KycOnboardingAgent < SupportAgentService
       elsif fcf.field_type == "Select"
         options = fcf.meta_data.split(",").map(&:strip).compact_blank
         unless options.include?(str_val) || str_val.empty?
-          ctx[:issues][:field_issues] << { type: :invalid_select_field_value, message: fcf.name, value: value, severity: :blocking }
+          ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
           Rails.logger.debug { "[KycOnboardingAgent] Invalid select field value for #{fcf.name}: #{value.inspect}" }
+          invalid_count += 1
         end
       elsif str_val.empty? || invalid_tokens.include?(str_val.downcase)
         ctx[:issues][:field_issues] << { type: :invalid, message: fcf.name, value: value, severity: :blocking }
         Rails.logger.debug { "[KycOnboardingAgent] Invalid JSON field detected: #{fcf.name}=#{value.inspect}" }
+        invalid_count += 1
       end
     end
+
+    ctx[:issues][:field_issues] << { type: :info, message: "All required custom fields are valid", severity: :success } if invalid_count.zero?
   end
 
   # Verifies all required documents (from form fields and support_agent config)
@@ -173,13 +184,14 @@ class KycOnboardingAgent < SupportAgentService
           content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
           result = JSON.parse(content)
           if result["matches"]
+            ctx[:issues][:document_issues] << { type: :info, name: doc.name, message: "Valid #{label}", severity: :success }
             Rails.logger.debug { "[KycOnboardingAgent] Document validated successfully: #{label}" }
           else
-            ctx[:issues][:document_issues] << { type: :mismatched_document, name: label, severity: :blocking, explanation: result["explanation"] }
+            ctx[:issues][:document_issues] << { type: :mismatched_document, name: doc.name, message: "Invalid #{label}", severity: :blocking, explanation: result["explanation"] }
             Rails.logger.debug { "[KycOnboardingAgent] Document mismatch detected: #{label}, explanation=#{result['explanation']}" }
           end
         rescue JSON::ParserError
-          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: label, severity: :warning, raw: raw }
+          ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw }
           Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
         end
       end

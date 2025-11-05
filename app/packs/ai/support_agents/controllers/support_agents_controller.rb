@@ -12,7 +12,7 @@ class SupportAgentsController < ApplicationController
 
   # GET /support_agents/new
   def new
-    @support_agent = SupportAgent.new
+    @support_agent = SupportAgent.new(support_agent_params)
     @support_agent.entity_id = current_user.entity_id
     authorize @support_agent
   end
