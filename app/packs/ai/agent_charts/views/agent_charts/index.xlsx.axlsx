@@ -6,6 +6,6 @@ wb.add_worksheet(name: "Agent Charts") do |sheet|
 
   # Create entries for each item
   @agent_charts.each do |chart|
-    sheet.add_row [chart.title, chart.status, chart.prompt, chart.document_ids&.join(","), chart.error]
+    sheet.add_row [chart.title, chart.status, chart.prompt, chart.document_names&.join(","), chart.error]
   end
 end

@@ -100,6 +100,14 @@ class Investor < ApplicationRecord
 
   validates :tag_list, length: { maximum: 120 }
 
+  scope :with_tag_list, lambda { |tags|
+    tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
+    where(
+      tags.map { "tag_list LIKE ?" }.join(" OR "),
+      *tags.map { |t| "%#{t}%" }
+    )
+  }
+
   scope :for_employee, lambda { |user|
     joins(:investor_access_rights).where(investor_access_rights: { user_id: user.id })
   }

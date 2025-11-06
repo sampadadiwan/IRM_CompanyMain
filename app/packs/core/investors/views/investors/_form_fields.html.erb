@@ -11,7 +11,7 @@
     <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control custom_field"  %>
   </div>
 
-  <% disabled = !investor.new_record? %>
+  <% disabled = !investor.new_record? && investor.primary_email.present? %>
   <div class="form-group" id="investor_name_group">
     <%= form.label :primary_email %>
     <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true} %>

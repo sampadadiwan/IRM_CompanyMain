@@ -6,7 +6,10 @@
     <%= agent_chart.prompt %>
   </td>
   <td>
-    <%= agent_chart.status&.humanize %>
+    <%= agent_chart.tag_list %>
+  </td>
+  <td>
+    <%= agent_chart.kpi_names&.join(", ") %>
   </td>
   <td>
     <%= agent_chart.error %>

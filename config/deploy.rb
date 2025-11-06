@@ -43,6 +43,7 @@ set :puma_workers, 4
 set :puma_daemonize, true
 set :puma_init_active_record, true
 
+
 set :puma_systemctl_user, :system
 set :skip_notification, ENV['SKIP_NOTIFICATION'] == 'true'
 set :puma_service_unit_name, -> { "puma_#{fetch(:application)}_#{fetch(:rails_env)}" }
@@ -118,7 +119,7 @@ namespace :deploy do
 
   before 'deploy:updated', 'IRM:set_rails_master_key'
   # before "deploy:updated", :ensure_rails_credentials
-  before 'deploy:finished', 'sidekiq:restart'
+  # before 'deploy:finished', 'sidekiq:restart' # This is handled by the capistrano-sidekiq gem
   after  'deploy:finished', :ensure_permissions
 end
 

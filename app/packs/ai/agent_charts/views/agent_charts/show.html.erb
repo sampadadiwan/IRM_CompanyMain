@@ -19,6 +19,15 @@
 
     <tr>
       <td>
+        Tag List
+      </td>
+      <td>
+        <%= @agent_chart.tag_list %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
         Owner
       </td>
       <td>
@@ -26,20 +35,31 @@
       </td>
     </tr>
 
+
     <tr>
       <td>
-        Raw Data
+        Document Names
       </td>
       <td>
-        <%= @agent_chart.raw_data %>
+        <%= @agent_chart.document_names&.join(", ") %>
       </td>
     </tr>
+
     <tr>
       <td>
-        Document Ids
+        KPI Names
       </td>
       <td>
-        <%= @agent_chart.document_ids %>
+        <%= @agent_chart.kpi_names&.join(", ") %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Kpi Before
+      </td>
+      <td>
+        <%= @agent_chart.kpi_before %> <%= @agent_chart.kpi_before_period %>
       </td>
     </tr>
 
@@ -83,20 +103,33 @@
   </div>
 <% end %>
 
+<% if params[:portfolio_company_id].present? && @agent_chart.spec.present? && @agent_chart.spec[params[:portfolio_company_id]].present? %>
+  <% portfolio_company = Investor.find(params[:portfolio_company_id]) %>
+  <h3>Chart for <%= link_to portfolio_company.name, portfolio_company %></h3>
 
-<%= turbo_frame_tag with_frame("agent_chart_#{@agent_chart.id}"), target: "_top" do %>
-  <% if @agent_chart.spec.present? %>
-    <%= render FormCard.new(title: link_to(@agent_chart.title, @agent_chart)) do %>
-      <div data-controller="chart-renderer"
-          data-chart-renderer-spec-value='<%= @agent_chart.spec.to_json %>'
-          style="width: 100%; margin: 2rem 0;">
-        <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+  <%= turbo_frame_tag with_frame("agent_chart_#{@agent_chart.id}"), target: "_top" do %>
+    <% if @agent_chart.spec.present? %>
+      <%= render FormCard.new(title: link_to(@agent_chart.title, @agent_chart)) do %>
+        <div data-controller="chart-renderer"
+            data-chart-renderer-spec-value='<%= @agent_chart.spec["#{portfolio_company.id}"].to_json %>'
+            style="width: 100%; margin: 2rem 0;">
+          <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="alert alert-info" style="margin-top:1rem;">
+        No chart spec saved yet for this record. Generate one:
+        <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!(portfolio_company_id:)</code>
       </div>
     <% end %>
-  <% else %>
-    <div class="alert alert-info" style="margin-top:1rem;">
-      No chart spec saved yet for this record. Generate one:
-      <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!</code>
-    </div>
   <% end %>
+<% elsif params[:portfolio_company_id].blank?  %>
+  <div class="alert alert-info" style="margin-top:1rem;">
+    Please select a portfolio company to view the chart.
+  </div>
+<% elsif @agent_chart.spec.blank? || @agent_chart.spec[params[:portfolio_company_id]].blank? %>
+  <div class="alert alert-info" style="margin-top:1rem;">
+    No chart spec saved yet for this record and portfolio company. Generate one:
+    <code>AgentChart.find(<%= @agent_chart.id %>).generate_spec!(portfolio_company_id:)</code>
+  </div>
 <% end %>

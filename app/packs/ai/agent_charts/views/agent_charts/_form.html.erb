@@ -18,12 +18,34 @@
 
     <div class="form-group">
       <%= form.label :prompt %>
-      <%= form.textarea :prompt, class: "form-control"  %>
+      <%= form.textarea :prompt, class: "form-control", prompt: "Plot the revenue vs costs" %>
     </div>
 
     <div class="form-group">
-      <%= form.label :document_ids %>
-      <%= form.text_field :document_ids, class: "form-control"  %>
+      <%= form.label :document_names %>
+      <%= form.text_field :document_names, class: "form-control"  %>
+      <span>Comma separated list of document IDs (CSV files) to use as data source</span>
+    </div>
+
+    <% kpi_names = InvestorKpiMapping.where(entity_id: current_user.entity_id).pluck(:standard_kpi_name).uniq %>
+    <div class="row">
+      <div class="form-group col-7">
+        <%= form.label :kpi_names, "KPI Names (optional)" %>
+        <%= form.select :kpi_names, options_for_select(kpi_names, selected: agent_chart.kpi_names), {include_hidden: false}, class: "form-control select2", multiple: true %>
+        <span>Select KPIs to use as data source</span>
+      </div>
+      <div class="form-group col-5">
+        <%= form.label :kpi_before, "Prior" %>
+        <div class="input-group">
+          <%= form.number_field :kpi_before, class: "form-control", min: 1, style: "max-width: 60px;" %>
+          <%= form.select :kpi_before_period, options_for_select([['Days', 'Days'], ['Weeks', 'Weeks'], ['Months', 'Months'], ['Years', 'Years']], selected: agent_chart.kpi_before_period), {}, class: "form-control" %>
+        </div>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tag_list, "Tags (optional)" %>
+      <%= form.text_field :tag_list, class: "form-control", placeholder: "e.g. sales, marketing" %>
+      <span>Comma separated list of tags of portfolio companies to generate this chart for</span>
     </div>
 
     <div class="form-group">

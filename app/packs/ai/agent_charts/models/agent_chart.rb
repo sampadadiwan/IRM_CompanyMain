@@ -6,34 +6,51 @@ class AgentChart < ApplicationRecord
   belongs_to :report, optional: true
 
   # List of documents (csv) from which to get the data for the charts
-  serialize :document_ids
+  serialize :document_names
+  serialize :kpi_names
 
   STATUSES = %w[draft ready failed].freeze
   validates :status, inclusion: { in: STATUSES }
+
+  scope :with_tag_list, lambda { |tags|
+    tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
+
+    where(
+      tags.map { "tag_list LIKE ?" }.join(" OR "),
+      *tags.map { |t| "%#{t}%" }
+    )
+  }
 
   def to_s
     title || "AgentChart ##{id}"
   end
 
-  after_save :generate_job
-
-  def generate_job
-    AgentChartJob.perform_later(id, nil)
-  end
-
-  def generate_spec!(csv_paths: [])
+  def generate_spec!(portfolio_company_id:, csv_paths: [], kpis: [])
     owner = nil
-    if csv_paths.empty? && document_ids.present?
+    kpis = kpi_names if kpis.empty?
+
+    # For each document, download the CSV if not already provided
+    if csv_paths.empty? && document_names.present?
       # Load CSV paths from associated documents if not explicitly provided
-      documents.each do |doc|
+      documents(portfolio_company_id).each do |doc|
         owner = doc.owner
         file = doc.file.download
         csv_paths << file.path if file&.path&.end_with?(".csv")
       end
     end
+
+    # Update status to draft while generating
     update!(status: "draft", error: nil, owner: owner)
-    spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:).generate_chart!(prompt: prompt)
-    update!(spec: spec_hash, status: "ready")
+    raw_data = get_kpis(portfolio_company_id, kpis: kpis) if kpis.present?
+
+    if csv_paths.present? || raw_data.present?
+      spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:).generate_chart!(prompt: prompt)
+      spec ||= {}
+      spec[portfolio_company_id] = spec_hash
+      update!(spec: spec, status: "ready")
+    else
+      raise "No data sources (CSV files or KPIs) available to generate chart for portfolio company #{portfolio_company_id}"
+    end
   rescue StandardError => e
     update!(status: "failed", error: "#{e.class}: #{e.message}")
     raise
@@ -49,30 +66,34 @@ class AgentChart < ApplicationRecord
     end
   end
 
-  def documents
-    Document.where(id: document_ids) if document_ids.present?
+  def documents(portfolio_company_id)
+    Document.where(owner_id: portfolio_company_id, owner_type: "Investor", name: document_names) if document_names.present?
   end
 
-  def document_ids=(ids)
-    self[:document_ids] = ids.is_a?(Array) ? ids.map(&:to_i) : ids.to_s.split(",").map { |x| x.strip.to_i }
+  def document_names=(names)
+    self[:document_names] = names.is_a?(Array) ? names.map(&:to_s) : names.to_s.split(",").map(&:strip)
   end
 
-  def self.test(csv_paths:)
-    charts = [
-      "Revenue by Product Line (stacked area) – shows how each product contributes to total sales over time",
-      "COGS vs. Gross Profit (line chart) – highlights cost efficiency and profitability trends",
-      "Operating Expense Breakdown (stacked bar) – compares R&D vs. SG&A over months",
-      "EBITDA, EBIT, and Net Income (multi-line) – visualizes profitability at different stages",
-      "Cash Flow Waterfall (CFO, CapEx, FCF) – illustrates how cash is generated and spent",
-      "Cash vs. Debt Levels (line chart) – tracks liquidity and leverage over time",
-      "Working Capital Components (AR, AP, Inventory line chart) – shows operational efficiency shifts",
-      "Margins % (gross, operating, net line chart) – productivity insights",
-      "EPS Growth (bar chart) – per-share earnings performance",
-      "Headcount vs. Revenue per Employee (dual-axis line chart) – productivity insights"
-    ]
+  def get_kpis(portfolio_company_id, kpis:)
+    # Get the kpis data if needed
+    raw_data = entity.kpis.for_company(portfolio_company_id).where(name: kpis)
+    kpi_before ||= 12
+    kpi_before_period ||= "Months"
+    # Filter data for the specified period
+    period_start = case kpi_before_period
+                   when "Months"
+                     kpi_before.months.ago
+                   when "Years"
+                     kpi_before.years.ago
+                   when "Weeks"
+                     kpi_before.weeks.ago
+                   when "Days"
+                     kpi_before.days.ago
+                   end
+    raw_data = raw_data.joins(:kpi_report).where(kpi_report: { as_of: period_start.beginning_of_month..Time.zone.today }) if period_start.present?
 
-    charts.each do |chart_prompt|
-      AgentChart.create!(entity_id: 17, status: "draft", title: Faker::Company.catch_phrase, prompt: chart_prompt).generate_spec!(csv_paths: csv_paths)
-    end
+    # We only need name and value for data to be sent as part of the prompt for the AI to generate the chart spec
+    raw_data = raw_data.as_json(only: %i[name value]) if kpis.present?
+    raw_data
   end
 end

@@ -48,7 +48,7 @@ class AgentChartsController < ApplicationController
   end
 
   def regenerate
-    AgentChartJob.perform_later(@agent_chart.id, current_user.id)
+    AgentChartJob.perform_later(current_user.id, agent_chart_id: @agent_chart.id)
     redirect_to @agent_chart, notice: "Chart regeneration initiated.", status: :see_other
   end
 
@@ -68,6 +68,6 @@ class AgentChartsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def agent_chart_params
-    params.require(:agent_chart).permit(:title, :prompt, :raw_data, :spec, :llm_model, :status, :error, :document_ids)
+    params.require(:agent_chart).permit(:title, :prompt, :raw_data, :spec, :llm_model, :status, :tag_list, :error, :document_names, :kpi_before, :kpi_before_period, kpi_names: [])
   end
 end

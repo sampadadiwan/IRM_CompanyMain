@@ -1,3 +1,9 @@
+V9.1.36
+#####################################
+4c6cbf29a Fund formula uppdate only (#1073)
+19124264b Changed value bridge charts colors
+e873436dd Support agent reports (#1078)
+
 V9.1.35
 #####################################
 ee540f8d5 (HEAD -> main, origin/main) Added better filter for budget vs actual
