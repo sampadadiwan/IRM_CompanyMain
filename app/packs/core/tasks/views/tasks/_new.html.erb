@@ -1,6 +1,7 @@
 <div>
     <%= turbo_frame_tag "new_task" do %>
-        <%= render NewCard.new() do %>
+        <% col_md = (params[:task].present? && params[:task][:owner_type] == "DealInvestor") ? "col-md-10" : "col-md-6" %>
+        <%= render NewCard.new(col_md: col_md) do %>
             <%= render "form", task: task %>
         <% end %>
     <% end %>

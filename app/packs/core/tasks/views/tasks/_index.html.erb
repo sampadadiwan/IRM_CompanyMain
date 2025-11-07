@@ -1,4 +1,10 @@
-<% owner||= nil; search ||= false %>
+<%
+  owner||= nil;
+  if params[:owner_type] && params[:owner_id]
+    owner ||= params[:owner_type].constantize.find_by(id: params[:owner_id])
+  end
+  search ||= false
+%>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -62,7 +68,7 @@
     <div class="table-responsive">
         <%= turbo_frame_tag "new_task" do %>
         <% end %>
-    
+
         <table id="tasks" class="table table-bordered dataTable">
 
             <thead>

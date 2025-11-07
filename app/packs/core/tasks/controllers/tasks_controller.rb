@@ -11,7 +11,8 @@ class TasksController < ApplicationController
 
     @tasks = with_owner_access(@tasks, raise_error: false)
 
-    @tasks = filter_params(@tasks, :completed, :for_support, :entity_id, :for_entity_id, :assigned_to_id, :owner_id, :owner_type)
+    @tasks = filter_params(@tasks, :for_support, :entity_id, :for_entity_id, :assigned_to_id, :owner_id, :owner_type)
+    @tasks = @tasks.incomplete if params[:completed] != "all"
 
     @pagy, @tasks = pagy(@tasks.includes(:for_entity, :user, :task_template))
   end
