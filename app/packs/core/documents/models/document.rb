@@ -289,6 +289,10 @@ class Document < ApplicationRecord
     subject_to_approval? && !approved
   end
 
+  def signed?
+    owner_tag == "Signed"
+  end
+
   def subject_to_approval?
     # It was generated from some template, but is not a signed doc.
     from_template_id.present? && owner_tag&.exclude?("Signed")

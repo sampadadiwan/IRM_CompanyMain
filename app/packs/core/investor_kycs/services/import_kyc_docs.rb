@@ -38,30 +38,32 @@ class ImportKycDocs < ImportUtil
   def save_kyc_document(user_data, import_upload, _custom_field_headers, context)
     Rails.logger.debug { "Processing fund doc #{user_data}" }
 
-    # Get the Fund
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
+    investor = import_upload.entity.investors.find_by(investor_name: user_data["Investor"])
+    dir = context[:unzip_dir]
     name = user_data["Document Name"]
-    model = InvestorKyc.where(investor_id: investor&.id, PAN: user_data["Pan"]).first if user_data["Document Type"] == "KYC"
+    model = InvestorKyc.find_by(investor_id: investor&.id, PAN: user_data["Pan"]) if user_data["Document Type"] == "KYC"
     send_email = user_data["Send Email"] == "Yes"
 
-    if investor && model && File.exist?(file_name)
-      if Document.exists?(owner: model, entity_id: model.entity_id,
-                          name: user_data["Document Name"])
-        # All other docs are attached as documents
-        # Create the doc and attach it to the commitment
-        [false, "#{user_data['Document Name']} already present"]
-      else
-        # Create the document
-        doc = Document.new(owner: model, entity_id: model.entity_id,
-                           name:, tag_list: user_data["Tags"], orignal: true,
-                           import_upload_id: import_upload.id,
-                           user_id: import_upload.user_id, send_email:)
+    file_path = find_case_insensitive_file(dir, user_data["File Name"])
 
-        doc.file = File.open(file_name, "rb")
+    if investor && model && File.exist?(file_path)
+      if Document.exists?(owner: model, entity_id: model.entity_id, name: name)
+        [false, "#{name} already present"]
+      else
+        doc = Document.new(
+          owner: model,
+          entity_id: model.entity_id,
+          name: name,
+          tag_list: user_data["Tags"],
+          orignal: true,
+          import_upload_id: import_upload.id,
+          user_id: import_upload.user_id,
+          send_email: send_email
+        )
+
+        doc.file = File.open(file_path, "rb")
         saved = doc.save
-        status = saved ? "Success" : doc.errors.full_messages
-        [saved, status]
+        [saved, saved ? "Success" : doc.errors.full_messages]
       end
     elsif investor.nil?
       [false, "Investor not found"]

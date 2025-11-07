@@ -238,4 +238,17 @@ class ImportUtil < Trailblazer::Operation
   def send_notification(message, user_id, level = "success")
     UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
+
+  # Finds a file by name inside a directory, matching case-insensitively.
+  # Returns the full path if found, or nil if not found.
+  def find_case_insensitive_file(dir, target_file_name)
+    return nil if dir.blank? || target_file_name.blank?
+
+    # Try to find a case-insensitive match in the given directory
+    matched_entry = Dir.children(dir).find { |f| f.casecmp?(target_file_name) }
+    return File.join(dir, matched_entry) if matched_entry
+
+    # Fallback: return path assuming exact name (may not exist)
+    File.join(dir, target_file_name)
+  end
 end

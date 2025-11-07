@@ -40,7 +40,10 @@ class ImportFundDocs < ImportUtil
   def save_fund_doc(user_data, import_upload, _custom_field_headers, context)
     Rails.logger.debug { "Processing fund doc #{user_data}" }
 
-    if @docs_added.include?(user_data['File Name'])
+    # Prevent duplicate uploads (case-insensitive)
+    @docs_added ||= []
+    file_name = user_data['File Name']&.strip
+    if @docs_added.map(&:downcase).include?(file_name.downcase)
       raise "#{user_data['File Name']} cannot be uploaded again"
     else
       @docs_added << user_data['File Name']
@@ -48,33 +51,30 @@ class ImportFundDocs < ImportUtil
 
     # Get the Model
     model = fetch_required_fields(user_data, import_upload)
-
     folio_id = user_data["Folio No"].presence
     send_email = user_data["Send Email"] == "Yes"
-    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
+    dir = context[:unzip_dir]
+    doc_name = user_data["Document Name"]
+
+    # Case-insensitive file path resolution
+    file_path = find_case_insensitive_file(dir, file_name)
 
     if model
-      # Create the doc and attach it to the commitment
-      if Document.exists?(owner: model, entity_id: model.entity_id,
-                          name: user_data["Document Name"])
-        [false, "#{user_data['Document Name']} already present"]
+      if Document.exists?(owner: model, entity_id: model.entity_id, name: doc_name)
+        [false, "#{doc_name} already present"]
       else
         # Check if we need to create a folder
         folder = user_data["Folder"].presence
         folder = model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create if folder
-        # Create the document
-        doc = Document.new(owner: model, entity_id: model.entity_id, folder:,
-                           name: user_data["Document Name"], tag_list: user_data["Tags"],
-                           import_upload_id: import_upload.id,
-                           user_id: import_upload.user_id, send_email:)
 
-        # Save the document
-        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_name)
+        raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_path)
 
-        doc.file = File.open(file_name, "rb")
+        doc = Document.new(owner: model, entity_id: model.entity_id, folder: folder, name: doc_name, tag_list: user_data["Tags"], import_upload_id: import_upload.id, user_id: import_upload.user_id, send_email: send_email)
+
+        doc.file = File.open(file_path, "rb")
         doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]
       end
-    elsif model.nil?
+    else
       [false, "#{user_data['Document Type']} not found for #{folio_id}"]
     end
   end

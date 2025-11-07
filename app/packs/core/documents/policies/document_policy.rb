@@ -92,6 +92,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def destroy?
     (permissioned_employee?(:destroy) &&
+    !record.signed? && # cannot delete signed documents
     (!record.sent_for_esign || record.esign_expired? || record.esign_failed? || record.esign_voided?)) || support?
   end
 
