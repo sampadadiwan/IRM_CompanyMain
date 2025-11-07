@@ -3,7 +3,7 @@ class ImportInvestorKpiMapping < ImportUtil
   STANDARD_HEADERS = [
     "Investor", "Reported Kpi Name", "Standard Kpi Name", "Category",
     "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report",
-    "Lower Threshold", "Upper Threshold"
+    "Lower Threshold", "Upper Threshold", "Cumulate"
   ].freeze
 
   # Returns the standard headers for the import file.
@@ -97,6 +97,7 @@ class ImportInvestorKpiMapping < ImportUtil
       lower_threshold: user_data["Lower Threshold"].presence,
       upper_threshold: user_data["Upper Threshold"].presence,
       position: user_data["Position"].presence,
+      cumulate: user_data["Cumulate"].to_s.downcase == "yes",
       import_upload_id: import_upload.id
     }
 
