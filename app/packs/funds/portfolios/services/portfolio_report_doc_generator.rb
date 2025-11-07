@@ -5,22 +5,30 @@ class PortfolioReportDocGenerator
   attr_accessor :working_dir
 
   def initialize(portfolio_company, template, start_date, end_date, user_id, options: nil)
-    Rails.logger.debug { "PortfolioCompanyDocGenerator #{portfolio_company.id}, #{template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
+    @portfolio_company = portfolio_company
+    @template = template
+    @start_date = start_date
+    @end_date = end_date
+    @user_id = user_id
+    @options = options
+  end
 
-    portfolio_report_extract_id = options[:portfolio_report_extract_id]
-    portfolio_report_extract = PortfolioReportExtract.find(portfolio_report_extract_id)
+  def call
+    Rails.logger.debug { "PortfolioCompanyDocGenerator #{@portfolio_company.id}, #{@template.name}, #{@start_date}, #{@end_date}, #{@user_id}, #{@options} " }
 
-    create_working_dir(portfolio_company)
-    template_path ||= download_template(template)
-    generate(portfolio_company, portfolio_report_extract, template, template_path, start_date, end_date)
-    generated_document_name = "#{template.name} #{portfolio_company.investor_name} #{start_date} to #{end_date}"
+    portfolio_report_extract = PortfolioReportExtract.find(@options[:portfolio_report_extract_id])
+
+    create_working_dir(@portfolio_company)
+    template_path = download_template(@template)
+    generate(@portfolio_company, portfolio_report_extract, @template, template_path, @start_date, @end_date)
+    generated_document_name = "#{@template.name} #{@portfolio_company.investor_name} #{@start_date} to #{@end_date}"
 
     # Folder to upload the generated document
-    folder = Folder.find(options[:folder_id]) if options[:folder_id].present?
-    folder ||= portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: portfolio_company.entity_id)
+    folder = Folder.find(@options[:folder_id]) if @options[:folder_id].present?
+    folder ||= @portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: @portfolio_company.entity_id)
 
     # Upload the generated document
-    upload(template, portfolio_company, start_date, end_date, folder, generated_document_name, file_extension: 'docx', user_id: user_id)
+    upload(@template, @portfolio_company, @start_date, @end_date, folder, generated_document_name, file_extension: 'docx', user_id: @user_id)
   ensure
     cleanup
   end
@@ -55,6 +63,10 @@ class PortfolioReportDocGenerator
     context.store  :portfolio_investments, TemplateDecorator.decorate_collection(portfolio_company.portfolio_investments.where(investment_date: ..end_date))
     context.store  :kpis, grid_view_array(portfolio_company, end_date)
 
+    portfolio_company.investor_kpi_mappings.pluck(:category).uniq.each_with_index do |category, _index|
+      context.store :"#{category}_kpis", grid_view_array(portfolio_company, end_date, category: category)
+    end
+
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
 
@@ -74,12 +86,14 @@ class PortfolioReportDocGenerator
 
   include ActionView::Helpers::NumberHelper
 
-  def grid_view_array(portfolio_company, end_date)
+  def grid_view_array(portfolio_company, end_date, category: nil)
     kpi_reports = portfolio_company.portfolio_kpi_reports
+                                   .includes(:kpis)
                                    .where(as_of: ..end_date)
                                    .order(:as_of)
 
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
+    investor_kpi_mappings = investor_kpi_mappings.where(category: category) if category.present?
 
     rows = investor_kpi_mappings.map do |ikm|
       row_data = { "header" => ikm.standard_kpi_name }
