@@ -66,22 +66,17 @@ class ImportUtil < Trailblazer::Operation
         # Get the records that do not have a form_type set
         records_wo_form_type = form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: nil)
 
-        # If there are records without form_type, we need to set the form_type
-        next unless records_wo_form_type.any?
-
-        # Create the custom fields for the form type based on the headers
-        custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload, ctx[:form_type_id])
-
-        # Find the form type based on the name - here we assign the last one found
-        form_type = import_upload.entity.form_types.where(name: form_type_name).last
-
-        if custom_fields_created.present?
-          import_upload.custom_fields_created = custom_fields_created.join(";")
-          result = import_upload.save
+        # If this is an import for MULTIPLE_FORM_TYPES_ALLOWED, then skip creating custom fields, as these models can have multiple form types
+        if import_upload.import_type.in?(FormType::MULTIPLE_FORM_TYPES_ALLOWED)
+          import_upload.custom_fields_created = "Skipped for import type #{import_upload.import_type}"
+        else
+          # Create the custom fields for the form type based on the headers. This is idempotent, so will not create duplicates, but will update the form type with extra custom fields if needed
+          custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload, ctx[:form_type_id])
+          import_upload.custom_fields_created = custom_fields_created.join(";") if custom_fields_created.present?
         end
 
-        Rails.logger.debug { "Updating form_type for #{records_wo_form_type.count} records of type #{form_type_name} to #{form_type&.name}" }
-        records_wo_form_type.update_all(form_type_id: form_type.id) if form_type.present?
+        result = import_upload.save
+
       end
     end
     result
