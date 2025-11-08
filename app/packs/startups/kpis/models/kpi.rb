@@ -191,19 +191,25 @@ class Kpi < ApplicationRecord
     if cumulative_kpi
       Rails.logger.debug { "Kpi:  [#{name}] Existing #{period} KPI found (id=#{cumulative_kpi.id}), current value=#{cumulative_kpi.value}, new value=#{cumulative_sum}" }
       cumulative_kpi.value = cumulative_sum
+      cumulative_kpi.notes = "Auto-generated #{period} cumulative"
       if cumulative_kpi.changed?
         Rails.logger.info "--- [#{name}] Overwriting #{period} KPI #{cumulative_kpi.id} with new value #{cumulative_sum}"
         cumulative_kpi.save
       else
         Rails.logger.debug { "Kpi:  [#{name}] Skipping save for #{period} KPI #{cumulative_kpi.id} (unchanged)" }
       end
+
     else
       Rails.logger.info "--- [#{name}] Creating new #{period} KPI with value #{cumulative_sum}"
       user_id = monthly_kpi.kpi_report.user_id
-      kpi_report = KpiReport.create!(period: period, as_of: monthly_kpi.kpi_report.as_of,
-                                     entity_id:, portfolio_company_id:, user_id:)
-      Kpi.create(entity_id: entity_id, name:, portfolio_company_id: portfolio_company_id,
-                 value: cumulative_sum, kpi_report: kpi_report)
+
+      kpi_report = KpiReport.find_or_create_by(period: period, as_of: monthly_kpi.kpi_report.as_of,
+                                               entity_id:, portfolio_company_id:, user_id:)
+
+      kpi = Kpi.find_or_initialize_by(entity_id:, name:, portfolio_company_id:, kpi_report:)
+      kpi.value = cumulative_sum
+      kpi.notes = "Auto-generated #{period} cumulative"
+      kpi.save
     end
   end
 end
