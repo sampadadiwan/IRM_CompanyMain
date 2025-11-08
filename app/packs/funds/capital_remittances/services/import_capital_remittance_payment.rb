@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount (Folio Currency)", "Currency", "Amount (Fund Currency)", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Fund", "Capital Call", "Amount (Folio Currency)", "Currency", "Amount (Fund Currency)", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
   step nil, delete: :create_custom_fields
 
@@ -94,8 +94,8 @@ class ImportCapitalRemittancePayment < ImportUtil
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
     raise "Capital Call not found" unless capital_call
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    raise "Investor not found" unless investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    raise "Stakeholder not found" unless investor
 
     # One of the 2 should be present folio_id or virtual_bank_account
     folio_id = user_data["Folio No"]&.to_s
@@ -105,10 +105,10 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     # Find the capital_commitment from either the folio_id or virtual_bank_account
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first if folio_id
-    raise "Investor commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
+    raise "Stakeholder commitment not found for folio #{folio_id}" if folio_id.present? && capital_commitment.blank?
 
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first if virtual_bank_account
-    raise "Investor commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
+    raise "Stakeholder commitment not found for virtual bank account #{virtual_bank_account}" if virtual_bank_account.present? && capital_commitment.blank?
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
     raise "Capital Remittance not found" unless capital_remittance

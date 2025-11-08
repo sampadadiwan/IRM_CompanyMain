@@ -1,5 +1,5 @@
 class ImportCapitalRemittance < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees, Folio Currency)", "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)", "Call Amount (Inclusive Of Capital Fees, Fund Currency)", "Capital Fees (Fund Currency)", "Other Fees (Fund Currency)", "Remittance Date", "Verified", "Folio No"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Fund", "Capital Call", "Call Amount (Inclusive Of Capital Fees, Folio Currency)", "Capital Fees (Folio Currency)", "Other Fees (Folio Currency)", "Call Amount (Inclusive Of Capital Fees, Fund Currency)", "Capital Fees (Fund Currency)", "Other Fees (Fund Currency)", "Remittance Date", "Verified", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -47,9 +47,9 @@ class ImportCapitalRemittance < ImportUtil
       # Raise appropriate errors if any required entity is missing or invalid
       raise "Fund not found" unless fund
       raise "Capital Call not found" unless capital_call
-      raise "Investor not found" unless investor
+      raise "Stakeholder not found" unless investor
       raise "Capital Commitment not found" unless capital_commitment
-      raise "Investor and Commitment do not match" if capital_commitment.investor_id != investor.id
+      raise "Stakeholder and Commitment do not match" if capital_commitment.investor_id != investor.id
     end
   end
 
@@ -74,8 +74,8 @@ class ImportCapitalRemittance < ImportUtil
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
 
     # Find the investor based on the name provided in user data
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    raise "Investor not found" unless investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    raise "Stakeholder not found" unless investor
 
     # Retrieve the folio ID from user data
     folio_id = user_data["Folio No"]&.to_s

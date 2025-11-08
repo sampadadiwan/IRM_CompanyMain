@@ -1,5 +1,5 @@
 class ImportCapitalCommitment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -11,8 +11,8 @@ class ImportCapitalCommitment < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    raise "Investor not found" unless investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    raise "Stakeholder not found" unless investor
 
     update_only = user_data["Update Only"]
     folio_id, _, _, folio_currency, = get_params(user_data, import_upload)

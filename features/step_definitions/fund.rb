@@ -245,7 +245,7 @@
           user_data = [headers, row].transpose.to_h
 
           puts "Checking import of #{user_data}"
-          remittance.investor.investor_name.should == user_data["Investor"].strip
+          remittance.investor.investor_name.should == user_data["Stakeholder"].strip
           remittance.fund.name.should == user_data["Fund"]
           remittance.capital_call.name.should == user_data["Capital Call"]
 
@@ -693,7 +693,7 @@ Then('the capital commitments must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     cc = capital_commitments[idx-1]
     puts "Checking import of #{cc.investor.investor_name}"
-    cc.investor.investor_name.should == user_data["Investor"].strip
+    cc.investor.investor_name.should == user_data["Stakeholder"].strip
     cc.fund.name.should == user_data["Fund"]
     cc.commitment_date.should == Date.local_parse(user_data["Commitment Date"].to_s)
     cc.folio_currency.should == user_data["Folio Currency"]
@@ -1437,7 +1437,7 @@ Then('the capital remittance payments must have the data in the sheet') do
       cc = capital_remittance_payments[idx-1]
 
       cc.fund.name.should == user_data["Fund"]
-      cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
+      cc.capital_remittance.investor.investor_name.should == user_data["Stakeholder"]
       cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
       cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_i * 100
 
@@ -2160,19 +2160,19 @@ Then('I should see the remittance payments upload errors') do
       row[headers.length].include?("Capital Call not found").should == true
     end
     if idx == 9
-      row[headers.length].include?("Investor not found").should == true
+      row[headers.length].include?("Stakeholder not found").should == true
     end
     if idx == 10
       row[headers.length].include?("Folio No or Virtual Bank Account must be specified").should == true
     end
     if idx == 11
-      row[headers.length].include?("Investor commitment not found for folio C999").should == true
+      row[headers.length].include?("Stakeholder commitment not found for folio C999").should == true
     end
     if idx == 12
-      row[headers.length].include?("Investor commitment not found for virtual bank account 99998888").should == true
+      row[headers.length].include?("Stakeholder commitment not found for virtual bank account 99998888").should == true
     end
     if idx == 13
-      row[headers.length].include?("Investor commitment not found").should == true
+      row[headers.length].include?("Stakeholder commitment not found").should == true
     end
   end
 end

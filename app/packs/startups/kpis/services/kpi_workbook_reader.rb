@@ -106,7 +106,7 @@ class KpiWorkbookReader
     end
 
     # Trigger KPI cumulation job after extraction
-    KpiCumulateJob.perform_later(portfolio_company_id: @portfolio_company_id)
+    KpiCumulateJob.perform_later(@portfolio_company_id)
     # Return the extracted results
     @results
   end
