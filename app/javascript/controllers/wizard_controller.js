@@ -2,13 +2,12 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
     connect() {
-        this.init();
+        this.initialize();
         $(".wizard_form").enableClientSideValidations();
         console.log("Wizard controller connected");
     }
 
-    init() {
-
+    initialize() {
         let validateFields = this.validateFields;
         let validateSection = this.validateSection;
 
