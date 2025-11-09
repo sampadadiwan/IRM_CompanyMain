@@ -40,6 +40,9 @@ class KpiReport < ApplicationRecord
 
   scope :for_user, ->(user) { where(entity_id: user.entity_id) }
   scope :for_both, ->(user) { KpiReport.from("(#{for_investor(user).to_sql} UNION #{for_user(user).to_sql}) as kpi_reports") }
+  scope :actuals, -> { where(tag_list: "Actual") }
+  scope :budgets, -> { where(tag_list: "Budget") }
+  scope :ics, -> { where(tag_list: "IC") }
 
   def self.custom_fields
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort

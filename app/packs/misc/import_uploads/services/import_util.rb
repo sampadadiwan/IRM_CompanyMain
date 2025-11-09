@@ -64,7 +64,7 @@ class ImportUtil < Trailblazer::Operation
         next unless form_type_name.constantize.method_defined?(:form_type_id)
 
         # Get the records that do not have a form_type set
-        records_wo_form_type = form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: nil)
+        form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: nil)
 
         # If this is an import for MULTIPLE_FORM_TYPES_ALLOWED, then skip creating custom fields, as these models can have multiple form types
         if import_upload.import_type.in?(FormType::MULTIPLE_FORM_TYPES_ALLOWED)
@@ -76,7 +76,6 @@ class ImportUtil < Trailblazer::Operation
         end
 
         result = import_upload.save
-
       end
     end
     result

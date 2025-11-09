@@ -144,9 +144,9 @@ class Kpi < ApplicationRecord
   def cumulate
     Rails.logger.info "--- [#{name}] Starting cumulate for KPI '#{name}' for entity #{entity_id}, pc_id: #{portfolio_company_id}"
 
+    # Find all related monthly KPIs for this entity and name, but only Actuals
     related_kpis = entity.kpis.joins(:kpi_report).includes(:kpi_report)
-                         .where(name:, portfolio_company_id: portfolio_company_id)
-                         .where("kpi_reports.period = 'Month'")
+                         .where(name:, portfolio_company_id:, kpi_reports: { tag_list: 'Actual', period: 'Month' })
                          .order("kpi_reports.as_of ASC")
 
     Rails.logger.info "--- [#{name}] Found #{related_kpis.size} related monthly KPIs"

@@ -1,5 +1,16 @@
 V9.1.36
 #####################################
+c82fbcf4c Form types auto create (#1083)
+7ce157313 Fixed issues with the kpi cumulation
+e6c57dc45 Better cumulation of Kpis
+663e77837 Added categor_kpis in the doc gen for portfolio reports
+c5f31866b Changed green color for Value Bridge
+4add1bdb0 Import docs file name fix (#1081)
+55663c9e3 Fixed tasks for DealInvestor
+2d0ed83aa Agent charts 2 (#1080)
+
+V9.1.36
+#####################################
 4c6cbf29a Fund formula uppdate only (#1073)
 19124264b Changed value bridge charts colors
 e873436dd Support agent reports (#1078)

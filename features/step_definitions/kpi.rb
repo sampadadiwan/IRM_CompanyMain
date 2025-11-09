@@ -270,7 +270,8 @@ Given('the following Monthly KPI Reports exist with KPIs:') do |table|
   table.hashes.each do |row|
     as_of = Date.parse(row['as_of'])
     period = row['period'] || 'Month'
-    kpi_report = FactoryBot.create(:kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id, user: @user, period:, as_of:)
+    tag_list = row['tag_list'] || 'Actual'
+    kpi_report = FactoryBot.create(:kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id, user: @user, period:, as_of:, tag_list:)
     FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f)
   end
 end
@@ -288,7 +289,7 @@ Then('Quarterly KPI should be cumulated correctly for {string}') do |kpi_name|
     quarter = ((kpi.kpi_report.as_of.month - 1) / 3) + 1
     year = kpi.kpi_report.as_of.year
     months_in_quarter = Date.new(year, ((quarter - 1) * 3) + 1, 1)..Date.new(year, ((quarter - 1) * 3) + 3, -1)
-    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_quarter).sum(:value)
+    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_quarter, "kpi_reports.tag_list": 'Actual').sum(:value)
     kpi.value.should == expected_sum
     puts "Expected sum: #{expected_sum}, Actual sum: #{kpi.value}"
   end
@@ -301,7 +302,7 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
     puts "Checking YTD KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
     year = kpi.kpi_report.as_of.year
     months_in_year = Date.new(year, 1, 1)..Date.new(year, 12, 31)
-    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_year).sum(:value)
+    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_year, "kpi_reports.tag_list": 'Actual').sum(:value)
     kpi.value.should == expected_sum
     puts "Expected sum: #{expected_sum}, Actual sum: #{kpi.value}"
   end
