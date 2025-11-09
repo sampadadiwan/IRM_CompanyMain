@@ -21,7 +21,7 @@ class PortfolioReportExtractsController < ApplicationController
     @portfolio_report_extract.data = @sections.to_json
 
     if @portfolio_report_extract.save
-      redirect_to edit_portfolio_report_extract_path(@portfolio_report_extract),
+      redirect_to portfolio_report_path(@portfolio_report_extract.portfolio_report),
                   notice: "Portfolio report extract updated successfully."
     else
       flash.now[:alert] = "Could not save changes. Please review and try again."
