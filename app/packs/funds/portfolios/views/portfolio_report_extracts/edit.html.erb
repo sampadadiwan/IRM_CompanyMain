@@ -30,7 +30,7 @@
                 local: true,
                 class: "wizard_form row justify-content-md-center" do |f| %>
 
-    <div id="sections-container" data-portfolio-report-extract-editor-target="sectionsContainer">
+    <div id="sections-container" data-portfolio-report-extract-editor-target="sectionsContainer" class="row justify-content-md-center">
       <% @sections.each_with_index do |(key, lines), index| %>
         <div class="col-md-10 setup-content section-fields" id="step-<%= index + 1 %>">
           <div class="card">
@@ -59,8 +59,6 @@
         </div>
       <% end %>
     </div>
-    </div>
-
 
   <% end %>
 
