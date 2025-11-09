@@ -22,7 +22,11 @@ class Kpi < ApplicationRecord
   # --- Generic filters -------------------------------------------------
   scope :for_metric,  ->(name)  { where(name:) }
   scope :for_company, ->(pc_id) { where(portfolio_company_id: pc_id) }
+  scope :actuals,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Actual') }
+  scope :budgets,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Budget') }
+  scope :ics,        -> { joins(:kpi_report).where('kpi_reports.tag_list': 'IC') }
 
+  # --- Scopes needing joins -------------------------------------------
   # Attach the parent report so date filters hit SQL, not Ruby.
   scope :with_report, -> { joins(:kpi_report) }
   scope :cumulatable, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { cumulate: true }) }
