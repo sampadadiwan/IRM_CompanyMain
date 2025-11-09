@@ -1,0 +1,57 @@
+<!-- app/views/portfolio_report_extracts/edit.html.erb -->
+<div class="card">
+  <div class="card-body">
+    <h1>Edit Portfolio Report Extract <%= link_to @portfolio_report_extract.portfolio_company %></h1>
+  </div>
+</div>
+
+
+<div class="wizard_container" data-controller="wizard">
+  <div class="row justify-content-md-center">
+    <div class="stepwizard col-md-10">
+      <div class="stepwizard-row setup-panel">
+        <% @sections.each_with_index do |(key, _), index| %>
+          <div class="stepwizard-step">
+            <a href="#step-<%= index + 1 %>" type="button" class="btn <%= index.zero? ? 'btn-outline-primary' : 'disabled btn-outline-primary' %> btn-outline-circle"><%= index + 1 %></a>
+            <p><%= key %></p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%= form_with model: @portfolio_report_extract,
+                url: portfolio_report_extract_path(@portfolio_report_extract),
+                method: :put,
+                local: true,
+                class: "wizard_form row justify-content-md-center" do |f| %>
+
+    <% @sections.each_with_index do |(key, lines), index| %>
+      <div class="col-md-10 setup-content" id="step-<%= index + 1 %>">
+        <div class="card">
+          <div class="card-header">
+            <%= text_field_tag "sections[#{index}][name]", key, class: "form-control" %>
+          </div>
+          <div class="card-body">
+            <%= text_area_tag(
+                  "sections[#{index}][body]",
+                  lines.join("\n"),
+                  id: "sections_#{key.parameterize}",
+                  rows: [lines.size + 1, 8].max,
+                  class: "form-control",
+                  style: "width: 100%;"
+                ) %>
+
+            <div class="form-group" style="margin-top: 1rem;">
+              <% if @sections.keys.last == key %>
+                <%= f.submit "Save", class: "btn btn-outline-primary btn-lg" %>
+              <% else %>
+                <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>

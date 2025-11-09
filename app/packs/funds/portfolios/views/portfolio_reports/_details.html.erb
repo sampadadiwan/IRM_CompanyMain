@@ -1,5 +1,5 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
-  
+
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Templates</a>
@@ -7,18 +7,20 @@
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-report-extracts-tab"
           data-action="click->tabdetails#loadData">Extracts</a>
   </nav>
-  
+
   <div class="tab-content" data-controller="datatable">
     <div id="docs-tab" class="tab-pane fade in show active">
       <div id="docs" class="associated_entity">
-        <%= render "/documents/index", documents: portfolio_report.documents, owner: portfolio_report, 
+        <%= render "/documents/index", documents: portfolio_report.documents, owner: portfolio_report,
                 entity: portfolio_report.entity %>
       </div>
     </div>
 
     <div id="portfolio-report-extracts-tab" class="tab-pane fade in">
       <div id="portfolio_extracts" class="associated_entity">
-        <%= render "/portfolio_reports/index_extracts", portfolio_report_extracts: portfolio_report.portfolio_report_extracts.order(id: :desc) %>
+        <%= turbo_frame_tag with_frame("portfolio_report_extracts_frame"), target: "_top", loading: :lazy, src: portfolio_report_extracts_path(portfolio_report_id: portfolio_report.id) do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
       </div>
     </div>
 

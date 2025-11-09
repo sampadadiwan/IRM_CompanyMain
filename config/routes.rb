@@ -3,6 +3,8 @@ Rails.application.routes.draw do
   mount Rswag::Api::Engine => '/api-docs'
 
   resources :portfolio_reports
+  resources :portfolio_report_extracts
+
   resources :excused_investors
 
   resources :rm_mappings

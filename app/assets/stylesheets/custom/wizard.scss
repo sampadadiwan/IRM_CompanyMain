@@ -33,6 +33,9 @@
         font-size: 1.3em;
         color: white;
         background-color: var(--bs-primary);
+        input {
+            color: white !important;
+        }
     }
     .btn-primary {
         color: white;
@@ -44,6 +47,7 @@
     display: table-cell;
     text-align: center;
     position: relative;
+    min-width: 200px !important;
 }
 
 .btn-circle {
