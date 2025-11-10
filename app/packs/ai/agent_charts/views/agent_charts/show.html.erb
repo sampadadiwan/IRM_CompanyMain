@@ -105,11 +105,11 @@
 
 <% if params[:portfolio_company_id].present? && @agent_chart.spec.present? && @agent_chart.spec[params[:portfolio_company_id]].present? %>
   <% portfolio_company = Investor.find(params[:portfolio_company_id]) %>
-  <h3>Chart for <%= link_to portfolio_company.name, portfolio_company %></h3>
+  <% title = "#{@agent_chart.title}: &nbsp; #{link_to portfolio_company.name, portfolio_company}".html_safe %>
 
   <%= turbo_frame_tag with_frame("agent_chart_#{@agent_chart.id}"), target: "_top" do %>
     <% if @agent_chart.spec.present? %>
-      <%= render FormCard.new(title: link_to(@agent_chart.title, @agent_chart)) do %>
+      <%= render FormCard.new(title: link_to(title, agent_chart_path(@agent_chart, portfolio_company_id: portfolio_company.id))) do %>
         <div data-controller="chart-renderer"
             data-chart-renderer-spec-value='<%= @agent_chart.spec["#{portfolio_company.id}"].to_json %>'
             style="width: 100%; margin: 2rem 0;">

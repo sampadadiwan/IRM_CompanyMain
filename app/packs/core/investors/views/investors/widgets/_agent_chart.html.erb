@@ -3,8 +3,8 @@
   name ||= nil
   args ||= {}
   uri_params ||= {}
-  agent_chart = AgentChart.where(title: args[:title], owner_type: "Investor", owner_id: @investor.id).last
-  uri = agent_chart_path(agent_chart) if agent_chart
+  agent_chart = AgentChart.where(title: args[:title], entity_id: @investor.entity_id).last
+  uri = agent_chart_path(agent_chart, portfolio_company_id: @investor.id) if agent_chart
 %>
 
 

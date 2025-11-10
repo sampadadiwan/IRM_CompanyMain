@@ -1,3 +1,9 @@
+V9.1.38
+#####################################
+1c726b298 Added better editing of the portfolio report extract
+c971db0b0 Added additional scopes to kpis for actuals,budgets,ids etc
+42729d128 Fixed kpi cumulate to now cumulate only Actuals
+
 V9.1.36
 #####################################
 c82fbcf4c Form types auto create (#1083)
