@@ -32,13 +32,13 @@
         </div>
 
         <div data-controller="add-pis-to-capital-distribution" >
-          
+
           <div class="form-group pool">
             <%= form.label :portfolio_investment_ids, "Sold Investments" %>
             <%= form.select :portfolio_investment_ids, capital_distribution.fund.portfolio_investments.sells.not_distributed.map{|pi| [pi.to_s, pi.id]}, {include_hidden: false}, { class: "form-control select2", multiple: true, disabled:, name: "portfolio_investment_ids[]", data: { action: "change->add-pis-to-capital-distribution#add_pis" } } %>
           </div>
 
-            
+
           <%= render "/capital_distributions/income_and_redemption_fields", form:, capital_distribution:, disabled: %>
 
         </div>
@@ -59,7 +59,7 @@
             <div class="form-group">
               <% unit_type = unit_type.strip %>
               <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-              <%= form.number_field :unit_type, step: :any, class: "form-control price", 
+              <%= form.number_field :unit_type, step: :any, class: "form-control price",
                   name: "capital_distribution[unit_prices][#{unit_type}]", value: capital_distribution.unit_prices[unit_type] %>
 
               <% if index == 0 %>
@@ -67,10 +67,13 @@
                   <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
                 </div>
               <% end %>
-            </div>  
-          <% end %>  
+            </div>
+          <% end %>
         </div>
         <% end %>
+
+
+        <%= custom_form_fields(capital_distribution, form) %>
 
         <div class="form-group">
           <%= form.label :completed %>
@@ -83,6 +86,7 @@
           <%= form.check_box :send_notification_on_complete, class: "form-check-input"  %>
           <span class="small_text">Send notification to investors when distribution payment is marked completed</span>
         </div>
+
 
         <div class="form-group">
           <%= form.label :notes %>

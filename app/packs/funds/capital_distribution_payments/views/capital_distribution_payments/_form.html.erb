@@ -14,7 +14,7 @@
           </ul>
         </div>
       <% end %>
-      
+
         <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
         <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
         <%= form.text_field :capital_distribution_id, class: "form-control", hidden: true  %>
@@ -59,6 +59,8 @@
         <%= form.label :completed %>
         <%= form.check_box :completed, class: "form-check-input"  %>
       </div>
+
+      <%= custom_form_fields(capital_distribution_payment, form) %>
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
