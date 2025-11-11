@@ -12,7 +12,7 @@ class ImportFundDocs < ImportUtil
   def initialize(**)
     super
     @commitments = []
-    @docs_added = []
+    @docs_added = Set.new
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, context)
@@ -41,12 +41,13 @@ class ImportFundDocs < ImportUtil
     Rails.logger.debug { "Processing fund doc #{user_data}" }
 
     # Prevent duplicate uploads (case-insensitive)
-    @docs_added ||= []
+    @docs_added ||= Set.new
     file_name = user_data['File Name']&.strip
-    if @docs_added.map(&:downcase).include?(file_name.downcase)
+    norm_name = file_name&.downcase
+    if @docs_added.include?(norm_name)
       raise "#{user_data['File Name']} cannot be uploaded again"
     else
-      @docs_added << user_data['File Name']
+      @docs_added.add(norm_name)
     end
 
     # Get the Model
@@ -96,7 +97,6 @@ class ImportFundDocs < ImportUtil
       raise "Capital Call not found for #{call_name}" unless call
 
       capital_remittance = CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id, investor_id: kyc.investor_id).last
-
       raise "Capital Remittance not found for #{fund.name}, #{call_name}, #{folio_id} and #{kyc.full_name}" unless capital_remittance && capital_remittance.investor_kyc.id == kyc.id
 
       return capital_remittance
