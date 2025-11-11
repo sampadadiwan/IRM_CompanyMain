@@ -391,6 +391,7 @@ Then('the investor kycs must have the data in the sheet {string}') do |file_name
 
     puts "Checking import of #{cc.full_name} #{cc.class.name}}"
     if user_data["Investing Entity"].present?
+      binding.pry if cc.address != user_data["Address"]
       cc.full_name.should == user_data["Investing Entity"]
       cc.birth_date.to_date.should == user_data["Date Of Birth"]
       cc.address.should == user_data["Address"]

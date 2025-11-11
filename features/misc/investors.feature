@@ -133,6 +133,8 @@ Scenario Outline: Import investor kycs
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet "investor_kycs_update.xlsx"
+  And Given import file "import_kyc_docs/test.zip" for "KycDocs"
+  Then I should see the documents attached to the correct kycs
 
 Scenario Outline: Bulk Actions on kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
@@ -186,8 +188,6 @@ Scenario Outline: Create investor kyc - no ckyc
   And when I upload the document for the kyc
   Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page
-
-
 
 
 Scenario Outline: Create investor kyc

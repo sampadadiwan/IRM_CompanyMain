@@ -95,8 +95,27 @@ Then('I get the error that StakeHolder cant be blank') do
 end
 
 Then('I select the investor for the KYC') do
-  @investor ||= Investor.last 
+  @investor ||= Investor.last
   @kyc_type ||= "Individual"
   class_name = "#{@kyc_type.underscore}_kyc"
   select(@investor.investor_name, from: "#{class_name}_investor_id")
+end
+
+
+Then('I should see the documents attached to the correct kycs') do
+  file = File.open("./public/sample_uploads/import_kyc_docs/index.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    kyc = @entity.investor_kycs.where(full_name: user_data["Investing Entity"]&.strip, PAN: user_data["Pan/Tax Id"]&.strip).first
+    document = kyc.documents.find_by(name: user_data["Document Name"].strip)
+    expect(document).not_to be_nil, "Document #{user_data['Document Name']} not found for KYC of Investor #{user_data['Investing Entity']}"
+
+    puts "Verified document #{document.name} for KYC of Investor #{user_data['Investor']}"
+  end
 end

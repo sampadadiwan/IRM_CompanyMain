@@ -1,7 +1,7 @@
 class ImportKycDocs < ImportUtil
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Investor", "PAN", "Document Type", "Document Name", "File Name", "Tags"].freeze
+  STANDARD_HEADERS = ["Investing Entity", "PAN/Tax ID", "Document Type", "Document Name", "File Name", "Tags"].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -16,7 +16,6 @@ class ImportKycDocs < ImportUtil
   def process_row(headers, custom_field_headers, row, import_upload, context)
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
-
     begin
       status, msg = save_kyc_document(user_data, import_upload, custom_field_headers, context)
       if status
@@ -36,17 +35,16 @@ class ImportKycDocs < ImportUtil
   end
 
   def save_kyc_document(user_data, import_upload, _custom_field_headers, context)
-    Rails.logger.debug { "Processing fund doc #{user_data}" }
+    Rails.logger.debug { "Processing investor kyc doc #{user_data}" }
 
-    investor = import_upload.entity.investors.find_by(investor_name: user_data["Investor"])
     dir = context[:unzip_dir]
     name = user_data["Document Name"]
-    model = InvestorKyc.find_by(investor_id: investor&.id, PAN: user_data["Pan"]) if user_data["Document Type"] == "KYC"
+    model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"]) if user_data["Document Type"] == "KYC"
     send_email = user_data["Send Email"] == "Yes"
 
     file_path = find_case_insensitive_file(dir, user_data["File Name"])
 
-    if investor && model && File.exist?(file_path)
+    if model && File.exist?(file_path)
       if Document.exists?(owner: model, entity_id: model.entity_id, name: name)
         [false, "#{name} already present"]
       else
@@ -62,14 +60,15 @@ class ImportKycDocs < ImportUtil
         )
 
         doc.file = File.open(file_path, "rb")
-        saved = doc.save
-        [saved, saved ? "Success" : doc.errors.full_messages]
+        doc.save!
+        Rails.logger.debug { "Saved document #{doc.name} for KYC #{model.full_name}" }
+        [true, "Success"]
       end
-    elsif investor.nil?
-      [false, "Investor not found"]
     elsif model.nil?
+      Rails.logger.debug { "KYC not found for #{user_data['Investing Entity']} with PAN #{user_data['Pan/Tax Id']}" }
       [false, "KYC not found"]
     else
+      Rails.logger.debug { "File not found: #{user_data['File Name']} in zip" }
       [false, "File name #{user_data['File Name']} not found in zip, please include this file and upload."]
     end
   end
