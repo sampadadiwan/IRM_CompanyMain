@@ -105,7 +105,7 @@ class AccountEntriesController < ApplicationController
     params[:q] ||= {}
 
     # Force reporting_date filter for perf if user didn't constrain reporting_date
-    params[:q][:reporting_date_gt] = l(Time.zone.today.beginning_of_quarter) unless ransack_has_attr?(params[:q], 'reporting_date')
+    params[:q][:reporting_date_gt] = l(Time.zone.today.beginning_of_year) unless ransack_has_attr?(params[:q], 'reporting_date')
 
     @q = AccountEntry.ransack(params[:q])
 
