@@ -17,6 +17,7 @@
 .DS_Store
 DS_Store
 mcp.json
+.env.secrets
 
 /.aider.tags.cache.v3
 .aider*
