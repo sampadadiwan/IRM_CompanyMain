@@ -14,26 +14,14 @@ namespace :packer do
 
   # Helper method to set common environment variables for Packer commands
   def set_packer_env_vars(env, env_variant)
-    # Attempt to load AWS credentials from Rails credentials
-    aws_access_key_id = Rails.application.credentials[:AWS_ACCESS_KEY_ID]
-    aws_secret_access_key = Rails.application.credentials[:AWS_SECRET_ACCESS_KEY]
-
+    # Fallback to environment variables if not found in credentials
+    aws_access_key_id = ENV['AWS_ACCESS_KEY_ID']
+    aws_secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
     if aws_access_key_id && aws_secret_access_key
-      puts "AWS credentials loaded from Rails credentials."
+      puts "AWS credentials loaded from environment variables."
     else
-      puts "Warning: AWS credentials (aws_access_key_id or aws_secret_access_key) not found in Rails credentials."
-      # Fallback to environment variables if not found in credentials
-      aws_access_key_id = ENV['AWS_ACCESS_KEY_ID']
-      aws_secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
-      if aws_access_key_id && aws_secret_access_key
-        puts "AWS credentials loaded from environment variables."
-      else
-        fail "Error: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are not set in Rails credentials or environment variables."
-      end
+      fail "Error: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are not set in environment variables."
     end
-
-    ENV['AWS_ACCESS_KEY_ID'] = aws_access_key_id
-    ENV['AWS_SECRET_ACCESS_KEY'] = aws_secret_access_key
 
     common_vars = {}
     # Set AWS_REGION based on env_variant

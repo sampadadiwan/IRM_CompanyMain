@@ -1,3 +1,11 @@
+V9.1.39
+#####################################
+6ec1d4de8 CDP xls download now has custom fields, fixed bug
+a1ba2b8f0 Import kyc docs now uses Investing Entity and Pan/Tax Id
+204d41f45 Added status to support_client_mappings index
+bc9d0d522 Account entry filter now defaults to start of year for reporting date
+34173a7f0 Added agent charts back to portco dashboar
+
 V9.1.38
 #####################################
 1c726b298 Added better editing of the portfolio report extract

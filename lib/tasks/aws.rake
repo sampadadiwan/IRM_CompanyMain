@@ -111,11 +111,11 @@ namespace :aws do
                     Rails.application.credentials
                   end
 
-    puts "🔑 Configuring AWS SDK for region #{ENV['AWS_REGION']}"
+    puts "🔑 Configuring AWS SDK for region #{ENV['AWS_REGION']}, using ENV for AWS keys"
     Aws.config.update({
       region: ENV["AWS_REGION"],
-      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
-      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
+      access_key_id: ENV["AWS_ACCESS_KEY_ID"],
+      secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
     })
   end
 

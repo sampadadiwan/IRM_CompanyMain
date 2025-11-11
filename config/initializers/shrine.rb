@@ -7,6 +7,7 @@ case Rails.configuration.upload_server
 when :s3, :s3_multipart
   require "shrine/storage/s3"
 
+  # Note AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will no longer be set, the EC2 instance will use IAM roles for this.
   s3_options = {
     bucket: ENV.fetch('AWS_S3_BUCKET', nil).to_s, # required
     region: ENV.fetch('AWS_S3_REGION', nil).to_s, # required

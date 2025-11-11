@@ -1,6 +1,6 @@
 class S3CheckJob < ApplicationJob
   def perform
-    # Configure AWS credentials and regions
+    # Note AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will no longer be set, the EC2 instance will use IAM roles for this.
     client = Aws::S3::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],

@@ -233,6 +233,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   def ec2
+    # Note AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY will no longer be set, the EC2 instance will use IAM roles for this.
     @ec2 ||= Aws::EC2::Client.new(
       access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
