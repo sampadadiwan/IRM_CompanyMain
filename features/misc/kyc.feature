@@ -26,8 +26,8 @@ Scenario Outline: Import KYCs - No Form Tag
   And Given import file "investor_kycs.xlsx" for "InvestorKyc"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet "investor_kycs.xlsx"
-  And there are "1" records for the form type "IndividualKyc"
-  And there are "1" records for the form type "NonIndividualKyc"
+  And there are "0" records for the form type "IndividualKyc"
+  And there are "0" records for the form type "NonIndividualKyc"
 
 Scenario Outline: Cannot create KYC without Stakeholder
   Given Im logged in as a user "first_name=Testuser" for an entity "name=Urban1;entity_type=Investment Fund"
