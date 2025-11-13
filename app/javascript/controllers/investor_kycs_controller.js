@@ -15,6 +15,8 @@ export default class extends ServerDatatableController {
   }
 
   initializeSelect2() {
+
+    if(!this.hasSelectTarget) return;
     const el = this.selectTarget
 
     // Listen for the internal state change and re-dispatch a native `change`
@@ -32,14 +34,14 @@ export default class extends ServerDatatableController {
     console.log(href.toString());
 
     window.location.href = href.toString();
-  } 
+  }
 
   investor_selected(event) {
-    // Selec the display value not the id 
+    // Selec the display value not the id
     let selectedOption = event.target.options[event.target.selectedIndex];
     console.log("selectedOption", selectedOption);
     // Set the full name input field with the selected option's text, only if the kyc type is individual
     $("#individual_kyc_full_name").val(selectedOption.text);
   }
-  
+
 }

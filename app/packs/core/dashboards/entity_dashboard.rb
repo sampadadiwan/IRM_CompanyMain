@@ -20,6 +20,7 @@ class EntityDashboard < Administrate::BaseDashboard
     pan: Field::String,
     primary_email: Field::String,
     sub_domain: Field::String,
+    domain: Field::String,
     url: Field::String,
     category: Field::String,
     created_at: Field::DateTime,
@@ -35,7 +36,8 @@ class EntityDashboard < Administrate::BaseDashboard
     instrument_types: Field::String,
     permissions: ActiveFlagField,
     customization_flags: ActiveFlagField,
-    support_agents: ActiveFlagField
+    support_agents: ActiveFlagField,
+    white_label: Field::BooleanEmoji
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -60,6 +62,8 @@ class EntityDashboard < Administrate::BaseDashboard
     primary_email
     parent_entity
     sub_domain
+    domain
+    white_label
     url
     category
     permissions
@@ -89,6 +93,8 @@ class EntityDashboard < Administrate::BaseDashboard
     primary_email
     parent_entity
     sub_domain
+    domain
+    white_label
     url
     currency
     tracking_currency

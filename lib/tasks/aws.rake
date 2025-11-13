@@ -86,6 +86,14 @@ namespace :aws do
   end
 
   task :environment, [:env_name] do |t, args|
+
+    unless ENV["AWS_ACCESS_KEY_ID"].present? && ENV["AWS_SECRET_ACCESS_KEY"].present?
+      puts "################################################################################"
+      puts "⚠️  AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY not set in environment variables."
+      puts "################################################################################"
+      raise "⚠️  AWS keys must be set in environment variables"
+    end
+
     env_name = args[:env_name]
 
     if env_name

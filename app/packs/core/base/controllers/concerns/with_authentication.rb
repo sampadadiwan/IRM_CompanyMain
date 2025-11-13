@@ -89,15 +89,26 @@ module WithAuthentication
   def set_current_entity
     @current_entity = nil
 
-    # Check if subdomain is present in the request
-    @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first if request.subdomain.present?
+    Rails.logger.debug { "domain = #{request.domain}, sub_domain = #{request.subdomain}" }
+    # Check is we are on caphive domain
+    if request.domain == ENV["BASE_DOMAIN"]
+      our_domain = true
 
-    # Check if subdomain parameter is present
-    @current_entity = Entity.where(sub_domain: params[:sub_domain]).load_async.first if params[:sub_domain].present?
+      if %w[app dev].exclude?(request.subdomain) && request.subdomain.present?
+        # Check if subdomain is present in the request and is not app or dev the default ones
+        @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first
+      end
+      # Check if subdomain parameter is present, sometimes this is sent from an email link
+      @current_entity = Entity.where(sub_domain: params[:sub_domain].strip).load_async.first if params[:sub_domain].present?
+    else
+      our_domain = false
+      # This is the case where a tenant has mapped thier own domain to their microsite. Ex app.tenant1.com -> tenant1.caphive.com
+      @current_entity = Entity.where(domain: request.domain).load_async.first
+    end
 
-    # Check if the current entity exists and redirect accordingly
-    if @current_entity.present? && (request.subdomain.blank? || %w[app dev].include?(request.subdomain))
-      # Redirect to the path with subdomain in the parameter
+    # Check if we are on our domain and  current entity exists and we have a valid tenant_sub_domain, the redirect to the microsite of the tenant accordingly
+    if our_domain && @current_entity.present? && @current_entity.sub_domain.present? && request.subdomain.blank?
+      # Redirect to the path with tenant_sub_domain in the parameter
       redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('BASE_DOMAIN', nil)}#{request.path}?#{request.query_string}", allow_other_host: true
     end
   end

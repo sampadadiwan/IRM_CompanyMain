@@ -1,3 +1,8 @@
+V9.1.40
+#####################################
+IAM role now used for S3 and Ec2 access
+
+
 V9.1.39
 #####################################
 6ec1d4de8 CDP xls download now has custom fields, fixed bug

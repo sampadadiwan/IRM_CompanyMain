@@ -1,6 +1,7 @@
 class InvestorKycAction < Trailblazer::Operation
   def save(ctx, investor_kyc:, **)
-    validate = ctx[:investor_user]
+    # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
+    validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
     # If the KYC is verified, then its also completed by the investor
     investor_kyc.completed_by_investor = investor_kyc.verified if investor_kyc.verified
     investor_kyc.save(validate:)

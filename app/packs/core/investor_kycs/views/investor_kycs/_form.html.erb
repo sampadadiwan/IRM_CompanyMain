@@ -28,7 +28,7 @@
 
 <% is_investor = current_user.curr_role == "investor"%>
 
-<%= form_with(model: investor_kyc, validate: is_investor, class: "wizard_form row justify-content-md-center") do |form| %>
+<%= form_with(model: investor_kyc, validate: is_investor, class: "wizard_form row justify-content-md-center", data: { controller: "interim-save" }) do |form| %>
   <% if investor_kyc.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(investor_kyc.errors.count, "error") %> prohibited this investor_kyc from being saved:</h2>
@@ -129,6 +129,11 @@
             <%= custom_form_fields(investor_kyc, form, step: :one, required: is_investor) %>
 
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+            <!-- Interim submit: bypass CSV on the client -->
+            <%= form.button "Save Draft",
+              type: "button",
+              class: "btn btn-outline-secondary btn-lg",
+              data: { action: "click->interim-save#interim" } if is_investor %>
 
         </div>
       </div>
@@ -217,6 +222,11 @@
 
           <div class="form-group">
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+            <!-- Interim submit: bypass CSV on the client -->
+            <%= form.button "Save Draft",
+              type: "button",
+              class: "btn btn-outline-secondary btn-lg",
+              data: { action: "click->interim-save#interim" } if is_investor%>
           </div>
         </div>
       </div>

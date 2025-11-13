@@ -85,10 +85,6 @@ resources :kyc_datas do
   get 'compare_ckyc_kra', on: :collection
 end
 
-resources :video_kycs do
-  get 'search', on: :collection
-end
-
 resources :payments
 resources :nudges
 resources :import_uploads do

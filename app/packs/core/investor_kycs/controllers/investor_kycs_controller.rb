@@ -124,10 +124,12 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
     investor_user = current_user.curr_role_investor?
+    # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
+    validate = params[:validate].present? ? params[:validate] != "false" : investor_user
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, validate:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
@@ -357,10 +359,13 @@ class InvestorKycsController < ApplicationController
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
     investor_user = current_user.curr_role_investor?
+    # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
+    validate = params[:validate].present? ? params[:validate] != "false" : investor_user
+
     @investor_kyc.assign_attributes(investor_kyc_params)
     @investor_kyc.documents.each(&:validate)
     respond_to do |format|
-      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:, validate:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
