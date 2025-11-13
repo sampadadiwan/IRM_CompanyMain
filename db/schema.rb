@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_140928) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_105557) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -2195,7 +2195,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_140928) do
     t.boolean "send_kyc_form_to_user", default: false
     t.text "notification_msg"
     t.string "bank_name", limit: 100
-    t.string "bank_branch", limit: 40
+    t.string "bank_branch"
     t.string "bank_account_type", limit: 40
     t.string "type", limit: 20
     t.json "json_fields"
