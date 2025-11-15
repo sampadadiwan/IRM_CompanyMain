@@ -63,7 +63,7 @@ class ApplicationMailer < ActionMailer::Base
 
   def setup_cc
     @cc = @entity.entity_setting.cc
-    # Sometimes we have an ovveride for the cc field in the investor access
+    # Sometimes we have an override for the cc field in the investor access
     investor_cc = @entity.investor_accesses.where(email: @user.email, investor_id: params[:investor_id]).first&.cc if @user && params[:investor_id].present?
     if @user && (@cc.nil? || @cc.blank?) && investor_cc.present?
       @cc = investor_cc
