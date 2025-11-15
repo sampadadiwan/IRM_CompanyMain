@@ -1522,9 +1522,13 @@ end
 Then('the kycs users should receive the kyc reminder email') do
   InvestorKyc.where(verified: false).each do |kyc|
     kyc.investor.investor_accesses.approved.each do |ia|
-      puts "Checking email for #{ia.email}"
+      puts "Checking email for #{ia.email} and cc #{ia.cc}"
       open_email(ia.email)
       expect(current_email.subject).to include "Reminder to update KYC: #{kyc.entity.name}"
+      if ia.cc.present?
+        puts "Checking CC email for #{ia.cc}"
+        expect(current_email.cc).to include ia.cc
+      end
     end
   end
 end
