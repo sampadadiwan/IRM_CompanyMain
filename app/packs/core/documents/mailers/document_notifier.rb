@@ -8,10 +8,12 @@ class DocumentNotifier < BaseNotifier
   end
 
   def email_data(notification)
-    fund_id = record.owner.fund_id if record.owner.respond_to?(:fund_id)
-    fund_id ||= record.fund_id if record.respond_to?(:fund_id)
+    if record.owner
+      fund_id = record.owner.fund_id if record.owner.respond_to?(:fund_id)
+      investor_id = record.owner.respond_to?(:investor_id) ? record.owner.investor_id : nil
+    end
 
-    investor_id = record.owner.respond_to?(:investor_id) ? record.owner.investor_id : nil
+    fund_id ||= record.fund_id if record.respond_to?(:fund_id)
 
     {
       notification_id: notification.id,
