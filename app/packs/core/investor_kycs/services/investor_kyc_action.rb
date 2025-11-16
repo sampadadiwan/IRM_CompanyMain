@@ -54,7 +54,7 @@ class InvestorKycAction < Trailblazer::Operation
   def updated_notification(_ctx, investor_kyc:, investor_user:, **)
     # reload the kyc in case it was changed from individual to non individual or visa versa
     investor_kyc = InvestorKyc.find(investor_kyc.id)
-    investor_kyc.updated_notification if investor_user
+    investor_kyc.updated_notification if investor_user && ctx[:validate]
     true
   end
 end
