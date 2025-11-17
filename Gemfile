@@ -72,7 +72,7 @@ gem "aws-sdk-s3", require: false
 gem 'chewy'
 
 # gem 'kaminari'
-gem "pagy"
+gem "pagy", "~> 9.4"
 # gem 'paper_trail'
 
 # Charting gems
@@ -133,7 +133,7 @@ gem 'rack-attack'
 
 # for making external API calls
 gem 'httparty'
-gem 'rubyzip'
+gem 'rubyzip', "2.4.1"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
@@ -152,7 +152,7 @@ gem 'net-scp'
 gem 'net-smtp'
 gem 'net-ssh'
 gem 'public_activity'
-gem 'rubyXL', git: "https://github.com/weshatheleopard/rubyXL.git"
+gem 'rubyXL', "3.4.33"
 
 # gem "strong_migrations"
 

@@ -1,3 +1,12 @@
+V9.1.41
+#####################################
+24b2390b2 No email sent for save draft in KYC
+8f571ac8f Nil check for owner in DocumentNotifier
+f8013b362 Added test for cc check for kyc emails
+7bb8f8d56 Added investor_id to DocumentNotifier for cc notifications
+42ea3d741 Removed 40 character limit from bank_branch (#1089)
+eba760d07 Kyc interim save (#1088)
+
 V9.1.40
 #####################################
 IAM role now used for S3 and Ec2 access

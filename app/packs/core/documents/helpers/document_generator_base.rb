@@ -2,7 +2,9 @@ module DocumentGeneratorBase
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
   def convert(template, context, file_name, to_pdf: true)
     # Mail Merge
-    template.render_to_file File.expand_path("#{file_name}.docx"), context
+    file_path = File.expand_path("#{file_name}.docx")
+    Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
+    template.render_to_file(file_path, context)
     if to_pdf
       # Convert to PDF
       Libreconv.convert("#{file_name}.docx", "#{file_name}.pdf")
