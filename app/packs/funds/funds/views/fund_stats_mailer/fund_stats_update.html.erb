@@ -1,0 +1,182 @@
+<%
+  show_totals = @support_agent.json_fields["show_totals"] == "Yes"
+  period = @ctx[:period]
+%>
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+
+  </head>
+  <body>
+    <div class="container">
+      <h1>Fund Stats Update for <%= @support_agent.entity.name %></h1>
+      <p>
+        Here are the latest stats for the period ending <strong><%= @ctx[:effective_date] %></strong>.
+      </p>
+
+      <h2>Stakeholder Summary</h2>
+      <table>
+        <tr>
+          <th>Metric</th>
+          <th>Count</th>
+        </tr>
+        <tr>
+          <td>Stakeholders in the last <%= period %></td>
+          <td><%= @ctx[:stakeholder_summary][:period_stakeholders] %></td>
+        </tr>
+        <tr>
+          <td>LPs in the last <%= period %></td>
+          <td><%= @ctx[:stakeholder_summary][:period_lps] %></td>
+        </tr>
+        <tr>
+          <td>Portfolio Companies in the last <%= period %></td>
+          <td><%= @ctx[:stakeholder_summary][:period_portfolio_companies] %></td>
+        </tr>
+        <% if show_totals %>
+          <tr>
+            <td><strong>Total Stakeholders</strong></td>
+            <td><strong><%= @ctx[:stakeholder_summary][:total_stakeholders] %></strong></td>
+          </tr>
+          <tr>
+            <td>Total LPs</td>
+            <td><%= @ctx[:stakeholder_summary][:total_lps] %></td>
+          </tr>
+          <tr>
+            <td>Total Portfolio Companies</td>
+            <td><%= @ctx[:stakeholder_summary][:total_portfolio_companies] %></td>
+          </tr>
+        <% end %>
+      </table>
+
+      <h2>KYC Summary</h2>
+      <table>
+        <tr>
+          <th>Metric</th>
+          <th>Count</th>
+        </tr>
+        <tr>
+          <td>KYC Records in the last <%= period %></td>
+          <td><%= @ctx[:kyc_summary][:period_count] %></td>
+        </tr>
+        <% if show_totals %>
+          <tr>
+            <td><strong>Total KYC Records</strong></td>
+            <td><strong><%= @ctx[:kyc_summary][:overall_count] %></strong></td>
+          </tr>
+        <% end %>
+      </table>
+
+      <h2>Generated Document Summary</h2>
+      <table>
+        <tr>
+          <th>Metric</th>
+          <th>Count</th>
+        </tr>
+        <tr>
+          <td>Generated Documents in the last <%= period %></td>
+          <td><%= @ctx[:generated_document_summary][:period_count] %></td>
+        </tr>
+        <% if show_totals %>
+          <tr>
+            <td><strong>Total Generated Documents</strong></td>
+            <td><strong><%= @ctx[:generated_document_summary][:overall_count] %></strong></td>
+          </tr>
+        <% end %>
+      </table>
+
+
+
+      <% @ctx[:funds].each do |fund| %>
+        <h2>Fund: <%= fund.name %></h2>
+
+        <h4>Commitment Summary</h4>
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+          <tr>
+            <td>Commitments in the last <%= period %></td>
+            <td><%= @ctx[fund.name][:commitment_summary][:period_count] %></td>
+          </tr>
+          <tr>
+            <td>Commitment Amount in the last <%= period %></td>
+            <td><%= money_to_currency(@ctx[fund.name][:commitment_summary][:period_total_amount]) %></td>
+          </tr>
+          <% if show_totals %>
+            <tr>
+              <td><strong>Total Commitments</strong></td>
+              <td><strong><%= @ctx[fund.name][:commitment_summary][:overall_count] %></strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total Commitment Amount</strong></td>
+              <td><strong><%= money_to_currency(@ctx[fund.name][:commitment_summary][:overall_total_amount]) %></strong></td>
+            </tr>
+          <% end %>
+        </table>
+
+        <h4>Call Summary</h4>
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+          <tr>
+            <td>Calls in the last <%= period %></td>
+            <td><%= @ctx[fund.name][:call_summary][:period_count] %></td>
+          </tr>
+          <tr>
+            <td>Collected Amount in the last <%= period %></td>
+            <td><%= money_to_currency(@ctx[fund.name][:call_summary][:period_collected_amount]) %></td>
+          </tr>
+          <% if show_totals %>
+            <tr>
+              <td><strong>Total Calls</strong></td>
+              <td><strong><%= @ctx[fund.name][:call_summary][:overall_count] %></strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total Collected Amount</strong></td>
+              <td><strong><%= money_to_currency(@ctx[fund.name][:call_summary][:overall_collected_amount]) %></strong></td>
+            </tr>
+          <% end %>
+        </table>
+
+        <h4>Investment Summary</h4>
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+          <tr>
+            <td>Investments in the last <%= period %></td>
+            <td><%= @ctx[fund.name][:investment_summary][:period_count] %></td>
+          </tr>
+          <tr>
+            <td>Investment Amount in the last <%= period %></td>
+            <td><%= money_to_currency(@ctx[fund.name][:investment_summary][:period_total_amount]) %></td>
+          </tr>
+          <tr>
+            <td>FMV Amount in the last <%= period %></td>
+            <td><%= money_to_currency(@ctx[fund.name][:investment_summary][:period_fmv_amount]) %></td>
+          </tr>
+          <% if show_totals %>
+            <tr>
+              <td><strong>Total Investments</strong></td>
+              <td><strong><%= @ctx[fund.name][:investment_summary][:overall_count] %></strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total Investment Amount</strong></td>
+              <td><strong><%= money_to_currency(@ctx[fund.name][:investment_summary][:overall_total_amount]) %></strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total FMV Amount</strong></td>
+              <td><strong><%= money_to_currency(@ctx[fund.name][:investment_summary][:overall_fmv_amount]) %></strong></td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+    </div>
+  </body>
+</html>

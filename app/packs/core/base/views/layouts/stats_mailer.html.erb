@@ -1,0 +1,139 @@
+<% @current_entity ||= nil %>
+
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title><%= @current_entity ? @current_entity.name : "CapHive" %></title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      h1, h2, h3, h4 {
+        color: #333333;
+      }
+      h1 {
+        font-size: 24px;
+        border-bottom: 2px solid #eeeeee;
+        padding-bottom: 10px;
+        color: #005a9c;
+      }
+      h2 {
+        font-size: 20px;
+        color: #007bff;
+        margin-top: 30px;
+        border-bottom: 1px solid #eeeeee;
+        padding-bottom: 5px;
+      }
+      h3 {
+        font-size: 18px;
+        color: #495057;
+        margin-top: 25px;
+      }
+      h4 {
+        font-size: 16px;
+        color: #6c757d;
+        margin-top: 20px;
+      }
+      p {
+        font-size: 16px;
+        line-height: 1.5;
+        color: #666666;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #dddddd;
+      }
+      th {
+        background-color: #f7f7f7;
+        color: #333333;
+        font-weight: bold;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+      }
+    </style>
+  </head>
+  <body class="">
+    <span class="preheader"></span>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body">
+      <tr>
+        <td>&nbsp;</td>
+        <td class="container">
+          <div class="content">
+
+            <!-- START HEADER -->
+            <div class="footer">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="content-block">
+                    <span class="title apple-link"></span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <!-- END HEADER -->
+
+
+            <!-- START CENTERED WHITE CONTAINER -->
+            <table role="presentation" class="main">
+
+              <!-- START MAIN CONTENT AREA -->
+              <tr>
+                <td class="wrapper">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <p><%= yield %></p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+            <!-- END MAIN CONTENT AREA -->
+            </table>
+            <!-- END CENTERED WHITE CONTAINER -->
+
+            <!-- START FOOTER -->
+            <div class="footer">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="content-block">
+                    <% if @entity.present? && @entity.white_label %>
+                      <%= @entity.name %>
+                    <% else %>
+                      Powered By CapHive
+                    <% end %>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <!-- END FOOTER -->
+
+          </div>
+        </td>
+        <td>&nbsp;</td>
+      </tr>
+    </table>
+  </body>
+</html>

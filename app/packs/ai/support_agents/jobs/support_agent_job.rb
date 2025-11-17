@@ -17,7 +17,7 @@ class SupportAgentJob < ApplicationJob
       errors = []
       targets.each do |target|
         # Dynamically call the agent's call method with the appropriate parameters
-        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id)
+        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: support_agent.entity_id)
         send_notification("#{support_agent.agent_type} processed Target ID=#{target.id} successfully", user_id, "success")
       rescue StandardError => e
         error_msg = "#{support_agent.agent_type} error processing Target ID=#{target.id}: #{e.message}"
