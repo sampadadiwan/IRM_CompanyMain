@@ -39,6 +39,9 @@ module AccountEntryAllocation
           )
         end
 
+        # This is added here to refresh the computed fields after creating multiple account entries
+        fields = commitment_cache.computed_fields_cache(capital_commitment, start_date)
+
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
 
