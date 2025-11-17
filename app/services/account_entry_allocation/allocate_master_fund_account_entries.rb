@@ -73,11 +73,12 @@ module AccountEntryAllocation
 
       fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" }
+        commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         if grouped
           # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
           master_aggregate_entry = generate_account_entry_to_allocate(fund_formula, start_date, end_date)
-          commitment_cache.computed_fields_cache(capital_commitment, start_date)
+
           # We need to pass an account_entry into the CreateAccountEntry operation
           feeder_aggregate_entry = master_aggregate_entry
           feeder_aggregate_entry.fund_id = fund.id
@@ -118,6 +119,8 @@ module AccountEntryAllocation
             notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 500).zero? && (aidx + 1) > 500
           end
         end
+
+        commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end

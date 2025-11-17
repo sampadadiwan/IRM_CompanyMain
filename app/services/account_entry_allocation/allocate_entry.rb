@@ -33,6 +33,7 @@ module AccountEntryAllocation
         begin
           create_instance_variables(ctx)
           AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: parent, bdg: binding))
+          commitment_cache.computed_fields_cache(capital_commitment, start_date)
         rescue StandardError => e
           raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
         end

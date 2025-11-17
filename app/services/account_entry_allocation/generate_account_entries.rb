@@ -22,7 +22,7 @@ module AccountEntryAllocation
 
       fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
-        fields = commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         # Determine the list of account entry names to process
         # If `account_entry_names` is present, use it as-is
@@ -40,7 +40,7 @@ module AccountEntryAllocation
         end
 
         # This is added here to refresh the computed fields after creating multiple account entries
-        fields = commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end

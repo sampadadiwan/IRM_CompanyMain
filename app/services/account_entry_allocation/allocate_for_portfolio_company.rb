@@ -23,6 +23,7 @@ module AccountEntryAllocation
       fund           = ctx[:fund]
       bulk_records   = []
       allocation_run_id = ctx[:allocation_run_id]
+      commitment_cache  = ctx[:commitment_cache]
 
       # Find all portfolio companies related to this fund through portfolio investments
 
@@ -49,6 +50,7 @@ module AccountEntryAllocation
 
         # Iterate through each capital commitment
         capital_commitments.each do |capital_commitment|
+          commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
           if account_entry_names.present?
             # If specific account entry names are provided,
             # build an account entry for each name (though `name` is not used in the method call)
@@ -60,6 +62,8 @@ module AccountEntryAllocation
             # If no specific names are provided, build a single account entry
             build_account_entry(portfolio_company, capital_commitment, binding, ctx, account_entry_name)
           end
+
+          commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
         end
       end
 
