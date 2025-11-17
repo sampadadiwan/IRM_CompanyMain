@@ -23,7 +23,7 @@ class UpdateSequences < Trailblazer::Operation
   end
 
   def broadcast_changes(_ctx, deal_activity:, **)
-    deal_activity.deal.kanban_board.broadcast_board_event if deal_activity.deal.kanban_board.present?
+    deal_activity.deal.kanban_board.presence&.broadcast_board_event
     true
   end
 end

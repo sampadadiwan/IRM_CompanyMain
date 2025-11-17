@@ -7,7 +7,7 @@ class AllocationRunsController < ApplicationController
     else
       flash[:alert] = "Failed to lock AllocationRun."
     end
-    redirect_back(fallback_location: allocate_form_fund_path(@allocation_run.fund))
+    redirect_back_or_to(allocate_form_fund_path(@allocation_run.fund))
   end
 
   # rubocop :disable Rails/SkipsModelValidations
@@ -19,7 +19,7 @@ class AllocationRunsController < ApplicationController
     else
       flash[:alert] = "Failed to unlock AllocationRun."
     end
-    redirect_back(fallback_location: allocate_form_fund_path(@allocation_run.fund))
+    redirect_back_or_to(allocate_form_fund_path(@allocation_run.fund))
   end
   # rubocop :enable Rails/SkipsModelValidations
 

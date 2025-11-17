@@ -68,7 +68,7 @@ class DealActivitiesController < ApplicationController
     @current_user = current_user
     respond_to do |format|
       if @deal_activity.save
-        @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
+        @deal_activity.deal.kanban_board.presence&.broadcast_board_event
         format.html do
           redirect_to deal_activity_url(@deal_activity), notice: "Deal activity was successfully created."
         end
@@ -91,7 +91,7 @@ class DealActivitiesController < ApplicationController
 
     respond_to do |format|
       if @deal_activity.update(deal_activity_params)
-        @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
+        @deal_activity.deal.kanban_board.presence&.broadcast_board_event
         format.html do
           redirect_url = params[:back_to].presence || deal_activity_url(@deal_activity)
           redirect_to redirect_url, notice: "Deal activity was successfully updated."
@@ -109,7 +109,7 @@ class DealActivitiesController < ApplicationController
       @deal_activity.set_list_position(params[:sequence].to_i + 1)
       @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
       params[:template] = true
-      @deal_activity.deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
+      @deal_activity.deal.kanban_board.presence&.broadcast_board_event
     end
     respond_to do |format|
       format.turbo_stream do

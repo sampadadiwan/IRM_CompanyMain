@@ -13,7 +13,7 @@ class GenerateDealActivitiesJob < ApplicationJob
         @deal_investor = DealInvestor.find(id)
         @deal_investor.create_activities
         @deal_investor.deal.broadcast_message("Deal steps were created, please refresh your page.")
-        @deal_investor.deal.kanban_board.broadcast_board_event if @deal_investor.deal.kanban_board.present?
+        @deal_investor.deal.kanban_board.presence&.broadcast_board_event
       end
     end
   end

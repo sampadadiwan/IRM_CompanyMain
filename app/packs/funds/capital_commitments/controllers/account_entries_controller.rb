@@ -69,7 +69,7 @@ class AccountEntriesController < ApplicationController
       @time_series_error << "Please select a reporting date."
     end
 
-    @time_series_error.join(" ") if @time_series_error.present?
+    @time_series_error.presence&.join(" ")
   end
 
   def sort_by_id_then_existing

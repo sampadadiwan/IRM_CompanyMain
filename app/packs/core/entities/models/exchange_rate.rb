@@ -78,7 +78,7 @@ class ExchangeRate < ApplicationRecord
       1
     else
       er = ExchangeRate.where(from:, to:, as_of: ..as_of, entity_id:).order(as_of: :desc).first
-      er.present? ? er.rate : nil
+      er.presence&.rate
     end
   end
 end

@@ -170,7 +170,7 @@ class FundsController < ApplicationController
         existing_allocation_run = AllocationRun.locked_and_overlapping(@fund.id, start_date, end_date)
         if existing_allocation_run
           flash[:alert] = "This AllocationRun already exists for the specified period and is locked. Start Date - #{existing_allocation_run.start_date.strftime('%d-%m-%Y')} and End Date - #{existing_allocation_run.end_date.strftime('%d-%m-%Y')}."
-          redirect_back(fallback_location: root_path) and return
+          redirect_back_or_to(root_path) and return
         end
       end
       template_name = template_id ? Document.find(template_id).name : nil
@@ -178,7 +178,7 @@ class FundsController < ApplicationController
     rescue StandardError => e
       Rails.logger.debug { "allocate: Errors #{e.message}" }
       Rails.logger.debug "allocate: Dates not sent properly"
-      redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
+      redirect_back_or_to(root_path, alert: "Please specify the start_date and end_date for allocation.")
       return
     end
 
@@ -186,7 +186,7 @@ class FundsController < ApplicationController
       AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, tag_list:, run_allocations:, explain:, user_id:, generate_soa:, template_id:, fund_ratios:, sample:, allocation_run_id: allocation_run.id)
       redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.")
     else
-      redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
+      redirect_back_or_to(root_path, alert: "Please specify the start_date and end_date for allocation.")
     end
   end
 
@@ -200,7 +200,7 @@ class FundsController < ApplicationController
       new_ff.save
     end
 
-    redirect_back(fallback_location: fund_path(@fund), notice: "Formulas copied successfully.")
+    redirect_back_or_to(fund_path(@fund), notice: "Formulas copied successfully.")
   end
 
   def generate_tracking_numbers

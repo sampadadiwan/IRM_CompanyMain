@@ -17,7 +17,7 @@ class DealActions < Trailblazer::Operation
   end
 
   def broadcast_update(_ctx, deal:, **)
-    deal.kanban_board.broadcast_board_event if deal.kanban_board.present?
+    deal.kanban_board.presence&.broadcast_board_event
     true
   end
 end

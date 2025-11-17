@@ -159,7 +159,7 @@ class CapitalRemittancesController < ApplicationController
     @ransack_table_header = RansackTableHeader.new(CapitalRemittance, default_columns_map: default_columns_map, current_user: current_user, records: [@capital_remittance], q: nil, turbo_frame: nil)
     notice = result.success? ? "Successfully verified." : "Failed to verify. #{@capital_remittance.errors}"
     respond_to do |format|
-      format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }
+      format.html { redirect_back_or_to capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }
       format.json { render :show, status: :ok, location: @capital_remittance }
       format.turbo_stream { render :verify }
     end
