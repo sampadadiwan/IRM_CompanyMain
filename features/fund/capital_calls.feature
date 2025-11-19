@@ -51,10 +51,10 @@ Scenario Outline: Create new capital call
   Then I should see the remittances
   And the capital call collected amount should be "<collected_amount>"
   And the remittance rollups should be correct
-  # Given each investor has a "verified" kyc linked to the commitment
-  # Given the fund has capital call template
-  # And when the capital call docs are generated
-  # Then the generated doc must be attached to the capital remittances
+  Given each investor has a "verified" kyc linked to the commitment
+  Given the fund has capital call template
+  And when the capital call docs are generated
+  Then the generated doc must be attached to the capital remittances
 
 
   Examples:

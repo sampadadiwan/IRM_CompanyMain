@@ -287,6 +287,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   def drawdown_cash_incl_curr_notice_investor
+    # take kyc id from capital remittance and sum using it
     money_sum(
       fund_as_of.capital_remittances
         .where(capital_commitment_id: @capital_commitment.id, remittance_date: ..@as_of_date),
@@ -301,6 +302,24 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
       fund_as_of.capital_remittances.sum(:computed_amount_cents)
     )
   end
+
+  def drawdown_cash_incl_curr_notice_kyc
+    # take kyc id from capital remittance and sum using it
+    money_sum(
+      fund_as_of.capital_remittances
+        .where(remittance_date: ..@as_of_date).joins(capital_commitment: :investor_kyc).where(investor_kycs: { id: @capital_commitment.investor_kyc_id }),
+      :computed_amount_cents
+    )
+  end
+  memoize :drawdown_cash_incl_curr_notice_kyc
+
+  def drawdown_cash_incl_curr_notice_kyc_percent
+    percentage(
+      drawdown_cash_incl_curr_notice_kyc.cents,
+      fund_as_of.capital_remittances.sum(:computed_amount_cents)
+    )
+  end
+  memoize :drawdown_cash_incl_curr_notice_kyc_percent
 
   # === Drawdown Fees ===
 
@@ -353,6 +372,22 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
     )
   end
 
+  def drawdown_fees_incl_curr_notice_kyc
+    money_sum(
+      fund_as_of.capital_remittances
+        .where(remittance_date: ..@as_of_date).joins(capital_commitment: :investor_kyc).where(investor_kycs: { id: @capital_commitment.investor_kyc_id }),
+      :capital_fee_cents
+    )
+  end
+  memoize :drawdown_fees_incl_curr_notice_kyc
+
+  def drawdown_fees_incl_curr_notice_kyc_percent
+    percentage(
+      drawdown_fees_incl_curr_notice_kyc.cents,
+      fund_as_of.capital_remittances.sum(:capital_fee_cents)
+    )
+  end
+
   # === Aggregate Drawdowns ===
   # Aggregate Drawdown is the sum of drawdown cash and drawdown fees
 
@@ -391,6 +426,22 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def agg_drawdown_incl_curr_notice_investor_percent
     percentage(
       agg_drawdown_incl_curr_notice_investor.cents,
+      fund_as_of.capital_remittances.sum(:call_amount_cents)
+    )
+  end
+
+  def agg_drawdown_incl_curr_notice_kyc
+    money_sum(
+      fund_as_of.capital_remittances
+        .where(remittance_date: ..@as_of_date).joins(capital_commitment: :investor_kyc).where(investor_kycs: { id: @capital_commitment.investor_kyc_id }),
+      :call_amount_cents
+    )
+  end
+  memoize :agg_drawdown_incl_curr_notice_kyc
+
+  def agg_drawdown_incl_curr_notice_kyc_percent
+    percentage(
+      agg_drawdown_incl_curr_notice_kyc.cents,
       fund_as_of.capital_remittances.sum(:call_amount_cents)
     )
   end

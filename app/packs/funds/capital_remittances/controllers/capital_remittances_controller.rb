@@ -66,7 +66,8 @@ class CapitalRemittancesController < ApplicationController
   def show; end
 
   def generate_docs
-    CapitalRemittanceDocJob.perform_later(@capital_remittance.capital_call_id, @capital_remittance.id, current_user.id)
+    call_notice_per_kyc = @capital_remittance.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
+    CapitalRemittanceDocJob.perform_later(@capital_remittance.capital_call_id, @capital_remittance.id, current_user.id, options: { call_notice_per_kyc: call_notice_per_kyc })
     redirect_to capital_remittance_path(@capital_remittance), notice: "Documentation generation started, please check back in a few mins."
   end
 

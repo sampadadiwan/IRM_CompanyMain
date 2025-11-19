@@ -20,10 +20,17 @@ class CapitalRemittanceDocGenerator
 
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
-      create_working_dir(capital_remittance)
-      generate(capital_remittance, tempfile.path)
-      upload(fund_doc_template, capital_remittance, user_id: user_id)
-      notify(fund_doc_template, capital_remittance, user_id) if user_id
+      # skip generation if skip_call_notice is set to yes in capital commitment custom field
+      if capital_remittance.capital_commitment.json_fields["skip_call_notice"].to_s.strip.downcase == "yes"
+        msg = "Skipping Document Generation for CapitalRemittance as skip_call_notice is set to Yes in the Commitment"
+        Rails.logger.info msg
+        raise msg
+      else
+        create_working_dir(capital_remittance)
+        generate(capital_remittance, tempfile.path, options)
+        upload(fund_doc_template, capital_remittance, user_id: user_id)
+        notify(fund_doc_template, capital_remittance, user_id) if user_id
+      end
     ensure
       cleanup
     end
@@ -32,7 +39,7 @@ class CapitalRemittanceDocGenerator
   private
 
   # Generate the full document using Sablon and save it to file
-  def generate(capital_remittance, template_path)
+  def generate(capital_remittance, template_path, options)
     template = Sablon.template(File.expand_path(template_path))
 
     # Get the fund state as of a specific date
@@ -41,7 +48,7 @@ class CapitalRemittanceDocGenerator
     fund_as_of_commitments_lp = fund_as_of.capital_commitments.lp(fund_as_of.id)
     fund_as_of_commitments_gp = fund_as_of.capital_commitments.gp(fund_as_of.id)
 
-    context = base_context(capital_remittance, fund_as_of)
+    context = base_context(capital_remittance, fund_as_of, options)
     context.merge!(remittance_context(capital_remittance, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
     context.merge!(distribution_context(capital_remittance, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
 
@@ -49,12 +56,12 @@ class CapitalRemittanceDocGenerator
   end
 
   # Core data required for template substitution
-  def base_context(capital_remittance, fund_as_of)
+  def base_context(capital_remittance, fund_as_of, options)
     capital_commitment = capital_remittance.capital_commitment
     capital_commitment.json_fields["remittance_date"] = capital_remittance.remittance_date
     fund_as_of.json_fields["capital_remittance"] = capital_remittance
 
-    {
+    context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_remittance.entity,
       fund: FundTemplateDecorator.decorate(fund_as_of),
@@ -70,6 +77,26 @@ class CapitalRemittanceDocGenerator
       # All Commitments as of the remittance date
       fund_as_of_commitments: TemplateDecorator.decorate(fund_as_of.capital_commitments)
     }
+
+    call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context) if options.present? && options[:call_notice_per_kyc]
+
+    context
+  end
+
+  def call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context)
+    # All remittances with the same kyc
+    kyc_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_commitment: { investor_kyc_id: capital_commitment.investor_kyc_id }, capital_call_id: capital_remittance.capital_call_id)
+    kyc_capital_fee = kyc_capital_remittances.sum(:capital_fee_cents)
+    kyc_other_fee = kyc_capital_remittances.sum(:other_fee_cents)
+    kyc_total_fee = kyc_capital_fee + kyc_other_fee
+
+    kyc_amounts = OpenStruct.new(capital_remittances: TemplateDecorator.decorate(kyc_capital_remittances),
+                                 call_amount: Money.new(kyc_capital_remittances.sum(&:call_amount_cents), fund_as_of.currency),
+                                 computed_amount: Money.new(kyc_capital_remittances.sum(&:computed_amount_cents), fund_as_of.currency),
+                                 capital_fee_amount: Money.new(kyc_capital_fee, fund_as_of.currency),
+                                 other_fee_amount: Money.new(kyc_other_fee, fund_as_of.currency),
+                                 total_fee_amount: Money.new(kyc_total_fee, fund_as_of.currency))
+    context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
   end
 
   # Add remittance breakdowns by LP/GP and current/prior to context

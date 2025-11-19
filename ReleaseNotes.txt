@@ -1,3 +1,11 @@
+V9.1.42
+#####################################
+70a9cc74a refresh the computed fields after creating multiple account entries
+2eaa001f2 Fixed not sending email on kyc save draft
+6d7fbd5ab Downgrade rubyzip for errors in doc gen
+095e7ce50 Rubocop cleanup
+
+
 V9.1.41
 #####################################
 24b2390b2 No email sent for save draft in KYC
