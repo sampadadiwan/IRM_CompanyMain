@@ -1146,7 +1146,9 @@ end
 
 Then('the generated doc must be attached to the capital remittances') do
   CapitalRemittance.all.each do |cc|
-    cc.documents.where(from_template_id: @call_template.id).count.should == 1
+    docs = cc.documents.where(from_template_id: @call_template.id)
+    docs.count.should == 1
+    puts "Checking documents for remittance #{cc.id}. Got #{docs.first.name}"
     visit(capital_remittance_path(cc))
     within("#remittance_details") do
       click_on("Documents")
