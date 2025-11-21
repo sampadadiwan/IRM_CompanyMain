@@ -232,3 +232,71 @@ Scenario Outline: Update Imported capital remittance payments
   Then the capital remittance payment amount is not recomputed
   When I edit the remittance payment with convert_to_fund_currency "true"
   Then the capital remittance payment amount is recomputed
+
+Scenario Outline: Call Notice generation and notification for all
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B, Series C, Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And The multiple commitments have the same investor kycs linked
+  And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "4" capital calls created
+  And the capital calls must have the data in the sheet
+  And the remittances are generated for the capital calls
+  And the capital commitments are updated with remittance numbers
+  Given the fund has capital call template
+  Given the remittances have proper notification users
+  Then call notice is generated for the remittances
+  And remittance notice must be generated for each remittance
+  Given I approve the capital call
+  # Normal scenario - call notice is generated for each remittance for its own data
+  Then the notification must be sent to the investors where the call notice was generated
+
+Scenario Outline: Call Notice generation and notification for all at kyc level
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B, Series C, Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And The multiple commitments have the same investor kycs linked
+  And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "4" capital calls created
+  And the capital calls must have the data in the sheet
+  And the remittances are generated for the capital calls
+  And the capital commitments are updated with remittance numbers
+  Given the fund has capital call template
+  Given the remittances have proper notification users
+  Given I update the fund custom fields "call_notice_on:kyc"
+  Then call notice is generated for the remittances
+
+  # Now notice is generated at the kyc level but we havent set skip call notice in the commitment so it will be generated for all remittances but where the kyc has multiple remittances it will have cumulated data
+  And remittance notice must be generated for each remittance
+  Given I approve the capital call
+  Then the notification must be sent to the investors where the call notice was generated
+
+Scenario Outline: Call Notice generation and notification for only the latest ones at kyc level
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B, Series C, Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And The multiple commitments have the same investor kycs linked
+  And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "4" capital calls created
+  And the capital calls must have the data in the sheet
+  And the remittances are generated for the capital calls
+  And the capital commitments are updated with remittance numbers
+  Given the fund has capital call template
+  Given the remittances have proper notification users
+  Given I update the fund custom fields "call_notice_on:kyc"
+  Given I update the remittances commitments custom fields with the same kyc and earlier remittance date "skip_call_notice:Yes"
+  Then call notice is generated for the remittances
+
+  # Now notice is generated at the kyc level but we have set skip call notice in the commitment that are from the same kyc and earlier i.e. only the latest remittance for the kyc should have notice generated
+  And remittance notice must be generated for the latest remittance for each kyc
+  Given I approve the capital call
+  Then the notification must be sent to the investors where the call notice was generated

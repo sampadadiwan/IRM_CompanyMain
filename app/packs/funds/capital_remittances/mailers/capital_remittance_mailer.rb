@@ -11,19 +11,6 @@ class CapitalRemittanceMailer < ApplicationMailer
     @additional_ccs = @capital_remittance.capital_commitment.cc
   end
 
-  def attach_all_files
-    # Check for attachments
-    @capital_remittance.documents.generated.approved.each do |doc|
-      # This password protects the file if required and attachs it
-      pw_protect_attach_file(doc, @custom_notification)
-    end
-
-    @capital_remittance.documents.not_generated.each do |doc|
-      # This attaches the file which is not generated
-      attach_doc(doc)
-    end
-  end
-
   def notify_capital_remittance
     subject = "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
 
@@ -38,5 +25,20 @@ class CapitalRemittanceMailer < ApplicationMailer
     attach_all_files
 
     send_mail(subject:)
+  end
+
+  private
+
+  def attach_all_files
+    # Check for attachments
+    @capital_remittance.documents.generated.approved.each do |doc|
+      # This password protects the file if required and attachs it
+      pw_protect_attach_file(doc, @custom_notification)
+    end
+
+    @capital_remittance.documents.not_generated.each do |doc|
+      # This attaches the file which is not generated
+      attach_doc(doc)
+    end
   end
 end

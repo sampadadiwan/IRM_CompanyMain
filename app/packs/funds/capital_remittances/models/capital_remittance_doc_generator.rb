@@ -21,14 +21,14 @@ class CapitalRemittanceDocGenerator
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
       # skip generation if skip_call_notice is set to yes in capital commitment custom field
-      if capital_remittance.capital_commitment.json_fields["skip_call_notice"].to_s.strip.downcase == "yes"
+      if capital_remittance.capital_commitment.skip_call_notice?
         msg = "Skipping Document Generation for CapitalRemittance as skip_call_notice is set to Yes in the Commitment"
         Rails.logger.info msg
         raise msg
       else
         create_working_dir(capital_remittance)
         generate(capital_remittance, tempfile.path, options)
-        upload(fund_doc_template, capital_remittance, user_id: user_id)
+        upload(fund_doc_template, capital_remittance, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_remittance), user_id: user_id)
         notify(fund_doc_template, capital_remittance, user_id) if user_id
       end
     ensure
@@ -37,6 +37,10 @@ class CapitalRemittanceDocGenerator
   end
 
   private
+
+  def final_file_name(fund_doc_template_name, capital_remittance)
+    "#{fund_doc_template_name} - #{capital_remittance.investor_kyc} - #{capital_remittance.folio_id}"
+  end
 
   # Generate the full document using Sablon and save it to file
   def generate(capital_remittance, template_path, options)

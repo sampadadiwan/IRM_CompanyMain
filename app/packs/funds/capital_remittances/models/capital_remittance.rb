@@ -106,7 +106,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def send_notification(reminder: false)
-    if capital_call.send_call_notice_flag && capital_call.approved
+    if capital_call.send_call_notice_flag && capital_call.approved && !capital_commitment.skip_call_notice? # skip sending notification if skip_call_notice is set to yes
       investor.notification_users(fund).each do |user|
         email_method = reminder ? :reminder_capital_remittance : :notify_capital_remittance
         CapitalRemittanceNotifier.with(record: self, entity_id:, email_method:).deliver_later(user)

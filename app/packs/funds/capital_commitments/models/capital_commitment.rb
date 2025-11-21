@@ -381,4 +381,8 @@ class CapitalCommitment < ApplicationRecord
     # Return both arrays as a tuple: [multipliers, amounts]
     [multipliers, amounts]
   end
+
+  def skip_call_notice?
+    json_fields["skip_call_notice"].to_s.strip.downcase == "yes"
+  end
 end

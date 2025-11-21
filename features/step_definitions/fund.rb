@@ -2627,3 +2627,176 @@ Given('the dashboard widgets must have the data in the sheet') do
 
   end
 end
+
+Given('The multiple commitments have the same investor kycs linked') do
+  investors = {}
+  @fund.capital_commitments.each do |cc|
+    p "Linking kyc for Commitment #{cc.id}"
+    investor = cc.investor
+    if investors.include?(investor.id)
+      kyc = InvestorKyc.find investors[investor.id]
+      puts "Reusing KYC #{kyc.id} for investor #{investor.id}"
+      cc.investor_kyc_id = kyc.id
+      cc.save!
+    else
+      kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, full_name: investor.investor_name)
+      kyc.save(validate: false)
+      puts "Creating new KYC #{kyc.id} for investor #{investor.id}"
+      investors[investor.id] = kyc.id
+      cc.investor_kyc_id = kyc.id
+      cc.save!
+    end
+  end
+end
+
+Then('call notice is generated for the remittances') do
+  @capital_call = @fund.capital_calls.first
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Generate Documents")
+  click_on("Proceed")
+  sleep(5) # Wait for the job to complete
+  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached")
+end
+
+Then('remittance notice must be generated for each remittance') do
+  @capital_call ||= @fund.capital_calls.first
+  call_template_name = @capital_call.fund.documents.where(owner_tag: "Call Template").last.name
+  @capital_call.capital_remittances.each do |cr|
+    cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+  end
+end
+
+Given('I approve the capital call') do
+  @user.add_role :approver
+  @user.save!
+  @capital_call.remittance_documents.update_all(approved: true)
+  @capital_call.update_columns(send_call_notice_flag: true, manual_generation: false)
+
+  visit(capital_call_path(@capital_call))
+  within "#capital_call_#{@capital_call.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Approve")
+  click_on("Proceed")
+
+end
+
+Given('the remittances have proper notification users') do
+  @capital_call ||= @fund.capital_calls.first
+  @capital_call.capital_remittances.each do |cr|
+    if cr.investor.notification_users(@fund).blank?
+      investor = cr.investor
+      user = FactoryBot.create(:user, entity: investor.investor_entity)
+      user.permissions.set(:enable_funds)
+      user.save!
+      user.entity.permissions.set(:enable_funds)
+      user.entity.save!
+      if @fund.access_rights.where(access_to_investor_id: cr.investor_id).blank?
+        AccessRight.create!(entity: @fund.entity, access_to_investor_id: cr.investor_id, metadata: "investor", access_type: "Fund", owner: @fund)
+      end
+      InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity, first_name: user.first_name, last_name: user.last_name, user: @user, email_enabled: true)
+      user.reload
+    end
+  end
+  @fund.reload
+end
+
+Then('the notification must be sent to the investors where the call notice was generated') do
+  @capital_call ||= @fund.capital_calls.first
+  puts "Total Notifications - #{ Noticed::Notification.count }"
+  call_template_name = @capital_call.fund.documents.where(owner_tag: "Call Template").last.name
+  @capital_call.capital_remittances.each do |cr|
+    if cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}")
+      cr.investor.notification_users(@fund).each do |nu|
+        current_email = nil
+        emails_sent_to(nu.email).each do |email|
+          puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+          current_email = email if email.subject.include?("#{cr.fund.name}: #{cr.capital_call.name}")
+        end
+        puts "Checking email to #{nu.email} for remittance #{cr.id}"
+        expect(current_email.body).to include "Please refer to the attached notice for further details or click on the link below"
+      end
+    else
+
+    end
+  end
+end
+
+Given('I update the fund custom fields {string}') do |custom_fields|
+  @fund ||= @capital_call.fund
+  custom_fields.split(",").each do |cf|
+    k, v = cf.split(":").map(&:strip)
+    @fund.json_fields[k] = v
+  end
+  @fund.save!
+end
+
+Given('I update the remittances commitments custom fields with the same kyc and earlier remittance date {string}') do |custom_fields|
+  @capital_call ||= @fund.capital_calls.first
+
+  # Load all remittances for the call, with their commitments + KYC,
+  # ordered so that within each KYC group, the latest remittance is last.
+  remittances = @capital_call.capital_remittances
+                             .joins(:capital_commitment)
+                             .includes(:capital_commitment)
+                             .where.not(capital_commitments: { investor_kyc_id: nil })
+                             .order(
+                               'capital_commitments.investor_kyc_id ASC',
+                               'capital_remittances.remittance_date ASC',
+                               'capital_remittances.id ASC'
+                             )
+
+  # Group by KYC (through the commitment)
+  remittances.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
+    # If only one remittance for that KYC, nothing to "earlier" update
+    next if group.size <= 1
+
+    # Take all except the latest (last in the sorted group)
+    group[0..-2].each do |cr|
+      puts "Updating commitment #{cr.capital_commitment.id} for remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}"
+      # Assuming key_values(model, attrs_string) assigns attributes from attrs
+      custom_fields.split(",").each do |cf|
+        k, v = cf.split(":").map(&:strip)
+        cr.capital_commitment.json_fields[k] = v
+      end
+      cr.capital_commitment.save!
+    end
+  end
+end
+
+
+Then('remittance notice must be generated for the latest remittance for each kyc') do
+  @capital_call ||= @fund.capital_calls.first
+
+  # Load all remittances for the call, with their commitments + KYC,
+  # ordered so that within each KYC group, the latest remittance is last.
+  remittances = @capital_call.capital_remittances
+                             .joins(:capital_commitment)
+                             .includes(:capital_commitment)
+                             .where.not(capital_commitments: { investor_kyc_id: nil })
+                             .order(
+                               'capital_commitments.investor_kyc_id ASC',
+                               'capital_remittances.remittance_date ASC',
+                               'capital_remittances.id ASC'
+                             )
+
+  # Group by KYC (through the commitment)
+  call_template_name = @capital_call.fund.documents.where(owner_tag: "Call Template").last.name
+  remittances.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
+    # If only one remittance for that KYC, nothing to "earlier" update
+    next if group.size <= 1
+
+    # Take all except the latest (last in the sorted group)
+    group[0..-2].each do |cr|
+      puts "Checking remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} is NOT generated"
+      cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == false
+    end
+    group.last.tap do |cr|
+      puts "Checking remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
+      cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+    end
+  end
+end
