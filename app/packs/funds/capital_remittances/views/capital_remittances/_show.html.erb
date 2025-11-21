@@ -31,7 +31,7 @@
           <td>
             <%= l capital_remittance.remittance_date %>
           </td>
-        </tr>    
+        </tr>
 
         <% if capital_remittance.payment_date %>
         <tr>
@@ -64,8 +64,8 @@
           <td>
             <%= link_to capital_remittance.folio_id, capital_remittance.capital_commitment %>
           </td>
-        </tr> 
-        
+        </tr>
+
         <tr>
           <td>
             Call Amount
@@ -75,7 +75,7 @@
           </td>
         </tr>
 
-        
+
 
         <% if capital_remittance.capital_fee_cents > 0 %>
         <tr>
@@ -83,7 +83,20 @@
             Capital Fees
           </td>
           <td>
-            <%= money_to_currency capital_remittance.capital_fee, params %>
+              <div class="money-wrapper">
+                <span><%= money_to_currency capital_remittance.capital_fee, params %></span>
+              </div>
+              <ul class="fees-list">
+              <% @capital_remittance.json_fields["capital_fees_audit"]&.each do |fee_array| %>
+                  <% fee_array.each do |fee| %>
+                    <li class="fee-item">
+                      <span class="fee-name"><%= fee[0] %></span>
+                      <span class="fee-description"><%= fee[1] %></span>
+                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                    </li>
+                  <% end %>
+                <% end %>
+              </ul>
           </td>
         </tr>
         <% end %>
@@ -107,7 +120,7 @@
                       <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
                     </li>
                   <% end %>
-                <% end %>                
+                <% end %>
               </ul>
             </td>
           </tr>
@@ -123,9 +136,9 @@
             </td>
           </tr>
 
-          
+
         <% end %>
-        
+
         <tr>
           <td>
             Collected Amount
@@ -156,7 +169,7 @@
 
         <% end %>
 
-        
+
         <tr>
           <td>
             Due Amount
@@ -202,7 +215,7 @@
         <% end %>
 
         <% if capital_remittance.fund.has_tracking_currency? %>
-          
+
           <tr>
             <td>
               Tracking Currency
@@ -230,12 +243,12 @@
             </td>
           </tr>
 
-          
+
         <% end %>
-                
-        
+
+
         <% if current_user && !current_user.curr_role_investor? %>
-        
+
           <tr>
             <td>
               Verified

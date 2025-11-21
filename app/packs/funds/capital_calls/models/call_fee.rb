@@ -23,4 +23,8 @@ class CallFee < ApplicationRecord
     capital_commitment = capital_remittance.capital_commitment
     eval(notes, binding)
   end
+
+  def label
+    "#{name} (#{fee_type}): #{start_date} to #{end_date}"
+  end
 end

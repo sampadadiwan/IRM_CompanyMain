@@ -1,3 +1,9 @@
+V9.1.43
+#####################################
+f1059b64e Remittance notification is skipped if comitment skip_call_notice is yes (#1095)
+6d4d6184e Fund template decorator updates (#1094)
+5790832bb Fund stats agent (#1092)
+
 V9.1.42
 #####################################
 70a9cc74a refresh the computed fields after creating multiple account entries

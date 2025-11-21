@@ -3,8 +3,17 @@ wb = xlsx_package.workbook
 
 form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittance")
 
+capital_call = params[:capital_call_id].present? ? CapitalCall.find(params[:capital_call_id]) : nil
+call_fees = capital_call&.call_fees
+capital_call_fees = call_fees&.filter { |cf| cf.fee_type == "Fees Part Of Capital" }
+other_call_fees = call_fees&.filter { |cf| cf.fee_type == "Other Fees" }
+
 wb.add_worksheet(name: "CapitalRemittance") do |sheet|
-  headers = ["Fund", "Investor", "Folio ID", "Investing Entity", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Collected Amount", "Status", "Verified", "Payment Date", "Remittance Date"] + custom_headers
+  headers = if capital_call.present? && call_fees.present?
+              ["Fund", "Investor", "Folio ID", "Investing Entity", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount (Inclusive of Capital Fees)", "Capital Fees"] + capital_call_fees.map(&:label) + ["Other Fees"] + other_call_fees.map(&:label) + ["Collected Amount", "Status", "Verified", "Payment Date", "Remittance Date"] + custom_headers
+            else
+              ["Fund", "Investor", "Folio ID", "Investing Entity", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Collected Amount", "Status", "Verified", "Payment Date", "Remittance Date"] + custom_headers
+            end
 
   has_tracking_currency = false
   if params[:fund_id].present? || params[:capital_call_id].present?
@@ -24,7 +33,14 @@ wb.add_worksheet(name: "CapitalRemittance") do |sheet|
     verified = cc.verified ? "Yes" : "No"
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
 
-    values = [cc.fund.name, cc.investor_name, cc.folio_id, cc.investor_kyc&.full_name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.capital_fee, cc.other_fee, cc.collected_amount, cc.status, verified, cc.payment_date, cc.remittance_date] + custom_field_values
+    if capital_call.present? && call_fees.present?
+      cr_capital_call_fees = cc.json_fields["capital_fees_audit"].map { |row| row[0].last }
+      cr_other_call_fees = cc.json_fields["other_fees_audit"].map { |row| row[0].last }
+
+      values = [cc.fund.name, cc.investor_name, cc.folio_id, cc.investor_kyc&.full_name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.capital_fee] + cr_capital_call_fees + [cc.other_fee] + cr_other_call_fees + [cc.collected_amount, cc.status, verified, cc.payment_date, cc.remittance_date] + custom_field_values
+    else
+      values = [cc.fund.name, cc.investor_name, cc.folio_id, cc.investor_kyc&.full_name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.capital_fee, cc.other_fee, cc.collected_amount, cc.status, verified, cc.payment_date, cc.remittance_date] + custom_field_values
+    end
 
     if has_tracking_currency
       values << cc.tracking_collected_amount.to_d
