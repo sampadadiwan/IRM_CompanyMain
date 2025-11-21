@@ -3,6 +3,7 @@ wb = xlsx_package.workbook
 
 form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittance")
 
+# If we have the capital_call, then need to show additional headers and values for the Fees
 capital_call = params[:capital_call_id].present? ? CapitalCall.find(params[:capital_call_id]) : nil
 call_fees = capital_call&.call_fees
 capital_call_fees = call_fees&.filter { |cf| cf.fee_type == "Fees Part Of Capital" }
@@ -34,6 +35,7 @@ wb.add_worksheet(name: "CapitalRemittance") do |sheet|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
 
     if capital_call.present? && call_fees.present?
+      # Fees for the capital_remittance is stored in its json fields
       cr_capital_call_fees = cc.json_fields["capital_fees_audit"].map { |row| row[0].last }
       cr_other_call_fees = cc.json_fields["other_fees_audit"].map { |row| row[0].last }
 
