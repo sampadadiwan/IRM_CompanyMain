@@ -674,8 +674,9 @@ end
 
 Given('I give deal access to {string}') do |investor_name|
   visit(deal_path(@deal))
-  element = all('.show_details_link').last
-  element.click
+  # click_on("Access Rights")
+  # element = all('.show_details_link').last
+  # element.click
   click_on("Access Rights")
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   puts "\n####Granting Deal Access to #{investor_name}####\n"
