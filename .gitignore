@@ -6,6 +6,10 @@
 
 # Ignore bundler config.
 /.bundle
+.claude/
+.gitnexus/
+app/.tmp
+app/.gitnexus
 
 
 # Ignore the default SQLite database.
