@@ -2,19 +2,27 @@ Feature: Investment Opportunity
   Can create and view a investment_opportunity as a company
 
 Scenario Outline: Create new investment_opportunity
-  Given Im logged in as a user "" for an entity "<entity>"
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true"
   Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users and investor_access_tags "IO"
+  Given there is an existing investor "" with "1" users and investor_access_tags ""
   And I am at the investment_opportunities page
   When I create a new investment_opportunity "<investment_opportunity>"
-  Then I should see the "<msg>"
+  Then I should see the "opportunity was successfully created"
   And an investment_opportunity should be created
   And I should see the investment_opportunity details on the details page
+  Given there is a custom notification "<notify_open_for_interests>" in place for the IO
+  When the "notify_open_for_interests" notification is sent
+  Then notification should be sent "<notification_sent>" to the IO investors for "<notify_open_for_interests>"
+  Given there is a custom notification "<notify_allocation>" in place for the IO
+  When the "notification_sent" notification is sent
+  Then notification should be sent "<notification_sent>" to the IO investors for "<notification_sent>"
   And I should see the investment_opportunity in all investment_opportunities page
 
   Examples:
-  	|entity                                 |investment_opportunity                  |msg	|
-  	|entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true  |company_name=Test IO|opportunity was successfully created|
-    |entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true  |company_name=IO 2   |opportunity was successfully created|
+  	|investment_opportunity |notify_open_for_interests                                          | notify_allocation | notification_sent |
+  	|company_name=IO 1   |subject=IO1 is now open;email_method=notify_open_for_interests;tag=IO | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
+    |company_name=IO 2   |subject=IO2 is now open;email_method=notify_open_for_interests;tag=IO | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
 
 
 Scenario Outline: Create new document for an investment_opportunity

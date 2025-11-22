@@ -62,11 +62,11 @@ Scenario Outline: Grant Access Rights to approval
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
-  Given the investors are added to the approval  
+  Given the investors are added to the approval
   When I visit the approval details page
-  Then the approval responses are generated with status "Pending"  
+  Then the approval responses are generated with status "Pending"
   Then I should see the approval response details for each response
-  When the approval is approved  
+  When the approval is approved
   Then the investor gets the approval notification
 
   Examples:
@@ -82,9 +82,10 @@ Scenario Outline: Grant Access Rights to approval after approved
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
-  Given the investors are added to the approval  
+  Given the investors are added to the approval
+  And the approval is approved
   When I visit the approval details page
-  Then the approval responses are generated with status "Pending"  
+  Then the approval responses are generated with status "Pending"
   Then the investor gets the approval notification
   When the Send Reminder button on approval is clicked
   Then the investor gets the approval notification
@@ -93,8 +94,8 @@ Scenario Outline: Grant Access Rights to approval after approved
 
   Examples:
   	|user	    |entity               |approval                                 |msg	|
-  	|  	        |entity_type=Company  |title=Test approval;approved=true      |Approval was successfully created|
-    |  	        |entity_type=Company  |title=Merger Approval;approved=true    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval;approved=false      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval;approved=false    |Approval was successfully created|
 
 
 
@@ -102,10 +103,10 @@ Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
-  Given the investors are added to the approval  
+  Given the investors are added to the approval
   Given Im logged in as an investor
   When I visit the approval details page
-  Then I should see my approval response  
+  Then I should see my approval response
   When I select "Approved" for the approval response
   Then the approval response is "Approved"
   And the approved count of the approval is "1"
@@ -114,7 +115,7 @@ Scenario Outline: Provide approval response
   Then the approval response is "Rejected"
   And the approved count of the approval is "0"
   And the rejected count of the approval is "1"
-  
+
   Examples:
   	|user	    |entity               |approval                 |msg	|
   	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
@@ -126,12 +127,12 @@ Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "entity_type=Company;sub_domain=test"
   Given there is an existing investor "" with "1" users
   Given there is an approval "<approval>" for the entity
-  Given the investors are added to the approval 
-  When the approval is approved internally 
+  Given the investors are added to the approval
+  When the approval is approved internally
   When I select "<status>" in the approval notification email
   Then the approval response is "<status>"
   And the approval response user is correctly captured
-  
+
   Examples:
   	|user	    |approval                 |msg	| status |
   	|  	      |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
