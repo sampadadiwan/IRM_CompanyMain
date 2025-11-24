@@ -64,7 +64,7 @@ class PortfolioReportDocGenerator
     context.store  :kpis, grid_view_array(portfolio_company, end_date)
 
     portfolio_company.investor_kpi_mappings.pluck(:category).uniq.each_with_index do |category, _index|
-      context.store :"#{category.gsub(/\s+/, "_").underscore}_kpis", grid_view_array(portfolio_company, end_date, category: category)
+      context.store :"#{category.gsub(/\s+/, '_').underscore}_kpis", grid_view_array(portfolio_company, end_date, category: category)
     end
 
     current_date = Time.zone.now.strftime('%d/%m/%Y')

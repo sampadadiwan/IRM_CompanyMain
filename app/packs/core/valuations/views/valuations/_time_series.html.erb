@@ -8,6 +8,12 @@
   # Eager load associations to avoid N+1 queries
   valuations = valuations.includes(:investment_instrument, form_type: :form_custom_fields)
 
+  # Check if report_id is passed to get grid view preferences
+  report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
+  grid_view_preferences = nil
+  if report.present?
+    grid_view_preferences = report.grid_view_preferences
+  end
 %>
 
 <table class="table table-bordered table-striped datatable">
@@ -28,7 +34,14 @@
           <td>
             <!-- Use the first valuation to get the custom field label -->
             <% first_valuation = valuations[0] %>
-            <%= first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+            <% if grid_view_preferences.present? %>
+              <!-- Check for custom label in grid view preferences --->
+              <% custom_label = grid_view_preferences.filter{|gvp| gvp.key == attr.to_s.split(".")[-1]} %>
+              <%= custom_label.presence || first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+            <% else %>
+              <!-- Default to valuation's custom field label --->
+              <%= first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+            <% end %>
           </td>
           <% ordered_days.each do |day| %>
             <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>

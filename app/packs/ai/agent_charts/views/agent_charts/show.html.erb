@@ -97,8 +97,23 @@
   <div class="associated_entity">
     <% if policy(@agent_chart).update? %>
       <%= link_to "Edit", edit_agent_chart_path(@agent_chart), {class: "btn btn-outline-primary"} %>
-      <%= button_to "Regenerate", regenerate_agent_chart_path(@agent_chart), method: :post, class: "btn btn-outline-secondary", data: {action: "click->confirm#popup", msg: "Are you sure you want to regenerate the chart spec?", method: :post } %>
       <%= button_to "Delete", @agent_chart, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+
+    <% if @agent_chart.spec.present?  && @agent_chart.spec.keys.present? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-chart-bar"></i> Charts
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <% @agent_chart.spec.keys.each do |portfolio_company_id| %>
+                <%= link_to Investor.find(portfolio_company_id).name, agent_chart_path(@agent_chart, portfolio_company_id:), id: "agent_chart_generate_spec_#{portfolio_company_id}_btn", class: "dropdown-item"%>
+              <% end %>
+          </div>
+        </div>
+      </div>
     <% end %>
   </div>
 <% end %>
