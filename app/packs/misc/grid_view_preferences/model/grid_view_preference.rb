@@ -62,6 +62,10 @@ class GridViewPreference < ApplicationRecord
     end
   end
 
+  def label
+    self[:label].presence || self.name
+  end
+
   def name_with_alignment
     if alignment.present?
       "#{label.presence || name}; #{alignment}"

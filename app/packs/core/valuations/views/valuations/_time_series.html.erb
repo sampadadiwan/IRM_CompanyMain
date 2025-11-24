@@ -16,6 +16,7 @@
   end
 %>
 
+
 <table class="table table-bordered table-striped datatable">
   <thead>
     <tr>
@@ -29,6 +30,7 @@
   <tbody>
     <% instruments.each do |instrument| %>
       <% attributes.each do |attr| %>
+        <% attr_key = attr.to_s.split(".")[-1] %>
         <tr>
           <td><%= link_to instrument.name, instrument if instrument %></td>
           <td>
@@ -36,11 +38,11 @@
             <% first_valuation = valuations[0] %>
             <% if grid_view_preferences.present? %>
               <!-- Check for custom label in grid view preferences --->
-              <% custom_label = grid_view_preferences.filter{|gvp| gvp.key == attr.to_s.split(".")[-1]} %>
-              <%= custom_label.presence || first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+              <% gvp = grid_view_preferences.find{|gvp|  [attr_key, "custom_fields.#{attr_key}"].include?(gvp.key) } %>
+              <%= gvp&.label || first_valuation.custom_field_label(attr_key) %>
             <% else %>
               <!-- Default to valuation's custom field label --->
-              <%= first_valuation.custom_field_label(attr.to_s.split(".")[-1]) %>
+              <%= first_valuation.custom_field_label(attr_key) %>
             <% end %>
           </td>
           <% ordered_days.each do |day| %>
