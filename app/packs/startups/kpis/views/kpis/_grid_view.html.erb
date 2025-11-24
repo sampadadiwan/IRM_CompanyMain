@@ -58,7 +58,7 @@
                                     <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
                                     <td>
                                         <% if kpi && kpi.value.present? %>
-                                            <%= display_kpi(kpi, ikm) %>
+                                            <%= display_kpi(kpi, ikm, params:) %>
                                             <br>
                                             <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                             <% if kpi.notes.present? %>
