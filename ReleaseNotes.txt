@@ -1,3 +1,15 @@
+V9.1.45
+#####################################
+006b79497 Added decimals to kpi report to allow 1 decimal places
+d6480640d Fixed the timeseries view for Valuation, to take the grid labels
+14d7778f6 Added the keys back into the secrets
+e45282f7e Show hide charts and tables from kpi grid view
+85b4eb5c5 Added button for display of charts for agen chart
+4384fa594 Better category_kpis in PortfolioReport
+92d49d5a4 Changed IP post reboot
+b602bf8aa Added release notes
+
+
 V9.1.44
 #####################################
 91372cc59 Now shows capital fee and other fee in CR xls and show page

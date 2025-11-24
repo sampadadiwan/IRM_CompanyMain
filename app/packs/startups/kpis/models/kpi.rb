@@ -3,6 +3,16 @@ class Kpi < ApplicationRecord
   include ForInvestor
   include Trackable.new(on: %i[create update], audit_fields: %i[value display_value notes percentage_change])
 
+  STANDARD_COLUMNS = {
+    "Name" => "name",
+    "Value" => "value",
+    "Display Value" => "display_value",
+    "Percentage Change" => "percentage_change",
+    "Notes" => "notes"
+  }.freeze
+
+  ADDITIONAL_COLUMNS_FROM = [:kpi_report, :investor_kpi_mapping].freeze
+
   belongs_to :entity
   belongs_to :owner, class_name: "Entity", optional: true
   belongs_to :portfolio_company, class_name: "Investor", optional: true
