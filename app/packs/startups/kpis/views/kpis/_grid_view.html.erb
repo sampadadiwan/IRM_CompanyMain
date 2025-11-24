@@ -3,95 +3,97 @@
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 mb-0 text-gray-800">
-            <%= params[:title].presence || "KPIs" %>            
+            <%= params[:title].presence || "KPIs" %>
         </h1>
 
         <span>
-            <button class="btn btn-outline-success ti ti-download", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button> 
-        </span>    
+            <button class="btn btn-outline-success ti ti-download", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button>
+        </span>
     </div>
 
-    <% 
+    <%
         # group_by investor_entity_id and standard_kpi_name
         investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor_id, ikm.standard_kpi_name] }
 
         grouped_kpis = kpis.group_by{|k| [k.entity_id, k.owner_id, k.kpi_report.tag_list]}
-        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq         
+        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
     %>
 
-
-    <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
-        <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
-            <thead>
-                <tr>
-                    <th class="no-sort">Portfolio Company</th>
-                    <th class="no-sort">Tags</th>
-                    <th class="no-sort">KPI</th>
-                    <% dates.each do |as_of| %>
-                        <th><%= l as_of %></th>
-                    <% end %>            
-                </tr>
-            </thead>
-            <tbody>
-                <% 
-                    grouped_kpis.each do |key, kpis| 
-                    entity_id, owner_id, tag_list = key
-                %>      
-                    <% kpis.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, company_id), kpis| %>
-                        <tr>
-                            <td><%= kpis.first.portfolio_company&.investor_name %></td>
-                            <% 
-                                kpi = kpis.first
-                                ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpi)
-                                standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi) 
-                            %>
-                            <td>
-                                <span class="badge badge-pill bg-success-subtle text-success"><%= tag_list %></span>
-                                <% if kpi.owner %>
-                                    <span class="d-block"> <%= kpi.owner %> </span>
-                                <% end %>
-                            </td>
-                            <td> 
-                                <%= standard_kpi_name %> 
-                            </td>
-                            <% dates.each do |as_of| %>            
-                                <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
+    <% unless params[:show_table] == "false" %>
+        <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
+            <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
+                <thead>
+                    <tr>
+                        <th class="no-sort">Portfolio Company</th>
+                        <th class="no-sort">Tags</th>
+                        <th class="no-sort">KPI</th>
+                        <% dates.each do |as_of| %>
+                            <th><%= l as_of %></th>
+                        <% end %>
+                    </tr>
+                </thead>
+                <tbody>
+                    <%
+                        grouped_kpis.each do |key, kpis|
+                        entity_id, owner_id, tag_list = key
+                    %>
+                        <% kpis.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, company_id), kpis| %>
+                            <tr>
+                                <td><%= kpis.first.portfolio_company&.investor_name %></td>
+                                <%
+                                    kpi = kpis.first
+                                    ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpi)
+                                    standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi)
+                                %>
                                 <td>
-                                    <% if kpi && kpi.value.present? %>
-                                        <%= display_kpi(kpi, ikm) %>
-                                        <br>
-                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
-                                        <% if kpi.notes.present? %>
-                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>                                        
-                                        <% end %>
+                                    <span class="badge badge-pill bg-success-subtle text-success"><%= tag_list %></span>
+                                    <% if kpi.owner %>
+                                        <span class="d-block"> <%= kpi.owner %> </span>
                                     <% end %>
                                 </td>
-                            <% end %>
-                        </tr>
+                                <td>
+                                    <%= standard_kpi_name %>
+                                </td>
+                                <% dates.each do |as_of| %>
+                                    <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
+                                    <td>
+                                        <% if kpi && kpi.value.present? %>
+                                            <%= display_kpi(kpi, ikm) %>
+                                            <br>
+                                            <%= kpi_percentage_class(kpi, ikm).html_safe %>
+                                            <% if kpi.notes.present? %>
+                                                <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                            <% end %>
+                                        <% end %>
+                                    </td>
+                                <% end %>
+                            </tr>
+                        <% end %>
+
                     <% end %>
-                    
-                <% end %>
-            </tbody>
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+    <% end %>
 
 </div>
 
+<% unless params[:show_charts] == "false" %>
+    <div class="associated_entity">
+        <div class="row">
+            <div class="col-lg-12 mb-4">
 
-<div class="associated_entity">
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-
-            <!-- Illustrations -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"> <%= params[:title].presence || "KPIs" %> </h6>
-                </div>
-                <div class="card-body">
-                    <% id = params[:report_id] %>
-                    <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings:) %>
+                <!-- Illustrations -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary"> <%= params[:title].presence || "KPIs" %> </h6>
+                    </div>
+                    <div class="card-body">
+                        <% id = params[:report_id] %>
+                        <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings:) %>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+<% end %>
