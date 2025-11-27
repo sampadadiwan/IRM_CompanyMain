@@ -36,7 +36,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", primary_key: ["id", "reporting_date"], charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB\n/*!50100 PARTITION BY RANGE (year(`reporting_date`))\n(PARTITION p2023 VALUES LESS THAN (2024) ENGINE = InnoDB,\n PARTITION p2024 VALUES LESS THAN (2025) ENGINE = InnoDB,\n PARTITION p2025 VALUES LESS THAN (2026) ENGINE = InnoDB,\n PARTITION p2026 VALUES LESS THAN (2027) ENGINE = InnoDB,\n PARTITION pmax VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */", force: :cascade do |t|
+  create_table "account_entries", primary_key: ["id", "reporting_date"], charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB\n/*!50100 PARTITION BY RANGE (year(`reporting_date`))\n(PARTITION p2023 VALUES LESS THAN (2024) ENGINE = InnoDB,\n PARTITION p2024 VALUES LESS THAN (2025) ENGINE = InnoDB,\n PARTITION p2025 VALUES LESS THAN (2026) ENGINE = InnoDB,\n PARTITION pmax VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */", force: :cascade do |t|
     t.bigint "id", null: false, auto_increment: true
     t.bigint "capital_commitment_id"
     t.bigint "entity_id", null: false
@@ -70,19 +70,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.string "parent_name"
     t.string "commitment_name"
     t.integer "ref_id", default: 0, null: false
+    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
-    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
     t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
     t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
-    t.index ["name", "fund_id", "capital_commitment_id", "entry_type", "reporting_date", "cumulative", "deleted_at", "parent_type", "parent_id", "ref_id", "amount_cents"], name: "index_accounts_on_unique_fields", unique: true
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
@@ -119,7 +118,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.string "parent_name"
     t.string "commitment_name"
     t.integer "ref_id", default: 0, null: false
-    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
     t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
@@ -128,6 +126,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
@@ -332,6 +331,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.text "status"
     t.string "tag_list"
     t.boolean "locked", default: false
+    t.string "statement_for"
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
@@ -985,6 +985,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.boolean "show_menu", default: true, null: false
     t.integer "import_upload_id"
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
+    t.index ["import_upload_id"], name: "index_dashboard_widgets_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
 
@@ -2103,6 +2104,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_083937) do
     t.bigint "import_upload_id"
     t.string "call_code", limit: 3
     t.boolean "email_enabled", default: true
+    t.string "tags", limit: 50
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
