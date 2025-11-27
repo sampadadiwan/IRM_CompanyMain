@@ -54,11 +54,27 @@ class ExchangeRatesController < ApplicationController
 
   # DELETE /exchange_rates/1 or /exchange_rates/1.json
   def destroy
-    @exchange_rate.destroy
-
     respond_to do |format|
-      format.html { redirect_to exchange_rates_url, notice: "Exchange rate was successfully destroyed." }
-      format.json { head :no_content }
+      if @exchange_rate.destroy
+        format.html { redirect_to exchange_rates_url, notice: "Exchange rate was successfully destroyed." }
+        format.json { head :no_content }
+      else
+        # This branch is for validation/callback failures, not FK errors
+        format.html { redirect_to exchange_rate_url(@exchange_rate), alert: @exchange_rate.errors.full_messages.to_sentence }
+        format.json { render json: @exchange_rate.errors, status: :unprocessable_entity }
+      end
+    end
+  rescue ActiveRecord::InvalidForeignKey
+    respond_to do |format|
+      format.html do
+        redirect_to exchange_rate_url(@exchange_rate),
+                    alert: "This exchange rate cannot be deleted because it is used in other records."
+      end
+
+      format.json do
+        render json: { error: "This exchange rate cannot be deleted because it is used in other records." },
+               status: :unprocessable_entity
+      end
     end
   end
 
@@ -68,6 +84,7 @@ class ExchangeRatesController < ApplicationController
   def set_exchange_rate
     @exchange_rate = ExchangeRate.find(params[:id])
     authorize @exchange_rate
+    @bread_crumbs = { 'Exchange Rates': exchange_rates_path, "#{@exchange_rate}": exchange_rate_path(@exchange_rate) }
   end
 
   # Only allow a list of trusted parameters through.

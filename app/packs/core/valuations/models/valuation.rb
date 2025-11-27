@@ -57,7 +57,7 @@ class Valuation < ApplicationRecord
   validates :per_share_value, numericality: { greater_than_or_equal_to: 0 }
   validates :valuation_date, presence: true
   validates :valuation_date, uniqueness: { scope: %i[investment_instrument_id entity_id owner_id owner_type] }
-  validates :name, length: { maximum: 60 }, allow_blank: true
+  validates :name, length: { maximum: 255 }, allow_blank: true
 
   # Ensure callback to the owner
   after_save :update_owner
@@ -80,9 +80,9 @@ class Valuation < ApplicationRecord
   before_save :set_name
   def set_name
     if investment_instrument.present?
-      self.name = "#{investment_instrument} - #{valuation_date}" if name.blank?
+      self.name = "#{investment_instrument.to_s.truncate(242)} - #{valuation_date}" if name.blank?
     elsif name.blank?
-      self.name = "#{entity} - #{valuation_date}"
+      self.name = "#{entity.to_s.truncate(242)} - #{valuation_date}"
     end
   end
 

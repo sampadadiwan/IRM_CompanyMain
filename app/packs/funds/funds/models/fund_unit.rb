@@ -10,6 +10,7 @@ class FundUnit < ApplicationRecord
 
   validates :unit_type, length: { maximum: 40 }
   validates :owner_type, length: { maximum: 255 }
+  validates :quantity, presence: true
 
   monetize :total_premium_cents, :amount_cents, :price_cents, :premium_cents, with_currency: ->(i) { i.fund.currency }
 

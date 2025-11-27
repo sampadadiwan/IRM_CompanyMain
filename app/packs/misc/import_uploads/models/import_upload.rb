@@ -35,7 +35,7 @@ class ImportUpload < ApplicationRecord
               "AGENT_CHART_SAMPLE" => "/sample_uploads/agent_charts.xlsx",
               "DASHBOARD_WIDGET_SAMPLE" => "/sample_uploads/dashboard_widgets.xlsx" }.freeze
 
-  TYPES = %w[FormCustomField InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 

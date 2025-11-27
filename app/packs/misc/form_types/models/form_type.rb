@@ -108,4 +108,12 @@ class FormType < ApplicationRecord
   def model
     name.constantize
   end
+
+  def to_s
+    if tag.blank?
+      name
+    else
+      "#{name} - #{tag}"
+    end
+  end
 end

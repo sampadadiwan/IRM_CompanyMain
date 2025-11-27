@@ -17,14 +17,14 @@ class ImportFormCustomField < ImportUtil
     Rails.logger.debug row_data
 
     # If ID is present, we are updating an existing FormCustomField
-    if row_data["ID"].blank?
+    if row_data["Id"].blank?
       form_custom_field = FormCustomField.new(import_upload_id: import_upload.id)
     else
       # If ID is present, we are updating an existing FormCustomField
-      form_custom_field = FormCustomField.joins(form_type).where(id: row_data["ID"], form_types: { entity_id: import_upload.entity_id }).first
-      if form_custom_field.nil
+      form_custom_field = FormCustomField.joins(:form_type).where(id: row_data["Id"], form_types: { entity_id: import_upload.entity_id }).first
+      if form_custom_field.nil?
         # If we can't find the FormCustomField, we raise an error
-        raise "FormCustomField with ID #{row_data['ID']} not found for entity #{import_upload.entity_id} and import_upload #{import_upload.id}"
+        raise "FormCustomField with ID #{row_data['Id']} not found for entity #{import_upload.entity_id} and import_upload #{import_upload.id}"
       end
     end
 
@@ -32,21 +32,22 @@ class ImportFormCustomField < ImportUtil
       name: row_data["Name"],
       label: row_data["Label"],
       field_type: row_data["Field Type"],
-      required: row_data["Required"].downcase == "true",
-      has_attachment: row_data["Has Attachment"].downcase == "true",
+      required: row_data["Required"]&.downcase&.strip == "true",
+      has_attachment: row_data["Has Attachment"]&.downcase&.strip == "true",
       position: row_data["Position"],
       help_text: row_data["Help Text"],
-      read_only: row_data["Read Only"].downcase == "true",
+      read_only: row_data["Read Only"]&.downcase&.strip == "true",
       show_user_ids: row_data["Show User IDs"],
       step: row_data["Step"],
       condition_on: row_data["Condition On"],
       condition_criteria: row_data["Condition Criteria"],
       condition_params: row_data["Condition Params"],
       condition_state: row_data["Condition State"],
-      internal: row_data["Internal"].downcase == "true",
+      internal: row_data["Internal"]&.downcase&.strip == "true",
       reg_env: row_data["Regulatory Environment"],
       meta_data: row_data["Metadata"],
-      info: row_data["Info"]
+      info: row_data["Info"],
+      import_upload_id: import_upload.id
     )
 
     form_custom_field.form_type_id = import_upload.owner_id
