@@ -9,7 +9,7 @@ class RansackQueryBuilder
       params["c"][unique_id] = {
         "a" => { "0" => { "name" => name } },
         "p" => predicate,
-        "v" => { "0" => { "value" => value } }
+        "v" => build_values_hash(value)
       }
     end
 
@@ -17,6 +17,20 @@ class RansackQueryBuilder
     params["s"] = "#{sort_by} #{sort_direction}" if sort_by.present?
 
     params
+  end
+
+  def self.build_values_hash(value)
+    if value.is_a?(Array)
+      if value.empty?
+        { "0" => { "value" => nil } }
+      else
+        value.each_with_index.with_object({}) do |(val, idx), h|
+          h[idx.to_s] = { "value" => val }
+        end
+      end
+    else
+      { "0" => { "value" => value } }
+    end
   end
 
   def self.single(name, predicate, value, idx: 0)

@@ -1,20 +1,27 @@
-<% uri = URI(fund_ratios_path(title: "Company Ratios", show_funds: true, **args, q: ransack_query_params_multiple([[:owner_id, :eq, @investor.id], [:owner_type, :eq, "Investor"]], sort_by: "end_date", sort_direction: "desc"))) %>
+<% ransack_params = [[:owner_id, :eq, @investor.id], [:owner_type, :eq, "Investor"]]
+if args[:ratio_names].present?
+  ratio_names = args[:ratio_names]
+  ransack_params << [:name, :in, ratio_names]
+end
+%>
+
+<% uri = URI(fund_ratios_path(title: "Company Ratios", show_funds: true, **args, q: ransack_query_params_multiple(ransack_params, sort_by: "end_date", sort_direction: "desc"))) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
         args: args,
         widget_size: widget.widget_size
       )
-    ) do 
+    ) do
 %>
     <% if args[:list].nil? || args[:list] == true %>
-      <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %> 
-      <% end %>           
+      <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %>
+      <% end %>
     <%end%>
-    
-    
+
+
     <% if args[:chart].nil? || args[:chart] == true %>
       <%= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months]) %>
     <% end %>
-  
+
 <% end %>

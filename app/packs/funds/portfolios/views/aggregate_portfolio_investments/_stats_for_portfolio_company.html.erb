@@ -26,7 +26,8 @@
           ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
         end
         fmv_cents = portfolio_company.portfolio_investments.includes(:valuation).sum do |pi|
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, pi.valuation.valuation_date, entity_id) || 0
+          conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date # need this as valuation is optional in PI
+          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, entity_id) || 0
         end
         cost_of_remaining_cents = portfolio_company.portfolio_investments.sum do |pi|
           ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, entity_id) || 0
