@@ -11,8 +11,8 @@ class CapitalRemittanceAction < Trailblazer::Operation
     capital_remittance.valid?
   end
 
-  def set_call_amount(_ctx, capital_remittance:, **)
-    capital_remittance.set_call_amount
+  def set_call_amount(ctx, capital_remittance:, **)
+    capital_remittance.set_call_amount(recompute_call_amount: ctx[:recompute_call_amount] || false)
     true
   end
 

@@ -291,8 +291,175 @@
     end
   end
 
+  When('I create a new capital call {string} with fees') do |args|
+    @capital_call = FactoryBot.build(:capital_call, fund: @fund)
+    key_values(@capital_call, args)
+    @capital_call.setup_defaults
 
-   Then('I should see the capital call details') do
+    puts @capital_call.to_json
+
+    visit(fund_url(@fund))
+
+    click_on "Calls"
+    click_on "New Call"
+
+    fill_in('capital_call_name', with: @capital_call.name)
+
+    fill_in('capital_call_due_date', with: @capital_call.due_date)
+    fill_in "capital_call[close_percentages][First Close]", with: "50"
+    select(@capital_call.call_basis, from: 'capital_call_call_basis')
+
+    if @capital_call.call_basis == "Percentage of Commitment"
+        fill_in "capital_call[close_percentages][First Close]", with: @capital_call.percentage_called
+    elsif @capital_call.call_basis != "Upload"
+      find('#select2-capital_call_fund_closes-container', visible: false)
+      select2_trigger = find('.select2-selection--multiple', match: :first)
+      select2_trigger.click
+      first_option = find(".select2-results__option", match: :first, visible: true)
+      first_option.click
+      fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
+    end
+
+    if @fund.entity.permissions.enable_units?
+      @fund.unit_types.split(",").each do |unit_type|
+        unit_type = unit_type.strip
+        fill_in("#{unit_type}_price", with: @capital_call.unit_prices[unit_type]["price"])
+        fill_in("#{unit_type}_premium", with: @capital_call.unit_prices[unit_type]["premium"])
+      end
+    end
+
+    if (@capital_call.fee_account_entry_names - ["Other"]).present?
+      (@capital_call.fee_account_entry_names - ["Other"]).each do |fee_name, idx|
+        click_on "Add Fees"
+        #sleep((1)
+        within all(".nested-fields").last do
+          select(fee_name, from: "fee_name")
+          fill_in("fee_start_date", with: Time.zone.today - 10.years)
+          fill_in("fee_end_date", with: Time.zone.today)
+          select(CapitalCall::FEE_TYPES[0], from: "call_fee_types")
+        end
+      end
+    end
+    allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
+    click_on "Save"
+    # sleep(2)
+    expect(page).to have_content("Capital call was successfully")
+  end
+
+
+  Then('the corresponding remittances should be created with fees') do
+    @capital_call = CapitalCall.last
+    if @capital_call.call_basis != "Upload"
+      @capital_call.capital_remittances.count.should == @fund.capital_commitments.count
+    end
+
+    @capital_call.capital_remittances.each_with_index do |remittance, idx|
+        cc = remittance.capital_commitment
+        if @capital_call.call_basis == "Amount allocated on Investable Capital"
+          ((@capital_call.amount_to_be_called * remittance.percentage / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
+        elsif @capital_call.call_basis == "Percentage of Commitment"
+          ((cc.committed_amount * @capital_call.close_percentages["First Close"].to_f / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
+        elsif @capital_call.call_basis == "Upload"
+          file = File.open("./public/sample_uploads/capital_remittances.xlsx", "r")
+          data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+          headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+          row = data.row(idx+2)
+          # create hash from headers and cells
+          user_data = [headers, row].transpose.to_h
+
+          puts "Checking import of #{user_data}"
+          remittance.investor.investor_name.should == user_data["Stakeholder"].strip
+          remittance.fund.name.should == user_data["Fund"]
+          remittance.capital_call.name.should == user_data["Capital Call"]
+
+          remittance.folio_call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees, Folio Currency)"].to_f * 100
+          remittance.folio_capital_fee_cents.should == user_data["Capital Fees (Folio Currency)"].to_f * 100
+          remittance.folio_other_fee_cents.should == user_data["Other Fees (Folio Currency)"].to_f * 100
+
+          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"].to_f * 100 if user_data["Call Amount (Inclusive Of Capital Fees, Fund Currency)"].present?
+          remittance.capital_fee_cents.should == user_data["Capital Fees (Fund Currency)"].to_f * 100 if user_data["Capital Fees (Fund Currency)"].present?
+          remittance.other_fee_cents.should == user_data["Other Fees (Fund Currency)"].to_f * 100 if user_data["Other Fees (Fund Currency)"].present?
+
+          remittance.status.should == "Pending"
+          remittance.verified.should == (user_data["Verified"] == "Yes")
+        end
+
+        # Check the fees
+        if @capital_call.call_fees.present?
+          fees_cents = 0
+          @capital_call.call_fees.each do |fee|
+            fees_cents += remittance.capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", fee.start_date, fee.end_date, fee.name, false).sum(:amount_cents)
+            # remittance.other_fee_cents.should > 0
+          end
+          puts "### Expected fees_cents for remittance #{remittance.id} - commitment #{remittance.capital_commitment}: #{fees_cents}"
+          puts "---------------------------------------------------------------------------------------------------"
+
+          remittance.capital_fee_cents.should == fees_cents
+        end
+    end
+  end
+
+  Then('The remittances should have the proper fees and call amount') do
+    @capital_call.reload
+    @remittance_fees = {}
+    @remittance_call_amounts = {}
+    if @capital_call.call_fees.present?
+      @capital_call.capital_remittances.each_with_index do |remittance, idx|
+        fees_cents = 0
+        @capital_call.call_fees.each do |fee|
+          fee_cents = remittance.capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", fee.start_date, fee.end_date, fee.name, false).sum(:amount_cents)
+          puts "### Remittance #{remittance.id} - Fee #{fee.name}: #{fee_cents}"
+          fees_cents += fee_cents
+        end
+
+        puts "### Expected fees_cents for remittance #{remittance.id} - commitment #{remittance.capital_commitment}: #{fees_cents}"
+        puts "---------------------------------------------------------------------------------------------------"
+        remittance.capital_fee_cents.should == fees_cents
+        @remittance_fees[remittance.id] = fees_cents
+
+        @remittance_call_amounts[remittance.id] = remittance.call_amount_cents
+        expect(remittance.call_amount_cents).to eq(remittance.computed_amount_cents + remittance.capital_fee_cents + remittance.other_fee_cents)
+      end
+    end
+
+
+  end
+
+  When('I recompute the capital call fees') do
+    visit(capital_call_url(@capital_call))
+    within "#capital_call_#{@capital_call.id}_actions" do
+      click_on("Actions")
+    end
+    click_on("Recompute Call")
+    click_on("Proceed")
+    sleep(2)
+  end
+
+  Then('The remittances should have the updated proper fees and call amount') do
+    @capital_call.reload
+    if @capital_call.call_fees.present?
+      @capital_call.capital_remittances.reload.each_with_index do |remittance, idx|
+        fees_cents = 0
+        @capital_call.call_fees.each do |fee|
+          fee_cents = remittance.capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", fee.start_date, fee.end_date, fee.name, false).sum(:amount_cents)
+          puts "### Remittance #{remittance.id} - NEW Fee #{fee.name}: #{fee_cents}"
+          fees_cents += fee_cents
+        end
+        puts "### Expected NEW fees_cents for remittance #{remittance.id} - commitment #{remittance.capital_commitment}: #{fees_cents}"
+        remittance.capital_fee_cents.should == fees_cents
+        @remittance_fees[remittance.id].should_not == fees_cents
+        puts "### CHANGE in fees for remittance #{remittance.id} - commitment #{remittance.capital_commitment}: #{@remittance_fees[remittance.id]} - #{fees_cents} = #{@remittance_fees[remittance.id] - fees_cents}"
+
+        puts "###Call Amount - Before: #{@remittance_call_amounts[remittance.id]} | After: #{remittance.call_amount_cents}"
+        expect(@remittance_call_amounts[remittance.id]).not_to eq(remittance.call_amount_cents)
+        puts "### CHANGE in call amount for remittance #{remittance.id} - commitment #{remittance.capital_commitment}: #{@remittance_call_amounts[remittance.id]} - #{remittance.call_amount_cents} = #{@remittance_call_amounts[remittance.id] - remittance.call_amount_cents}"
+        expect(remittance.call_amount_cents).to eq(remittance.computed_amount_cents + remittance.capital_fee_cents + remittance.other_fee_cents)
+        puts "---------------------------------------------------------------------------------------------------"
+      end
+    end
+  end
+
+  Then('I should see the capital call details') do
     find(".show_details_link").click
     @capital_call = CapitalCall.last
     expect(page).to have_content(@capital_call.name)

@@ -63,6 +63,33 @@ Scenario Outline: Create new capital call
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
 
 
+Scenario Outline: Capital Call recompute fees
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "<fund>" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the investors are added to the fund
+  And Given import file "capital_commitments.xlsx" for "CapitalCommitment"
+  And Given the commitments have a cc "advisor@gmail.com"
+  And Given import file "test_files/account_entries_recompute_fees_1.xlsx" for "AccountEntry"
+  When I create a new capital call "<call>" with fees
+  Then I should see the capital call details
+  Then the corresponding remittances should be created with fees
+  Then I should see the remittances
+  And The remittances should have the proper fees and call amount
+  And Given import file "test_files/account_entries_recompute_fees_2.xlsx" for "AccountEntry"
+  When I recompute the capital call fees
+  Then The remittances should have the updated proper fees and call amount
+
+
+
+  Examples:
+  |entity                                         |fund                |msg	| call | collected_amount | subject |
+  |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 3520000 | This is a capital call for Fund 1 |
+  |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B;currency=INR    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 40000 | This is a capital call for Fund 2 |
+
+
 Scenario Outline: Create a capital call
   Given there is a user "<user>" for an entity "<entity>"
   Given Im logged in as a user "<user>" for an entity "<entity>"

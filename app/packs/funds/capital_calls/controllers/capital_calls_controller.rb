@@ -26,7 +26,7 @@ class CapitalCallsController < ApplicationController
 
   def recompute_fees
     CapitalRemittancesRecomputeFeesJob.perform_later(@capital_call.id, current_user.id)
-    redirect_to capital_call_path(@capital_call), notice: "Recompute fees job started."
+    redirect_to capital_call_path(@capital_call), notice: "Recompute Call job started."
   end
 
   # GET /capital_calls/1 or /capital_calls/1.json

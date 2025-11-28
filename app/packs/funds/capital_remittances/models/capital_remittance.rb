@@ -71,23 +71,23 @@ class CapitalRemittance < ApplicationRecord
 
   include CapitalRemittanceCounters
 
-  def set_call_amount
+  def set_call_amount(recompute_call_amount: false)
     self.remittance_date ||= capital_call.call_date
     # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
     self.folio_committed_amount_cents = capital_commitment.folio_committed_amount_cents
     self.committed_amount_cents = capital_commitment.committed_amount_cents
 
-    calc_call_amount_cents
+    calc_call_amount_cents(recompute_call_amount:)
     # Setup Paid or Pending status
     set_status
   end
 
-  def calc_call_amount_cents
+  def calc_call_amount_cents(recompute_call_amount: false)
     # Convert between folio and fund currencies
     convert_fees
 
     # Case where we allocate based on percentage of commitment
-    if capital_call.call_basis == "Percentage of Commitment" && call_amount_cents.zero?
+    if capital_call.call_basis == "Percentage of Commitment" && (call_amount_cents.zero? || recompute_call_amount)
       call_basis_percentage_commitment
 
     # Case where the capital remittances will be uploaded manually
@@ -95,8 +95,8 @@ class CapitalRemittance < ApplicationRecord
       call_basis_upload
 
     # Special case where the call_basis is Investable Capital Percentage or Foreign Investable Capital Percentage
-    elsif call_amount_cents.zero?
-      call_basis_account_entry(capital_call.call_basis)
+    elsif call_amount_cents.zero? || recompute_call_amount
+      call_basis_account_entry(capital_call.call_basis) && (call_amount_cents.zero? || recompute_call_amount)
 
     end
   end

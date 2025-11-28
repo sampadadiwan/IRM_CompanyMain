@@ -66,8 +66,8 @@
         <% if policy(@capital_call).recompute_fees? %>
           <%= button_to recompute_fees_capital_call_path(@capital_call), id: "capital_call_recompute_fees_btn", method: :patch, class: "dropdown-item ti ti-calculator", form_class: "deleteButton",
               data: {action: "click->confirm#popup", turbo: false, method: :patch,
-                     msg: "This will recompute the fees for each remittance in this call. Proceed?"} do %>
-            Recompute Fees
+                     msg: "This will recompute the all remittances in this call. Proceed?"} do %>
+            Recompute Call
           <% end %>
         <% end %>
 
