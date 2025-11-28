@@ -69,6 +69,7 @@ class ImportCapitalRemittancePayment < ImportUtil
                                                  capital_remittance:,
                                                  folio_amount_cents:,
                                                  amount_cents:,
+                                                 investor_id: capital_remittance.investor_id,
                                                  notes: user_data["Notes"],
                                                  reference_no: user_data["Reference No"],
                                                  payment_date: user_data["Payment Date"],
