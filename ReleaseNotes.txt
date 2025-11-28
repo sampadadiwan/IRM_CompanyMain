@@ -1,3 +1,12 @@
+V9.1.46
+#####################################
+2724736b2 Bugfix Proper exchange rate destroy message on foreign key error
+FCF import considers blank as false
+Fund unit now validates quantity is present
+Valuation name limit increased from 60 to default 255 261125 (#1098)
+2151deb03 Bugfixes fund ratios dashboard widget bugfix 241125 (#1097)
+db4a66f62 Added STANDARD_COLUMNS to kpi
+
 V9.1.45
 #####################################
 006b79497 Added decimals to kpi report to allow 1 decimal places
