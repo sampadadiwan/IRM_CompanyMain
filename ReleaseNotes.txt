@@ -1,3 +1,11 @@
+V9.1.47
+#####################################
+179097477 Added OpenWebUi to prod in
+85f125793 Schema sync
+282262abf Added release notes
+e7928fb84 Updated calc_call_amount_cents method to recompute call amt with fees (#1096)
+20381af35 Bugfix 281125 (#1099)
+
 V9.1.46
 #####################################
 2724736b2 Bugfix Proper exchange rate destroy message on foreign key error
