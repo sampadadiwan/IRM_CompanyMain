@@ -11,7 +11,7 @@ class Kpi < ApplicationRecord
     "Notes" => "notes"
   }.freeze
 
-  ADDITIONAL_COLUMNS_FROM = [:kpi_report, :investor_kpi_mapping].freeze
+  ADDITIONAL_COLUMNS_FROM = %i[kpi_report investor_kpi_mapping].freeze
 
   belongs_to :entity
   belongs_to :owner, class_name: "Entity", optional: true

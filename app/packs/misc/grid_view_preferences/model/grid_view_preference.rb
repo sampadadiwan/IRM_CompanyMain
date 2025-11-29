@@ -63,7 +63,7 @@ class GridViewPreference < ApplicationRecord
   end
 
   def label
-    self[:label].presence || self.name
+    self[:label].presence || name
   end
 
   def name_with_alignment
