@@ -18,7 +18,7 @@ class UpdateFundFormulaVariableMapJob < ApplicationJob
     full_prompt = build_prompt(reference_yaml, run_formula, services_code, extra_files)
 
     Rails.logger.debug "Sending to LLM..."
-    raw_response = LlmService.chat(prompt: full_prompt, provider: "gemini", llm_model: ENV['DEFAULT_MODEL'], format: :json).strip
+    raw_response = LlmService.chat(prompt: full_prompt, provider: "gemini", llm_model: ENV.fetch('DEFAULT_MODEL', nil), format: :json).strip
 
     # Attempt to extract YAML from markdown code block, otherwise use the whole response
     response = if raw_response.match?(/```ya?ml\n(.+?)```/m)

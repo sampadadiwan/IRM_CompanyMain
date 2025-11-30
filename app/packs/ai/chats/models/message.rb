@@ -3,7 +3,7 @@ class Message < ApplicationRecord
 
   # Provides methods like tool_call?, tool_result?
   acts_as_message # Assumes Chat and ToolCall model names
-
+  has_many_attached :attachments
   # Broadcast updates to self (for streaming into the message frame)
   broadcasts_to ->(message) { [message.chat, "messages"] }
 

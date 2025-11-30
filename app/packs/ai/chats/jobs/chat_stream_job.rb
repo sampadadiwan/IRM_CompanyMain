@@ -13,6 +13,8 @@ class ChatStreamJob < ApplicationJob
     @chat = Chat.find(chat_id)
     @chunk_counter = 0
 
+    Rails.logger.debug @chat
+
     begin
       # Load the document if provided and valid
       if document_id.present?
@@ -21,10 +23,10 @@ class ChatStreamJob < ApplicationJob
       end
 
       # Prepare the `with:` options for the chat request
-      document.present? ? [document.file_url] : []
+      with = document.present? ? [document.file.download.path] : []
 
       # Ask the chat and stream the response chunk by chunk
-      @chat.ask(user_content, with: [document.file_url]) do |chunk|
+      @chat.ask(user_content, with: with) do |chunk|
         process_chunk(chunk)
       end
 

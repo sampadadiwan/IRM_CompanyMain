@@ -2,7 +2,7 @@ class SupportAgentService < Trailblazer::Operation
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
-    model = ctx[:llm] || ENV["SUPPORT_AGENT_MODEL"] || ENV['DEFAULT_MODEL'] # || "gpt-5"
+    model = ctx[:llm] || ENV["SUPPORT_AGENT_MODEL"] || ENV.fetch('DEFAULT_MODEL', nil) # || "gpt-5"
     ctx[:llm] = RubyLLM.chat(model: model)
   end
 
