@@ -11,5 +11,9 @@ class AddRubyLlmV19Columns < ActiveRecord::Migration[8.0]
     unless column_exists?(:messages, :content_raw)
       add_column :messages, :content_raw, :json
     end
+
+    RubyLLM.models.refresh!
+    RubyLLM.models.save_to_json
+
   end
 end

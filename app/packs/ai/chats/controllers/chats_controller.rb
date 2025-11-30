@@ -39,7 +39,7 @@ class ChatsController < ApplicationController
   # PATCH/PUT /chats/1
   def update
     if @chat.update(chat_params)
-      redirect_to @chat, notice: "Compliance rule was successfully updated.", status: :see_other
+      redirect_to @chat, notice: "Chat was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end
@@ -52,7 +52,11 @@ class ChatsController < ApplicationController
   # DELETE /chats/1
   def destroy
     @chat.destroy!
-    redirect_to chats_url, notice: "Compliance rule was successfully destroyed.", status: :see_other
+    if @chat.owner
+      redirect_to @chat.owner, notice: "Chat was successfully destroyed.", status: :see_other
+    else
+      redirect_to chats_url, notice: "Chat was successfully destroyed.", status: :see_other
+    end
   end
 
   private
