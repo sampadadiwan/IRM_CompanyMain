@@ -4,25 +4,60 @@ class KnowledgeBaseSetupService
   #   docs_path: "docs/products",
   #   assistant_name: "Product Support Bot"
   # ).call
+  #
+  #  KnowledgeBaseSetupService.delete_assistant("asst_123")
 
-  def initialize(docs_path:, assistant_name:)
+  def self.delete_assistant(assistant_id)
+    client = OpenAI::Client.new
+    Rails.logger.debug { "🗑️ Deleting Assistant: #{assistant_id}..." }
+    response = client.assistants.delete(id: assistant_id)
+    Rails.logger.debug { "✅ Assistant deleted: #{response['deleted']}" }
+    response
+  rescue StandardError => e
+    Rails.logger.error "❌ Error deleting assistant: #{e.message}"
+  end
+
+  def self.get_assistant(assistant_id)
+    client = OpenAI::Client.new
+    Rails.logger.debug { "🔍 Retrieving Assistant: #{assistant_id}..." }
+    response = client.assistants.retrieve(id: assistant_id)
+
+    if response['tool_resources'] && response['tool_resources']['file_search']
+      vector_store_ids = response['tool_resources']['file_search']['vector_store_ids']
+      Rails.logger.debug { "📂 Vector Store IDs: #{vector_store_ids.inspect}" }
+    else
+      Rails.logger.debug "⚠️ No vector store attached."
+    end
+    response
+  rescue StandardError => e
+    Rails.logger.error "❌ Error retrieving assistant: #{e.message}"
+  end
+
+  def initialize(assistant_name:, docs_path: nil, vector_store_id: nil)
     @client = OpenAI::Client.new
     @docs_path = docs_path
     @assistant_name = assistant_name
+    @vector_store_id = vector_store_id
   end
 
   def call
     Rails.logger.debug "📦 Starting Knowledge Base Setup..."
 
-    # 1. Create Vector Store
-    vector_store = create_vector_store
-    Rails.logger.debug { "✅ Vector Store Created: #{vector_store['id']}" }
+    if @vector_store_id
+      Rails.logger.debug { "🔄 Using existing Vector Store: #{@vector_store_id}" }
+      vs_id = @vector_store_id
+    else
+      # 1. Create Vector Store
+      vector_store = create_vector_store
+      vs_id = vector_store['id']
+      Rails.logger.debug { "✅ Vector Store Created: #{vs_id}" }
 
-    # 2. Upload Files to Vector Store
-    upload_files_to_store(vector_store['id'])
+      # 2. Upload Files to Vector Store
+      upload_files_to_store(vs_id)
+    end
 
     # 3. Create/Update Assistant
-    assistant = create_assistant(vector_store['id'])
+    assistant = create_assistant(vs_id)
 
     Rails.logger.debug "\n🎉 SETUP COMPLETE!"
     Rails.logger.debug "---------------------------------------------------"
@@ -82,10 +117,12 @@ class KnowledgeBaseSetupService
   def create_assistant(vector_store_id)
     # Define the bot's persona
     instructions = <<~TEXT
-      You are a helpful customer support agent for our company.
+      You are a helpful customer support agent for our company CapHive.
       Use the attached Knowledge Base files to answer questions.
-      If the answer is not in the files, politely say you don't know
-      and advise them to email support@example.com.
+      You are strictly prohibited from answering questions unrelated to CapHive or the provided knowledge base.
+      Do not use your general knowledge to answer questions.
+      If the answer is not in the files, then politely say you don't know
+      and advise them to email support@caphive.com.
       Keep answers concise and friendly.
     TEXT
 

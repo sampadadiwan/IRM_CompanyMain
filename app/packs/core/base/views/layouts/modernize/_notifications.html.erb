@@ -23,10 +23,10 @@
         </div>
     </li>
 
-    <% if current_user && current_user.entity.is_fund? && ENV['FM_SUPPORT_BOT_URL'].present? %>
+    <% if current_user && current_user.entity.is_fund? && ENV['FAQ_ASSISTANT_ID'].present? %>
 
         <li class="nav-item dropdown">
-            <%= link_to ENV['FM_SUPPORT_BOT_URL'], target: "caphive_support_bot", class: "nav-link nav-icon-hover", "data-bs-toggle": "tooltip", title: "Support Bot" do %>
+            <%= link_to faq_threads_path, target: "caphive_support_bot", class: "nav-link nav-icon-hover", "data-bs-toggle": "tooltip", title: "Support Bot" do %>
                 <i class="ti ti-robot"></i>
             <% end %>
         </li>

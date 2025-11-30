@@ -1,14 +1,13 @@
 <%= turbo_stream_from @faq_thread %>
 
-<div class="container-fluid vh-100 d-flex flex-column" data-controller="faq-thread" style="padding-left: 0; padding-right: 0;">
+<div class="container-fluid d-flex flex-column" data-controller="faq-thread" style="padding-left: 0; padding-right: 0;">
   <div class="row flex-grow-1 g-0">
     <!-- Sidebar -->
-    <div class="col-md-3 bg-light border-end d-none d-md-flex flex-column">
-      <div class="p-3 border-bottom">
-        <%= button_to "New Chat", faq_threads_path, class: "btn btn-outline-primary btn-sm w-100" %>
-      </div>
+    <div class="col-md-3 border-end d-none d-md-flex flex-column">
+
       <div class="flex-grow-1 overflow-auto p-2">
         <div class="list-group list-group-flush">
+          <%= button_to "New Chat", faq_threads_path, class: "btn btn-outline-primary w-100 mb-4" %>
           <% @faq_threads.each do |thread| %>
             <%= link_to faq_thread_path(thread),
                 class: "list-group-item list-group-item-action #{'active' if thread == @faq_thread}" do %>
@@ -34,7 +33,6 @@
       <!-- Messages Container -->
       <div id="faq_thread_messages"
            class="flex-grow-1 overflow-auto p-4"
-           style="background-color: #f8f9fa;"
            data-faq-thread-target="messages">
         <!-- Messages will be appended here via Turbo Stream -->
         <% @faq_thread.messages&.each do |msg| %>

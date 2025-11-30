@@ -16,14 +16,17 @@ class SupportBotService
     # 1. Add User Message to Thread
     @client.messages.create(
       thread_id: @faq_thread.openai_thread_id,
-      parameters: { role: "user", content: user_message }
+      parameters: {
+        role: "user", content: user_message
+      }
     )
 
     # 2. Create Run
     run = @client.runs.create(
       thread_id: @faq_thread.openai_thread_id,
       parameters: {
-        assistant_id: @assistant_id
+        assistant_id: @assistant_id,
+        additional_instructions: "Remember: You are strictly prohibited from answering questions unrelated to CapHive or the provided knowledge base. Do not use your general knowledge."
       }
     )
 
