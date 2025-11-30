@@ -1,13 +1,64 @@
 <%= turbo_stream_from [@chat, "messages"] %>
-<div class="card">
-  <div class="card-header">
-    <h5 class="card-title">Chat Details <%= @chat.id %></h5>
-  </div>
-  <div class="card-body">
-    <div id="messages">
-      <%= render @chat.messages %>
-    </div>
-      <%= render "chats/chat_box", chat: @chat %>
+
+<div class="container-fluid d-flex flex-column" data-controller="faq-thread" style="padding-left: 0; padding-right: 0;">
+  <div class="row flex-grow-1 g-0">
+    <!-- Main Chat Area -->
+    <div class="col-12 d-flex flex-column">
+
+      <!-- Messages Container -->
+      <div id="messages"
+           class="flex-grow-1 overflow-auto p-3"
+           data-faq-thread-target="messages">
+        <!-- Messages will be appended here via Turbo Stream -->
+        <%= render @chat.messages %>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div data-faq-thread-target="typing" class="d-none px-4 py-2 bg-light border-top">
+        <div class="spinner-dots">
+          <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></span>
+          <span class="spinner-grow spinner-grow-sm text-secondary delay-100" role="status" aria-hidden="true"></span>
+          <span class="spinner-grow spinner-grow-sm text-secondary delay-200" role="status" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="bg-white p-3 border-top">
+        <%= form_with url: send_message_chat_path(@chat),
+                      method: :post,
+                      data: { action: "turbo:submit-end->faq-thread#resetForm" },
+                      class: "w-100" do |f| %>
+          <div class="input-group">
+            <%= f.text_area :content,
+                name: "user_content",
+                rows: 1,
+                placeholder: "Type your message...",
+                class: "form-control shadow-none",
+                style: "resize: none; max-height: 50px;",
+                data: { faq_thread_target: "input", action: "keydown.enter->faq-thread#submitOnEnter" } %>
+
+            <% if @chat.owner && @chat.owner.respond_to?(:documents) && @chat.owner.documents.present? %>
+              <%= f.select :document_id,
+                  @chat.owner.documents.select{|d| d.pdf? || d.csv?}.map{|d| [d.name, d.id]},
+                  {prompt: "Select Document"},
+                  class: "form-select",
+                  style: "max-width: 200px;" %>
+            <% end %>
+
+            <%= button_tag type: "submit", class: "btn btn-primary d-flex align-items-center" do %>
+              <i class="fas fa-paper-plane"></i>
+            <% end %>
+          </div>
+          <small class="form-text text-muted mt-1">
+             The data in the chats above along with any documents you select will be used to generate a response using an external LLM.
+          </small>
+        <% end %>
+      </div>
     </div>
   </div>
 </div>
+
+<style>
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+</style>
