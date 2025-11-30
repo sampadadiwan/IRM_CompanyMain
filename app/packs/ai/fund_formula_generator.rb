@@ -29,7 +29,7 @@ class FundFormulaGenerator
     LlmService.chat(
       prompt: prompt,
       provider: "gemini",
-      llm_model: "gemini-2.5-flash-preview-05-20"
+      llm_model: ENV['DEFAULT_MODEL']
     ).strip
   end
 

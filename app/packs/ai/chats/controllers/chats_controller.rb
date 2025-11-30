@@ -27,7 +27,7 @@ class ChatsController < ApplicationController
     @chat = Chat.new(chat_params)
     @chat.user_id = current_user.id
     @chat.entity_id = current_user.entity_id
-    @chat.model_id = ENV["DEFAULT_CHAT_MODEL"] || "gemini-2.5-flash-preview-05-20"
+    @chat.model_id = ENV['DEFAULT_MODEL']
     authorize @chat
     if @chat.save
       redirect_to @chat, notice: "Chat was successfully created."

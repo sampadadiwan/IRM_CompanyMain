@@ -1,6 +1,6 @@
 class KpiAnalystJob < ApplicationJob
   queue_as :low
-  MODEL = 'gemini-2.5-flash-preview-04-17'.freeze
+  MODEL = 'ENV['DEFAULT_MODEL']-preview-04-17'.freeze
 
   def perform(current_kpi_report_id, prev_kpi_report_id, user_id)
     Chewy.strategy(:sidekiq) do

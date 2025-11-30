@@ -28,7 +28,7 @@ class FundFormulaExplainer
     response = LlmService.chat(
       prompt: full_prompt,
       provider: "gemini", # Consider making this configurable
-      llm_model: "gemini-2.5-flash-preview-05-20" # Consider making this configurable
+      llm_model: ENV['DEFAULT_MODEL'] # Consider making this configurable
     ).strip
 
     Rails.logger.info "FundFormulaExplainer: Received LLM response for formula #{fund_formula.name} - rule_type '#{rule_type}':\n#{response}"
