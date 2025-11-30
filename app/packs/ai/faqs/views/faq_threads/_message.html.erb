@@ -1,0 +1,34 @@
+<%
+  is_user = role == 'user'
+  alignment_class = is_user ? 'justify-content-end' : 'justify-content-start'
+  bg_class = is_user ? 'bg-primary text-white' : 'bg-light text-dark border'
+  avatar_bg = is_user ? 'bg-secondary' : 'bg-info'
+%>
+
+<div class="d-flex <%= alignment_class %> mb-3" data-faq-thread-target="message" data-role="<%= role %>">
+  <% unless is_user %>
+    <div class="flex-shrink-0 me-2">
+      <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
+        AI
+      </div>
+    </div>
+  <% end %>
+
+  <div class="p-3 rounded-3 shadow-sm <%= bg_class %>" style="max-width: 80%;">
+    <% if is_user %>
+      <%= simple_format(content, class: "mb-0 small") %>
+    <% else %>
+      <div class="small">
+        <%= markdown_to_html(content) rescue simple_format(content) %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if is_user %>
+    <div class="flex-shrink-0 ms-2">
+      <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
+        You
+      </div>
+    </div>
+  <% end %>
+</div>

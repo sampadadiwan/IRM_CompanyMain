@@ -1,0 +1,23 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Support Conversations</h1>
+    <%= button_to "New Chat", faq_threads_path, class: "btn btn-primary" %>
+  </div>
+
+  <% if @faq_threads.any? %>
+    <div class="list-group">
+      <% @faq_threads.each do |thread| %>
+        <%= link_to faq_thread_path(thread), class: "list-group-item list-group-item-action flex-column align-items-start" do %>
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1"><%= thread.title.presence || "Conversation ##{thread.id}" %></h5>
+            <small>Created <%= time_ago_in_words(thread.created_at) %> ago</small>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-center py-5">
+      <p class="text-muted mb-4">No support conversations yet.</p>
+    </div>
+  <% end %>
+</div>

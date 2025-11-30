@@ -19,7 +19,7 @@ class LlmService
     # Set default provider and model from environment variables if not explicitly provided.
     # This allows for easy configuration in different environments (development, production).
     provider ||= ENV.fetch('AI_CHECKS_PROVIDER', 'gemini')
-    llm_model ||= ENV.fetch('AI_CHECKS_MODEL', 'ENV['DEFAULT_MODEL']')
+    llm_model ||= ENV.fetch('AI_CHECKS_MODEL', ENV.fetch('DEFAULT_MODEL'))
 
     Rails.logger.debug { "LlmService: Using provider: #{provider}, model: #{llm_model}" }
 

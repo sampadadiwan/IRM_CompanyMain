@@ -1,3 +1,6 @@
+resources :faq_threads do
+  post :create_message, on: :member
+end
 resources :support_agents do
   post 'run', on: :collection
 end

@@ -42,6 +42,7 @@ class User < ApplicationRecord
     "qa" => "974"
   }.freeze
 
+  has_many :faq_threads, dependent: :destroy
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :investor_accesses, dependent: :destroy
