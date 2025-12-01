@@ -1,12 +1,20 @@
 V9.1.49
 #####################################
+b9b6ea290 Fixed the sample fund and kyc docs import zip files
+b1ae295f9 Added release notes
+6d4920cff Fixed portfolio report doc generation (#1104)
 bbefd4358 Allow multiple form types for CapitalCommitment
 10145c9c3 Now uses Kyc Id as a column to de-dup kycs for doc import
+23ce7bb57 Fixed bug with Investor to Stakeholder migration in import
+ca021167e Fixed tests post changes to Stakeholder
 ea4c320da Renamed Investor to Stakeholder in CDP and KYC files
+cac00fabc Fixed upload of docs for kyc, now takes Id to disambiguate Kycs
 e92a572fc Added cumulation for Kpis using month_offset_for_financial_year
+ae5e98984 Sync Schema
 a3580deaf Added Allow Orignal Format Download
 232a81491 Now allows / validates only a single FormType for most  models
 313fac4f6 Archived migrations
+7cc3dff84 Added better assistant_id for SupportBot in prod
 
 V9.1.48
 #####################################

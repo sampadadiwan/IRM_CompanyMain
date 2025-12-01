@@ -376,4 +376,8 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   def pan=(value)
     self.PAN = value.strip if value.present?
   end
+
+  def pan
+    self.PAN
+  end
 end
