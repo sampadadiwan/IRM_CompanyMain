@@ -45,7 +45,7 @@ class ImportFundDocs < ImportUtil
     file_name = user_data['File Name']&.strip
     norm_name = file_name&.downcase
     if @docs_added.include?(norm_name)
-      puts "Duplicate document upload attempted for #{file_name}"
+      Rails.logger.debug { "Duplicate document upload attempted for #{file_name}" }
       raise "#{user_data['File Name']} cannot be uploaded again"
     else
       @docs_added.add(norm_name)

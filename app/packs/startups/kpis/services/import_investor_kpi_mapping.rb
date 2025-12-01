@@ -1,7 +1,7 @@
 class ImportInvestorKpiMapping < ImportUtil
   # Defines the standard headers expected in the import file.
   STANDARD_HEADERS = [
-    "Investor", "Reported Kpi Name", "Standard Kpi Name", "Category",
+    "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
     "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report",
     "Lower Threshold", "Upper Threshold", "Cumulate"
   ].freeze
@@ -36,11 +36,11 @@ class ImportInvestorKpiMapping < ImportUtil
         save_investor_kpi_mapping(user_data, investor_kpi_mapping, custom_field_headers, import_upload, investor)
       else
         # Raise an error if the mapping does not exist for update.
-        raise "InvestorKpiMapping not found for update with Standard Kpi Name '#{user_data['Standard Kpi Name']}' and Investor '#{user_data['Investor']}'"
+        raise "InvestorKpiMapping not found for update with Standard Kpi Name '#{user_data['Standard Kpi Name']}' and Investor '#{user_data['Stakeholder']}'"
       end
     elsif investor_kpi_mapping.persisted?
       Rails.logger.debug { "InvestorKpiMapping already exists with ID: #{investor_kpi_mapping.id}" }
-      raise "InvestorKpiMapping already exists with Standard Kpi Name '#{user_data['Standard Kpi Name']}', Reported Kpi Name '#{user_data['Reported Kpi Name']}' and Investor '#{user_data['Investor']}'"
+      raise "InvestorKpiMapping already exists with Standard Kpi Name '#{user_data['Standard Kpi Name']}', Reported Kpi Name '#{user_data['Reported Kpi Name']}' and Investor '#{user_data['Stakeholder']}'"
     else
       save_investor_kpi_mapping(user_data, investor_kpi_mapping, custom_field_headers, import_upload, investor)
     end
@@ -56,8 +56,8 @@ class ImportInvestorKpiMapping < ImportUtil
   # @return [Investor] The investor object.
   # @raise [RuntimeError] If the investor is not found.
   def find_investor(user_data, import_upload)
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    raise "Investor with name '#{user_data['Investor']}' not found for entity #{import_upload.entity.name}" unless investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    raise "Investor with name '#{user_data['Stakeholder']}' not found for entity #{import_upload.entity.name}" unless investor
 
     investor
   end

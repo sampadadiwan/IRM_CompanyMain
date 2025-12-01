@@ -41,33 +41,20 @@ class ImportKycDocs < ImportUtil
     name = user_data["Document Name"]
     orignal = user_data["Allow Orignal Format Download"].to_s.downcase.strip == "yes"
 
-    if user_data["Id"].to_s.strip.present?
-      # Sometimes we get an ID for the specific KYC we want to attach the document to. This happens when there are 2 KYCs with the same details (One for Gift City and one for regular)
-      model = import_upload.entity.investor_kycs.find_by(id: user_data["Id"].strip)
-      # Sometimes the "Id" header is included in the custom fields, so we need to remove it
-      custom_field_headers -= ["Id"]
-    elsif user_data["Pan/Tax Id"].to_s.strip.blank?
-      # If we have a PAN/Tax ID thats blank then we try to find by name only
-      model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"].strip)
-    else
-      # Otherwise we try to find it by the standard details
-      model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"]) if user_data["Document Type"] == "KYC"
-    end
+    owner = get_owner(user_data, import_upload, custom_field_headers)
 
     send_email = user_data["Send Email"] == "Yes"
     file_path = find_case_insensitive_file(dir, user_data["File Name"])
 
-
-    if model && File.exist?(file_path)
-      if Document.exists?(owner: model, entity_id: model.entity_id, name: name)
+    if owner && File.exist?(file_path)
+      if Document.exists?(owner: owner, entity_id: owner.entity_id, name: name)
         [false, "#{name} already present"]
       else
         doc = Document.new(
-          owner: model,
-          entity_id: model.entity_id,
+          owner: owner,
+          entity_id: owner.entity_id,
           name: name,
           tag_list: user_data["Tags"],
-          orignal: true,
           import_upload_id: import_upload.id,
           user_id: import_upload.user_id,
           send_email: send_email,
@@ -76,10 +63,10 @@ class ImportKycDocs < ImportUtil
 
         doc.file = File.open(file_path, "rb")
         doc.save!
-        Rails.logger.debug { "Saved document #{doc.name} for KYC #{model.full_name}" }
+        Rails.logger.debug { "Saved document #{doc.name} for KYC #{owner.full_name}" }
         [true, "Success"]
       end
-    elsif model.nil?
+    elsif owner.nil?
       Rails.logger.debug { "KYC not found for #{user_data['Investing Entity']} with PAN #{user_data['Pan/Tax Id']}" }
       [false, "KYC not found"]
     else
@@ -90,5 +77,21 @@ class ImportKycDocs < ImportUtil
 
   def post_process(_ctx, unzip_dir:, **)
     FileUtils.rm_rf unzip_dir
+  end
+
+  def get_owner(user_data, import_upload, custom_field_headers)
+    if user_data["Id"].to_s.strip.present?
+      # Sometimes the "Id" header is included in the custom fields, so we need to remove it
+      custom_field_headers -= ["Id"]
+      Rails.logger.debug { "Removing Id from custom_field_headers #{custom_field_headers}" }
+      # Sometimes we get an ID for the specific KYC we want to attach the document to. This happens when there are 2 KYCs with the same details (One for Gift City and one for regular)
+      import_upload.entity.investor_kycs.find_by(id: user_data["Id"].strip)
+    elsif user_data["Pan/Tax Id"].to_s.strip.blank?
+      # If we have a PAN/Tax ID thats blank then we try to find by name only
+      import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"].strip)
+    elsif user_data["Document Type"] == "KYC"
+      # Otherwise we try to find it by the standard details
+      import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"])
+    end
   end
 end
