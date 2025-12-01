@@ -24,9 +24,7 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
               <%
-                  payments_completed_msg = "This will mark all payments in this distribution as completed and trigger a notification to the investors with approved users..
-                  <br>
-                  #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_distribution_payment.fund, capital_distribution_payment_id: @capital_distribution_payment.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"
+                  payments_completed_msg = "This will mark the payment as completed.Proceed?"
               %>
 
               <%= button_to payments_completed_capital_distribution_payment_path(@capital_distribution_payment),
