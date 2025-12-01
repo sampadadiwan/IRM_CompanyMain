@@ -2,6 +2,7 @@ class Kpi < ApplicationRecord
   include WithCustomField
   include ForInvestor
   include Trackable.new(on: %i[create update], audit_fields: %i[value display_value notes percentage_change])
+  include KpiCumulative
 
   STANDARD_COLUMNS = {
     "Name" => "name",
@@ -152,78 +153,5 @@ class Kpi < ApplicationRecord
       Rails.logger.debug "--- RAG status set to nil (conditions not met)."
     end
     save if changed?
-  end
-
-  # This is used to cumulate the KPI values over time periods like Quarterly and YTD
-  def cumulate
-    Rails.logger.info "--- [#{name}] Starting cumulate for KPI '#{name}' for entity #{entity_id}, pc_id: #{portfolio_company_id}"
-
-    # Find all related monthly KPIs for this entity and name, but only Actuals
-    related_kpis = entity.kpis.joins(:kpi_report).includes(:kpi_report)
-                         .where(name:, portfolio_company_id:, kpi_reports: { tag_list: 'Actual', period: 'Month' })
-                         .order("kpi_reports.as_of ASC")
-
-    Rails.logger.info "--- [#{name}] Found #{related_kpis.size} related monthly KPIs"
-    return if related_kpis.empty?
-
-    # Group KPIs by year and quarter to calculate sums efficiently
-    kpis_by_quarter = related_kpis.group_by { |kpi| [kpi.kpi_report.as_of.year, ((kpi.kpi_report.as_of.month - 1) / 3) + 1] }
-    kpis_by_year = related_kpis.group_by { |kpi| kpi.kpi_report.as_of.year }
-
-    # Process each quarter's cumulative value once
-    kpis_by_quarter.each do |(year, quarter), kpis_in_quarter|
-      quarterly_sum = kpis_in_quarter.sum { |kpi| kpi.value.to_f }
-      last_kpi_in_quarter = kpis_in_quarter.last
-      quarter_start = Date.new(year, ((quarter - 1) * 3) + 1, 1)
-      quarter_end = quarter_start.end_of_quarter
-      process_cumulative_kpi(last_kpi_in_quarter, quarterly_sum, 'Quarter', quarter_start, quarter_end)
-    end
-
-    # Process each year's cumulative value once
-    kpis_by_year.each do |year, kpis_in_year|
-      ytd_sum = kpis_in_year.sum { |kpi| kpi.value.to_f }
-      last_kpi_in_year = kpis_in_year.last
-      year_start = Date.new(year, 1, 1)
-      year_end = Date.new(year, 12, 31)
-      process_cumulative_kpi(last_kpi_in_year, ytd_sum, 'YTD', year_start, year_end)
-    end
-
-    Rails.logger.info "--- [#{name}] Cumulate complete for KPI '#{name}'"
-  end
-
-  private
-
-  def process_cumulative_kpi(monthly_kpi, cumulative_sum, period, start_date, end_date)
-    Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{start_date} to #{end_date}, cumulative sum: #{cumulative_sum}" }
-
-    cumulative_kpi = Kpi.joins(:kpi_report)
-                        .where(entity_id: entity_id, name:, portfolio_company_id: portfolio_company_id)
-                        .where(kpi_reports: { period: period })
-                        .where("kpi_reports.as_of BETWEEN ? AND ?", start_date, end_date)
-                        .last
-
-    if cumulative_kpi
-      Rails.logger.debug { "Kpi:  [#{name}] Existing #{period} KPI found (id=#{cumulative_kpi.id}), current value=#{cumulative_kpi.value}, new value=#{cumulative_sum}" }
-      cumulative_kpi.value = cumulative_sum
-      cumulative_kpi.notes = "Auto-generated #{period} cumulative"
-      if cumulative_kpi.changed?
-        Rails.logger.info "--- [#{name}] Overwriting #{period} KPI #{cumulative_kpi.id} with new value #{cumulative_sum}"
-        cumulative_kpi.save
-      else
-        Rails.logger.debug { "Kpi:  [#{name}] Skipping save for #{period} KPI #{cumulative_kpi.id} (unchanged)" }
-      end
-
-    else
-      Rails.logger.info "--- [#{name}] Creating new #{period} KPI with value #{cumulative_sum}"
-      user_id = monthly_kpi.kpi_report.user_id
-
-      kpi_report = KpiReport.find_or_create_by(period: period, as_of: monthly_kpi.kpi_report.as_of,
-                                               entity_id:, portfolio_company_id:, user_id:)
-
-      kpi = Kpi.find_or_initialize_by(entity_id:, name:, portfolio_company_id:, kpi_report:)
-      kpi.value = cumulative_sum
-      kpi.notes = "Auto-generated #{period} cumulative"
-      kpi.save
-    end
   end
 end

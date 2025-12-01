@@ -1,7 +1,7 @@
 class ImportInvestorAccess < ImportUtil
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -13,11 +13,11 @@ class ImportInvestorAccess < ImportUtil
   end
 
   def save_row(user_data, import_upload, _custom_field_headers, _ctx)
-    if user_data['Investor'].present?
-      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
-      raise "Investor not found" unless investor
+    if user_data['Stakeholder'].present?
+      investor = import_upload.entity.investors.find_by(investor_name: user_data['Stakeholder'])
+      raise "Stakeholder not found" unless investor
     else
-      raise "Investor name is missing"
+      raise "Stakeholder name is missing"
     end
 
     Rails.logger.debug user_data

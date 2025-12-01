@@ -299,10 +299,17 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
   ytd_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "YTD")
   ytd_kpis.count.should > 0
   ytd_kpis.each do |kpi|
+    months = (kpi.portfolio_company.json_fields['month_offset_for_financial_year'] || 3).to_i
     puts "Checking YTD KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
+
     year = kpi.kpi_report.as_of.year
-    months_in_year = Date.new(year, 1, 1)..Date.new(year, 12, 31)
+    year_start = kpi.fiscal_year_start(kpi.kpi_report.as_of, months)
+    year_end = year_start + 12.months - 1.day
+    months_in_year = year_start..year_end
+
     expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_year, "kpi_reports.tag_list": 'Actual').sum(:value)
+
+    binding.pry if kpi.value != expected_sum
     kpi.value.should == expected_sum
     puts "Expected sum: #{expected_sum}, Actual sum: #{kpi.value}"
   end
