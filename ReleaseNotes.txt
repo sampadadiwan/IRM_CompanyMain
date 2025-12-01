@@ -1,3 +1,14 @@
+V9.1.48
+#####################################
+98db2e980 Changed styles for chat
+3f6105906 Added better FaqThreads
+4765cc950 Added icons to kpi grid
+96eaa1408 Added better destroy for the chats
+8368cfcbb Added analyst using gemini-3
+8afe2bc23 Changed to use Gemini-2.5
+e0bae0009 Added link to Support Bot for FMs only
+0b967ccd3 Added Doorkeeper consent with nonce
+
 V9.1.47
 #####################################
 179097477 Added OpenWebUi to prod in

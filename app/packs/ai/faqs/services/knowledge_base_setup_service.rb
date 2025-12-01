@@ -59,11 +59,11 @@ class KnowledgeBaseSetupService
     # 3. Create/Update Assistant
     assistant = create_assistant(vs_id)
 
-    Rails.logger.debug "\n🎉 SETUP COMPLETE!"
-    Rails.logger.debug "---------------------------------------------------"
-    Rails.logger.debug "Add this to your .env file:"
-    Rails.logger.debug { "FAQ_ASSISTANT_ID=#{assistant['id']}" }
-    Rails.logger.debug "---------------------------------------------------"
+    Rails.logger.info "\n🎉 SETUP COMPLETE!"
+    Rails.logger.info "---------------------------------------------------"
+    Rails.logger.info "Add this to your .env file:"
+    Rails.logger.info { "FAQ_ASSISTANT_ID=#{assistant['id']}" }
+    Rails.logger.info "---------------------------------------------------"
 
     assistant
   end
@@ -117,13 +117,12 @@ class KnowledgeBaseSetupService
   def create_assistant(vector_store_id)
     # Define the bot's persona
     instructions = <<~TEXT
-      You are a helpful customer support agent for our company CapHive.
+      You are a helpful customer support agent for our company CapHive. You provide detailed and step by step instructions on queries from users.
       Use the attached Knowledge Base files to answer questions.
       You are strictly prohibited from answering questions unrelated to CapHive or the provided knowledge base.
       Do not use your general knowledge to answer questions.
       If the answer is not in the files, then politely say you don't know
       and advise them to email support@caphive.com.
-      Keep answers concise and friendly.
     TEXT
 
     @client.assistants.create(parameters: {
