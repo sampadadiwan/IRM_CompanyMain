@@ -215,7 +215,7 @@ Then('the investor accesses must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     ia = investor_accesses[idx-1]
     puts "Checking import of #{ia.investor.investor_name}"
-    ia.investor.investor_name.should == user_data["Investor"].strip
+    ia.investor.investor_name.should == user_data["Stakeholder"].strip
     ia.email.should == user_data["Email"]
     ia.cc.should == user_data["Cc"]
     ia.first_name.should == user_data["First Name"]
@@ -396,7 +396,7 @@ Then('the investor kycs must have the data in the sheet {string}') do |file_name
       cc.birth_date.to_date.should == user_data["Date Of Birth"]
       cc.address.should == user_data["Address"]
       cc.corr_address.should == user_data["Correspondence Address"]
-      cc.PAN.should == user_data["Pan"]
+      cc.PAN.should == user_data["Pan/Tax Id"]
       cc.bank_name.should == user_data["Bank Name"]
       cc.bank_branch.should == user_data["Branch Name"]
       cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s
