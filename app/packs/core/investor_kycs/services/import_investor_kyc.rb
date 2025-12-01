@@ -1,5 +1,5 @@
 class ImportInvestorKyc < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Investing Entity", "Pan/Tax Id", "Address", "Correspondence Address", "Kyc Type", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type"].freeze
   # add them as standard fields above
 
   def standard_headers
@@ -15,8 +15,8 @@ class ImportInvestorKyc < ImportUtil
     update_only = user_data["Update Only"]
     pan = user_data["Pan"]
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    raise "Investor not found" unless investor
+    investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
+    raise "Stakeholder not found" unless investor
 
     investor_kyc = InvestorKyc.where(investor_id: investor.id, PAN: pan,
                                      entity_id: import_upload.entity_id, full_name:).first
@@ -60,7 +60,7 @@ class ImportInvestorKyc < ImportUtil
     verified = %w[yes true].include?(user_data["Verified"]&.downcase)
     send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)
 
-    investor_kyc.assign_attributes(investor:, PAN: user_data["Pan"],
+    investor_kyc.assign_attributes(investor:, PAN: user_data["Pan/Tax Id"],
                                    agreement_committed_amount: user_data["Agreement Committed Amount"],
                                    agreement_unit_type: user_data["Agreement Unit Type"],
                                    full_name: user_data["Investing Entity"],

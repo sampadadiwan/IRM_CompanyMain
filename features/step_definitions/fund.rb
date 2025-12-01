@@ -1857,12 +1857,12 @@ Then('the capital distribution payments must have the data in the sheet {string}
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
     capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
-    investor = Investor.where(investor_name: row_data["Investor"]).first
+    investor = Investor.where(investor_name: row_data["Stakeholder"]).first
     cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
 
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should == row_data["Investor"]
+    cdp.investor_name.should == row_data["Stakeholder"]
     cdp.income.to_d.should == row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
     cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)

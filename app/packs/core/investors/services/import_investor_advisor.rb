@@ -1,5 +1,5 @@
 class ImportInvestorAdvisor < ImportUtil
-  STANDARD_HEADERS = ["Email", "Add To", "Name", "Investor", "Allowed Roles"].freeze
+  STANDARD_HEADERS = ["Email", "Add To", "Name", "Stakeholder", "Allowed Roles"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -9,7 +9,7 @@ class ImportInvestorAdvisor < ImportUtil
     # puts "processing #{user_data}"
     saved = true
     email = user_data['Email']
-    investor_name = user_data['Investor']
+    investor_name = user_data['Stakeholder']
     allowed_roles = user_data['Allowed Roles'].present? ? user_data['Allowed Roles'].downcase.split(',').map(&:strip) : %w[employee investor]
 
     entity = import_upload.entity
