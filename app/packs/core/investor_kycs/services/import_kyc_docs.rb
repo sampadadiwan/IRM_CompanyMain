@@ -39,6 +39,9 @@ class ImportKycDocs < ImportUtil
 
     dir = context[:unzip_dir]
     name = user_data["Document Name"]
+    orignal = user_data["Allow Orignal Format Download"].to_s.downcase.strip == "yes"
+
+    # We may also get the Form Type Tag, when we have this, then find the KYC based on both name and form type tag
     model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"]) if user_data["Document Type"] == "KYC"
     send_email = user_data["Send Email"] == "Yes"
 
@@ -56,7 +59,8 @@ class ImportKycDocs < ImportUtil
           orignal: true,
           import_upload_id: import_upload.id,
           user_id: import_upload.user_id,
-          send_email: send_email
+          send_email: send_email,
+          orignal: orignal
         )
 
         doc.file = File.open(file_path, "rb")
