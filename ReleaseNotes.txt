@@ -1,3 +1,13 @@
+V9.1.49
+#####################################
+bbefd4358 Allow multiple form types for CapitalCommitment
+10145c9c3 Now uses Kyc Id as a column to de-dup kycs for doc import
+ea4c320da Renamed Investor to Stakeholder in CDP and KYC files
+e92a572fc Added cumulation for Kpis using month_offset_for_financial_year
+a3580deaf Added Allow Orignal Format Download
+232a81491 Now allows / validates only a single FormType for most  models
+313fac4f6 Archived migrations
+
 V9.1.48
 #####################################
 98db2e980 Changed styles for chat
