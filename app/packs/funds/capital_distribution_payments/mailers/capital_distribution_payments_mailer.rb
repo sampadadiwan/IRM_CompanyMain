@@ -16,6 +16,8 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  private
+
   def attach_all_files
     # Check for attachments
     @capital_distribution_payment.documents.generated.approved.each do |doc|
