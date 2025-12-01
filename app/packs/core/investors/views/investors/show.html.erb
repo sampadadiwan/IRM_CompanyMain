@@ -58,7 +58,7 @@
           <i class="ti ti-layout-dashboard"></i> Dashboard
         <% end %>
 
-        <%= link_to folder_documents_path(folder_id: @investor.document_folder_id),
+        <%= link_to folder_documents_path(folder_id: @investor.document_folder.id),
                     class: "dropdown-item d-flex align-items-center",
                     data: { turbo: false } do %>
           <i class="ti ti-folder"></i> Documents

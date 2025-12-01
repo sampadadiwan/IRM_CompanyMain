@@ -11,6 +11,7 @@ class PortfolioReportDocGenerator
     @end_date = end_date
     @user_id = user_id
     @options = options
+    call
   end
 
   def call
