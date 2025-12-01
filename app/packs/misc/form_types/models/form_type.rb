@@ -2,7 +2,7 @@ class FormType < ApplicationRecord
   include WithGridViewPreferences
 
   # These models can have multiple form types attached to them, so when we upload the data we cannot auto create the form types
-  MULTIPLE_FORM_TYPES_ALLOWED = %w[InvestorKyc IndividualKyc NonIndividualKyc Offer Interest].freeze
+  MULTIPLE_FORM_TYPES_ALLOWED = %w[CapitalCommitment InvestorKyc IndividualKyc NonIndividualKyc Offer Interest].freeze
 
   belongs_to :entity
 
