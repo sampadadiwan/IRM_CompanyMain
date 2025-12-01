@@ -80,12 +80,12 @@ class ImportKycDocs < ImportUtil
   end
 
   def get_owner(user_data, import_upload, custom_field_headers)
-    if user_data["Id"].to_s.strip.present?
+    if user_data["Kyc Id"].to_s.strip.present?
       # Sometimes the "Id" header is included in the custom fields, so we need to remove it
-      custom_field_headers -= ["Id"]
+      custom_field_headers -= ["Kyc Id"]
       Rails.logger.debug { "Removing Id from custom_field_headers #{custom_field_headers}" }
       # Sometimes we get an ID for the specific KYC we want to attach the document to. This happens when there are 2 KYCs with the same details (One for Gift City and one for regular)
-      import_upload.entity.investor_kycs.find_by(id: user_data["Id"].strip)
+      import_upload.entity.investor_kycs.find_by(id: user_data["Kyc Id"].strip)
     elsif user_data["Pan/Tax Id"].to_s.strip.blank?
       # If we have a PAN/Tax ID thats blank then we try to find by name only
       import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"].strip)
