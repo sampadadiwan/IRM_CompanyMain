@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_11_28_093247) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_30_122623) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1420,6 +1420,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_093247) do
     t.index ["investor_kyc_id"], name: "index_expression_of_interests_on_investor_kyc_id"
     t.index ["investor_signatory_id"], name: "index_expression_of_interests_on_investor_signatory_id"
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
+  end
+
+  create_table "faq_threads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "openai_thread_id"
+    t.string "title", default: "New Support Chat"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "messages"
+    t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
 
   create_table "favorites", force: :cascade do |t|
