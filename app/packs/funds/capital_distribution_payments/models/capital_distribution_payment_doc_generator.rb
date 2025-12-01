@@ -22,11 +22,15 @@ class CapitalDistributionPaymentDocGenerator
     fund_doc_template.file.download do |tempfile|
       create_working_dir(capital_distribution_payment)
       generate(capital_distribution_payment, tempfile.path)
-      upload(fund_doc_template, capital_distribution_payment, user_id: user_id)
+      upload(fund_doc_template, capital_distribution_payment, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_distribution_payment), user_id: user_id)
       notify(fund_doc_template, capital_distribution_payment, user_id) if user_id
     ensure
       cleanup
     end
+  end
+
+  def final_file_name(fund_doc_template_name, capital_distribution_payment)
+    "#{fund_doc_template_name} - #{capital_distribution_payment.investor_kyc} - #{capital_distribution_payment.folio_id}"
   end
 
   private
