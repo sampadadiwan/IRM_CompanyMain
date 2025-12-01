@@ -2254,6 +2254,7 @@ Then('I should see the commitment and distribuition docs upload errors') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
+  # The commented out checks are for errors that are no longer generated due to changes in the import which does not check the kyc now.
   data.each_with_index do |row, idx|
     p row[headers.length]
     next if idx.zero? # skip header row
@@ -2264,10 +2265,10 @@ Then('I should see the commitment and distribuition docs upload errors') do
       row[headers.length].include?("Fund Absent Fund not found").should == true
     end
     if idx == 4
-      row[headers.length].include?("Investing Entity Investor 99 not found").should == true
+      # row[headers.length].include?("Investing Entity Investor 99 not found").should == true
     end
     if idx == 5
-      row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
+      # row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
     end
     if idx == 6
       row[headers.length].include?("Distribution Name not found").should == true
@@ -2276,13 +2277,13 @@ Then('I should see the commitment and distribuition docs upload errors') do
       row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true
     end
     if idx == 8
-      row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
+      # row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
     end
     if idx == 9
       row[headers.length].include?("Fund is blank").should == true
     end
     if idx == 10
-      row[headers.length].include?("Investing Entity is blank").should == true
+      # row[headers.length].include?("Investing Entity is blank").should == true
     end
     if idx == 11
       row[headers.length].include?("Folio No is blank").should == true
@@ -2350,7 +2351,7 @@ Then('I should see the remittance payments upload errors') do
 end
 
 Then('The proper documents must be uploaded for the remittances') do
-  expect(ImportUpload.last.failed_row_count).to eq(7)
+  expect(ImportUpload.last.failed_row_count).to eq(6)
   doc1 = Document.where(name: "Remittance doc 1").first
   cc = CapitalCall.find_by(fund: @fund, name: "Capital Call 4")
   investor = Investor.find_by(investor_name: "Investor 1", entity: @fund.entity)
@@ -2368,6 +2369,7 @@ Then('I should see the remittance docs upload errors') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
+  # The commented out checks are for errors that are no longer generated due to changes in the import which does not check the kyc now.
   data.each_with_index do |row, idx|
     p row[headers.length]
     next if idx.zero? # skip header row
@@ -2381,13 +2383,13 @@ Then('I should see the remittance docs upload errors') do
       row[headers.length].include?("Capital Call not found for Some capital call").should == true
     end
     if idx == 5
-      row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
+      # row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
     end
     if idx == 6
       row[headers.length].include?("Fund is blank").should == true
     end
     if idx == 7
-      row[headers.length].include?("Investing Entity is blank").should == true
+      # row[headers.length].include?("Investing Entity is blank").should == true
     end
     if idx == 8
       row[headers.length].include?("Folio No is blank").should == true

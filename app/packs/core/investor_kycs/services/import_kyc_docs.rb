@@ -34,18 +34,29 @@ class ImportKycDocs < ImportUtil
     end
   end
 
-  def save_kyc_document(user_data, import_upload, _custom_field_headers, context)
+  def save_kyc_document(user_data, import_upload, custom_field_headers, context)
     Rails.logger.debug { "Processing investor kyc doc #{user_data}" }
 
     dir = context[:unzip_dir]
     name = user_data["Document Name"]
     orignal = user_data["Allow Orignal Format Download"].to_s.downcase.strip == "yes"
 
-    # We may also get the Form Type Tag, when we have this, then find the KYC based on both name and form type tag
-    model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"]) if user_data["Document Type"] == "KYC"
-    send_email = user_data["Send Email"] == "Yes"
+    if user_data["Id"].to_s.strip.present?
+      # Sometimes we get an ID for the specific KYC we want to attach the document to. This happens when there are 2 KYCs with the same details (One for Gift City and one for regular)
+      model = import_upload.entity.investor_kycs.find_by(id: user_data["Id"].strip)
+      # Sometimes the "Id" header is included in the custom fields, so we need to remove it
+      custom_field_headers -= ["Id"]
+    elsif user_data["Pan/Tax Id"].to_s.strip.blank?
+      # If we have a PAN/Tax ID thats blank then we try to find by name only
+      model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"].strip)
+    else
+      # Otherwise we try to find it by the standard details
+      model = import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"]) if user_data["Document Type"] == "KYC"
+    end
 
+    send_email = user_data["Send Email"] == "Yes"
     file_path = find_case_insensitive_file(dir, user_data["File Name"])
+
 
     if model && File.exist?(file_path)
       if Document.exists?(owner: model, entity_id: model.entity_id, name: name)

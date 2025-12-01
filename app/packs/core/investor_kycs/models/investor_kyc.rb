@@ -372,4 +372,8 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   def kyc_data_fields_populated
     full_name.present? || address.present? || corr_address.present?
   end
+
+  def pan=(value)
+    self.PAN = value.strip if value.present?
+  end
 end
