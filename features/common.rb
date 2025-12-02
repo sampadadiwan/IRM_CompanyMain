@@ -21,13 +21,18 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
         {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 10.year},
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 10.year}
     ])
-
-    puts "\n####Creating Default Form Types####\n"
-    FormType::MULTIPLE_FORM_TYPES_ALLOWED.each do |type|
-      ft = FormType.where(name: type, entity: @entity, tag: "Default").first_or_create
-    end
-
   end
+
+  puts "\n####Creating Default Form Types####\n"
+  FormType::MULTIPLE_FORM_TYPES_ALLOWED.each do |type|
+    ft = FormType.where(name: type, entity: @entity, tag: "Default").first_or_create
+    if ft.persisted?
+      puts "Created FormType #{type}"
+    else
+      puts "Error creating FormType #{type}: #{ft.errors.full_messages}"
+    end
+  end
+
 
   puts @entity.exchange_rates.to_json
 
