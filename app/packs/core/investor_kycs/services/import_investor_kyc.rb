@@ -6,9 +6,13 @@ class ImportInvestorKyc < ImportUtil
     STANDARD_HEADERS
   end
 
+  def get_form_types(import_upload)
+    @get_form_types ||= import_upload.entity.form_types.where(name: %w[IndividualKyc NonIndividualKyc]).index_by { |ft| "#{ft.name}-#{ft.tag}" }
+  end
+
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug user_data
-    @form_types ||= import_upload.entity.form_types.where(name: %w[IndividualKyc NonIndividualKyc]).index_by { |ft| "#{ft.name}-#{ft.tag}" }
+    get_form_types(import_upload)
 
     saved = true
     full_name = user_data["Investing Entity"]
@@ -32,7 +36,7 @@ class ImportInvestorKyc < ImportUtil
       if investor_kyc.present?
         # Update only, and we have a pre-existing KYC
         investor_kyc.import_upload_id = import_upload.id
-        saved = save_kyc(investor_kyc, investor, user_data, custom_field_headers)
+        saved = save_kyc(import_upload, investor_kyc, investor, user_data, custom_field_headers)
       else
         # Kyc not found but there is a kyc with a blank full name or nil full name in the DB - update
         # Update only, but we dont have a pre-existing KYC
@@ -40,7 +44,7 @@ class ImportInvestorKyc < ImportUtil
       end
     elsif investor_kyc.nil?
       investor_kyc = InvestorKyc.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
-      saved = save_kyc(investor_kyc, investor, user_data, custom_field_headers)
+      saved = save_kyc(import_upload, investor_kyc, investor, user_data, custom_field_headers)
       # No update, and we dont have a pre-existing KYC
     else
       # No update, but we have a pre-existing KYC
@@ -50,17 +54,10 @@ class ImportInvestorKyc < ImportUtil
     saved
   end
 
-  def save_kyc(investor_kyc, investor, user_data, custom_field_headers)
+  def save_kyc(import_upload, investor_kyc, investor, user_data, custom_field_headers)
     kyc_type = user_data["Kyc Type"].presence || "Individual"
-
-    # Find the form type based on the kyc_type and form tag
-    form_tag = user_data["Form Tag"]&.strip
-    raise "Form Tag not specified" if form_tag.blank?
-
-    form_type = @form_types["#{kyc_type}Kyc-#{form_tag}"]
-    raise "Form Type not found for #{kyc_type}Kyc with tag #{form_tag}" if form_type.nil?
-
-    # At this point we are sure we have a form_type
+    # Determine the form type for the row being processed
+    form_type = get_form_type(import_upload, user_data, form_type_name: "#{kyc_type.delete(' ').strip}Kyc")
 
     verified = %w[yes true].include?(user_data["Verified"]&.downcase)
     send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)

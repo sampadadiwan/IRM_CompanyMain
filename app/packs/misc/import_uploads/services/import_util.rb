@@ -185,7 +185,7 @@ class ImportUtil < Trailblazer::Operation
     # Ensure that we have the form type for the MULTIPLE_FORM_TYPES_ALLOWED
     if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
       raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
-    else
+    elsif form_type.present?
       # Create a map of label to form custom field for faster lookup
       fcf_label_map = form_type.form_custom_fields.index_by(&:label)
     end
@@ -262,5 +262,27 @@ class ImportUtil < Trailblazer::Operation
 
     # Fallback: return path assuming exact name (may not exist)
     File.join(dir, target_file_name)
+  end
+
+  # Given a row we are importing ie user_data, find the form type for the row
+  def get_form_type(import_upload, user_data, form_type_name: nil)
+    name = if import_upload.import_type == "InvestorKyc"
+             %w[IndividualKyc NonIndividualKyc]
+           else
+             [import_upload.import_type]
+           end
+
+    @form_types ||= import_upload.entity.form_types.where(name: name).index_by { |ft| "#{ft.name}-#{ft.tag}" }
+    # Find the form type based on the form_type_name and form tag
+    form_tag = user_data["Form Tag"]&.strip
+    raise "Form Tag not specified" if form_tag.blank?
+
+    # If form_type_name is not specified, use the import_upload.import_type
+    form_type_name ||= import_upload.import_type
+    form_type = @form_types["#{form_type_name}-#{form_tag}"]
+    raise "Form Type not found for #{form_type_name} with tag #{form_tag}" if form_type.nil?
+
+    # Return the form type
+    form_type
   end
 end

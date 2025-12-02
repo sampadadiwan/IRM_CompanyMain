@@ -21,6 +21,12 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
         {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 10.year},
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 10.year}
     ])
+
+    puts "\n####Default Form Types####\n"
+    FormType::MULTIPLE_FORM_TYPES_ALLOWED.each do |type|
+      puts FormType.where(name: type, entity: @entity, tag: "Default").first_or_create!
+    end
+
   end
 
   puts @entity.exchange_rates.to_json

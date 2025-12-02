@@ -141,7 +141,7 @@ Then('the account entries generated match the account entries in {string}') do |
 		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8))
 	else
-		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
+		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
 		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 
