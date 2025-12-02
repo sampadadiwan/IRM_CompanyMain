@@ -1,5 +1,5 @@
 class ImportInvestorKyc < ImportUtil
-  STANDARD_HEADERS = ["Stakeholder", "Investing Entity", "Pan/Tax Id", "Address", "Correspondence Address", "Kyc Type", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Investing Entity", "Pan/Tax Id", "Address", "Correspondence Address", "Kyc Type", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Agreement Unit Type", "Form Tag"].freeze
   # add them as standard fields above
 
   def standard_headers
@@ -55,7 +55,12 @@ class ImportInvestorKyc < ImportUtil
 
     # Find the form type based on the kyc_type and form tag
     form_tag = user_data["Form Tag"]&.strip
-    form_type = form_tag.present? ? @form_types["#{kyc_type}Kyc-#{form_tag}"] : nil
+    raise "Form Tag not specified" if form_tag.blank?
+
+    form_type = @form_types["#{kyc_type}Kyc-#{form_tag}"]
+    raise "Form Type not found for #{kyc_type}Kyc with tag #{form_tag}" if form_type.nil?
+
+    # At this point we are sure we have a form_type
 
     verified = %w[yes true].include?(user_data["Verified"]&.downcase)
     send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)
@@ -79,7 +84,7 @@ class ImportInvestorKyc < ImportUtil
 
     # Form Tag is optional, so we remove it from the custom_field_headers, so it does not get saved as a custom field
     custom_field_headers -= ["Form Tag"]
-    setup_custom_fields(user_data, investor_kyc, custom_field_headers)
+    setup_custom_fields(user_data, investor_kyc, custom_field_headers, form_type:)
 
     result = if investor_kyc.new_record?
                InvestorKycCreate.call(investor_kyc:, investor_user: false)

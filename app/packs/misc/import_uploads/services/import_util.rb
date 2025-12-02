@@ -181,8 +181,16 @@ class ImportUtil < Trailblazer::Operation
     end
   end
 
-  def setup_custom_fields(user_data, model, custom_field_headers)
-    custom_field_headers -= ["Update Only"]
+  def setup_custom_fields(user_data, model, custom_field_headers, form_type: nil)
+    # Ensure that we have the form type for the MULTIPLE_FORM_TYPES_ALLOWED
+    if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
+      raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
+    else
+      # Create a map of label to form custom field for faster lookup
+      fcf_label_map = form_type.form_custom_fields.index_by(&:label)
+    end
+
+    custom_field_headers -= ["Update Only", "Id"]
     # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
     custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
 
@@ -191,7 +199,17 @@ class ImportUtil < Trailblazer::Operation
       model.properties ||= {}
       custom_field_headers.each do |cfh|
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
-        model.properties[FormCustomField.to_name(cfh)] = user_data[cfh] if cfh.present? # && user_data[cfh].present?
+        next if cfh.blank? # && user_data[cfh].present?
+
+        json_fields_key = if form_type.present?
+                            # Get the json fields key from the form custom field name based on the label
+                            fcf_label_map[cfh]&.name
+                          else
+                            # Create the json fields key from the header
+                            FormCustomField.to_name(cfh)
+                          end
+        # Set the custom field value
+        model.json_fields[json_fields_key] = user_data[cfh]
       end
     end
   end
