@@ -40,7 +40,8 @@ class FundFormula < ApplicationRecord
   validates :name, length: { maximum: 125 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-
+  # remove non-breaking spaces
+  normalizes :formula, with: ->(formula) { formula.strip.tr("\u00A0", ' ') }
   validates :tag_list, length: { maximum: 255 }
 
   scope :with_tags, ->(tags) { where(tags.map { |_tag| "fund_formulas.tag_list LIKE ?" }.join(" OR "), *tags.map { |tag| "%#{tag}%" }) }
