@@ -43,8 +43,11 @@ class ImportOffer < ImportUtil
     # For SecondarySale we can have multiple form types. We need to set the form type for the offer
     ctx[:form_type_id] = secondary_sale.offer_form_type_id
     offer.form_type_id = secondary_sale.offer_form_type_id
+    unless defined?(@form_type)
+      @form_type = FormType.find_by(id: secondary_sale.offer_form_type_id)
+    end
 
-    setup_custom_fields(user_data, offer, custom_field_headers - IGNORE_CF_HEADERS)
+    setup_custom_fields(user_data, offer, custom_field_headers - IGNORE_CF_HEADERS, form_type: @form_type)
 
     AccessRight.create(owner: offer.secondary_sale, entity: offer.entity, access_to_investor_id: offer.investor_id, metadata: "Seller")
     offer.save!

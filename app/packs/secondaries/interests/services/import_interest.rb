@@ -38,12 +38,15 @@ class ImportInterest < ImportUtil
       interest.buyer_entity_name = user_data["Buyer Entity Name"]
     end
 
-    setup_shortlist(user_data, interest, import_upload)
-    setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS)
-
     # For SecondarySale we can have multiple form types. We need to set the form type for the interest
     ctx[:form_type_id] = secondary_sale.interest_form_type_id
     interest.form_type_id = secondary_sale.interest_form_type_id
+    unless defined?(@form_type)
+      @form_type = FormType.find_by(id: secondary_sale.interest_form_type_id)
+    end
+
+    setup_shortlist(user_data, interest, import_upload)
+    setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS, form_type: @form_type)
 
     AccessRight.create(owner: interest.secondary_sale, entity: interest.entity, access_to_investor_id: interest.investor_id, metadata: "Buyer")
     interest.save!

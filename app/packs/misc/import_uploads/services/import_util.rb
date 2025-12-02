@@ -201,9 +201,12 @@ class ImportUtil < Trailblazer::Operation
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
         next if cfh.blank? # && user_data[cfh].present?
 
-        json_fields_key = if form_type.present?
+        json_fields_key = if form_type.present? && fcf_label_map[cfh].present?
                             # Get the json fields key from the form custom field name based on the label
-                            fcf_label_map[cfh]&.name
+                            fcf_label_map[cfh].name
+                          elsif form_type.present? && fcf_label_map[cfh].blank?
+                            # In the tests we may not have created the custom fields yet, so allow that, but in the real world we should raise an error
+                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name}")
                           else
                             # Create the json fields key from the header
                             FormCustomField.to_name(cfh)

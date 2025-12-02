@@ -22,9 +22,9 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 10.year}
     ])
 
-    puts "\n####Default Form Types####\n"
+    puts "\n####Creating Default Form Types####\n"
     FormType::MULTIPLE_FORM_TYPES_ALLOWED.each do |type|
-      puts FormType.where(name: type, entity: @entity, tag: "Default").first_or_create!
+      ft = FormType.where(name: type, entity: @entity, tag: "Default").first_or_create
     end
 
   end
