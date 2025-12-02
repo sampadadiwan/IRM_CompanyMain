@@ -21,10 +21,16 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
         {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 10.year},
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 10.year}
     ])
+
+    # Create default form types for funds
+    form_types = %w[CapitalCommitment InvestorKyc IndividualKyc NonIndividualKyc]
+  else
+    # Create default form types for other entities
+    form_types = %w[Offer Interest]
   end
 
   puts "\n####Creating Default Form Types####\n"
-  FormType::MULTIPLE_FORM_TYPES_ALLOWED.each do |type|
+  form_types.each do |type|
     ft = FormType.where(name: type, entity: @entity, tag: "Default").first_or_create
     if ft.persisted?
       puts "Created FormType #{type}"
