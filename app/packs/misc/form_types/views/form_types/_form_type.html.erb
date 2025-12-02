@@ -11,7 +11,7 @@
     <% end %>
 
     <%= link_to generate_upload_xlsx_form_type_path(form_type, format: :xlsx), {class: "btn btn-outline-info" } do %>
-      <i class="ti ti-download"></i> Upload Template
+      <i class="ti ti-download"></i> Import Template
     <% end %>
 
     <% if policy(form_type).update? %>
