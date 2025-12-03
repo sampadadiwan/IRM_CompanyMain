@@ -28,7 +28,11 @@ class InvestmentOpportunitiesController < ApplicationController
   end
 
   # GET /investment_opportunities/1 or /investment_opportunities/1.json
-  def show; end
+  def show
+    if params[:template].present?
+      render layout: false
+    end
+  end
 
   # Called when advisors share a link to the IO, the IO is shared without a password
   def no_password_show
