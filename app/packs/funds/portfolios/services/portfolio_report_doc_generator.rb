@@ -89,7 +89,7 @@ class PortfolioReportDocGenerator
 
   def grid_view_array(portfolio_company, end_date, category: nil)
     kpi_reports = portfolio_company.portfolio_kpi_reports
-                                   .includes(:kpis)
+                                   .includes(kpis: :investor_kpi_mapping)
                                    .where(as_of: ..end_date)
                                    .order(:as_of)
 
@@ -100,8 +100,7 @@ class PortfolioReportDocGenerator
       row_data = { "header" => ikm.standard_kpi_name }
 
       kpi_reports.each do |kr|
-        kpi = kr.kpis.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
-
+        kpi = kr.kpis.show_in_report.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
         row_data[kr.label] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
