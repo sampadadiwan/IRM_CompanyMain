@@ -1,5 +1,6 @@
+<% investor_id ||= params[:investor_id] %>
 <tr id="<%= dom_id investor_access %>">
-  <% if params[:investor_id].blank? %>
+  <% if investor_id.blank? %>
     <td>
       <%= link_to investor_access.investor_name, investor_access.investor %>
     </td>
@@ -25,7 +26,7 @@
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
   </td>
   <td>
-    <%= display_boolean investor_access.whatsapp_enabled %>    
+    <%= display_boolean investor_access.whatsapp_enabled %>
   </td>
   <td>
     <%= display_boolean investor_access.user.whatsapp_enabled %>
@@ -38,7 +39,7 @@
   </td>
   <td>
 
-    
+
 
     <%
       label = investor_access.approved ? "UnApprove" : "Approve"
@@ -47,7 +48,7 @@
     %>
 
     <% if policy(investor_access).approve? %>
-      <%= button_to approve_investor_access_path(investor_access, show_investor_name: params[:show_investor_name], investor_id: params[:investor_id]),
+      <%= button_to approve_investor_access_path(investor_access, investor_id: investor_id),
                     method: :patch, class: btn_class, form_class: "deleteButton" do %>
         <i class="<%= icon_class %>"></i><%= label %>
       <% end %>
@@ -56,7 +57,7 @@
 
 
     <div class="btn-group">
-      <div class="dropup">
+      <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle" type="button"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="ti ti-settings"></i> <%= t_common(:actions) %>
@@ -64,7 +65,7 @@
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
           <% if policy(investor_access).edit? %>
-            <%= link_to edit_investor_access_path(investor_access),
+            <%= link_to edit_investor_access_path(investor_access, investor_id: investor_id),
                         data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" do %>
               <i class="ti ti-edit"></i> <%= t_common(:edit) %>
             <% end %>
