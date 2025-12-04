@@ -134,119 +134,6 @@
     100% { transform: translateX(150%) skewX(-15deg); }
   }
 
-  .btn-modern-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    width: 100%;
-    padding: 16px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.02em;
-
-    /* Animated Gradient Border Setup */
-    background:
-        linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%) padding-box, /* Slightly darker inner background */
-        linear-gradient(90deg, #63b3ed, #ffffff, #63b3ed) border-box; /* Brighter, sharper border gradient */
-    background-size: 100% 100%, 200% 100%;
-
-    border: 2px solid transparent;
-    border-radius: 50px; /* Pill shape for a more modern feel */
-    cursor: pointer;
-    position: relative;
-    overflow: hidden; /* Contains the gloss sweep */
-
-    /* Border Animation */
-    animation: border-shine-flow 2s linear infinite; /* Faster animation */
-
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow:
-        0 4px 6px -1px rgba(66, 153, 225, 0.4),
-        0 2px 4px -1px rgba(66, 153, 225, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.3); /* Top highlight */
-
-    /* Internal Gloss Sweep Effect */
-    &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 100%
-        );
-        transform: translateX(-150%) skewX(-25deg);
-        animation: gloss-sweep 3s infinite ease-in-out;
-        pointer-events: none;
-    }
-
-    &:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow:
-          0 10px 15px -3px rgba(66, 153, 225, 0.5),
-          0 4px 6px -2px rgba(66, 153, 225, 0.3),
-          0 0 20px rgba(99, 179, 237, 0.6); /* Stronger outer glow */
-
-      background:
-        linear-gradient(135deg, #2c5282 0%, #2a4365 100%) padding-box,
-        linear-gradient(90deg, #63b3ed, #ffffff, #63b3ed) border-box;
-      background-size: 100% 100%, 200% 100%;
-    }
-
-    &:active {
-      transform: translateY(0) scale(0.98);
-      box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
-    }
-
-    i {
-        font-size: 1.1em;
-        transition: transform 0.3s ease;
-    }
-
-    &:hover i {
-        transform: translateX(4px);
-    }
-  }
-
-  .btn-modern-secondary {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #4a5568;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    text-decoration: none;
-
-    [data-bs-theme=dark] & {
-      background: transparent;
-      border-color: #475569;
-      color: #cbd5e1;
-    }
-
-    &:hover {
-      background: #f7fafc;
-      border-color: #cbd5e1;
-      color: #2d3748;
-
-      [data-bs-theme=dark] & {
-        background: rgba(255,255,255,0.05);
-        color: #f8fafc;
-      }
-    }
-  }
-
   .divider {
     display: flex;
     align-items: center;
@@ -327,4 +214,8 @@
        color: #c53030;
     }
   }
+
+
+
+
 }
