@@ -68,7 +68,7 @@
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, var(--card-primary), var(--card-secondary)); // Theme Gradient
+    background: linear-gradient(90deg, var(--card-primary), var(--card-primary)); // Theme Gradient
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -82,7 +82,7 @@
     }
 
     .btn-view-opportunity {
-      background: linear-gradient(90deg, var(--card-primary), var(--card-secondary));
+      background: linear-gradient(90deg, var(--card-primary), var(--card-primary));
       color: white;
       border-color: transparent;
       transform: translateY(-2px);
@@ -108,8 +108,8 @@
     }
 
     .company-title {
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: 1.2rem;
+      font-weight: 500;
       color: #111827;
       margin: 0;
       line-height: 1.3;
@@ -204,7 +204,7 @@
             }
             .value {
                 font-size: 1.1rem;
-                font-weight: 700;
+                font-weight: 500;
                 color: #1e293b;
 
                 [data-bs-theme=dark] & {

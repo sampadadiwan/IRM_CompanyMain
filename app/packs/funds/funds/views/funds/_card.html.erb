@@ -3,170 +3,158 @@
     params[:force_units] = fund.default_currency_units
 %>
 
-<div class="row">
-    <div class="col-lg-12 d-flex align-items-strech">
-    <div class="card w-100">
-        <div class="card-body">
-        <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
-            <div class="mb-3 mb-sm-0">
-                <div class="row">
-                    <span class="col">
-                        <h4 class="card-title fw-semibold">
-                            <%= link_to fund %>
-                        </h4>
+<div class="col-lg-12 mb-4">
+    <div class="fund-card">
+        <!-- Header -->
+        <div class="card-header-custom">
+            <h3 class="fund-title">
+                <%= link_to fund.name, fund %>
+            </h3>
 
-                        <span class="fs3 mb-1">
-                        </span>
-
-                    <span>
-                </div>
-            </div>
-
-            <div class="btn-group float-right d-none d-sm-block">
-
+            <div class="btn-group">
                 <div class="dropdown">
-                    <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
+                    <button class="btn btn-outline-primary btn-actions dropdown-toggle d-flex align-items-center gap-2" type="button"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Actions
+                        <i class="ti ti-settings fs-5"></i> Actions
                     </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
 
-                    <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-layout-dashboard"></i> Dashboard
-                    <% end %>
+                        <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-layout-dashboard"></i> Dashboard
+                        <% end %>
 
-                    <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
-                    <% end %>
+                        <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
+                        <% end %>
 
-                    <div class="dropdown-divider"></div>
+                        <div class="dropdown-divider"></div>
 
-                    <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-file-text"></i> Documents
-                    <% end %>
+                        <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-file-text"></i> Documents
+                        <% end %>
 
-                    <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-briefcase"></i> Portfolio
-                    <% end %>
+                        <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-briefcase"></i> Portfolio
+                        <% end %>
 
-                    <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-settings"></i> Fund Unit Settings
-                    <% end %>
+                        <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-settings"></i> Fund Unit Settings
+                        <% end %>
 
-                    <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-book"></i> Fund Account Entries
-                    <% end %>
+                        <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                            <i class="ti ti-book"></i> Fund Account Entries
+                        <% end %>
 
                     </div>
                 </div>
-                </div>
-
-
-
+            </div>
         </div>
 
-        <div class="row align-items-center">
-            <div class="col-md-6 d-none d-sm-block">
-                <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
-                 colors: ["#73A0FA", "#73A0FA", "#73A0FA", "#78D3AC"],
-                 library: {
-                   plotOptions: {
-                        column: {
-                            colorByPoint: true,
-                            pointWidth: 40,
-                            dataLabels: {
-                                enabled: false,
-                                format: "{point.y:,.2f}"
-                            }
-                        }
-                    },
-                    **chart_theme_color
-                } %>
-            </div>
-
-            <div class="col-md-3">
-                <div class="hstack mb-4 pb-1">
-                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
-                        </div>
-                        <div>
-                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.committed_amount, params) %></h4>
-                        <p class="fs-3 mb-0">Committed</p>
+        <!-- Body -->
+        <div class="card-body-custom">
+            <div class="row">
+                <!-- Chart Section -->
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="chart-container">
+                        <%= column_chart [
+                            ["Committed", fund.committed_amount.to_f],
+                            ["Called", fund.call_amount.to_f],
+                            ["Collected", fund.collected_amount.to_f],
+                            ["Distributed", fund.distribution_amount.abs.to_f]
+                        ],
+                         colors: ["#73A0FA", "#73A0FA", "#73A0FA", "#78D3AC"],
+                         library: {
+                           plotOptions: {
+                                column: {
+                                    colorByPoint: true,
+                                    pointWidth: 40,
+                                    dataLabels: {
+                                        enabled: false,
+                                        format: "{point.y:,.2f}"
+                                    }
+                                }
+                            },
+                            **chart_theme_color
+                        } %>
                     </div>
                 </div>
 
-                <div class="hstack mb-4 pb-1">
-                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
-                        </div>
-                        <div>
-                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.call_amount, params) %></h4>
-                        <p class="fs-3 mb-0">Called</p>
-                    </div>
-                </div>
+                <!-- Metrics Section -->
+                <div class="col-lg-5">
+                    <div class="metrics-container">
+                        <div class="row">
+                            <!-- Core Metrics -->
+                            <div class="col-sm-6">
+                                <div class="metric-item">
+                                    <div class="icon-box">
+                                        <i class="ti ti-currency-dollar"></i>
+                                    </div>
+                                    <div class="content">
+                                        <span class="value"><%= money_to_currency(fund.committed_amount, params) %></span>
+                                        <span class="label">Committed</span>
+                                    </div>
+                                </div>
 
-                <div class="hstack mb-4 pb-1">
-                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
-                        </div>
-                        <div>
-                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.distribution_amount.abs, params) %></h4>
-                        <p class="fs-3 mb-0">Distributed</p>
-                    </div>
-                </div>
+                                <div class="metric-item">
+                                    <div class="icon-box">
+                                        <i class="ti ti-arrow-down-right"></i>
+                                    </div>
+                                    <div class="content">
+                                        <span class="value"><%= money_to_currency(fund.call_amount, params) %></span>
+                                        <span class="label">Called</span>
+                                    </div>
+                                </div>
 
-                <div class="hstack mb-4 pb-1">
-                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                        <i class="ti ti-grid-dots text-primary fs-6"></i>
-                        </div>
-                        <div>
-                        <h4 class="mb-0 fs-5"><%= fund.capital_commitments_count %></h4>
-                        <p class="fs-3 mb-0">Folios</p>
-                    </div>
-                </div>
+                                <div class="metric-item">
+                                    <div class="icon-box">
+                                        <i class="ti ti-arrow-up-right"></i>
+                                    </div>
+                                    <div class="content">
+                                        <span class="value"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+                                        <span class="label">Distributed</span>
+                                    </div>
+                                </div>
 
-                <div>
-                    <div class="text-center">
-
-                    </div>
-                </div>
-            </div>
-
-            <%
-
-                #fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4)
-
-                # We preload fund_ratios to avoid N+1 queries, so we use filter here
-                fund_ratios = fund.fund_ratios
-                  .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Portfolio Value to Cost", "Gross Portfolio IRR"].include?(r.name) }
-                  .sort_by(&:id)
-                  .reverse
-                  .take(4)
-
-            %>
-            <% if fund_ratios.present? %>
-            <div class="col-md-3">
-
-                <% fund_ratios.each do |fund_ratio| %>
-                    <div class="hstack mb-4 pb-1">
-                        <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
-                            <i class="ti ti-grid-dots text-primary fs-6"></i>
+                                <div class="metric-item">
+                                    <div class="icon-box">
+                                        <i class="ti ti-users"></i>
+                                    </div>
+                                    <div class="content">
+                                        <span class="value"><%= fund.capital_commitments_count %></span>
+                                        <span class="label">Folios</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                            <h4 class="mb-0 fs-5"><%= fund_ratio.display_value %></h4>
-                            <p class="fs-3 mb-0"><%= link_to fund_ratio.name, fund_ratio %></p>
+
+                            <!-- Ratios -->
+                            <div class="col-sm-6">
+                                <%
+                                    fund_ratios = fund.fund_ratios
+                                      .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Portfolio Value to Cost", "Gross Portfolio IRR"].include?(r.name) }
+                                      .sort_by(&:id)
+                                      .reverse
+                                      .take(4)
+                                %>
+                                <% if fund_ratios.present? %>
+                                    <% fund_ratios.each do |fund_ratio| %>
+                                        <div class="metric-item">
+                                            <div class="icon-box">
+                                                <i class="ti ti-chart-pie"></i>
+                                            </div>
+                                            <div class="content">
+                                                <span class="value"><%= fund_ratio.display_value %></span>
+                                                <span class="sub-link"><%= link_to fund_ratio.name, fund_ratio %></span>
+                                            </div>
+                                        </div>
+                                    <% end %>
+                                <% end %>
+                            </div>
                         </div>
                     </div>
-
-                <% end %>
+                </div>
             </div>
-            <% end %>
-
-        </div>
         </div>
     </div>
-    </div>
-
 </div>
 
 <% params[:force_units] = nil %>
