@@ -1,18 +1,17 @@
     <% if widget.image_placement.casecmp?("center") %>
-        <div class="col-xl-12 d-xl-block">
+        <div class="col-xl-12 d-xl-block mb-4">
     <% else %>
-        <div class="col-xl-6 d-xl-block">
+        <div class="col-xl-6 d-xl-block mb-4">
     <% end %>
 
-            <div
-                class="position-relative bg-primary-subtle p-4 rounded text-center"
-            >
+            <div class="position-relative bg-light p-2 rounded-4 overflow-hidden border border-light-subtle text-center shadow-sm">
                 <% if widget.image&.mime_type&.include?('video') %>
                     <%= render "layouts/video", url: widget.image_url, no_card: true %>
                 <% elsif widget.image&.mime_type&.include?('image') %>
                         <img
                             src="<%= widget.image_url %> "
-                            class="img-fluid object-fit-contain"
+                            class="img-fluid object-fit-contain rounded-3"
+                            style="max-height: 500px;"
                         />
                 <% elsif widget.embed_script.present? %>
                     <div class="ratio ratio-16x9">

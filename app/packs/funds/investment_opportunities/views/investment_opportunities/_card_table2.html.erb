@@ -1,86 +1,60 @@
 <% col_size ||= 4 %>
-<div class="io_facts row">
+<%
+  params[:force_units] = investment_opportunity.default_currency_units
+%>
 
-  <div class="col-12 col-md-<%= col_size %>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex flex-row align-items-center">
-          <div
-            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
-            <i class="ti ti-currency-dollar fs-6"></i>
-          </div>
-          <div class="ms-3 align-self-center text-wrap">          
-            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></h3>
-            <span class="text-muted">Fund Raise Amount</span>
-          </div>
-        </div>
+<div class="io-preview-container">
+  <div class="preview-metrics-grid">
+
+    <!-- Metric 1: Fund Raise Amount -->
+    <div class="metric-card">
+      <div class="icon-wrapper indigo">
+        <i class="ti ti-currency-dollar"></i>
+      </div>
+      <div class="content">
+        <span class="value"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></span>
+        <span class="label">Fund Raise Amount</span>
       </div>
     </div>
-  </div>
 
-  <% 
-    if params[:force_units] == "Crores" && investment_opportunity.min_ticket_size.to_d < 100_00000
-        # If committed_amount is less than a crore, then show in lakhs
-        params[:force_units] = "Lakhs"
-    end 
-  %>
+    <%
+      if params[:force_units] == "Crores" && investment_opportunity.min_ticket_size.to_d < 100_00000
+          # If committed_amount is less than a crore, then show in lakhs
+          params[:force_units] = "Lakhs"
+      end
+    %>
 
-  <div class="col-12 col-md-<%= col_size %>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex flex-row align-items-center">
-          <div
-            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
-            <i class="ti ti-ticket fs-6"></i>
-          </div>
-          <div class="ms-3 align-self-center text-wrap">
-            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.min_ticket_size, params %></h3>
-            <span class="text-muted">Min Ticket Size</span>
-          </div>
-        </div>
+    <!-- Metric 2: Min Ticket Size -->
+    <div class="metric-card">
+      <div class="icon-wrapper amber">
+        <i class="ti ti-ticket"></i>
+      </div>
+      <div class="content">
+        <span class="value"><%= money_to_currency investment_opportunity.min_ticket_size, params %></span>
+        <span class="label">Min Ticket Size</span>
       </div>
     </div>
-  </div>
 
-  <div class="col-12 col-md-<%= col_size %>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex flex-row align-items-center">
-          <div
-            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
-            <i class="ti ti-calendar fs-6"></i>
-          </div>
-          <div class="ms-3 align-self-center text-wrap">
-            <h3 class="mb-0 fs-6"><%= l investment_opportunity.last_date %></h3>
-            <span class="text-muted">Last Date</span>
-          </div>
-        </div>
+    <!-- Metric 3: Last Date -->
+    <div class="metric-card">
+      <div class="icon-wrapper emerald">
+        <i class="ti ti-calendar"></i>
+      </div>
+      <div class="content">
+        <span class="value"><%= l investment_opportunity.last_date %></span>
+        <span class="label">Last Date</span>
       </div>
     </div>
   </div>
 
   <% if show_tags %>
-
-  <% tags = investment_opportunity.tag_list&.split(",") %>
-  
-  <div class="col-12 col-md-<%= col_size %>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex flex-row align-items-center">
-          <div
-            class="">
-            <i class=""></i>
-          </div>
-          <div class="text-center">
-              <% tags&.each do |tag| %>
-                <span class="badge rounded-pill bg-primary"><%= link_to tag, investment_opportunities_path(tag:) %></span>
-              <% end %>                      
-          </div>
-        </div>
-      </div>
+    <div class="d-flex flex-wrap gap-2 mt-4">
+       <% investment_opportunity.tag_list&.split(",")&.each do |tag| %>
+         <span class="badge rounded-pill bg-light text-dark border"><%= link_to tag, investment_opportunities_path(tag:), class: "text-decoration-none text-dark" %></span>
+       <% end %>
     </div>
-  </div>
-
   <% end %>
 
 </div>
+
+<% params[:force_units] = nil %>

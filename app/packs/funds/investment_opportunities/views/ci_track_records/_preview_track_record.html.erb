@@ -1,24 +1,21 @@
-    <div class="row center">
-
+<div class="io-preview-container mt-5 mb-5">
+    <div class="row center g-4">
         <% owner.ci_track_records.each_with_index do |track_record, idx| %>
-            <div class="col-sm-12 col-xl col-md-4">
-                <% color = ["success", "primary", "warning", "success", "primary", "info", "warning"][idx % 7] %>
+            <div class="col-md-4">
+                <% color_class = ["text-bg-success", "text-bg-primary", "text-bg-warning", "text-bg-info", "text-bg-danger"][idx % 5] %>
 
-                <div class="col d-flex align-items-stretch">
-                    <div class="card w-100">
-                        <div class="card-header text-bg-<%=color%>">
-                            <h4 class="mb-0 text-white card-title"><%= track_record.name %></h4>
-                        </div>
-                        <div class="card-body">
-                            <h3 class="card-title"><%= track_record.to_s %></h3>
-                            <p class="card-text">
-                                <%= track_record.details %>
-                            </p>
-                        </div>
+                <div class="preview-section-card track-record-card h-100">
+                    <div class="card-header-colored <%= color_class %>">
+                        <h4 class="mb-0 text-white"><%= track_record.name %></h4>
+                    </div>
+                    <div class="card-body-track">
+                        <h3><%= track_record.to_s %></h3>
+                        <p>
+                            <%= track_record.details %>
+                        </p>
                     </div>
                 </div>
             </div>
-
         <% end %>
-
     </div>
+</div>

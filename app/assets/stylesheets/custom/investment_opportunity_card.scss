@@ -225,3 +225,310 @@
     }
   }
 }
+
+// ------------------------------------------------
+// PREVIEW PAGE STYLES
+// ------------------------------------------------
+
+.io-preview-container {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+    // Header Section
+    .preview-header-custom {
+        background: #ffffff;
+        border-radius: 24px;
+        position: relative;
+        overflow: visible; // Allow shadows to spill
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        padding: 32px;
+        margin-bottom: 30px;
+        border: 1px solid #f1f5f9;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 24px;
+            right: 24px;
+            height: 4px;
+            background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .company-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+        }
+
+        .tag-pill {
+            padding: 8px 16px;
+            background: #f8fafc;
+            color: #64748b;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+
+            i { color: #10b981; }
+
+            &:hover {
+                background: #fff;
+                border-color: #cbd5e1;
+                color: #0f172a;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+        }
+
+        .action-area {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+    }
+
+    // Metrics Section (Card Table 2)
+    .preview-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); // Force 3 columns for the 3 main metrics
+        gap: 24px;
+        margin-bottom: 40px;
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 28px;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.06);
+                border-color: transparent;
+            }
+
+            .icon-wrapper {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.75rem;
+                flex-shrink: 0;
+                transition: transform 0.3s ease;
+
+                &.indigo { background: #e0e7ff; color: #4f46e5; }
+                &.amber { background: #fef3c7; color: #d97706; }
+                &.emerald { background: #d1fae5; color: #059669; }
+            }
+
+            &:hover .icon-wrapper {
+                transform: scale(1.1) rotate(5deg);
+            }
+
+            .content {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+
+                .value {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: #0f172a;
+                    line-height: 1.2;
+                    margin-bottom: 4px;
+                }
+
+                .label {
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: #64748b;
+                    font-weight: 600;
+                }
+            }
+        }
+    }
+
+    // Generic Preview Card (Thesis, Widgets, Track Record)
+    .preview-section-card {
+        background: #ffffff;
+        border-radius: 24px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        margin-bottom: 32px;
+        overflow: hidden;
+
+        .card-header-clean {
+            padding: 24px 32px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+
+            h4 {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #1e293b;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                &::before {
+                    content: '';
+                    display: block;
+                    width: 4px;
+                    height: 24px;
+                    background: #4f46e5;
+                    border-radius: 4px;
+                }
+            }
+        }
+
+        .card-body-clean {
+            padding: 32px;
+            color: #475569;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+
+        // Track Record Card specific
+        &.track-record-card {
+             height: 100%;
+             transition: transform 0.3s ease;
+
+             &:hover {
+                 transform: translateY(-5px);
+                 box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+             }
+
+            .card-header-colored {
+                padding: 20px 24px;
+
+                h4 {
+                    color: white;
+                    margin: 0;
+                    font-weight: 700;
+                }
+            }
+
+            .card-body-track {
+                padding: 24px;
+
+                h3 {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: #1e293b;
+                    margin-bottom: 12px;
+                }
+
+                p {
+                    color: #64748b;
+                    font-size: 0.95rem;
+                    margin: 0;
+                }
+            }
+        }
+    }
+
+    // Document Card
+    .preview-doc-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        padding: 20px;
+        height: 100%;
+        transition: all 0.3s ease;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+            border-color: #4f46e5;
+
+            .icon-wrapper {
+                background: #4f46e5;
+                color: #fff;
+            }
+        }
+
+        .stretched-link {
+            z-index: 2;
+        }
+
+        .doc-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 12px;
+
+            .icon-wrapper {
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                background: #f1f5f9;
+                color: #64748b;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                flex-shrink: 0;
+                transition: all 0.3s ease;
+            }
+
+            .doc-info {
+                flex: 1;
+                min-width: 0; // for text truncation
+
+                h4 {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: #1e293b;
+                    margin: 0 0 4px 0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .date {
+                    font-size: 0.8rem;
+                    color: #94a3b8;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+            }
+        }
+
+        .doc-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+            margin-top: auto;
+        }
+    }
+}
