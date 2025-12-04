@@ -253,7 +253,6 @@ class CapitalRemittance < ApplicationRecord
 
   # The name of the fee i.e investment_amount, capital_fee or other_fee
   def build_fee_structs(fee_name)
-
     fee_data = json_fields[fee_name]
     return [] if fee_data.blank?
 
@@ -264,7 +263,6 @@ class CapitalRemittance < ApplicationRecord
         amount: amount.to_f
       )
     end
-
   end
 
   def consolidate_fees(fees)
@@ -274,9 +272,8 @@ class CapitalRemittance < ApplicationRecord
       OpenStruct.new(
         name: name,
         amount: rows.sum(&:amount),
-        date: nil  # or pick earliest/latest (see below)
+        date: nil # or pick earliest/latest (see below)
       )
     end
   end
-
 end

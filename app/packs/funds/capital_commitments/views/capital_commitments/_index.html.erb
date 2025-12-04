@@ -12,11 +12,11 @@
 <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
 
 
-<div class="table-responsive">
+<div class="">
         <%
 
           capital_commitments_frame = "capital_commitments_frame"
-          
+
           default_columns_map = if current_user.curr_role == "investor"
             CapitalCommitment::INVESTOR_STANDARD_COLUMNS
           else

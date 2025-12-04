@@ -41,6 +41,6 @@
 
 <% q ||=nil %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: "valuations_frame") %>
-<div class="table-responsive">
+<div class="">
   <%= render RansackTable.new(Valuation, q: q, current_user: current_user, records: valuations, report_id: params["report_id"], turbo_frame: "valuations_frame", referrer: request.referrer, pagy: @pagy) %>
 </div>

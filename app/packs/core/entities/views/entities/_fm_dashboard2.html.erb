@@ -13,30 +13,39 @@
     <% cache_if(current_user != nil, cache_key("FMDashBoard", include_theme: true), expires_in: 5.day) do %>
 
         <% if current_user.enable_funds %>
-            <% title = link_to(t('entities.fm_dashboard2.funds'), funds_path) %>
-            <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
-                <% @pagy, funds = pagy(policy_scope(Fund)) %>
+            <div id="funds-section">
+                <% title = link_to(t('entities.fm_dashboard2.funds'), funds_path) %>
+                <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
+                    <% @pagy, funds = pagy(policy_scope(Fund)) %>
 
-                <% funds.includes(:fund_ratios).each do |fund| %>
-                    <%= render "/funds/card", fund: %>
+                    <% funds.includes(:fund_ratios).each do |fund| %>
+                        <%= render "/funds/card", fund: %>
+                    <% end %>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <%= raw pagy_info(@pagy) %>
+                        <%= raw pagy_bootstrap_nav(@pagy) %>
+                    </div>
                 <% end %>
-
-                <div class="d-flex justify-content-between align-items-center">
-                    <%= raw pagy_info(@pagy) %>
-                    <%= raw pagy_bootstrap_nav(@pagy) %>
-                </div>
-            <% end %>
-
+            </div>
         <% end %>
 
-    
+
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
         <% if investment_opportunities.count > 0 %>
-            <%= render ToggleCard.new(title: t('entities.fm_dashboard2.investment_opportunities'), css_class: "show_ios") do %>
-                <% investment_opportunities.each do |investment_opportunity| %>
-                    <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
+            <div id="opportunities-section">
+                <%= render ToggleCard.new(title: t('entities.fm_dashboard2.investment_opportunities'), css_class: "show_ios") do %>
+                    <div class="alert alert-primary d-flex align-items-center" role="alert">
+                        <i class="ti ti-bulb fs-6 me-2"></i>
+                        <div>
+                            You have <%= investment_opportunities.count %> active investment opportunities.
+                        </div>
+                    </div>
+                    <% investment_opportunities.each do |investment_opportunity| %>
+                        <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
+                    <% end %>
                 <% end %>
-            <% end %>
+            </div>
         <% end %>
 
     <% end %>

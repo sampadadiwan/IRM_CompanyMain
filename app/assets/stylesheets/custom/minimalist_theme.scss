@@ -85,6 +85,11 @@
 
   .card-body {
     padding: 28px; // More breathing room
+
+    // Enforce spacious padding in comfortable mode (overrides layout.scss)
+    [data-density="comfortable"] & {
+      padding: 28px !important;
+    }
   }
 
   // Typography inside cards
@@ -125,6 +130,11 @@
   font-size: 0.875rem;
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
+
+  // Enforce spacious padding in comfortable mode
+  [data-density="comfortable"] & {
+    padding: 10px 24px !important;
+  }
 
   // Icon spacing within buttons
   i {
@@ -291,6 +301,10 @@
     transition: all 0.2s;
     background: transparent;
 
+    [data-density="comfortable"] & {
+      padding: 12px 20px !important;
+    }
+
     [data-bs-theme=dark] & {
         color: #7c8fac;
     }
@@ -322,6 +336,7 @@
     border-radius: 12px;
     border: 1px solid #f1f5f9;
     background: white;
+    margin-top: 5px;
 
     [data-bs-theme=dark] & {
         background: #2a3447;
@@ -343,6 +358,10 @@
     padding: 16px 24px;
     border-top: none;
 
+    [data-density="comfortable"] & {
+      padding: 16px 24px !important;
+    }
+
     [data-bs-theme=dark] & {
         background-color: #323a49; // Dark header
         color: #7c8fac;
@@ -357,6 +376,10 @@
     font-size: 0.875rem;
     border-bottom: 1px solid #f1f5f9;
     font-weight: 500;
+
+    [data-density="comfortable"] & {
+      padding: 20px 24px !important;
+    }
 
     [data-bs-theme=dark] & {
         color: #eaeff4;
@@ -396,9 +419,13 @@
   padding: 6px 10px;
   border-radius: 20px;
   font-weight: 600;
-  text-transform: uppercase;
+  // text-transform: uppercase;
   font-size: 0.65rem;
   letter-spacing: 0.025em;
+
+  [data-density="comfortable"] & {
+    padding: 6px 10px !important;
+  }
 
   // Minimalist style badges (light background, colored text)
   &.bg-success {

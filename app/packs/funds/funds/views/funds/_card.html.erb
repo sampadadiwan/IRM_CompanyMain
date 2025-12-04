@@ -1,4 +1,4 @@
-<%      
+<%
     fund ||= @fund
     params[:force_units] = fund.default_currency_units
 %>
@@ -23,6 +23,7 @@
             </div>
 
             <div class="btn-group float-right d-none d-sm-block">
+
                 <div class="dropdown">
                     <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -32,10 +33,6 @@
 
                     <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
                         <i class="ti ti-layout-dashboard"></i> Dashboard
-                    <% end %>
-
-                    <%= link_to fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
-                        <i class="ti ti-eye"></i> View Fund
                     <% end %>
 
                     <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center" do %>
@@ -71,9 +68,11 @@
         <div class="row align-items-center">
             <div class="col-md-6 d-none d-sm-block">
                 <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
+                 colors: ["#73A0FA", "#73A0FA", "#73A0FA", "#78D3AC"],
                  library: {
                    plotOptions: {
                         column: {
+                            colorByPoint: true,
                             pointWidth: 40,
                             dataLabels: {
                                 enabled: false,
@@ -84,7 +83,7 @@
                     **chart_theme_color
                 } %>
             </div>
-            
+
             <div class="col-md-3">
                 <div class="hstack mb-4 pb-1">
                     <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
@@ -132,10 +131,10 @@
                     </div>
                 </div>
             </div>
-            
-            <% 
-                
-                #fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4) 
+
+            <%
+
+                #fund_ratios = fund.fund_ratios.where(owner: fund, name: ["XIRR", "TVPI", "Fund Utilization", "Portfolio Value to Cost"]).order(id: :desc).limit(4)
 
                 # We preload fund_ratios to avoid N+1 queries, so we use filter here
                 fund_ratios = fund.fund_ratios
@@ -158,11 +157,11 @@
                             <p class="fs-3 mb-0"><%= link_to fund_ratio.name, fund_ratio %></p>
                         </div>
                     </div>
-                
+
                 <% end %>
             </div>
             <% end %>
-            
+
         </div>
         </div>
     </div>
