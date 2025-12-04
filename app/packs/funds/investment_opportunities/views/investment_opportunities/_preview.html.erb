@@ -1,6 +1,6 @@
-<div class="io-preview-page-wrapper" style="background-color: #f8fafc; min-height: 100vh;">
+<div class="io-preview-page-wrapper" style="min-height: 100vh;">
     <!-- Navigation / Header -->
-    <div class="sticky-top bg-white border-bottom shadow-sm" style="z-index: 1030;">
+    <div class="sticky-top bg-white border-bottom shadow-sm preview-nav-header" style="z-index: 1030;">
         <div class="container py-3">
              <%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
         </div>
@@ -9,12 +9,13 @@
     <!-- Main Content -->
     <div class="container py-5">
         <div class="row">
+            <!-- Key Metrics -->
+            <div class="">
+                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
+            </div>
+
             <!-- Left Column: Main Info -->
             <div class="col-lg-8">
-                <!-- Key Metrics -->
-                <div class="mb-5">
-                    <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
-                </div>
 
                 <!-- Thesis / Details -->
                 <div class="mb-5">
@@ -28,7 +29,7 @@
 
                  <!-- Track Record -->
                  <div class="mb-5">
-                    <h3 class="fw-bold mb-4 text-dark">Track Record</h3>
+                    <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
                     <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
                 </div>
             </div>
@@ -39,7 +40,7 @@
                     <!-- Documents Section -->
                     <div class="mb-5">
                         <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h4 class="fw-bold m-0 text-dark">Documents</h4>
+                            <h4 class="fw-bold m-0 preview-section-title">Documents</h4>
                             <span class="badge bg-primary-subtle text-primary rounded-pill"><%= investment_opportunity.document_folder.documents.count %></span>
                         </div>
 

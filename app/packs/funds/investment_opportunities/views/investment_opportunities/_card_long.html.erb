@@ -8,19 +8,19 @@
     <div class="investment-opportunity-card h-100 d-flex flex-row overflow-hidden">
 
         <!-- Left Section: Identity (Logo + Name) -->
-        <div class="d-flex flex-column align-items-center justify-content-center p-3 border-right bg-light" style="width: 35%; min-width: 140px;">
+        <div class="d-flex flex-column align-items-center justify-content-center p-3 identity-section" style="width: 35%; min-width: 140px;">
             <div class="mb-3 text-center w-100 d-flex align-items-center justify-content-center" style="height: 80px;">
                 <% if investment_opportunity.logo.present? %>
                     <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "img-fluid", style: "max-height: 80px; object-fit: contain;" %>
                 <% else %>
-                     <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 60px; height: 60px;">
+                     <div class="d-flex align-items-center justify-content-center rounded-circle logo-fallback shadow-sm" style="width: 60px; height: 60px;">
                         <h4 class="mb-0 text-primary font-weight-bold"><%= investment_opportunity.company_name.first(2).upcase %></h4>
                     </div>
                 <% end %>
             </div>
 
-            <h5 class="text-center font-weight-bold mb-1 text-dark px-2" style="font-size: 1rem; line-height: 1.3;">
-                <%= link_to investment_opportunity.company_name, investment_opportunity, class: "text-dark text-decoration-none" %>
+            <h5 class="text-center font-weight-bold mb-1 company-name-text px-2" style="font-size: 1rem; line-height: 1.3;">
+                <%= link_to investment_opportunity.company_name, investment_opportunity, class: "text-decoration-none" %>
             </h5>
 
             <% if show_tags && investment_opportunity.tag_list.present? %>
@@ -63,7 +63,7 @@
                             <span class="value" style="font-size: 1rem;"><%= money_to_currency investment_opportunity.min_ticket_size, params %></span>
                         </div>
                     </div>
-                    <div class="col-6 px-0 border-left pl-2">
+                    <div class="col-6 px-0 metric-separator pl-2">
                         <div class="metric-item mb-0 p-0 border-0 bg-transparent">
                             <div class="icon-label mb-1">
                                 <i class="ti ti-calendar date-icon mr-1"></i>
