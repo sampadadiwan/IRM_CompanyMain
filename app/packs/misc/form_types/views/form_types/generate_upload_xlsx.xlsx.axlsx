@@ -11,6 +11,12 @@ custom_headers = @form_type.form_custom_fields.order(:position).map(&:human_labe
 
 wb.add_worksheet(name: @form_type.name) do |sheet|
   # Create the header row
-  sheet.add_row(standard_headers + ["Form Tag"] + custom_headers)
-  sheet.add_row(Array.new(standard_headers.length, "") + [@form_type.tag] + Array.new(custom_headers.length, ""))
+  if FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(name)
+    # Add From Tag if its needed but not already present
+    sheet.add_row(standard_headers - ["Form Tag"] + ["Form Tag"] + custom_headers)
+    sheet.add_row(Array.new((standard_headers - ["Form Tag"]).length, "") + [@form_type.tag] + Array.new(custom_headers.length, ""))
+  else
+    sheet.add_row(standard_headers + custom_headers)
+    sheet.add_row(Array.new(standard_headers.length, "") + Array.new(custom_headers.length, ""))
+  end
 end

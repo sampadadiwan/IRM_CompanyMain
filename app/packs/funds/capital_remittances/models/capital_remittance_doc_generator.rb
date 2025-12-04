@@ -113,7 +113,6 @@ class CapitalRemittanceDocGenerator
     # Store the breakdown in the context
     context.store :kyc_investment_amount_breakdown, kyc_investment_amount_breakdown
 
-
     kyc_total_fee = kyc_capital_fee + kyc_other_fee
     kyc_committed_amount = kyc_capital_remittances.sum(:committed_amount_cents)
 
@@ -127,7 +126,6 @@ class CapitalRemittanceDocGenerator
                                  committed_amount: Money.new(kyc_committed_amount, fund_as_of.currency))
 
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
-
   end
 
   # Add remittance breakdowns by LP/GP and current/prior to context
