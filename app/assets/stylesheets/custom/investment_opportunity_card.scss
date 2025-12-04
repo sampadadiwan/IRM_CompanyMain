@@ -1,6 +1,6 @@
 .investment-opportunity-card {
   background: #ffffff;
-  border: none;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   position: relative;
   overflow: hidden;
@@ -13,6 +13,7 @@
 
   [data-bs-theme=dark] & {
     background: #2a3447;
+    border-color: #334155;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   }
 
