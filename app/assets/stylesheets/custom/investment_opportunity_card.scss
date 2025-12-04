@@ -1,153 +1,227 @@
 .investment-opportunity-card {
   background: #ffffff;
-  border: 1px solid #eef2f6;
-  border-radius: 16px;
-  padding: 0;
-  transition: all 0.3s ease;
+  border: none;
+  border-radius: 20px;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif; // Assuming font availability or fallback
+
+  // Top colorful accent line
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #4f46e5, #0ea5e9); // Indigo to Sky
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    border-color: transparent;
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 
-    .action-footer {
-        background-color: #f8f9fa;
+    &::before {
+      opacity: 1;
+    }
+
+    .btn-view-opportunity {
+      background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+      color: white;
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
     }
   }
 
   .card-header-custom {
-    padding: 20px 24px;
+    padding: 28px 28px 20px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    border-bottom: 1px solid #f5f7fa;
-    background: #fff;
-    min-height: 80px;
+    background: linear-gradient(to bottom, #fcfcfd, #ffffff);
+
+    .company-info {
+        flex: 1;
+        padding-right: 15px;
+    }
 
     .company-title {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: #1a1f36;
+      color: #111827;
       margin: 0;
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
 
       a {
         color: inherit;
         text-decoration: none;
-        &:hover { color: var(--bs-primary); }
+        transition: color 0.2s;
+        &:hover { color: #4f46e5; }
       }
     }
 
     .company-logo {
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
       object-fit: contain;
-      border-radius: 8px;
-      padding: 4px;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-left: 16px;
+      border-radius: 12px;
+      padding: 6px;
+      background: #ffffff;
+      border: 1px solid #f3f4f6;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
       flex-shrink: 0;
     }
   }
 
   .card-body-custom {
-    padding: 24px;
+    padding: 10px 28px 28px;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 
-    .metric-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .icon-wrapper {
-        width: 42px;
-        height: 42px;
+    // Hero Metric (Fund Raise)
+    .hero-metric {
+        background: #f8fafc;
         border-radius: 12px;
+        padding: 16px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        margin-right: 16px;
-        flex-shrink: 0;
-        font-size: 1.2rem;
+        border: 1px solid #f1f5f9;
 
-        &.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        &.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        &.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-      }
-
-      .metric-details {
-        display: flex;
-        flex-direction: column;
-
-        .metric-value {
-          font-size: 1rem;
-          font-weight: 600;
-          color: #111827;
-          line-height: 1.2;
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 15px;
         }
 
-        .metric-label {
-          font-size: 0.8rem;
-          color: #6b7280;
-          margin-top: 4px;
-          font-weight: 500;
+        .content {
+            display: flex;
+            flex-direction: column;
+
+            .label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 2px;
+            }
+            .value {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #1e293b;
+            }
         }
-      }
+    }
+
+    // Secondary Metrics Grid
+    .secondary-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+
+            .icon-label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 6px;
+                color: #64748b;
+                font-size: 0.85rem;
+                font-weight: 500;
+
+                i {
+                    font-size: 1rem;
+                    &.ticket-icon { color: #f59e0b; }
+                    &.date-icon { color: #10b981; }
+                }
+            }
+
+            .value {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #334155;
+            }
+        }
     }
 
     .tags-section {
-        margin-top: 24px;
-        padding-top: 20px;
-        border-top: 1px dashed #e5e7eb;
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px dashed #e2e8f0;
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
 
         .custom-badge {
-            padding: 4px 10px;
-            background: #f3f4f6;
-            color: #4b5563;
-            border-radius: 6px;
+            padding: 5px 12px;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.2s;
+            border: 1px solid transparent;
 
             &:hover {
-                background: #e5e7eb;
-                color: #1f2937;
+                background: #fff;
+                border-color: #cbd5e1;
+                color: #0f172a;
+                transform: scale(1.02);
             }
         }
     }
   }
 
   .action-footer {
-    padding: 16px 24px;
-    text-align: center;
-    transition: background-color 0.3s;
+    padding: 20px 28px 28px;
+    margin-top: auto;
 
-    .btn-custom {
+    .btn-view-opportunity {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         width: 100%;
-        padding: 10px;
-        border-radius: 10px;
+        padding: 12px;
+        border-radius: 12px;
         font-weight: 600;
         letter-spacing: 0.3px;
-        text-transform: uppercase;
-        font-size: 0.85rem;
+        font-size: 0.95rem;
+        background: #fff;
+        color: #4f46e5;
+        border: 1px solid #e0e7ff;
+        transition: all 0.3s ease;
+
+        i {
+            transition: transform 0.2s;
+        }
+
+        &:hover i {
+            transform: translateX(3px);
+        }
     }
   }
 }

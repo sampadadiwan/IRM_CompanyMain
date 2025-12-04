@@ -7,22 +7,25 @@
 <div class="col-md-4 mb-4">
     <div class="investment-opportunity-card">
         <div class="card-header-custom">
-            <h3 class="company-title">
-                <%= link_to investment_opportunity.company_name, investment_opportunity %>
-            </h3>
+            <div class="company-info">
+                <h3 class="company-title">
+                    <%= link_to investment_opportunity.company_name, investment_opportunity %>
+                </h3>
+            </div>
             <% if investment_opportunity.logo.present? %>
                 <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "company-logo" %>
             <% end %>
         </div>
 
         <div class="card-body-custom">
-            <div class="metric-row">
-                <div class="icon-wrapper blue">
+            <!-- Hero Metric -->
+            <div class="hero-metric">
+                <div class="icon-box">
                     <i class="ti ti-currency-dollar"></i>
                 </div>
-                <div class="metric-details">
-                    <span class="metric-value"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></span>
-                    <span class="metric-label">Fund Raise Amount</span>
+                <div class="content">
+                    <span class="label">Fund Raise</span>
+                    <span class="value"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></span>
                 </div>
             </div>
 
@@ -33,26 +36,26 @@
                 end
             %>
 
-            <div class="metric-row">
-                <div class="icon-wrapper red">
-                    <i class="ti ti-ticket"></i>
+            <!-- Secondary Metrics Grid -->
+            <div class="secondary-metrics">
+                <div class="metric-item">
+                    <div class="icon-label">
+                        <i class="ti ti-ticket ticket-icon"></i>
+                        <span>Min Ticket</span>
+                    </div>
+                    <span class="value"><%= money_to_currency investment_opportunity.min_ticket_size, params %></span>
                 </div>
-                <div class="metric-details">
-                    <span class="metric-value"><%= money_to_currency investment_opportunity.min_ticket_size, params %></span>
-                    <span class="metric-label">Min Ticket Size</span>
+
+                <div class="metric-item">
+                    <div class="icon-label">
+                        <i class="ti ti-calendar date-icon"></i>
+                        <span>Closes On</span>
+                    </div>
+                    <span class="value"><%= l investment_opportunity.last_date %></span>
                 </div>
             </div>
 
-            <div class="metric-row">
-                <div class="icon-wrapper green">
-                    <i class="ti ti-calendar"></i>
-                </div>
-                <div class="metric-details">
-                    <span class="metric-value"><%= l investment_opportunity.last_date %></span>
-                    <span class="metric-label">Last Date</span>
-                </div>
-            </div>
-
+            <!-- Tags -->
             <% if show_tags %>
                 <% tags = investment_opportunity.tag_list&.split(",") %>
                 <% if tags.present? %>
@@ -68,7 +71,10 @@
         <% unless hide_show_btn %>
             <div class="action-footer">
                 <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
-                <%= link_to t_common(:show), link, class: "btn btn-outline-primary btn-custom" %>
+                <%= link_to link, class: "btn btn-view-opportunity" do %>
+                    <span><%= t_common(:show) %></span>
+                    <i class="ti ti-arrow-right"></i>
+                <% end %>
             </div>
         <% end %>
     </div>
