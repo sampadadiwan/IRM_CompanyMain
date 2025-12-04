@@ -97,7 +97,7 @@ class PortfolioReportDocGenerator
                                    .where(as_of: ..end_date)
                                    .order(:as_of)
 
-    investor_kpi_mappings = portfolio_company.investor_kpi_mappings
+    investor_kpi_mappings = portfolio_company.investor_kpi_mappings.where(show_in_report: true)
     investor_kpi_mappings = investor_kpi_mappings.where(category: category) if category.present?
 
     rows = investor_kpi_mappings.map do |ikm|
