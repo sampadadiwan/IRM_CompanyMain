@@ -58,8 +58,8 @@ class CapitalRemittance < ApplicationRecord
   monetize :tracking_collected_amount_cents, :tracking_call_amount_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
-  monetize :call_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, with_currency: ->(i) { i.fund.currency }
-  monetize :folio_call_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
+  monetize :call_amount_cents, :investment_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_call_amount_cents, :folio_investment_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id

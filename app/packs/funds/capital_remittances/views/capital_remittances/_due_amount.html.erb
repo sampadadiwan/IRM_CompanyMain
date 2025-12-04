@@ -4,23 +4,28 @@
     <small class="text-muted d-none d-sm-block d-sm-none d-md-block">
 
       <% if capital_remittance.capital_call.amount_to_be_called_cents > 0 %>
-        <%= money_to_currency capital_remittance.capital_call.amount_to_be_called, params %> x 
+        <%= money_to_currency capital_remittance.capital_call.amount_to_be_called, params %> x
       <% else %>
-        <%= money_to_currency capital_remittance.folio_committed_amount, params %> x 
+        <%= money_to_currency capital_remittance.folio_committed_amount, params %> x
       <% end %>
 
-      <%= capital_remittance.percentage %> % 
-      
+      <%= capital_remittance.percentage %> %
+
+      <% if capital_remittance.investment_amount_cents > 0 %>
+        +
+        <%= money_to_currency capital_remittance.folio_investment_amount, params %>
+      <% end %>
+
       <% if capital_remittance.capital_fee_cents > 0 %>
         +
-        <%= money_to_currency capital_remittance.folio_capital_fee, params %> 
+        <%= money_to_currency capital_remittance.folio_capital_fee, params %>
       <% end %>
 
       <% if capital_remittance.other_fee_cents > 0 %>
         +
-        <%= money_to_currency capital_remittance.folio_other_fee, params %> 
-      <% end %>      
-      
+        <%= money_to_currency capital_remittance.folio_other_fee, params %>
+      <% end %>
+
       -
 
       <%= money_to_currency capital_remittance.folio_collected_amount, params %>

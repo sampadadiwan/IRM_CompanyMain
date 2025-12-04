@@ -20,8 +20,8 @@ module CapitalRemittanceCallBasis
     )
 
     # Include capital fees in both folio and fund currency calculations.
-    self.folio_call_amount_cents += folio_capital_fee_cents
-    self.call_amount_cents = computed_amount_cents + capital_fee_cents
+    self.folio_call_amount_cents += folio_capital_fee_cents + folio_investment_amount_cents
+    self.call_amount_cents = computed_amount_cents + capital_fee_cents + investment_amount_cents
 
     logger.error "call_basis_percentage: computed_amount_cents = #{computed_amount_cents}, \
                   call_amount_cents = #{call_amount_cents}, \
@@ -49,7 +49,7 @@ module CapitalRemittanceCallBasis
 
     # Compute the call amount based on the retrieved percentage.
     self.computed_amount_cents = capital_call.amount_to_be_called_cents * percentage / 100.0
-    self.call_amount_cents = computed_amount_cents + capital_fee_cents
+    self.call_amount_cents = computed_amount_cents + capital_fee_cents + investment_amount_cents
 
     # Convert FX
     self.folio_call_amount_cents = convert_currency(
@@ -73,7 +73,7 @@ module CapitalRemittanceCallBasis
       )
     end
 
-    self.computed_amount_cents = call_amount_cents - capital_fee_cents
+    self.computed_amount_cents = call_amount_cents - capital_fee_cents - investment_amount_cents
 
     # Calculate the percentage of the committed folio amount that is being called.
 
