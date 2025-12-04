@@ -1,13 +1,11 @@
 <div class="io-preview-page-wrapper" style="min-height: 100vh;">
     <!-- Navigation / Header -->
-    <div class="sticky-top bg-white border-bottom shadow-sm preview-nav-header" style="z-index: 1030;">
-        <div class="container py-3">
-             <%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
-        </div>
+    <div class="sticky-top" style="z-index: 1030;">
+        <%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
     </div>
 
     <!-- Main Content -->
-    <div class="container py-5">
+    <div class="">
         <div class="row">
             <!-- Key Metrics -->
             <div class="">
@@ -97,7 +95,7 @@
 
                 <% eoi = eois.where(show_data_room: true).first %>
                 <% if eoi and eoi.show_data_room? %>
-                     <div class="mt-5">
+                     <div class="">
                         <h4 class="mb-4 fw-bold">Data Room</h4>
                         <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
                             <div class="text-center py-5">
@@ -109,7 +107,7 @@
                     </div>
                 <% end %>
             <% elsif current_user && current_user.entity_id == investment_opportunity.entity_id %>
-                 <div class="mt-5">
+                 <div class="">
                     <h4 class="mb-4 fw-bold">Data Room</h4>
                     <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
                         <div class="text-center py-5">
