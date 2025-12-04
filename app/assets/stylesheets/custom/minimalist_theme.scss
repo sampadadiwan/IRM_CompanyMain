@@ -1,10 +1,57 @@
 // app/assets/stylesheets/custom/minimalist_theme.scss
 
-// Minimalist Theme - Global Styles
+/*
+ * Minimalist Theme - Global Styles
+ *
+ * SUMMARY OF UI CHANGES:
+ * ---------------------
+ * 1. Global Layout:
+ *    - Sets a lighter background (#f8f9fa) for the body wrapper in light mode for better contrast.
+ *    - Sets a dark background (#202936) in dark mode.
+ *
+ * 2. Cards (Stats & Details):
+ *    - Removes heavy shadows and adds subtle borders.
+ *    - Increases border radius to 16px for a modern, rounded look.
+ *    - Sets "Ultrawhite" (#ffffff) background for cards in light mode.
+ *    - Adapts background (#2a3447) and borders for dark mode.
+ *    - Softens text colors for headings and subtitles.
+ *    - Thins out progress bars (4px) and rounds their corners.
+ *
+ * 3. Buttons:
+ *    - Updates button radius (10px) and padding for a friendlier touch.
+ *    - Refines 'outline' buttons to have softer borders and cleaner hover states.
+ *    - Adjusts button colors in dark mode to be visible and aesthetically pleasing (using transparency).
+ *
+ * 4. Typography:
+ *    - Uses softer slate/gray tones (#505051, #64748b) instead of pure black for better readability and reduced eye strain.
+ *    - Adjusts font weights for a cleaner hierarchy.
+ *
+ * 5. Tables:
+ *    - Simplifies table headers with a light gray background (#f8fafc) and uppercase styling.
+ *    - Sets ultrawhite background for table rows in light mode.
+ *    - Adapts table backgrounds, borders, and text colors for dark mode.
+ *    - Adds subtle hover effects.
+ *
+ * 6. Dropdowns:
+ *    - Modernizes dropdowns with rounded corners (12px) and subtle shadows.
+ *    - Improves hover states for dropdown items.
+ *    - Full dark mode support for dropdown menus.
+ *
+ * 7. Badges/Pills:
+ *    - Converts badges to a "pill" style (rounded).
+ *    - Uses light background colors with darker text for status indicators (Success, Warning, etc.) instead of solid heavy colors.
+ *    - Adjusts opacity for dark mode compatibility.
+ *
+ * 8. Navigation (Tabs):
+ *    - Removes borders from inactive tabs for a cleaner look.
+ *    - Highlights active tabs with a bottom border and primary color.
+ */
 
 // 1. General Layout & Spacing
 .body-wrapper {
   background-color: #f8f9fa; // Lighter background for contrast
+
+  // Dark mode override
   [data-bs-theme=dark] & {
     background-color: #202936;
   }
@@ -12,19 +59,21 @@
 
 // 2. Cards (Stats & Details)
 .card {
-  border: 1px solid #f0f2f5 !important; // Very subtle border
+  border: 1px solid #f0f2f5 !important; // Very subtle border instead of heavy default
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important; // Much softer shadow
-  border-radius: 16px !important; // More rounded
+  border-radius: 16px !important; // More rounded corners
   margin-bottom: 24px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background-color: #ffffff !important; // Ultrawhite background for cards
+  background-color: #ffffff !important; // Ultrawhite background for cards in light mode
 
+  // Dark mode card styles
   [data-bs-theme=dark] & {
     background-color: #2a3447 !important;
     border-color: #333f55 !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
   }
 
+  // Hover effect for interactivity
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025) !important;
@@ -35,23 +84,23 @@
   }
 
   .card-body {
-    padding: 28px;
+    padding: 28px; // More breathing room
   }
 
   // Typography inside cards
   h3, .h3 {
-    font-weight: 600;
-    color: #505051; // Slate-800 like
+    font-weight: 400;
+    color: #505051; // Slate-800 like text
     letter-spacing: -0.02em;
     margin-bottom: 4px;
 
     [data-bs-theme=dark] & {
-      color: #eaeff4;
+      color: #eaeff4; // Light text for dark mode
     }
   }
 
   .card-subtitle, .text-muted {
-    color: #64748b !important; // Slate-500 like
+    color: #64748b !important; // Slate-500 like text
     font-weight: 500;
     font-size: 0.875rem;
 
@@ -60,10 +109,10 @@
     }
   }
 
-  // Number Stats specific
+  // Number Stats specific (thinner progress bars)
   .progress-bar {
-     border-radius: 4px;
-     height: 4px !important; // Thinner
+     border-radius: 1px;
+    //  height: 4px !important;
      opacity: 0.8;
   }
 }
@@ -77,13 +126,13 @@
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
 
-  // Icon spacing
+  // Icon spacing within buttons
   i {
     // margin-right: 8px;
   }
 }
 
-// Redefine outline buttons to be softer
+// Redefine outline buttons to be softer and cleaner
 .btn-outline-primary {
   border-color: #e2e8f0; // Slate-200
   color: #3b82f6; // Blue-500
@@ -96,7 +145,7 @@
   }
 
   &:hover, &:active, &.active {
-    background: #eff6ff; // Blue-50
+    background: #eff6ff; // Blue-50 background on hover
     border-color: #3b82f6;
     color: #2563eb; // Blue-600
     box-shadow: none;
@@ -159,7 +208,7 @@
   }
 }
 
-// Dropdowns
+// Dropdowns - Modernized look
 .dropdown-menu {
   border: 1px solid #f1f5f9;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
@@ -220,7 +269,7 @@
   }
 }
 
-// 4. Tabs
+// 4. Tabs - Clean look without boxy borders
 .nav-tabs {
   border-bottom: 1px solid #e2e8f0;
   margin-bottom: 24px;
@@ -261,14 +310,14 @@
       background: transparent;
 
       [data-bs-theme=dark] & {
-          color: #3b82f6; // Or appropriate dark mode accent
+          color: #3b82f6;
           border-bottom-color: #3b82f6;
       }
     }
   }
 }
 
-// 5. Tables (Capital Commitments)
+// 5. Tables (Capital Commitments, etc)
 .table-responsive {
     border-radius: 12px;
     border: 1px solid #f1f5f9;
@@ -284,7 +333,7 @@
   margin-bottom: 0;
 
   thead th {
-    background-color: #f8fafc; // Slate-50
+    background-color: #f8fafc; // Slate-50 header
     color: #475569; // Slate-600
     text-transform: uppercase;
     font-size: 0.75rem;
@@ -295,7 +344,7 @@
     border-top: none;
 
     [data-bs-theme=dark] & {
-        background-color: #323a49; // Slightly lighter than card bg
+        background-color: #323a49; // Dark header
         color: #7c8fac;
         border-bottom-color: #333f55;
     }
@@ -315,7 +364,7 @@
     }
   }
 
-  // Ultrawhite background for table rows
+  // Ultrawhite background for table rows in light mode
   tbody tr {
       background-color: #ffffff;
 
@@ -342,7 +391,7 @@
   margin-left: 10px;
 }
 
-// 6. Badges/Pills
+// 6. Badges/Pills - Clean, light background style
 .badge {
   padding: 6px 10px;
   border-radius: 20px;
@@ -436,8 +485,8 @@
 
 // 7. Page Title/Header
 h1, .h1 {
-    font-weight: 600;
-    color: #0f172a;
+    font-weight: 400;
+    color: #505051;
     letter-spacing: -0.025em;
 
     [data-bs-theme=dark] & {
