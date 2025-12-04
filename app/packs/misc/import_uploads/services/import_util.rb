@@ -187,7 +187,7 @@ class ImportUtil < Trailblazer::Operation
       raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
     elsif form_type.present?
       # Create a map of label to form custom field for faster lookup
-      fcf_label_map = form_type.form_custom_fields.index_by(&:label)
+      fcf_label_map = form_type.form_custom_fields.index_by { |f| f.label.downcase }
     end
 
     custom_field_headers -= ["Update Only", "Id"]
@@ -201,10 +201,10 @@ class ImportUtil < Trailblazer::Operation
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
         next if cfh.blank? # && user_data[cfh].present?
 
-        json_fields_key = if form_type.present? && fcf_label_map[cfh].present?
+        json_fields_key = if form_type.present? && fcf_label_map[cfh.downcase].present?
                             # Get the json fields key from the form custom field name based on the label
-                            fcf_label_map[cfh].name
-                          elsif form_type.present? && fcf_label_map[cfh].blank?
+                            fcf_label_map[cfh.downcase].name
+                          elsif form_type.present? && fcf_label_map[cfh.downcase].blank?
                             # In the tests we may not have created the custom fields yet, so allow that, but in the real world we should raise an error
                             Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name}")
                           else
