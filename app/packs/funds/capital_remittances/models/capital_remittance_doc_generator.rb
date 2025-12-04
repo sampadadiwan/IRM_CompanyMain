@@ -93,13 +93,15 @@ class CapitalRemittanceDocGenerator
     kyc_capital_fee = kyc_capital_remittances.sum(:capital_fee_cents)
     kyc_other_fee = kyc_capital_remittances.sum(:other_fee_cents)
     kyc_total_fee = kyc_capital_fee + kyc_other_fee
+    kyc_committed_amount = kyc_capital_remittances.sum(:committed_amount_cents)
 
     kyc_amounts = OpenStruct.new(capital_remittances: TemplateDecorator.decorate(kyc_capital_remittances),
                                  call_amount: Money.new(kyc_capital_remittances.sum(&:call_amount_cents), fund_as_of.currency),
                                  computed_amount: Money.new(kyc_capital_remittances.sum(&:computed_amount_cents), fund_as_of.currency),
                                  capital_fee_amount: Money.new(kyc_capital_fee, fund_as_of.currency),
                                  other_fee_amount: Money.new(kyc_other_fee, fund_as_of.currency),
-                                 total_fee_amount: Money.new(kyc_total_fee, fund_as_of.currency))
+                                 total_fee_amount: Money.new(kyc_total_fee, fund_as_of.currency),
+                                 committed_amount: Money.new(kyc_committed_amount, fund_as_of.currency))
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
   end
 
