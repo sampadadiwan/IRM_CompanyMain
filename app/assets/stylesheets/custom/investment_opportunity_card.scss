@@ -1,3 +1,46 @@
+// Theme Variables derived from theme_buttons.scss
+:root {
+  --card-primary: #5d87ff; // Default (Blue_Theme)
+  --card-secondary: #49beff;
+  --card-primary-rgb: 93, 135, 255;
+}
+
+[data-color-theme="Blue_Theme"] {
+  --card-primary: #5d87ff;
+  --card-secondary: #49beff;
+  --card-primary-rgb: 93, 135, 255;
+}
+
+[data-color-theme="Aqua_Theme"] {
+  --card-primary: #0074ba;
+  --card-secondary: #47d7bc;
+  --card-primary-rgb: 0, 116, 186;
+}
+
+[data-color-theme="Purple_Theme"] {
+  --card-primary: #763ebd;
+  --card-secondary: #95cfd5;
+  --card-primary-rgb: 118, 62, 189;
+}
+
+[data-color-theme="Green_Theme"] {
+  --card-primary: #0a7ea4;
+  --card-secondary: #ccda4e;
+  --card-primary-rgb: 10, 126, 164;
+}
+
+[data-color-theme="Cyan_Theme"] {
+  --card-primary: #01c0c8;
+  --card-secondary: #fb9678;
+  --card-primary-rgb: 1, 192, 200;
+}
+
+[data-color-theme="Orange_Theme"] {
+  --card-primary: #fa896b;
+  --card-secondary: #0074ba;
+  --card-primary-rgb: 250, 137, 107;
+}
+
 .investment-opportunity-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -25,7 +68,7 @@
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, #4f46e5, #0ea5e9); // Indigo to Sky
+    background: linear-gradient(90deg, var(--card-primary), var(--card-secondary)); // Theme Gradient
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -39,11 +82,11 @@
     }
 
     .btn-view-opportunity {
-      background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+      background: linear-gradient(90deg, var(--card-primary), var(--card-secondary));
       color: white;
       border-color: transparent;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 12px rgba(var(--card-primary-rgb), 0.3);
     }
   }
 
@@ -80,9 +123,9 @@
         color: inherit;
         text-decoration: none;
         transition: color 0.2s;
-        &:hover { color: #4f46e5; }
+        &:hover { color: var(--card-primary); }
 
-        [data-bs-theme=dark] &:hover { color: #818cf8; }
+        [data-bs-theme=dark] &:hover { color: var(--card-primary); }
       }
     }
 
@@ -128,8 +171,8 @@
         .icon-box {
             width: 40px;
             height: 40px;
-            background: #e0e7ff;
-            color: #4f46e5;
+            background: rgba(var(--card-primary-rgb), 0.15);
+            color: var(--card-primary);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -138,8 +181,8 @@
             margin-right: 15px;
 
             [data-bs-theme=dark] & {
-              background: rgba(79, 70, 229, 0.2);
-              color: #818cf8;
+              background: rgba(var(--card-primary-rgb), 0.2);
+              color: var(--card-primary);
             }
         }
 
@@ -274,13 +317,13 @@
         letter-spacing: 0.3px;
         font-size: 0.95rem;
         background: #fff;
-        color: #4f46e5;
-        border: 1px solid #e0e7ff;
+        color: var(--card-primary);
+        border: 1px solid rgba(var(--card-primary-rgb), 0.3);
         transition: all 0.3s ease;
 
         [data-bs-theme=dark] & {
           background: #323a49;
-          color: #818cf8;
+          color: var(--card-primary);
           border-color: #4338ca;
         }
 
@@ -293,8 +336,8 @@
         }
 
         [data-bs-theme=dark] &:hover {
-             background: rgba(79, 70, 229, 0.1);
-             border-color: #818cf8;
+             background: rgba(var(--card-primary-rgb), 0.1);
+             border-color: var(--card-primary);
         }
     }
   }
@@ -315,7 +358,7 @@
 
      [data-bs-theme=dark] & {
        background: #2a3447;
-       h4 { color: #818cf8 !important; }
+       h4 { color: var(--card-primary) !important; }
      }
   }
 
@@ -398,7 +441,7 @@
             left: 24px;
             right: 24px;
             height: 4px;
-            background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+            background: linear-gradient(90deg, var(--card-primary), var(--card-secondary));
             border-bottom-left-radius: 4px;
             border-bottom-right-radius: 4px;
         }
@@ -509,9 +552,9 @@
                 transition: transform 0.3s ease;
 
                 &.indigo {
-                  background: #e0e7ff;
-                  color: #4f46e5;
-                  [data-bs-theme=dark] & { background: rgba(79, 70, 229, 0.2); color: #818cf8; }
+                  background: rgba(var(--card-primary-rgb), 0.15);
+                  color: var(--card-primary);
+                  [data-bs-theme=dark] & { background: rgba(var(--card-primary-rgb), 0.2); color: var(--card-primary); }
                 }
                 &.amber {
                   background: #fef3c7;
@@ -607,7 +650,7 @@
                     display: block;
                     width: 4px;
                     height: 24px;
-                    background: #4f46e5;
+                    background: var(--card-primary);
                     border-radius: 4px;
                 }
             }
@@ -695,14 +738,14 @@
         &:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-            border-color: #4f46e5;
+            border-color: var(--card-primary);
 
             [data-bs-theme=dark] & {
               box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
             }
 
             .icon-wrapper {
-                background: #4f46e5;
+                background: var(--card-primary);
                 color: #fff;
             }
         }
