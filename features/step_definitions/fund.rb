@@ -2413,6 +2413,15 @@ end
 
 
 Given('Given import file {string} for {string}') do |file, type|
+
+  # Some types require form types to be present before import
+  if ["InvestorKyc"].include?(type)
+    FormType.where(entity: @entity, name: "IndividualKyc", tag: "Default").first_or_create!
+    FormType.where(entity: @entity, name: "NonIndividualKyc", tag: "Default").first_or_create!
+  elsif FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(type)
+    FormType.where(entity: @entity, name: type, tag: "Default").first_or_create!
+  end
+
   @import_file = file
   owner = @fund || @entity
   iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))

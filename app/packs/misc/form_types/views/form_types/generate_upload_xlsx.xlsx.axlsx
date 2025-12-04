@@ -1,0 +1,16 @@
+wb = xlsx_package.workbook
+
+name = if %w[IndividualKyc NonIndividualKyc].include?(@form_type.name)
+         "InvestorKyc"
+       else
+         @form_type.name
+       end
+import_class = "Import#{name}".constantize
+standard_headers = import_class::STANDARD_HEADERS
+custom_headers = @form_type.form_custom_fields.order(:position).map(&:human_label)
+
+wb.add_worksheet(name: @form_type.name) do |sheet|
+  # Create the header row
+  sheet.add_row(standard_headers + ["Form Tag"] + custom_headers)
+  sheet.add_row(Array.new(standard_headers.length, "") + [@form_type.tag] + Array.new(custom_headers.length, ""))
+end

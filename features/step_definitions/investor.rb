@@ -229,20 +229,6 @@ Then('the investor accesses must have the data in the sheet') do
 end
 
 
-Given('Given I upload an investor kyc {string} for employees') do |file_name|
-  visit(investor_kycs_path)
-  click_on("Upload/Download")
-  click_on("Upload KYC Details")
-  fill_in('import_upload_name', with: "Test Investor Access Upload")
-  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
-  click_on("Save")
-  expect(page).to have_content("Import Upload:")
-  #sleep(2)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-end
-
-
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
   InvestorAccess.all.each do |ia|

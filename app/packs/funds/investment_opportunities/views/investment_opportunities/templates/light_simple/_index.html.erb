@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= investment_opportunity.company_name %></title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bs-font-sans-serif: 'Inter', sans-serif;
+            --bs-body-color: #525252; /* Neutral 600 */
+            --bs-body-bg: #fff;
+        }
+
+        body {
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            overflow-x: hidden; /* Prevent horizontal scroll from absolute elements */
+        }
+
+        /* --- Custom Visuals from Original --- */
+        .mesh-gradient {
+            background-color: #ffffff;
+            background-image: radial-gradient(at 40% 20%, hsla(210,100%,98%,1) 0px, transparent 50%),
+                              radial-gradient(at 80% 0%, hsla(189,100%,96%,1) 0px, transparent 50%),
+                              radial-gradient(at 0% 50%, hsla(341,100%,98%,1) 0px, transparent 50%);
+        }
+        .subtle-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        }
+
+        /* Glassmorphism */
+        .backdrop-blur-md {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Custom Shadows & Borders */
+        .widget-shadow {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03), 0 10px 40px rgba(0,0,0,0.04);
+        }
+        .card-hover:hover {
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.08) !important;
+            transition: box-shadow 0.3s ease;
+        }
+
+        /* --- UI Elements --- */
+        /* Custom Toggle Switch */
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            cursor: pointer;
+        }
+        .form-switch .form-check-input:checked {
+            background-color: #10b981; /* Emerald */
+            border-color: #10b981;
+        }
+
+        /* Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #d4d4d4;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e5e5e5;
+            border-radius: 2px;
+        }
+
+        /* Accordion Animations */
+        .accordion-content {
+            transition: grid-template-rows 0.3s ease-out;
+            display: grid;
+        }
+        .accordion-open { grid-template-rows: 1fr; }
+        .accordion-closed { grid-template-rows: 0fr; }
+
+        /* Video Play Button Hover */
+        .play-container:hover .play-button {
+            transform: scale(1.1);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Utility Helpers */
+        .text-justify-custom { text-align: justify; }
+        .cursor-pointer { cursor: pointer; }
+        .h-0-custom { height: 0; overflow: hidden; }
+        .tab-active {
+            color: #212529 !important;
+            border-bottom: 2px solid #212529 !important;
+        }
+        .tab-inactive {
+            color: #6c757d !important;
+            border-bottom: 2px solid transparent !important;
+        }
+
+        /* Specific Hero positioning that Bootstrap utilities can't do easily */
+        .hero-widget-cluster { height: 400px; }
+        @media (min-width: 768px) { .hero-widget-cluster { height: 500px; } }
+
+        .floating-card-right { right: -1rem; top: 6rem; }
+        .floating-card-left { left: -1rem; bottom: 10rem; }
+        @media (min-width: 768px) {
+            .floating-card-right { right: -3rem; }
+            .floating-card-left { left: -3rem; }
+        }
+
+        /* Removing standard button focus outlines for cleaner UI */
+        .btn:focus, .form-control:focus { box-shadow: none; border-color: #e5e5e5; }
+
+        /* Gray scale image hover */
+        .img-grayscale { filter: grayscale(100%); transition: filter 0.5s ease, transform 0.5s ease; }
+        .img-container:hover .img-grayscale { filter: grayscale(0%); transform: scale(1.05); }
+
+    </style>
+</head>
+<body class="bg-white antialiased">
+
+    <nav class="navbar navbar-expand-md fixed-top border-bottom border-light-subtle backdrop-blur-md py-3">
+        <div class="container-xl">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-medium tracking-tight" href="#">
+                <div class="d-flex align-items-center justify-content-center bg-dark text-white rounded-1" style="width: 24px; height: 24px; font-size: 10px; font-weight: bold;">V</div>
+                <span class="text-dark"><%= investment_opportunity.company_name %></span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <div class="navbar-nav gap-4 text-secondary fw-medium small">
+                    <a class="nav-link text-secondary hover-dark" href="#platform">Platform</a>
+                    <a class="nav-link text-secondary hover-dark" href="#details">Details</a>
+                    <a class="nav-link text-secondary hover-dark" href="#documents">Docs</a>
+                    <a class="nav-link text-secondary hover-dark" href="#faq">FAQ</a>
+                </div>
+            </div>
+
+            <div class="d-none d-md-flex align-items-center gap-3">
+                <a href="#" class="text-decoration-none text-secondary small fw-medium">Log in</a>
+                <a href="#invest" class="btn btn-dark btn-sm px-3 py-2 fw-medium shadow-sm">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+
+
+
+    <header class="position-relative pt-5 pb-5 mt-5 overflow-hidden mesh-gradient">
+
+
+        <div class="position-absolute top-0 start-0 w-100 h-100 subtle-grid opacity-50 pe-none"></div>
+
+        <div class="position-relative z-1 container text-center pt-5">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill border bg-white bg-opacity-50 small text-secondary mb-4 shadow-sm">
+                <span class="position-relative d-flex" style="width: 8px; height: 8px;">
+                  <span class="position-absolute d-inline-block w-100 h-100 rounded-circle bg-success opacity-75 animate-ping"></span>
+                  <span class="position-relative d-inline-block w-100 h-100 rounded-circle bg-success"></span>
+                </span>
+                <span style="font-size: 0.75rem; font-weight: 500;">Series B Round Open</span>
+            </div>
+
+            <h1 class="display-3 fw-semibold text-dark mb-4 lh-1">
+                <%= investment_opportunity.company_name %> <br>
+                <span class="text-secondary opacity-50"><%= investment_opportunity.tag_list %></span>
+            </h1>
+
+            <p class="lead text-secondary mx-auto mb-5" style="max-width: 650px;">
+                <%= investment_opportunity.details %>
+            </p>
+
+            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 mb-5 pb-5">
+
+                <%= link_to  new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-dark btn-lg px-4 py-3 fw-medium d-flex align-items-center gap-2 shadow"}  do %>
+                    Express Interest <i data-lucide="arrow-right" class="width-4 height-4"></i>
+                <% end %>
+
+                <a href="#deck" class="btn btn-white border px-4 py-3 fw-medium d-flex align-items-center gap-2 shadow-sm bg-white text-dark">
+                    <i data-lucide="play-circle" class="width-4 height-4"></i> Watch Demo
+                </a>
+            </div>
+
+            <div class="position-relative mx-auto hero-widget-cluster pe-none" style="max-width: 900px;">
+
+                <div class="position-absolute start-50 top-0 translate-middle-x bg-white rounded-4 border widget-shadow p-4 z-1 w-100" style="max-width: 800px;">
+                    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-light rounded p-2">
+                                <i data-lucide="pie-chart" class="width-4 height-4 text-secondary"></i>
+                            </div>
+                            <div class="text-start">
+                                <h6 class="m-0 fw-bold text-dark">Portfolio Overview</h6>
+                                <small class="text-muted" style="font-size: 0.7rem;">Last updated 2 mins ago</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                             <div class="badge bg-light text-secondary border fw-medium d-flex align-items-center px-3 text-dark">1Y</div>
+                             <div class="badge bg-dark fw-medium d-flex align-items-center px-3">YTD</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-end justify-content-between gap-1 mb-4 px-2" style="height: 12rem;">
+                         <div class="w-100 bg-light rounded-top-1" style="height: 40%"></div>
+                         <div class="w-100 bg-light rounded-top-1" style="height: 55%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-25" style="height: 45%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-25" style="height: 60%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-25" style="height: 75%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-50" style="height: 65%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-50" style="height: 85%"></div>
+                         <div class="w-100 bg-secondary-subtle rounded-top-1 opacity-50" style="height: 90%"></div>
+                         <div class="w-100 bg-dark rounded-top-1 position-relative shadow" style="height: 95%">
+                            <div class="position-absolute start-50 translate-middle-x bg-white border text-dark fw-bold py-1 px-2 rounded shadow-sm text-nowrap" style="top: -40px; font-size: 0.75rem;">
+                                $1.2M <span class="text-success ms-1" style="font-size: 0.65rem;">▲ 12%</span>
+                            </div>
+                         </div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted fw-medium small px-2" style="font-size: 0.7rem;">
+                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
+                    </div>
+                </div>
+
+                <div class="position-absolute floating-card-right bg-white rounded-4 border widget-shadow p-3 z-2 d-none d-md-block" style="width: 250px;">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="small fw-bold text-dark">Recent Transfers</span>
+                        <i data-lucide="arrow-up-right" class="width-3 height-3 text-muted"></i>
+                    </div>
+                    <div class="vstack gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">S</div>
+                            <div class="flex-grow-1 text-start lh-1">
+                                <div class="small fw-medium text-dark">Stripe Inc.</div>
+                                <div class="text-muted" style="font-size: 0.65rem;">Seed Round</div>
+                            </div>
+                            <div class="small fw-medium text-dark">+$25k</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">L</div>
+                            <div class="flex-grow-1 text-start lh-1">
+                                <div class="small fw-medium text-dark">Linear</div>
+                                <div class="text-muted" style="font-size: 0.65rem;">Series A</div>
+                            </div>
+                            <div class="small fw-medium text-dark">+$12k</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="position-absolute floating-card-left bg-white rounded-4 border widget-shadow p-3 z-2 d-none d-md-block" style="width: 220px;">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="rounded-circle bg-success-subtle border border-success-subtle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i data-lucide="shield-check" class="width-4 height-4 text-success"></i>
+                        </div>
+                        <div class="text-start lh-1">
+                            <div class="small fw-bold text-dark">System Status</div>
+                            <div class="text-success fw-medium" style="font-size: 0.65rem;">All systems operational</div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="d-flex justify-content-between text-muted" style="font-size: 0.65rem;">
+                            <span>API Uptime</span>
+                            <span class="text-dark fw-medium">99.99%</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 99%" aria-valuenow="99" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="platform" class="py-5 bg-light border-top">
+        <div class="container-xl px-4 py-5">
+
+            <div class="row g-4">
+
+                <div class="col-md-12">
+                    <div class="card h-100 border-0 shadow-sm card-hover rounded-4 overflow-hidden play-container">
+                        <div class="row g-0 h-100">
+                            <div class="col-md-6 p-4 p-md-5 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <div class="bg-primary-subtle rounded p-1 text-primary">
+                                            <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-dark small fw-bold">Market Intelligence</h6>
+                                    </div>
+                                    <h4 class="h4 fw-bold text-dark mb-3">The Rise of Generative AI in B2B</h4>
+                                    <p class="small text-muted mb-4">
+                                        Deep dive into the infrastructure layer opportunities and valuation frameworks for the next wave of AI-native enterprise applications. Featuring insights from our latest LP summit.
+                                    </p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 small fw-medium text-muted">
+                                    <span class="bg-light px-2 py-1 rounded text-secondary border">Analysis</span>
+                                    <span>•</span>
+                                    <span>14 min watch</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 bg-dark position-relative" style="min-height: 250px;">
+                                <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1632&q=80" alt="Meeting" class="w-100 h-100 object-fit-cover opacity-50 img-grayscale">
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <button class="play-button btn rounded-circle d-flex align-items-center justify-content-center text-white border border-white border-opacity-25 shadow-lg p-0" style="width: 64px; height: 64px; background: rgba(255,255,255,0.1); backdrop-filter: blur(4px);">
+                                        <i data-lucide="play" class="fill-white ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="card h-100 border-0 shadow-sm card-hover rounded-4 overflow-hidden img-container">
+                        <div class="row g-0 h-100">
+
+                            <div class="col-md-6 bg-dark position-relative" style="min-height: 250px;">
+                                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" alt="Meeting" class="w-100 h-100 object-fit-cover opacity-50 img-grayscale">
+                            </div>
+
+                            <div class="col-md-6 p-4 p-md-5 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <div class="bg-primary-subtle rounded p-1 text-primary">
+                                            <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <h6 class="mb-0 text-dark small fw-bold">Portfolio Spotlight</h6>
+                                    </div>
+                                    <h4 class="h4 fw-bold text-dark mb-3">Fintech Infrastructure 2.0</h4>
+                                    <p class="small text-muted mb-4">
+                                        How embedded finance is unlocking new revenue streams for legacy platforms. A case study on our portfolio company, FinBridge, achieving 300% YoY growth.
+                                    </p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 small fw-medium text-muted">
+                                    <span class="bg-light px-2 py-1 rounded text-secondary border">Case Study</span>
+                                    <span>•</span>
+                                    <span>5 min read</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+    <section id="details" class="py-5 bg-white">
+        <div class="container-md" style="max-width: 900px;">
+            <h2 class="h2 fw-semibold text-dark mb-5">Fund Details</h2>
+
+            <div class="d-flex gap-5 border-bottom mb-5 overflow-x-auto">
+                <button onclick="switchTab('overview')" id="tab-overview" class="btn btn-link text-decoration-none pb-3 px-0 fw-medium tab-active small">Overview</button>
+                <button onclick="switchTab('financials')" id="tab-financials" class="btn btn-link text-decoration-none pb-3 px-0 fw-medium tab-inactive small">Financials</button>
+                <button onclick="switchTab('notes')" id="tab-notes" class="btn btn-link text-decoration-none pb-3 px-0 fw-medium tab-inactive small">Notes</button>
+            </div>
+
+            <div id="content-overview" class="tab-content row g-5">
+                <div class="col-md-6">
+                    <h3 class="h5 fw-medium text-dark mb-3">Strategic Focus</h3>
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-4">
+                        <li class="d-flex align-items-start gap-3">
+                            <i data-lucide="check" class="text-success mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Primary focus on B2B SaaS infrastructure and developer tools.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                            <i data-lucide="check" class="text-success mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Early-stage entry (Seed to Series A) with follow-on reserves.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                            <i data-lucide="check" class="text-success mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Targeting North American and European markets exclusively.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                            <i data-lucide="check" class="text-success mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Hands-on operational support for portfolio founders.</span>
+                        </li>
+                    </ul>
+                    <a href="#" class="small fw-medium text-dark">Read full thesis →</a>
+                </div>
+                <div class="col-md-6">
+                     <div class="bg-light rounded-4 border p-5 d-flex align-items-center justify-content-center position-relative overflow-hidden" style="height: 300px;">
+                         <div class="position-absolute top-0 start-0 w-100 h-100 opacity-25" style="background-image: radial-gradient(#adb5bd 1px, transparent 1px); background-size: 16px 16px;"></div>
+                         <div class="bg-white rounded-3 shadow p-4 z-1">
+                             <i data-lucide="globe-2" class="text-secondary" style="width: 40px; height: 40px;"></i>
+                         </div>
+                     </div>
+                </div>
+            </div>
+
+            <div id="content-financials" class="tab-content row g-5 d-none">
+                <div class="col-md-6">
+                    <h3 class="h5 fw-medium text-dark mb-3">Performance Metrics</h3>
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-4">
+                        <li class="d-flex align-items-start gap-3">
+                            <span class="bg-secondary rounded-circle mt-2 flex-shrink-0" style="width: 6px; height: 6px;"></span>
+                            <span class="small text-secondary"><strong class="text-dark">IRR:</strong> 28.5% Gross (Vintage 2021)</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                             <span class="bg-secondary rounded-circle mt-2 flex-shrink-0" style="width: 6px; height: 6px;"></span>
+                            <span class="small text-secondary"><strong class="text-dark">TVPI:</strong> 2.4x multiple on invested capital</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                             <span class="bg-secondary rounded-circle mt-2 flex-shrink-0" style="width: 6px; height: 6px;"></span>
+                            <span class="small text-secondary"><strong class="text-dark">DPI:</strong> 0.45x distributions to paid-in capital</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                             <span class="bg-secondary rounded-circle mt-2 flex-shrink-0" style="width: 6px; height: 6px;"></span>
+                            <span class="small text-secondary"><strong class="text-dark">AUM:</strong> $145M across 3 active funds</span>
+                        </li>
+                    </ul>
+                    <button class="btn btn-outline-secondary btn-sm fw-medium text-dark">Download Audited Rep</button>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-dark rounded-4 border border-secondary border-opacity-25 d-flex align-items-center justify-content-center position-relative overflow-hidden" style="height: 300px;">
+                         <div class="position-absolute bottom-0 w-100 d-flex align-items-end justify-content-between px-4 pb-4 gap-2 h-50">
+                            <div class="w-100 bg-secondary rounded-top opacity-50" style="height: 30%"></div>
+                            <div class="w-100 bg-secondary rounded-top opacity-50" style="height: 50%"></div>
+                            <div class="w-100 bg-secondary rounded-top opacity-75" style="height: 40%"></div>
+                            <div class="w-100 bg-white rounded-top shadow" style="height: 60%"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+             <div id="content-notes" class="tab-content row g-5 d-none">
+                <div class="col-md-6">
+                    <h3 class="h5 fw-medium text-dark mb-3">Latest Board Meeting</h3>
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-4">
+                        <li class="d-flex align-items-start gap-3">
+                             <i data-lucide="minus" class="text-secondary opacity-50 mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Reviewed Q3 expansion plans for the DACH region.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                             <i data-lucide="minus" class="text-secondary opacity-50 mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Approved budget increase for engineering headcount.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-3">
+                             <i data-lucide="minus" class="text-secondary opacity-50 mt-1 flex-shrink-0" style="width: 16px; height: 16px;"></i>
+                            <span class="small text-secondary">Discussed potential Series C lead investors.</span>
+                        </li>
+                    </ul>
+                     <span class="small fst-italic text-muted">Last edited by Sarah J. on Oct 12</span>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-warning-subtle rounded-4 border border-warning-subtle d-flex flex-column align-items-center justify-content-center p-5 position-relative text-center" style="height: 300px;">
+                         <div class="position-absolute top-0 end-0 p-4 opacity-25 text-warning-emphasis">
+                            <i data-lucide="sticky-note" style="width: 80px; height: 80px;"></i>
+                         </div>
+                         <div class="z-1">
+                            <h5 class="text-warning-emphasis fw-medium mb-1">Private Note</h5>
+                            <p class="text-warning-emphasis opacity-75 small mb-0">These notes are visible only to General Partners.</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <%= render "/investment_opportunities/templates/light_simple/preview_docs", owner: investment_opportunity %>
+
+    <%= render "/investment_opportunities/templates/light_simple/preview_track_record", owner: investment_opportunity %>
+
+    <!-- Active Pipeline Section -->
+    <section id="pipeline" class="py-5 bg-black text-white border-top border-secondary border-opacity-25">
+        <div class="container-xl px-4 py-4">
+            <div class="d-flex align-items-center justify-content-between mb-5">
+                <h2 class="h2 fw-semibold mb-0">Active Pipeline</h2>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-dark border border-secondary border-opacity-25 d-flex align-items-center justify-content-center p-2" style="width: 40px; height: 40px;">
+                        <i data-lucide="filter" class="text-secondary" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <button class="btn btn-dark border border-secondary border-opacity-25 d-flex align-items-center justify-content-center p-2" style="width: 40px; height: 40px;">
+                        <i data-lucide="arrow-up-down" class="text-secondary" style="width: 16px; height: 16px;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Card 1: License Expansion -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 rounded-4 p-4 text-white d-flex flex-column justify-content-between position-relative overflow-hidden card-hover" style="background-color: #0ea5e9; min-height: 220px;">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="small fw-bold text-uppercase opacity-75 d-flex align-items-center gap-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                    <i data-lucide="layout-grid" style="width: 14px; height: 14px;"></i> Enterprise
+                                </span>
+                                <i data-lucide="more-horizontal" class="opacity-75 cursor-pointer" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="h5 fw-bold mb-1">License Expansion</h4>
+                            <p class="small opacity-75 mb-0">Oct 24 • High Priority</p>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-between mt-4">
+                            <span class="h3 fw-bold mb-0">$18,500</span>
+                            <div class="d-flex ps-2">
+                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64" class="rounded-circle border border-2 border-info position-relative z-1" width="32" height="32" alt="User">
+                                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64" class="rounded-circle border border-2 border-info position-relative z-2 ms-n2" width="32" height="32" alt="User" style="margin-left: -10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Q4 Strategy -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 rounded-4 p-4 text-dark d-flex flex-column justify-content-between position-relative overflow-hidden card-hover" style="background-color: #fefce8; min-height: 220px;">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="small fw-bold text-uppercase text-secondary d-flex align-items-center gap-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                    <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i> Marketing
+                                </span>
+                                <i data-lucide="more-horizontal" class="text-secondary cursor-pointer" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="h5 fw-bold mb-1">Q4 Strategy</h4>
+                            <p class="small text-secondary mb-0">Nov 02 • Review Phase</p>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-between mt-4">
+                            <span class="h3 fw-bold mb-0">$5,200</span>
+                            <div class="d-flex ps-2">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&h=64" class="rounded-circle border border-2 border-warning-subtle" width="32" height="32" alt="User">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: AWS Migration -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 rounded-4 p-4 text-white d-flex flex-column justify-content-between position-relative overflow-hidden card-hover" style="background-color: #ef4444; min-height: 220px;">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="small fw-bold text-uppercase opacity-75 d-flex align-items-center gap-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                    <i data-lucide="cloud" style="width: 14px; height: 14px;"></i> Cloud Ops
+                                </span>
+                                <i data-lucide="more-horizontal" class="opacity-75 cursor-pointer" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="h5 fw-bold mb-1">AWS Migration</h4>
+                            <p class="small opacity-75 mb-0">Oct 30 • Technical</p>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-between mt-4">
+                            <span class="h3 fw-bold mb-0">$24,900</span>
+                            <div class="d-flex ps-2">
+                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64" class="rounded-circle border border-2 border-danger position-relative z-1" width="32" height="32" alt="User">
+                                <div class="rounded-circle border border-2 border-danger bg-danger text-white d-flex align-items-center justify-content-center fw-bold position-relative z-2 ms-n2" style="width: 32px; height: 32px; font-size: 0.65rem; margin-left: -10px; filter: brightness(0.85);">+2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Global Success -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 p-4 text-white d-flex flex-column justify-content-between position-relative overflow-hidden card-hover" style="background-color: #171717; min-height: 220px;">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="small fw-bold text-uppercase text-secondary d-flex align-items-center gap-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                    <i data-lucide="triangle" class="fill-secondary text-secondary" style="width: 12px; height: 12px;"></i> Retainer
+                                </span>
+                                <i data-lucide="more-horizontal" class="text-secondary cursor-pointer" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="h5 fw-bold mb-1">Global Success</h4>
+                            <p class="small text-secondary mb-0">Nov 15 • Renewal</p>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-between mt-4">
+                            <span class="h3 fw-bold mb-0">$3,800</span>
+                            <div class="d-flex ps-2">
+                                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=64&h=64" class="rounded-circle border border-2 border-dark" width="32" height="32" alt="User">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="py-5 bg-light border-top">
+        <div class="container-sm" style="max-width: 768px;">
+            <div class="text-center mb-5">
+                <h2 class="h2 fw-semibold text-dark mb-2">Frequently Asked Questions</h2>
+                <p class="text-muted">Everything you need to know about the investment process.</p>
+            </div>
+
+            <div class="vstack gap-3">
+                <div class="bg-white border rounded-3 overflow-hidden">
+                    <button class="btn btn-white w-100 text-start d-flex align-items-center justify-content-between p-4 border-0 rounded-0 hover-light" onclick="toggleAccordion(1)">
+                        <span class="fw-medium text-dark small">What is the minimum ticket size for this round?</span>
+                        <i data-lucide="chevron-down" id="icon-1" class="text-secondary transition-transform" style="transition: transform 0.3s;"></i>
+                    </button>
+                    <div id="accordion-1" class="accordion-closed accordion-content bg-white">
+                        <div class="overflow-hidden">
+                            <div class="px-4 pb-4 small text-secondary">
+                                The minimum investment for Series B participation is currently set at $25,000 for individual accredited investors and $100,000 for institutional partners. This ensures we can maintain a manageable cap table while remaining accessible to strategic angels.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border rounded-3 overflow-hidden">
+                    <button class="btn btn-white w-100 text-start d-flex align-items-center justify-content-between p-4 border-0 rounded-0 hover-light" onclick="toggleAccordion(2)">
+                        <span class="fw-medium text-dark small">How are capital calls structured?</span>
+                        <i data-lucide="chevron-down" id="icon-2" class="text-secondary transition-transform" style="transition: transform 0.3s;"></i>
+                    </button>
+                    <div id="accordion-2" class="accordion-closed accordion-content bg-white">
+                        <div class="overflow-hidden">
+                            <div class="px-4 pb-4 small text-secondary">
+                                Capital is called on an as-needed basis, typically over a 2-3 year deployment period. The initial drawdown is usually 20% of the committed capital upon closing, with subsequent calls provided with a minimum 10-business-day notice.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border rounded-3 overflow-hidden">
+                    <button class="btn btn-white w-100 text-start d-flex align-items-center justify-content-between p-4 border-0 rounded-0 hover-light" onclick="toggleAccordion(3)">
+                        <span class="fw-medium text-dark small">Can international investors participate?</span>
+                        <i data-lucide="chevron-down" id="icon-3" class="text-secondary transition-transform" style="transition: transform 0.3s;"></i>
+                    </button>
+                    <div id="accordion-3" class="accordion-closed accordion-content bg-white">
+                        <div class="overflow-hidden">
+                            <div class="px-4 pb-4 small text-secondary">
+                                Yes, we accept international investors provided they meet the local accreditation standards equivalent to US regulations. Additional KYC/AML documentation may be required depending on your jurisdiction.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white border-top pt-5 pb-4">
+        <div class="container-xl px-4">
+            <div class="row g-4 mb-5">
+                <div class="col-md-5">
+                    <a href="#" class="d-flex align-items-center gap-2 text-dark text-decoration-none fw-medium mb-3">
+                        <div class="bg-dark text-white rounded-1 d-flex align-items-center justify-content-center fw-bold" style="width: 20px; height: 20px; font-size: 10px;">V</div>
+                        VENTURE
+                    </a>
+                    <p class="small text-muted">San Francisco, CA<br>New York, NY</p>
+                </div>
+                <div class="col-md-2">
+                    <h6 class="text-dark fw-medium small mb-3">Platform</h6>
+                    <ul class="list-unstyled small text-muted d-flex flex-column gap-2">
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Overview</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Widgets</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Integrations</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6 class="text-dark fw-medium small mb-3">Company</h6>
+                    <ul class="list-unstyled small text-muted d-flex flex-column gap-2">
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">About</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Careers</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Press</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-dark fw-medium small mb-3">Legal</h6>
+                    <ul class="list-unstyled small text-muted d-flex flex-column gap-2">
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Privacy</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Terms</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted hover-dark">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-top pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <p class="small text-muted mb-0" style="font-size: 0.7rem;">© 2024 Venture Capital Partners. All rights reserved.</p>
+                <div class="d-flex gap-3">
+                    <a href="#" class="text-muted"><i data-lucide="twitter" style="width: 16px; height: 16px;"></i></a>
+                    <a href="#" class="text-muted"><i data-lucide="linkedin" style="width: 16px; height: 16px;"></i></a>
+                    <a href="#" class="text-muted"><i data-lucide="github" style="width: 16px; height: 16px;"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        lucide.createIcons();
+
+        // Slider Logic
+        const slider = document.getElementById('investmentSlider');
+        const output = document.getElementById('sliderValue');
+
+        if(slider && output) {
+            slider.oninput = function() {
+                output.innerHTML = parseInt(this.value).toLocaleString();
+            }
+        }
+
+        // Tab Logic (Updated for Bootstrap Classes)
+        function switchTab(tabId) {
+            // Hide all content
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(el => el.classList.add('d-none'));
+
+            // Show selected content
+            const target = document.getElementById('content-' + tabId);
+            if(target) target.classList.remove('d-none');
+
+            // Update buttons
+            const buttons = document.querySelectorAll('.tab-btn, button[onclick^="switchTab"]');
+            buttons.forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+
+            const activeBtn = document.getElementById('tab-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.remove('tab-inactive');
+                activeBtn.classList.add('tab-active');
+            }
+        }
+
+        // Accordion Logic (Custom logic kept for animation control)
+        function toggleAccordion(id) {
+            const content = document.getElementById(`accordion-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+
+            // Toggle grid state
+            if (content.classList.contains('accordion-open')) {
+                content.classList.remove('accordion-open');
+                content.classList.add('accordion-closed');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                // Close others
+                document.querySelectorAll('.accordion-content').forEach(el => {
+                   el.classList.remove('accordion-open');
+                   el.classList.add('accordion-closed');
+                });
+                document.querySelectorAll('[id^="icon-"]').forEach(el => {
+                   el.style.transform = 'rotate(0deg)';
+                });
+
+                content.classList.remove('accordion-closed');
+                content.classList.add('accordion-open');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // Counter Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = document.querySelectorAll('.counter');
+                    counters.forEach(counter => {
+                        const target = parseFloat(counter.getAttribute('data-target'));
+                        const isFloat = target % 1 !== 0;
+                        const duration = 1000;
+                        const start = performance.now();
+
+                        const step = (currentTime) => {
+                            const elapsed = currentTime - start;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const ease = 1 - Math.pow(1 - progress, 4);
+                            const current = ease * target;
+
+                            if (isFloat) {
+                                counter.innerText = current.toFixed(1);
+                            } else {
+                                counter.innerText = Math.ceil(current);
+                            }
+
+                            if (progress < 1) {
+                                requestAnimationFrame(step);
+                            } else {
+                                counter.innerText = target;
+                            }
+                        };
+                        requestAnimationFrame(step);
+                    });
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const analyticsSection = document.getElementById('analytics');
+        if(analyticsSection) observer.observe(analyticsSection);
+    </script>
+</body>
+</html>

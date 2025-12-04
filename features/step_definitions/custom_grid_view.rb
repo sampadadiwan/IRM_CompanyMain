@@ -25,11 +25,13 @@ When('I create a report and custom grid view for {string}') do |report|
 end
 
 When('I create a form type and custom grid view for {string}') do |form_type|
+  FormType.where(name: form_type).destroy_all
   click_link('New Form Type')
   find('select[name="form_type[name]"]').select(form_type)
   click_on('Save')
   sleep(0.5)
   click_on('Configure Grids')
+  @form_type = FormType.where(name: form_type).last
   #sleep(1)
 end
 
@@ -118,13 +120,12 @@ Given('I visit FundUnitSetting Page and find columns in the grid') do
 end
 
 When('I visit Custom Grid View page and uncheck {string}') do |column_name|
-  form_type = FormType.first
-  visit '/grid_view_preferences/configure_grids?owner_id=1&owner_type=FormType'
+  visit "/grid_view_preferences/configure_grids?owner_id=#{@form_type.id}&owner_type=FormType"
   #sleep(0.25)
   within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
   end
-  
+
   click_on('Proceed')
   #sleep(0.25)
 end
@@ -136,7 +137,7 @@ When('I visit Report Custom Grid View page and uncheck {string}') do |column_nam
   within(:xpath, "//tr[contains(@class, 'column_#{column_name.downcase}')]") do
     find("form.deleteButton button").click
   end
-  
+
   click_on('Proceed')
   #sleep(0.25)
 end
@@ -145,18 +146,18 @@ end
 Given('I should not find {string} column in the Investor Grid') do |column_name|
   visit('/investors')
   #sleep(0.25)
-  
+
   column_title = column_name.capitalize
-  
+
   expect(page).not_to have_selector('thead th', text: column_title)
 end
 
 Given('I should not find {string} column in the Portfolio Investment Grid') do |column_name|
   visit('/investors')
   #sleep(0.25)
-  
+
   column_title = column_name.capitalize
-  
+
   expect(page).not_to have_selector('thead th', text: column_title)
 end
 
@@ -164,7 +165,7 @@ Given('I should not find {string} column in the Report PI Grid') do |column_name
   visit(Report.first.url)
   #sleep(0.25)
   column_title = column_name.capitalize
-  
+
   expect(page).not_to have_selector('thead th', text: column_title)
 end
 
@@ -180,7 +181,7 @@ When('I visit {string} Page and find columns in the grid') do |class_name|
   page_url = "/#{class_name.underscore.pluralize}"
   visit(page_url)
   # @expected_columns = class_name::STANDARD_COLUMNS.keys.compact
-  @expected_columns = 
+  @expected_columns =
   case class_name.to_s
   when 'CapitalRemittance'
     ["Stakeholder", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date"]
@@ -205,6 +206,6 @@ When('I should not find {string} column in the {string} Grid') do |column, class
   visit("/#{class_name.underscore.pluralize}")
   #sleep(0.25)
   column_title = column.titleize
-  
+
   expect(page).not_to have_selector('thead th', text: column_title)
 end

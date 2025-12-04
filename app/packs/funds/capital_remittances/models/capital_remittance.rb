@@ -207,7 +207,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_call capital_commitment fund investor]
+    %w[capital_call capital_commitment fund investor capital_call]
   end
 
   after_destroy :touch_investor

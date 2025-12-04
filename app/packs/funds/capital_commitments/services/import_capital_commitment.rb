@@ -1,5 +1,5 @@
 class ImportCapitalCommitment < ImportUtil
-  STANDARD_HEADERS = ["Stakeholder", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "Fund", "Folio Currency", "Committed Amount (Folio Currency)", "Committed Amount (Fund Currency)", "Fund Close", "Notes", "Folio No", "Unit Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only", "Form Tag"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -7,6 +7,7 @@ class ImportCapitalCommitment < ImportUtil
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
+
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
@@ -51,9 +52,13 @@ class ImportCapitalCommitment < ImportUtil
                                          import_upload_id: import_upload.id, notes: user_data["Notes"],
                                          esign_emails: user_data["Investor Signatory Emails"])
 
+    # Ensure KYC is set for the capital commitment
     get_kyc(user_data, investor, fund, capital_commitment)
-
-    setup_custom_fields(user_data, capital_commitment, custom_field_headers - ["Feeder Fund"])
+    # Get the form type for the capital commitment
+    form_type = get_form_type(import_upload, user_data)
+    # Setup custom fields
+    setup_custom_fields(user_data, capital_commitment, custom_field_headers - ["Feeder Fund"], form_type:)
+    # Setup exchange rate if foreign currency
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
     result = if capital_commitment.new_record?

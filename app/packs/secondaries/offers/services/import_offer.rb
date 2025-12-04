@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Investor", "Quantity", "Price", "Full Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Seller Signatory Emails", "Approved"].freeze
+  STANDARD_HEADERS = ["Email", "Investor", "Quantity", "Price", "Full Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Seller Signatory Emails", "Approved", "Form Tag"].freeze
 
   IGNORE_CF_HEADERS = ["Id", "User", "Update Only", "Created", "Updated", "Verified", "Pan Verified", "Bank Account Verified", "SPA Accepted"].freeze
 
@@ -43,8 +43,16 @@ class ImportOffer < ImportUtil
     # For SecondarySale we can have multiple form types. We need to set the form type for the offer
     ctx[:form_type_id] = secondary_sale.offer_form_type_id
     offer.form_type_id = secondary_sale.offer_form_type_id
+    unless defined?(@form_type)
+      if secondary_sale.offer_form_type_id.present?
+        @form_type = FormType.find_by(id: secondary_sale.offer_form_type_id)
+      else
+        form_type_tag = user_data["Form Tag"].presence || "Default"
+        @form_type = FormType.where(entity: import_upload.entity, name: "Offer", tag: form_type_tag).first
+      end
+    end
 
-    setup_custom_fields(user_data, offer, custom_field_headers - IGNORE_CF_HEADERS)
+    setup_custom_fields(user_data, offer, custom_field_headers - IGNORE_CF_HEADERS, form_type: @form_type)
 
     AccessRight.create(owner: offer.secondary_sale, entity: offer.entity, access_to_investor_id: offer.investor_id, metadata: "Seller")
     offer.save!

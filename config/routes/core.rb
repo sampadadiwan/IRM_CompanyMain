@@ -28,6 +28,7 @@ resources :form_types do
   get 'clone', on: :member
   patch 'rename_fcf', on: :member
   patch 'add_regulatory_fields', on: :member
+  get 'generate_upload_xlsx', on: :member
 end
 
 resources :e_signatures

@@ -9,6 +9,11 @@
     <%= link_to form_type , {class: "btn btn-outline-primary" } do %>
       <i class="ti ti-eye"></i> <%= t_common(:show) %>
     <% end %>
+
+    <%= link_to generate_upload_xlsx_form_type_path(form_type, format: :xlsx), {class: "btn btn-outline-info" } do %>
+      <i class="ti ti-download"></i> Import Template
+    <% end %>
+
     <% if policy(form_type).update? %>
       <%= link_to edit_form_type_path(form_type) , {class: "btn btn-outline-success" } do %>
         <i class="ti ti-edit"></i> <%= t_common(:edit) %>

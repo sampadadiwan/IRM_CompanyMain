@@ -17,6 +17,10 @@ class FormTypePolicy < ApplicationPolicy
     index? && belongs_to_entity?(user, record)
   end
 
+  def generate_upload_xlsx?
+    show?
+  end
+
   def create?
     belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
   end
