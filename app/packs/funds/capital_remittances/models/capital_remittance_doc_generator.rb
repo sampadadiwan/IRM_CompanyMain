@@ -90,17 +90,29 @@ class CapitalRemittanceDocGenerator
   def call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context)
     # All remittances with the same kyc
     kyc_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_commitment: { investor_kyc_id: capital_commitment.investor_kyc_id }, capital_call_id: capital_remittance.capital_call_id)
+
     kyc_capital_fee = kyc_capital_remittances.sum(:capital_fee_cents)
     kyc_other_fee = kyc_capital_remittances.sum(:other_fee_cents)
+    kyc_investment_amount = kyc_capital_remittances.sum(:investment_amount_cents)
+    # For investment_amount, we also need to show the breakdown in the template
+    all_investment_breakdowns = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount") }
+    # Now sum up the amounts
+    kyc_investment_amount_breakdown = capital_remittance.consolidate_fees(all_investment_breakdowns)
+
     kyc_total_fee = kyc_capital_fee + kyc_other_fee
+    kyc_committed_amount = kyc_capital_remittances.sum(:committed_amount_cents)
 
     kyc_amounts = OpenStruct.new(capital_remittances: TemplateDecorator.decorate(kyc_capital_remittances),
                                  call_amount: Money.new(kyc_capital_remittances.sum(&:call_amount_cents), fund_as_of.currency),
                                  computed_amount: Money.new(kyc_capital_remittances.sum(&:computed_amount_cents), fund_as_of.currency),
                                  capital_fee_amount: Money.new(kyc_capital_fee, fund_as_of.currency),
                                  other_fee_amount: Money.new(kyc_other_fee, fund_as_of.currency),
-                                 total_fee_amount: Money.new(kyc_total_fee, fund_as_of.currency))
+                                 investment_amount: Money.new(kyc_investment_amount, fund_as_of.currency),
+                                 total_fee_amount: Money.new(kyc_total_fee, fund_as_of.currency),
+                                 committed_amount: Money.new(kyc_committed_amount, fund_as_of.currency))
+
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
+    context.store :kyc_investment_amount_breakdown, kyc_investment_amount_breakdown
   end
 
   # Add remittance breakdowns by LP/GP and current/prior to context
@@ -189,6 +201,10 @@ class CapitalRemittanceDocGenerator
 
     context.store :capital_fee, money_to_currency(capital_remittance.capital_fee)
     context.store :other_fee, money_to_currency(capital_remittance.other_fee)
+    context.store :investment_amount, money_to_currency(capital_remittance.investment_amount)
+
+    # For investment_amount, we also need to show the breakdown in the template
+    context.store :investment_amount_breakdown, capital_remittance.build_fee_structs("investment_amount")
   end
 
   # Formats a numeric value to human-readable words based on currency

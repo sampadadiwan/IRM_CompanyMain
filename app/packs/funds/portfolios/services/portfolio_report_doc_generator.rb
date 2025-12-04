@@ -62,7 +62,11 @@ class PortfolioReportDocGenerator
     context.store  :portfolio_company, TemplateDecorator.decorate(portfolio_company)
     context.store  :apis, TemplateDecorator.decorate_collection(portfolio_company.aggregate_portfolio_investments)
     context.store  :portfolio_investments, TemplateDecorator.decorate_collection(portfolio_company.portfolio_investments.where(investment_date: ..end_date))
-    context.store  :kpis, grid_view_array(portfolio_company, end_date)
+
+    logo_doc = portfolio_company.documents.where(owner_tag: "logo").first
+    add_image(context, :logo, logo_doc.file) if logo_doc&.file.present?
+
+    context.store :kpis, grid_view_array(portfolio_company, end_date)
 
     portfolio_company.investor_kpi_mappings.pluck(:category).uniq.each_with_index do |category, _index|
       context.store :"#{category.gsub(/\s+/, '_').underscore}_kpis", grid_view_array(portfolio_company, end_date, category: category)
