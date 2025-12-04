@@ -1,0 +1,153 @@
+.investment-opportunity-card {
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  padding: 0;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border-color: transparent;
+
+    .action-footer {
+        background-color: #f8f9fa;
+    }
+  }
+
+  .card-header-custom {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f5f7fa;
+    background: #fff;
+    min-height: 80px;
+
+    .company-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a1f36;
+      margin: 0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+        &:hover { color: var(--bs-primary); }
+      }
+    }
+
+    .company-logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border-radius: 8px;
+      padding: 4px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-left: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  .card-body-custom {
+    padding: 24px;
+    flex-grow: 1;
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .icon-wrapper {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+
+        &.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        &.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        &.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+      }
+
+      .metric-details {
+        display: flex;
+        flex-direction: column;
+
+        .metric-value {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #111827;
+          line-height: 1.2;
+        }
+
+        .metric-label {
+          font-size: 0.8rem;
+          color: #6b7280;
+          margin-top: 4px;
+          font-weight: 500;
+        }
+      }
+    }
+
+    .tags-section {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px dashed #e5e7eb;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .custom-badge {
+            padding: 4px 10px;
+            background: #f3f4f6;
+            color: #4b5563;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+
+            &:hover {
+                background: #e5e7eb;
+                color: #1f2937;
+            }
+        }
+    }
+  }
+
+  .action-footer {
+    padding: 16px 24px;
+    text-align: center;
+    transition: background-color 0.3s;
+
+    .btn-custom {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+  }
+}
