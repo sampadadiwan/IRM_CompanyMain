@@ -1,103 +1,82 @@
-<% 
-    @current_entity ||= nil 
+<%
+    @current_entity ||= nil
     @no_password_login = @current_entity&.entity_setting&.custom_flags&.no_password_login?
 %>
 <div id="login_page_x" data-controller="login">
 
+  <div class="login-container">
+    <div class="login-header">
+       <h2 class="h3 mb-2 fw-normal">Welcome Back</h2>
+       <p class="text-muted">Sign in to your account to continue</p>
+    </div>
+
+    <div class="login-body">
         <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
 
         <%- flash.each do |name, msg| -%>
-            <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
-        <%- end -%>  
+            <%= content_tag :div, msg, :id => "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+        <%- end -%>
 
-        <div class="container" data-turbo='false'>
+        <% unless @no_password_login  %>
+            <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "user-login-form", data: { turbo: false } }) do |f| %>
+                <div class="form-group">
+                    <input type="email" class="form-control-modern"
+                        id="user_email"
+                        required="required"
+                        name="user[email]" value="<%=params[:email]%>"
+                        placeholder="Email Address">
+                </div>
 
-            <!-- Outer Row -->
-                    <div class="card border-0">
-                        <div class="card-body p-0">
-                            <!-- Nested Row within Card Body -->
-                            <div class="row">
-                                <div class="col-sm bg-login-image login-right">
-                                    <div class="p-5 text-center">
-                                        <% unless @no_password_login  %>
-                                        
-                                        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-
-                                        <form class="user">
-                                            <div class="form-group">
-                                                <input type="email" class="form-control form-control-user"
-                                                    id="user_email" aria-describedby="emailHelp"
-                                                    required="required" 
-                                                    name="user[email]", value="<%=params[:email]%>"
-                                                    placeholder="Enter Email Address...">
-                                            </div>
-
-                                            <div class="form-group">
-                                                <input type="password" class="form-control form-control-user"
-                                                name="user[password]" required="required" 
-                                                id="user_password" placeholder="Password">
-                                                <i class="far fa-eye" id="togglePassword" style="float:right; margin-top: -25px; margin-right: 5px; cursor: pointer;"></i>
-                                            </div>
-
-                                            <div class="form-group">
-                                                    <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Log In" data-disable-with="Log In">
-                                                    &nbsp;&nbsp;
-                                                    <input type="checkbox"  
-                                                    id="user_remember_me" name="user[remember_me]">
-                                                    <label for="user_remember_me">Remember
-                                                        Me</label>
-                                            </div>
-                                        
-                                        </form>
-
-                                        <% end %>                                        
-
-                                        <div class="title-line"><span>OR</span></div>
-
-                                        <% end %>
-
-                                        <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass"}) do |f| %>
-                                        
-                                        <input type="hidden" name="current_entity_id" value="<%= @current_entity&.id %>" />
-                                        <input type="hidden" name="redirect_to" value="<%= session[:user_return_to] %>" />
-
-                                        <form class="user">
-                                            <div class="form-group">
-                                                <input type="email" class="form-control form-control-user"
-                                                    id="user_email_wo_pass" aria-describedby="emailHelp"
-                                                    required="required" 
-                                                    name="user[email]", value="<%=params[:email]%>"
-                                                    placeholder="Email Address...">
-                                            </div>
-
-                                            
-
-                                            <span>
-                                                    <input type="submit" name="login_wo_pw" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Log In Via Email Link" data-disable-with="Log In" >
-                                            </span>
-
-                                        </form>
-
-                                        <% end %>
-
-                                        <hr>
-
-                                        <div class="text-center">
-                                            <%= render "devise/shared/links" %>
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="form-group">
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control-modern"
+                        name="user[password]" required="required"
+                        id="user_password" placeholder="Password">
+                        <i class="far fa-eye toggle-password" id="togglePassword"></i>
                     </div>
+                </div>
 
+                <div class="remember-me">
+                     <input type="checkbox" id="user_remember_me" name="user[remember_me]">
+                     <label for="user_remember_me">Remember Me</label>
+                </div>
 
+                <button type="submit" name="login" class="btn btn-primary w-100" data-disable-with="Logging in...">
+                    <span>Log In</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            <% end %>
 
+            <div class="divider"><span>OR</span></div>
+        <% end %>
+
+        <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass", class: "magic-link-form"}) do |f| %>
+            <input type="hidden" name="current_entity_id" value="<%= @current_entity&.id %>" />
+            <input type="hidden" name="redirect_to" value="<%= session[:user_return_to] %>" />
+
+            <%# Only show email input here if we showed the password form above, otherwise this is the only login method so we might want to style it differently?
+                Actually, original logic just showed another email input. To make it cleaner, if the user skips password login, they might prefer to just click "Magic Link" if they already typed email above?
+                But that requires JS synchronization.
+                For now, let's keep it simple and explicit: "Don't want to use password? Use this form."
+            %>
+
+            <div class="form-group">
+                <input type="email" class="form-control-modern"
+                    id="user_email_wo_pass"
+                    required="required"
+                    name="user[email]" value="<%=params[:email]%>"
+                    placeholder="Email Address for Magic Link">
+            </div>
+
+            <button type="submit" name="login_wo_pw" class="btn btn-secondary w-100" data-disable-with="Sending Link...">
+                Log In Via Email Link
+            </button>
+        <% end %>
+
+        <div class="login-footer">
+            <%= render "devise/shared/links" %>
         </div>
+    </div>
+  </div>
 
 </div>
-
-

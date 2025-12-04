@@ -30,10 +30,10 @@
     <div class="position-relative overflow-hidden radial-gradient min-vh-100 w-100">
       <div class="position-relative z-index-5">
         <div class="row">
-          <div class="col-xl-7 col-xxl-7">
-            <div class="d-none d-xl-flex min-vh-100 bg-body row justify-content-center align-items-center p-4">
+          <div class="col-xl-7 col-xxl-7 p-0 d-flex flex-column">
+            <div class="d-none d-xl-flex h-100 bg-white justify-content-center align-items-center p-4" style="background-color: white !important;">
               <div class="col-sm-8 col-md-6 col-xl-9">
-                <%= render "devise/shared/company_logo" %>                
+                <%= render "devise/shared/company_logo" %>
               </div>
             </div>
           </div>
@@ -41,9 +41,9 @@
             <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
               <div class="col-sm-8 col-md-6 col-xl-9">
                 <% name = @current_entity&.name || "CapHive" %>
-                <h5 class="card-title fw-semibold text-center"> Welcome to <%=name%> </h5>
+                <!-- h5 class="card-title fw-semibold text-center"> Welcome to <%=name%> </h5 -->
                 <p class=" mb-9"></p>
-                <%= yield %>                
+                <%= yield %>
               </div>
             </div>
           </div>
