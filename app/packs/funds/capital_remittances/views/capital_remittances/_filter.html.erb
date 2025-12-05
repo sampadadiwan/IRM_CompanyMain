@@ -1,7 +1,7 @@
-<div data-controller="remittances"
+
+  <div class="d-flex align-items-center gap-2" data-controller="remittances"
      data-remittances-filter-src="<%= data_source %>">
-  <div class="d-flex align-items-center gap-2">
-    <div class="form-group">
+    <div class="form-group mb-0">
       <%= select_tag :status,
         options_for_select(["Paid", "Pending", "Overdue", "Overpaid"], params[:status]),
         id: "status",
@@ -10,7 +10,7 @@
         data: { action: "change->remittances#filter" } %>
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-0">
       <%= select_tag :verified,
         options_for_select([["Yes", true], ["No", false]], params[:verified]),
         id: "verified",

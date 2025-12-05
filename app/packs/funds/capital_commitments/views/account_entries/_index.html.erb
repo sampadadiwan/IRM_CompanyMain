@@ -1,52 +1,52 @@
-<% 
-  fund ||= nil 
+<%
+  fund ||= nil
   import_upload_id ||= params[:import_upload_id]
   title ||= params[:title] || "Account Entries"
-%>        
+%>
 
-<% 
+<%
     xl_data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
 
-    xl_link = download_xl_link(xl_data_source) 
-    lazy_load_data ||= false 
+    xl_link = download_xl_link(xl_data_source)
+    lazy_load_data ||= false
 
     col_params = { }
     cols ||= "default"
 
     col_params[:column_names] = AccountEntry::STANDARD_COLUMNS.keys
     col_params[:column_fields] = AccountEntry::STANDARD_COLUMNS.values
-    
+
     if params[:capital_commitment_id].blank?
       col_params[:column_names] = ["Fund", "Investor"] + col_params[:column_names]
       col_params[:column_fields] = ["fund_name", "investor_name"] + col_params[:column_fields]
     end
 
-    column_names, field_list = get_columns(AccountEntry, params: col_params) 
+    column_names, field_list = get_columns(AccountEntry, params: col_params)
   %>
 
 
-<div class="table-responsive">
+<div class="">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
 
-    <span>  
-      <%  
+    <span>
+      <%
         if params[:capital_commitment_id].present? || params[:fund_id].present?
-            account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
+            account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id])
             account_entry.entity_id =current_user.entity_id
-                
+
       %>
 
-      
+
         <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary ti ti-plus"} if policy(account_entry).new? %>
 
-        <%= link_to "Upload", 
-                      new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
-                      "import_upload[owner_type]": "Fund", 
-                      "import_upload[import_type]": "AccountEntry", 
-                      "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                      { class: "btn btn-outline-primary ti ti-upload"}   %> 
+        <%= link_to "Upload",
+                      new_import_upload_path("import_upload[owner_id]": account_entry.fund_id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "AccountEntry",
+                      "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
+                      { class: "btn btn-outline-primary ti ti-upload"}   %>
 
 
         <div class="btn-group">
@@ -84,13 +84,13 @@
 
     </span>
 
-    
+
   </div>
 
   <% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q)) %>
   <%=render SearchComponent.new(data_source: data_source, turbo_frame: "account_entries_frame") %>
 
-  <div class="table-responsive">
+  <div class="">
 
       <%= render RansackTable.new(AccountEntry, q: @q, current_user: current_user, records: account_entries, report_id: params["report_id"], turbo_frame: "account_entries_frame", referrer: request.referrer, pagy: @pagy) %>
 

@@ -1,8 +1,10 @@
 <% @current_entity ||= nil %>
-<div>
-    <div class="splash-logo text-center rounded">
+<div class="brand-content animate-fade-in">
+    <div class="splash-logo mb-4">
         <% image = @current_entity&.logo&.url || "/img/logo_big.png" %>
-        <%= image_tag(image, class: "devise-logo img-fluid mx-auto d-block") %>    
+        <%= image_tag(image, class: "devise-logo img-fluid") %>
     </div>
-    <div class="text-muted text-center">Powered by <span style="color:orange;">Cap</span>Hive</div>    
-</div>    
+    <div class="powered-by mt-auto">
+        Powered by <span class="highlight">Cap</span>Hive
+    </div>
+</div>

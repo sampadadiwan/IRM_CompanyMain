@@ -1,70 +1,123 @@
-<%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
+<div class="io-preview-page-wrapper" style="min-height: 100vh;">
+    <!-- Navigation / Header -->
+    <div class="sticky-top" style="z-index: 1030;">
+        <%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
+    </div>
 
-<div class="associated_entity">
-    <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col">
+    <!-- Main Content -->
+    <div class="">
+        <div class="row">
+            <!-- Key Metrics -->
+            <div class="">
                 <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
             </div>
-        </div>
-    </div>
-    </section>
-</div>
 
-<%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
-<%= render "/ci_widgets/preview_widgets2", owner: investment_opportunity %>
+            <!-- Left Column: Main Info -->
+            <div class="col-lg-8">
 
-<div class="row justify-content-center">
-    <% investment_opportunity.document_folder.documents.each do |doc| %>
-        <div class="col-md-3"><%= render "/investment_opportunities/preview_document", document: doc %></div>
-    <% end %>
-</div>
-
-<div class="align-items-center text-center">
-    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} if current_user %>
-</div>
-
-
-<div class="mt-5">
-
-    <% if current_user && current_user.has_cached_role?(:rm) %>
-
-        <div id="eois" class="associated_entity">
-
-            <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id,
-                                    all: true)  do %>
-                <%= render "/layouts/loading" %>
-            <% end %>
-
-        </div>
-    <% end %>
-
-    <% if current_user && current_user.curr_role == "investor" %>
-        <% eois = policy_scope(ExpressionOfInterest).where(investment_opportunity_id: investment_opportunity.id) %>
-
-        <% eois.each do |eoi| %>
-          <%= render "/expression_of_interests/card", expression_of_interest: eoi if eoi %>
-        <% end %>
-
-        <% eoi = eois.where(show_data_room: true).first %>
-        <% if eoi and eoi.show_data_room? %>
-            <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                <!-- Thesis / Details -->
+                <div class="mb-5">
+                    <%= render "/investment_opportunities/preview_thesis", investment_opportunity: investment_opportunity %>
                 </div>
-            <% end %>
-        <% end %>
-    <% elsif current_user && current_user.entity_id == investment_opportunity.entity_id %>
-        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
-            <div class="text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
+
+                <!-- Widgets (Video/Images/Text) -->
+                <div class="mb-5">
+                    <%= render "/ci_widgets/preview_widgets2", owner: investment_opportunity %>
+                </div>
+
+                 <!-- Track Record -->
+                 <div class="mb-5">
+                    <h3 class="fw-bold mb-4 preview-section-title">Track Record</h3>
+                    <%= render "/ci_track_records/preview_track_record", owner: investment_opportunity %>
                 </div>
             </div>
-        <% end %>
-    <% end %>
 
+            <!-- Right Column: Documents & Actions -->
+            <div class="col-lg-4">
+                <div class="sticky-lg-top" style="top: 250px; z-index: 1;">
+                    <!-- Documents Section -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <h4 class="fw-bold m-0 preview-section-title">Documents</h4>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill"><%= investment_opportunity.document_folder.documents.count %></span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3">
+                            <% investment_opportunity.document_folder.documents.each do |doc| %>
+                                <%= render "/investment_opportunities/preview_document", document: doc %>
+                            <% end %>
+                        </div>
+                    </div>
+
+                     <!-- Sticky CTA for Mobile/Desktop -->
+                    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white overflow-hidden position-relative">
+                        <div class="card-body p-4 text-center position-relative" style="z-index: 2;">
+                            <h4 class="text-white fw-bold mb-2">Ready to Invest?</h4>
+                            <p class="text-white-50 mb-4 small">Express your interest to get started with the allocation process.</p>
+                            <%= link_to new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-light w-100 fw-bold py-3 rounded-pill text-primary shadow-sm"} do %>
+                                Express Interest <i class="ti ti-arrow-right ms-2"></i>
+                            <% end %>
+                        </div>
+                        <!-- Abstract Background Shapes -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="opacity: 0.1; z-index: 1;">
+                            <div class="position-absolute top-0 end-0 bg-white rounded-circle" style="width: 150px; height: 150px; transform: translate(30%, -30%);"></div>
+                            <div class="position-absolute bottom-0 start-0 bg-white rounded-circle" style="width: 100px; height: 100px; transform: translate(-30%, 30%);"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Expression of Interest Lists (Protected) -->
+        <div class="mt-5 pt-5 border-top">
+             <% if current_user && current_user.has_cached_role?(:rm) %>
+                <div id="eois" class="associated_entity">
+                    <h4 class="mb-4 fw-bold">Expressions of Interest</h4>
+                    <%= turbo_frame_tag "expression_of_interests_list", target: "_top", loading: :lazy, src: expression_of_interests_path( investment_opportunity_id: investment_opportunity.id, all: true)  do %>
+                        <%= render "/layouts/loading" %>
+                    <% end %>
+                </div>
+            <% end %>
+
+            <% if current_user && current_user.curr_role == "investor" %>
+                <% eois = policy_scope(ExpressionOfInterest).where(investment_opportunity_id: investment_opportunity.id) %>
+                <% if eois.any? %>
+                    <h4 class="mb-4 fw-bold">Your Interest</h4>
+                    <div class="row g-4">
+                        <% eois.each do |eoi| %>
+                            <div class="col-md-6">
+                                <%= render "/expression_of_interests/card", expression_of_interest: eoi if eoi %>
+                            </div>
+                        <% end %>
+                    </div>
+                <% end %>
+
+                <% eoi = eois.where(show_data_room: true).first %>
+                <% if eoi and eoi.show_data_room? %>
+                     <div class="">
+                        <h4 class="mb-4 fw-bold">Data Room</h4>
+                        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                <% end %>
+            <% elsif current_user && current_user.entity_id == investment_opportunity.entity_id %>
+                 <div class="">
+                    <h4 class="mb-4 fw-bold">Data Room</h4>
+                    <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: folder_documents_path(entity_id: investment_opportunity.entity_id, folder_id: investment_opportunity.data_room_folder_id, show_root_docs: true) do %>
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    <% end %>
+                </div>
+            <% end %>
+        </div>
+    </div>
 </div>

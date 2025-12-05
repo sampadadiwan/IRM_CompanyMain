@@ -1,0 +1,795 @@
+// app/assets/stylesheets/custom/minimalist_theme.scss
+
+/*
+ * Minimalist Theme - Global Styles
+ *
+ * SUMMARY OF UI CHANGES:
+ * ---------------------
+ * 1. Global Layout:
+ *    - Sets a lighter background (#f8f9fa) for the body wrapper in light mode for better contrast.
+ *    - Sets a dark background (#202936) in dark mode.
+ *
+ * 2. Cards (Stats & Details):
+ *    - Removes heavy shadows and adds subtle borders.
+ *    - Increases border radius to 16px for a modern, rounded look.
+ *    - Sets "Ultrawhite" (#ffffff) background for cards in light mode.
+ *    - Adapts background (#2a3447) and borders for dark mode.
+ *    - Softens text colors for headings and subtitles.
+ *    - Thins out progress bars (4px) and rounds their corners.
+ *
+ * 3. Buttons:
+ *    - Updates button radius (10px) and padding for a friendlier touch.
+ *    - Refines 'outline' buttons to have softer borders and cleaner hover states.
+ *    - Adjusts button colors in dark mode to be visible and aesthetically pleasing (using transparency).
+ *
+ * 4. Typography:
+ *    - Uses softer slate/gray tones (#505051, #64748b) instead of pure black for better readability and reduced eye strain.
+ *    - Adjusts font weights for a cleaner hierarchy.
+ *
+ * 5. Tables:
+ *    - Simplifies table headers with a light gray background (#f8fafc) and uppercase styling.
+ *    - Sets ultrawhite background for table rows in light mode.
+ *    - Adapts table backgrounds, borders, and text colors for dark mode.
+ *    - Adds subtle hover effects.
+ *
+ * 6. Dropdowns:
+ *    - Modernizes dropdowns with rounded corners (12px) and subtle shadows.
+ *    - Improves hover states for dropdown items.
+ *    - Full dark mode support for dropdown menus.
+ *
+ * 7. Badges/Pills:
+ *    - Converts badges to a "pill" style (rounded).
+ *    - Uses light background colors with darker text for status indicators (Success, Warning, etc.) instead of solid heavy colors.
+ *    - Adjusts opacity for dark mode compatibility.
+ *
+ * 8. Navigation (Tabs):
+ *    - Removes borders from inactive tabs for a cleaner look.
+ *    - Highlights active tabs with a bottom border and primary color.
+ *
+ * 9. Forms & Inputs:
+ *    - Modernizes inputs with subtle background colors (#f8fafc) and lighter borders.
+ *    - Adds refined focus states with a soft blue glow.
+ *    - Improves vertical rhythm with increased spacing.
+ *    - Customizes checkboxes for a premium feel.
+ *    - Overrides Select2 styles to match the new minimalist aesthetic.
+ */
+
+// 1. General Layout & Spacing
+.body-wrapper {
+  background-color: #f8f9fa; // Lighter background for contrast
+
+  // Dark mode override
+  [data-bs-theme=dark] & {
+    background-color: #202936;
+  }
+}
+
+// 2. Cards (Stats & Details)
+.card {
+  border: 1px solid #f0f2f5 !important; // Very subtle border instead of heavy default
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important; // Much softer shadow
+  border-radius: 16px !important; // More rounded corners
+  margin-bottom: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-color: #ffffff !important; // Ultrawhite background for cards in light mode
+
+  // Dark mode card styles
+  [data-bs-theme=dark] & {
+    background-color: #2a3447 !important;
+    border-color: #333f55 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  // Hover effect for interactivity
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025) !important;
+
+    [data-bs-theme=dark] & {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+    }
+  }
+
+  .card-body {
+    padding: 28px; // More breathing room
+
+    // Enforce spacious padding in comfortable mode (overrides layout.scss)
+    [data-density="comfortable"] & {
+      padding: 28px !important;
+    }
+  }
+
+  // Typography inside cards
+  h3, .h3 {
+    font-weight: 400;
+    color: #505051; // Slate-800 like text
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+
+    [data-bs-theme=dark] & {
+      color: #eaeff4; // Light text for dark mode
+    }
+  }
+
+  .card-subtitle {
+    color: #64748b !important; // Slate-500 like text
+    font-weight: 500;
+    font-size: 0.875rem;
+
+    [data-bs-theme=dark] & {
+      color: #7c8fac !important;
+    }
+  }
+
+  // Number Stats specific (thinner progress bars)
+  .progress-bar {
+     border-radius: 1px;
+    //  height: 4px !important;
+     opacity: 0.8;
+  }
+}
+
+// 3. Buttons & Actions
+.btn {
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 10px 24px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+
+  // Enforce spacious padding in comfortable mode
+  [data-density="comfortable"] & {
+    padding: 10px 24px !important;
+  }
+
+  // Icon spacing within buttons
+  i {
+    // margin-right: 8px;
+  }
+}
+
+// Redefine outline buttons to be softer and cleaner
+.btn-outline-primary {
+  border-color: #e2e8f0; // Slate-200
+  color: #3b82f6; // Blue-500
+  background: white;
+
+  [data-bs-theme=dark] & {
+    background-color: transparent;
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  &:hover, &:active, &.active {
+    background: #eff6ff; // Blue-50 background on hover
+    border-color: #3b82f6;
+    color: #2563eb; // Blue-600
+    box-shadow: none;
+
+    [data-bs-theme=dark] & {
+       background: rgba(59, 130, 246, 0.1);
+       color: #60a5fa;
+       border-color: #60a5fa;
+    }
+  }
+}
+
+.btn-outline-success {
+  border-color: #e2e8f0;
+  color: #10b981; // Emerald-500
+  background: white;
+
+  [data-bs-theme=dark] & {
+    background-color: transparent;
+    border-color: #10b981;
+    color: #10b981;
+  }
+
+  &:hover, &:active, &.active {
+    background: #ecfdf5; // Emerald-50
+    border-color: #10b981;
+    color: #059669; // Emerald-600
+    box-shadow: none;
+
+    [data-bs-theme=dark] & {
+       background: rgba(16, 185, 129, 0.1);
+       color: #34d399;
+       border-color: #34d399;
+    }
+  }
+}
+
+.btn-outline-danger {
+  border-color: #e2e8f0;
+  color: #ef4444;
+  background: white;
+
+  [data-bs-theme=dark] & {
+    background-color: transparent;
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  &:hover, &:active, &.active {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+    box-shadow: none;
+
+    [data-bs-theme=dark] & {
+       background: rgba(239, 68, 68, 0.1);
+       color: #f87171;
+       border-color: #f87171;
+    }
+  }
+}
+
+// Dropdowns - Modernized look
+.dropdown-menu {
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  border-radius: 12px;
+  padding: 6px;
+
+  [data-bs-theme=dark] & {
+      border-color: #333f55;
+      background-color: #2a3447;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .dropdown-item {
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 500;
+    color: #475569; // Slate-600
+    font-size: 0.875rem;
+
+    [data-bs-theme=dark] & {
+        color: #7c8fac;
+    }
+
+    &:hover {
+      background-color: #f8fafc; // Slate-50
+      color: #0f172a; // Slate-900
+
+      [data-bs-theme=dark] & {
+          background-color: #333f55;
+          color: #eaeff4;
+      }
+    }
+
+    i {
+      color: #94a3b8; // Slate-400
+      margin-right: 10px;
+      width: 18px;
+      text-align: center;
+
+      [data-bs-theme=dark] & {
+          color: #5a6a85;
+      }
+    }
+    &:hover i {
+      color: #64748b;
+
+      [data-bs-theme=dark] & {
+          color: #eaeff4;
+      }
+    }
+  }
+
+  .dropdown-divider {
+    border-top-color: #f1f5f9;
+    [data-bs-theme=dark] & {
+        border-top-color: #333f55;
+    }
+  }
+}
+
+// 4. Tabs - Clean look without boxy borders
+.nav-tabs {
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+
+  [data-bs-theme=dark] & {
+      border-bottom-color: #333f55;
+  }
+
+  .nav-item {
+      margin-bottom: -1px;
+  }
+
+  .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-weight: 600;
+    padding: 12px 20px;
+    transition: all 0.2s;
+    background: transparent;
+
+    [data-density="comfortable"] & {
+      padding: 12px 20px !important;
+    }
+
+    [data-bs-theme=dark] & {
+        color: #7c8fac;
+    }
+
+    &:hover {
+      color: #1e293b;
+      border-color: transparent;
+
+      [data-bs-theme=dark] & {
+          color: #eaeff4;
+      }
+    }
+
+    &.active {
+      color: #3b82f6;
+      border-bottom: 2px solid #3b82f6;
+      background: transparent;
+
+      [data-bs-theme=dark] & {
+          color: #3b82f6;
+          border-bottom-color: #3b82f6;
+      }
+    }
+  }
+}
+
+// 5. Tables (Capital Commitments, etc)
+.table-responsive {
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    background: white;
+    margin-top: 5px;
+
+    [data-bs-theme=dark] & {
+        background: #2a3447;
+        border-color: #333f55;
+    }
+}
+
+.table {
+  margin-bottom: 0;
+
+  thead th {
+    background-color: #f8fafc; // Slate-50 header
+    color: #475569; // Slate-600
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 16px 24px;
+    border-top: none;
+
+    [data-density="comfortable"] & {
+      padding: 16px 24px !important;
+    }
+
+    [data-bs-theme=dark] & {
+        background-color: #323a49; // Dark header
+        color: #7c8fac;
+        border-bottom-color: #333f55;
+    }
+  }
+
+  tbody td {
+    padding: 20px 24px;
+    vertical-align: middle;
+    color: #334155; // Slate-700
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-weight: 500;
+
+    [data-density="comfortable"] & {
+      padding: 20px 24px !important;
+    }
+
+    [data-bs-theme=dark] & {
+        color: #eaeff4;
+        border-bottom-color: #333f55;
+    }
+  }
+
+  // Ultrawhite background for table rows in light mode
+  tbody tr {
+      background-color: #ffffff;
+
+      [data-bs-theme=dark] & {
+        background-color: #2a3447; // Reset to dark for dark mode
+      }
+  }
+
+  // Hints of color in table rows on hover
+  tbody tr:hover {
+    background-color: #f8fafc; // Hover state light
+
+    [data-bs-theme=dark] & {
+        background-color: #323a49; // Hover state dark
+    }
+  }
+
+  tbody tr:last-child td {
+      border-bottom: none;
+  }
+}
+
+.pagy.info {
+  margin-left: 10px;
+}
+
+// 6. Badges/Pills - Clean, light background style
+.badge {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  // text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.025em;
+
+  [data-density="comfortable"] & {
+    padding: 6px 10px !important;
+  }
+
+  // Minimalist style badges (light background, colored text)
+  &.bg-success {
+    background-color: #dcfce7 !important; // Green-100
+    color: #166534 !important; // Green-700
+
+    [data-bs-theme=dark] & {
+        background-color: rgba(16, 185, 129, 0.2) !important;
+        color: #34d399 !important;
+    }
+
+    a {
+      color: #166534 !important;
+      [data-bs-theme=dark] & {
+          color: #34d399 !important;
+      }
+    }
+  }
+  &.bg-warning {
+    background-color: #fef3c7 !important; // Amber-100
+    color: #92400e !important; // Amber-800
+
+    [data-bs-theme=dark] & {
+        background-color: rgba(245, 158, 11, 0.2) !important;
+        color: #fbbf24 !important;
+    }
+
+    a {
+      color: #92400e !important;
+      [data-bs-theme=dark] & {
+          color: #fbbf24 !important;
+      }
+    }
+  }
+  &.bg-danger {
+    background-color: #fee2e2 !important; // Red-100
+    color: #991b1b !important; // Red-800
+
+    [data-bs-theme=dark] & {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+        color: #f87171 !important;
+    }
+
+    a {
+      color: #991b1b !important;
+      [data-bs-theme=dark] & {
+          color: #f87171 !important;
+      }
+    }
+  }
+  &.bg-info {
+    background-color: #e0f2fe !important; // Sky-100
+    color: #075985 !important; // Sky-800
+
+    [data-bs-theme=dark] & {
+        background-color: rgba(14, 165, 233, 0.2) !important;
+        color: #38bdf8 !important;
+    }
+
+    a {
+      color: #075985 !important;
+      [data-bs-theme=dark] & {
+          color: #38bdf8 !important;
+      }
+    }
+  }
+  &.bg-primary {
+     background-color: #dbeafe !important; // Blue-100
+     color: #1e40af !important; // Blue-800
+
+     [data-bs-theme=dark] & {
+        background-color: rgba(59, 130, 246, 0.2) !important;
+        color: #60a5fa !important;
+     }
+
+      a {
+        color: #1e40af !important;
+        [data-bs-theme=dark] & {
+            color: #60a5fa !important;
+        }
+      }
+  }
+}
+
+// 7. Page Title/Header
+h1, .h1 {
+    font-weight: 400;
+    color: #505051;
+    letter-spacing: -0.025em;
+
+    [data-bs-theme=dark] & {
+        color: #eaeff4;
+    }
+}
+
+// 8. Specific spacing improvements (Global)
+.row.mb-4, .row.mb-3 {
+    margin-bottom: 32px !important;
+}
+// 9. Forms & Inputs
+.form-group {
+  margin-bottom: 28px; // Increased spacing for cleaner vertical rhythm
+  position: relative;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #334155; // Slate-700 - Darker for better contrast
+  margin-bottom: 10px;
+  font-size: 0.875rem;
+  display: inline-block;
+  letter-spacing: -0.01em;
+
+  [data-bs-theme=dark] & {
+    color: #e2e8f0; // Slate-200
+  }
+}
+
+.form-control, .form-select {
+  border-radius: 12px; // Slightly more rounded
+  border: 1px solid #e2e8f0; // Slate-200 - Lighter default border
+  padding: 12px 16px; // More comfortable touch target
+  font-size: 0.95rem; // Slightly larger text for readability
+  color: #1e293b; // Slate-800
+  background-color: #f8fafc; // Slate-50 - Very subtle background
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+  [data-density="comfortable"] & {
+    padding: 14px 18px !important;
+  }
+
+  &::placeholder {
+    color: #94a3b8; // Slate-400
+    opacity: 0.8;
+  }
+
+  &:hover {
+    border-color: #cbd5e1; // Slate-300 on hover
+    background-color: #ffffff;
+  }
+
+  &:focus {
+    background-color: #ffffff;
+    border-color: #3b82f6; // Blue-500
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12); // Softer, larger glow
+    outline: none;
+    transform: translateY(-1px); // Micro-interaction on focus
+  }
+
+  &:disabled, &[readonly] {
+    background-color: #f1f5f9; // Slate-100
+    color: #64748b; // Slate-500
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    box-shadow: none;
+    transform: none;
+  }
+
+  [data-bs-theme=dark] & {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+
+    &:hover {
+      background-color: #0f172a;
+      border-color: #475569;
+    }
+
+    &:focus {
+      background-color: #0f172a;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+    }
+
+    &:disabled, &[readonly] {
+      background-color: #0f172a;
+      border-color: #1e293b;
+    }
+  }
+}
+
+textarea.form-control {
+  min-height: 120px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+// Checkboxes styling - Custom Look
+.form-check-input {
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: 0.15em;
+  vertical-align: top;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1; // Thicker border
+  border-radius: 6px; // Soft square
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+  }
+
+  &:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+
+  &:hover {
+    border-color: #94a3b8;
+  }
+
+  [data-bs-theme=dark] & {
+    background-color: #1e293b;
+    border-color: #475569;
+
+    &:checked {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+    }
+
+    &:hover {
+      border-color: #64748b;
+    }
+  }
+}
+
+// Form help text
+.form-text, .text-muted {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #64748b !important; // Slate-500
+  font-weight: 500;
+  line-height: 1.5;
+
+  [data-bs-theme=dark] & {
+    color: #94a3b8 !important;
+  }
+}
+
+// Select2 Overrides to match theme
+.select2-container {
+  display: block; // Fix alignment issues
+}
+
+.select2-container .select2-selection--single {
+  height: auto !important;
+  min-height: 48px; // Match standard input height
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 10px 16px !important;
+  background-color: #f8fafc !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+  [data-bs-theme=dark] & {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  .select2-selection__rendered {
+    padding-left: 0 !important;
+    line-height: 1.5 !important;
+    color: #1e293b !important;
+    font-size: 0.95rem;
+    padding-top: 2px;
+
+    [data-bs-theme=dark] & {
+      color: #f8fafc !important;
+    }
+  }
+
+  .select2-selection__arrow {
+    height: 100% !important;
+    top: 0 !important;
+    right: 16px !important;
+    width: 20px !important;
+
+    b {
+      border-color: #64748b transparent transparent transparent !important;
+      border-width: 6px 5px 0 5px !important;
+      margin-top: -2px !important;
+    }
+  }
+}
+
+// Select2 Focus State
+.select2-container--default.select2-container--open .select2-selection--single {
+  border-color: #3b82f6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12) !important;
+
+  [data-bs-theme=dark] & {
+    background-color: #0f172a !important;
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15) !important;
+  }
+}
+
+.select2-dropdown {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important; // Deeper shadow
+  overflow: hidden;
+  margin-top: 8px;
+
+  [data-bs-theme=dark] & {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .select2-search--dropdown {
+    padding: 12px;
+
+    .select2-search__field {
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+
+      [data-bs-theme=dark] & {
+        background-color: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+    }
+  }
+
+  .select2-results__option {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+
+    &--highlighted {
+      background-color: #eff6ff !important; // Blue-50
+      color: #1e40af !important; // Blue-800
+
+      [data-bs-theme=dark] & {
+        background-color: #334155 !important;
+        color: #f8fafc !important;
+      }
+    }
+
+    &[aria-selected="true"] {
+      background-color: #e2e8f0 !important;
+      font-weight: 600;
+
+      [data-bs-theme=dark] & {
+        background-color: #475569 !important;
+      }
+    }
+  }
+}

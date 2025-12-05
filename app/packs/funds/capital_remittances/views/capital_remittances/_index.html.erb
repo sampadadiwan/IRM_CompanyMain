@@ -1,25 +1,25 @@
-<% 
+<%
   lazy_load_data ||= false
   search ||= "Yes"
-  capital_call ||= nil 
-  capital_commitment ||= nil 
+  capital_call ||= nil
+  capital_commitment ||= nil
   fund ||= nil
   fund_id ||= params[:fund_id] || fund&.id
   import_upload_id ||= params[:import_upload_id]
 %>
 
-<% 
-  data_source = capital_remittances_path(params: params.to_unsafe_h, status: "", verified: "", import_upload_id:) 
+<%
+  data_source = capital_remittances_path(params: params.to_unsafe_h, status: "", verified: "", import_upload_id:)
   xl_data_source = capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:)
-  xl_link = download_xl_link(xl_data_source) 
+  xl_link = download_xl_link(xl_data_source)
 %>
-              
+
 <div data-controller="remittances" data-remittances-table-name-value="#capital_remittances">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
 
-    <span class="d-flex align-items-center gap-2 flex-wrap">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
 
 
       <% if capital_call %>
@@ -83,14 +83,14 @@
         <%= render "/capital_remittances/bulk_actions" %>
       <% end %>
 
-    </span>
+    </div>
 
   </div>
 
 
-  
-  <div class="table-responsive"  data-source="<%= data_source %>">
-    <% capital_remittances_frame ||= "capital_remittances_frame" 
+
+  <div class=""  data-source="<%= data_source %>">
+    <% capital_remittances_frame ||= "capital_remittances_frame"
         default_columns_map = if current_user.curr_role == "investor"
             CapitalRemittance::INVESTOR_STANDARD_COLUMNS
           elsif params[:for_commitment].present?
@@ -98,7 +98,7 @@
           else
             CapitalRemittance::STANDARD_COLUMNS
           end
-    
+
     %>
     <%=render SearchComponent.new(data_source: , turbo_frame: capital_remittances_frame) %>
 

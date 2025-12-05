@@ -3,28 +3,28 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">
-      KPI Reports 
+      KPI Reports
       <%= Entity.find(params[:entity_id]).name if params[:entity_id] %>
     </h1>
     <span>
-      
+
         <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
-        
+
         <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, months: 12, grid_view: true), {class: "btn btn-outline-primary"} if params[:q].blank? %>
 
-        <%= link_to "Upload", 
+        <%= link_to "Upload",
             new_import_upload_path(
-                "import_upload[import_type]": "Kpi", 
+                "import_upload[import_type]": "Kpi",
                 "import_upload[entity_id]": current_user.entity_id,
-                "sample_upload": "KPIS_SAMPLE"), 
-                { class: "btn btn-outline-success"} %> 
+                "sample_upload": "KPIS_SAMPLE"),
+                { class: "btn btn-outline-success"} %>
 
     </span>
   </div>
 
   <% data_source ||= kpi_reports_path(params: params.to_unsafe_h, period: params[:period]) %>
 
-  <div class="table-responsive">
+  <div class="">
     <% q ||= nil%>
     <% kpi_reports_frame ||= "kpi_reports_frame" %>
     <%=render SearchComponent.new(data_source: , turbo_frame: kpi_reports_frame) %>
