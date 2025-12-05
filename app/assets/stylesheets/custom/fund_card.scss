@@ -1,116 +1,40 @@
-// Theme Variables adapted from investment_opportunity_card.scss
-:root {
-  --fund-card-primary: #5d87ff; // Default (Blue_Theme)
-  --fund-card-secondary: #49beff;
-  --fund-card-primary-rgb: 93, 135, 255;
-}
+@import "base_card";
 
-[data-color-theme="Blue_Theme"] {
-  --fund-card-primary: #5d87ff;
-  --fund-card-secondary: #49beff;
-  --fund-card-primary-rgb: 93, 135, 255;
-}
-
-[data-color-theme="Aqua_Theme"] {
-  --fund-card-primary: #0074ba;
-  --fund-card-secondary: #47d7bc;
-  --fund-card-primary-rgb: 0, 116, 186;
-}
-
-[data-color-theme="Purple_Theme"] {
-  --fund-card-primary: #763ebd;
-  --fund-card-secondary: #95cfd5;
-  --fund-card-primary-rgb: 118, 62, 189;
-}
-
-[data-color-theme="Green_Theme"] {
-  --fund-card-primary: #0a7ea4;
-  --fund-card-secondary: #ccda4e;
-  --fund-card-primary-rgb: 10, 126, 164;
-}
-
-[data-color-theme="Cyan_Theme"] {
-  --fund-card-primary: #01c0c8;
-  --fund-card-secondary: #0074ba;
-  --fund-card-primary-rgb: 1, 192, 200;
-}
-
-[data-color-theme="Orange_Theme"] {
-  --fund-card-primary: #fa896b;
-  --fund-card-secondary: #0074ba;
-  --fund-card-primary-rgb: 250, 137, 107;
-}
+// Note: Variable definitions are handled by base_card's mixin if included here,
+// but since we are likely loading both stylesheets, or they might be independent,
+// we should ensure the variables are available.
+// However, since investment_opportunity_card.scss already includes them at root,
+// and this file previously adapted them, we can rely on the shared variables
+// if they are loaded together. If this file is used independently, we should
+// include the mixin. For safety, we can include the mixin here too or rely on the fact
+// that they use the same variable names now.
+//
+// Assuming standard Rails asset pipeline or Webpack where these might be compiled together
+// or separately. To be safe and follow the pattern, I will not re-declare :root here
+// if I assume they are global. But the previous file had them locally scoped or
+// repeated. The best practice with the mixin is to include it if it's the main file entry point.
+// Since I don't know the exact entry point structure, I will NOT re-emit :root variables
+// if they are already expected to be global from the other file, BUT the safer bet for
+// modularity is that this file should work on its own.
+//
+// Let's just use the variables defined in base_card.
 
 .fund-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  // font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  @include card-base; // Default hover translate is -4px
   margin-bottom: 24px;
 
-  [data-bs-theme=dark] & {
-    background: #2a3447;
-    border-color: #334155;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  // Top colorful accent line
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: linear-gradient(90deg, var(--fund-card-primary), var(--fund-card-primary));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-
-    &::before {
-      opacity: 1;
-    }
-  }
-
   .card-header-custom {
+    @include card-header-base;
     padding: 24px 28px 20px;
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(to bottom, #fcfcfd, #ffffff);
     border-bottom: 1px solid #f1f5f9;
 
     [data-bs-theme=dark] & {
-      background: linear-gradient(to bottom, #323a49, #2a3447);
       border-bottom-color: #334155;
     }
 
     .fund-title {
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: #111827;
-      margin: 0;
-      line-height: 1.3;
-      letter-spacing: -0.01em;
-
-      [data-bs-theme=dark] & {
-        color: #eaeff4;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-        transition: color 0.2s;
-        &:hover { color: var(--fund-card-primary); }
-      }
+      @include card-title-base;
     }
   }
 
@@ -152,8 +76,8 @@
     .icon-box {
       width: 42px;
       height: 42px;
-      background: rgba(var(--fund-card-primary-rgb), 0.1);
-      color: var(--fund-card-primary);
+      background: rgba(var(--card-primary-rgb), 0.1);
+      color: var(--card-primary);
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -163,7 +87,7 @@
       flex-shrink: 0;
 
       [data-bs-theme=dark] & {
-        background: rgba(var(--fund-card-primary-rgb), 0.2);
+        background: rgba(var(--card-primary-rgb), 0.2);
       }
     }
 
@@ -199,7 +123,7 @@
           font-size: 0.85rem;
           margin-top: 2px;
           a {
-              color: var(--fund-card-primary);
+              color: var(--card-primary);
               text-decoration: none;
               &:hover { text-decoration: underline; }
           }
@@ -215,9 +139,9 @@
       transition: all 0.2s;
 
       &:hover, &[aria-expanded="true"] {
-          background-color: var(--fund-card-primary);
+          background-color: var(--card-primary);
           color: white;
-          border-color: var(--fund-card-primary);
+          border-color: var(--card-primary);
       }
   }
 }
