@@ -1,10 +1,32 @@
 V9.1.51
 #####################################
+01dfbc1a3 Better comments in DocGenContext
+84ea0e9e9 Removed unwanted files
+99b2a1fa0 (origin/main) Added DocGenContext for all_keys for dumping key in the template
+5ffa39751 Fixed specs for regulatory custom fields (#1119)
+7c51b0538 Better styles (#1118)
+c6ff064e6 Changed table header weight
+215d38fc4 Better styles (#1116)
+520ca5adb Fixed Import using Form Tag to match labels in a case insensitive manner
+919b865ac Now fixed the 'Form Tag' duplicate header in Import Template
+71d1b0315 Added breakdown for each fee type in remittance generator
+cda97cd55 Now takes kpi mappings with show in report (#1115)
+04409fa2d Added kyc_investment_amount_breakdown and investment_amount in remittance doc gen
+50f436df2 Added kyc_investment_amount_breakdown and investment_amount in remittance doc gen
+0fd9a0a21 Added to_s in template decorator, added logo in portfolio report doc gen (#1114)
+c38e019d8 added kyc committed_amount in remittance doc gen (#1113)
+a5c1f7544 Added Investment Amount to Fee Type
+b4291703c Added Investment Amount to remittance as part of the fees
+469fd7db2 Added release notes
+c899b13c5 Ia table fix (#1109)
 b40fb75a8 Added show_in_report to kpi
 4f4db3902 Added simple_light template
 d7eda7639 Bug Fixes for grid view prefs
+4866f4052 Tests pass with new Form Tag in imports
+9256f0840 Added get_form_type in the import_utils
 3744a23ac Added download of xlsx template from FormTypes
 709427310 Added capital_call ransack search for CRP
+
 
 V9.1.50
 #####################################

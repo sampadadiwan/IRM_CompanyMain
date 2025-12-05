@@ -43,6 +43,8 @@ class DocGenContext
   #
   # It returns an array of unique string keys, e.g.:
   #   ["user.name", "user.email", "funds.0.name"]
+
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
   def all_keys(data = nil, prefix = nil, visited = Set.new)
     # Default to the instance context the first time the method is called.
     data ||= @context
@@ -127,6 +129,7 @@ class DocGenContext
     # multiple routes.
     keys.uniq
   end
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
 
   private
 
