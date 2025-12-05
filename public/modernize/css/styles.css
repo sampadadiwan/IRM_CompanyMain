@@ -257,6 +257,32 @@
   --bs-btn-hover-border-color: #00639e;
 }
 
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root {
+  --bs-primary: #21201E;
+  --bs-primary-rgb: 0, 0, 0;
+  --bs-light-primary: rgba(0, 0, 0, 0.1);
+  --bs-primary-bg-subtle: rgba(0, 0, 0, 0.1);
+  --bs-secondary: #666666;
+  --bs-secondary-rgb: 102, 102, 102;
+  --bs-light-secondary: rgba(102, 102, 102, 0.1);
+  --bs-secondary-bg-subtle: rgba(102, 102, 102, 0.1);
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-primary,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-primary {
+  --bs-btn-bg: #21201E;
+  --bs-btn-border-color: #21201E;
+  --bs-btn-hover-bg: #222222;
+  --bs-btn-hover-border-color: #222222;
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-secondary,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-secondary {
+  --bs-btn-bg: #666666;
+  --bs-btn-border-color: #666666;
+  --bs-btn-hover-bg: #555555;
+  --bs-btn-hover-border-color: #555555;
+}
+
 /*!
  * Bootstrap  v5.3.2 (https://getbootstrap.com/)
  * Copyright 2011-2023 The Bootstrap Authors
@@ -16407,6 +16433,12 @@ html[data-layout=horizontal] .body-wrapper > .container-fluid, html[data-layout=
 }
 .customizer-box.color-pallete label .color-box.skin-6 {
   background-color: #fa896b;
+}
+.customizer-box.color-pallete label .color-box.skin-6 {
+  background-color: #fa896b;
+}
+.customizer-box.color-pallete label .color-box.skin-7 {
+  background-color: #21201E;
 }
 
 .preloader {

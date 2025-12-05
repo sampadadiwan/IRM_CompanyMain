@@ -488,3 +488,120 @@
   --bs-btn-disabled-border-color: #fa896b;
   --bs-gradient: none;
 }
+
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-outline-primary,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-outline-primary {
+  --bs-btn-color: #21201E;
+  --bs-btn-border-color: #21201E;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #21201E;
+  --bs-btn-hover-border-color: #21201E;
+  --bs-btn-focus-shadow-rgb: 0, 0, 0;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #21201E;
+  --bs-btn-active-border-color: #21201E;
+  --bs-btn-disabled-color: #21201E;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #21201E;
+  --bs-gradient: none;
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-outline-secondary,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-outline-secondary {
+  --bs-btn-color: #666666;
+  --bs-btn-border-color: #666666;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #21201E;
+  --bs-btn-hover-border-color: #21201E;
+  --bs-btn-focus-shadow-rgb: 102, 102, 102;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #21201E;
+  --bs-btn-active-border-color: #21201E;
+  --bs-btn-disabled-color: #666666;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #666666;
+  --bs-gradient: none;
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-outline-success,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-outline-success {
+  --bs-btn-color: #21201E;
+  --bs-btn-border-color: #21201E;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #21201E;
+  --bs-btn-hover-border-color: #21201E;
+  --bs-btn-focus-shadow-rgb: 0, 0, 0;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #21201E;
+  --bs-btn-active-border-color: #21201E;
+  --bs-btn-disabled-color: #21201E;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #21201E;
+  --bs-gradient: none;
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-outline-info,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-outline-info {
+  --bs-btn-color: #21201E;
+  --bs-btn-border-color: #21201E;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #21201E;
+  --bs-btn-hover-border-color: #21201E;
+  --bs-btn-focus-shadow-rgb: 0, 0, 0;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #21201E;
+  --bs-btn-active-border-color: #21201E;
+  --bs-btn-disabled-color: #21201E;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #21201E;
+  --bs-gradient: none;
+}
+[data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .btn-outline-danger,
+[data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .btn-outline-danger {
+  --bs-btn-color: #21201E;
+  --bs-btn-border-color: #21201E;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #21201E;
+  --bs-btn-hover-border-color: #21201E;
+  --bs-btn-focus-shadow-rgb: 0, 0, 0;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #21201E;
+  --bs-btn-active-border-color: #21201E;
+  --bs-btn-disabled-color: #21201E;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #21201E;
+  --bs-gradient: none;
+}
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-success,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-success {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-info,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-info {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-danger,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-danger {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-primary,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-primary {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-secondary,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-secondary {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
+
+// [data-bs-theme=light][data-color-theme=Minimalist_Theme]:root .text-bg-warning,
+// [data-bs-theme=dark][data-color-theme=Minimalist_Theme]:root .text-bg-warning {
+//   color: #fff !important;
+//   background-color: #21201E !important;
+// }
