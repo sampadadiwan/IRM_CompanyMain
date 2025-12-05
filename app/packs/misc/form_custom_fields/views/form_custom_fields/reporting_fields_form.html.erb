@@ -1,6 +1,7 @@
 <% validate = validate.present? ? validate : true %>
 <%# always validate for investor  %>
 <% validate = validate || current_user.curr_role_investor? %>
+<%= render NewCard.new do %>
 <%= render FormCard.new(title: "#{object.to_s} Reporting Fields") do %>
 
     <%= form_with(model: object, url: url, validate: validate, method: :put) do |form| %>
@@ -32,4 +33,5 @@
     </div>
     <% end %>
 
+<% end %>
 <% end %>
