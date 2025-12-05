@@ -97,7 +97,7 @@ Scenario Outline: Create investor kyc - with a Regulatory Custom Form and regula
   And I click add "SEBI" reporting fields to "IndividualKyc" form from the dropdown
   Then "SEBI" regulatory fields are added to the "IndividualKyc" form
   Given I go to KYCs page
-  Given I add a new "IndividualKyc" KYC with custom form tag "SEBI"
+  Given I add a new "IndividualKyc" KYC with custom form tag "SEBIFORM"
   Given I fill InvestorKyc details with regulatory fields "PAN=ABCD9876F;properties=sebi_investor_category:Domestic,sebi_investor_sub_category:NBFCs" with files "" for ""
   Then I should see the "Investor kyc was successfully saved."
   Then I should see the investor kyc details on the details page and regulatory fields "present"
