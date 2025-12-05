@@ -1,16 +1,19 @@
 class TrackingCurrencyJob < ApplicationJob
   queue_as :low
 
-  def perform(fund_id: nil, user_id: nil)
+  def perform(fund_id: nil, user_id: nil, entity_id: nil)
     Chewy.strategy(:sidekiq) do
       @error_msg = {}
 
-      funds = if fund_id.nil?
-                # This is run daily, to compute for all funds that have tracking currency
-                Fund.where("tracking_currency <> currency")
-              else
+      funds = if fund_id.present?
                 # This is run when a specific fund needs to be updated
                 Fund.where(id: fund_id)
+              elsif entity_id.present?
+                # This is run when all funds for an entity need to be updated, typically called when an exchangee rate changes
+                Fund.where(entity_id: entity_id)
+              else
+                # This is run daily, to compute for all funds that have tracking currency
+                Fund.where("tracking_currency <> currency")
               end
 
       funds.each do |fund|
@@ -21,6 +24,8 @@ class TrackingCurrencyJob < ApplicationJob
         @error_msg[:from] = "TrackingCurrencyJob"
         @error_msg[fund.name] = e.message
       end
+
+      send_errors_notification("Errors occurred during Tracking Currency Job", @error_msg, user_id) if @error_msg.present?
 
       EntityMailer.with(error_msg: @error_msg).notify_errors.deliver_now if @error_msg.present?
     end
@@ -65,7 +70,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for account entries for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Account Entries" => e.message }
+    { "#{fund.name}: Account Entries" => e.message }
   end
 
   def convert_remittance_payments(fund, user_id)
@@ -82,7 +87,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for remittance payments for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Remittance Payments" => e.message }
+    { "#{fund.name}: Remittance Payments" => e.message }
   end
 
   def convert_remittances(fund, user_id)
@@ -95,7 +100,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for remittances for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Remittances" => e.message }
+    { "#{fund.name}: Remittances" => e.message }
   end
 
   def convert_distributions(fund, user_id)
@@ -110,7 +115,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for distribution payments for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Distributions" => e.message }
+    { "#{fund.name}: Distributions" => e.message }
   end
 
   def convert_commitment_adjustments(fund, user_id)
@@ -123,7 +128,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for commitment adjustments for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Commitment Adjustments" => e.message }
+    { "#{fund.name}: Commitment Adjustments" => e.message }
   end
 
   def convert_initial_capital_commitments(fund, user_id)
@@ -137,7 +142,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for capital commitments for fund #{fund.name}: #{e.message}", user_id, :danger)
-    { "Initial Capital Commitments" => e.message }
+    { "#{fund.name}: Capital Commitments" => e.message }
   end
 
   def update_capital_commitments_from_yesterday(fund)
@@ -150,7 +155,7 @@ class TrackingCurrencyJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating capital commitments from yesterday for fund #{fund.name}: #{e.message}", nil, :danger) # user_id is not available here
-    { "Updated Capital Commitments" => e.message }
+    { "#{fund.name}: Updated Capital Commitments" => e.message }
   end
 
   def convert_portfolio_investments(fund)
@@ -160,11 +165,15 @@ class TrackingCurrencyJob < ApplicationJob
       tracking_fmv_cents = pi.fmv_cents * pi.tracking_exchange_rate(exchange_rate_date: latest_valuation.valuation_date).rate
       pi.update_columns(tracking_amount_cents:, tracking_fmv_cents:)
     end
+
+    # We need to ensure counter culture counts are correct
+    PortfolioInvestment.counter_culture_fix_counts(where: { fund_id: fund.id })
+
     {}
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for portfolio investments for fund #{fund.name}: #{e.message}", nil, :danger) # user_id is not available here
-    { "Portfolio Investments" => e.message }
+    { "#{fund.name}: Portfolio Investments" => e.message }
   end
   # rubocop:enable Rails/SkipsModelValidations
 end
