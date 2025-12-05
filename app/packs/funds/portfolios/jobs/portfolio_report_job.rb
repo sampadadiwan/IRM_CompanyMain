@@ -59,7 +59,9 @@ class PortfolioReportJob < LlmReportJob
 
     # If no filtered documents are found, log a debug message and return nil
     if filtered_documents.empty?
-      Rails.logger.debug { "No documents found for #{portfolio_company.name} for report #{portfolio_report}" }
+      msg = "No documents found for #{portfolio_company.name} for report #{portfolio_report}"
+      Rails.logger.debug { msg }
+      send_notification(msg, user_id, "danger")
       nil
     else
       # Create a new PortfolioReportExtract record to store the generated output
@@ -70,18 +72,12 @@ class PortfolioReportJob < LlmReportJob
         portfolio_report_section_id: nil, start_date: start_date, end_date: end_date
       )
 
-      # Prepare the JSON output structure based on portfolio report sections
-      json_output = {}
-      portfolio_report.portfolio_report_sections.each do |section|
-        json_output[section.name] = "#{section.data} Extract the information as a array"
-      end
-
       # Notify the user that information is being sent to the LLM
       msg = "Sending the extracted information to the LLM for processing"
       send_notification(msg, user_id)
 
       # Define LLM instructions for formatting the output
-      llm_instructions = "Format your output as json in the format #{json_output}. Do not generate nested json, just one level. Do not add any \n (newlines), \t (tabs) within an item and do not add ```json to the output."
+      llm_instructions = get_llm_instructions(portfolio_report)
 
       # Call the LLM (Large Language Model) with the extracted documents, notes, and instructions
       result = DocLlmContext.wtf?(model: portfolio_report_extract,
@@ -100,6 +96,44 @@ class PortfolioReportJob < LlmReportJob
       # Return the created and updated portfolio report extract
       portfolio_report_extract
     end
+  end
+
+  def get_llm_instructions(portfolio_report)
+    sections = portfolio_report.portfolio_report_sections
+
+    section_names = sections.map(&:name)
+
+    # Human-readable "what to do" per section
+    section_tasks_text = sections.map do |section|
+      %("#{section.name}": #{section.data.to_s.strip})
+    end.join("\n")
+
+    # JSON skeleton with the exact keys you want
+    json_skeleton = "{\n#{section_names.map { |name| %(  "#{name}": []) }.join(",\n")}\n}"
+
+    <<~INSTRUCTIONS
+      You are generating a JSON object for a portfolio report.
+
+      For each section, follow the described task:
+
+      #{section_tasks_text}
+
+      You MUST respond with a single JSON object with exactly the following keys:
+
+      #{section_names.map { |n| %(- "#{n}") }.join("\n")}
+
+      Rules:
+      - Do NOT rename, remove, or add any keys.
+      - The top-level structure MUST be a JSON object.
+      - Each value MUST be an array of strings (each string is one point).
+      - Do NOT nest JSON objects or arrays inside items.
+      - Do NOT include any newline (\\n) or tab (\\t) characters inside an item.
+      - Do NOT include markdown fences like ```json.
+
+      The JSON must follow this structure (values are examples only):
+
+      #{json_skeleton}
+    INSTRUCTIONS
   end
 
   # Retrieves and filters documents and notes for a portfolio report.

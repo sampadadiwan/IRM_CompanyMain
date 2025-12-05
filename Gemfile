@@ -5,6 +5,9 @@ gem 'docusign_esign', '~> 4.0.0.rc1'
 gem 'faraday'
 gem 'faraday-typhoeus'
 
+# Gem for segmenting paragraphs into sentences
+gem 'pragmatic_segmenter'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'pdf-reader'
 gem 'rails', '~> 8.0.0'
