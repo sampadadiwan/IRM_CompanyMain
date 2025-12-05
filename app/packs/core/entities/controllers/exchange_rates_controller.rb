@@ -1,10 +1,15 @@
 class ExchangeRatesController < ApplicationController
-  before_action :set_exchange_rate, only: %i[show edit update destroy]
+  before_action :set_exchange_rate, only: %i[show edit update destroy generate_tracking_numbers]
 
   # GET /exchange_rates or /exchange_rates.json
   def index
     @exchange_rates = policy_scope(ExchangeRate)
     @exchange_rates = @exchange_rates.latest if params[:all].blank?
+  end
+
+  def generate_tracking_numbers
+    TrackingCurrencyJob.perform_later(entity_id: @exchange_rate.entity_id, user_id: current_user.id)
+    redirect_to exchange_rate_path(@exchange_rate), notice: "Tracking currency update started, please check back in a few mins."
   end
 
   # GET /exchange_rates/1 or /exchange_rates/1.json

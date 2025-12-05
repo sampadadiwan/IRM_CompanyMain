@@ -5,6 +5,10 @@ Given('I go to add a new custom form') do
 end
 
 Given('I add a custom form for {string} with reg env {string} and tag {string}') do |class_name, reg_env, tag|
+  # Rename existing form types to avoid uniqueness conflict
+  if FormType::MULTIPLE_FORM_TYPES_ALLOWED.exclude?(class_name)
+    FormType.where(name: class_name).update_all(name: "#{class_name}_#{SecureRandom.hex(4)}")
+  end
   select(class_name, from: "form_type_name")
   fill_in("form_type_tag", with: tag)
   fill_in("form_type_reg_env", with: reg_env)
@@ -20,6 +24,7 @@ Then('{string} regulatory fields are added to the {string} form') do |reg_env, c
     expect(@form_type.form_custom_fields.where(reg_env: reg_env).count).to be > 0
   else
     # Check if no regulatory fields are present
+    # verify that there are no form custom fields with a non-nil reg_env i.e. they are all nil
     expect(@form_type.form_custom_fields.where.not(reg_env: nil).count).to eq(0)
   end
 end
@@ -313,10 +318,11 @@ end
 
 Given('I click add {string} reporting fields to {string} form from the dropdown') do |reg_env, form_name|
   @form_type ||= FormType.where(name: form_name).last
-
-  click_on("Add Reporting Fields")
-  within(".dropdown-menu") do
-    click_on(reg_env)
+  within("#form_type_#{@form_type.id}") do
+    click_on("Add Reporting Fields")
+    within(".dropdown-menu") do
+      click_on(reg_env)
+    end
   end
   click_on("Proceed")
   sleep(1)

@@ -11,16 +11,16 @@
     <% end %>
     <div class="collapse" id="errorList">
         <% @error_msg.each_with_index do |error, idx| %>
-            <div class="card border-danger mb-2">
+            <div class="card mb-2 mt-2">
                 <div class="card-header fw-bold">
                     Error <%= idx + 1 %>
                 </div>
                 <div class="card-body p-2">
-                    <ul class="list-group list-group-flush">
+                    <ul class="">
                         <% error.each do |k, v| %>
                             <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <span class="fw-semibold text-capitalize"><%= k.to_s.humanize %></span>
-                                <span class="text-secondary"><%= v %></span>
+                                <span class=""><%= k.to_s.humanize %></span>
+                                <span class=""><%= v %></span>
                             </li>
                         <% end %>
                     </ul>

@@ -32,4 +32,8 @@ class ExchangeRatePolicy < ApplicationPolicy
   def destroy?
     true
   end
+
+  def generate_tracking_numbers?
+    belongs_to_entity?(user, record) && record.latest?
+  end
 end
