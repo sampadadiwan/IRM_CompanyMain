@@ -51,6 +51,9 @@ class OfferSpaGenerator
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
 
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
+
     add_fees(context, offer)
 
     add_image(context, :offer_signature, offer.signature)

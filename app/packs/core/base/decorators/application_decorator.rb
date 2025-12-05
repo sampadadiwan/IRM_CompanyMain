@@ -18,4 +18,8 @@ class ApplicationDecorator < Draper::Decorator
   def investor_link
     h.link_to object.investor_name, h.investor_path(id: object.investor_id)
   end
+
+  def to_json(*_args)
+    object.as_json
+  end
 end

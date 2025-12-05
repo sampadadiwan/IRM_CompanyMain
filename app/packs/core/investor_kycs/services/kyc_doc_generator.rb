@@ -149,6 +149,8 @@ class KycDocGenerator
       context[:fund_account_entries_before_end_date] = TemplateDecorator.new(fund_account_entries.where(reporting_date: ..end_date))
     end
 
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
     context
   end
 

@@ -83,7 +83,8 @@ class CapitalRemittanceDocGenerator
     }
 
     call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context) if options.present? && options[:call_notice_per_kyc]
-
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
     context
   end
 

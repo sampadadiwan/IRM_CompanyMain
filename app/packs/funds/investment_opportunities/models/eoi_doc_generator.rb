@@ -46,6 +46,8 @@ class EoiDocGenerator
 
     amount_in_words = expression_of_interest.investment_opportunity.currency == "INR" ? expression_of_interest.amount.to_i.rupees.humanize : expression_of_interest.amount.to_i.to_words.humanize
     context.store :amount_words, amount_in_words
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
 
     # Can we have more than one LP signer ?
     add_image(context, :investor_signature, expression_of_interest.investor_kyc.signature)

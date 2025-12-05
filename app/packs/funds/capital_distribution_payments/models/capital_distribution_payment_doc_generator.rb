@@ -55,7 +55,7 @@ class CapitalDistributionPaymentDocGenerator
     capital_commitment.json_fields["payment_date"] = capital_distribution_payment.payment_date
     fund_as_of.json_fields["capital_distribution_payment"] = capital_distribution_payment
 
-    {
+    context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_distribution_payment.entity,
       fund: FundTemplateDecorator.decorate(fund_as_of),
@@ -67,6 +67,10 @@ class CapitalDistributionPaymentDocGenerator
       # All Commitments as of the payment date
       fund_as_of_commitments: TemplateDecorator.decorate(fund_as_of.capital_commitments)
     }
+
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
+    context
   end
 
   # Add capital distribution payment context
