@@ -1,11 +1,11 @@
-<%= render ToggleCard.new(title: "Stakeholder: #{@investor.investor_name}", css_class: "show_investors", state: "closed") do %>
+<%= render ToggleCard.new(title: "Stakeholder: #{@investor.investor_name}", css_class: "show_investors", state: "show") do %>
 
   <%
     show_portfolio_company_agent = @investor.entity.support_agents.set?(:portfolio_company_agent) && @investor.support_agent_report.present?
   %>
   <%= render "/investors/portfolio_company_agent", investor: @investor if show_portfolio_company_agent %>
 
-  <table class="table table-bordered dataTable ">
+  <table class="table table-bordered dataTable">
 
     <tr>
       <td>
