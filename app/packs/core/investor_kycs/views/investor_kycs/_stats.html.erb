@@ -17,7 +17,11 @@
             <div class="card-body">
               <div class="d-flex align-items-center mb-3">
                 <div>
-                  <h3 class="fs-6"><%= policy_scope(current_user.entity.investor_kycs.send(type)).count %></h3>
+                  <div data-controller="counters"
+                      data-counters-value-value="<%= policy_scope(current_user.entity.investor_kycs.send(type)).count %>">
+                    <h3 class="fs-7" data-counters-target="output">0</h3>
+                  </div>
+                  <h3 class="fs-6"></h3>
                   <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
                 </div>
                 <div class="ms-auto">
