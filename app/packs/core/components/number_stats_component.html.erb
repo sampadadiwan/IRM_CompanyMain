@@ -7,7 +7,15 @@
       <div class="card-body">
         <div class="d-flex align-items-center mb-3">
           <div>
-            <h3 class="fs-<%=@fs_size%>"><%= @amount %></h3>
+            <% if @raw_amount %>
+              <div data-controller="counters"
+                   data-counters-value-value="<%= @raw_amount %>"
+                   data-counters-formatted-value-value="<%= @amount %>">
+                <h3 class="fs-<%=@fs_size%>" data-counters-target="output">0</h3>
+              </div>
+            <% else %>
+              <h3 class="fs-<%=@fs_size%>"><%= @amount %></h3>
+            <% end %>
             <h6 class="card-subtitle mb-1 text-muted"><%= @subtitle %></h6>
           </div>
           <% if @text_info.present? %>
