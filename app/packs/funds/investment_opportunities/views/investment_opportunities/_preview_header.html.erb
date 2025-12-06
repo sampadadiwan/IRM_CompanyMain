@@ -16,7 +16,7 @@
                 </div>
                 <div class="col-sm-4">
                     <% if current_user %>
-                        <div class="action-area justify-content-end">
+                        <div class="action-area d-flex justify-content-start justify-content-sm-end gap-2 mt-3 mt-sm-0">
                             <%= link_to new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), class: "btn btn-primary btn-lg rounded-pill px-4" do %>
                                 Express Interest
                             <% end %>

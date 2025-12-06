@@ -369,6 +369,10 @@
 
         .tag-pill {
             padding: 8px 16px;
+            @media (max-width: 768px) {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
             background: #f8fafc;
             color: #64748b;
             border-radius: 100px;
