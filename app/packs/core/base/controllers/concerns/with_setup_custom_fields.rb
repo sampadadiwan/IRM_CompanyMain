@@ -6,17 +6,18 @@ module WithSetupCustomFields
   def setup_custom_fields(model, type: nil, force_form_type: nil)
     # I a few cases we need to force the form type Ex SecondarySale, Offer, Interest
     form_type = force_form_type
-
     # If the form type is not forced, we will try to find the form type based on the type
-    form_type ||= if type.present?
-                    FormType.where(entity_id: model.entity_id, name: type).last
-                  else
-                    FormType.where(entity_id: model.entity_id, name: model.class.name).last
-                  end
+    if model.form_type_id.blank?
+      form_type ||= if type.present?
+                      FormType.where(entity_id: model.entity_id, name: type).last
+                    else
+                      FormType.where(entity_id: model.entity_id, name: model.class.name).last
+                    end
 
-    # set the models form type, if its and existing record do not change the form type if it is already set
-    # For a new record, we can set the form type, as sometimes the the user wants to change the kyc type
-    model.form_type = form_type if model.new_record? || model.form_type.nil?
+      # set the models form type, if its and existing record do not change the form type if it is already set
+      # For a new record, we can set the form type, as sometimes the the user wants to change the kyc type
+      model.form_type = form_type if model.new_record? || model.form_type.nil?
+    end
   end
 
   def setup_doc_user(model)
