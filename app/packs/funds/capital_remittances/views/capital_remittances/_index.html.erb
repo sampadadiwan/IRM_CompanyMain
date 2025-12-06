@@ -45,7 +45,8 @@
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
 
-              <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil %>
+              <!-- For now we enable uploads for all calls. # Disable upload if call basis is not Upload -->
+              <% disabled = false # capital_call.call_basis != "Upload" ? "disabled" : nil %>
 
               <% if policy(capital_call).update? %>
                 <%= link_to new_import_upload_path(

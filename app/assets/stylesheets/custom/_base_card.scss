@@ -43,6 +43,12 @@
     --card-secondary: #0074ba;
     --card-primary-rgb: 250, 137, 107;
   }
+
+  [data-color-theme="Minimalist_Theme"] {
+    --card-primary: #000000;
+    --card-secondary: #666666;
+    --card-primary-rgb: 0, 0, 0;
+  }
 }
 
 @mixin card-base($hover-translate-y: -4px) {

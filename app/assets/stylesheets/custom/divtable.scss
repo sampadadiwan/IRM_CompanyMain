@@ -6,9 +6,9 @@
   }
 
   .divTable.minimalistBlack .divTableBody .divTableCell {
-    border-bottom: 1px solid #8b8b8d;
+    // border-bottom: 1px solid #8b8b8d;
     padding: 0.75rem;
-    vertical-align: top;
+    vertical-align: middle;
   }
 
   [data-bs-theme=light] .odd .divTableCell {
@@ -23,17 +23,17 @@
     background-color: #5d87ff;
     color: white;
     font-weight: bold;
-    border-bottom: 1px solid #8b8b8d;
-    border-top: 1px solid #8b8b8d;
+    // border-bottom: 1px solid #8b8b8d;
+    // border-top: 1px solid #8b8b8d;
 
     padding: 0.75rem;
     vertical-align: top;
   }
   .minimalistBlack .tableFootStyle {
-    
+
   }
   .minimalistBlack .tableFootStyle {
-    
+
   }
   /* DivTable.com */
   .divTable{ display: table; }
