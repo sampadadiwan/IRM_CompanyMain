@@ -823,7 +823,7 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   click_on("Upload / Download")
   click_on("Upload Remittances")
   fill_in('import_upload_name', with: "Test Upload")
-  attach_file('files[]', File.absolute_path("./public/sample_uploads/capital_remittances.xlsx"), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
   #sleep((2)
   click_on("Save")
   # sleep(2)
