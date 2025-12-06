@@ -41,7 +41,7 @@ class ImportKycDocs < ImportUtil
     name = user_data["Document Name"]
     orignal = user_data["Allow Orignal Format Download"].to_s.downcase.strip == "yes"
 
-    owner = get_owner(user_data, import_upload, custom_field_headers)
+    owner = get_owner(user_data, import_upload)
 
     send_email = user_data["Send Email"] == "Yes"
     file_path = find_case_insensitive_file(dir, user_data["File Name"])
@@ -79,19 +79,52 @@ class ImportKycDocs < ImportUtil
     FileUtils.rm_rf unzip_dir
   end
 
-  def get_owner(user_data, import_upload, custom_field_headers)
-    if user_data["Kyc Id"].to_s.strip.present?
-      # Sometimes the "Id" header is included in the custom fields, so we need to remove it
-      custom_field_headers -= ["Kyc Id"]
-      Rails.logger.debug { "Removing Id from custom_field_headers #{custom_field_headers}" }
-      # Sometimes we get an ID for the specific KYC we want to attach the document to. This happens when there are 2 KYCs with the same details (One for Gift City and one for regular)
-      import_upload.entity.investor_kycs.find_by(id: user_data["Kyc Id"].strip)
-    elsif user_data["Pan/Tax Id"].to_s.strip.blank?
-      # If we have a PAN/Tax ID thats blank then we try to find by name only
-      import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"].strip)
-    elsif user_data["Document Type"] == "KYC"
-      # Otherwise we try to find it by the standard details
-      import_upload.entity.investor_kycs.find_by(full_name: user_data["Investing Entity"], PAN: user_data["Pan/Tax Id"])
+  # Locates the Investor KYC record based on user data.
+  #
+  # It attempts to find the KYC record using the Investing Entity name and optionally the PAN/Tax ID.
+  # - If PAN is provided, it searches by Name and PAN.
+  # - If PAN is missing but Document Type is "KYC", it searches by Name only.
+  # - Otherwise, it returns nil.
+  #
+  # @param user_data [Hash] The row data from the import.
+  # @param import_upload [ImportUpload] The import upload record.
+  # @return [InvestorKyc, nil] The found KYC record or nil.
+  def get_owner(user_data, import_upload)
+    query = { full_name: user_data["Investing Entity"].to_s.strip }
+    pan_tax_id = user_data["Pan/Tax Id"].to_s.strip
+    query[:PAN] = pan_tax_id if pan_tax_id.present?
+
+    return nil unless pan_tax_id.present? || user_data["Document Type"] == "KYC"
+
+    kycs = import_upload.entity.investor_kycs.where(query)
+    resolve_kycs(kycs, user_data)
+  end
+
+  private
+
+  # Resolves the specific KYC record from a collection of potential matches.
+  #
+  # If multiple records are found, it uses the "Kyc Id" from user_data to disambiguate.
+  # Raises an error if multiple records exist but no KYC Id is provided.
+  #
+  # @param kycs [ActiveRecord::Relation] The collection of matching KYC records.
+  # @param user_data [Hash] The row data containing potential "Kyc Id".
+  # @return [InvestorKyc, nil] The single matching KYC record.
+  def resolve_kycs(kycs, user_data)
+    if kycs.count > 1
+      kyc_id = user_data["Kyc Id"].to_s.strip
+      if kyc_id.present?
+        # Note: Previous code attempted to remove "Kyc Id" from custom_field_headers here,
+        # but it was a local variable reassignment with no side effect.
+        kycs.find_by(id: kyc_id)
+      else
+        msg = "Multiple KYCs found for #{user_data['Investing Entity']}. " \
+              "Please specify the KYC Id to attach the document to the correct KYC."
+        Rails.logger.debug msg
+        raise msg
+      end
+    else
+      kycs.first
     end
   end
 end
