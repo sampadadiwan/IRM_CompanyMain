@@ -89,7 +89,6 @@ class DocLlmContext < DocLlmBase
       parsed = JSON.parse(raw_json)
       extracted_info = parsed.transform_values { |v| normalize_section_value(v) }
       ctx[:extracted_info] = extracted_info.to_json # its stored as json and parsed in doc generator
-
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse JSON from LLM: #{e.message} | raw: #{raw_json.inspect}"
       ctx[:extracted_info] = raw_json

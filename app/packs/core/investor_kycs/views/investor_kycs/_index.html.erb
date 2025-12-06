@@ -166,10 +166,14 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-              <%= link_to download_xl_link(data_source),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-download"></i> <%= t_common(:download) %>
+              <% FormType.where(entity_id: current_user.entity_id, name: ["IndividualKyc", "NonIndividualKyc"]).each do |form_type| %>
+                <%= link_to investor_kycs_path("form_type_name": form_type.name, "form_type_id": form_type.id, format: :xlsx),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-file-description"></i> <%= t_common(:download) + ": #{form_type.name} #{form_type.tag}" %>
+                <% end %>
               <% end %>
+
+
 
               <div class="dropdown-divider"></div>
 
