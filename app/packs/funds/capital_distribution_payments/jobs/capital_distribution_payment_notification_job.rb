@@ -21,7 +21,7 @@ class CapitalDistributionPaymentNotificationJob < ApplicationJob
       end
 
       sleep(2)
-      msg = "Capital Distribution Payment Notification Job completed for Capital Distribution #{@capital_distribution.id}. Success: #{success} payments, Failure: #{failure} payments."
+      msg = "Capital Distribution Payment Notification Job completed for Distribution: #{@capital_distribution}. Success: #{success} payments, Failure: #{failure} payments."
       send_notification(msg, user_id)
       send_errors_notification(msg, @error_msg, user_id) if failure.positive?
       @main_error = "Distribution payment notifications completed with #{@error_msg.length} errors."

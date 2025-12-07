@@ -161,7 +161,7 @@
               <% if policy(@capital_distribution).approve? %>
                 <%= button_to approve_capital_distribution_path(@capital_distribution), method: :post, class: "dropdown-item", form_class: "deleteButton",
                     data: { action: "click->confirm#popup", turbo: false,
-                            msg: "This will mark the distribution as approved. The notification will be triggered only when the payments are 'Mark Payments Completed'.",
+                            msg: "This will mark the distribution as approved.",
                             method: :post } do %>
                   <i class="ti ti-check"></i>Approve
                 <% end %>
