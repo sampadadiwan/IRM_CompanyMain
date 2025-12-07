@@ -1,7 +1,7 @@
 
 Given('the entity has custom fields {string} for {string}') do |args, class_name|
   puts "Creating custom fields for #{class_name} #{args.split('#')}"
-  ft = @entity.form_types.create!(name: class_name)
+  ft = @entity.form_types.where(name: class_name, tag: "Default").first_or_initialize
   args.split("#").each do |arg|
     cf = ft.form_custom_fields.build()
     key_values(cf, arg)
@@ -10,7 +10,11 @@ Given('the entity has custom fields {string} for {string}') do |args, class_name
 end
 
 Given('there is a FormType {string}') do |args|
-  @form_type = FormType.new(entity_id: @entity.id)
+  form_type = FormType.new(entity_id: @entity.id)
+  key_values(form_type, args)
+
+  # FormType may already exist, so find and update
+  @form_type = @entity.form_types.where(name: form_type.name, entity: @entity, tag: form_type.tag).first_or_initialize
   key_values(@form_type, args)
   @form_type.save!
 end

@@ -1,5 +1,5 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids add_regulatory_fields]
+  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids add_regulatory_fields generate_upload_xlsx]
 
   # GET /form_types or /form_types.json
   def index
@@ -9,6 +9,14 @@ class FormTypesController < ApplicationController
 
   # GET /form_types/1 or /form_types/1.json
   def show; end
+
+  def generate_upload_xlsx
+    respond_to do |format|
+      format.xlsx do
+        response.headers['Content-Disposition'] = "attachment; filename=\"#{@form_type}.xlsx\""
+      end
+    end
+  end
 
   def clone
     if @form_type.entity_id == current_user.entity_id

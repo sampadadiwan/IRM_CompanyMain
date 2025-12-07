@@ -44,6 +44,17 @@
           </td>
         </tr>
 
+        <% if @capital_remittance.investment_amount_cents > 0 %>
+        <tr>
+          <td>
+            Investment Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_remittance.investment_amount, params %>
+          </td>
+        </tr>
+        <% end %>
+
         <% if @capital_remittance.capital_fee_cents > 0 %>
         <tr>
           <td>

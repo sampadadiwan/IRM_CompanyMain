@@ -58,8 +58,8 @@ class CapitalRemittance < ApplicationRecord
   monetize :tracking_collected_amount_cents, :tracking_call_amount_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
-  monetize :call_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, with_currency: ->(i) { i.fund.currency }
-  monetize :folio_call_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
+  monetize :call_amount_cents, :investment_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_call_amount_cents, :folio_investment_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
@@ -207,7 +207,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_call capital_commitment fund investor]
+    %w[capital_call capital_commitment fund investor capital_call]
   end
 
   after_destroy :touch_investor
@@ -249,5 +249,31 @@ class CapitalRemittance < ApplicationRecord
     end
 
     [amount_cents, reason]
+  end
+
+  # The name of the fee i.e investment_amount, capital_fee or other_fee
+  def build_fee_structs(fee_name)
+    fee_data = json_fields[fee_name]
+    return [] if fee_data.blank?
+
+    fee_data.flatten(1).map do |(name, date, amount)|
+      OpenStruct.new(
+        name: name,
+        date: Date.parse(date),
+        amount: amount.to_f
+      )
+    end
+  end
+
+  def consolidate_fees(fees)
+    grouped = fees.group_by(&:name)
+
+    grouped.map do |name, rows|
+      OpenStruct.new(
+        name: name,
+        amount: rows.sum(&:amount),
+        date: nil # or pick earliest/latest (see below)
+      )
+    end
   end
 end

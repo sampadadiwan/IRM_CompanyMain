@@ -13,7 +13,7 @@ class ImportFundRatio < ImportUtil
   def save_row(user_data, import_upload, _custom_field_headers, _ctx)
     Rails.logger.debug { "Processing Fund Ratio #{user_data}" }
 
-    fund = find_fund(user_data["Fund"])
+    fund = find_fund(import_upload, user_data["Fund"])
     entity = import_upload.entity
     owner = find_owner(fund, user_data, entity)
 
@@ -44,8 +44,8 @@ class ImportFundRatio < ImportUtil
 
   private
 
-  def find_fund(fund_name)
-    fund = Fund.find_by(name: fund_name)
+  def find_fund(import_upload, fund_name)
+    fund = import_upload.entity.funds.where(name: fund_name).last
     raise "Fund not found for #{fund_name}" if fund.nil?
 
     fund

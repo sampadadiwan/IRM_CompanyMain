@@ -15,7 +15,10 @@
     <%= display_boolean exchange_rate.latest %>
   </td>
   <td>
-    <%= link_to  t_common(:show), exchange_rate , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Reverse", new_exchange_rate_path(to: exchange_rate.from, from: exchange_rate.to) , {class: "btn btn-outline-success"}%>
+    <%= link_to  t_common(:show), exchange_rate , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= link_to "Reverse", new_exchange_rate_path(to: exchange_rate.from, from: exchange_rate.to) , {class: "btn btn-outline-success ti ti-arrow-back-up-double"}%>
+    <% if policy(exchange_rate).generate_tracking_numbers? %>
+      <%= button_to "Generate Tracking Amounts", generate_tracking_numbers_exchange_rate_path(exchange_rate), class: "btn btn-outline-warning ti ti-currency-dollar", method: :post, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :post, msg: "Are you sure you want to generate tracking currency values for all funds under this entity based on this exchange rate?" } %>
+    <% end %>
   </td>
 </tr>

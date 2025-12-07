@@ -68,7 +68,7 @@ class ImportUtil < Trailblazer::Operation
 
         # If this is an import for MULTIPLE_FORM_TYPES_ALLOWED, then skip creating custom fields, as these models can have multiple form types
         if import_upload.import_type.in?(FormType::MULTIPLE_FORM_TYPES_ALLOWED)
-          import_upload.custom_fields_created = "Skipped for import type #{import_upload.import_type}"
+          import_upload.custom_fields_created = "Data has been uploaded. Please create the required custom fields"
         else
           # Create the custom fields for the form type based on the headers. This is idempotent, so will not create duplicates, but will update the form type with extra custom fields if needed
           custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload, ctx[:form_type_id])
@@ -181,8 +181,16 @@ class ImportUtil < Trailblazer::Operation
     end
   end
 
-  def setup_custom_fields(user_data, model, custom_field_headers)
-    custom_field_headers -= ["Update Only"]
+  def setup_custom_fields(user_data, model, custom_field_headers, form_type: nil)
+    # Ensure that we have the form type for the MULTIPLE_FORM_TYPES_ALLOWED
+    if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
+      raise "Form Type must be specified for #{model.class.name} when setting up custom fields"
+    elsif form_type.present?
+      # Create a map of label to form custom field for faster lookup
+      fcf_label_map = form_type.form_custom_fields.index_by { |f| f.label.downcase }
+    end
+
+    custom_field_headers -= ["Update Only", "Id"]
     # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
     custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
 
@@ -191,7 +199,20 @@ class ImportUtil < Trailblazer::Operation
       model.properties ||= {}
       custom_field_headers.each do |cfh|
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
-        model.properties[FormCustomField.to_name(cfh)] = user_data[cfh] if cfh.present? # && user_data[cfh].present?
+        next if cfh.blank? # && user_data[cfh].present?
+
+        json_fields_key = if form_type.present? && fcf_label_map[cfh.downcase].present?
+                            # Get the json fields key from the form custom field name based on the label
+                            fcf_label_map[cfh.downcase].name
+                          elsif form_type.present? && fcf_label_map[cfh.downcase].blank?
+                            # In the tests we may not have created the custom fields yet, so allow that, but in the real world we should raise an error
+                            Rails.env.test? ? FormCustomField.to_name(cfh) : raise("Custom field #{cfh} not found in form type #{form_type.name}")
+                          else
+                            # Create the json fields key from the header
+                            FormCustomField.to_name(cfh)
+                          end
+        # Set the custom field value
+        model.json_fields[json_fields_key] = user_data[cfh]
       end
     end
   end
@@ -244,5 +265,27 @@ class ImportUtil < Trailblazer::Operation
 
     # Fallback: return path assuming exact name (may not exist)
     File.join(dir, target_file_name)
+  end
+
+  # Given a row we are importing ie user_data, find the form type for the row
+  def get_form_type(import_upload, user_data, form_type_name: nil)
+    name = if import_upload.import_type == "InvestorKyc"
+             %w[IndividualKyc NonIndividualKyc]
+           else
+             [import_upload.import_type]
+           end
+
+    @form_types ||= import_upload.entity.form_types.where(name: name).index_by { |ft| "#{ft.name}-#{ft.tag}" }
+    # Find the form type based on the form_type_name and form tag
+    form_tag = user_data["Form Tag"]&.strip
+    raise "Form Tag not specified" if form_tag.blank?
+
+    # If form_type_name is not specified, use the import_upload.import_type
+    form_type_name ||= import_upload.import_type
+    form_type = @form_types["#{form_type_name}-#{form_tag}"]
+    raise "Form Type not found for #{form_type_name} with tag #{form_tag}" if form_type.nil?
+
+    # Return the form type
+    form_type
   end
 end

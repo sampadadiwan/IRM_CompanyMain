@@ -1,6 +1,10 @@
 
 <% if params[:preview].present? || !policy(@investment_opportunity).update? %>
-    <%= render "/investment_opportunities/preview", investment_opportunity: @investment_opportunity %>
+    <% if params[:template].present? %>
+        <%= render "/investment_opportunities/templates/#{params[:template]}/index", investment_opportunity: @investment_opportunity %>
+    <% else %>
+        <%= render "/investment_opportunities/preview", investment_opportunity: @investment_opportunity %>
+    <% end %>
 <% else %>
     <%= render "/investment_opportunities/show", investment_opportunity: @investment_opportunity %>
 <% end %>

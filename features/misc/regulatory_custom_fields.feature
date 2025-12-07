@@ -8,7 +8,7 @@ Scenario Outline: Create investor kyc - with a Regulatory Custom Form and regula
   Given there is an existing investor "name=Investor 1" with "1" users
   Given I go to add a new custom form
   Given I add a custom form for "IndividualKyc" with reg env "SEBI" and tag "SEBI"
-  Then "SEBI" regulatory fields are added to the "IndividualKyc" form 
+  Then "SEBI" regulatory fields are added to the "IndividualKyc" form
   Given I go to KYCs page
   Given I add a new "IndividualKyc" KYC with custom form tag "SEBI"
   Given I fill InvestorKyc details with regulatory fields "PAN=ABCD9876F;properties=sebi_investor_category:Domestic,sebi_investor_sub_category:NBFCs" with files "" for ""
@@ -16,7 +16,7 @@ Scenario Outline: Create investor kyc - with a Regulatory Custom Form and regula
   Then I should see the investor kyc details on the details page and regulatory fields "present"
   Given I go to add a new custom form
   Given I add a custom form for "IndividualKyc" with reg env "WRONG" and tag "WRONG"
-  Then "" regulatory fields are added to the "IndividualKyc" form 
+  Then "" regulatory fields are added to the "IndividualKyc" form
   Given I go to KYCs page
   Given I add a new "IndividualKyc" KYC with custom form tag "WRONG"
   Given I fill InvestorKyc details with regulatory fields "PAN=ABCD9876F" with files "" for ""
@@ -36,24 +36,23 @@ Scenario Outline: Create investment instrument - with a Regulatory Custom Form a
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
   Given I go to add a new custom form
   Given I add a custom form for "InvestmentInstrument" with reg env "SEBI" and tag "SEBI"
-  Then "SEBI" regulatory fields are added to the "InvestmentInstrument" form 
+  Then "SEBI" regulatory fields are added to the "InvestmentInstrument" form
   Given I go to PortfolioCompany show page
   Given I go to the Instruments tab
   Given I add a new Instrument with custom form tag "SEBI"
   And I fill the instrument form with the regulatory fields
   Then I should see the "Investment instrument was successfully created"
   Then I should see the Instrument details on the details page and regulatory fields "present"
-
   Given I go to add a new custom form
   Given I add a custom form for "InvestmentInstrument" with reg env "WRONG" and tag "WRONG"
-  Then "" regulatory fields are added to the "InvestmentInstrument" form 
+  Then "" regulatory fields are added to the "InvestmentInstrument" form
   Given I go to PortfolioCompany show page
   Given I go to the Instruments tab
   Given I add a new Instrument with custom form tag "WRONG"
   And I fill the instrument form without the regulatory fields
   Then I should see the "Investment instrument was successfully created"
   Then I should see the Instrument details on the details page and regulatory fields "absent"
-  
+
   Examples:
     |entity                             |fund                |
     |entity_type=Investment Fund;       |name=Test fund      |
@@ -64,7 +63,7 @@ Scenario Outline: Create investment instrument - with a incorrect Regulatory Cus
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
   Given I go to add a new custom form
   Given I add a custom form for "InvestmentInstrument" with reg env "NOTSEBI" and tag "NOTSEBI"
-  Then "" regulatory fields are added to the "InvestmentInstrument" form 
+  Then "" regulatory fields are added to the "InvestmentInstrument" form
   Then "SEBI" regulatory fields are not added to the "InvestmentInstrument" form
   Given I go to PortfolioCompany show page
   Given I go to the Instruments tab
@@ -75,7 +74,7 @@ Scenario Outline: Create investment instrument - with a incorrect Regulatory Cus
 
   Given I go and edit the "InvestmentInstrument" custom form with tag "NOTSEBI" and url param "debug=true"
   Given I fill in the reg env with "SEBI" and save
-  Then "SEBI" regulatory fields are added to the "InvestmentInstrument" form 
+  Then "SEBI" regulatory fields are added to the "InvestmentInstrument" form
   Given I am using the last instrument created with the custom form tag "NOTSEBI"
   Given I go to see the Instrument details on the details page
   Then I should see "Sebi Reporting Fields"
@@ -83,7 +82,7 @@ Scenario Outline: Create investment instrument - with a incorrect Regulatory Cus
   And I edit the instrument form with the regulatory fields
   Then I should see the "Investment instrument was successfully updated"
   Then I should see the Instrument details on the details page and regulatory fields "present"
-  
+
   Examples:
     |entity                             |fund                |
     |entity_type=Investment Fund;       |name=Test fund      |
@@ -95,10 +94,10 @@ Scenario Outline: Create investor kyc - with a Regulatory Custom Form and regula
   Given I go to add a new custom form
   Given I add a custom form for "IndividualKyc" with tag "SEBIFORM"
   Given I go the the form types index page
-  And I click add "SEBI" reporting fields to "IndividualKyc" form from the dropdown  
-  Then "SEBI" regulatory fields are added to the "IndividualKyc" form 
+  And I click add "SEBI" reporting fields to "IndividualKyc" form from the dropdown
+  Then "SEBI" regulatory fields are added to the "IndividualKyc" form
   Given I go to KYCs page
-  Given I add a new "IndividualKyc" KYC with custom form tag "SEBI"
+  Given I add a new "IndividualKyc" KYC with custom form tag "SEBIFORM"
   Given I fill InvestorKyc details with regulatory fields "PAN=ABCD9876F;properties=sebi_investor_category:Domestic,sebi_investor_sub_category:NBFCs" with files "" for ""
   Then I should see the "Investor kyc was successfully saved."
   Then I should see the investor kyc details on the details page and regulatory fields "present"
@@ -106,7 +105,7 @@ Scenario Outline: Create investor kyc - with a Regulatory Custom Form and regula
   Then I should see the "Investor kyc was successfully verified"
   Then I should see the investor kyc details on the details page and regulatory fields "present"
   Given I edit the reporting fields for the verified KYC
-  Given I fill in the regulatory fields with "sebi_investor_category:Foreign,sebi_investor_sub_category:FPIs"    
+  Given I fill in the regulatory fields with "sebi_investor_category:Foreign,sebi_investor_sub_category:FPIs"
   Then I should see the investor kyc details on the details page and regulatory fields "present"
   Given I log out
   When I log in as the investor user

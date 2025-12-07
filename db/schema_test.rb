@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_11_28_093247) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -769,6 +769,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_093247) do
     t.boolean "compliant", default: false
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
+    t.decimal "investment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_investment_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -1420,6 +1422,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_093247) do
     t.index ["investor_kyc_id"], name: "index_expression_of_interests_on_investor_kyc_id"
     t.index ["investor_signatory_id"], name: "index_expression_of_interests_on_investor_signatory_id"
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
+  end
+
+  create_table "faq_threads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "openai_thread_id"
+    t.string "title", default: "New Support Chat"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "messages"
+    t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
 
   create_table "favorites", force: :cascade do |t|

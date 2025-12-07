@@ -22,7 +22,7 @@ class FundDocGenerator
   end
 
   def prepare_context(fund, start_date, end_date)
-    {
+    context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: fund.entity,
       fund: TemplateDecorator.decorate(fund),
@@ -59,6 +59,10 @@ class FundDocGenerator
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(fund.capital_distribution_payments.where(payment_date: ..end_date))
 
     }
+
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
+    context
   end
 
   private

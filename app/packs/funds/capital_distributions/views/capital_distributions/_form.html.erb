@@ -92,6 +92,13 @@
           <%= form.label :notes %>
           <%= form.rich_text_area :notes, class: "form-control"  %>
         </div>
+
+        <div id='form_distribution_fee'>
+          <%= form.fields_for :distribution_fees do |field| %>
+            <%= render 'distribution_fee_fields', :f => field, fund: capital_distribution.fund %>
+          <% end %>
+        </div>
+
         <div class="form-group">
           <%= link_to_add_association 'Add Account Entries', form, :distribution_fees, class: "btn btn-outline-success" %>
 

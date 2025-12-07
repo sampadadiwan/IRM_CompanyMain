@@ -13,6 +13,9 @@ module CapitalRemittanceFees
       if other_fee_cents.zero?
         self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, remittance_date) : 0
       end
+      if investment_amount_cents.zero?
+        self.investment_amount_cents = folio_investment_amount_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_investment_amount_cents, remittance_date) : 0
+      end
 
     else
 
@@ -23,6 +26,9 @@ module CapitalRemittanceFees
       if folio_other_fee_cents.zero?
         self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, remittance_date) : 0
       end
+      if folio_investment_amount_cents.zero?
+        self.folio_investment_amount_cents = investment_amount_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, investment_amount_cents, remittance_date) : 0
+      end
 
     end
   end
@@ -31,9 +37,10 @@ module CapitalRemittanceFees
   def setup_call_fees
     total_capital_fees_cents = 0
     total_other_fees_cents = 0
+    total_investments_cents = 0
     json_fields["other_fees_audit"] = []
     json_fields["capital_fees_audit"] = []
-
+    json_fields["investment_amount_audit"] = []
     # Process each call fee associated with the capital call
     if capital_call.all_call_fees.present?
       capital_call.all_call_fees.each do |call_fee|
@@ -48,11 +55,14 @@ module CapitalRemittanceFees
         end
         next if fees_audit.blank?
 
-        # Categorize fees into capital fees or other fees
+        # Categorize fees into capital fees, investment_amount or other fees
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees_cents
           json_fields[FormCustomField.to_name(call_fee.name)] = currency_from_cents(fees_cents, fund.currency, {})
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
+        elsif call_fee.fee_type == "Investment Amount"
+          total_investments_cents += fees_cents
+          json_fields["investment_amount_audit"] << fees_audit if fees_audit.present?
         else
           total_capital_fees_cents += fees_cents
           json_fields["capital_fees_audit"] << fees_audit if fees_audit.present?
@@ -62,6 +72,7 @@ module CapitalRemittanceFees
       Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
       self.capital_fee_cents = total_capital_fees_cents
       self.other_fee_cents = total_other_fees_cents
+      self.investment_amount_cents = total_investments_cents
     end
   end
 

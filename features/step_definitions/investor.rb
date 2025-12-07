@@ -215,7 +215,7 @@ Then('the investor accesses must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     ia = investor_accesses[idx-1]
     puts "Checking import of #{ia.investor.investor_name}"
-    ia.investor.investor_name.should == user_data["Investor"].strip
+    ia.investor.investor_name.should == user_data["Stakeholder"].strip
     ia.email.should == user_data["Email"]
     ia.cc.should == user_data["Cc"]
     ia.first_name.should == user_data["First Name"]
@@ -226,20 +226,6 @@ Then('the investor accesses must have the data in the sheet') do
     ia.import_upload_id.should == ImportUpload.last.id
   end
 
-end
-
-
-Given('Given I upload an investor kyc {string} for employees') do |file_name|
-  visit(investor_kycs_path)
-  click_on("Upload/Download")
-  click_on("Upload KYC Details")
-  fill_in('import_upload_name', with: "Test Investor Access Upload")
-  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
-  click_on("Save")
-  expect(page).to have_content("Import Upload:")
-  #sleep(2)
-  ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
 
@@ -396,7 +382,7 @@ Then('the investor kycs must have the data in the sheet {string}') do |file_name
       cc.birth_date.to_date.should == user_data["Date Of Birth"]
       cc.address.should == user_data["Address"]
       cc.corr_address.should == user_data["Correspondence Address"]
-      cc.PAN.should == user_data["Pan"]
+      cc.PAN.should == user_data["Pan/Tax Id"]
       cc.bank_name.should == user_data["Bank Name"]
       cc.bank_branch.should == user_data["Branch Name"]
       cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s

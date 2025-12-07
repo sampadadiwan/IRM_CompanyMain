@@ -39,6 +39,8 @@ class SecondarySaleDocGenerator
 
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(secondary_sale)
     convert(template, context, file_name)

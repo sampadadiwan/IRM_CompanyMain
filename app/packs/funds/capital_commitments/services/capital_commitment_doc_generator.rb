@@ -45,6 +45,9 @@ class CapitalCommitmentDocGenerator
     add_image(context, :profile_image, capital_commitment.investor_kyc.documents.where(owner_tag: "Profile Image").first&.file)
     add_image(context, :profile_image_2, capital_commitment.investor_kyc.documents.where(owner_tag: "Profile Image 2").first&.file) # rubocop:disable Naming/VariableNumber
 
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
+
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = generated_file_name(capital_commitment)

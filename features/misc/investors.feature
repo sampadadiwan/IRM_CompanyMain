@@ -123,13 +123,13 @@ Scenario Outline: Import investor kycs
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And the investors have approved investor access
-  And Given I upload an investor kyc "investor_kycs.xlsx" for employees
+  And Given import file "investor_kycs.xlsx" for "InvestorKyc"
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet "investor_kycs.xlsx"
   And the imported data must have the form_type updated
   And the approved investor access should receive a notification
-  And Given I upload an investor kyc "investor_kycs_update.xlsx" for employees
+  And Given import file "investor_kycs_update.xlsx" for "InvestorKyc"
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet "investor_kycs_update.xlsx"
@@ -141,7 +141,7 @@ Scenario Outline: Bulk Actions on kycs
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And the investors have approved investor access
-  And Given I upload an investor kyc "investor_kycs.xlsx" for employees
+  And Given import file "investor_kycs.xlsx" for "InvestorKyc"
   Given I filter the "investor_kycs" by "verified=false"
   And I trigger the bulk action for "Verify"
   Then I should see the "Verify completed"

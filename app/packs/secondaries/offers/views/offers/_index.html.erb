@@ -1,5 +1,5 @@
 <%
-    offers_frame ||= "offers_frame" 
+    offers_frame ||= "offers_frame"
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800 ml-5">
@@ -9,10 +9,10 @@
     <span>
         <%= link_to t("secondaries_actions.view_all_offers"), offers_secondary_sale_path(@secondary_sale),
                                  class: "btn btn-outline-primary ti ti-list" if @secondary_sale && policy(@secondary_sale).owner? %>
-        
+
         <%= link_to t("secondaries_actions.new_offer"), new_offer_path("offer[secondary_sale_id]": @secondary_sale&.id),
                                  class: "btn btn-outline-primary ti ti-plus" if @secondary_sale && policy(@secondary_sale).offer?  %>
-        
+
         <div class="btn-group">
             <div class="dropdown">
                 <button class="btn btn-outline-primary dropdown-toggle ti ti-upload" type="button"
@@ -43,7 +43,7 @@
                 </div>
             </div>
         </div>
-        
+
 
         <%= button_to t("secondaries_actions.approve_all_pending"), approve_offers_secondary_sale_path(@secondary_sale),
                                  method: :patch, class: "btn btn-outline-success ti ti-check" , form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: t("common.confirm")} if @secondary_sale && policy(@secondary_sale).approve_offers? %>
@@ -63,16 +63,16 @@
         <%= raw pagy_info(@pagy) %>
         <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="offers_frame" data-remote="true")) %>
     </div>
-<% else %>    
+<% else %>
 
-    <% 
-        lazy_load_data ||= false 
+    <%
+        lazy_load_data ||= false
         import_upload_id ||= params[:import_upload_id]
     %>
 
-    <% 
+    <%
         q ||= nil
-        data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) 
+        data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified])
         default_columns_map = if current_user.curr_role == "investor"
             Offer::INVESTOR_STANDARD_COLUMNS
           else
@@ -80,7 +80,7 @@
           end
     %>
 
-    <div class="table-responsive">
+    <div class="">
         <%=render SearchComponent.new(data_source: , turbo_frame: offers_frame) %>
 
         <%= render RansackTable.new(Offer, q: q, default_columns_map:, current_user: current_user, records: offers, report_id: params["report_id"], turbo_frame: offers_frame, referrer: request.referrer, pagy: @pagy) %>

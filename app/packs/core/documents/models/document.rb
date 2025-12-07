@@ -65,6 +65,7 @@ class Document < ApplicationRecord
   has_rich_text :text
 
   validates :name, :file, presence: true
+  normalizes :name, with: ->(name) { name.strip }
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
 

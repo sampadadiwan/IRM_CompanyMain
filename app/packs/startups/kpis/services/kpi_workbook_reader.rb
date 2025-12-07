@@ -286,20 +286,31 @@ class KpiWorkbookReader
 
   # Detects the column containing KPI names
   def detect_kpi_name_column(start_row, max_cols_to_scan = 3, sample_size = 10)
-    column_counts = Hash.new(0)
+    target_kpi_set = @target_kpis.to_set
+    kpi_match_counts = Hash.new(0)
+    non_empty_counts = Hash.new(0)
 
     # Scan a sample of rows to determine the most likely KPI column
     (start_row..[start_row + sample_size, @workbook.last_row].min).each do |row_index|
       row = clean_row(@workbook.row(row_index))
       (0...max_cols_to_scan).each do |col_index|
         cell = row[col_index]
-        # Increment the count for non-empty cells in the column
-        column_counts[col_index] += 1 unless cell.nil? || cell.to_s.strip.empty?
+        next if cell.nil? || cell.to_s.strip.empty?
+
+        non_empty_counts[col_index] += 1
+        # Favor columns whose values match target KPI names
+        kpi_match_counts[col_index] += 1 if target_kpi_set.include?(normalize_kpi_name(cell))
       end
     end
 
-    # Return the column index (0-based) with the most non-empty values
-    column_counts.max_by { |_, count| count }&.first || 0
+    # Prefer the column with the most KPI name matches; fall back to non-empty count.
+    if kpi_match_counts.values.any?(&:positive?)
+      # Use [count, -col] to prefer leftmost column when counts are equal
+      kpi_match_counts.max_by { |col, count| [count, -col] }&.first || 0
+    else
+      # Use [count, -col] to prefer leftmost column when counts are equal
+      non_empty_counts.max_by { |col, count| [count, -col] }&.first || 0
+    end
   end
 end
 

@@ -7,11 +7,25 @@
     <div class="d-flex flex-wrap align-items-center gap-2">
 
         <% if fund && policy(fund).update? %>
-
-            <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id),
-                        class: "btn btn-outline-primary d-inline-flex align-items-center",
-                        data: { turbo: false } do %>
-            <i class="ti ti-plus"></i> New Commitment
+            <% form_types = FormType.where(entity_id: current_user.entity_id, name: "CapitalCommitment") %>
+            <% if form_types.length > 1 %>
+                <div class="btn-group">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
+                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="ti ti-plus"></i> New Commitment:
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <% form_types.each do |form_type| %>
+                                <%= link_to form_type.tag, new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_type.id), class: "dropdown-item d-flex align-items-center", data: { turbo: false } %>
+                            <% end %>
+                        </div>
+                    </div>
+                </div>
+            <% else %>
+                <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_types.first&.id), class: "btn btn-outline-primary d-inline-flex align-items-center", data: { turbo: false } do %>
+                <i class="ti ti-plus"></i> New Commitment
+                <% end %>
             <% end %>
 
             <div class="btn-group">

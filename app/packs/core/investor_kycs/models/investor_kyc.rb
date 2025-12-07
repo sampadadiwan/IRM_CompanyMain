@@ -131,6 +131,8 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
   validates :bank_name, length: { maximum: 100 }
+  validates :bank_branch, length: { maximum: 255 }
+  validates :bank_account_type, length: { maximum: 40 }
   validates :phone, length: { is: 10 }, allow_blank: true
 
   # remove spaces in esign_emails
@@ -371,5 +373,13 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def kyc_data_fields_populated
     full_name.present? || address.present? || corr_address.present?
+  end
+
+  def pan=(value)
+    self.PAN = value.strip if value.present?
+  end
+
+  def pan
+    self.PAN
   end
 end

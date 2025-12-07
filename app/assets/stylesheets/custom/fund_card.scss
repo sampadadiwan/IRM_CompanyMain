@@ -1,0 +1,147 @@
+@import "base_card";
+
+// Note: Variable definitions are handled by base_card's mixin if included here,
+// but since we are likely loading both stylesheets, or they might be independent,
+// we should ensure the variables are available.
+// However, since investment_opportunity_card.scss already includes them at root,
+// and this file previously adapted them, we can rely on the shared variables
+// if they are loaded together. If this file is used independently, we should
+// include the mixin. For safety, we can include the mixin here too or rely on the fact
+// that they use the same variable names now.
+//
+// Assuming standard Rails asset pipeline or Webpack where these might be compiled together
+// or separately. To be safe and follow the pattern, I will not re-declare :root here
+// if I assume they are global. But the previous file had them locally scoped or
+// repeated. The best practice with the mixin is to include it if it's the main file entry point.
+// Since I don't know the exact entry point structure, I will NOT re-emit :root variables
+// if they are already expected to be global from the other file, BUT the safer bet for
+// modularity is that this file should work on its own.
+//
+// Let's just use the variables defined in base_card.
+
+.fund-card {
+  @include card-base; // Default hover translate is -4px
+  margin-bottom: 24px;
+
+  .card-header-custom {
+    @include card-header-base;
+    padding: 24px 28px 20px;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+
+    [data-bs-theme=dark] & {
+      border-bottom-color: #334155;
+    }
+
+    .fund-title {
+      @include card-title-base;
+    }
+  }
+
+  .card-body-custom {
+    padding: 28px;
+
+    .chart-container {
+      min-height: 250px;
+      padding: 10px;
+      border-right: 1px solid #f1f5f9;
+
+      [data-bs-theme=dark] & {
+        border-right-color: #334155;
+      }
+
+      @media (max-width: 768px) {
+        border-right: none;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+      }
+    }
+
+    .metrics-container {
+       padding-left: 20px;
+
+       @media (max-width: 768px) {
+         padding-left: 0;
+       }
+    }
+  }
+
+  // Metric Item Styles
+  .metric-item {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+
+    .icon-box {
+      width: 42px;
+      height: 42px;
+      background: rgba(var(--card-primary-rgb), 0.1);
+      color: var(--card-primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-right: 16px;
+      flex-shrink: 0;
+
+      [data-bs-theme=dark] & {
+        background: rgba(var(--card-primary-rgb), 0.2);
+      }
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+
+      .value {
+        font-size: 1.25rem;
+        font-weight: 400;
+        color: #1e293b;
+        line-height: 1.2;
+        margin-bottom: 4px;
+
+        [data-bs-theme=dark] & {
+          color: #f8fafc;
+        }
+      }
+
+      .label {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+        // text-transform: uppercase;
+        letter-spacing: 0.03em;
+
+        [data-bs-theme=dark] & {
+          color: #94a3b8;
+        }
+      }
+
+      .sub-link {
+          font-size: 0.85rem;
+          margin-top: 2px;
+          a {
+              color: var(--card-primary);
+              text-decoration: none;
+              &:hover { text-decoration: underline; }
+          }
+      }
+    }
+  }
+
+  // Action Button
+  .btn-actions {
+      border-radius: 10px;
+      font-weight: 600;
+      padding: 8px 16px;
+      transition: all 0.2s;
+
+      &:hover, &[aria-expanded="true"] {
+          background-color: var(--card-primary);
+          color: white;
+          border-color: var(--card-primary);
+      }
+  }
+}

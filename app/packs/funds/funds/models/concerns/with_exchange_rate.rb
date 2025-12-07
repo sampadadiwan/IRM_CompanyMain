@@ -18,7 +18,7 @@ module WithExchangeRate
         amount * @exchange_rate.rate
       else
         errors.add(:base, "Exchange rate from #{from} to #{to} not found for date #{as_of}.")
-        # throw(:abort)
+        raise ActiveRecord::RecordInvalid, self
       end
     end
   end

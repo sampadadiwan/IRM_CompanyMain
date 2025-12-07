@@ -51,6 +51,8 @@ class InterestDocGenerator
 
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
 
     add_image(context, :interest_signature, interest.signature)
 

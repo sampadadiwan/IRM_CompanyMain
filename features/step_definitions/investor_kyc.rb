@@ -10,20 +10,6 @@
     sleep(2)
   end
 
-Given('Given I upload an investor kyc file for the fund') do
-  visit(investor_kycs_path)
-  click_on("Upload/Download")
-  click_on("Upload KYC Details")
-  fill_in('import_upload_name', with: "Test Upload")
-  attach_file('files[]', File.absolute_path("./public/sample_uploads/investor_kycs.xlsx"), make_visible: true)
-  #sleep((2)
-  click_on("Save")
-  expect(page).to have_content("Import Upload:")
-  ImportUploadJob.perform_now(ImportUpload.last.id)
-  # sleep(4)
-  ImportUpload.last.failed_row_count.should == 0
-end
-
 Then('the investor kycs must have the data in the sheet') do
   file = File.open("./public/sample_uploads/investor_kycs.xlsx", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
@@ -69,8 +55,8 @@ end
 Given('there is a FormType {string} with custom fields {string}') do |form_type_args, custom_field_names|
   form_type = FormType.new
   key_values(form_type, form_type_args)
-  form_type.entity = @entity
-  form_type.save!
+  form_type = FormType.where(entity: @entity, name: form_type.name, tag: form_type.tag).first_or_create
+
   puts "\n########### FormType ############"
   puts form_type.to_json
   custom_field_names.split(',').each do |name|

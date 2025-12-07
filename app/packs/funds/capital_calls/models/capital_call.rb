@@ -9,7 +9,7 @@ class CapitalCall < ApplicationRecord
 
   include ForInvestor
 
-  FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
+  FEE_TYPES = ["Fees Part Of Capital", "Other Fees", "Investment Amount"].freeze
   CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
 
   STANDARD_COLUMNS = { "Name" => "name",

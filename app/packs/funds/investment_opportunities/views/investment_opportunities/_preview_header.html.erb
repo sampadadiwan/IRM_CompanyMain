@@ -1,42 +1,39 @@
 <div class="col d-flex align-items-stretch">
-    <div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
-    <div class="card-body position-relative">
-        <div class="row">
-        <div class="col-sm-9">
-            <div class="d-flex align-items-center mb-7">            
-                <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center"><%= investment_opportunity.company_name %></h3>
-            </div>
-            <div class="d-flex align-items-center">            
-                <% investment_opportunity.tag_list.split(",").each do |tag| %>
-                    <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
-                        <h5 class="mb-0 fs-5"><%= tag %><i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h5>
+    <div class="io-preview-container w-100">
+        <div class="preview-header-custom">
+            <div class="row align-items-center">
+                <div class="col-sm-8">
+                    <div class="d-flex align-items-center mb-3">
+                        <h3 class="company-title"><%= investment_opportunity.company_name %></h3>
                     </div>
-                <% end %>            
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <% investment_opportunity.tag_list.split(",").each do |tag| %>
+                            <span class="tag-pill">
+                                <%= tag %> <i class="ti ti-arrow-up-right"></i>
+                            </span>
+                        <% end %>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <% if current_user %>
+                        <div class="action-area d-flex justify-content-start justify-content-sm-end gap-2 mt-3 mt-sm-0">
+                            <%= link_to new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), class: "btn btn-primary btn-lg rounded-pill px-4" do %>
+                                Express Interest
+                            <% end %>
+
+                            <% if investment_opportunity.shareable %>
+                                <a class="btn btn-outline-primary btn-lg rounded-pill px-4" role="button" title="Copy URL"
+                                    data-action="click->confirm#copy" data-target="#copy_io_link" data-notify="#copy_io_link_notice">
+                                    <i class="ti ti-copy me-2"></i> Copy
+                                </a>
+
+                                <span id="copy_io_link" class="d-none"><%= io_magic_link(investment_opportunity, current_user)  %></span>
+                                <span id="copy_io_link_notice" class="d-none"></span>
+                            <% end %>
+                        </div>
+                    <% end %>
+                </div>
             </div>
         </div>
-        <div class="col-sm-3">
-            
-            <div class="d-flex align-items-center mb-7"></div>
-
-            <% if current_user %>
-                <div class="d-flex align-items-center">         
-
-                    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg btn-hover-shadow"}  %>
-
-                    
-                    <% if investment_opportunity.shareable %>
-                        <a class="btn btn-primary btn-lg" role="button" title="Copy URL for Sharing"
-                            class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-target="#copy_io_link" data-notify="#copy_io_link_notice"> Copy URL 
-                        </a>
-
-                        <span id="copy_io_link" class="d-none"><%= io_magic_link(investment_opportunity, current_user)  %></span>
-                        <span id="copy_io_link_notice" class="d-none"></span>
-                    <% end %>
-        
-                </div>
-            <% end %>
-        </div>
-        </div>
-    </div>
     </div>
 </div>

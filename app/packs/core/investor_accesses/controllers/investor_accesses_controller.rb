@@ -69,10 +69,18 @@ class InvestorAccessesController < ApplicationController
     @investor_access.approved = !@investor_access.approved
     @investor_access.granted_by = current_user.id
     @investor_access.save
+    msg = if @investor_access.approved
+            "Approved #{@investor_access.email}."
+          else
+            "Un-approved #{@investor_access.email}."
+          end
+    UserAlert.new(user_id: current_user.id, message: msg, level: "success").broadcast
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.replace(@investor_access)
+          turbo_stream.replace("investor_access_#{@investor_access.id}",
+                               partial: "investor_accesses/investor_access", locals: { investor_access: @investor_access, investor_id: params[:investor_id] })
         ]
       end
       format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully approved." }
@@ -92,7 +100,10 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       if @investor_access.save
-        format.turbo_stream { render :create }
+        format.turbo_stream do
+          UserAlert.new(user_id: current_user.id, message: "Added #{@investor_access.email} to investor users", level: "success").broadcast
+          render :create
+        end
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully created." }
         format.json { render :show, status: :created, location: @investor_access }
       else
@@ -108,7 +119,10 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       if @investor_access.update(investor_access_params)
-        format.turbo_stream { render :update }
+        format.turbo_stream do
+          UserAlert.new(user_id: current_user.id, message: "Updated #{@investor_access.email}", level: "success").broadcast
+          render :update
+        end
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_access }
       else
@@ -124,6 +138,8 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
+        UserAlert.new(user_id: current_user.id, message: "Destroyed #{@investor_access.email}", level: "info").broadcast
+
         render turbo_stream: [
           turbo_stream.remove(@investor_access)
         ]

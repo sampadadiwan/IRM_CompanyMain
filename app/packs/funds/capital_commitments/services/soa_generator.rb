@@ -147,7 +147,8 @@ class SoaGenerator
       portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),
       portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date))
     }
-
+    # This is only for dumping keys for debugging inside the template
+    @context.store :context, DocGenContext.new(@context)
     @context
   end
 

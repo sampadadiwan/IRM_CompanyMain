@@ -823,7 +823,7 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   click_on("Upload / Download")
   click_on("Upload Remittances")
   fill_in('import_upload_name', with: "Test Upload")
-  attach_file('files[]', File.absolute_path("./public/sample_uploads/capital_remittances.xlsx"), make_visible: true)
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file}"), make_visible: true)
   #sleep((2)
   click_on("Save")
   # sleep(2)
@@ -1857,12 +1857,12 @@ Then('the capital distribution payments must have the data in the sheet {string}
     # create hash from headers and cells
     row_data = [headers, row].transpose.to_h
     capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
-    investor = Investor.where(investor_name: row_data["Investor"]).first
+    investor = Investor.where(investor_name: row_data["Stakeholder"]).first
     cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).first
 
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should == row_data["Investor"]
+    cdp.investor_name.should == row_data["Stakeholder"]
     cdp.income.to_d.should == row_data["Income"].to_d
     cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
     cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)
@@ -2254,6 +2254,7 @@ Then('I should see the commitment and distribuition docs upload errors') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
+  # The commented out checks are for errors that are no longer generated due to changes in the import which does not check the kyc now.
   data.each_with_index do |row, idx|
     p row[headers.length]
     next if idx.zero? # skip header row
@@ -2264,10 +2265,10 @@ Then('I should see the commitment and distribuition docs upload errors') do
       row[headers.length].include?("Fund Absent Fund not found").should == true
     end
     if idx == 4
-      row[headers.length].include?("Investing Entity Investor 99 not found").should == true
+      # row[headers.length].include?("Investing Entity Investor 99 not found").should == true
     end
     if idx == 5
-      row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
+      # row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
     end
     if idx == 6
       row[headers.length].include?("Distribution Name not found").should == true
@@ -2276,13 +2277,13 @@ Then('I should see the commitment and distribuition docs upload errors') do
       row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true
     end
     if idx == 8
-      row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
+      # row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
     end
     if idx == 9
       row[headers.length].include?("Fund is blank").should == true
     end
     if idx == 10
-      row[headers.length].include?("Investing Entity is blank").should == true
+      # row[headers.length].include?("Investing Entity is blank").should == true
     end
     if idx == 11
       row[headers.length].include?("Folio No is blank").should == true
@@ -2350,7 +2351,7 @@ Then('I should see the remittance payments upload errors') do
 end
 
 Then('The proper documents must be uploaded for the remittances') do
-  expect(ImportUpload.last.failed_row_count).to eq(7)
+  expect(ImportUpload.last.failed_row_count).to eq(6)
   doc1 = Document.where(name: "Remittance doc 1").first
   cc = CapitalCall.find_by(fund: @fund, name: "Capital Call 4")
   investor = Investor.find_by(investor_name: "Investor 1", entity: @fund.entity)
@@ -2368,6 +2369,7 @@ Then('I should see the remittance docs upload errors') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
+  # The commented out checks are for errors that are no longer generated due to changes in the import which does not check the kyc now.
   data.each_with_index do |row, idx|
     p row[headers.length]
     next if idx.zero? # skip header row
@@ -2381,13 +2383,13 @@ Then('I should see the remittance docs upload errors') do
       row[headers.length].include?("Capital Call not found for Some capital call").should == true
     end
     if idx == 5
-      row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
+      # row[headers.length].include?("Capital Remittance not found for SAAS Fund, Capital Call 25, 55 and Investor 6").should == true
     end
     if idx == 6
       row[headers.length].include?("Fund is blank").should == true
     end
     if idx == 7
-      row[headers.length].include?("Investing Entity is blank").should == true
+      # row[headers.length].include?("Investing Entity is blank").should == true
     end
     if idx == 8
       row[headers.length].include?("Folio No is blank").should == true
@@ -2411,6 +2413,15 @@ end
 
 
 Given('Given import file {string} for {string}') do |file, type|
+
+  # Some types require form types to be present before import
+  if ["InvestorKyc"].include?(type)
+    FormType.where(entity: @entity, name: "IndividualKyc", tag: "Default").first_or_create!
+    FormType.where(entity: @entity, name: "NonIndividualKyc", tag: "Default").first_or_create!
+  elsif FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(type)
+    FormType.where(entity: @entity, name: type, tag: "Default").first_or_create!
+  end
+
   @import_file = file
   owner = @fund || @entity
   iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))

@@ -5,22 +5,22 @@
     <h1 class="h3 mb-0 text-gray-800">Finalize Allocations: <%= link_to @investment_opportunity.company_name, @investment_opportunity %></h1>
 
     <span>
-        
-        <%= link_to "All Interests", finalize_allocation_investment_opportunity_path(@investment_opportunity), 
-                {class: "btn btn-outline-primary" }  %> 
-        <%= link_to "Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: true), 
-                {class: "btn btn-outline-success" }  %> 
-        <%= link_to "Un-Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: false), 
-                {class: "btn btn-outline-warning" }  %> 
-                
-        <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_expression_of_interests_path %>">
+
+        <%= link_to "All Interests", finalize_allocation_investment_opportunity_path(@investment_opportunity),
+                {class: "btn btn-outline-primary" }  %>
+        <%= link_to "Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: true),
+                {class: "btn btn-outline-success" }  %>
+        <%= link_to "Un-Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: false),
+                {class: "btn btn-outline-warning" }  %>
+
+        <form class="d-sm-inline-block form-inline navbar-search mt-2" action="<%= search_expression_of_interests_path %>">
             <div class="input-group">
                 <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
                 <input type="hidden" name="investment_opportunity_id" value="<%= @investment_opportunity.id %>">
                 <input type="hidden" name="finalize_allocation" value="true">
             </div>
-        
-        </form>        
+
+        </form>
     </span>
 </div>
 
@@ -43,9 +43,9 @@
     <div class="divTableBody tbody">
         <% @expression_of_interests.each do |expression_of_interest| %>
             <%= render "expression_of_interests/final_expression_of_interest", expression_of_interest: expression_of_interest %>
-        <% end %>        
+        <% end %>
     </div>
-    
+
 </div>
 
 <div class="d-flex justify-content-between align-items-center">

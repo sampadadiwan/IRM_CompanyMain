@@ -28,12 +28,15 @@ resources :form_types do
   get 'clone', on: :member
   patch 'rename_fcf', on: :member
   patch 'add_regulatory_fields', on: :member
+  get 'generate_upload_xlsx', on: :member
 end
 
 resources :e_signatures
 resources :stamp_papers
 resources :investor_notice_items
-resources :exchange_rates
+resources :exchange_rates do
+  post 'generate_tracking_numbers', on: :member
+end
 
 resources :approval_responses do
   patch 'approve', on: :member

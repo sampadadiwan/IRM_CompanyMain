@@ -133,4 +133,9 @@ class FormCustomField < ApplicationRecord
   def self.to_name(header)
     header.strip.titleize.squeeze(" ").tr(" ", "_").underscore.gsub(/[^0-9A-Za-z_]/, '').squeeze("_")
   end
+
+  def self.json_fields_key(header, model, _form_type_id)
+    form_type = model.entity.form_types.where(name: model.class.name).first
+    form_type.form_custom_fields.find_by(name: to_name(header))&.id
+  end
 end

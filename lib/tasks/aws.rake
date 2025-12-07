@@ -85,15 +85,7 @@ namespace :aws do
     create_ami_from_snapshot(args)
   end
 
-  task :environment, [:env_name] do |t, args|
-
-    unless ENV["AWS_ACCESS_KEY_ID"].present? && ENV["AWS_SECRET_ACCESS_KEY"].present?
-      puts "################################################################################"
-      puts "⚠️  AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY not set in environment variables."
-      puts "################################################################################"
-      raise "⚠️  AWS keys must be set in environment variables"
-    end
-
+    task :environment, [:env_name] do |t, args|
     env_name = args[:env_name]
 
     if env_name
@@ -119,11 +111,11 @@ namespace :aws do
                     Rails.application.credentials
                   end
 
-    puts "🔑 Configuring AWS SDK for region #{ENV['AWS_REGION']}, using ENV for AWS keys"
+    puts "🔑 Configuring AWS SDK for region #{ENV['AWS_REGION']}"
     Aws.config.update({
       region: ENV["AWS_REGION"],
-      access_key_id: ENV["AWS_ACCESS_KEY_ID"],
-      secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
+      access_key_id: credentials[:AWS_ACCESS_KEY_ID],
+      secret_access_key: credentials[:AWS_SECRET_ACCESS_KEY],
     })
   end
 

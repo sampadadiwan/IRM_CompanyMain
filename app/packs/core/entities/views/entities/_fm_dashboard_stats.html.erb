@@ -1,11 +1,13 @@
 <div class="row">
   <div class="col-lg-3 col-md-6">
-    <a href="<%=funds_path%>">
-    <div class="card">
+    <a href="#funds-section" onclick="document.querySelector('#funds-section').scrollIntoView({ behavior: 'smooth' }); return false;">
+    <div class="card cursor-pointer">
       <div class="card-body">
         <div class="d-flex align-items-center mb-3">
           <div>
-            <h3 class="fs-8"><%= policy_scope(current_user.entity.funds).count %></h3>
+            <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.funds).count %>">
+              <h3 class="fs-8" data-counters-target="output"></h3>
+            </div>
             <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.funds') %> </h6>
           </div>
           <div class="ms-auto">
@@ -23,7 +25,9 @@
       <div class="card-body">
         <div class="d-flex align-items-center mb-3">
           <div>
-            <h3 class="fs-8"><%= policy_scope(current_user.entity.investors).count %></h3>
+            <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors).count %>">
+              <h3 class="fs-8" data-counters-target="output"></h3>
+            </div>
             <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.stakeholders') %> </h6>
           </div>
           <div class="ms-auto">
@@ -36,14 +40,16 @@
     </a>
   </div>
   <div class="col-lg-3 col-md-6">
-    <a href="<%=investment_opportunities_path%>">
-    <div class="card">
+    <a href="#opportunities-section" onclick="document.querySelector('#opportunities-section').scrollIntoView({ behavior: 'smooth' }); return false;">
+    <div class="card cursor-pointer">
       <div class="card-body">
         <div class="row">
           <div class="col-12">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <h3 class="fs-8"><%= policy_scope(current_user.entity.investment_opportunities).count %></h3>
+                <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investment_opportunities).count %>">
+                  <h3 class="fs-8" data-counters-target="output"></h3>
+                </div>
                 <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.opportunities') %> </h6>
               </div>
               <div class="ms-auto">
@@ -67,7 +73,9 @@
           <div class="col-12">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <h3 class="fs-8"><%= policy_scope(current_user.entity.investors.portfolio_companies).count %></h3>
+                <div data-controller="counters" data-counters-value-value="<%= policy_scope(current_user.entity.investors.portfolio_companies).count %>">
+                  <h3 class="fs-8" data-counters-target="output"></h3>
+                </div>
                 <h6 class="card-subtitle mb-1 text-muted"><%= t('entities.fm_dashboard_stats.portfolio_companies') %> </h6>
               </div>
               <div class="ms-auto">

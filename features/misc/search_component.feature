@@ -7,7 +7,7 @@ Scenario Outline: Create investors and search with search component
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And the investors have approved investor access
-  And Given I upload an investor kyc "investor_kycs.xlsx" for employees
+  And Given import file "investor_kycs.xlsx" for "InvestorKyc"
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   When I go to the Investor Kycs index page

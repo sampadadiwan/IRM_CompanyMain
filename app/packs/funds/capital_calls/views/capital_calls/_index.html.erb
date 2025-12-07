@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
-    
-    
+
+
     <div class="d-flex flex-wrap align-items-center gap-2">
 
         <% fund ||= nil %>
@@ -37,7 +37,7 @@
 
 </div>
 
-<% 
+<%
     import_upload_id ||= params[:import_upload_id]
 %>
 <% data_source ||= capital_calls_path(params: params.to_unsafe_h, import_upload_id:) %>
@@ -46,6 +46,6 @@
 <% q ||= nil %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: capital_calls_frame) %>
 
-<div class="table-responsive">
+<div class="">
 <%= render RansackTable.new(CapitalCall, q: q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: capital_calls, turbo_frame: capital_calls_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>

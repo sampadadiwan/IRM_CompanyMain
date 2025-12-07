@@ -11,6 +11,7 @@ class PortfolioReportDocGenerator
     @end_date = end_date
     @user_id = user_id
     @options = options
+    call
   end
 
   def call
@@ -61,7 +62,11 @@ class PortfolioReportDocGenerator
     context.store  :portfolio_company, TemplateDecorator.decorate(portfolio_company)
     context.store  :apis, TemplateDecorator.decorate_collection(portfolio_company.aggregate_portfolio_investments)
     context.store  :portfolio_investments, TemplateDecorator.decorate_collection(portfolio_company.portfolio_investments.where(investment_date: ..end_date))
-    context.store  :kpis, grid_view_array(portfolio_company, end_date)
+
+    logo_doc = portfolio_company.documents.where(owner_tag: "logo").first
+    add_image(context, :logo, logo_doc.file) if logo_doc&.file.present?
+
+    context.store :kpis, grid_view_array(portfolio_company, end_date)
 
     portfolio_company.investor_kpi_mappings.pluck(:category).uniq.each_with_index do |category, _index|
       context.store :"#{category.gsub(/\s+/, '_').underscore}_kpis", grid_view_array(portfolio_company, end_date, category: category)
@@ -69,6 +74,8 @@ class PortfolioReportDocGenerator
 
     current_date = Time.zone.now.strftime('%d/%m/%Y')
     context.store :current_date, current_date
+    # This is only for dumping keys for debugging inside the template
+    context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(portfolio_company)
     convert(template, context, file_name, to_pdf: false)
@@ -88,19 +95,18 @@ class PortfolioReportDocGenerator
 
   def grid_view_array(portfolio_company, end_date, category: nil)
     kpi_reports = portfolio_company.portfolio_kpi_reports
-                                   .includes(:kpis)
+                                   .includes(kpis: :investor_kpi_mapping)
                                    .where(as_of: ..end_date)
                                    .order(:as_of)
 
-    investor_kpi_mappings = portfolio_company.investor_kpi_mappings
+    investor_kpi_mappings = portfolio_company.investor_kpi_mappings.where(show_in_report: true)
     investor_kpi_mappings = investor_kpi_mappings.where(category: category) if category.present?
 
     rows = investor_kpi_mappings.map do |ikm|
       row_data = { "header" => ikm.standard_kpi_name }
 
       kpi_reports.each do |kr|
-        kpi = kr.kpis.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
-
+        kpi = kr.kpis.show_in_report.find { |k| k.name.casecmp?(ikm.standard_kpi_name) }
         row_data[kr.label] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 

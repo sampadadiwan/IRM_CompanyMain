@@ -1,6 +1,4 @@
-<%= turbo_stream.prepend('investor_accesses_table_body', 
-    partial: "investor_accesses/investor_access", locals: { investor_access: @investor_access }) %>
-<%= turbo_stream.replace('toasts', partial: "layouts/success_toast", 
-    locals: { message: "Added #{@investor_access.email} to investor users" }) %>
+<%= turbo_stream.prepend('investor_accesses_table_body',
+    partial: "investor_accesses/investor_access", locals: { investor_access: @investor_access, investor_id: @investor_access.investor_id }) %>
 
 <%= turbo_stream.replace('new_investor_access', partial: "investor_accesses/blank" ) %>
