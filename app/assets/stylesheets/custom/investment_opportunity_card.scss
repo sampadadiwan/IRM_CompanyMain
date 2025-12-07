@@ -254,10 +254,25 @@
   .identity-section {
     background: #f8fafc;
     border-right: 1px solid #f1f5f9;
+    width: 35%;
+    min-width: 140px;
+
+    @media (max-width: 767.98px) {
+      width: 25%;
+      min-width: 0;
+    }
 
     [data-bs-theme=dark] & {
         background: #323a49;
         border-right-color: #334155;
+    }
+  }
+
+  .metrics-section {
+    width: 65%;
+
+    @media (max-width: 767.98px) {
+      width: 75%;
     }
   }
 

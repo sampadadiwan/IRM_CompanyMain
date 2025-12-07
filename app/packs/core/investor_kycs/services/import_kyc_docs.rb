@@ -34,7 +34,7 @@ class ImportKycDocs < ImportUtil
     end
   end
 
-  def save_kyc_document(user_data, import_upload, custom_field_headers, context)
+  def save_kyc_document(user_data, import_upload, _custom_field_headers, context)
     Rails.logger.debug { "Processing investor kyc doc #{user_data}" }
 
     dir = context[:unzip_dir]
@@ -111,10 +111,10 @@ class ImportKycDocs < ImportUtil
   # @param user_data [Hash] The row data containing potential "Kyc Id".
   # @return [InvestorKyc, nil] The single matching KYC record.
   def resolve_kycs(kycs, user_data)
-    if kycs.count > 1
+    if kycs.many?
       kyc_id = user_data["Kyc Id"].to_s.strip
       if kyc_id.present?
-        # Note: Previous code attempted to remove "Kyc Id" from custom_field_headers here,
+        # NOTE: Previous code attempted to remove "Kyc Id" from custom_field_headers here,
         # but it was a local variable reassignment with no side effect.
         kycs.find_by(id: kyc_id)
       else
