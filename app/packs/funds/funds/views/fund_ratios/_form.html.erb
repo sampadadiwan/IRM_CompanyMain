@@ -13,20 +13,8 @@
       </div>
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :entity_id %>
-      <%= form.text_field :entity_id, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :fund_id %>
-      <%= form.text_field :fund_id, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :valuation_id %>
-      <%= form.text_field :valuation_id, class: "form-control"  %>
-    </div>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
 
     <div class="form-group">
       <%= form.label :name %>
@@ -46,6 +34,11 @@
     <div class="form-group">
       <%= form.label :end_date %>
       <%= form.date_field :end_date, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :scenario %>
+      <%= form.text_field :scenario, class: "form-control"  %>
     </div>
 
     <div class="form-group">

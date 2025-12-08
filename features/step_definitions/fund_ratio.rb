@@ -244,17 +244,68 @@ Then('the FundRatios should be have owner from file {string}') do |file_name|
     folio_id = user_data["Folio No"]
     name = user_data["Ratio Name"]
     end_date = user_data["End Date"]
-    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
+    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : nil
     portfolio_scenario_name = user_data["Portfolio Scenario"]
     portfolio_scenario = @fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)
 
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     fund_ratio = FundRatio.find_by(name:, capital_commitment: cc, end_date:)
-    owner = cc || Investor.find_by(investor_name: user_data["Portfolio Company"])
+    owner = if folio_id.present?
+      cc
+    elsif user_data["Portfolio Company"].present?
+      investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
+      if user_data["Instrument"].present?
+        instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
+        instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
+      else
+        investor
+      end
+    else
+      @fund
+    end
 
     fund_ratio.value.should == user_data["Value"].to_d
-    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id
-    fund_ratio.scenario.should == user_data["Scenario"]&.strip
+    if fund_ratio.name.include?("IRR") || ["XIRR", "Fund Utilization", "Gross Portfolio IRR"].include?(fund_ratio.name)
+      fund_ratio.display_value.should == "#{user_data['Value'].to_d.to_f.round(2)} %"
+    else
+      fund_ratio.display_value.should == "#{user_data['Value'].to_d.to_f.round(2)} x"
+    end
+    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id if portfolio_scenario.present?
+    scenario = user_data["Scenario"].present? ? user_data["Scenario"].strip : "Default"
+    fund_ratio.scenario.should == scenario
+    fund_ratio.end_date.should == end_date
     fund_ratio.owner.should == owner
   end
+end
+
+Given('I go to fund ratio show page') do
+  @fund_ratio ||= FundRatio.last
+  visit(fund_ratio_path(@fund_ratio))
+end
+
+Given('I fill the fund ratio form with {string}') do |args|
+  @temp_ratio = FundRatio.new
+  key_values(@temp_ratio, args)
+  puts "Updating Fund Ratio #{@fund_ratio} - #{@fund_ratio.id} with values #{@temp_ratio.inspect}"
+  fill_in("fund_ratio_scenario", with: @temp_ratio.scenario) if @temp_ratio.scenario.present?
+  fill_in("fund_ratio_name", with: @temp_ratio.name) if @temp_ratio.name.present?
+  fill_in("fund_ratio_value", with: @temp_ratio.value) if @temp_ratio.value.present?
+  fill_in("fund_ratio_display_value", with: @temp_ratio.display_value) if @temp_ratio.display_value.present?
+  fill_in("fund_ratio_end_date", with: Date.local_parse(@temp_ratio.end_date)) if @temp_ratio.end_date.present?
+  fill_in("fund_ratio_label", with: @temp_ratio.label) if @temp_ratio.label.present?
+  fill_in("fund_ratio_notes", with: @temp_ratio.notes) if @temp_ratio.notes.present?
+end
+
+Then('the FundRatio should be updated with correct data') do
+  expect(page).to have_content("Fund ratio was successfully updated.")
+  @fund_ratio.reload
+  puts "Verifying Fund Ratio #{@fund_ratio} - #{@fund_ratio.id} values"
+  puts "#{@fund_ratio.inspect}"
+  expect(@fund_ratio.scenario).to eq(@temp_ratio.scenario) if @temp_ratio.scenario.present?
+  expect(@fund_ratio.name).to eq(@temp_ratio.name) if @temp_ratio.name.present?
+  expect(@fund_ratio.value).to eq(@temp_ratio.value) if @temp_ratio.value.present?
+  expect(@fund_ratio.display_value).to eq(@temp_ratio.display_value) if @temp_ratio.display_value.present?
+  expect(@fund_ratio.end_date).to eq(@temp_ratio.end_date) if @temp_ratio.end_date.present?
+  expect(@fund_ratio.label).to eq(@temp_ratio.label) if @temp_ratio.label.present?
+  expect(@fund_ratio.notes).to eq(@temp_ratio.notes) if @temp_ratio.notes.present?
 end

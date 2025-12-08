@@ -130,3 +130,30 @@ Scenario Outline: Import Fund Ratio for portfolio company
   Examples:
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
+
+
+@import
+Scenario Outline: Import Fund Ratio with Scenario
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And there is a fund "<fund>" for the entity
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+  And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given my firm is an investor in the fund
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there is a CapitalCommitment with "folio_id=DF1"
+  Given there is a PortfolioScenario "name=Base Case" for the fund
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios_scenario.xlsx"
+  Then the FundRatios should be have owner from file "fund_ratios_scenario.xlsx"
+  Given I go to fund ratio show page
+  And I click on "Edit"
+  And I fill the fund ratio form with "scenario=Updated Scenario;name=Updated Ratio;value=9999;display_value=99.99;end_date=31-12-2024;label=Updated Label;notes=Updated Notes"
+  And I click on "Save"
+  Then the FundRatio should be updated with correct data
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |

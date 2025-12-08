@@ -22,6 +22,8 @@ class ImportFundRatio < ImportUtil
     raise "Portfolio Scenario not found for #{portfolio_scenario_name}" if portfolio_scenario_name.present? && portfolio_scenario_id.nil?
 
     scenario = user_data["Scenario"]&.strip || "Default"
+    end_date = user_data["End Date"].present? ? parse_date(user_data["End Date"]) : nil
+
     attributes = {
       fund: fund,
       entity: entity,
@@ -29,7 +31,7 @@ class ImportFundRatio < ImportUtil
       user_data: user_data,
       value: parse_value(user_data["Value"]),
       display_value: format_display_value(user_data["Value"], user_data["Ratio Name"]),
-      end_date: parse_date(user_data["End Date"]),
+      end_date: end_date,
       import_upload: import_upload,
       scenario: scenario
     }
@@ -92,8 +94,7 @@ class ImportFundRatio < ImportUtil
   def format_display_value(value, ratio_name)
     formatted_value = value.to_d.to_f.round(2)
 
-    case ratio_name
-    when "XIRR", "Fund Utilization", "Gross Portfolio IRR"
+    if ["XIRR", "Fund Utilization", "Gross Portfolio IRR"].include?(ratio_name) || ratio_name.include?("IRR")
       "#{formatted_value} %"
     else
       "#{formatted_value} x"
