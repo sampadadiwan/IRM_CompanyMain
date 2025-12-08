@@ -78,14 +78,14 @@ class AgentChart < ApplicationRecord
   def get_kpis(portfolio_company_id, kpis:)
     self.kpi_before ||= 12
     self.kpi_before_period ||= "Month"
-    # Fetch KPI data for the specified portfolio company and KPIs
-    raw_data = entity.kpis.joins(:kpi_report).for_company(portfolio_company_id)
     # Filter by specified KPIs and  period
-    raw_data = raw_data.where(name: kpis, kpi_report: { period: self.kpi_before_period })
+    kpi_reports = entity.kpi_reports.where(portfolio_company_id:, period: self.kpi_before_period).order(as_of: :desc).limit(self.kpi_before)
+
+    # Fetch KPI data for the specified portfolio company and KPIs
+    kpi_report_ids = kpi_reports.pluck(:id)
+    raw_data = entity.kpis.joins(:kpi_report).where(name: kpis, kpi_report_id: kpi_report_ids)
     # Order by as_of ascending
     raw_data = raw_data.order("kpi_report.as_of ASC").select("kpis.name, kpis.value, kpi_report.as_of")
-    # Limit to the most recent kpi_before entries
-    raw_data = raw_data.limit(self.kpi_before)
 
     # We only need name and value for data to be sent as part of the prompt for the AI to generate the chart spec
     raw_data = raw_data.as_json(only: %i[name value as_of]) if kpis.present?

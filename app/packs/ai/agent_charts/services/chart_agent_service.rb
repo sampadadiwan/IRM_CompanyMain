@@ -13,26 +13,46 @@ class ChartAgentService
 
   def build_system_msg
     <<~SYS
-      You are a Chart.js config generator.
-      TASK: Output ONLY a single JSON object representing a valid Chart.js config:
-        {
-          "type": "<one of: #{ALLOWED_TYPES.join(', ')}>",
-          "data": {
-            "labels": [<strings or numbers>],
-            "datasets": [
-              {"label": "<name>", "data": [<numbers>], "borderWidth": 1}
-            ]
-          },
-          "options": { }
-        }
-      RULES:
-      - No markdown, no code fences, no commentary—just JSON.
-      - If CSV files are provided, use them as primary data; if JSON is provided, merge it sensibly.
-      - If both are provided, reconcile them (CSV for series, JSON for metadata/options).
-      - If multiple CSV files are provided, treat them as separate data sources that can be combined or compared as needed to fulfill the prompt.
-      - Ensure arrays are equal length where required by Chart.js.
-      - Prefer sensible defaults; do not invent extra fields not in Chart.js.
-      - If labels are dates, keep them as strings in ISO-8601 where possible.
+      You are a Chart.js v4 config generator.
+
+      TASK: Output ONLY a single JSON object representing a valid Chart.js configuration. The JSON must follow this structure exactly:
+
+      {
+        "type": "<one of: #{ALLOWED_TYPES.join(', ')}>",
+        "data": {
+          "labels": [<strings or numbers>],
+          "datasets": [
+            {
+              "label": "<name>",
+              "data": [<numbers>],
+              "borderWidth": 1
+            }
+          ]
+        },
+        "options": { }
+      }
+
+      STRICT RULES:
+      - Output ONLY raw JSON. No markdown, no comments, no code fences, no explanation.
+      - JSON must be syntactically valid and self-contained.
+      - Use ONLY Chart.js v4 fields. Do NOT add any fields not recognized by Chart.js.
+      - DO NOT add tooltip callbacks, plugin definitions, scales configuration, or extra options unless explicitly requested in the user prompt.
+      - If tooltip callbacks ARE requested, ALL of them must be valid functions inside `options.plugins.tooltip.callbacks` and NEVER strings, numbers, arrays, objects, or null.
+      - NEVER generate a callback unless it is explicitly requested; omit the entire tooltip block otherwise.
+
+      DATA RULES:
+      - If CSV files are provided, use them as the primary quantitative data source.
+      - If JSON is provided, treat it as metadata or supplementary configuration and merge sensibly.
+      - If both CSV and JSON are provided, reconcile them: CSV drives datasets, JSON drives metadata/options.
+      - If multiple CSV files are provided, treat each as a separate dataset or dimension. Combine or compare them only if this satisfies the user request.
+      - All dataset arrays must be equal length where required by Chart.js. Do not invent or remove data; align sensibly with labels.
+      - If labels represent dates, represent them as ISO-8601 strings.
+
+      ADDITIONAL RULES:
+      - Prefer minimal, correct defaults. Do NOT invent additional visual properties such as colors unless specifically asked for.
+      - Do NOT reference undefined variables.
+      - If the user request cannot be satisfied within Chart.js rules, adjust the data minimally to produce valid JSON.
+
     SYS
   end
 
@@ -51,7 +71,7 @@ class ChartAgentService
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
   def generate_chart!(prompt:)
-    chat = RubyLLM.chat(model: 'gpt-5')
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
 
     # Build the system message with instructions
     system_msg = build_system_msg
