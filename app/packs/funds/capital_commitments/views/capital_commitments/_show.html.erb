@@ -1,5 +1,11 @@
 <% toggle_state = params[:toggle_state] || "closed" %>
-  <div class="row g-4">
+
+<%= render ToggleCard.new(title: "#{capital_commitment.investor_name} : #{capital_commitment.fund.name}", css_class: "show_remittances_#{capital_commitment.id}") do %>
+
+
+
+
+  <div class="row">
     <!-- Left Column: Main Info -->
     <div class="col-lg-8">
 
@@ -301,3 +307,5 @@
     </div>
 
   </div>
+
+<% end %>
