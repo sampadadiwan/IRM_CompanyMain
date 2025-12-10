@@ -26,10 +26,6 @@
                 </div>
               <% end %>
 
-              <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Category</label>
-                <div><span class="badge bg-secondary rounded-pill px-3 py-2"><%= fund.category %></span></div>
-              </div>
 
               <div class="col-md-6">
                 <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Currency</label>
@@ -68,41 +64,6 @@
           </div>
         </div>
 
-        <% if fund.has_tracking_currency? && policy(fund).update? %>
-          <div class="card shadow-sm border-0 mt-4">
-            <div class="card-header  border-bottom py-3">
-              <h5 class="mb-0 fw-bold"><i class="ti ti-chart-line me-2 text-info"></i>Tracking Currency (<%= fund.tracking_currency %>)</h5>
-            </div>
-            <div class="card-body">
-              <div class="row g-3">
-                <div class="col-6 col-md-3">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Committed</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_committed_amount, params %></div>
-                  </div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Call Amount</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_call_amount, params %></div>
-                  </div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Collected</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_collected_amount, params %></div>
-                  </div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="p-3 rounded bg-light-info text-center h-100">
-                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Distributed</small>
-                    <div class="fw-bold"><%= money_to_currency fund.tracking_distribution_amount, params %></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        <% end %>
 
         <% if current_user %>
            <div class="card shadow-sm border-0 mt-4">
@@ -125,6 +86,42 @@
 
       <!-- Right Column: Settings & Meta -->
       <div class="col-lg-4">
+        <% if fund.has_tracking_currency? && policy(fund).update? %>
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-bottom py-3">
+              <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-line me-2 text-info"></i>Tracking Currency (<%= fund.tracking_currency %>)</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="p-3 rounded bg-light-info text-center h-100">
+                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Committed</small>
+                    <div class="fw-bold"><%= money_to_currency fund.tracking_committed_amount, params %></div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded bg-light-info text-center h-100">
+                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Call Amount</small>
+                    <div class="fw-bold"><%= money_to_currency fund.tracking_call_amount, params %></div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded bg-light-info text-center h-100">
+                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Collected</small>
+                    <div class="fw-bold"><%= money_to_currency fund.tracking_collected_amount, params %></div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded bg-light-info text-center h-100">
+                    <small class="d-block text-muted text-uppercase fw-bold mb-1">Distributed</small>
+                    <div class="fw-bold"><%= money_to_currency fund.tracking_distribution_amount, params %></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <!-- Key Dates -->
         <div class="card shadow-sm border-0 mb-4">
           <div class="card-header  border-bottom py-3">
@@ -157,10 +154,6 @@
             </div>
             <ul class="list-group list-group-flush">
               <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                <span class="text-muted">Show Valuations</span>
-                <%= display_boolean fund.show_valuations %>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Show Fund Ratios</span>
                 <%= display_boolean fund.show_fund_ratios %>
               </li>
@@ -171,23 +164,11 @@
             </ul>
           </div>
 
-          <!-- Extra Financials -->
-           <% if fund.unit_types.present? %>
-            <div class="card shadow-sm border-0 mb-4">
-               <div class="card-body d-flex justify-content-between align-items-center">
-                  <span class="text-muted fw-bold">Unit Premiums</span>
-                  <span class="badge bg-light-primary text-primary fs-4"><%= money_to_currency fund.total_units_premium, params %></span>
-               </div>
-            </div>
-          <% end %>
 
           <!-- Docs & Emails -->
            <div class="card shadow-sm border-0 mb-4">
              <div class="card-body">
-               <div class="mb-4">
-                 <label class="text-muted text-uppercase fw-bold fs-1 mb-2">Commitment Documents</label>
-                 <div class="bg-light p-2 rounded"><%= fund.commitment_doc_list.presence || '-' %></div>
-               </div>
+
 
                <div>
                  <label class="text-muted text-uppercase fw-bold fs-1 mb-2">Signatory Emails</label>

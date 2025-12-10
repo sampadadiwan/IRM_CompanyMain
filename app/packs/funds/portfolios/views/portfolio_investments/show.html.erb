@@ -1,5 +1,6 @@
 <div class="container-fluid p-3">
-  <div class="row g-4">
+  <%= render ToggleCard.new(title: "#{@portfolio_investment}", css_class: "show_kyc_#{@portfolio_investment.id}", state: "show") do %>
+  <div class="row">
     <!-- Left Column: Main Info -->
     <div class="col-lg-8">
       <div class="card shadow-sm border-0 mb-4">
@@ -108,9 +109,10 @@
                 <span class="fw-bold "><%= @portfolio_investment.quantity %></span>
             </li>
 
+
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Valuation</span>
-                <span class="fw-bold "><%= link_to @portfolio_investment.valuation, class: "text-decoration-none fw-bold text-primary" %></span>
+                <span class="fw-bold "><%= link_to @portfolio_investment.valuation.to_s, valuation_path(@portfolio_investment.valuation), class: "text-decoration-none fw-bold text-primary" if @portfolio_investment.valuation %></span>
             </li>
 
             <% if @portfolio_investment.buy? %>
@@ -240,11 +242,10 @@
 
     </div>
   </div>
+  <% end %>
+</div>
 
-
-        <!-- Details Partial -->
-      <div>
-          <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>
-      </div>
-
+<!-- Details Partial -->
+<div>
+    <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>
 </div>

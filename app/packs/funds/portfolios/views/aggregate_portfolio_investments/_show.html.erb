@@ -1,5 +1,6 @@
 <div class="container-fluid p-3">
-  <div class="row g-4">
+  <%= render ToggleCard.new(title: "#{aggregate_portfolio_investment}", css_class: "show_kyc_#{aggregate_portfolio_investment.id}", state: "show") do %>
+  <div class="row">
     <!-- Left Column: Main Info -->
     <div class="col-lg-8">
       <div class="card shadow-sm border-0 mb-4">
@@ -208,11 +209,12 @@
 
     </div>
   </div>
-
-
-  <% unless aggregate_portfolio_investment.snapshot %>
-    <div class="mb-4">
-      <%= render "/aggregate_portfolio_investments/details", aggregate_portfolio_investment: aggregate_portfolio_investment %>
-    </div>
   <% end %>
 </div>
+
+
+<% unless aggregate_portfolio_investment.snapshot %>
+  <div class="mb-4">
+    <%= render "/aggregate_portfolio_investments/details", aggregate_portfolio_investment: aggregate_portfolio_investment %>
+  </div>
+<% end %>

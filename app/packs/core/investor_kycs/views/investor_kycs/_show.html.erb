@@ -4,7 +4,7 @@
   ifsc_label = sys_t('investor_kyc.bank_routing_number')
 %>
 
-
+<%= render ToggleCard.new(title: "KYC: #{investor_kyc.full_name || investor_kyc.investor_name}", css_class: "show_kyc_#{investor_kyc.id}", state: "closed") do %>
   <div class="row g-4">
     <!-- Left Column: Main Info -->
     <div class="col-lg-8">
@@ -231,36 +231,6 @@
             </ul>
         </div>
 
-        <!-- Documents Card -->
-        <% if investor_kyc.pan_card.present? || investor_kyc.signature.present? %>
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header  border-bottom py-3">
-                    <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-files me-2 text-secondary"></i>Documents</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        <% if investor_kyc.pan_card.present? && investor_kyc.pan_card.mime_type.include?("image") %>
-                            <div class="col-12">
-                                <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= pan_label %> Image</label>
-                                <div>
-                                    <%= image_tag investor_kyc.pan_card.url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;", class: "img-fluid rounded border" %>
-                                </div>
-                            </div>
-                        <% end %>
-
-                        <% if investor_kyc.signature.present? %>
-                            <div class="col-12">
-                                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Signature</label>
-                                <div>
-                                    <%= image_tag investor_kyc.signature_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;", class: "img-fluid rounded border" %>
-                                </div>
-                            </div>
-                        <% end %>
-                    </div>
-                </div>
-            </div>
-        <% end %>
-
         <% if params[:debug].present? %>
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header  border-bottom py-3">
@@ -306,3 +276,4 @@
 
   </div>
 
+<% end %>
