@@ -1500,7 +1500,7 @@ end
 Given('Given I upload {string} {string} error file for Account Entries') do |file, err_count|
   @import_file = file
   visit(capital_commitment_path(@fund.capital_commitments.first))
-  click_on("Account Entries")
+  click_tab("Account Entries")
   sleep(1)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
