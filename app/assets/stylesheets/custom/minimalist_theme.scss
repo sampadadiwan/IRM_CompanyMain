@@ -66,8 +66,8 @@
   // Mobile: Reduce container padding to maximize width
   .container-fluid {
     @media (max-width: 767.98px) {
-      padding-left: 4px !important;
-      padding-right: 4px !important;
+      padding-left: 5px !important;
+      padding-right: 5px !important;
     }
   }
 }
@@ -80,6 +80,7 @@
   margin-bottom: 24px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   background-color: #ffffff !important; // Ultrawhite background for cards in light mode
+  container-type: inline-size; // Enable container queries
 
   // Dark mode card styles
   [data-bs-theme=dark] & {
@@ -117,10 +118,25 @@
     }
   }
 
+  // Add a container query for responsive card component styles
+  @container (max-width: 767.98px) {
+    .card-body {
+      padding: 5px !important;
+    }
+  }
+
   // Reduce outer card wrapper padding (ToggleCard) to maximize inner card width
-  .card-body {
+  .card.ToggleCard .card-body {
     @media (max-width: 767.98px) {
-      padding: 4px !important;
+      padding: 0 !important;
+
+      .card {
+        margin-bottom: 0 !important;
+      }
+
+      .card:not(:last-child) {
+        margin-bottom: 5px !important;
+      }
     }
   }
 
