@@ -1,7 +1,8 @@
 
+<div class="container-fluid p-3">
 <%= render FormCard.new(title: @approval_response.investor.to_s) do  %>
   <%= render "/approval_responses/show", approval_response: @approval_response %>
-  
+
 
   <div class="associated_entity">
     <% if policy(@approval_response).update? %>
@@ -35,3 +36,4 @@
   </div>
 
 <% end %>
+</div>

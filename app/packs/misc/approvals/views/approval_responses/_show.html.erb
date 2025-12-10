@@ -29,10 +29,17 @@
         Status
       </td>
       <td>
-        <%= approval_response.status %>
+        <%
+          colors = ["bg-success", "bg-warning", "bg-secondary", "bg-info", "bg-primary", "bg-light", "bg-dark"].freeze
+
+          idx = approval_response.approval.response_status&.split(",")&.index(approval_response.status) || 0
+
+        %>
+        <span class="badge <%=colors[idx]%>"><%= approval_response.status %></span>
       </td>
     </tr>
 
+    <% if approval_response.owner %>
     <tr>
       <td>
         Reference
@@ -41,7 +48,8 @@
         <%= link_to approval_response.owner %>
       </td>
     </tr>
-    
+    <% end %>
+
 
     <%= display_custom_fields(approval_response) if current_user %>
 
