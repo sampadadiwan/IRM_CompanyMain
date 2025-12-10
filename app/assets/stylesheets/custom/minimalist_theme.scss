@@ -62,10 +62,18 @@
   [data-bs-theme=dark] & {
     background-color: #202936;
   }
+
+  // Mobile: Reduce container padding to maximize width
+  .container-fluid {
+    @media (max-width: 767.98px) {
+      padding-left: 4px !important;
+      padding-right: 4px !important;
+    }
+  }
 }
 
 // 2. Cards (Stats & Details)
-.card {
+.container-fluid > .card {
   border: 1px solid #f0f2f5 !important; // Very subtle border instead of heavy default
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important; // Much softer shadow
   border-radius: 16px !important; // More rounded corners
@@ -96,6 +104,31 @@
     // Enforce spacious padding in comfortable mode (overrides layout.scss)
     [data-density="comfortable"] & {
       padding: 28px !important;
+    }
+
+    // Force 2 columns for data fields on mobile to save space
+    .row {
+      .col-md-6 {
+        @media (max-width: 767.98px) {
+          flex: 0 0 auto;
+          width: 50%;
+        }
+      }
+    }
+  }
+
+  // Reduce outer card wrapper padding (ToggleCard) to maximize inner card width
+  .card-body {
+    @media (max-width: 767.98px) {
+      padding: 4px !important;
+    }
+  }
+
+  // Reduce header padding on mobile
+  .card-header {
+    @media (max-width: 767.98px) {
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
     }
   }
 
@@ -365,6 +398,11 @@
     padding: 16px 24px;
     border-top: none;
 
+    // Mobile padding adjustment
+    @media (max-width: 767.98px) {
+      padding: 12px 12px;
+    }
+
     [data-density="comfortable"] & {
       padding: 16px 24px !important;
     }
@@ -383,6 +421,11 @@
     font-size: 0.875rem;
     border-bottom: 1px solid #f1f5f9;
     font-weight: 500;
+
+    // Mobile padding adjustment
+    @media (max-width: 767.98px) {
+      padding: 12px 12px;
+    }
 
     [data-density="comfortable"] & {
       padding: 20px 24px !important;
@@ -531,6 +574,36 @@ h1, .h1 {
 // 8. Specific spacing improvements (Global)
 .row.mb-4, .row.mb-3 {
     margin-bottom: 32px !important;
+
+    @media (max-width: 767.98px) {
+        margin-bottom: 16px !important;
+    }
+}
+
+// Reduce grid gutters on mobile for tighter layout
+.row.g-4 {
+  @media (max-width: 767.98px) {
+    --bs-gutter-x: 0.5rem;
+    --bs-gutter-y: 0.5rem;
+  }
+}
+
+// Global row adjustment for mobile to prevent overflow with tight container padding
+// Scoped to body-wrapper to ensure it overrides Bootstrap defaults
+.body-wrapper .row {
+  @media (max-width: 767.98px) {
+    --bs-gutter-x: 0.5rem !important; // Force gutter reduction
+    margin-left: -4px !important;
+    margin-right: -4px !important;
+  }
+}
+
+// Explicitly override column padding to ensure alignment
+.body-wrapper .row > * {
+  @media (max-width: 767.98px) {
+    padding-left: 4px !important;
+    padding-right: 0 !important; // Remove right padding as requested to fix alignment
+  }
 }
 // 9. Forms & Inputs
 .form-group {
