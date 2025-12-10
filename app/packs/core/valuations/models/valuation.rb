@@ -16,6 +16,16 @@ class Valuation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
+
+  # A *typed* association for when the owner is specifically an Investor
+  belongs_to :portfolio_company,
+             class_name: "Investor",
+             foreign_key: :owner_id,
+             optional: true
+
+  # Now you can safely go through a non-polymorphic association
+  has_many :portfolio_kpis, through: :portfolio_company
+
   belongs_to :investment_instrument # , optional: true
   include FileUploader::Attachment(:report)
 

@@ -38,7 +38,9 @@
   Then('I should see the fund details on the details page') do
     find(".show_details_link").click
     expect(page).to have_content(@fund.name)
-    expect(page).to have_content(@fund.unit_types) if @fund.unit_types.present?
+    @fund.unit_types&.split(",").each do |unit_type|
+      expect(page).to have_content(unit_type)
+    end
     expect(page).to have_content(strip_tags(@fund.details))
   end
 
@@ -99,7 +101,7 @@
   end
 
   Then('I should see the capital commitment details') do
-    find(".show_details_link").click
+    # find(".show_details_link").click
 
     @capital_commitment = CapitalCommitment.last
     @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
@@ -1062,7 +1064,7 @@ end
 
 Then('I should be able to see my capital commitments') do
   @user.reload
-  click_on("Commitments")
+  # click_on("Commitments")
 
 
   within("#capital_commitments") do
@@ -1076,7 +1078,7 @@ Then('I should be able to see my capital commitments') do
         puts "Commitment Visible"
         expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
         # expect(page).to have_content(cc.fund.name)
-        expect(page).to have_content( money_to_currency(cc.committed_amount) )
+        expect(page).to have_content( money_to_currency(cc.committed_amount, {force_units: "Lakhs"}) )
       else
         puts "Commitment Not Visible"
         expect(page).not_to have_content(cc.investor.investor_name)
@@ -1475,6 +1477,8 @@ Then('Given I upload {string} file for Account Entries') do |file|
   visit(capital_commitment_path(@fund.capital_commitments.first))
   click_on("Account Entries")
   #sleep((1)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content("Upload", wait:5)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
@@ -1496,7 +1500,7 @@ Given('Given I upload {string} {string} error file for Account Entries') do |fil
   @import_file = file
   visit(capital_commitment_path(@fund.capital_commitments.first))
   click_on("Account Entries")
-  #sleep((1)
+  sleep(1)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)

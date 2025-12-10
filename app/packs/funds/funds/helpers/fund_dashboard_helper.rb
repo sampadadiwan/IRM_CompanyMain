@@ -133,7 +133,8 @@ module FundDashboardHelper
         }
       },
       xAxis: { type: 'category', title: { text: 'Quarters' } },
-      yAxis: { title: { text: 'Amount (in currency)' } }
+      yAxis: { title: { text: 'Amount (in currency)' } },
+      **chart_theme_color
     }, prefix: "#{fund.currency}:"
   end
 

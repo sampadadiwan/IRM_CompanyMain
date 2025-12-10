@@ -1,4 +1,4 @@
-<div class="associated_entity" data-controller="tabs">
+<div class="associated_entity" data-controller="tabs tabdetails">
 
   <%
     offers_active = false
@@ -7,15 +7,14 @@
     document_tag = nil
   %>
 
-  <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist" data-controller="tabdetails">
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <% if policy(secondary_sale).owner? %>
       <% interests_active = true %>
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
-      
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"
-            data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.offers') %></a>
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.offers') %></a>
+
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"><%= t('secondaries_tabs.access_rights') %></a>
 
@@ -26,26 +25,23 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
             <%= t('secondaries_tabs.notification') %></a>
-    
+
     <% elsif policy(secondary_sale).rm? %>
       <% interests_active = true %>
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"
-            data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.offers') %></a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.offers') %></a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
-      
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
+
     <% elsif policy(secondary_sale).seller? %>
       <% offers_active = true; document_tag="Seller" %>
       <input hidden=true value="#offerings-tab" id="clickOnLoad" />
-      <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab" 
-          data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.my_offers') %></a>
+      <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.my_offers') %></a>
 
     <% elsif policy(secondary_sale).buyer? %>
       <% interests_active = true; document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
-      
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"    
-          data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.interests') %></a>
+
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
     <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
@@ -53,7 +49,7 @@
 
   </nav>
 
-  <div class="tab-content">
+  <div class="tab-content" data-controller="datatable">
 
     <% if policy(secondary_sale).owner? %>
       <div id="access-rights-tab" class="tab-pane fade <%= access_right_active ? 'in show active' : '' %>">
@@ -81,7 +77,7 @@
 
             <%= render "custom_notifications/index", custom_notifications: secondary_sale.custom_notifications, owner: secondary_sale %>
 
-        </div>  
+        </div>
       </div>
 
 
@@ -92,8 +88,8 @@
 
       <div id="offerings-tab" class="tab-pane fade <%= offers_active ? 'in show active' : '' %>">
         <div id="offerings" class="associated_entity">
-          <% approved = (policy(secondary_sale).owner? || policy(secondary_sale).rm?) ? false : nil %>          
-          
+          <% approved = (policy(secondary_sale).owner? || policy(secondary_sale).rm?) ? false : nil %>
+
           <% if policy(secondary_sale).owner? || policy(secondary_sale).rm?  %>
             <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false), loading: :lazy  do %>
               <%= render "/layouts/loading" %>
@@ -102,9 +98,9 @@
             <%= turbo_frame_tag "offers_frame", target: "_top", src: offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, approved: approved, card: true), loading: :lazy  do %>
               <%= render "/layouts/loading" %>
             <% end %>
-          <% end %>          
+          <% end %>
 
-        </div>     
+        </div>
       </div>
     <% end %>
 
@@ -114,14 +110,14 @@
           <%= turbo_frame_tag "interests_frame", target: "_top", src: interests_secondary_sale_path(secondary_sale), loading: :lazy do %>
               <%= render "/layouts/loading" %>
           <% end %>
-        </div>     
+        </div>
       </div>
     <% end %>
 
     <!-- Docs is visible to all -->
     <div id="docs-tab" class="tab-pane fade">
       <div id="docs" class="associated_entity">
-        
+
         <%= link_to folder_documents_path(entity_id: secondary_sale.entity_id,
                                       folder_id: secondary_sale.document_folder.id),
                                       class: "load_data_link",
@@ -129,15 +125,15 @@
 
             <span>Loading...</span>
         <% end %>
-        
+
         <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
         <% end %>
 
       </div>
     </div>
-      
 
-      
+
+
   </div>
 
 </div>

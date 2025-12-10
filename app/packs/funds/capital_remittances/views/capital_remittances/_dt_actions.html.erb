@@ -1,45 +1,51 @@
-<div class="btn-group">
-  <div class="dropdown">
-    <button class="btn btn-outline-primary dropdown-toggle" type="button"
-            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="ti ti-settings"></i> <%= t_common(:actions) %>
-    </button>
-    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+<% if capital_remittance.entity_id == current_user.entity_id %>
+  <div class="btn-group">
+    <div class="dropdown">
+      <button class="btn btn-outline-primary dropdown-toggle" type="button"
+              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="ti ti-settings"></i> <%= t_common(:actions) %>
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-      <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item" do %>
-        <i class="ti ti-eye"></i>Show
-      <% end %>
-
-      <% if policy(capital_remittance).verify? %>
-        <% 
-          object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
-          label = object.verified ? "Unverify" : "Verify"
-          msg = object.verified ? "Mark as Unverified?" : "Mark as Verified?"
-          icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
-        %>
-
-        <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
-                      method: :patch, class: "dropdown-item", form_class: "deleteButton",
-                      data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch } do %>
-          <i class="<%= icon_class %>"></i><%= label %>
+        <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item" do %>
+          <i class="ti ti-eye"></i>Show
         <% end %>
-      <% end %>
 
-      <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
-                  class: "dropdown-item" do %>
-        <i class="ti ti-cash"></i>New Payment
-      <% end %>
+        <% if policy(capital_remittance).verify? %>
+          <%
+            object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
+            label = object.verified ? "Unverify" : "Verify"
+            msg = object.verified ? "Mark as Unverified?" : "Mark as Verified?"
+            icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
+          %>
 
-      <% if policy(capital_remittance).preview? %>
-        
-        <div class="dropdown-divider"></div>
+          <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
+                        method: :patch, class: "dropdown-item", form_class: "deleteButton",
+                        data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch } do %>
+            <i class="<%= icon_class %>"></i><%= label %>
+          <% end %>
+        <% end %>
 
-        <%= link_to "Preview Notification", preview_capital_remittance_path(capital_remittance.id, email_method: "notify_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+        <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
+                    class: "dropdown-item" do %>
+          <i class="ti ti-cash"></i>New Payment
+        <% end %>
 
-        <%= link_to "Preview Reminder", preview_capital_remittance_path(capital_remittance.id, email_method: "reminder_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+        <% if policy(capital_remittance).preview? %>
 
-      <% end %>  
+          <div class="dropdown-divider"></div>
+
+          <%= link_to "Preview Notification", preview_capital_remittance_path(capital_remittance.id, email_method: "notify_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+          <%= link_to "Preview Reminder", preview_capital_remittance_path(capital_remittance.id, email_method: "reminder_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+
+        <% end %>
+      </div>
     </div>
-  </div>
 
-</div>
+  </div>
+<% else %>
+  <%= link_to capital_remittance_path(capital_remittance), class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+    <i class="ti ti-eye"></i> <%= t_common(:view) %>
+  <% end %>
+<% end %>

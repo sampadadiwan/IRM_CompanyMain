@@ -16,7 +16,7 @@
 
     <div class="tab-content" data-controller="datatable">
 
-        <div id="payments-tab" class="tab-pane fade in show active">
+        <div id="payments-tab" class="tab-pane fade show active">
           <div id="payments" class="associated_entity">
             <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id) do %>
             <% end %>

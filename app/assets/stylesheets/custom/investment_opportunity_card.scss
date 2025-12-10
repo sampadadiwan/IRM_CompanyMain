@@ -206,6 +206,18 @@
                 }
             }
         }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+
+            &:hover {
+                transform: scale(1.02);
+            }
+        }
     }
   }
 

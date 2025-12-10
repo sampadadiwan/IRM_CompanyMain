@@ -13,8 +13,8 @@
 
   </nav>
 
-  <div class="tab-content">
-    <div id="portfolio-investments-tab" class="tab-pane fade in show active">
+  <div class="tab-content" data-controller="datatable">
+    <div id="portfolio-investments-tab" class="tab-pane fade show active">
       <div id="portfolio_investments_div" class="associated_entity">
         <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(aggregate_portfolio_investment_id: @aggregate_portfolio_investment.id, fund_id: @aggregate_portfolio_investment.fund_id) do %>
           <span>Loading...</span>
@@ -23,13 +23,13 @@
     </div>
 
 
-    <div id="cashflows-tab" class="tab-pane fade in">
+    <div id="cashflows-tab" class="tab-pane fade">
       <div id="cashflows" class="associated_entity">
         <%= render "/portfolio_cashflows/index", portfolio_cashflows: @aggregate_portfolio_investment.portfolio_cashflows.includes(:fund), aggregate_portfolio_investment: @aggregate_portfolio_investment %>
       </div>
     </div>
 
-    <div id="docs-tab" class="tab-pane fade in">
+    <div id="docs-tab" class="tab-pane fade">
       <div id="docs" class="associated_entity">
 
         <%= link_to folder_documents_path(entity_id: @aggregate_portfolio_investment.entity_id,

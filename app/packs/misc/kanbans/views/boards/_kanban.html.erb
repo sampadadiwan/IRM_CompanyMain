@@ -78,11 +78,10 @@
                   <% end %>
                 <% end %>
                 <% if policy(KanbanColumn.new(entity_id: current_user.entity_id)).create? %>
-                  <button type="button add-column-button" aria-haspopup="true" aria-expanded="false" data-testid="add-new-column-button" aria-labelledby=":r13:" data-size="small" class="btn btn-outline-primary square-button column-add">
-                    <span data-component="buttonContent">
-                      <span data-component="leadingVisual">
-                        <h5>+ Add Column</h5>
-                      </span>
+                  <button type="button" aria-haspopup="true" aria-expanded="false" data-testid="add-new-column-button" class="column-add">
+                    <span class="d-flex align-items-center gap-2">
+                        <i class="ti ti-plus"></i>
+                        <h5>Add Column</h5>
                     </span>
                   </button>
                 <% end %>

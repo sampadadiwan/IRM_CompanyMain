@@ -1,11 +1,11 @@
 <% edit_path ||= nil %>
 <% regulatory_custom_fields = object.form_type.present? ? object.form_custom_fields.regulatory : [] %>
-      
+
 <% if regulatory_custom_fields.present? %>
     <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq
     reg_envs.each do |reg_env| %>
 
-        <%= render ToggleCard.new(title: "#{reg_env.humanize.titleize} Reporting Fields", css_class: "show_reporting_fields_#{reg_env}", state: "closed") do %>
+        <%#= render ToggleCard.new(title: "#{reg_env.humanize.titleize} Reporting Fields", css_class: "show_reporting_fields_#{reg_env}", state: "closed") do %>
             <table class="table table-bordered dataTable">
                 <% fields = regulatory_custom_fields.for_env(reg_env) %>
 
@@ -18,6 +18,6 @@
                 </div>
             <% end %>
 
-        <% end %>
+        <%# end %>
     <% end %>
 <% end %>

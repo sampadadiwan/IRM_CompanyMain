@@ -19,7 +19,23 @@ export default class extends Controller {
   clickTab(tab) {
     console.log(`tab_controller switching to #${tab}`);
     // $(`a[href="#${tab}"]`).click();
-    bootstrap.Tab.getOrCreateInstance($(`a[href="#${tab}"]`)).show()
+
+    let tabLink = $(`a[href="#${tab}"]`);
+    if (tabLink.length > 0) {
+      bootstrap.Tab.getOrCreateInstance(tabLink[0]).show()
+    } else {
+      let element = document.getElementById(tab);
+      if (element) {
+        if (element.classList.contains('collapse')) {
+          bootstrap.Collapse.getOrCreateInstance(element).show();
+        } else {
+          let trigger = element.querySelector('[data-bs-toggle="collapse"]');
+          if (trigger) {
+            trigger.click();
+          }
+        }
+      }
+    }
 
 
     if( $(`#${tab} .load_data_link`).length > 0 ) {

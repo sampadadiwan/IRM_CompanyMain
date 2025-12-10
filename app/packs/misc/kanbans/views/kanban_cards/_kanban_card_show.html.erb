@@ -1,35 +1,36 @@
 <div class="card-body kanban_card">
   <div class="task-header">
-    <div>
-      <h3 class="item-head fw-semibold small-heading" data-item-title="Investor Name"><%= kanban_card.title %></h3>
+    <div class="d-flex justify-content-between align-items-start">
+      <h3 class="item-head fw-bold  mb-1" style="font-size: 1rem;" data-item-title="Investor Name"><%= kanban_card.title %></h3>
     </div>
   </div>
-  <div class="task-content">
+
+  <div class="task-content text-muted">
         <% kanban_card.info_field.split(',').each do |info| %>
-          <p class="mb-0" data-item-text= <%= info %>>
+          <p class="mb-1" data-item-text="<%= info %>">
               <%= info.strip %>
           </p>
         <% end %>
   </div>
+
   <div class="task-body">
     <div class="task-bottom">
       <div class="tb-section-1">
-      <span class="hstack fs-2">
-        <i class="ti ti-money fs-5"></i>
-        <% unless kanban_card.tags.nil? || kanban_card.tags.empty? %>
-          <% kanban_card.tags.split(',').each do |tag| %>
-            <%= link_to tag.strip, search_kanban_cards_path(query: tag.strip, kanban_board: kanban_card.kanban_board_id, format: :turbo_stream), method: :get, remote: true, class: "badge bg-secondary text-light fs-1 card-tag", style: "cursor: pointer;" %>
-          <% end %>
-        <% end %>
-      </span>
+         <% unless kanban_card.tags.nil? || kanban_card.tags.empty? %>
+            <% kanban_card.tags.split(',').each do |tag| %>
+                <%= link_to tag.strip, search_kanban_cards_path(query: tag.strip, kanban_board: kanban_card.kanban_board_id, format: :turbo_stream), method: :get, remote: true, class: "card-tag" %>
+            <% end %>
+         <% else %>
+             <span class="text-light"><i class="ti ti-tag"></i></span>
+         <% end %>
       </div>
       <div class="tb-section-2">
         <%  if Rails.env.test? %>
-          <div class="move-to-up-column">
-            <button class="btn btn-outline-primary btn-sm">^</button>
+          <div class="move-to-up-column d-inline-block">
+            <button class="btn btn-sm btn-light text-muted p-1" title="Move Up"><i class="ti ti-arrow-up"></i></button>
           </div>
-          <div class="move-to-next-column">
-            <button class="btn btn-outline-primary btn-sm">>></button>
+          <div class="move-to-next-column d-inline-block">
+             <button class="btn btn-sm btn-light text-muted p-1" title="Move Next"><i class="ti ti-arrow-right"></i></button>
           </div>
         <% end %>
       </div>

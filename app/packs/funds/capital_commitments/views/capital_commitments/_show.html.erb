@@ -1,437 +1,303 @@
 <% toggle_state = params[:toggle_state] || "closed" %>
-<%= render ToggleCard.new(title: "Commitment: #{capital_commitment.investor_name}", css_class: "show_commitments", state: toggle_state) do %>
+  <div class="row g-4">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-  <table class="table table-bordered dataTable">
-    <tr class="">
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= capital_commitment.entity.name %>
-      </td>
-    </tr>
+      <!-- Commitment Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-file-certificate me-2 text-primary"></i>Commitment: <%= capital_commitment.investor_name %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= capital_commitment.entity.name %></div>
+            </div>
 
-    <tr class="">
-      <td>
-        Fund
-      </td>
-      <td>
-        <%= link_to capital_commitment.fund.name, capital_commitment.fund %>
-      </td>
-    </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to capital_commitment.fund.name, capital_commitment.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-    <% if link_to capital_commitment.feeder_fund.present? %>
-    <tr class="">
-      <td>
-        Feeder Fund
-      </td>
-      <td>
-        <%= link_to capital_commitment.feeder_fund %>
-      </td>
-    </tr>
-    <% end %>
+            <% if capital_commitment.feeder_fund.present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Feeder Fund</label>
+                <div class="fs-4"><%= link_to capital_commitment.feeder_fund.name, capital_commitment.feeder_fund, class: "text-decoration-none fw-bold text-primary" %></div>
+              </div>
+            <% end %>
 
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Stakeholder</label>
+              <div class="fs-4"><%= link_to capital_commitment.investor_name, investor_path(id: capital_commitment.investor_id), class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-    <tr class="">
-      <td>
-        Stakeholder
-      </td>
-      <td>
-        <%= link_to capital_commitment.investor_name, investor_path(id: capital_commitment.investor_id) %>
-      </td>
-    </tr>
+            <% if capital_commitment.commitment_date %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Date</label>
+                <div class="fs-4 fw-medium "><%= l capital_commitment.commitment_date %></div>
+              </div>
+            <% end %>
 
-    <% if capital_commitment.commitment_date %>
-      <tr class="">
-        <td>
-          Date
-        </td>
-        <td>
-          <%= l capital_commitment.commitment_date %>
-        </td>
-      </tr>
-    <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Folio Id</label>
+              <div class="fs-4 fw-medium "><%= capital_commitment.folio_id %></div>
+            </div>
 
-      <tr class="">
-        <td>
-          Folio Id
-        </td>
-        <td>
-          <%= capital_commitment.folio_id %>
-        </td>
-      </tr>
+            <% if capital_commitment.virtual_bank_account.present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Virtual Bank Account</label>
+                <div class="fs-4 fw-medium "><%= capital_commitment.virtual_bank_account %></div>
+              </div>
+            <% end %>
 
-    <% if capital_commitment.virtual_bank_account.present? %>
-      <tr class="">
-        <td>
-          Virtual Bank Account
-        </td>
-        <td>
-          <%= capital_commitment.virtual_bank_account %>
-        </td>
-      </tr>
-    <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund Close</label>
+              <div class="fs-4 fw-medium "><%= capital_commitment.fund_close %></div>
+            </div>
 
-    <tr class="">
-      <td>
-        Fund Close
-      </td>
-      <td>
-        <%= capital_commitment.fund_close %>
-      </td>
-    </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Linked KYC</label>
+              <div class="fs-4">
+                <% if capital_commitment.investor_kyc %>
+                  <%= link_to capital_commitment.investor_kyc.full_name, capital_commitment.investor_kyc, class: "text-decoration-none text-primary" %>
+                <% else %>
+                  <span class="badge bg-danger">No KYC</span>
+                <% end %>
+              </div>
+            </div>
 
-    <tr class="">
-      <td>
-        Linked KYC
-      </td>
-      <td>
-        <% if capital_commitment.investor_kyc %>
-          <%= link_to capital_commitment.investor_kyc.full_name, capital_commitment.investor_kyc %>
-          <br>
-          <% if capital_commitment.investor_kyc.verified %>
-            <span class="badge bg-success">Verified</span>
-          <% else %>
-            <span class="badge bg-warning">Not Verified</span>
-          <% end %>
-        <% else %>
-          <span class="badge bg-danger">No KYC</span>
-        <% end %>
-      </td>
-    </tr>
+            <% if capital_commitment.fund.unit_types.present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Unit Type</label>
+                <div class="fs-4 fw-medium "><%= capital_commitment.unit_type %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Total Units</label>
+                <div class="fs-4 fw-medium "><%= capital_commitment.total_fund_units_quantity %></div>
+              </div>
+            <% end %>
 
+            <div class="col-12">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investor Signatory Emails</label>
+              <div class="fs-4 fw-medium "><%= capital_commitment.esign_emails %></div>
+            </div>
 
-    <% if capital_commitment.fund.unit_types.present? %>
+            <% if capital_commitment.notes.present? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <div class="fs-4 fw-medium "><%= capital_commitment.notes.html_safe %></div>
+              </div>
+            <% end %>
 
-    <tr class="">
-      <td>
-        Unit Type
-      </td>
-      <td>
-        <%= capital_commitment.unit_type %>
-      </td>
-    </tr>
-
-    <tr class="">
-      <td>
-        Total Units
-      </td>
-      <td>
-        <%= capital_commitment.total_fund_units_quantity %>
-      </td>
-    </tr>
-
-    <% end %>
-
-    <% if capital_commitment.adjustment_amount_cents > 0 || capital_commitment.foreign_currency? %>
-
-      <tr class="">
-        <td>
-          Folio Currency
-        </td>
-        <td>
-          <%= capital_commitment.folio_currency %>
-        </td>
-      </tr>
-
-      <tr class="">
-        <td>
-          Folio Committed Amount
-        </td>
-        <td>
-          <%= money_to_currency capital_commitment.folio_committed_amount, params %>
-        </td>
-      </tr>
-
-      <% if capital_commitment.adjustment_amount_cents != 0 %>
-
-        <tr class="">
-          <td>
-            Original Folio Committed Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_commitment.orig_folio_committed_amount, params %>
-          </td>
-        </tr>
-
-        <tr class="">
-          <td>
-            Adjustment Folio Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_commitment.adjustment_folio_amount, params %>
-          </td>
-        </tr>
-
-        <tr class="">
-          <td>
-            Adjustment Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_commitment.adjustment_amount, params %>
-          </td>
-        </tr>
-
-      <% end %>
-
-    <% end %>
-
-    <tr class="">
-      <td>
-        Committed Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_commitment.committed_amount, params %>
-        <% if capital_commitment.foreign_currency? %>
-          <br>
-          Adjustments + Original
-          <br>
-          <%= money_to_currency(capital_commitment.adjustment_amount, params) %> +
-          <%= money_to_currency(capital_commitment.orig_committed_amount, params) %>
-        <% end %>
-      </td>
-    </tr>
-
-
-    <tr class="">
-      <td>
-        Called Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_commitment.call_amount, params %>
-      </td>
-    </tr>
-
-    <tr class="">
-      <td>
-        Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_commitment.collected_amount, params %>
-      </td>
-    </tr>
-
-
-    <tr class="">
-      <td>
-        Called - Collected
-      </td>
-      <td>
-        <span class="<%= capital_commitment.pending_call_amount != 0 ? 'text-danger': '' %>"><%= money_to_currency capital_commitment.pending_call_amount, params %></span>
-
-        <div class="progress">
-          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
-            <%= capital_commitment.percentage_pending_call %> % Paid
           </div>
         </div>
-      </td>
-    </tr>
+      </div>
 
-    <tr class="">
-      <td>
-        Committed - Collected
-      </td>
-      <td>
-        <%= money_to_currency capital_commitment.pending_committed_amount, params %>
+       <!-- Other Details Card -->
+       <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+        </div>
+        <div class="card-body">
+             <% if current_user %>
+               <table class="table table-borderless mb-0">
+                <%= display_custom_fields(capital_commitment) %>
+               </table>
+            <% end %>
+        </div>
+      </div>
 
-        <div class="progress">
-          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
-            <%= capital_commitment.percentage_pending_committed %> % Collected
-          </div>
+    </div>
+
+    <!-- Right Column: Financials & Status -->
+    <div class="col-lg-4">
+
+        <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Onboarding Complete</span>
+                    <span class="fw-bold "><%= display_boolean capital_commitment.onboarding_completed %></span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">KYC Verified</span>
+                    <span class="fw-bold ">
+                      <% if capital_commitment&.investor_kyc&.verified %>
+                        <span class="badge bg-success ms-2">Verified</span>
+                      <% else %>
+                        <span class="badge bg-warning ms-2">Not Verified</span>
+                      <% end %>
+                    </span>
+                </li>
+
+            </ul>
         </div>
 
-      </td>
-    </tr>
+        <!-- Financials -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <% if capital_commitment.adjustment_amount_cents > 0 || capital_commitment.foreign_currency? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Folio Currency</span>
+                        <span class="fw-bold "><%= capital_commitment.folio_currency %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Folio Committed Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.folio_committed_amount, params %></span>
+                    </li>
 
-    <tr class="">
-      <td>
-        Distributed Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_commitment.distribution_amount, params %>
-      </td>
-    </tr>
+                    <% if capital_commitment.adjustment_amount_cents != 0 %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted">Original Folio Committed</span>
+                            <span class="fw-bold "><%= money_to_currency capital_commitment.orig_folio_committed_amount, params %></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted">Adjustment Folio Amount</span>
+                            <span class="fw-bold "><%= money_to_currency capital_commitment.adjustment_folio_amount, params %></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted">Adjustment Amount</span>
+                            <span class="fw-bold "><%= money_to_currency capital_commitment.adjustment_amount, params %></span>
+                        </li>
+                    <% end %>
+                <% end %>
 
+                <li class="list-group-item py-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted">Committed Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.committed_amount, params %></span>
+                    </div>
+                     <% if capital_commitment.foreign_currency? %>
+                        <small class="text-muted d-block text-end">
+                            Adjustments + Original: <%= money_to_currency(capital_commitment.adjustment_amount, params) %> + <%= money_to_currency(capital_commitment.orig_committed_amount, params) %>
+                        </small>
+                    <% end %>
+                </li>
 
-    <% if capital_commitment.fund.has_tracking_currency? %>
-      <tr class="">
-        <td>
-          Tracking Currency
-        </td>
-        <td>
-          <%= capital_commitment.fund.tracking_currency %>
-        </td>
-      </tr>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Called Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_commitment.call_amount, params %></span>
+                </li>
 
-      <tr class="">
-        <td>
-          Tracking Committed Amount
-        </td>
-        <td>
-          <%= money_to_currency capital_commitment.tracking_committed_amount, params %>
-        </td>
-      </tr>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Collected Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_commitment.collected_amount, params %></span>
+                </li>
 
-    <% end %>
+                <li class="list-group-item py-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Called - Collected</span>
+                        <span class="fw-bold  <%= capital_commitment.pending_call_amount != 0 ? 'text-danger': '' %>"><%= money_to_currency capital_commitment.pending_call_amount, params %></span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
+                           <%= capital_commitment.percentage_pending_call %> % Paid
+                        </div>
+                    </div>
+                </li>
 
-    <tr class="">
-      <td>
-        Onboarding Complete
-      </td>
-      <td>
-        <%= display_boolean capital_commitment.onboarding_completed %>
-      </td>
-    </tr>
+                <li class="list-group-item py-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Committed - Collected</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.pending_committed_amount, params %></span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
+                            <%= capital_commitment.percentage_pending_committed %> % Collected
+                        </div>
+                    </div>
+                </li>
 
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Distributed Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_commitment.distribution_amount, params %></span>
+                </li>
 
-    <% if capital_commitment.entity.permissions.enable_account_entries? %>
-      <tr class="">
-        <td>
-          Total Allocated Expense
-        </td>
-        <td>
-          <%= money_to_currency capital_commitment.total_allocated_expense, params %>
-        </td>
-      </tr>
+                <% if capital_commitment.fund.has_tracking_currency? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Tracking Currency</span>
+                        <span class="fw-bold "><%= capital_commitment.fund.tracking_currency %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Tracking Committed Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.tracking_committed_amount, params %></span>
+                    </li>
+                <% end %>
 
-      <tr class="">
-        <td>
-          Total Allocated Income
-        </td>
-        <td>
-          <%= money_to_currency capital_commitment.total_allocated_income, params %>
-        </td>
-      </tr>
-    <% end %>
+                <% if capital_commitment.entity.permissions.enable_account_entries? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Total Allocated Expense</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.total_allocated_expense, params %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Total Allocated Income</span>
+                        <span class="fw-bold "><%= money_to_currency capital_commitment.total_allocated_income, params %></span>
+                    </li>
+                <% end %>
+            </ul>
+        </div>
 
+        <% if params[:debug].present? %>
+            <%
+                end_date = params[:end_date].present? ? Date.local_parse(params[:end_date]) : Time.zone.today
+                cc_calcs = CapitalCommitmentCalcs.new(capital_commitment, end_date)
+            %>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3">
+                <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-bug me-2 text-danger"></i>Debug Info</h6>
+                </div>
+                 <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Cash In Hand</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.cash_in_hand_cents, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Net Current Assets</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.net_current_assets_cents, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Estimated Carry</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.estimated_carry_cents, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Collected</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.collected_cents, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">DPI</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.dpi, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">RVPI</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.rvpi, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">TVPI</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.tvpi, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">FMV</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.fmv_on_date, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Gross XIRR</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.xirr, capital_commitment.fund.currency, params  %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Net XIRR</span>
+                        <span class="fw-bold "><%= currency_from_cents cc_calcs.xirr(net_irr: true), capital_commitment.fund.currency, params  %></span>
+                    </li>
+                 </ul>
+            </div>
+        <% end %>
+    </div>
 
-    <%= display_custom_fields(capital_commitment) if current_user %>
-
-    <tr class="">
-      <td>
-        Investor Signatory Emails
-      </td>
-      <td>
-        <%= capital_commitment.esign_emails %>
-      </td>
-    </tr>
-
-
-    <tr  class="">
-      <td>
-        Notes
-      </td>
-      <td>
-        <%= capital_commitment.notes.html_safe if capital_commitment.notes %>
-      </td>
-    </tr>
-
-    <% if params[:debug].present? %>
-    <tr class=" btn-outline-primary">
-      <td colspan="2">
-      </td>
-    </tr>
-
-    <%
-      end_date = params[:end_date].present? ? Date.local_parse(params[:end_date]) : Time.zone.today
-      cc_calcs = CapitalCommitmentCalcs.new(capital_commitment, end_date)
-    %>
-
-          <tr class="">
-            <td>
-              Cash In Hand
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.cash_in_hand_cents, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              Net Current Assets
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.net_current_assets_cents, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              Esitmated Carry
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.estimated_carry_cents, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-
-
-          <tr class="">
-            <td>
-              Collected
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.collected_cents, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              DPI
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.dpi, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              RVPI
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.rvpi, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              TVPI
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.tvpi, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              FMV
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.fmv_on_date, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-
-          <tr class="">
-            <td>
-              Gross XIRR
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.xirr, capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-          <tr class="">
-            <td>
-              Net XIRR
-            </td>
-            <td>
-              <%= currency_from_cents cc_calcs.xirr(net_irr: true), capital_commitment.fund.currency, params  %>
-            </td>
-          </tr>
-
-    <% end %>
-
-  </table>
-
-<% end %>
+  </div>

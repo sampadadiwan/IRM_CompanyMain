@@ -1,24 +1,73 @@
 <div class="container-fluid px-2">
-  <%# color should alternate between success and info %>
-  <%
-    color = "info"
-  %>
   <% units ||= nil%>
   <div class="row">
     <% deals.each_with_index do |deal, index| %>
-      <% color = color == "info" ? "success" : "info" %>
+      <div class="col-md-4 mb-3">
+        <div class="investment-opportunity-card h-100">
+          <div class="card-header-custom">
+            <div class="company-info">
+              <h3 class="company-title">
+                <%= link_to deal.name, deal_path(deal) %>
+              </h3>
+            </div>
+            <% if deal.entity&.respond_to?(:logo) && deal.entity.logo.present? %>
+               <%#= image_tag deal.entity.logo.url, class: "company-logo" %>
+            <% end %>
+          </div>
 
-      <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
-      <% subtitle = units.present? ? money_to_currency(deal.amount, {units: units}, view_cookies: cookies) : "#{deal.amount} #{deal.currency}"%>
-        <%= render(NumberStatsComponent.new(
-          path: deal_path(deal),
-          amount: deal.name,
-          subtitle: subtitle,
-          progress_bar_color: color,
-          css_class: "darker-shadow-offwhite"
-        )) %>
+          <div class="card-body-custom">
+            <!-- Hero Metric -->
+            <div class="hero-metric">
+              <div class="icon-box">
+                <i class="ti ti-currency-dollar"></i>
+              </div>
+              <div class="content">
+                <span class="label">Deal Size</span>
+                <% subtitle = money_to_currency(deal.amount, params) %>
+                <span class="value"><%= subtitle %></span>
+              </div>
+            </div>
+
+            <!-- Secondary Metrics Grid -->
+            <div class="secondary-metrics">
+              <div class="metric-item">
+                <div class="icon-label">
+                  <i class="ti ti-activity"></i>
+                  <span>Status</span>
+                </div>
+                <span class="value"><%= deal.status %></span>
+              </div>
+
+              <div class="metric-item">
+                <div class="icon-label">
+                  <i class="ti ti-calendar"></i>
+                  <span>Start Date</span>
+                </div>
+                <span class="value"><%= deal.start_date&.strftime("%d %b %Y") || deal.created_at.strftime("%d %b %Y") %></span>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <% if deal.tags.present? %>
+              <% tags = deal.tags.is_a?(String) ? deal.tags.split(",") : deal.tags %>
+              <% if tags.any? %>
+                <div class="tags-section mt-auto pt-3 border-top">
+                  <% tags.each do |tag| %>
+                    <%= link_to tag.strip, deals_path(tag: tag.strip), class: "badge rounded-pill bg-light text-dark text-decoration-none border me-1" %>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <div class="action-footer">
+            <%= link_to deal_path(deal), class: "btn btn-view-opportunity" do %>
+              <span>View Deal</span>
+              <i class="ti ti-arrow-right"></i>
+            <% end %>
+          </div>
+        </div>
       </div>
-
     <% end %>
   </div>
 </div>

@@ -1,68 +1,82 @@
-<%= render ToggleCard.new(title: "Support Agent Report", css_class: "show_support_agent_report") do %>
+<div class="container-fluid p-3">
+  <%= render ToggleCard.new(title: "Support Agent: #{support_agent_report.support_agent.name}", css_class: "show_support_agent_report") do %>
 
-  <table class="table table-bordered dataTable no_hover_table">
-
-    <tr>
-      <td>Agent</td>
-      <td><%= support_agent_report.support_agent.name || support_agent_report.support_agent_id %></td>
-    </tr>
+  <div class="row">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
 
-    <tr>
-      <td>Status</td>
-      <td> <span class="badge <%= support_agent_report.status == "completed" ? "bg-success" : "bg-warning" %>"> <%= support_agent_report.status&.humanize %></span> </td>
-    </tr>
 
+      <% if support_agent_report.json_fields.present? %>
+        <% json_data = support_agent_report.json_fields.with_indifferent_access %>
+        <!-- Report Details / Issues -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+              <h5 class="mb-0 fw-bold "><i class="ti ti-list-details me-2 text-warning"></i>Report Details</h5>
 
-    <tr>
-      <td>Created at</td>
-      <td><%= l(support_agent_report.created_at) %></td>
-    </tr>
+            </div>
+            <div class="card-body p-0">
+                <div class="bg-light row py-2 px-3 fw-bold border-bottom mx-0">
+                    <div class="col-2">Category</div>
+                    <div class="col-2">Type</div>
+                    <div class="col-6">Message</div>
+                    <div class="col-2">Severity</div>
+                </div>
 
-    <tr>
-      <td>Updated at</td>
-      <td><%= l(support_agent_report.updated_at) %></td>
-    </tr>
+                <% json_data.each do |category, issues| %>
+                  <% issues.each do |issue| %>
+                    <div class="row py-2 px-3 border-bottom mx-0">
+                        <div class="col-2"><%= category.to_s.humanize %></div>
+                        <div class="col-2"><%= issue["type"]&.humanize %></div>
+                        <div class="col-6"><%= issue["message"] %></div>
+                        <div class="col-2">
+                            <%
+                              badge_color = case issue["severity"]&.downcase
+                                            when "blocking"
+                                              "bg-danger text-white"
+                                            when "success"
+                                              "bg-success-subtle text-success"
+                                            else
+                                              "bg-warning-subtle text-warning"
+                                            end
+                            %>
+                            <span class="badge <%= badge_color %>"><%= issue["severity"]&.humanize %></span>
+                        </div>
+                    </div>
+                  <% end %>
+                <% end %>
+            </div>
+        </div>
+      <% end %>
 
-  </table>
+    </div>
 
+    <!-- Right Column: Metadata -->
+    <div class="col-lg-4">
 
-  <% if support_agent_report.json_fields.present? %>
-    <% json_data = support_agent_report.json_fields.with_indifferent_access %>
-    <table class="table table-striped datatable jqDataTable">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Type</th>
-          <th>Message</th>
-          <th>Severity</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% json_data.each do |category, issues| %>
-          <% issues.each do |issue| %>
-            <tr>
-              <td><%= category.to_s.humanize %></td>
-              <td><%= issue["type"]&.humanize %></td>
-              <td><%= issue["message"] %></td>
-              <%
-                # Badge color based on severity blocking is danger, success is success, others are warning
-                badge_color = case issue["severity"]&.downcase
-                              when "blocking"
-                                "bg-danger text-white"
-                              when "success"
-                                "bg-success-subtle text-success"
-                              else
-                                "bg-warning-subtle text-warning"
-                              end
-              %>
-              <td><span class="mb-1 badge <%= badge_color %>"><%= issue["severity"]&.humanize %></span></td>
-            </tr>
-          <% end %>
-        <% end %>
-      </tbody>
-    </table>
+        <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-info-circle me-2 text-info"></i>Metadata</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Status</span>
+                    <span class="badge <%= support_agent_report.status == "completed" ? "bg-success" : "bg-warning" %>"> <%= support_agent_report.status&.humanize %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Created at</span>
+                    <span class="fw-bold "><%= l(support_agent_report.created_at) %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Updated at</span>
+                    <span class="fw-bold "><%= l(support_agent_report.updated_at) %></span>
+                </li>
+            </ul>
+        </div>
 
+    </div>
+
+  </div>
   <% end %>
-
-<% end %>
+</div>

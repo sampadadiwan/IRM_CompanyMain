@@ -29,7 +29,7 @@
     fill_in("offer_full_name", with: @offer.full_name)
 
     if(@offer.secondary_sale && @offer.secondary_sale.finalized)
-      click_on("Next")      
+      click_on("Next")
       fill_in("offer_PAN", with: @offer.PAN)
       fill_in("offer_address", with: @offer.address)
       # fill_in("offer_city", with: @offer.city)
@@ -82,7 +82,7 @@
       # expect(page).to have_content(@offer.bank_routing_info)
     end
 
-    within("tr#approved") do
+    within("li#approved") do
         expect(page).to have_content(@offer.approved ? "Yes" : "No")
     end
 
@@ -102,14 +102,14 @@
     click_on("Offers")
     # Check if this has the card class
     if @offer.full_name.present?
-      expect(page).to have_content(@offer.full_name)  
+      expect(page).to have_content(@offer.full_name)
     else
       expect(page).to have_content(@user.full_name)
     end
     # expect(page).to have_content(@entity.name)
     # expect(page).to have_content(@offer.quantity)
     expect(page).to have_content(@offer.allocation_quantity)
-    # within("td.approved") do
+    # within("li.approved") do
         # expect(page).to have_content("No")
     # end
   end
@@ -140,7 +140,7 @@ Then('I should see all the offers') do
         expect(page).to have_content(offer.investor.investor_name)
         expect(page).to have_content(offer.quantity)
         expect(page).to have_content(offer.percentage)
-        # within("td.approved") do
+        # within("li.approved") do
           if offer.approved
             expect(page).to have_content("Yes")
           else
@@ -160,7 +160,7 @@ Offer.all.each do |offer|
     offer.reload
     offer.approved.should == true
 
-    within("td.approved") do
+    within("li#approved") do
       expect(page).to have_content("Yes")
     end
 
@@ -253,7 +253,7 @@ Given('I add pan details to the offer') do
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
   fill_in("offer_full_name", with: Faker::Name.unique.name)
-  click_on("Next")  
+  click_on("Next")
   fill_in("offer_PAN", with: Faker::Alphanumeric.alphanumeric(number: 10).upcase)
   attach_file("files[]", File.absolute_path("./public/sample_uploads/example_pan.jpeg"), make_visible: true)
   sleep(1)
@@ -277,7 +277,7 @@ Then('when the offer name is updated') do
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
   fill_in("offer_full_name", with: Faker::Name.unique.name)
-  click_on("Next")  
+  click_on("Next")
   click_on("Next")
   click_on("Save")
 end
@@ -305,7 +305,7 @@ Given('I add bank details to the offer') do
   @offer.update!(approved: true)
   visit(edit_offer_path(@offer))
   fill_in("offer_full_name", with: Faker::Name.unique.name)
-  click_on("Next")  
+  click_on("Next")
   fill_in("offer_address", with: @offer.address)
   fill_in("offer_bank_account_number", with: Faker::Bank.unique.account_number)
   fill_in("offer_ifsc_code", with: Faker::Bank.swift_bic)

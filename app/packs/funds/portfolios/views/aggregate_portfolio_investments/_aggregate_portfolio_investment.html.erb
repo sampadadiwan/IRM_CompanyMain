@@ -35,7 +35,7 @@
                         "portfolio_investment[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id,
                         "portfolio_investment[portfolio_company_id]": aggregate_portfolio_investment.portfolio_company_id),
                       class: "dropdown-item d-flex align-items-center ti ti-plus",
-                      data: { turbo: false } %>
+                      data: { turbo: false } if policy(aggregate_portfolio_investment).add_investment? %>
         </li>
       </ul>
     </div>

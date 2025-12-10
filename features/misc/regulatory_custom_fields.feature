@@ -77,7 +77,7 @@ Scenario Outline: Create investment instrument - with a incorrect Regulatory Cus
   Then "SEBI" regulatory fields are added to the "InvestmentInstrument" form
   Given I am using the last instrument created with the custom form tag "NOTSEBI"
   Given I go to see the Instrument details on the details page
-  Then I should see "Sebi Reporting Fields"
+  Then I should see "Reporting Fields"
   Given I go to edit the instrument created with the custom form tag "NOTSEBI"
   And I edit the instrument form with the regulatory fields
   Then I should see the "Investment instrument was successfully updated"

@@ -111,6 +111,7 @@ class PortfolioCompanyAgent < SupportAgentService
   # Stores report as persisted SupportAgentReport record.
   def generate_progress_reports(ctx, portfolio_company:, support_agent:, **)
     super(ctx, model: portfolio_company, support_agent: support_agent)
+
     AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id)
     true
   end

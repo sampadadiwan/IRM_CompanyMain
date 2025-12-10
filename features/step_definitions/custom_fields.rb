@@ -172,10 +172,10 @@ Then('I should see the Instrument details on the details page and regulatory fie
   expect(page).to have_content("INR")
   expect(page).to have_content("Domestic")
   if fields_present == "present"
-    expect(page).to have_css('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true)
-    find('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true).click
+    expect(page).to have_css('a.show_details_link[href=".show_reporting_fields"]', visible: true)
+    find('a.show_details_link[href=".show_reporting_fields"]', visible: true).click
 
-    expect(page).to have_content("Sebi Reporting Fields")
+    expect(page).to have_content("Reporting Fields")
     expect(page).to have_content("Type of Investee Company")
     expect(page).to have_content("Type of Security")
     expect(page).to have_content("Details of Security (if Type of Security chosen is Others)")
@@ -194,8 +194,6 @@ Then('I should see the Instrument details on the details page and regulatory fie
     expect(page).to have_content("Yes")
     expect(page).to have_content("Biotechnology")
   else
-    expect(page).not_to have_css('a.show_details_link[href=".show_reporting_fields_SEBI"]')
-    expect(page).not_to have_content("Sebi Reporting Fields")
     expect(page).not_to have_content("Type of Investee Company")
     expect(page).not_to have_content("Type of Security")
     expect(page).not_to have_content("Details of Security (if Type of Security chosen is Others)")
@@ -219,17 +217,15 @@ Then('I should see the investor kyc details on the details page and regulatory f
   expect(page).to have_content(@kyc.bank_account_number)
   expect(page).to have_content(@kyc.ifsc_code)
   if string == "present"
-    expect(page).to have_css('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true)
-    find('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true).click
-
-    expect(page).to have_content("Sebi Reporting Fields")
+    # expect(page).to have_css('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true)
+    # find('a.show_details_link[href=".show_reporting_fields_SEBI"]', visible: true).click
+    expect(page).to have_content("Reporting Fields")
     expect(page).to have_content("Investor Category")
     expect(page).to have_content("Investor Sub Category")
     expect(page).to have_content(@kyc.json_fields["sebi_investor_category"])
     expect(page).to have_content(@kyc.json_fields["sebi_investor_sub_category"])
   else
     expect(page).not_to have_css('a.show_details_link[href=".show_reporting_fields_SEBI"]')
-    expect(page).not_to have_content("Sebi Reporting Fields")
     expect(page).not_to have_content("Investor Category")
     expect(page).not_to have_content("Investor Sub Category")
   end

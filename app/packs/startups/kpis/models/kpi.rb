@@ -36,6 +36,7 @@ class Kpi < ApplicationRecord
   scope :actuals,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Actual') }
   scope :budgets,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Budget') }
   scope :ics,        -> { joins(:kpi_report).where('kpi_reports.tag_list': 'IC') }
+  scope :as_of,      ->(date) { joins(:kpi_report).where('kpi_reports.as_of': date) }
   scope :show_in_report, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { show_in_report: true }) }
 
   # --- Scopes needing joins -------------------------------------------

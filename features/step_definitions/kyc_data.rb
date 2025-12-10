@@ -208,7 +208,7 @@ end
 When('I navigate to the {string} tab for the investor kyc') do |string|
   @investor_kyc ||= InvestorKyc.last
   visit(investor_kyc_path(@investor_kyc))
-  expect(page).to have_content("KYC Type")
+  expect(page).to have_content("KYC TYPE")
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   click_on(string)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')

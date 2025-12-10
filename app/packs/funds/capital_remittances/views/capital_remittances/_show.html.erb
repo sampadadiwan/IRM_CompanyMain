@@ -1,329 +1,254 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3 d-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Remittance: <%= capital_remittance.investor_name %></h6>
-      <span>
-      </span>
-  </div>
-  <div class="card-body show_details">
-    <table class="table table-bordered dataTable">
+<%= render ToggleCard.new(title: "Remittance: #{capital_remittance.investor_name} : #{capital_remittance.fund.name}", css_class: "show_remittances_#{capital_remittance.id}") do %>
+  <div class="row">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-        <tr>
-          <td>
-            Fund
-          </td>
-          <td>
-            <%= link_to capital_remittance.fund.name, capital_remittance.fund %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Capital Call
-          </td>
-          <td>
-            <%= current_user && current_user.entity_id == capital_remittance.entity_id ? link_to(capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab")) : capital_remittance.capital_call.name %>
-          </td>
-        </tr>
+      <!-- Remittance Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-receipt me-2 text-primary"></i><%= link_to "Remittance Details", capital_remittance %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to capital_remittance.fund.name, capital_remittance.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-        <tr>
-          <td>
-            Drawdown Date
-          </td>
-          <td>
-            <%= l capital_remittance.remittance_date %>
-          </td>
-        </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Capital Call</label>
+              <div class="fs-4"><%= current_user && current_user.entity_id == capital_remittance.entity_id ? link_to(capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab"), class: "text-decoration-none fw-bold text-primary") : capital_remittance.capital_call.name %></div>
+            </div>
 
-        <% if capital_remittance.payment_date %>
-        <tr>
-          <td>
-            Payment Date
-          </td>
-          <td>
-            <%= l capital_remittance.payment_date if capital_remittance.payment_date %>
-          </td>
-        </tr>
-        <% end %>
+            <div class="col-md-6">
+               <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Stakeholder</label>
+               <div class="fs-4 fw-medium ">
+                  <% if current_user %>
+                    <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id), class: "text-decoration-none fw-bold text-primary" %>
+                  <% else %>
+                    <%= capital_remittance.investor_name %>
+                  <% end %>
+               </div>
+            </div>
 
-        <tr>
-          <td>
-            Stakeholder
-          </td>
-          <td>
-            <% if current_user %>
-              <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id) %>
-            <% else %>
-              <%= capital_remittance.investor_name %>
+            <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Folio No</label>
+                <div class="fs-4"><%= link_to capital_remittance.folio_id, capital_remittance.capital_commitment, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Drawdown Date</label>
+              <div class="fs-4 fw-medium "><%= l capital_remittance.remittance_date %></div>
+            </div>
+
+            <% if capital_remittance.payment_date %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Payment Date</label>
+                  <div class="fs-4 fw-medium "><%= l capital_remittance.payment_date if capital_remittance.payment_date %></div>
+                </div>
             <% end %>
-          </td>
-        </tr>
 
-        <tr>
-          <td>
-            Folio No
-          </td>
-          <td>
-            <%= link_to capital_remittance.folio_id, capital_remittance.capital_commitment %>
-          </td>
-        </tr>
+            <% if capital_remittance.exchange_rate %>
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Exchange Rate</label>
+                    <div class="fs-4 fw-medium "><%= link_to capital_remittance.exchange_rate, class: "text-decoration-none fw-bold text-primary" %></div>
+                </div>
+            <% end %>
 
-        <tr>
-          <td>
-            Call Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.call_amount, params %>
-          </td>
-        </tr>
-
-
-        <% if capital_remittance.investment_amount_cents > 0 %>
-        <tr>
-          <td>
-            Investment Amount
-          </td>
-          <td>
-            <div class="money-wrapper">
-                <span><%= money_to_currency capital_remittance.investment_amount, params %></span>
+            <% if capital_remittance.notes.present? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <div class="fs-4 fw-medium "><%= capital_remittance.notes.html_safe %></div>
               </div>
-              <ul class="fees-list">
-              <% @capital_remittance.json_fields["investment_amount_audit"]&.each do |fee_array| %>
-                  <% fee_array.each do |fee| %>
-                    <li class="fee-item">
-                      <span class="fee-name"><%= fee[0] %></span>
-                      <span class="fee-description"><%= fee[1] %></span>
-                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
-                    </li>
-                  <% end %>
+            <% end %>
+
+          </div>
+        </div>
+      </div>
+
+       <% if current_user %>
+            <!-- Other Details Card -->
+           <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+              <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+            </div>
+            <div class="card-body">
+                 <table class="table table-borderless mb-0">
+                  <%= display_custom_fields(capital_remittance) %>
+                 </table>
+            </div>
+          </div>
+        <% end %>
+
+    </div>
+
+    <!-- Right Column: Status -->
+    <div class="col-lg-4">
+
+         <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <% if true || current_user && !current_user.curr_role_investor? %>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Verified</span>
+                    <span class="fw-bold "><%= display_boolean(capital_remittance.verified) %></span>
+                </li>
+
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Status</span>
+                    <span class="fw-bold "><%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
+                    with_content(capital_remittance.status) if capital_remittance.status %></span>
+                </li>
+
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Notification Sent</span>
+                    <span class="fw-bold "><%= display_boolean capital_remittance.notification_sent %></span>
+                </li>
                 <% end %>
-              </ul>
-          </td>
-        </tr>
-        <% end %>
+            </ul>
+        </div>
 
-        <% if capital_remittance.capital_fee_cents > 0 %>
-        <tr>
-          <td>
-            Capital Fees
-          </td>
-          <td>
-              <div class="money-wrapper">
-                <span><%= money_to_currency capital_remittance.capital_fee, params %></span>
-              </div>
-              <ul class="fees-list">
-              <% @capital_remittance.json_fields["capital_fees_audit"]&.each do |fee_array| %>
-                  <% fee_array.each do |fee| %>
-                    <li class="fee-item">
-                      <span class="fee-name"><%= fee[0] %></span>
-                      <span class="fee-description"><%= fee[1] %></span>
-                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
-                    </li>
-                  <% end %>
+        <!-- Financials -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Call Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_remittance.call_amount, params %></span>
+                </li>
+
+                <% if capital_remittance.investment_amount_cents > 0 %>
+                     <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                             <span class="text-muted">Investment Amount</span>
+                             <span class="fw-bold "><%= money_to_currency capital_remittance.investment_amount, params %></span>
+                        </div>
+
+                         <% if @capital_remittance.json_fields["investment_amount_audit"].present? %>
+                            <div class="small text-muted bg-light p-2 rounded">
+                                <% @capital_remittance.json_fields["investment_amount_audit"]&.each do |fee_array| %>
+                                    <% fee_array.each do |fee| %>
+                                        <div class="d-flex justify-content-between">
+                                            <span><%= fee[0] %> (<%= fee[1] %>)</span>
+                                            <span><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                                        </div>
+                                    <% end %>
+                                <% end %>
+                            </div>
+                        <% end %>
+                     </li>
                 <% end %>
-              </ul>
-          </td>
-        </tr>
-        <% end %>
 
-        <% if capital_remittance.other_fee_cents > 0 %>
-          <tr>
-            <% # Have added styles here as it's not working by adding this class %>
-            <td class="vertical-align-top" style="vertical-align: top;">
-              Other Fees
-            </td>
-            <td>
-              <div class="money-wrapper">
-                <span><%= money_to_currency capital_remittance.other_fee, params %></span>
-              </div>
-              <ul class="fees-list">
-              <% @capital_remittance.json_fields["other_fees_audit"]&.each do |fee_array| %>
-                  <% fee_array.each do |fee| %>
-                    <li class="fee-item">
-                      <span class="fee-name"><%= fee[0] %></span>
-                      <span class="fee-description"><%= fee[1] %></span>
-                      <span class="fee-amount"><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
-                    </li>
-                  <% end %>
+                 <% if capital_remittance.capital_fee_cents > 0 %>
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                             <span class="text-muted">Capital Fees</span>
+                             <span class="fw-bold "><%= money_to_currency capital_remittance.capital_fee, params %></span>
+                        </div>
+
+                         <% if @capital_remittance.json_fields["capital_fees_audit"].present? %>
+                            <div class="small text-muted bg-light p-2 rounded">
+                                <% @capital_remittance.json_fields["capital_fees_audit"]&.each do |fee_array| %>
+                                    <% fee_array.each do |fee| %>
+                                        <div class="d-flex justify-content-between">
+                                            <span><%= fee[0] %> (<%= fee[1] %>)</span>
+                                            <span><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                                        </div>
+                                    <% end %>
+                                <% end %>
+                            </div>
+                        <% end %>
+                     </li>
                 <% end %>
-              </ul>
-            </td>
-          </tr>
-        <% end %>
 
-        <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
-          <tr>
-            <td>
-              Folio Call Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.folio_call_amount, params %>
-            </td>
-          </tr>
+                 <% if capital_remittance.other_fee_cents > 0 %>
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                             <span class="text-muted">Other Fees</span>
+                             <span class="fw-bold "><%= money_to_currency capital_remittance.other_fee, params %></span>
+                        </div>
 
+                         <% if @capital_remittance.json_fields["other_fees_audit"].present? %>
+                            <div class="small text-muted bg-light p-2 rounded">
+                                <% @capital_remittance.json_fields["other_fees_audit"]&.each do |fee_array| %>
+                                    <% fee_array.each do |fee| %>
+                                        <div class="d-flex justify-content-between">
+                                            <span><%= fee[0] %> (<%= fee[1] %>)</span>
+                                            <span><%= currency_from_cents(fee[2], @capital_remittance.fund.currency, params) %></span>
+                                        </div>
+                                    <% end %>
+                                <% end %>
+                            </div>
+                        <% end %>
+                     </li>
+                <% end %>
 
-        <% end %>
+                <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
+                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Folio Call Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_remittance.folio_call_amount, params %></span>
+                    </li>
+                <% end %>
 
-        <tr>
-          <td>
-            Collected Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.collected_amount, params %>
-          </td>
-        </tr>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Collected Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_remittance.collected_amount, params %></span>
+                </li>
 
-        <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-        <tr>
-          <td>
-            Folio Collected Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.folio_collected_amount, params %>
-          </td>
-        </tr>
+                <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Folio Collected Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_remittance.folio_collected_amount, params %></span>
+                    </li>
+                <% end %>
 
-        <tr>
-          <td>
-            Exchange Rate
-          </td>
-          <td>
-            <%= link_to capital_remittance.exchange_rate if capital_remittance.exchange_rate %>
-          </td>
-        </tr>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Due Amount</span>
+                    <span class="fw-bold "><%= money_to_currency capital_remittance.due_amount, params %></span>
+                </li>
 
-        <% end %>
+                <% if capital_remittance.has_arrears? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Arrear Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_remittance.arrear_amount, params %></span>
+                    </li>
 
+                    <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+                         <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted">Folio Arrear Amount</span>
+                            <span class="fw-bold "><%= money_to_currency capital_remittance.folio_arrear_amount, params %></span>
+                        </li>
 
-        <tr>
-          <td>
-            Due Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.due_amount, params %>
-          </td>
-        </tr>
+                         <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted">Net Folio Collected Amount</span>
+                            <span class="fw-bold "><%= money_to_currency capital_remittance.net_folio_collected_amount, params %></span>
+                        </li>
+                    <% end %>
+                <% end %>
 
+                <% if capital_remittance.fund.has_tracking_currency? %>
+                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Tracking Currency</span>
+                        <span class="fw-bold "><%= capital_remittance.fund.tracking_currency %></span>
+                    </li>
+                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Tracking Call Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_remittance.tracking_call_amount, params %></span>
+                    </li>
+                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Tracking Collected Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_remittance.tracking_collected_amount, params %></span>
+                    </li>
+                <% end %>
 
-        <% if capital_remittance.has_arrears? %>
-          <tr>
-            <td>
-              Arrear Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.arrear_amount, params %>
-            </td>
-          </tr>
+            </ul>
+        </div>
 
-          <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-          <tr>
-            <td>
-              Folio Arrear Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.folio_arrear_amount, params %>
-            </td>
-          </tr>
-          <% end %>
-
-          <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-          <tr>
-            <td>
-              Net Folio Collected Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.net_folio_collected_amount, params %>
-            </td>
-          </tr>
-          <% end %>
-
-        <% end %>
-
-        <% if capital_remittance.fund.has_tracking_currency? %>
-
-          <tr>
-            <td>
-              Tracking Currency
-            </td>
-            <td>
-              <%= capital_remittance.fund.tracking_currency %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Call Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.tracking_call_amount, params %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Collected Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_remittance.tracking_collected_amount, params %>
-            </td>
-          </tr>
-
-
-        <% end %>
-
-
-        <% if current_user && !current_user.curr_role_investor? %>
-
-          <tr>
-            <td>
-              Verified
-            </td>
-            <td>
-              <%= display_boolean(capital_remittance.verified) %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Status
-            </td>
-            <td>
-              <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
-              with_content(capital_remittance.status) if capital_remittance.status %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Notification Sent
-            </td>
-            <td>
-              <%= display_boolean capital_remittance.notification_sent %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Notes
-            </td>
-            <td>
-              <%= capital_remittance.notes&.html_safe %>
-            </td>
-          </tr>
-
-          <% if capital_remittance.exchange_rate %>
-            <tr>
-              <td>
-                Exchange Rate
-              </td>
-              <td>
-                <%= link_to capital_remittance.exchange_rate %>
-              </td>
-            </tr>
-          <% end %>
-
-        <% end %>
-
-        <%= display_custom_fields(capital_remittance) if current_user %>
-
-    </table>
+    </div>
   </div>
-</div>
+<% end %>

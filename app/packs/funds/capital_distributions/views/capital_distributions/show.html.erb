@@ -1,149 +1,185 @@
 <%= render "/capital_distributions/stats", capital_distribution: @capital_distribution %>
-<%= render ToggleCard.new(title: "Distribution: #{@capital_distribution.title}", css_class: "show_cd", state: "closed") do %>
+<div class="container-fluid p-3">
+  <%= render ToggleCard.new(title: "Distribution: #{@capital_distribution.title}", css_class: "show_cd", state: "closed") do %>
 
-  <table class="table table-bordered dataTable">
+  <div class="row g-4">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-    <tr>
-      <td>Title</td>
-      <td><%= @capital_distribution.title %></td>
-    </tr>
+      <!-- Distribution Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-file-invoice me-2 text-primary"></i>Distribution: <%= @capital_distribution.title %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= @capital_distribution.entity.name %></div>
+            </div>
 
-    <tr>
-      <td>Distribution On</td>
-      <td><%= @capital_distribution.distribution_on %></td>
-    </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to @capital_distribution.fund.name, fund_path(@capital_distribution.fund, tab: "capital-distributions-tab"), class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-    <tr>
-      <td>Generate Payments</td>
-      <td><%= display_boolean @capital_distribution.generate_payments %></td>
-    </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Title</label>
+              <div class="fs-4 fw-medium "><%= @capital_distribution.title %></div>
+            </div>
 
-    <tr>
-      <td>Completed</td>
-      <td><%= display_boolean @capital_distribution.completed %></td>
-    </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Distribution On</label>
+              <div class="fs-4 fw-medium "><%= @capital_distribution.distribution_on %></div>
+            </div>
 
-    <tr>
-      <td>Send Notification On Complete</td>
-      <td><%= display_boolean @capital_distribution.send_notification_on_complete %></td>
-    </tr>
-
-    <tr>
-      <td>Fund</td>
-      <td>
-        <%= link_to @capital_distribution.fund.name, fund_path(@capital_distribution.fund, tab: "capital-distributions-tab") %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>Entity</td>
-      <td><%= @capital_distribution.entity.name %></td>
-    </tr>
-
-    <tr>
-      <td>Gross Distribution</td>
-      <td><%= money_to_currency @capital_distribution.gross_amount, params %></td>
-    </tr>
-
-    <tr>
-      <td>Net Distribution</td>
-      <td><%= money_to_currency @capital_distribution.distribution_amount, params %></td>
-    </tr>
-
-    <tr>
-      <td>Face Value For Redemption</td>
-      <td><%= money_to_currency @capital_distribution.cost_of_investment, params %></td>
-    </tr>
-
-    <tr>
-      <td>Income</td>
-      <td><%= money_to_currency @capital_distribution.income, params %></td>
-    </tr>
-
-
-    <% if @capital_distribution.distribution_fees.order(fee_type: :asc).present? %>
-      <tr class="d-none d-sm-table-row">
-        <td>Account Entries</td>
-        <td>
-          <table class="table table-bordered dataTable">
-            <tr>
-              <td>Name</td>
-              <td>From</td>
-              <td>To</td>
-              <td>Type</td>
-              <td>Notes</td>
-            </tr>
-            <% @capital_distribution.distribution_fees.each do |distribution_fee| %>
-              <tr>
-                <td><%= distribution_fee.name %></td>
-                <td><%= l distribution_fee.start_date %></td>
-                <td><%= l distribution_fee.end_date %></td>
-                <td><%= distribution_fee.fee_type %></td>
-                <td><%= distribution_fee.notes %></td>
-              </tr>
+            <% if @capital_distribution.distribution_date %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Distribution Date</label>
+              <div class="fs-4 fw-medium "><%= l @capital_distribution.distribution_date %></div>
+            </div>
             <% end %>
-          </table>
-        </td>
-      </tr>
-    <% end %>
 
+            <% if @capital_distribution.notes.present? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <div class="fs-4 fw-medium "><%= @capital_distribution.notes.html_safe %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
 
+      <!-- Financials -->
+      <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h5>
+          </div>
+          <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                  <span class="text-muted">Gross Distribution</span>
+                  <span class="fw-bold "><%= money_to_currency @capital_distribution.gross_amount, params %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                  <span class="text-muted">Net Distribution</span>
+                  <span class="fw-bold "><%= money_to_currency @capital_distribution.distribution_amount, params %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                  <span class="text-muted">Face Value For Redemption</span>
+                  <span class="fw-bold "><%= money_to_currency @capital_distribution.cost_of_investment, params %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                  <span class="text-muted">Income</span>
+                  <span class="fw-bold "><%= money_to_currency @capital_distribution.income, params %></span>
+              </li>
 
-    <tr>
-      <td>Reinvestment</td>
-      <td>
-        <%= money_to_currency @capital_distribution.reinvestment, params %><br>
-        <%= link_to "Create Account Entry",
-            new_account_entry_path("account_entry[entity_id]": @capital_distribution.entity_id,
-            "account_entry[fund_id]": @capital_distribution.fund_id,
-            "account_entry[name]": "Reinvestment",
-            "account_entry[reporting_date]": @capital_distribution.distribution_date,
-            "account_entry[notes]": "Reinvestment from '#{@capital_distribution.title}' on #{@capital_distribution.distribution_date}",
-            "account_entry[amount]": @capital_distribution.reinvestment,
-            "account_entry[entry_type]": "Reinvestment") %>
-      </td>
-    </tr>
+              <li class="list-group-item py-3 px-4">
+                   <div class="d-flex justify-content-between align-items-center">
+                      <span class="text-muted">Reinvestment</span>
+                      <span class="fw-bold "><%= money_to_currency @capital_distribution.reinvestment, params %></span>
+                   </div>
+                   <div class="mt-2 text-end">
+                      <%= link_to "Create Account Entry",
+                          new_account_entry_path("account_entry[entity_id]": @capital_distribution.entity_id,
+                          "account_entry[fund_id]": @capital_distribution.fund_id,
+                          "account_entry[name]": "Reinvestment",
+                          "account_entry[reporting_date]": @capital_distribution.distribution_date,
+                          "account_entry[notes]": "Reinvestment from '#{@capital_distribution.title}' on #{@capital_distribution.distribution_date}",
+                          "account_entry[amount]": @capital_distribution.reinvestment,
+                          "account_entry[entry_type]": "Reinvestment"), class: "small text-decoration-none" %>
+                   </div>
+              </li>
+          </ul>
+      </div>
 
-    <tr>
-      <td>Distribution Date</td>
-      <td><%= l @capital_distribution.distribution_date if @capital_distribution.distribution_date %></td>
-    </tr>
+      <% if @capital_distribution.distribution_fees.present? %>
+        <!-- Fees Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+              <h5 class="mb-0 fw-bold "><i class="ti ti-receipt-tax me-2 text-warning"></i>Fees</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="bg-light row py-2 px-3 fw-bold border-bottom mx-0">
+                    <div class="col-3">Name</div>
+                    <div class="col-2">From</div>
+                    <div class="col-2">To</div>
+                    <div class="col-2">Type</div>
+                    <div class="col-3">Notes</div>
+                </div>
 
-    <% if @capital_distribution.fund.unit_types.present? %>
-      <% @capital_distribution.unit_prices.each do |unit_type, price| %>
-        <tr>
-          <td><%= unit_type %></td>
-          <td>Price: <%= price %></td>
-        </tr>
+                <% @capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee| %>
+                    <div class="row py-2 px-3 border-bottom mx-0">
+                        <div class="col-3"><%= distribution_fee.name %></div>
+                        <div class="col-2"><%= l distribution_fee.start_date %></div>
+                        <div class="col-2"><%= l distribution_fee.end_date %></div>
+                        <div class="col-2"><%= distribution_fee.fee_type %></div>
+                        <div class="col-3"><%= distribution_fee.notes %></div>
+                    </div>
+                <% end %>
+            </div>
+        </div>
       <% end %>
-    <% end %>
 
-    <tr>
-      <td>Approved</td>
-      <td><%= display_boolean @capital_distribution.approved %></td>
-    </tr>
+    </div>
 
-    <tr>
-      <td>Payments Distributed</td>
-      <td><%= money_to_currency @capital_distribution.distribution_amount, params %></td>
-    </tr>
+    <!-- Right Column: Financials & Status -->
+    <div class="col-lg-4">
 
-    <tr>
-      <td>Notes</td>
-      <td><%= @capital_distribution.notes&.html_safe %></td>
-    </tr>
+        <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Approved</span>
+                    <span class="fw-bold "><%= display_boolean @capital_distribution.approved %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Generate Payments</span>
+                    <span class="fw-bold "><%= display_boolean @capital_distribution.generate_payments %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Completed</span>
+                    <span class="fw-bold "><%= display_boolean @capital_distribution.completed %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Send Notification On Complete</span>
+                    <span class="fw-bold "><%= display_boolean @capital_distribution.send_notification_on_complete %></span>
+                </li>
+            </ul>
+        </div>
 
-  </table>
+        <% if @capital_distribution.fund.unit_types.present? && @capital_distribution.unit_prices.present? %>
+            <!-- Unit Prices -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3 px-4">
+                    <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-tag me-2 text-info"></i>Unit Prices</h6>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <% @capital_distribution.unit_prices.each do |unit_type, price| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted"><%= unit_type %></span>
+                            <span class="fw-bold  text-end">Price: <%= price %></span>
+                        </li>
+                    <% end %>
+                </ul>
+            </div>
+        <% end %>
 
-<% end %>
+    </div>
 
-<div>
+  </div>
+  <% end %>
+</div>
+
+<div class="container-fluid px-3 pb-3">
   <% if policy(@capital_distribution).update? %>
     <%= link_to edit_capital_distribution_path(@capital_distribution), class: "btn btn-outline-primary" do %>
       <i class="ti ti-edit"></i> <%= t_common(:edit) %>
     <% end %>
 
-    <%= button_to @capital_distribution, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
+    <%= button_to @capital_distribution, method: :delete, class: "btn btn-outline-danger d-inline-block", form_class: "deleteButton d-inline-block",
         data: { action: "click->confirm#popup", turbo: false } do %>
       <i class="ti ti-trash"></i> <%= t_common(:delete) %>
     <% end %>
@@ -213,7 +249,6 @@
         </div>
     </div>
   <% end %>
-
 </div>
 
 

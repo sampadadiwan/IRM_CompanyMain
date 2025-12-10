@@ -1,268 +1,193 @@
-<%= render ToggleCard.new(title: "Payment: #{capital_distribution_payment.investor_name}", css_class: "show_cdps", allow_toggle: false) do %>
 
-    <table class="table table-bordered dataTable">
+<%= render ToggleCard.new(title: "Payment: #{capital_distribution_payment.investor_name}: #{capital_distribution_payment.fund.name}", css_class: "show_cdps_#{capital_distribution_payment.id}", allow_toggle: true) do %>
+  <div class="row p-3">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-        <tr>
-          <td>
-            Fund
-          </td>
-          <td>
-            <%= link_to capital_distribution_payment.fund.name, capital_distribution_payment.fund %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Entity
-          </td>
-          <td>
-            <%= capital_distribution_payment.entity.name %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Capital Distribution
-          </td>
-          <td>
-            <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
-          </td>
-        </tr>
+      <!-- Payment Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-cash me-2 text-primary"></i><%= link_to "Payment Details", capital_distribution_payment %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= capital_distribution_payment.entity.name %></div>
+            </div>
 
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to capital_distribution_payment.fund.name, capital_distribution_payment.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-        <tr>
-          <td>
-            Commitment
-          </td>
-          <td>
-            <%= link_to capital_distribution_payment.capital_commitment %>
-          </td>
-        </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Capital Distribution</label>
+              <div class="fs-4"><%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-        <tr>
-          <td>
-            Gross Payable
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.gross_payable, params %>
-          </td>
-        </tr>
+            <div class="col-md-6">
+               <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Commitment</label>
+               <div class="fs-4"><%= link_to capital_distribution_payment.capital_commitment, capital_distribution_payment.capital_commitment, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-        <tr>
-          <td>
-            Net Payable
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.net_payable, params %>
-          </td>
-        </tr>
+             <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Payment Date</label>
+              <div class="fs-4 fw-medium "><%= l capital_distribution_payment.payment_date if capital_distribution_payment.payment_date %></div>
+            </div>
 
-        <tr>
-          <td>
-            Face Value For Redemption
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.cost_of_investment, params %>
-          </td>
-        </tr>
+             <% if capital_distribution_payment.fund.has_tracking_currency? %>
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Tracking Currency</label>
+                    <div class="fs-4 fw-medium "><%= capital_distribution_payment.fund.tracking_currency %></div>
+                </div>
 
-        <% if capital_distribution_payment.cost_of_investment_cents != capital_distribution_payment.cost_of_investment_with_fees_cents %>
-        <tr>
-          <td class="vertical-align-top" style="vertical-align: top;">
-            Redemption Account Entries
-          </td>
-          <td>
-            <%= render "/capital_distribution_payments/account_entries", type: ["FV For Redemption"] %>
-          </td>
-        </tr>
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Tracking Amount</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.tracking_net_payable, params %></div>
+                </div>
+            <% end %>
 
-        <tr>
-          <td>
-            Net Face Value For Redemption
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.cost_of_investment_with_fees, params %>
-          </td>
-        </tr>
+            <% if capital_distribution_payment.exchange_rate %>
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Exchange Rate</label>
+                    <div class="fs-4 fw-medium "><%= link_to capital_distribution_payment.exchange_rate, class: "text-decoration-none fw-bold text-primary" %></div>
+                </div>
+            <% end %>
+
+            <% if capital_distribution_payment.entity.permissions.enable_units? && !current_user&.curr_role_investor? %>
+                 <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Units Redeemed</label>
+                    <div class="fs-4 fw-medium "><%= capital_distribution_payment.units_quantity %></div>
+                </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+       <% if current_user %>
+            <!-- Other Details Card -->
+           <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+              <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+            </div>
+            <div class="card-body">
+                 <table class="table table-borderless mb-0">
+                  <%= display_custom_fields(capital_distribution_payment) %>
+                 </table>
+            </div>
+          </div>
         <% end %>
 
-        <tr>
-          <td>
-            Income
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.income, params %>
-          </td>
-        </tr>
+    </div>
 
-        <% if capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents %>
+    <!-- Right Column: Status -->
+    <div class="col-lg-4">
 
-        <tr>
-          <td class="vertical-align-top" style="vertical-align: top;">
-            Other Account Entries
-          </td>
-          <td>
-            <%= render "/capital_distribution_payments/account_entries", type: ["Income", "Tax", "Expense"] %>
-          </td>
-        </tr>
+         <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Completed</span>
+                    <span class="fw-bold "><%= display_boolean capital_distribution_payment.completed %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Notification Sent</span>
+                    <span class="fw-bold "><%= display_boolean capital_distribution_payment.notification_sent %></span>
+                </li>
+            </ul>
+        </div>
 
-        <tr>
-          <td>
-            Net Income
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.income_with_fees, params %>
-          </td>
-        </tr>
-        <% end %>
+         <!-- Financials -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Gross Payable</span>
+                    <span class="fw-bold "><%= money_to_currency capital_distribution_payment.gross_payable, params %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Net Payable</span>
+                    <span class="fw-bold "><%= money_to_currency capital_distribution_payment.net_payable, params %></span>
+                </li>
 
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Face Value For Redemption</span>
+                    <span class="fw-bold "><%= money_to_currency capital_distribution_payment.cost_of_investment, params %></span>
+                </li>
 
-        <tr>
-          <td>
-            Reinvestment
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.reinvestment, params %>
-          </td>
-        </tr>
+                <% if capital_distribution_payment.cost_of_investment_cents != capital_distribution_payment.cost_of_investment_with_fees_cents %>
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Redemption Account Entries</span>
+                            <div class="fw-bold  text-end">
+                                <%= render "/capital_distribution_payments/account_entries", type: ["FV For Redemption"] %>
+                            </div>
+                        </div>
+                    </li>
 
-        <% if capital_distribution_payment.reinvestment_cents != capital_distribution_payment.reinvestment_with_fees_cents %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Net Face Value For Redemption</span>
+                        <span class="fw-bold "><%= money_to_currency capital_distribution_payment.cost_of_investment_with_fees, params %></span>
+                    </li>
+                <% end %>
 
-        <tr>
-          <td class="vertical-align-top" style="vertical-align: top;">
-            Reinvestment Account Entries
-          </td>
-          <td>
-            <%= render "/capital_distribution_payments/account_entries", type: ["Reinvestment"] %>
-          </td>
-        </tr>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Income</span>
+                    <span class="fw-bold "><%= money_to_currency capital_distribution_payment.income, params %></span>
+                </li>
 
-        <tr>
-          <td>
-            Net Reinvestment
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.reinvestment_with_fees, params %>
-          </td>
-        </tr>
-        <% end %>
+                <% if capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents %>
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Other Account Entries</span>
+                            <div class="fw-bold  text-end">
+                                <%= render "/capital_distribution_payments/account_entries", type: ["Income", "Tax", "Expense"] %>
+                            </div>
+                        </div>
+                    </li>
 
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Net Income</span>
+                        <span class="fw-bold "><%= money_to_currency capital_distribution_payment.income_with_fees, params %></span>
+                    </li>
+                <% end %>
 
-        <% if false && capital_distribution_payment.net_of_account_entries_cents > 0 %>
-          <tr>
-            <% # Have added styles here as it's not working by adding this class %>
-            <td class="vertical-align-top" style="vertical-align: top;">
-              Account Entries
-            </td>
-            <td>
-              <%= money_to_currency capital_distribution_payment.net_of_account_entries, params %>
-            </td>
-          </tr>
-          <tr>
-            <% # Have added styles here as it's not working by adding this class %>
-            <td class="vertical-align-top" style="vertical-align: top;">
-              Breakdown
-            </td>
-            <td>
-              <%= render "/capital_distribution_payments/account_entries", type: DistributionFee::TYPES %>
-            </td>
-          </tr>
-        <% end %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Reinvestment</span>
+                    <span class="fw-bold "><%= money_to_currency capital_distribution_payment.reinvestment, params %></span>
+                </li>
 
+                <% if capital_distribution_payment.reinvestment_cents != capital_distribution_payment.reinvestment_with_fees_cents %>
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Reinvestment Account Entries</span>
+                            <div class="fw-bold  text-end">
+                                <%= render "/capital_distribution_payments/account_entries", type: ["Reinvestment"] %>
+                            </div>
+                        </div>
+                    </li>
 
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Net Reinvestment</span>
+                        <span class="fw-bold "><%= money_to_currency capital_distribution_payment.reinvestment_with_fees, params %></span>
+                    </li>
+                <% end %>
 
+                <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Folio Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_distribution_payment.folio_amount, params %></span>
+                    </li>
+                <% end %>
+            </ul>
+        </div>
 
-        <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
-        <tr>
-          <td>
-            Folio Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_distribution_payment.folio_amount, params %>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Exchange Rate
-          </td>
-          <td>
-            <%= link_to capital_distribution_payment.exchange_rate if capital_distribution_payment.exchange_rate %>
-          </td>
-        </tr>
-
-        <% end %>
-
-        <% if capital_distribution_payment.fund.has_tracking_currency? %>
-          <tr>
-            <td>
-              Tracking Currency
-            </td>
-            <td>
-              <%= capital_distribution_payment.fund.tracking_currency %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              Tracking Amount
-            </td>
-            <td>
-              <%= money_to_currency capital_distribution_payment.tracking_net_payable, params %>
-            </td>
-          </tr>
-        <% end %>
-
-        <% if capital_distribution_payment.entity.permissions.enable_units? && !current_user&.curr_role_investor? %>
-        <tr>
-          <td>
-            Units Redeemed
-          </td>
-          <td>
-            <%= capital_distribution_payment.units_quantity %>
-          </td>
-        </tr>
-        <% end %>
-
-        <tr>
-          <td>
-            Payment Date
-          </td>
-          <td>
-            <%= l capital_distribution_payment.payment_date if capital_distribution_payment.payment_date %>
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Completed
-          </td>
-          <td>
-            <%= display_boolean capital_distribution_payment.completed %>
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            Notification Sent
-          </td>
-          <td>
-            <%= display_boolean capital_distribution_payment.notification_sent %>
-          </td>
-        </tr>
-
-
-
-        <% if capital_distribution_payment.exchange_rate %>
-        <tr>
-          <td>
-            Exchange Rate
-          </td>
-          <td>
-            <%= link_to capital_distribution_payment.exchange_rate %>
-          </td>
-        </tr>
-        <% end %>
-
-        <%= display_custom_fields(capital_distribution_payment) if current_user %>
-
-    </table>
-
+    </div>
+  </div>
 <% end %>

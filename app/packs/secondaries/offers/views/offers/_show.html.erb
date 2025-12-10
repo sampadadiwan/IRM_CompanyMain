@@ -1,293 +1,239 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3 d-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Offer: <%= @offer.user.full_name %></h6>
-      <span>
-      </span>
-  </div>
-  <div class="card-body show_details">
+  <%= render ToggleCard.new(title: "Offer: #{@offer.user.full_name}", css_class: "show_offer", state: "show") do %>
 
-    <table class="table table-bordered dataTable">
+  <div class="row">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-      <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @offer.entity.name %>
-        </td>
-      </tr>
+      <!-- Offer Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><i class="ti ti-file-dollar me-2 text-primary"></i>Offer Details</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium"><%= @offer.entity.name %></div>
+            </div>
 
-      <tr>
-        <td>
-          Investor
-        </td>
-        <td>
-          <%= @offer.investor.investor_name %>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investor</label>
+              <div class="fs-4 fw-medium"><%= @offer.investor.investor_name %></div>
+            </div>
 
-      <tr>
-        <td>
-          User
-        </td>
-        <td>
-          <%= @offer.user.full_name %>
-          (<%= @offer.user.email %>)
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Secondary Sale
-        </td>
-        <td>
-          <%= link_to @offer.secondary_sale.name, @offer.secondary_sale %>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">User</label>
+              <div class="fs-4 fw-medium">
+                <%= @offer.user.full_name %> <span class="text-muted fs-6">(<%= @offer.user.email %>)</span>
+              </div>
+            </div>
 
-      <tr id="approved">
-        <td>
-          Approved
-        </td>
-        <td class="approved">
-          <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
-            <%= @offer.approved ?  "Yes" : "No" %>
-          </span>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Secondary Sale</label>
+              <div class="fs-4 fw-medium"><%= link_to @offer.secondary_sale.name, @offer.secondary_sale, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-      <tr>
-        <td>
-          Quantity
-        </td>
-        <td>
-          <%= custom_format_number @offer.quantity, params %>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Quantity</label>
+              <div class="fs-4 fw-medium"><%= custom_format_number @offer.quantity, params %></div>
+            </div>
 
-      <tr>
-        <td>
-          Price
-        </td>
-        <td>
-          <%= custom_format_number @offer.price, params %>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Price</label>
+              <div class="fs-4 fw-medium"><%= custom_format_number @offer.price, params %></div>
+            </div>
 
-      <% if current_user  %>        
+            <% if current_user %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <div class="fs-4 fw-medium"><%= @offer.notes %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
 
-        <tr>
-          <td>
-            Notes
-          </td>
-          <td>
-            <%= @offer.notes %>
-          </td>
-        </tr>
+      <% if current_user %>
 
 
-        <% if @offer.allocation_quantity > 0  || params[:debug].present? %>
-          <tr>
-            <td colspan="2" class="bg-primary"></td>
-          </tr>
-          <tr>
-            <td>
-              Allocated Quantity
-            </td>
-            <td>
-              <%= @offer.allocation_quantity %>
-            </td>
-          </tr>
-          
-          <tr>
-            <td>
-              Gross Amount
-            </td>
-            <td>
-              <%= money_to_currency @offer.allocation_amount, params %>
-            </td>
-          </tr>
-          <%
-            fees = @offer.compute_fees(@offer.secondary_sale.fees)
-            fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
-          %>
-          <tr>
-            <td>
-              Fees
-            </td>
-            <td>
-              <%= money_to_currency fee_amount, params %>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Net Amount
-            </td>
-            <td>
-              <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
-            </td>
-          </tr>
-
-        <% end %>
-
-          <tr>
-            <td colspan="2" class="bg-primary"></td>
-          </tr>
-          <tr>
-            <td>
-              Full Name
-            </td>
-            <td>
-              <%= @offer.full_name %>
-            </td>
-          </tr>
-
-
-          <tr>
-            <td>
-              Seller Emails for ESignatures
-            </td>
-            <td>
-              <%= @offer.seller_signatory_emails %>
-            </td>
-          </tr>
-
-
-          <tr>
-            <td>
-              Address
-            </td>
-            <td>
-              <%= @offer.address %>
-            </td>
-          </tr>
-
-          <tr>
-            <td>
-              PAN
-            </td>
-            <td>
-              <%= @offer.PAN %>
-              <br>
-              <% show_pan_verification = !@offer.secondary_sale.disable_pan_kyc && @offer.entity.entity_setting.pan_verification %>
-              <% if show_pan_verification && current_user%>
-              <%= render "investor_kycs/pan_verification", model: @offer %>
-              <% end %>
-            </td>
-          </tr>
-
-          <% if params[:debug].present? %>
-            <tr>
-              <td>
-                PAN Verification Response
-              </td>
-              <td>
-                <%= @offer.pan_verification_response %>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                PAN Verification Status
-              </td>
-              <td>
-                <%= @offer.pan_verification_status %>
-              </td>
-            </tr>
-          <% end %>
-
-          <tr>
-            <td>
-              Bank Account Number
-            </td>
-            <td>
-              <%= @offer.bank_account_number %>
-
-              <br>
-              <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              IFSC Code
-            </td>
-            <td>
-              <%= @offer.ifsc_code %>
-            </td>
-          </tr>
-
-          <% if params[:debug].present? %>
-            <tr>
-              <td>
-                Bank Verification Response
-              </td>
-              <td>
-                <%= @offer.bank_verification_response %>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                Bank Verification Status
-              </td>
-              <td>
-                <%= @offer.bank_verification_status %>
-              </td>
-            </tr>
-          <% end %>
-
-          <tr id="completed">
-            <td>
-              Completed
-            </td>
-            <td>
-              <%= display_boolean(@offer.completed) %>
-            </td>
-          </tr>
-
-
-
-          <tr>
-              <td colspan="2" class="bg-primary"></td>
-          </tr>
-
-
-          <tr>
-              <td>
-              I agree to enter into the SPA
-              </td>
-              <td>
-                  <%= display_boolean @offer.final_agreement %>
-                  <% if @offer.final_agreement_user %>
-                    <div>
-                      <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
-                    </div>
-                  <% end %>
-              </td>
-          </tr>
-
-        
-
-        <%= display_custom_fields(@offer) if current_user %>
-
-        <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
-
-            <tr>
-            <td colspan="2" class="bg-primary"></td>
-            </tr>
-            <tr>
-            <td>
-                SPA
-            </td>
-            <td>
-                <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-sm btn-outline-success" if @offer.spa %>
-                <span><%= "(Link expires in 7 days)" unless current_user %></span>
-            </td>
-            </tr>
-
-        <% end %>
-
+        <!-- Other Details -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-settings me-2 text-secondary"></i>Other Details</h5>
+          </div>
+          <div class="card-body">
+             <table class="table table-borderless mb-0">
+              <%= display_custom_fields(@offer) %>
+             </table>
+          </div>
+        </div>
 
       <% end %>
 
-    </table>
+    </div>
+
+    <!-- Right Column: Attributes -->
+    <div class="col-lg-4">
+      <% if current_user %>
+        <% if @offer.allocation_quantity > 0 || params[:debug].present? %>
+          <!-- Allocation Details -->
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-bottom py-3">
+              <h5 class="mb-0 fw-bold"><i class="ti ti-chart-pie me-2 text-success"></i>Allocation Details</h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Allocated Quantity</label>
+                  <div class="fs-4 fw-medium"><%= @offer.allocation_quantity %></div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Gross Amount</label>
+                  <div class="fs-4 fw-medium"><%= money_to_currency @offer.allocation_amount, params %></div>
+                </div>
+
+                <%
+                  fees = @offer.compute_fees(@offer.secondary_sale.fees)
+                  fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
+                %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fees</label>
+                  <div class="fs-4 fw-medium"><%= money_to_currency fee_amount, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Net Amount</label>
+                  <div class="fs-4 fw-medium"><%= money_to_currency (@offer.allocation_amount - fee_amount), params %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Agreement & SPA -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-files me-2 text-warning"></i>Agreements</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">I agree to enter into the SPA</label>
+                <div class="fs-4 fw-medium">
+                  <%= display_boolean @offer.final_agreement %>
+                  <% if @offer.final_agreement_user %>
+                    <div class="fs-6 text-muted">Accepted By: <%= @offer.final_agreement_user.full_name %></div>
+                  <% end %>
+                </div>
+              </div>
+
+              <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
+                <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">SPA</label>
+                  <div class="fs-4 fw-medium">
+                     <% if @offer.spa %>
+                        <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-success btn-sm" %>
+                        <div class="fs-6 text-muted mt-1">(Link expires in 7 days)</div>
+                     <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3 px-4">
+          <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4" id="approved">
+            <span class="text-muted">Approved</span>
+            <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
+              <%= @offer.approved ?  "Yes" : "No" %>
+            </span>
+          </li>
+
+          <% if current_user %>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4" id="completed">
+              <span class="text-muted">Completed</span>
+              <span class="fw-bold"><%= display_boolean(@offer.completed) %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+
+      <% if current_user %>
+        <!-- KYC & Banking Details -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-building-bank me-2 text-info"></i>KYC & Banking Details</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Full Name</label>
+                <div class="fs-4 fw-medium"><%= @offer.full_name %></div>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Seller Emails for ESignatures</label>
+                <div class="fs-4 fw-medium"><%= @offer.seller_signatory_emails %></div>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Address</label>
+                <div class="fs-4 fw-medium"><%= @offer.address %></div>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">PAN</label>
+                <div class="fs-4 fw-medium">
+                  <%= @offer.PAN %>
+                  <% show_pan_verification = !@offer.secondary_sale.disable_pan_kyc && @offer.entity.entity_setting.pan_verification %>
+                  <% if show_pan_verification %>
+                    <div class="mt-2">
+                      <%= render "investor_kycs/pan_verification", model: @offer %>
+                    </div>
+                  <% end %>
+                </div>
+                <% if params[:debug].present? %>
+                   <div class="mt-2 small text-muted">
+                      <div>Response: <%= @offer.pan_verification_response %></div>
+                      <div>Status: <%= @offer.pan_verification_status %></div>
+                   </div>
+                <% end %>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Bank Account</label>
+                <div class="fs-4 fw-medium">
+                  <%= @offer.bank_account_number %>
+                  <% if !@offer.secondary_sale.disable_bank_kyc %>
+                    <div class="mt-2">
+                      <%= render "investor_kycs/bank_verification", model: @offer %>
+                    </div>
+                  <% end %>
+                </div>
+                <% if params[:debug].present? %>
+                   <div class="mt-2 small text-muted">
+                      <div>Response: <%= @offer.bank_verification_response %></div>
+                      <div>Status: <%= @offer.bank_verification_status %></div>
+                   </div>
+                <% end %>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">IFSC Code</label>
+                <div class="fs-4 fw-medium"><%= @offer.ifsc_code %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
 
   </div>
-</div>
+  <% end %>

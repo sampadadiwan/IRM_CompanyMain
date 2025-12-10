@@ -3,11 +3,19 @@ class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
   include ActiveSupport::NumberHelper
 
   def portfolio_company_name
-    h.link_to object.portfolio_company_name, object.portfolio_company
+    if h.current_user.curr_role_investor?
+      object.portfolio_company_name
+    else
+      h.link_to object.portfolio_company_name, object.portfolio_company
+    end
   end
 
   def investment_instrument_name
-    h.link_to object.investment_instrument, object.investment_instrument
+    if h.current_user.curr_role_investor?
+      object.investment_instrument.name
+    else
+      h.link_to object.investment_instrument, object.investment_instrument
+    end
   end
 
   def fund_name

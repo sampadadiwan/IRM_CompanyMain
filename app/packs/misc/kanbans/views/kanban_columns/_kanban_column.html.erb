@@ -2,37 +2,6 @@
 <% card_class ||= KanbanCardManager::PARENT_MAPPING.key(kanban_column.kanban_board.owner_type) %>
 <div id="<%=kanban_column.id%>" class="task-list-container" data-action="sorting" draggable="true">
   <div class="connect-sorting connect-sorting-todo" data-kanban-column-id="<%= kanban_column.id %>">
-    <div class="task-container-header">
-      <%= turbo_stream_from kanban_column %>
-      <div id="<%= dom_id kanban_column %>">
-        <%= render "kanban_columns/kanban_column_show", kanban_column: kanban_column %>
-      </div>
-      <div class="dropdown">
-        <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-          <i class="ti ti-dots-vertical text-dark"></i>
-        </a>
-        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
-          <a class="dropdown-item column-edit" href="javascript:void(0);">Edit</a>
-          <a class="dropdown-item column-archive" href="javascript:void(0);">Archive All</a>
-        </div>
-      </div>
-    </div>
-    <div class="connect-sorting-content ui-sortable" data-sortable="true">
-      <% kanban_cards = kanban_column.kanban_cards %>
-      <% if searched_kanban_cards.present? %>
-        <% kanban_cards = kanban_cards.where(id: searched_kanban_cards.pluck(:id)) %>
-      <% end %>
-      <% kanban_cards.includes(:data_source).sequenced.each do |kanban_card| %>
-
-        <% if kanban_card.data_source.present? %>
-          <% if policy(kanban_card.data_source).show? %>
-            <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
-          <% end %>
-        <% else %>
-          <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
-        <% end %>
-      <% end %>
-    </div>
     <% new_object = card_class.constantize.new(
       entity_id: kanban_column.entity_id,
       "#{KanbanCardManager::PARENT_MAPPING[card_class]&.underscore}_id": kanban_column.kanban_board.owner_id
@@ -50,14 +19,48 @@
       turbo_frame: new_frame_tag)
     %>
 
-    <% if policy(new_object).create? %>
-      <%= turbo_frame_tag "button_turbo_frame" do %>
-        <button type="button" class="btn btn-outline-primary" title="Add item" data-turbo-frame="<%= new_frame_tag %>">
-          <%= link_to new_path, method: :get, data: { turbo_frame: new_frame_tag }, class: "text-decoration-none d-flex align-items-center gap-1" do %>
-            <i class="ti ti-plus"></i> Add Item
-          <% end %>
-        </button>
+    <div class="task-container-header">
+      <%= turbo_stream_from kanban_column %>
+      <div id="<%= dom_id kanban_column %>">
+        <%= render "kanban_columns/kanban_column_show", kanban_column: kanban_column %>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <% if policy(new_object).create? %>
+           <%= link_to new_path, method: :get, data: { turbo_frame: new_frame_tag }, class: "header-add-btn text-decoration-none", title: "Add Item" do %>
+             <i id="add_new_card" class="ti ti-plus"></i>
+           <% end %>
+        <% end %>
+
+        <div class="dropdown">
+          <a class="dropdown-toggle" href="javascript:void(0)" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <i class="ti ti-dots-vertical text-dark"></i>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
+            <a class="dropdown-item column-edit" href="javascript:void(0);">Edit</a>
+            <a class="dropdown-item column-archive" href="javascript:void(0);">Archive All</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="connect-sorting-content ui-sortable mb-0 pb-0" data-sortable="true">
+      <% kanban_cards = kanban_column.kanban_cards %>
+      <% if searched_kanban_cards.present? %>
+        <% kanban_cards = kanban_cards.where(id: searched_kanban_cards.pluck(:id)) %>
       <% end %>
+      <% kanban_cards.includes(:data_source).sequenced.each do |kanban_card| %>
+
+        <% if kanban_card.data_source.present? %>
+          <% if policy(kanban_card.data_source).show? %>
+            <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
+          <% end %>
+        <% else %>
+          <%= render "kanban_cards/kanban_card", kanban_card: kanban_card%>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%= turbo_frame_tag "button_turbo_frame" do %>
+       <!-- Empty frame for Turbo responsiveness if needed, but button is now in header -->
     <% end %>
 
 

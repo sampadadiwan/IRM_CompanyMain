@@ -1,253 +1,212 @@
 <% cache [secondary_sale, current_user, current_user.entity_id == secondary_sale.entity_id] do %>
+<div class="container-fluid p-3">
   <%= render ToggleCard.new(title: "Secondary Sale: #{secondary_sale.name}", css_class: "show_sale", state: "closed") do %>
 
-      <table class="table table-bordered dataTable">
-        <tr>
-            <td>
-              Entity
-            </td>
-            <td>
-              <%= secondary_sale.entity.name %>
-            </td>
-        </tr>
+  <div class="row">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-        <tr>
-          <td>
-            Support Email
-          </td>
-          <td>
-            <a href="mailto:<%=secondary_sale.support_email%>" target="_blank">
-              <%= secondary_sale.support_email %>
-            </a>
-            <br>
-            <div class="badge bg-success">
-              Send your queries here
-            </div> 
-          </td>
-        </tr>
+      <!-- Sale Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3">
+          <h5 class="mb-0 fw-bold"><i class="ti ti-tag me-2 text-primary"></i>Secondary Sale: <%= secondary_sale.name %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium"><%= secondary_sale.entity.name %></div>
+            </div>
 
-        <tr>
-          <td>
-            Name
-          </td>
-          <td>
-            <%= secondary_sale.name %>
-          </td>
-        </tr>
-        <tr class="">
-          <td>
-            Start Date
-          </td>
-          <td>
-            <%= l secondary_sale.start_date %>
-          </td>
-        </tr>
-        <tr class="">
-          <td>
-            Offer End Date
-          </td>
-          <td>
-            <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
-          </td>
-        </tr>
-
-        <tr>
-          <td>
-            End Date
-          </td>
-          <td>
-            <%= l secondary_sale.end_date %>
-          </td>
-        </tr>
-        <% unless policy(secondary_sale).show_interest? %>
-          <tr id="percent_allowed">
-            <td>
-              Percent Allowed
-            </td>
-            <td>
-              <%= secondary_sale.percent_allowed %> %
-            </td>
-          </tr>
-        <% end %>
-      
-
-        <% if secondary_sale.final_price > 0 %>
-          <tr>
-            <td>
-              Final Price
-            </td>
-            <td>
-              <%= custom_format_number secondary_sale.final_price, params %>
-            </td>
-          </tr>
-        <% else %>
-
-          <% if secondary_sale.price_type == "Price Range" %>
-
-            <tr>
-              <td>
-                Price Type
-              </td>
-              <td>
-                <%= secondary_sale.price_type %>
-              </td>
-            </tr>
-
-            <tr>
-              <td>
-                Min Price
-              </td>
-              <td>
-                <%= custom_format_number secondary_sale.min_price, params %>
-              </td>
-            </tr>
-
-            <tr>
-              <td>
-                Max Price
-              </td>
-              <td>
-                <%= custom_format_number secondary_sale.max_price, params %>
-              </td>
-            </tr>
-            
-          <% end %>
-
-          <% end %>
-
-          <tr>
-            <td>
-              Active
-            </td>
-            <td>
-              <%= display_boolean secondary_sale.active? %>
-            </td>
-          </tr>
-          
-
-          <% if current_user.entity_id == secondary_sale.entity_id %>
-
-          <tr>
-            <td>
-              Total Offered
-            </td>
-            <td>
-                            
-              <%= custom_format_number secondary_sale.display_quantity, params %>
-              
-
-              <div>
-                <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
-                  <%= money_to_currency amount, params %> 
-                  <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
-                <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Support Email</label>
+              <div class="fs-4 fw-medium">
+                <a href="mailto:<%=secondary_sale.support_email%>" target="_blank" class="text-decoration-none">
+                  <%= secondary_sale.support_email %>
+                </a>
+                <div><span class="badge bg-success">Send your queries here</span></div>
               </div>
-            </td>
-          </tr>
+            </div>
 
-          <tr class="">
-            <td>
-              Buyer Doc List
-            </td>
-            <td>
-              <%= secondary_sale.buyer_doc_list %>
-            </td>
-          </tr>
-          <tr class="">
-            <td>
-              Seller Doc List
-            </td>
-            <td>
-              <%= secondary_sale.seller_doc_list %>
-            </td>
-          </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Name</label>
+              <div class="fs-4 fw-medium"><%= secondary_sale.name %></div>
+            </div>
 
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Start Date</label>
+              <div class="fs-4 fw-medium"><%= l secondary_sale.start_date %></div>
+            </div>
 
-          <tr>
-            <td>
-              Actual Offered Quantity
-            </td>
-            <td>
-              <%= custom_format_number secondary_sale.total_offered_quantity, params %>
-            </td>
-          </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Offer End Date</label>
+              <div class="fs-4 fw-medium"><%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %></div>
+            </div>
 
-          <tr>
-            <td>
-              Shortlisted Interest Quantity
-            </td>
-            <td>
-                <ul>
-                  <li>
-                    Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
-                  </li>
-                  <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
-                  <% price_qty.each do |price, qty| %>
-                    <li>
-                      <%= qty %> @ <%= price %> 
-                    </li>
-                  <% end %>
-                </ul>
-            </td>
-          </tr>    
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">End Date</label>
+              <div class="fs-4 fw-medium"><%= l secondary_sale.end_date %></div>
+            </div>
 
-        <% end %>
+            <% if current_user.entity_id == secondary_sale.entity_id %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Buyer Doc List</label>
+                <div class="fs-4 fw-medium"><%= secondary_sale.buyer_doc_list %></div>
+              </div>
 
-        <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Seller Doc List</label>
+                <div class="fs-4 fw-medium"><%= secondary_sale.seller_doc_list %></div>
+              </div>
 
-          <tr>
-            <td colspan="2" class="bg-primary"></td>
-          </tr>
+            <% end %>
 
-          <tr>
-            <td>
-              Clearing Price
-            </td>
-            <td>
-              <%= custom_format_number secondary_sale.clearing_price, params %>
-            </td>
-          </tr>
+            <% if secondary_sale.notification_employee_ids.present? %>
+              <% notification_names = secondary_sale.notification_users.map(&:full_name) %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notify Employees</label>
+                <div class="fs-4 fw-medium"><%= notification_names %></div>
+              </div>
+            <% end %>
+
+          </div>
+        </div>
+      </div>
 
 
-          <tr>
-            <td>
-              Allocated Quantity
-            </td>
-            <td>
-              <%= custom_format_number secondary_sale.allocation_quantity, params %>
-            </td>
-          </tr>
+      <!-- Other Details Card -->
+      <% if current_user %>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-borderless mb-0">
+              <%= display_custom_fields(secondary_sale, collapsed: true) %>
+            </table>
+          </div>
+        </div>
+      <% end %>
 
-          <tr>
-            <td>
-              Allocated Amount
-            </td>
-            <td>
-              <%= money_to_currency secondary_sale.allocation_amount, params %>
-            </td>
-          </tr>
-          
-          <tr>
-            <td colspan="2" class="bg-primary"></td>
-          </tr>
-        <% end %>
+    </div>
 
-        
-        <%= display_custom_fields(secondary_sale, collapsed: true) if current_user %>
+    <!-- Right Column: Status -->
+    <div class="col-lg-4">
 
-        <% if secondary_sale.notification_employee_ids.present? %>
-        <% notification_names = secondary_sale.notification_users.map(&:full_name) %>
-        <tr>
-            <td>
-              Notify Employees
-            </td>
-            <td>
-              <%= notification_names %>
-            </td>
-        </tr>
-        <% end %>
+      <!-- Economics -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3 px-4">
+          <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-bar me-2 text-info"></i>Economics</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <% unless policy(secondary_sale).show_interest? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Percent Allowed</label>
+                <div class="fs-4 fw-medium"><%= secondary_sale.percent_allowed %> %</div>
+              </div>
+            <% end %>
 
-      </table>
+            <% if secondary_sale.final_price > 0 %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Final Price</label>
+                <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.final_price, params %></div>
+              </div>
+            <% else %>
+              <% if secondary_sale.price_type == "Price Range" %>
+                <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Price Type</label>
+                  <div class="fs-4 fw-medium"><%= secondary_sale.price_type %></div>
+                </div>
 
+                <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Min Price</label>
+                  <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.min_price, params %></div>
+                </div>
+
+                <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Max Price</label>
+                  <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.max_price, params %></div>
+                </div>
+              <% end %>
+            <% end %>
+
+            <% if current_user.entity_id == secondary_sale.entity_id %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Total Offered</label>
+                <div class="fs-4 fw-medium">
+                  <%= custom_format_number secondary_sale.display_quantity, params %>
+                  <div class="fs-2 text-muted">
+                    <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
+                      <%= money_to_currency amount, params %>
+                      <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Actual Offered Quantity</label>
+                <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.total_offered_quantity, params %></div>
+              </div>
+
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Shortlisted Interest Quantity</label>
+                <div class="fs-4 fw-medium">
+                  <ul class="list-unstyled mb-0">
+                    <li>Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %></li>
+                    <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
+                    <% price_qty.each do |price, qty| %>
+                      <li class="fs-2 text-muted"><%= qty %> @ <%= price %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
+        <!-- Allocation Results -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header border-bottom py-3 px-4">
+             <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Allocation Results</h6>
+          </div>
+          <div class="card-body">
+            <div class="row g-4">
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Clearing Price</label>
+                <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.clearing_price, params %></div>
+              </div>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Allocated Quantity</label>
+                <div class="fs-4 fw-medium"><%= custom_format_number secondary_sale.allocation_quantity, params %></div>
+              </div>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Allocated Amount</label>
+                <div class="fs-4 fw-medium"><%= money_to_currency secondary_sale.allocation_amount, params %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Attributes -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-bottom py-3 px-4">
+          <h6 class="mb-0 fw-bold d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+            <span class="text-muted">Active</span>
+            <span class="fw-bold"><%= display_boolean secondary_sale.active? %></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
   <% end %>
+</div>
 <% end %>

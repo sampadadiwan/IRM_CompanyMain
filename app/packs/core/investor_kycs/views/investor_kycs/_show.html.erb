@@ -3,366 +3,306 @@
   pan_label = sys_t('investor_kyc.tax_id')
   ifsc_label = sys_t('investor_kyc.bank_routing_number')
 %>
-<%= render ToggleCard.new(title: "KYC #{investor_kyc.full_name}", css_class: "show_inv_entities") do %>
-
-  <table class="table table-bordered dataTable">
-
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= investor_kyc.entity.name %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        KYC Type
-      </td>
-      <td>
-        <%= InvestorKyc.kyc_types[investor_kyc.kyc_type] %>
-        <% if investor_kyc.form_type_id.present? %>
-          <% form_type = investor_kyc.form_type %>
-          (<%= link_to form_type.tag || investor_kyc.form_type_id, form_type %>)
-        <% end %>
-      </td>
-    </tr>
 
 
-    <tr>
-      <td>
-        Stakeholder
-      </td>
-      <td>
-        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>
-      </td>
-    </tr>
+  <div class="row g-4">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
-    <tr>
-      <td>
-        Complete
-      </td>
-      <td>
-          <%= display_boolean investor_kyc.completed_by_investor %>
-      </td>
-    </tr>
+      <!-- Identity Card -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-user me-2 text-primary"></i>KYC: <%= investor_kyc.full_name %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= investor_kyc.entity.name %></div>
+            </div>
 
-    <tr>
-      <td>
-        KYC Verified
-      </td>
-      <td>
-          <%= display_boolean investor_kyc.verified %>
-          <div>
-            <small>
-              <%= "Verified by: " + investor_kyc.verified_by.full_name if investor_kyc.verified && investor_kyc.verified_by %>
-            </small>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investing Entity</label>
+              <div class="fs-4 fw-medium "><%= investor_kyc.full_name %></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Stakeholder</label>
+              <div class="fs-4"><%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab"), class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
+
+             <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">KYC Type</label>
+              <div class="fs-4 fw-medium ">
+                 <%= InvestorKyc.kyc_types[investor_kyc.kyc_type] %>
+                 <% if investor_kyc.form_type_id.present? %>
+                   <% form_type = investor_kyc.form_type %>
+                   (<%= link_to form_type.tag || investor_kyc.form_type_id, form_type, class: "text-decoration-none" %>)
+                 <% end %>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= (investor_kyc.kyc_type == "individual") ? "Date Of Birth" : "Date Of Incorporation" %></label>
+              <div class="fs-4 fw-medium "><%= investor_kyc.birth_date&.strftime("%d %B, %Y") %></div>
+            </div>
+
+            <div class="col-md-6">
+               <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= pan_label %></label>
+               <div class="fs-4 fw-medium ">
+                  <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url(), target: "_blank", class: "text-decoration-none text-primary") : investor_kyc.PAN   %>
+               </div>
+            </div>
+
+            <% if investor_kyc.entity.entity_setting.pan_verification %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= pan_label %> Verified</label>
+                <div class="fs-4">
+                  <%= render "investor_kycs/pan_verification", model: investor_kyc, current_user: current_user %>
+                </div>
+              </div>
+            <% end %>
+
           </div>
-      </td>
-    </tr>
+        </div>
+      </div>
 
-    <% if current_user && policy(@investor_kyc).validate_docs_with_ai? %>
-    <tr>
-      <td>
-        Document Data Validated
-      </td>
-      <td>
-        <%= display_boolean investor_kyc.all_docs_valid %>
-      </td>
-    </tr>
-    <% end %>
+       <!-- Bank & Address Card -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-building-bank me-2 text-info"></i>Contact & Banking</h5>
+        </div>
+        <div class="card-body">
+           <div class="row g-4">
+               <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Correspondence Address</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.corr_address %></div>
+               </div>
+               <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Permanent Address</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.address %></div>
+               </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Bank Name</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.bank_name %></div>
+               </div>
+               <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Branch Name</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.bank_branch %></div>
+               </div>
+               <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Account Type</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.bank_account_type %></div>
+               </div>
+               <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Account Number</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.bank_account_number %></div>
+               </div>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= ifsc_label %></label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.ifsc_code %></div>
+               </div>
+               <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Bank Verified</label>
+                  <div class="fs-4">
+                     <%= render "investor_kycs/bank_verification", model: investor_kyc, current_user: current_user %>
+                  </div>
+               </div>
+                <div class="col-12">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investor Signature Emails</label>
+                  <div class="fs-4 fw-medium "><%= investor_kyc.esign_emails %></div>
+               </div>
+           </div>
+        </div>
+      </div>
 
-    <tr>
-      <td>
-        Investing Entity
-      </td>
-      <td>
-        <%= investor_kyc.full_name %>
-      </td>
-    </tr>
+       <!-- Other Details Card -->
+       <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+        </div>
+        <div class="card-body">
+             <% if current_user %>
+               <table class="table table-borderless mb-0">
+                <%= display_custom_fields(investor_kyc) %>
+               </table>
+            <% end %>
+        </div>
+      </div>
 
-    <tr>
-      <td>
-        <%= (investor_kyc.kyc_type == "individual") ? "Date Of Birth" : "Date Of Incorporation" %>
-      </td>
-      <td>
-        <%= investor_kyc.birth_date&.strftime("%d %B, %Y") %>
-      </td>
-    </tr>
+    </div>
 
-    <tr>
-      <td>
-        <%= pan_label %>
-      </td>
-      <td>
-        <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url(), target: "_blank") : investor_kyc.PAN   %>
+    <!-- Right Column: Financials -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <% if investor_kyc.entity.entity_type == "Angel Fund" %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Unit Type</span>
+                        <span class="fw-bold "><%= investor_kyc.agreement_unit_type %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Agreement Committed Amount</span>
+                        <span class="fw-bold "><%= money_to_currency investor_kyc.agreement_committed_amount, params %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Due Amount</span>
+                        <span class="fw-bold "><%= money_to_currency investor_kyc.due_amount, params %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Uncalled Amount</span>
+                        <span class="fw-bold "><%= money_to_currency investor_kyc.uncalled_amount, params %></span>
+                    </li>
+                <% end %>
 
-        <% if investor_kyc.pan_card.present? %>
-          <% if investor_kyc.pan_card.mime_type.include?("image") %>
-            <br>
-            <%= image_tag investor_kyc.pan_card.url,
-              style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
-          <% end %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Committed Amount</span>
+                    <span class="fw-bold "><%= money_to_currency investor_kyc.committed_amount, params %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Collected Amount</span>
+                    <span class="fw-bold "><%= money_to_currency investor_kyc.collected_amount, params %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Called Amount</span>
+                    <span class="fw-bold "><%= money_to_currency investor_kyc.call_amount, params %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Distributed Amount</span>
+                    <span class="fw-bold "><%= money_to_currency investor_kyc.distribution_amount, params %></span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Attributes / Status -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Expiry Date</span>
+                    <span class="fw-bold ">
+                        <%= l investor_kyc.expiry_date if investor_kyc.expiry_date %>
+                        <%= render "investor_kycs/expired", investor_kyc: investor_kyc %>
+                    </span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Completed</span>
+                    <span class="fw-bold "><%= display_boolean investor_kyc.completed_by_investor %></span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">KYC Verified</span>
+                    <div class="text-end">
+                        <%= display_boolean investor_kyc.verified %>
+                        <% if investor_kyc.verified && investor_kyc.verified_by %>
+                            <div class="small text-muted"><%= investor_kyc.verified_by.full_name %></div>
+                        <% end %>
+                    </div>
+                </li>
+
+                <% if current_user && policy(@investor_kyc).validate_docs_with_ai? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">Document Data Validated</span>
+                        <span class="fw-bold "><%= display_boolean investor_kyc.all_docs_valid %></span>
+                    </li>
+                <% end %>
+
+                <% if investor_kyc.entity.entity_setting.aml_enabled? %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span class="text-muted">AML Status</span>
+                        <span class="fw-bold ">
+                            <% if investor_kyc.aml_status == "no_match" %>
+                                <span class="badge bg-success"><%= investor_kyc.aml_status.titleize %></span>
+                            <% elsif investor_kyc.aml_status == "potential_match"%>
+                                <span class="badge bg-warning"><%= investor_kyc.aml_status.titleize %></span>
+                            <% end %>
+                        </span>
+                    </li>
+                <% end %>
+
+
+
+            </ul>
+        </div>
+
+        <!-- Documents Card -->
+        <% if investor_kyc.pan_card.present? || investor_kyc.signature.present? %>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3">
+                    <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-files me-2 text-secondary"></i>Documents</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <% if investor_kyc.pan_card.present? && investor_kyc.pan_card.mime_type.include?("image") %>
+                            <div class="col-12">
+                                <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= pan_label %> Image</label>
+                                <div>
+                                    <%= image_tag investor_kyc.pan_card.url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;", class: "img-fluid rounded border" %>
+                                </div>
+                            </div>
+                        <% end %>
+
+                        <% if investor_kyc.signature.present? %>
+                            <div class="col-12">
+                                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Signature</label>
+                                <div>
+                                    <%= image_tag investor_kyc.signature_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;", class: "img-fluid rounded border" %>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
         <% end %>
-      </td>
-    </tr>
 
-    <% if investor_kyc.entity.entity_setting.pan_verification %>
-      <tr>
-        <td>
-          <%= pan_label %> Verified
-        </td>
-        <td>
-          <%= render "investor_kycs/pan_verification", model: investor_kyc, current_user: current_user %>
-        </td>
-      </tr>
-    <% end %>
+        <% if params[:debug].present? %>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3">
+                <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-bug me-2 text-danger"></i>Debug Info</h6>
+                </div>
+                 <ul class="list-group list-group-flush">
+                    <li class="list-group-item py-3">
+                        <span class="text-muted d-block mb-1">Bank Verification Response</span>
+                        <code class="d-block text-break"><%= investor_kyc.bank_verification_response %></code>
+                    </li>
+                    <li class="list-group-item py-3">
+                        <span class="text-muted d-block mb-1">Bank Verification Status</span>
+                         <span class="fw-bold "><%= investor_kyc.bank_verification_status %></span>
+                    </li>
+                     <li class="list-group-item py-3">
+                        <span class="text-muted d-block mb-1">Signature Data</span>
+                         <code class="d-block text-break"><%= investor_kyc.signature_data %></code>
+                    </li>
+                     <li class="list-group-item py-3">
+                        <span class="text-muted d-block mb-1"><%= pan_label %> Verification Response</span>
+                         <code class="d-block text-break"><%= investor_kyc.pan_verification_response %></code>
+                    </li>
+                     <li class="list-group-item py-3">
+                        <span class="text-muted d-block mb-1"><%= pan_label %> Verification Status</span>
+                        <span class="fw-bold "><%= investor_kyc.pan_verification_status %></span>
+                    </li>
+                 </ul>
+            </div>
+        <% end %>
 
-    <tr>
-      <td>
-        Signature
-      </td>
-      <td>
-        <%= image_tag investor_kyc.signature_url,
-          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investor_kyc.signature.present? %>
-      </td>
-    </tr>
+        <%# Investor User cannot see regulatory fields %>
+        <% if !current_user&.curr_role_investor? %>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3">
+                    <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-report me-2 text-primary"></i>Reporting Fields</h6>
+                </div>
+                <div class="card-body">
+                    <%= render "form_custom_fields/reporting_fields", object: investor_kyc, edit_path: edit_reporting_fields_investor_kyc_path(investor_kyc)%>
+                </div>
+            </div>
+        <% end %>
+    </div>
 
-    <tr>
-      <td>
-        Correspondence Address
-      </td>
-      <td>
-        <%= investor_kyc.corr_address %>
-      </td>
-    </tr>
+  </div>
 
-    <tr>
-      <td>
-        Permanent Address
-      </td>
-      <td>
-        <%= investor_kyc.address %>
-      </td>
-    </tr>
-
-
-    <tr>
-      <td>
-        Bank Name
-      </td>
-      <td>
-        <%= investor_kyc.bank_name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Branch Name
-      </td>
-      <td>
-        <%= investor_kyc.bank_branch %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Bank Account Type
-      </td>
-      <td>
-        <%= investor_kyc.bank_account_type %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Bank Account Number
-      </td>
-      <td>
-        <%= investor_kyc.bank_account_number %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <%=ifsc_label%>
-      </td>
-      <td>
-        <%= investor_kyc.ifsc_code %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Bank Verified
-      </td>
-      <td>
-        <%= render "investor_kycs/bank_verification", model: investor_kyc, current_user: current_user %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Investor Signature Emails
-      </td>
-      <td>
-        <%= investor_kyc.esign_emails %>
-      </td>
-    </tr>
-
-
-    <%= display_custom_fields(investor_kyc) if current_user %>
-
-    <tr>
-      <td>
-        Expiry Date
-      </td>
-      <td>
-        <%= l investor_kyc.expiry_date if investor_kyc.expiry_date %>
-        <br>
-        <%= render "investor_kycs/expired", investor_kyc:  %>
-      </td>
-    </tr>
-
-
-    <% if investor_kyc.entity.entity_type == "Angel Fund" %>
-    <tr>
-      <td>
-        Unit Type
-      </td>
-      <td>
-        <%= investor_kyc.agreement_unit_type %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Agreement Committed Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.agreement_committed_amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Due Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.due_amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Uncalled Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.uncalled_amount, params %>
-      </td>
-    </tr>
-    <% end %>
-
-    <tr>
-      <td>
-        Committed Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.committed_amount, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.collected_amount, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Called Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.call_amount, params %>
-      </td>
-    </tr>
-
-
-    <tr>
-      <td>
-        Distributed Amount
-      </td>
-      <td>
-        <%= money_to_currency investor_kyc.distribution_amount, params %>
-      </td>
-    </tr>
-
-
-    <% if investor_kyc.entity.entity_setting.aml_enabled? %>
-    <tr>
-      <td>
-        AML Status
-      </td>
-      <td>
-        <% if investor_kyc.aml_status == "no_match" %>
-              <span class="badge bg-success" type="button">
-                  <%= investor_kyc.aml_status.titleize %>
-              </span>
-          <% elsif investor_kyc.aml_status == "potential_match"%>
-              <span class="badge bg-warning" type="button">
-                  <%= investor_kyc.aml_status.titleize %>
-              </span>
-          <% end %>
-      </td>
-    </tr>
-    <% end %>
-
-    <% if params[:debug].present? %>
-      <tr>
-        <td>
-          Bank Verification Response
-        </td>
-        <td>
-          <%= investor_kyc.bank_verification_response %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Bank Verification Status
-        </td>
-        <td>
-          <%= investor_kyc.bank_verification_status %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Signature Data
-        </td>
-        <td>
-          <%= investor_kyc.signature_data %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          <%=pan_label%> Verification Response
-        </td>
-        <td>
-          <%= investor_kyc.pan_verification_response %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <%=pan_label%> Verification Status
-        </td>
-        <td>
-          <%= investor_kyc.pan_verification_status %>
-        </td>
-      </tr>
-    <% end %>
-
-  </table>
-
-<% end %>
-
-<%# Investor User cannot see regulatory fields %>
-<% if !current_user&.curr_role_investor? %>
-  <%= render "form_custom_fields/reporting_fields", object: investor_kyc, edit_path: edit_reporting_fields_investor_kyc_path(investor_kyc)%>
-<% end %>

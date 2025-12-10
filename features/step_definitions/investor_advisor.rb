@@ -33,7 +33,7 @@
         next if idx.zero? # skip header row
         user_data = [headers, row].transpose.to_h
         user = User.find_by_email(user_data["Email"].strip)
-        investor = @entity.investors.where(investor_name: user_data["Investor"].strip).first
+        investor = @entity.investors.where(investor_name: user_data["Stakeholder"].strip).first
         # Check if user is added as an investor_advisor
         puts "Checking investor_advisor #{user.email} for #{investor.investor_entity.name}"
         investor.investor_entity.investor_advisors.where(user_id: user.id, entity_id: investor.investor_entity_id).count.should > 0

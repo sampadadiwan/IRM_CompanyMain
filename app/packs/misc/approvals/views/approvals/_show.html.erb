@@ -1,100 +1,111 @@
 <%= render ToggleCard.new(title: "Approval: #{approval.title}", css_class: "show_approval") do %>
+  <div class="row g-0 p-3" id="<%= dom_id approval %>">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8 pe-4">
 
-    <table id="<%= dom_id approval %>" class="table table-bordered dataTable">
+      <!-- Approval Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-check me-2 text-primary"></i>Approval Details</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= approval.entity.name %></div>
+            </div>
 
-        <tr>
-            <td>
-                Title
-            </td>
-            <td>
-                <%= approval.title %>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Due By
-            </td>
-            <td>
-                <%= l approval.due_date %>
-            </td>
-        </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Title</label>
+              <div class="fs-4 fw-medium "><%= approval.title %></div>
+            </div>
 
-        <% if current_user && current_user.entity_id == approval.entity_id %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Due By</label>
+              <div class="fs-4 fw-medium "><%= l approval.due_date %></div>
+            </div>
 
-        <tr>
-            <td>
-                Response Status
-            </td>
-            <td>
-                <%= approval.response_status %>
-            </td>
-        </tr>
-
-        <tr>
-            <td>
-                Approved
-            </td>
-            <td>
-                <%= display_boolean approval.approved %>
-            </td>
-        </tr>
-        <% end %>
-
-        <tr>
-            <td>
-                Details
-            </td>
-            <td>
-                <%= approval.agreements_reference %>
-
-               
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Entity
-            </td>
-            <td>
-                <%= approval.entity.name %>
-            </td>
-        </tr>
-        <% if current_user && current_user.entity_id == approval.entity_id %>
-            <% status_count = approval.approval_responses.group(:status).count %>
-            <% response_statuses = approval.response_status&.split(",") || [] %>
-            <% response_statuses.each do |status| %>
-                <tr>
-                    <td>
-                        <%= status %>
-                    </td>
-                    <td class="<%=status.downcase%>_count">
-                        <%= status_count[status] || 0 %>
-                    </td>
-                </tr>
+            <% if current_user && current_user.entity_id == approval.entity_id %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Response Status</label>
+                <div class="fs-4 fw-medium "><%= approval.response_status %></div>
+              </div>
             <% end %>
+
+            <div class="col-12">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Details</label>
+              <div class="fs-4 fw-medium "><%= approval.agreements_reference %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% if current_user %>
+        <!-- Other Details Card -->
+        <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+            <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+        </div>
+        <div class="card-body">
+                <table class="table table-borderless mb-0">
+                <%= display_custom_fields(@approval) %>
+                </table>
+        </div>
+        </div>
+      <% end %>
+
+    </div>
+
+    <!-- Right Column: Status -->
+    <div class="col-lg-4">
+
+         <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <% if current_user && current_user.entity_id == approval.entity_id %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Approved</span>
+                        <span class="fw-bold "><%= display_boolean approval.approved %></span>
+                    </li>
+                <% end %>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Show KYCs in Approval</span>
+                    <span class="fw-bold "><%= display_boolean approval.enable_approval_show_kycs %></span>
+                </li>
+
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Enable response links in email</span>
+                    <span class="fw-bold "><%= display_boolean approval.response_enabled_email %></span>
+                </li>
+            </ul>
+        </div>
+        <% if current_user && current_user.entity_id == approval.entity_id %>
+          <!-- Response Stats -->
+          <div class="card shadow-sm border-0 mb-4">
+              <div class="card-header  border-bottom py-3">
+                <h5 class="mb-0 fw-bold "><i class="ti ti-chart-bar me-2 text-info"></i>Responses</h5>
+              </div>
+              <div class="card-body p-0">
+                   <% status_count = approval.approval_responses.group(:status).count %>
+                   <% response_statuses = approval.response_status&.split(",") || [] %>
+
+                   <ul class="list-group list-group-flush">
+                   <% response_statuses.each do |status| %>
+                      <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                          <span class="text-muted"><%= status %></span>
+                          <span class="fw-bold  <%= status.downcase %>_count"><%= status_count[status] || 0 %></span>
+                      </li>
+                   <% end %>
+                   </ul>
+              </div>
+          </div>
         <% end %>
 
-        <%= display_custom_fields(@approval) if current_user %>
-        
+    </div>
 
-        <tr>
-            <td>
-                Show KYCs in Approval
-            </td>
-            <td>
-                <%= display_boolean approval.enable_approval_show_kycs %>
-            </td>
-        </tr>
-        
-
-         <tr>
-            <td>
-                Enable response links in email
-            </td>
-            <td>
-                <%= display_boolean approval.response_enabled_email %>
-            </td>
-        </tr>
-
-    </table>
-
+</div>
 <% end %>

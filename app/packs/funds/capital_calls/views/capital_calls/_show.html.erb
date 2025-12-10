@@ -1,269 +1,239 @@
-<%= render ToggleCard.new(title: "Call: #{capital_call.name}", css_class: "show_calls", state: "closed") do %>
 
-  <table class="table table-bordered dataTable">
-      <tr class="">
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= capital_call.entity.name %>
-        </td>
-      </tr>
-      <tr class="">
-        <td>
-          Fund
-        </td>
-        <td>
-          <%= link_to capital_call.fund.name, capital_call.fund %>
-        </td>
-      </tr>
-      <tr class="">
-        <td>
-          Name
-        </td>
-        <td>
-          <%= capital_call.name %>
-        </td>
-      </tr>
+<div class="container-fluid p-3">
+  <%= render ToggleCard.new(title: "Call: #{capital_call.name}", css_class: "show_calls", state: "closed") do %>
 
-      <tr class="">
-        <td>
-          Call Date
-        </td>
-        <td>
-          <%= l capital_call.call_date %>
-        </td>
-      </tr>
-      <tr class="">
-        <td>
-          Due Date
-        </td>
-        <td>
-          <%= l capital_call.due_date %>
-        </td>
-      </tr>
+  <div class="row">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
 
+      <!-- Call Details -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-bell-ringing me-2 text-primary"></i>Call: <%= capital_call.name %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= capital_call.entity.name %></div>
+            </div>
 
-      <% if current_user.entity_id == capital_call.entity_id %>
-      
-      <tr class="">
-        <td>
-          Call Basis
-        </td>
-        <td>
-          <%= capital_call.call_basis %>
-        </td>
-      </tr>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to capital_call.fund.name, capital_call.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-      <% if capital_call.percentage_called > 0 %>
-      <tr class="">
-        <td>
-          Percentage Called
-        </td>
-        <td>
-          <%= capital_call.percentage_called %> %
-        </td>
-      </tr>
-      <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Name</label>
+              <div class="fs-4 fw-medium "><%= capital_call.name %></div>
+            </div>
 
-      <% if capital_call.amount_to_be_called_cents > 0 %>
-      <tr class="">
-        <td>
-          Amount To Be Called
-        </td>
-        <td>
-          <%= money_to_currency capital_call.amount_to_be_called, params %> 
-        </td>
-      </tr>
-      <% end %>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Call Date</label>
+              <div class="fs-4 fw-medium "><%= l capital_call.call_date %></div>
+            </div>
 
-      
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Due Date</label>
+              <div class="fs-4 fw-medium "><%= l capital_call.due_date %></div>
+            </div>
 
-      <tr class="">
-        <td>
-          Applicable To Close
-        </td>
-        <td>
-          <%= capital_call.fund_closes %>
-        </td>
-      </tr>
+            <% if current_user.entity_id == capital_call.entity_id %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Call Basis</label>
+                <div class="fs-4 fw-medium "><%= capital_call.call_basis %></div>
+              </div>
 
-      <% if capital_call.close_percentages.present? %>
-        <% capital_call.close_percentages.each do |close, percentage| %>
-          <tr class="">
-            <td>
-              <%= close %> - Percentage Called
-            </td>
-            <td>
-              <%= percentage.to_i %> %
-            </td>
-          </tr>
-        <% end %>
-      <% end %>
+              <% if capital_call.percentage_called > 0 %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Percentage Called</label>
+                  <div class="fs-4 fw-medium "><%= capital_call.percentage_called %> %</div>
+                </div>
+              <% end %>
 
-      <% if capital_call.fund.unit_types.present? %>
-        <% capital_call.unit_prices.each do |unit_type, unit_price| %>
+              <% if capital_call.amount_to_be_called_cents > 0 %>
+                <div class="col-md-6">
+                  <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Amount To Be Called</label>
+                  <div class="fs-4 fw-medium "><%= money_to_currency capital_call.amount_to_be_called, params %></div>
+                </div>
+              <% end %>
 
-          <tr class="">
-            <td>
-              <%= unit_type %>
-            </td>
-            <td>
-              Price: <%= unit_price['price'] %>, 
-              Premium: <%= unit_price['premium'] %>
-            </td>
-          </tr>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Applicable To Close</label>
+                <div class="fs-4 fw-medium ">
+                <% capital_call.fund_closes.each do |close| %>
+                  <span class="badge bg-secondary rounded-pill px-3 py-2"><%= close %></span>
+                <% end %>
+                </div>
+              </div>
 
-        <% end %>  
-      <% end %>
+              <% if capital_call.close_percentages.present? %>
+                <% capital_call.close_percentages.each do |close, percentage| %>
+                  <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= close %> - Percentage Called</label>
+                    <div class="fs-4 fw-medium "><%= percentage.to_i %> %</div>
+                  </div>
+                <% end %>
+              <% end %>
 
-      <% if current_user %>
+            <% end %>
 
-          <tr class="">
-            <td>
-              Approved
-            </td>
-            <td>
-              <%= display_boolean capital_call.approved %>
-            </td>
-          </tr>
-          <tr class="">
-            <td>
-                Call Amount
-            </td>
-            <td>
-                <%= money_to_currency capital_call.call_amount, params %>
-            </td>
-          </tr>
+            <% if capital_call.notes.present? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <div class="fs-4 fw-medium "><%= capital_call.notes.html_safe %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
 
-
-          
-          <% if capital_call.call_fees.present? || capital_call.fee_formulas.present? %>
-          <tr class="d-none d-sm-table-row">
-            <td>
-              Fees
-            </td>
-            <td>
-              <table class="table dataTable">
-                <tr>
-                  <td>Name</td> 
-                  <td>From</td>
-                  <td>To</td>
-                  <td>Type</td>
-                  <td>Notes</td>
-                </tr>
+      <% if current_user.entity_id == capital_call.entity_id && (capital_call.call_fees.present? || capital_call.fee_formulas.present?) %>
+        <!-- Fees Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3">
+              <h5 class="mb-0 fw-bold "><i class="ti ti-receipt-tax me-2 text-warning"></i>Fees</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="bg-light row py-2 px-3 fw-bold border-bottom mx-0">
+                    <div class="col-3">Name</div>
+                    <div class="col-2">From</div>
+                    <div class="col-2">To</div>
+                    <div class="col-2">Type</div>
+                    <div class="col-3">Notes</div>
+                </div>
 
                 <% capital_call.call_fees.each do |call_fee| %>
-                  <tr>            
-                    <td><%= call_fee.name %></td>
-                      <td><%= l call_fee.start_date %></td>
-                      <td><%= l call_fee.end_date %></td>
-                      <td><%= call_fee.fee_type %></td>
-                      <td><%= call_fee.notes %></td>
-                  </tr>
+                    <div class="row py-2 px-3 border-bottom mx-0">
+                        <div class="col-3"><%= call_fee.name %></div>
+                        <div class="col-2"><%= l call_fee.start_date %></div>
+                        <div class="col-2"><%= l call_fee.end_date %></div>
+                        <div class="col-2"><%= call_fee.fee_type %></div>
+                        <div class="col-3"><%= call_fee.notes %></div>
+                    </div>
                 <% end %>
 
                 <% capital_call.fee_formulas&.each do |call_fee| %>
-                  <tr>            
-                    <td><%= call_fee.name %></td>
-                      <td></td>
-                      <td></td>
-                      <td><%= call_fee.fee_type %></td>
-                      <td><%= call_fee.notes %></td>
-                  </tr>
+                    <div class="row py-2 px-3 border-bottom mx-0">
+                        <div class="col-3"><%= call_fee.name %></div>
+                        <div class="col-2"></div>
+                        <div class="col-2"></div>
+                        <div class="col-2"><%= call_fee.fee_type %></div>
+                        <div class="col-3"><%= call_fee.notes %></div>
+                    </div>
                 <% end %>
-
-              </table>
-
-            </td>
-          </tr>
-          <% end %>
-
-          
-
-          <% if capital_call.capital_fee_cents > 0 %>
-      
-            <tr class="">
-              <td>
-                Capital Fees
-              </td>
-              <td>
-                <%= money_to_currency capital_call.capital_fee, params %> 
-              </td>
-            </tr>
-
-          <% end %>
-
-          <% if capital_call.other_fee_cents > 0 %>
-      
-            <tr class="">
-              <td>
-                Other Fees
-              </td>
-              <td>
-                <%= money_to_currency capital_call.other_fee, params %> 
-              </td>
-            </tr>
-
-          <% end %>
-          
-          <tr class="">
-          <td>
-              Collected Amount
-          </td>
-          <td>
-              <%= money_to_currency capital_call.collected_amount, params %>
-              
-              <div class="progress">
-                  <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-                      <%= capital_call.percentage_raised %> %
-                  </div>
-              </div>
-          
-          </td>
-          </tr>
-
-          <tr class="">
-            <td>
-                Due Amount
-            </td>
-            <td>
-                <%= money_to_currency capital_call.due_amount, params %>        
-            </td>
-          </tr>
-
+            </div>
+        </div>
       <% end %>
 
-      <%= display_custom_fields(capital_call) if current_user %>
+       <!-- Other Details Card -->
+       <% if current_user && current_user.entity_id == capital_call.entity_id %>
+       <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-warning"></i>Other Details</h5>
+        </div>
+        <div class="card-body">
+             <table class="table table-borderless mb-0">
+              <%= display_custom_fields(capital_call) %>
+             </table>
+        </div>
+      </div>
       <% end %>
-      
 
-      <tr class="">
-        <td>
-          Send Call Notice
-        </td>
-        <td>
-          <%= display_boolean capital_call.send_call_notice_flag %>
-        </td>
-      </tr>
+    </div>
 
-      <tr class="">
-        <td>
-          Send Payment Notification
-        </td>
-        <td>
-          <%= display_boolean capital_call.send_payment_notification_flag %>
-        </td>
-      </tr>
+    <!-- Right Column: Financials & Status -->
+    <div class="col-lg-4">
 
-      <tr class="">
-        <td>
-          Notes
-        </td>
-        <td>
-          <%= capital_call.notes.html_safe if capital_call.notes %>
-        </td>
-      </tr>
-  </table>
+        <!-- Attributes -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header  border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <% if current_user %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Approved</span>
+                        <span class="fw-bold "><%= display_boolean capital_call.approved %></span>
+                    </li>
+                <% end %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Send Call Notice</span>
+                    <span class="fw-bold "><%= display_boolean capital_call.send_call_notice_flag %></span>
+                </li>
+                 <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                    <span class="text-muted">Send Payment Notification</span>
+                    <span class="fw-bold "><%= display_boolean capital_call.send_payment_notification_flag %></span>
+                </li>
+            </ul>
+        </div>
 
-<% end %>
+        <% if current_user %>
+            <!-- Financials -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3 px-4">
+                <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Call Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_call.call_amount, params %></span>
+                    </li>
+
+                    <% if capital_call.capital_fee_cents > 0 %>
+                         <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted">Capital Fees</span>
+                            <span class="fw-bold "><%= money_to_currency capital_call.capital_fee, params %></span>
+                        </li>
+                    <% end %>
+
+                    <% if capital_call.other_fee_cents > 0 %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted">Other Fees</span>
+                            <span class="fw-bold "><%= money_to_currency capital_call.other_fee, params %></span>
+                        </li>
+                    <% end %>
+
+                    <li class="list-group-item py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Collected Amount</span>
+                            <span class="fw-bold "><%= money_to_currency capital_call.collected_amount, params %></span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+                                <%= capital_call.percentage_raised %> %
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                        <span class="text-muted">Due Amount</span>
+                        <span class="fw-bold "><%= money_to_currency capital_call.due_amount, params %></span>
+                    </li>
+
+                </ul>
+            </div>
+        <% end %>
+
+        <% if current_user.entity_id == capital_call.entity_id && capital_call.fund.unit_types.present? %>
+            <!-- Unit Prices -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header  border-bottom py-3 px-4">
+                    <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-tag me-2 text-info"></i>Unit Prices</h6>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <% capital_call.unit_prices.each do |unit_type, unit_price| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <span class="text-muted"><%= unit_type %></span>
+                            <span class="fw-bold  text-end">Price: <%= unit_price['price'] %> <br> Premium: <%= unit_price['premium'] %></span>
+                        </li>
+                    <% end %>
+                </ul>
+            </div>
+        <% end %>
+
+    </div>
+
+  </div>
+  <% end %>
+</div>

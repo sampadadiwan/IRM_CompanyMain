@@ -1,0 +1,147 @@
+<div class="container-fluid p-3" data-controller="tabs" style="max-width: 1400px;">
+
+    <div class="accordion ultra-cool-accordion" id="investorFundDetailsAccordion">
+
+      <!-- Commitments -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="commitments-tab">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCommitments" aria-expanded="true" aria-controls="collapseCommitments">
+            <%= t('funds.fund_details.commitments') %>
+          </button>
+        </h2>
+        <div id="collapseCommitments" class="accordion-collapse collapse show" aria-labelledby="commitments-tab" data-bs-parent="#investorFundDetailsAccordion">
+          <div class="accordion-body">
+            <div id="commitments" class="">
+                <%= turbo_frame_tag "capital_commitments_frame", target: "_top", loading: :lazy, src: capital_commitments_path(fund_id: fund.id, card: true) do %>
+                  <%= render "/layouts/loading" %>
+                <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calls -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="calls-tab">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalls" aria-expanded="false" aria-controls="collapseCalls">
+            <%= t('funds.fund_details.calls') %>
+          </button>
+        </h2>
+        <div id="collapseCalls" class="accordion-collapse collapse" aria-labelledby="calls-tab" data-bs-parent="#investorFundDetailsAccordion">
+          <div class="accordion-body">
+            <div id="capital-remittances" class="">
+              <%= turbo_frame_tag "capital_remittances_frame", target: "_top", loading: :lazy, src: capital_remittances_path(fund_id: fund.id, card: false, status: "", verified: "") do %>
+                <%= render "/layouts/loading" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distributions -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="distributions-tab">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDistributions" aria-expanded="false" aria-controls="collapseDistributions">
+            <%= t('funds.fund_details.distributions') %>
+          </button>
+        </h2>
+        <div id="collapseDistributions" class="accordion-collapse collapse" aria-labelledby="distributions-tab" data-bs-parent="#investorFundDetailsAccordion">
+          <div class="accordion-body">
+            <div id="capital-distribution-payments" class="">
+              <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(fund_id: fund.id, card: false) do %>
+                <%= render "/layouts/loading" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Units -->
+      <% if fund.entity.permissions.enable_units? %>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="units-tab">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnits" aria-expanded="false" aria-controls="collapseUnits">
+              <%= t('funds.fund_details.units') %>
+            </button>
+          </h2>
+          <div id="collapseUnits" class="accordion-collapse collapse" aria-labelledby="units-tab" data-bs-parent="#investorFundDetailsAccordion">
+            <div class="accordion-body">
+              <div id="fund_units" class="">
+                <%= turbo_frame_tag "fund_units_list", src: fund_units_path(fund_id: fund.id), loading: :lazy, target: "_top" do %>
+                   <%= render "/layouts/loading" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Ratios -->
+      <% if fund.show_fund_ratios %>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="ratios-tab">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRatios" aria-expanded="false" aria-controls="collapseRatios">
+              <%= t('funds.fund_details.ratios') %>
+            </button>
+          </h2>
+          <div id="collapseRatios" class="accordion-collapse collapse" aria-labelledby="ratios-tab" data-bs-parent="#investorFundDetailsAccordion">
+            <div class="accordion-body">
+              <%
+                # For the portfolio and fund ratios, use the master_fund if its present as in the feeder fund we want to see the master_fund portfolio and ratios
+                fund_id = fund.master_fund.present? ?  fund.master_fund_id : fund.id
+              %>
+              <div id="fund-ratios" class="">
+                <%= turbo_frame_tag "fund_ratios_frame", target: "_top", loading: :lazy, src: fund_ratios_path(fund_id: fund_id, fund_ratios_only: true, owner_type: "Fund", scenario: "Default") do %>
+                    <%= render "/layouts/loading" %>
+                  <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Portfolio -->
+      <% if fund.show_portfolios %>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="portfolio-tab">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePortfolio" aria-expanded="false" aria-controls="collapsePortfolio">
+              <%= t('funds.fund_details.portfolio') %>
+            </button>
+          </h2>
+          <div id="collapsePortfolio" class="accordion-collapse collapse" aria-labelledby="portfolio-tab" data-bs-parent="#investorFundDetailsAccordion">
+            <div class="accordion-body">
+              <div id="portfolio_investments" class="">
+                <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard") do %>
+                  <%= render "/layouts/loading" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Documents -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="docs-tab">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocuments" aria-expanded="false" aria-controls="collapseDocuments">
+            <%= t('funds.fund_details.documents') %>
+          </button>
+        </h2>
+        <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="docs-tab" data-bs-parent="#investorFundDetailsAccordion">
+          <div class="accordion-body">
+            <div id="docs" class="">
+                <%= turbo_frame_tag "documents_tree_frame", src: folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true), loading: :lazy, target: "_top" do %>
+                  <div class="text-center">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                  </div>
+                <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+</div>

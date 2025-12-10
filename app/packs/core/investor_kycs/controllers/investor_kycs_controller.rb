@@ -33,7 +33,7 @@ class InvestorKycsController < ApplicationController
 
     @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
 
-    @pagy, @investor_kycs = pagy(@investor_kycs, limit: params[:per_page]) if params[:all].blank?
+    @pagy, @investor_kycs = pagy(@investor_kycs, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?
 
     @investor_kycs
   end

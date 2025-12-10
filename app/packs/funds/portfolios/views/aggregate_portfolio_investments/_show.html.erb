@@ -1,283 +1,218 @@
+<div class="container-fluid p-3">
+  <div class="row g-4">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-info-circle me-2 text-primary"></i>Aggregate Investment: <%= aggregate_portfolio_investment.portfolio_company_name %></h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entity</label>
+              <div class="fs-4 fw-medium "><%= aggregate_portfolio_investment.entity.name %></div>
+            </div>
 
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <div class="fs-4"><%= link_to aggregate_portfolio_investment.fund, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
 
-<div class="card shadow mb-4">
-  <div class="card-header py-3 d-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Aggregate Investment: <%= aggregate_portfolio_investment.portfolio_company_name %></h6>
-      <span>
-      </span>
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Portfolio Company</label>
+              <div class="fs-4"><%= link_to aggregate_portfolio_investment.portfolio_company, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Instrument</label>
+              <div class="fs-4"><%= link_to aggregate_portfolio_investment.investment_instrument, class: "text-decoration-none fw-bold text-primary" %></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Investment Domicile</label>
+              <div class="fs-4 fw-medium "><%= aggregate_portfolio_investment.investment_domicile %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h5 class="mb-0 fw-bold "><i class="ti ti-settings me-2 text-info"></i>Other Details</h5>
+        </div>
+        <div class="card-body">
+           <table class="table table-borderless mb-0">
+             <%= display_custom_fields(aggregate_portfolio_investment) %>
+           </table>
+        </div>
+      </div>
+
+      <% unless aggregate_portfolio_investment.snapshot %>
+        <div class="mb-4">
+          <%= render "/aggregate_portfolio_investments/charts", aggregate_portfolio_investment: aggregate_portfolio_investment %>
+        </div>
+      <% end %>
+
+    </div>
+
+    <!-- Right Column: Financials, Attributes & Actions -->
+    <div class="col-lg-4">
+
+      <!-- Financials -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-chart-pie me-2 text-success"></i>Financials</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Current Quantity</span>
+                <span class="fw-bold "><%= aggregate_portfolio_investment.quantity %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Avg Cost Per Share</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.avg_cost, params %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Bought Quantity</span>
+                <span class="fw-bold "><%= aggregate_portfolio_investment.bought_quantity %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Bought Amount</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.bought_amount, params %></span>
+            </li>
+            <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Bought Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_bought_amount %></span>
+                </li>
+            <% end %>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Transfer Quantity</span>
+                <span class="fw-bold "><%= aggregate_portfolio_investment.transfer_quantity %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Transfer Amount</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.transfer_amount %></span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Sold Quantity</span>
+                <span class="fw-bold "><%= aggregate_portfolio_investment.sold_quantity %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Sold Amount</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.sold_amount, params %></span>
+            </li>
+            <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Sold Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_sold_amount %></span>
+                </li>
+            <% end %>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Cost Of Sold (FIFO)</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %></span>
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">FMV</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.fmv, params %></span>
+            </li>
+            <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">FMV (<%= aggregate_portfolio_investment.fund.tracking_currency %>)</span>
+                    <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.tracking_fmv %></span>
+                </li>
+            <% end %>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Realized Gain</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.gain, params %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Unrealized Gain</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.unrealized_gain, params %></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <span class="text-muted">Cost of Remaining</span>
+                <span class="fw-bold "><%= money_to_currency aggregate_portfolio_investment.cost_of_remaining, params %></span>
+            </li>
+        </ul>
+      </div>
+
+      <!-- Attributes -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header  border-bottom py-3">
+          <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <span class="text-muted">Show Portfolio</span>
+            <% if aggregate_portfolio_investment.show_portfolio %>
+                <span class="badge bg-success">Yes</span>
+            <% else %>
+                <span class="badge bg-warning">No</span>
+            <% end %>
+          </li>
+        </ul>
+      </div>
+
+       <!-- Actions -->
+       <% unless aggregate_portfolio_investment.snapshot %>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header  border-bottom py-3">
+            <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-settings me-2 text-secondary"></i>Actions</h6>
+          </div>
+          <div class="card-body">
+             <div class="d-grid gap-2">
+                <%= link_to aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'),
+                            class: "btn btn-outline-info" do %>
+                    <i class="ti ti-eye"></i>Preview
+                <% end %>
+
+                <%= link_to new_valuation_path(
+                                "valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id,
+                                "valuation[owner_type]": "Investor",
+                                "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id),
+                            class: "btn btn-outline-success" do %>
+                    <i class="ti ti-currency-dollar"></i>Add Valuation
+                <% end %>
+
+                <%
+                    toggle_show_portfolio_text = "Show Portfolio"
+                    toggle_icon = "ti ti-eye"
+                    if aggregate_portfolio_investment.show_portfolio
+                    toggle_show_portfolio_text = "Hide Portfolio"
+                    toggle_icon = "ti ti-eye-off"
+                    end
+                %>
+                <%= button_to toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
+                                method: :patch, class: "btn btn-outline-info w-100" do %>
+                    <i class="<%= toggle_icon %>"></i><%= toggle_show_portfolio_text %>
+                <% end %>
+
+                <% if policy(aggregate_portfolio_investment).destroy? %>
+                    <%= button_to aggregate_portfolio_investment, method: :delete,
+                                class: "btn btn-outline-danger w-100", form_class: "deleteButton",
+                                data: { action: "click->confirm#popup", turbo: false,
+                                        msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
+                    <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+                    <% end %>
+                <% end %>
+             </div>
+          </div>
+        </div>
+      <% end %>
+
+    </div>
   </div>
-  <div class="card-body show_details">
-    <table class="table table-bordered dataTable">
-      <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= aggregate_portfolio_investment.entity.name %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Fund
-        </td>
-        <td>
-          <%= link_to aggregate_portfolio_investment.fund %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Portfolio Company
-        </td>
-        <td>
-          <%= link_to aggregate_portfolio_investment.portfolio_company %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Instrument
-        </td>
-        <td>
-          <%= link_to aggregate_portfolio_investment.investment_instrument %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Investment Domicile
-        </td>
-        <td>
-          <%= aggregate_portfolio_investment.investment_domicile %>
-        </td>
-      </tr>
 
 
-      <tr>
-        <td>
-          Current Quantity
-        </td>
-        <td>
-          <%= aggregate_portfolio_investment.quantity %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Avg Cost Per Share
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.avg_cost, params %>
-        </td>
-      </tr>
-
-
-      <tr>
-        <td>
-          Bought Quantity
-        </td>
-        <td>
-          <%= aggregate_portfolio_investment.bought_quantity %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Bought Amount
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.bought_amount, params %>
-        </td>
-      </tr>
-
-      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
-        <tr>
-          <td>
-            Bought Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
-          </td>
-          <td>
-            <%= money_to_currency aggregate_portfolio_investment.tracking_bought_amount %>
-          </td>
-        </tr>
-      <% end %>
-
-
-      <tr>
-        <td>
-          Transfer Quantity
-        </td>
-        <td>
-          <%=  aggregate_portfolio_investment.transfer_quantity %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Transfer Amount
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.transfer_amount %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Sold Quantity
-        </td>
-        <td>
-          <%= aggregate_portfolio_investment.sold_quantity %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Sold Amount
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.sold_amount, params %>
-        </td>
-      </tr>
-
-      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
-        <tr>
-          <td>
-            Sold Amount (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
-          </td>
-          <td>
-            <%= money_to_currency aggregate_portfolio_investment.tracking_sold_amount %>
-          </td>
-        </tr>
-      <% end %>
-
-
-      <tr>
-        <td>
-          Cost Of Sold (FIFO)
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          FMV
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
-        </td>
-      </tr>
-
-      <% if aggregate_portfolio_investment.fund.tracking_currency.present? %>
-        <tr>
-          <td>
-            FMV (<%= aggregate_portfolio_investment.fund.tracking_currency %>)
-          </td>
-          <td>
-            <%= money_to_currency aggregate_portfolio_investment.tracking_fmv %>
-          </td>
-        </tr>
-      <% end %>
-
-      <tr>
-        <td>
-          Realized Gain
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.gain, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Unrealized Gain
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.unrealized_gain, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Cost of Remaining
-        </td>
-        <td>
-          <%= money_to_currency aggregate_portfolio_investment.cost_of_remaining, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Show Portfolio
-        </td>
-        <td>
-          <% if aggregate_portfolio_investment.show_portfolio %>
-            <span class="badge bg-success" type="button">
-              Yes
-            </span>
-          <% else %>
-            <span class="badge bg-warning" type="button">
-                No
-            </span>
-          <% end %>
-        </td>
-      </tr>
-
-      <%= display_custom_fields(aggregate_portfolio_investment) %>
-
-    </table>
-  </div>
+  <% unless aggregate_portfolio_investment.snapshot %>
+    <div class="mb-4">
+      <%= render "/aggregate_portfolio_investments/details", aggregate_portfolio_investment: aggregate_portfolio_investment %>
+    </div>
+  <% end %>
 </div>
-
-<% unless aggregate_portfolio_investment.snapshot %>
-
-
-<div class="associated_entity">
-
-  <%= link_to aggregate_portfolio_investment_path(aggregate_portfolio_investment, preview: 'true'),
-              class: "btn btn-outline-info" do %>
-    <i class="ti ti-eye"></i>Preview
-  <% end %>
-
-  <% if policy(aggregate_portfolio_investment).destroy? %>
-    <%= button_to aggregate_portfolio_investment, method: :delete,
-                  class: "btn btn-outline-danger", form_class: "deleteButton",
-                  data: { action: "click->confirm#popup", turbo: false,
-                          msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?" } do %>
-      <i class="ti ti-trash"></i> <%= t_common(:delete) %>
-    <% end %>
-  <% end %>
-
-  <%= link_to new_valuation_path(
-                "valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id,
-                "valuation[owner_type]": "Investor",
-                "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id),
-              class: "btn btn-outline-success" do %>
-    <i class="ti ti-currency-dollar"></i>Add Valuation
-  <% end %>
-
-  <%
-    toggle_show_portfolio_text = "Show Portfolio"
-    show_portfolio_value = true
-    toggle_icon = "ti ti-eye"
-    if aggregate_portfolio_investment.show_portfolio
-      toggle_show_portfolio_text = "Hide Portfolio"
-      show_portfolio_value = false
-      toggle_icon = "ti ti-eye-off"
-    end
-  %>
-
-  <%= button_to toggle_show_portfolio_aggregate_portfolio_investment_path(aggregate_portfolio_investment, format: :html),
-                method: :patch, class: "btn btn-outline-info" do %>
-    <i class="<%= toggle_icon %>"></i><%= toggle_show_portfolio_text %>
-  <% end %>
-
-</div>
-
-
-<%= render "/aggregate_portfolio_investments/charts", aggregate_portfolio_investment: aggregate_portfolio_investment %>
-
-<%= render "/aggregate_portfolio_investments/details", aggregate_portfolio_investment: aggregate_portfolio_investment %>
-
-
-
-<% end %>

@@ -51,7 +51,9 @@
 
 <% if !current_user&.curr_role_investor? %>
   <%# Investor User cannot see regulatory fields%>
-  <%= render "form_custom_fields/reporting_fields", object: @investment_instrument %>
+  <%= render ToggleCard.new(title: "Reporting Fields", css_class: "show_reporting_fields", state: "closed") do %>
+    <%= render "form_custom_fields/reporting_fields", object: @investment_instrument %>
+  <% end %>
 <% end %>
 
 <div class="associated_entity">
