@@ -4,7 +4,7 @@
   ifsc_label = sys_t('investor_kyc.bank_routing_number')
 %>
 
-<%= render ToggleCard.new(title: "KYC: #{investor_kyc.full_name || investor_kyc.investor_name}", css_class: "show_kyc_#{investor_kyc.id}", state: "closed") do %>
+<%= render ToggleCard.new(title: "KYC: #{investor_kyc.full_name || investor_kyc.investor_name}", css_class: "show_kyc_#{investor_kyc.id}", state: "show") do %>
   <div class="row g-4">
     <!-- Left Column: Main Info -->
     <div class="col-lg-8">
