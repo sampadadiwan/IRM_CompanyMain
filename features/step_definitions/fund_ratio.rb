@@ -42,7 +42,8 @@ end
 
 And("I should find Fund Ratios created with correct data for Capital Commitment") do
   visit(capital_commitment_path(CapitalCommitment.last))
-  click_on("Ratios")
+  # This is to scroll to the Account Entries tab and click it, otherwise the turbo_frame does not lazy load unless you scroll to it
+  click_tab("Ratios")
   expect(page).to have_content("XIRR")
   expect(page).to have_content("23.45 %")
   expect(page).to have_content("31/03/2022")

@@ -50,7 +50,8 @@ Given('I am at the capital commitment page') do
 end
 
 Given('I add a new account entry') do
-	click_on("Account Entries")
+	# This is to scroll to the Account Entries tab and click it, otherwise the turbo_frame does not lazy load unless you scroll to it
+	click_tab("Account Entries")
 	click_on("New Account Entry")
 	fill_in("account_entry_period", with: "Q1")
 	fill_in("account_entry_name", with: "Test Account Entry")

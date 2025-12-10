@@ -60,17 +60,45 @@ Before do |scenario|
   Capybara.current_session.current_window.resize_to(1580, 900)
 end
 
+# After do |scenario|
+#   DatabaseCleaner.clean
+
+#   if scenario.failed?
+#     puts scenario.location.to_s
+#     timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
+#     screenshot_name = "screenshot-#{scenario.name.gsub("/","-")}-#{scenario.location.to_s}.png"
+#     screenshot_path = "#{Rails.root.join("tmp/cucumber")}/#{screenshot_name}"
+#     # Capybara.page.save_screenshot(screenshot_path, full: true)
+#   end
+# end
+
 After do |scenario|
   DatabaseCleaner.clean
+  next unless scenario.failed?
 
-  if scenario.failed?
-    puts scenario.location.to_s
-    timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
-    screenshot_name = "screenshot-#{scenario.name.gsub("/","-")}-#{scenario.location.to_s}.png"
-    screenshot_path = "#{Rails.root.join("tmp/cucumber")}/#{screenshot_name}"
-    # Capybara.page.save_screenshot(screenshot_path, full: true)
+  exception = scenario.exception
+
+  File.open('log/cucumber_failures.log', 'a') do |f|
+    f.puts "-" * 80
+    f.puts "Time:     #{Time.now}"
+    f.puts "Feature:  #{scenario.location.file}"
+    f.puts "Scenario: #{scenario.name}"
+    f.puts "Status:   FAILED"
+
+    if exception
+      f.puts
+      f.puts "Exception: #{exception.class} - #{exception.message}"
+      f.puts
+      f.puts "Backtrace:"
+      f.puts exception.backtrace.join("\n")
+    end
+
+    f.puts "-" * 80
+    f.puts
   end
 end
+
+
 
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
@@ -139,6 +167,13 @@ module IRMUtils
     key_val.each do |k, v|
       model[k] = v
     end
+  end
+
+  # This is to scroll to the Account Entries tab and click it, otherwise the turbo_frame does not lazy load unless you scroll to it
+  def click_tab(tab_name)
+    tab = find('a.nav-link', text: tab_name)
+    tab.scroll_to(tab)
+    tab.click
   end
 end
 
