@@ -1,6 +1,18 @@
 
 V9.1.55
 #####################################
+7aad81d32 Better mobile spacing
+d2ade1064 Open kyc card on show page
+780efdc4f Removed AI icon from sidebar
+a371e3ceb More spec fixed 091225 (#1129)
+fabc75b9f Expand/Minimize to cards in IO PReview
+0da21e07f Misc UI fixes as per Aseems Feeback
+72d3c0da0 Better mobile app displays
+9823cdc10 Fixed KYCs title in dashboard menu
+18d8f88dd Removed some logging
+f0af0a2f9 This calculates the fees breakdown correctly for the CR doc gen
+1ceec764a Better badge for approval status
+11e14c505 Better styles (#1127)
 a1b3448d3 Better agent chart with correct query for KPIs
 d3571aa64 Fund ratios import fixes (#1123)
 513625e15 Bugfixes 011225 (#1107)
@@ -14,6 +26,7 @@ b4a4f5f5a Fund units download correct units
 417b03e90 Added fund units tab under CDP
 82053c2dc Distribution notice name update
 5d19a0fab attach all files does not show up as a custom notification type
+
 
 V9.1.54
 #####################################

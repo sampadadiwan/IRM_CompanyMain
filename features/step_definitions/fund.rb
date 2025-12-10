@@ -266,6 +266,7 @@
         # Check the fees
         if @capital_call.call_fees.present?
           @capital_call.call_fees.each do |fee|
+            binding.pry if remittance.capital_fee_cents == 0
             remittance.capital_fee_cents.should > 0
             # remittance.other_fee_cents.should > 0
           end
