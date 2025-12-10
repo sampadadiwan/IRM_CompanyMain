@@ -28,7 +28,7 @@
                   <table class="table table-bordered dataTable ">
 
 
-                     <% if @document.orignal %>
+                     <% if @document.orignal || ENV['PDF_TRON'] == 'false' %>
                         <tr>
                            <td>
                               Download
