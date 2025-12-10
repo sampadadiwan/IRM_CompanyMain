@@ -37,7 +37,7 @@
                 </li>
             <% end %>
 
-            
+
 
             <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
                 <!-- Divider -->
@@ -134,11 +134,11 @@
 
 
 
-            
+
 
             <% if current_user &&
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
-            
+
                 <!-- Divider -->
                 <hr class="sidebar-divider">
 
@@ -165,7 +165,7 @@
                                 <span class="hide-menu"><%= t('sidebar.my_tasks') %></span>
                             </a>
                         </li>
-                        
+
                         <% if current_user.support? %>
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="/tasks?for_support=true">
@@ -227,14 +227,6 @@
                     </ul>
                 </li>
 
-                <% if current_user.enable_ai_chat %>
-                    <li class="sidebar-item"> 
-                        <a class="sidebar-link" href="/ai">
-                            <span><i class="ti ti-robot"></i></span>
-                            <span class="hide-menu"><%= t('sidebar.ai') %></span>
-                        </a>
-                    </li>
-                <% end %>
             <% end %>
 
         </ul>
