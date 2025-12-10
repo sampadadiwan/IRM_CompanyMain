@@ -1,15 +1,15 @@
-<div class="io-preview-container">
-    <div class="preview-section-card">
+<div class="io-preview-container" data-controller="fullscreen">
+    <div class="preview-section-card" data-fullscreen-target="element">
         <div class="card-header-clean">
             <h4>Thesis</h4>
             <div class="card-actions cursor-pointer ms-auto d-flex button-group">
-                <a class="link d-flex text-secondary align-items-center" data-action="collapse">
+                <a class="link d-flex text-secondary align-items-center" data-bs-toggle="collapse" href="#thesis-card-body">
                     <i class="ti ti-minus fs-6"></i></a>
-                <a class="mb-0 text-secondary btn-minimize px-2 cursor-pointer link d-flex align-items-center" data-action="expand">
+                <a class="mb-0 text-secondary btn-minimize px-2 cursor-pointer link d-flex align-items-center" data-action="fullscreen#toggle">
                     <i class="ti ti-arrows-maximize fs-6"></i></a>
             </div>
         </div>
-        <div class="card-body-clean collapse show">
+        <div class="card-body-clean collapse show" id="thesis-card-body">
             <h2 class="fs-6 text-center mb-4 fw-bolder">
                 <span class="text-primary"><%= investment_opportunity.company_name %>:</span> <%= investment_opportunity.tag_list %>
             </h2>

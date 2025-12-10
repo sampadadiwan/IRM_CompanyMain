@@ -1,38 +1,49 @@
 <% owner.ci_widgets.each_with_index do |widget, idx| %>
   <% color = "primary" %>
+  <% collapse_id = "widget-body-#{idx}" %>
 
-  <div class="io-preview-container mb-5">
-      <div class="preview-section-card">
-        <div class="card-header-clean">
-            <h4>
-                <%= widget.title %>
-            </h4>
-            <div class="card-actions cursor-pointer ms-auto d-flex button-group">
-                <a class="link d-flex text-secondary align-items-center" data-action="collapse">
-                    <i class="ti ti-minus fs-6"></i>
-                </a>
-                <a class="mb-0 text-secondary btn-minimize px-2 cursor-pointer link d-flex align-items-center" data-action="expand">
-                    <i class="ti ti-arrows-maximize fs-6"></i>
-                </a>
-            </div>
-        </div>
+  <div class="io-preview-container mb-5" data-controller="fullscreen">
+    <div class="preview-section-card" data-fullscreen-target="element">
+      <div class="card-header-clean d-flex align-items-center">
+        <h4 class="mb-0">
+          <%= widget.title %>
+        </h4>
 
-        <div class="card-body-clean collapse show">
-            <div class="row align-items-center">
-                <%= render "/ci_widgets/details_center", details: widget.details_top, color: color if !widget.details_top.blank?%>
+        <div class="card-actions cursor-pointer ms-auto d-flex button-group">
+          <!-- Toggle collapse -->
+          <a class="link d-flex text-secondary align-items-center"
+             data-bs-toggle="collapse"
+             href="#<%= collapse_id %>"
+             role="button"
+             aria-expanded="true"
+             aria-controls="<%= collapse_id %>">
+            <i class="ti ti-minus fs-6"></i>
+          </a>
 
-                <% if widget.image_placement == "Right" %>
-                  <%= render "/ci_widgets/media", widget: widget %>
-                  <%= render "/ci_widgets/details", widget: widget, color: color %>
-                <% elsif widget.image_placement.casecmp?("center") %>
-                  <%= render "/ci_widgets/media", widget: widget %>
-                  <%= render "/ci_widgets/details_center", details: widget.details, color: color if !widget.details.blank?%>
-                <% else %>
-                  <%= render "/ci_widgets/details", widget: widget, color: color %>
-                  <%= render "/ci_widgets/media", widget: widget %>
-                <% end %>
-            </div>
+          <!-- Optional: another button doing the same thing -->
+          <a class="mb-0 text-secondary btn-minimize px-2 cursor-pointer link d-flex align-items-center"
+             data-action="fullscreen#toggle">
+            <i class="ti ti-arrows-maximize fs-6"></i>
+          </a>
         </div>
       </div>
+
+      <div id="<%= collapse_id %>" class="card-body-clean collapse show">
+        <div class="row align-items-center">
+          <%= render "/ci_widgets/details_center", details: widget.details_top, color: color if widget.details_top.present? %>
+
+          <% if widget.image_placement == "Right" %>
+            <%= render "/ci_widgets/media", widget: widget %>
+            <%= render "/ci_widgets/details", widget: widget, color: color %>
+          <% elsif widget.image_placement.casecmp?("center") %>
+            <%= render "/ci_widgets/media", widget: widget %>
+            <%= render "/ci_widgets/details_center", details: widget.details, color: color if widget.details.present? %>
+          <% else %>
+            <%= render "/ci_widgets/details", widget: widget, color: color %>
+            <%= render "/ci_widgets/media", widget: widget %>
+          <% end %>
+        </div>
+      </div>
+    </div>
   </div>
 <% end %>
