@@ -260,7 +260,7 @@ class CapitalRemittance < ApplicationRecord
       OpenStruct.new(
         name: name,
         date: Date.parse(date),
-        amount: amount.to_f
+        amount: amount.to_f / 100.0 # converting cents to amount as fees is stored in cents in the audit trail
       )
     end
   end
