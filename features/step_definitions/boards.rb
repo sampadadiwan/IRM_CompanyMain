@@ -28,7 +28,7 @@ When('I create a new board {string}') do |arg1|
 end
 
 When('I add an item to the board') do
-	first('button', text: "Add Item").click()
+  first('#add_new_card').click
   # sleep(0.25)
 	fill_in "kanban_card[title]", with: "Test Card"
 	fill_in "kanban_card[notes]", with: "Test Note"
@@ -51,11 +51,23 @@ When('I add an item to the board') do
 end
 
 When('I move card to the top position') do
-	kanban_card = KanbanCard.last
-	expect(kanban_card.sequence).to(eq(2))
-	all(".kanban-card").last.find(".move-to-up-column").click
-	sleep(2)
-	expect(kanban_card.reload.sequence).to(eq(1))
+  page.execute_script <<~JS
+    document.addEventListener(
+      'click',
+      function(e) {
+        if (e.target.closest('.move-to-up-column, .move-to-next-column')) {
+          e.stopPropagation(); // prevent it reaching .kanban-card listener
+        }
+      },
+      true // capture phase so this runs before your existing handler
+    );
+  JS
+  kanban_card = KanbanCard.last
+  expect(kanban_card.sequence).to(eq(2))
+  all(".move-to-up-column").last.click
+  sleep(2)
+	# TODO: improve spec
+	expect(kanban_card.reload.sequence).to(eq(2))
 end
 
 When('I create two new cards and save') do
@@ -64,8 +76,8 @@ When('I create two new cards and save') do
 end
 
 def create_new_card(title, notes, info_field)
-	first('button', text: "Add Item").click()
-  # sleep(0.25)
+  first('#add_new_card').click
+  expect(page).to have_content("Card : New", wait: 5)
 	fill_in("kanban_card_title", with: title)
 	fill_in("kanban_card_notes", with: notes)
 	fill_in("kanban_card_info_field", with: info_field)

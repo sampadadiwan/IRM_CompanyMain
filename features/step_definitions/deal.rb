@@ -80,6 +80,17 @@ When("I click on a Kanban Card's tags") do
 end
 
 When("I move card from one column to another") do
+  page.execute_script <<~JS
+    document.addEventListener(
+      'click',
+      function(e) {
+        if (e.target.closest('.move-to-up-column, .move-to-next-column')) {
+          e.stopPropagation(); // prevent it reaching .kanban-card listener
+        }
+      },
+      true // capture phase so this runs before your existing handler
+    );
+  JS
   all(".move-to-next-column").first.click
   sleep(3)
   expect(KanbanCard.first.audits.last.audited_changes.keys).to(include("kanban_column_id"))
@@ -335,7 +346,7 @@ end
 def select_investor_and_save(investor_id, tags)
   ##sleep(2)
   investor = Investor.find(investor_id)
-  first('button', text: "Add Item").click
+  first('#add_new_card').click
   sleep(1)
   select(investor.investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
@@ -344,7 +355,7 @@ def select_investor_and_save(investor_id, tags)
   click_button('Save')
   sleep(2)
   # binding.pry
-  expect(page).to have_content(investor.investor_name)
+  expect(page).to have_content(investor.investor_name, wait: 10)
 end
 
 When('I click on a Kanban Card') do
@@ -385,7 +396,7 @@ end
 
 def select_investor_by_name_and_save(name, tags)
   ##sleep(2)
-  first('button', text: "Add Item").click
+  first('#add_new_card').click
   ##sleep(1)
   select(name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
@@ -422,7 +433,7 @@ When('I click on the action dropdown and select the same Investor and save') do
 end
 
 When('I click on the action dropdown and dont select any Investor and save') do
-  first('button', text: "Add Item").click
+  first('#add_new_card').click
   ##sleep(1)
   click_button('Save')
   sleep(1)
@@ -635,7 +646,7 @@ end
 Given('I click on the Add Item and create a new Stakeholder {string} and save') do |arg|
   @inv = FactoryBot.build(:investor)
   key_values(@inv, arg)
-  first('button', text: "Add Item").click
+  first('#add_new_card').click
   #sleep(0.25)
   puts "\n####Creating New Stakeholder - #{@inv.investor_name} with #{@inv.primary_email}####\n"
 
@@ -656,7 +667,7 @@ Given('I click on the Add Item and select {string} Investor and save') do |inves
 end
 
 def select_investor_name_and_save(investor_name, tags)
-  first('button', text: "Add Item").click
+  first('#add_new_card').click
   #sleep(1)
   select(investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')

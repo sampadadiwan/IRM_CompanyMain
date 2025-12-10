@@ -998,13 +998,11 @@ Then('the docusign esign completed document is present') do
   # page should contain status signed
   click_on("Signatures")
   expected_status = "Signed"
-  expect(page).to have_content(expected_status)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content(expected_status, wait: 10)
   visit(capital_commitment_path(@capital_commitment))
-  xpath = "/html/body/div[2]/div[1]/div/div/div[7]/nav/a[1]"
-  documents_button = find(:xpath, xpath)
-  documents_button.click
   # the signed document owner tag will be signed
-  expect(page).to have_content("Signed").once
+  expect(page).to have_content("Signed", wait: 10).once
 end
 
 Given('the template has esigns setup') do

@@ -24,16 +24,20 @@
              <span class="text-light"><i class="ti ti-tag"></i></span>
          <% end %>
       </div>
-      <div class="tb-section-2">
-        <%  if Rails.env.test? %>
-          <div class="move-to-up-column d-inline-block">
-            <button class="btn btn-sm btn-light text-muted p-1" title="Move Up"><i class="ti ti-arrow-up"></i></button>
-          </div>
-          <div class="move-to-next-column d-inline-block">
-             <button class="btn btn-sm btn-light text-muted p-1" title="Move Next"><i class="ti ti-arrow-right"></i></button>
-          </div>
-        <% end %>
-      </div>
     </div>
   </div>
 </div>
+<% if Rails.env.test? %>
+    <div class="kanban-card-move-controls">
+      <div class="move-to-up-column d-inline-block">
+        <button class="btn btn-sm btn-light text-muted p-1" title="Move Up">
+          <i class="ti ti-arrow-up"></i>
+        </button>
+      </div>
+      <div class="move-to-next-column d-inline-block">
+        <button class="btn btn-sm btn-light text-muted p-1" title="Move Next">
+          <i class="ti ti-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  <% end %>

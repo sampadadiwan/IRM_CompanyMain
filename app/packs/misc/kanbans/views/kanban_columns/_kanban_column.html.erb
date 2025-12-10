@@ -44,7 +44,7 @@
     </div>
     <div class="connect-sorting-content ui-sortable mb-0 pb-0" data-sortable="true">
       <% kanban_cards = kanban_column.kanban_cards %>
-      <% if searched_kanban_cards.present? %>
+      <% unless searched_kanban_cards.nil? %>
         <% kanban_cards = kanban_cards.where(id: searched_kanban_cards.pluck(:id)) %>
       <% end %>
       <% kanban_cards.includes(:data_source).sequenced.each do |kanban_card| %>

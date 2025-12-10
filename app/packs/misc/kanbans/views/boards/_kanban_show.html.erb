@@ -1,3 +1,4 @@
+<%= owner = kanban_board.owner.presence || kanban_board%>
 <h1>
-    <%= link_to kanban_board.name, kanban_board.owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
+    <%= link_to kanban_board.name, owner, class: "h3 mb-0 text-gray-800", target: "_self", style: "margin-bottom: 35px;" %>
 </h1>
