@@ -13,7 +13,7 @@
             <li class="nav-item">
                 <a class="nav-link btn btn-sm" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                     <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-                    <%= label.titleize %>
+                    <%= label != "KYCs" ? label.titleize : label %>
                 </a>
             </li>
         <% end %>
