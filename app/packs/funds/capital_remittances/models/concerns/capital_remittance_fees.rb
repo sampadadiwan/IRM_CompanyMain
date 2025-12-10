@@ -58,7 +58,6 @@ module CapitalRemittanceFees
         # Categorize fees into capital fees, investment_amount or other fees
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees_cents
-          json_fields[FormCustomField.to_name(call_fee.name)] = currency_from_cents(fees_cents, fund.currency, {})
           json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         elsif call_fee.fee_type == "Investment Amount"
           total_investments_cents += fees_cents
@@ -67,6 +66,8 @@ module CapitalRemittanceFees
           total_capital_fees_cents += fees_cents
           json_fields["capital_fees_audit"] << fees_audit if fees_audit.present?
         end
+        # Add this fee to the json_fields with a custom field name
+        json_fields[FormCustomField.to_name(call_fee.name)] = currency_from_cents(fees_cents, fund.currency, {})
       end
 
       Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }

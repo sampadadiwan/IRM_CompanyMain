@@ -96,13 +96,11 @@ class CapitalRemittanceDocGenerator
     all_capital_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
     # Now sum up the amounts
     kyc_capital_fees_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_capital_fees_breakdown))
-    Rails.logger.debug "ALL CAPITAL FEES BREAKDOWN: #{all_capital_fees_breakdown.inspect}"
     # Store the breakdown in the context
     context.store :kyc_capital_fees_breakdown, kyc_capital_fees_breakdown
 
     kyc_other_fee = kyc_capital_remittances.sum(:other_fee_cents)
     all_other_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
-    Rails.logger.debug "ALL OTHER FEES BREAKDOWN: #{all_other_fees_breakdown.inspect}"
     # Now sum up the amounts
     kyc_other_fees_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_other_fees_breakdown))
     # Store the breakdown in the context
@@ -111,7 +109,7 @@ class CapitalRemittanceDocGenerator
     kyc_investment_amount = kyc_capital_remittances.sum(:investment_amount_cents)
     # For investment_amount, we also need to show the breakdown in the template
     all_investments_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
-    Rails.logger.debug "ALL INVESTMENT AMOUNTS BREAKDOWN: #{all_investments_breakdown.inspect}"
+
     # Now sum up the amounts
     kyc_investment_amount_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_investments_breakdown))
     # Store the breakdown in the context
