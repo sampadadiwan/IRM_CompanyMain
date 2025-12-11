@@ -88,32 +88,69 @@ class CapitalRemittanceDocGenerator
     context
   end
 
+  # rubocop:disable Metrics/MethodLength
   def call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context)
     # All remittances with the same kyc
-    kyc_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_commitment: { investor_kyc_id: capital_commitment.investor_kyc_id }, capital_call_id: capital_remittance.capital_call_id)
+    call_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_call_id: capital_remittance.capital_call_id)
+    kyc_capital_remittances = call_capital_remittances.where(capital_commitment: { investor_kyc_id: capital_commitment.investor_kyc_id })
 
+    call_capital_remittances.sum(:capital_fee_cents)
     kyc_capital_fee = kyc_capital_remittances.sum(:capital_fee_cents)
-    all_capital_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
-    # Now sum up the amounts
-    kyc_capital_fees_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_capital_fees_breakdown))
-    # Store the breakdown in the context
-    context.store :kyc_capital_fees_breakdown, kyc_capital_fees_breakdown
 
+    # Now sum up the amounts
+    call_capital_fees_breakdown = call_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
+    kyc_capital_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
+
+    # Store the breakdown in the context
+    call_capital_fees_breakdown = capital_remittance.consolidate_fees(call_capital_fees_breakdown)
+    kyc_capital_fees_breakdown = capital_remittance.consolidate_fees(kyc_capital_fees_breakdown)
+    call_capital_fees_breakdown_map = call_capital_fees_breakdown.index_by(&:name)
+    # Now in the kyc_capital_fees_breakdown we need to add the all_capital_fees_breakdown amounts for the same name
+    kyc_capital_fees_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_capital_fees_breakdown_map[fee.name].amount if call_capital_fees_breakdown_map.key?(fee.name)
+    end
+
+    context.store :call_capital_fees_breakdown, TemplateDecorator.decorate_collection(call_capital_fees_breakdown)
+    context.store :kyc_capital_fees_breakdown, TemplateDecorator.decorate_collection(kyc_capital_fees_breakdown)
+
+    # Now sum up the amounts for other fees
+    call_capital_remittances.sum(:other_fee_cents)
     kyc_other_fee = kyc_capital_remittances.sum(:other_fee_cents)
-    all_other_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
-    # Now sum up the amounts
-    kyc_other_fees_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_other_fees_breakdown))
-    # Store the breakdown in the context
-    context.store :kyc_other_fees_breakdown, kyc_other_fees_breakdown
 
+    call_other_fees_breakdown = call_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
+    kyc_other_fees_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
+
+    call_other_fees_breakdown = capital_remittance.consolidate_fees(call_other_fees_breakdown)
+    kyc_other_fees_breakdown = capital_remittance.consolidate_fees(kyc_other_fees_breakdown)
+    # Now in the kyc_other_fees_breakdown we need to add the all_other_fees_breakdown amounts for the same name
+    call_other_fees_breakdown_map = call_other_fees_breakdown.index_by(&:name)
+    kyc_other_fees_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_other_fees_breakdown_map[fee.name].amount if call_other_fees_breakdown_map.key?(fee.name)
+    end
+
+    # Store the breakdown in the context
+    context.store :call_other_fees_breakdown, TemplateDecorator.decorate_collection(call_other_fees_breakdown)
+    context.store :kyc_other_fees_breakdown, TemplateDecorator.decorate_collection(kyc_other_fees_breakdown)
+
+    call_capital_remittances.sum(:investment_amount_cents)
     kyc_investment_amount = kyc_capital_remittances.sum(:investment_amount_cents)
+
     # For investment_amount, we also need to show the breakdown in the template
-    all_investments_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
+    call_investments_breakdown = call_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
+    kyc_investments_breakdown = kyc_capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
 
     # Now sum up the amounts
-    kyc_investment_amount_breakdown = TemplateDecorator.decorate_collection(capital_remittance.consolidate_fees(all_investments_breakdown))
+    call_investment_amount_breakdown = capital_remittance.consolidate_fees(call_investments_breakdown)
+    kyc_investment_amount_breakdown = capital_remittance.consolidate_fees(kyc_investments_breakdown)
+    # Now in the kyc_investment_amount_breakdown we need to add the call_investment_amount_breakdown amounts for the same name
+    call_investment_amount_breakdown_map = call_investment_amount_breakdown.index_by(&:name)
+    kyc_investment_amount_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_investment_amount_breakdown_map[fee.name].amount if call_investment_amount_breakdown_map.key?(fee.name)
+    end
+
     # Store the breakdown in the context
-    context.store :kyc_investment_amount_breakdown, kyc_investment_amount_breakdown
+    context.store :call_investment_amount_breakdown, TemplateDecorator.decorate_collection(call_investment_amount_breakdown)
+    context.store :kyc_investment_amount_breakdown, TemplateDecorator.decorate_collection(kyc_investment_amount_breakdown)
 
     kyc_total_fee = kyc_capital_fee + kyc_other_fee
     kyc_committed_amount = kyc_capital_remittances.sum(:committed_amount_cents)
@@ -129,6 +166,7 @@ class CapitalRemittanceDocGenerator
 
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Add remittance breakdowns by LP/GP and current/prior to context
   def remittance_context(remittance, fund_as_of, lp_commitments, gp_commitments)

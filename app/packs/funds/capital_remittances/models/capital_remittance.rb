@@ -262,13 +262,13 @@ class CapitalRemittance < ApplicationRecord
         date: Date.parse(date),
         amount: amount.to_f / 100.0 # converting cents to amount as fees is stored in cents in the audit trail
       )
-    end
+    end.sort_by(&:name)
   end
 
   def consolidate_fees(fees)
     grouped = fees.group_by(&:name)
 
-    grouped.map do |name, rows|
+    grouped.sort.map do |name, rows|
       OpenStruct.new(
         name: name,
         amount: rows.sum(&:amount),
