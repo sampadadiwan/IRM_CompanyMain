@@ -1,34 +1,35 @@
 <%
   is_user = role == 'user'
-  alignment_class = is_user ? 'justify-content-end' : 'justify-content-start'
-  bg_class = is_user ? 'bg-primary text-white' : 'bg-light text-dark border'
-  avatar_bg = is_user ? 'bg-secondary' : 'bg-info'
+  # ChatGPT style: User has transparent bg (same as main), AI has slightly lighter bg
+  bg_style = is_user ? '' : 'background-color: var(--gpt-bot-msg-bg); border-bottom: 1px solid rgba(0,0,0,0.1); border-top: 1px solid rgba(0,0,0,0.1);'
+  avatar_bg = is_user ? 'bg-secondary' : 'bg-success'
+  avatar_icon = is_user ? 'fa-user' : 'fa-robot'
 %>
 
-<div class="d-flex <%= alignment_class %> mb-3" data-faq-thread-target="message" data-role="<%= role %>">
-  <% unless is_user %>
-    <div class="flex-shrink-0 me-2">
-      <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
-        AI
+<div class="w-100 py-4 <%= 'border-bottom border-black/10' unless is_user %>"
+     style="<%= bg_style %>"
+     data-faq-thread-target="message"
+     data-role="<%= role %>">
+
+  <div class="gpt-message-container">
+    <div class="d-flex gap-4 w-100">
+      <!-- Avatar -->
+      <div class="gpt-avatar flex-shrink-0">
+        <div class="rounded-sm <%= avatar_bg %> d-flex align-items-center justify-content-center text-white" style="width: 30px; height: 30px; border-radius: 2px;">
+          <i class="fas <%= avatar_icon %>" style="font-size: 14px;"></i>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="gpt-content flex-grow-1 overflow-hidden">
+        <% if is_user %>
+          <div class="prose" style="white-space: pre-wrap;"><%= content %></div>
+        <% else %>
+          <div class="prose" style="min-height: 20px;">
+            <%= markdown_to_html(content) rescue simple_format(content) %>
+          </div>
+        <% end %>
       </div>
     </div>
-  <% end %>
-
-  <div class="p-3 rounded-3 shadow-sm <%= bg_class %>" style="max-width: 80%;">
-    <% if is_user %>
-      <%= simple_format(content, class: "mb-0 small") %>
-    <% else %>
-      <div class="small">
-        <%= markdown_to_html(content) rescue simple_format(content) %>
-      </div>
-    <% end %>
   </div>
-
-  <% if is_user %>
-    <div class="flex-shrink-0 ms-2">
-      <div class="rounded-circle <%= avatar_bg %> d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px;">
-        You
-      </div>
-    </div>
-  <% end %>
 </div>

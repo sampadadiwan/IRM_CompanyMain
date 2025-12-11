@@ -1,22 +1,26 @@
 <%= turbo_stream_from @faq_thread %>
 
-<div class="d-flex flex-column" data-controller="faq-thread" style="padding-left: 0; padding-right: 0;">
-  <div class="row flex-grow-1 g-0">
+<div class="d-flex flex-column h-100 gpt-layout" data-controller="faq-thread">
+  <div class="row flex-grow-1 g-0 h-100">
     <!-- Sidebar -->
-    <div class="col-md-2 border-end d-none d-md-flex flex-column">
+    <div class="col-md-2 d-none d-md-flex flex-column gpt-sidebar p-2">
+      <%= button_to faq_threads_path, class: "btn btn-outline-primary w-100 mb-3 text-start d-flex align-items-center gap-2 new-chat-btn" do %>
+        <i class="fas fa-plus"></i> New Chat
+      <% end %>
 
-      <div class="flex-grow-1 overflow-auto p-2">
-        <div class="list-group list-group-flush">
-          <%= button_to "New Chat", faq_threads_path, class: "btn btn-outline-primary w-100 mb-4" %>
+      <div class="flex-grow-1 overflow-auto">
+        <div class="list-group list-group-flush gpt-history-list">
           <% @faq_threads.each do |thread| %>
             <%= link_to faq_thread_path(thread),
-                class: "list-group-item list-group-item-action #{'active' if thread == @faq_thread}" do %>
-              <div class="d-flex w-100 justify-content-between">
-                <span class="text-truncate"><%= thread.title.presence || "New Chat" %></span>
+                class: "list-group-item list-group-item-action border-0 rounded-2 mb-1 #{'active' if thread == @faq_thread}" do %>
+              <div class="d-flex align-items-center gap-2 text-truncate">
+                <i class="far fa-message"></i>
+                <span class="small">
+                    <%= thread.title %>
+                    <br>
+                    <span class="text-muted"><%= l(thread.created_at.to_date) %></span>
+                </span>
               </div>
-              <small class="<%= thread == @faq_thread ? 'text-white-50' : 'text-muted' %>">
-                <%= time_ago_in_words(thread.updated_at) %> ago
-              </small>
             <% end %>
           <% end %>
         </div>
@@ -24,57 +28,62 @@
     </div>
 
     <!-- Main Chat Area -->
-    <div class="col-md-10 d-flex flex-column">
-      <!-- Chat Header -->
-      <!-- div class="bg-white border-bottom p-3 shadow-sm sticky-top">
-        <h1 class="h5 mb-0"><%= @faq_thread.title.presence || "Support Chat" %></h1>
-      </div -->
+    <div class="col-md-10 d-flex flex-column gpt-main position-relative">
 
       <!-- Messages Container -->
       <div id="faq_thread_messages"
-           class="flex-grow-1 overflow-auto p-4"
+           class="flex-grow-1 overflow-auto pb-9"
            data-faq-thread-target="messages">
-        <!-- Messages will be appended here via Turbo Stream -->
-        <% @faq_thread.messages&.each do |msg| %>
-          <% # Handle both string keys (from JSON) and symbol keys (if any) %>
-          <%= render "faq_threads/message", role: msg["role"] || msg[:role], content: msg["content"] || msg[:content] %>
-        <% end %>
-      </div>
+        <div class="d-flex flex-column w-100">
+          <% @faq_thread.messages&.each do |msg| %>
+            <%= render "faq_threads/message", role: msg["role"] || msg[:role], content: msg["content"] || msg[:content] %>
+          <% end %>
+        </div>
 
-      <!-- Loading Indicator -->
-      <div data-faq-thread-target="typing" class="d-none px-4 py-2 bg-light border-top">
-        <div class="spinner-dots">
-          <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></span>
-          <span class="spinner-grow spinner-grow-sm text-secondary delay-100" role="status" aria-hidden="true"></span>
-          <span class="spinner-grow spinner-grow-sm text-secondary delay-200" role="status" aria-hidden="true"></span>
+        <!-- Loading Indicator -->
+        <div data-faq-thread-target="typing" class="d-none w-100 py-4 border-bottom border-black/10 bg-gray-50" style="background-color: var(--gpt-bot-msg-bg);">
+          <div class="gpt-message-container">
+             <div class="d-flex gap-3">
+               <div class="gpt-avatar bot flex-shrink-0">
+                  <div class="rounded-sm bg-success d-flex align-items-center justify-content-center text-white" style="width: 30px; height: 30px;">
+                    <i class="fas fa-robot" style="font-size: 14px;"></i>
+                  </div>
+               </div>
+               <div class="gpt-content d-flex align-items-center">
+                  <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                  </div>
+               </div>
+             </div>
+          </div>
         </div>
       </div>
 
       <!-- Input Area -->
-      <div class="bg-white p-3 border-top">
-        <%= form_with url: create_message_faq_thread_path(@faq_thread),
-                      method: :post,
-                      data: { action: "turbo:submit-end->faq-thread#resetForm" },
-                      class: "w-100" do |f| %>
-          <div class="input-group">
-            <%= f.text_area :message,
-                rows: 1,
-                placeholder: "Type your message...",
-                class: "form-control shadow-none",
-                style: "resize: none; max-height: 50px;",
-                data: { faq_thread_target: "input", action: "keydown.enter->faq-thread#submitOnEnter" } %>
+      <div class="gpt-input-container">
+        <div class="gpt-input-wrapper">
+          <%= form_with url: create_message_faq_thread_path(@faq_thread),
+                        method: :post,
+                        data: { action: "turbo:submit-end->faq-thread#resetForm" },
+                        class: "w-100" do |f| %>
+            <div class="position-relative d-flex align-items-end p-2 bg-white rounded-3 shadow-sm border border-black/10 input-box-style">
+              <%= f.text_area :message,
+                  rows: 1,
+                  placeholder: "Send a message...",
+                  class: "form-control border-0 shadow-none bg-transparent m-0 p-2",
+                  style: "resize: none; max-height: 200px; min-height: 24px; overflow-y: hidden; color: var(--gpt-text-color);",
+                  data: { faq_thread_target: "input", action: "keydown.enter->faq-thread#submitOnEnter input->faq-thread#autoResize" } %>
 
-            <%= button_tag type: "submit", class: "btn btn-primary d-flex align-items-center" do %>
-              <i class="fas fa-paper-plane"></i>
-            <% end %>
-          </div>
-        <% end %>
+              <%= button_tag type: "submit", class: "btn btn-link text-secondary p-2 ms-2", style: "text-decoration: none;" do %>
+                <i class="fas fa-paper-plane"></i>
+              <% end %>
+            </div>
+            <div class="text-center mt-2">
+              <small class="text-muted" style="font-size: 12px;">AI may produce inaccurate information about people, places, or facts.</small>
+            </div>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-</style>
