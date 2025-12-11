@@ -73,7 +73,7 @@ module CapitalRemittanceCallBasis
       )
     end
 
-    self.computed_amount_cents = call_amount_cents - capital_fee_cents - investment_amount_cents
+    self.computed_amount_cents = call_amount_cents - capital_fee_cents
 
     # Calculate the percentage of the committed folio amount that is being called.
 
