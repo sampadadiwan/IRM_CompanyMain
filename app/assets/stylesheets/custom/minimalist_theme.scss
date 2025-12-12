@@ -102,11 +102,6 @@
   .card-body {
     padding: 28px; // More breathing room
 
-    // Enforce spacious padding in comfortable mode (overrides layout.scss)
-    [data-density="comfortable"] & {
-      padding: 28px !important;
-    }
-
     // Force 2 columns for data fields on mobile to save space
     .row {
       .col-md-6 {
@@ -222,11 +217,6 @@
   font-size: 0.875rem;
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
-
-  // Enforce spacious padding in comfortable mode
-  [data-density="comfortable"] & {
-    padding: 10px 24px !important;
-  }
 
   // Icon spacing within buttons
   i {
@@ -393,10 +383,6 @@
     transition: all 0.2s;
     background: transparent;
 
-    [data-density="comfortable"] & {
-      padding: 12px 20px !important;
-    }
-
     [data-bs-theme=dark] & {
         color: #7c8fac;
     }
@@ -455,10 +441,6 @@
       padding: 12px 12px;
     }
 
-    [data-density="comfortable"] & {
-      padding: 16px 24px !important;
-    }
-
     [data-bs-theme=dark] & {
         background-color: #323a49; // Dark header
         color: #7c8fac;
@@ -477,10 +459,6 @@
     // Mobile padding adjustment
     @media (max-width: 767.98px) {
       padding: 12px 12px;
-    }
-
-    [data-density="comfortable"] & {
-      padding: 20px 24px !important;
     }
 
     [data-bs-theme=dark] & {
@@ -524,10 +502,6 @@
   // text-transform: uppercase;
   font-size: 0.65rem;
   letter-spacing: 0.025em;
-
-  [data-density="comfortable"] & {
-    padding: 6px 10px !important;
-  }
 
   // Minimalist style badges (light background, colored text)
   &.bg-success {
@@ -685,10 +659,6 @@ h1, .h1 {
   background-color: #f8fafc; // Slate-50 - Very subtle background
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-
-  [data-density="comfortable"] & {
-    padding: 14px 18px !important;
-  }
 
   &::placeholder {
     color: #94a3b8; // Slate-400

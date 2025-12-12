@@ -1,88 +1,99 @@
 
 /* Global density switchers */
-/* Cozy-compact (a notch roomier than your current compact) */
+
+/* 1. Easy Layout (Balanced Default) */
+[data-density="easy"] .table > :not(caption) > * > * {
+  padding: 0.75rem 1rem; /* 12px 16px - On 4dp grid */
+  line-height: 1.5;
+}
+
+[data-density="easy"] .card .card-body {
+  padding: 1.25rem; /* 20px - On 4dp grid */
+}
+
+[data-density="easy"] .form-control,
+[data-density="easy"] .form-select {
+  padding: 0.5rem 0.75rem; /* 8px 12px - On 4dp grid */
+  line-height: 1.5;
+  min-height: 2.25rem; /* 36px - On 4dp grid */
+}
+
+[data-density="easy"] .btn {
+  padding: 0.5rem 1rem; /* 8px 16px - On 4dp grid */
+  line-height: 1.5;
+  min-height: 2.25rem; /* 36px */
+}
+
+[data-density="easy"] .badge {
+  padding: 0.25rem 0.75rem; /* 4px 12px - On 4dp grid */
+}
+
+/* 2. Compact Layout (Material Design "Compact") - High density */
 [data-density="compact"] .table > :not(caption) > * > * {
-  padding: .45rem .75rem;   /* was .25rem .5rem */
-  line-height: 1.35;        /* helps scanability */
+  padding: 0.5rem 0.75rem; /* 8px 12px */
+  line-height: 1.4;
 }
 
 [data-density="compact"] .card .card-body {
-  padding: 1rem;            /* was .75rem */
+  padding: 1rem; /* 16px */
 }
 
 [data-density="compact"] .form-control,
 [data-density="compact"] .form-select {
-  padding: .5rem .75rem;    /* was .375rem .5rem */
-  line-height: 1.35;
-  min-height: 2.125rem;     /* ~34px click target */
+  padding: 0.5rem 0.75rem; /* 8px 12px */
+  line-height: 1.4;
+  min-height: 2.25rem; /* 36px */
 }
 
 [data-density="compact"] .btn {
-  padding: .375rem .75rem;  /* was .25rem .5rem */
-  line-height: 1.3;
-  min-height: 2rem;         /* keep buttons easy to hit */
+  padding: 0.25rem 0.75rem; /* 4px 12px */
+  line-height: 1.4;
+  min-height: 2rem; /* 32px */
 }
 
 [data-density="compact"] .nav > .nav-link {
-  padding: .3rem .5rem !important; /* was .25rem .5rem */
-  line-height: 1.3;
-  min-height: 2rem;
+  padding: 0.25rem 0.5rem !important; /* 4px 8px */
 }
 
 [data-density="compact"] .sidebar-item > .sidebar-link {
-  padding: .3rem .5rem !important;
-  line-height: 1.3;
-  min-height: 2rem;
+  padding: 0.25rem 0.5rem !important; /* 4px 8px */
 }
 
 [data-density="compact"] .badge {
-  padding: .25rem .5rem !important;
-  line-height: 1.1;
+  padding: 0.25rem 0.5rem !important; /* 4px 8px */
 }
 
-[data-density="compact"] .task-done-checkbox {
+/* 3. Comfortable Layout (Material Design "Comfortable") - Low density */
+/* Note: The minimalist_theme provides the primary styling for this mode. These are fallbacks or adjustments. */
+[data-density="comfortable"] .table > :not(caption) > * > * { padding: 1rem 1.5rem; } /* 16px 24px - On 4dp grid */
+[data-density="comfortable"] .card .card-body { padding: 1.5rem; } /* 24px - On 4dp grid */
+[data-density="comfortable"] .form-control,
+[data-density="comfortable"] .form-select {
+  padding: 0.75rem 1rem; /* 12px 16px - On 4dp grid */
+  min-height: 2.75rem; /* 44px - On 4dp grid */
+}
+[data-density="comfortable"] .btn {
+  padding: 0.75rem 1.25rem; /* 12px 20px - On 4dp grid */
+  min-height: 2.75rem; /* 44px */
+}
+[data-density="comfortable"] .badge { padding: 0.5rem 1rem; } /* 8px 16px - On 4dp grid */
+[data-density="comfortable"] .nav > .nav-link { padding: 0.75rem 1.25rem; } /* 12px 20px */
+[data-density="comfortable"] .sidebar-item > .sidebar-link { padding: 0.75rem 1.25rem !important; } /* 12px 20px */
+
+
+/* Global Settings for Density Modes */
+[data-density="compact"] .task-done-checkbox,
+[data-density="easy"] .task-done-checkbox,
+[data-density="comfortable"] .task-done-checkbox {
   width: 1.5rem !important;
   height: 1.5rem !important;
 }
 
 /* Reduce gaps in common stacks */
 .stack > * + * { margin-top: var(--sp-3); }
-[data-density="compact"] .stack > * + * { margin-top: var(--sp-2); } /* keep this; feels right with the above */
-
-
-
-/* Comfortable mode (aligned with compact structure, full set like compact) */
-[data-density="comfortable"] .table > :not(caption) > * > * { padding: .625rem 1rem; line-height: 1.5; }
-[data-density="comfortable"] .card .card-body { padding: 1.25rem; }
-[data-density="comfortable"] .form-control,
-[data-density="comfortable"] .form-select { padding: .625rem .875rem; line-height: 1.45; min-height: 2.25rem; }
-[data-density="comfortable"] .btn { padding: .5rem .875rem; line-height: 1.4; min-height: 2.25rem; }
-[data-density="comfortable"] .badge { padding: .35rem .65rem; line-height: 1.4; }
-[data-density="comfortable"] .stack > * + * { margin-top: 1rem; }
-[data-density="comfortable"] .nav-link { padding: .625rem 1rem; }
-[data-density="comfortable"] .nav > .nav-link {
-  padding: .5rem .875rem;
-  line-height: 1.4;
-  min-height: 2.25rem;
-}
-[data-density="comfortable"] .sidebar-item > .sidebar-link {
-  padding: .5rem .875rem !important;
-  line-height: 1.4;
-  min-height: 2.25rem;
-}
-
-[data-density="comfortable"] .table.table-dense > :not(caption) > * > * { padding: .5rem .75rem; }
-[data-density="comfortable"] {
-  --bs-body-line-height: 1.5;
-  --bs-card-spacer-y: 1.25rem;
-  --bs-card-spacer-x: 1.25rem;
-  --bs-border-radius: .5rem;
-}
-
-[data-density="comfortable"] .task-done-checkbox {
-  width: 1.75rem !important;
-  height: 1.75rem !important;
-}
+[data-density="compact"] .stack > * + * { margin-top: var(--sp-2); }
+[data-density="easy"] .stack > * + * { margin-top: 1rem; }
+[data-density="comfortable"] .stack > * + * { margin-top: 1.25rem; }
 
 
 #settings-offcanvas {
