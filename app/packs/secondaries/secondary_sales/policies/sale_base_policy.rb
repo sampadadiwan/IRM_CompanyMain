@@ -33,7 +33,7 @@ class SaleBasePolicy < ApplicationPolicy
 
     if user.has_cached_role?(:rm)
       "#{model_class}RmPolicy".constantize
-    elsif user.curr_role.to_s == "investor" || user.has_cached_role?(:holding)
+    elsif user.curr_role.to_s == "investor" || user.curr_role.to_s == "advisor" || user.has_cached_role?(:holding)
       "#{model_class}InvestorPolicy".constantize
     elsif user.has_cached_role?(:company_admin)
       "#{model_class}CompanyAdminPolicy".constantize
