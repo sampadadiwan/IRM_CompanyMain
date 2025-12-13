@@ -1,23 +1,18 @@
 <div class="api_details associated_entity" data-controller="tabs tabdetails">
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
-          data-action="click->tabdetails#loadData">Investments</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab"
-          data-action="click->tabdetails#loadData">Income</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData">Documents</a>
-
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">Investments</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab">Income</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
-
   </nav>
 
   <div class="tab-content" data-controller="datatable">
     <div id="portfolio-investments-tab" class="tab-pane fade show active">
       <div id="portfolio_investments_div" class="associated_entity">
         <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(aggregate_portfolio_investment_id: @aggregate_portfolio_investment.id, fund_id: @aggregate_portfolio_investment.fund_id) do %>
-          <span>Loading...</span>
+          <%= render "/layouts/loading" %>
         <% end %>
       </div>
     </div>
@@ -32,14 +27,12 @@
     <div id="docs-tab" class="tab-pane fade">
       <div id="docs" class="associated_entity">
 
-        <%= link_to folder_documents_path(entity_id: @aggregate_portfolio_investment.entity_id,
-                                        folder_id: @aggregate_portfolio_investment.document_folder.id),
-                                        class: "load_data_link",
-                                        data: { turbo_frame: 'documents_tree_frame' } do %>
-            <span>Loading...</span>
-        <% end %>
+        <% src = folder_documents_path(entity_id: @aggregate_portfolio_investment.entity_id,
+                                        folder_id: @aggregate_portfolio_investment.document_folder.id) %>
 
-        <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: src do %>
+          <%= render "/layouts/loading" %>
         <% end %>
 
       </div>

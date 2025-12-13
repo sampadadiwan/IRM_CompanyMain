@@ -2,17 +2,14 @@
 
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData">Documents</a>
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
     <% @entity = @investor_kyc.entity%>
     <% if @entity.ckyc_or_kra_enabled? %>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kyc-datas-tab"
-        data-action="click->tabdetails#loadData">Kyc Data</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kyc-datas-tab">Kyc Data</a>
     <% end %>
 
     <% if false && params[:audit_trail].present? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#audit-trail-tab"
-          data-action="click->tabdetails#loadData">Audit Trail</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#audit-trail-tab">Audit Trail</a>
     <% end %>
 
     <% if policy(@investor_kyc).validate_docs_with_ai? %>

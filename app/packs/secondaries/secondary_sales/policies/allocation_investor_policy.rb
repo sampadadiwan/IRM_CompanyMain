@@ -1,4 +1,4 @@
-class AllocationPolicy < SaleBasePolicy
+class AllocationInvestorPolicy < SaleBasePolicy
   def bulk_actions?
     false
   end

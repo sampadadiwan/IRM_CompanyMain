@@ -104,9 +104,11 @@ module WithCustomField
   end
 
   def perform_custom_calculation(fcf)
-    val = eval(fcf.meta_data)
-    json_fields[fcf.name] = val
-    val
+    if fcf.meta_data.present?
+      val = eval(fcf.meta_data)
+      json_fields[fcf.name] = val
+      val
+    end
   end
 
   def custom_fields

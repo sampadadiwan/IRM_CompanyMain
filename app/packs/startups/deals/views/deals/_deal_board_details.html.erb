@@ -7,9 +7,7 @@
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-         data-action="click->tabdetails#loadData">Documents</a>
-
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
 
@@ -20,12 +18,10 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
 
       <% if show_investors == "Yes" %>
-        <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab" id="deal_investments"
-            data-action="click->tabdetails#loadData">Deal Investors</a>
+        <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab" id="deal_investments">Deal Investors</a>
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab"
-            data-action="click->tabdetails#loadData">Reminders</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
 
     </nav>
 
@@ -40,6 +36,7 @@
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
             <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
+              <%= render "/layouts/loading" %>
             <% end %>
         </div>
       </div>
@@ -59,6 +56,7 @@
       <div id="investors-tab" class="tab-pane fade">
         <div id="deal_investors" class="associated_entity">
           <%= turbo_frame_tag "deal_investors_frame", target: "_top", src: deal_investors_path(deal_id: deal.id), loading: :lazy do %>
+            <%= render "/layouts/loading" %>
           <% end %>
         </div>
       </div>
@@ -79,6 +77,7 @@
       <div id="reminders-tab" class="tab-pane fade">
         <div id="reminders" class="associated_entity">
           <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: deal.id, owner_type: "Deal", sent: false), loading: :lazy do %>
+            <%= render "/layouts/loading" %>
           <% end %>
         </div>
       </div>

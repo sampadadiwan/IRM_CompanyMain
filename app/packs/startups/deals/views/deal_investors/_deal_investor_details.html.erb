@@ -1,16 +1,14 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab"
-              data-action="click->tabdetails#loadData">Deal Steps</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
-              data-action="click->tabdetails#loadData">Tasks</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab">Deal Steps</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
 
     <% if show_tranch %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tranche-tab">Tranche</a>
     <% end %>
+
   </nav>
 
 
@@ -30,12 +28,10 @@
         <%#= render "/deal_activities/index", deal_investor:deal_investor,
                     template: false, deal_activities: deal_investor.deal_activities.includes(:deal) %>
 
-        <%= link_to deal_activities_path(deal_investor_id: deal_investor.id), class: "load_data_link",
-          data: { turbo_frame: 'deal_activities_frame' } do %>
-            <span>Loading...</span>
-        <% end %>
+        <% src = deal_activities_path(deal_investor_id: deal_investor.id) %>
 
-        <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
+        <%= turbo_frame_tag "deal_activities_frame", target: "_top", loading: :lazy, src: src do %>
+          <%= render "/layouts/loading" %>
         <% end %>
 
       </div>
@@ -43,8 +39,8 @@
 
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">
-        <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner: deal_investor, for_entity: deal_investor.entity), target: "_top" do %>
-          <span>Loading...</span>
+        <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner: deal_investor, for_entity: deal_investor.entity), target: "_top", loading: :lazy do %>
+          <%= render "/layouts/loading" %>
         <% end %>
       </div>
     </div>

@@ -1,46 +1,37 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#responses-tab"
-         data-action="">Responses</a>      
-      
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-         data-action="click->tabdetails#loadData">Documents</a>
-      
-      <% if policy(approval).update? %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">
-            Access Rights</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#responses-tab">Responses</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
 
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
-            Notification</a>
+      <% if policy(approval).update? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">Access Rights</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">Notification</a>
       <% end %>
 
     </nav>
-    
-  
-  
+
+
+
   <div class="tab-content" data-controller="datatable">
 
     <div id="responses-tab" class="tab-pane fade in show active">
       <div id="approval_responses" class="associated_entity">
         <%= turbo_frame_tag "approval_responses", target: "_top" do %>
-          <%= render "approval_responses/index", 
+          <%= render "approval_responses/index",
               approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval %>
         <% end %>
-      </div>  
+      </div>
     </div>
 
     <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <%= link_to documents_path(owner_id: approval.id, owner_type: "Approval", 
-                                     entity_id: approval.entity_id, no_folders: true), 
-                                     class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
-              <span>Loading...</span>
+          <% src = documents_path(owner_id: approval.id, owner_type: "Approval",
+                                     entity_id: approval.entity_id, no_folders: true) %>
+          <%= turbo_frame_tag "documents_frame", target: "_top", loading: :lazy, src: src do %>
+            <%= render "/layouts/loading" %>
           <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-          <% end %>
-        </div>     
+        </div>
       </div>
 
       <% if policy(approval).update? %>
@@ -48,9 +39,10 @@
           <div id="access_rights" class="associated_entity">
 
               <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy, src: access_rights_path(owner_id: approval.id, owner_type: "Approval", entity_id: approval.entity_id) do %>
+                <%= render "/layouts/loading" %>
               <% end %>
 
-          </div>  
+          </div>
         </div>
 
         <div id="custom-notification-tab" class="tab-pane fade">
@@ -58,10 +50,10 @@
 
               <%= render "custom_notifications/index", custom_notifications: approval.custom_notifications, owner: approval %>
 
-          </div>  
+          </div>
         </div>
       <% end %>
-      
+
     </div>
-  
+
   </div>

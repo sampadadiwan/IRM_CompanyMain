@@ -1,7 +1,7 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#payments-tab" data-action="click->tabdetails#loadData">Payments</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#payments-tab">Payments</a>
 
       <% if capital_distribution.portfolio_investments.present? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab">
@@ -19,6 +19,7 @@
         <div id="payments-tab" class="tab-pane fade show active">
           <div id="payments" class="associated_entity">
             <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top", loading: :lazy, src: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id) do %>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>
@@ -28,7 +29,7 @@
         <div id="portfolio-investments-tab" class="tab-pane fade">
           <div id="portfolio_investments_div" class="associated_entity">
             <%= turbo_frame_tag "portfolio_investments_frame", target: "_top", src: portfolio_investments_path(capital_distribution_id: capital_distribution.id, fund_id: capital_distribution.fund_id) do %>
-              <span>Loading...</span>
+              <%= render "/layouts/loading" %>
             <% end %>
           </div>
         </div>

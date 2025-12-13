@@ -20,32 +20,24 @@
 
       <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a -->
 
-      <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab"
-            data-action="click->tabdetails#loadData">Reminders</a -->
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
-            <%= t('secondaries_tabs.notification') %></a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab"><%= t('secondaries_tabs.notification') %></a>
 
     <% elsif policy(secondary_sale).rm? %>
       <% interests_active = true %>
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.offers') %></a>
-
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
-
     <% elsif policy(secondary_sale).seller? %>
       <% offers_active = true; document_tag="Seller" %>
       <input hidden=true value="#offerings-tab" id="clickOnLoad" />
       <a class="nav-link <%= offers_active ? 'active' : '' %>" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"><%= t('secondaries_tabs.my_offers') %></a>
-
     <% elsif policy(secondary_sale).buyer? %>
       <% interests_active = true; document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
-
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"><%= t('secondaries_tabs.interests') %></a>
     <% end %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData"><%= t('secondaries_tabs.documents') %></a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"><%= t('secondaries_tabs.documents') %></a>
 
   </nav>
 
@@ -118,15 +110,10 @@
     <div id="docs-tab" class="tab-pane fade">
       <div id="docs" class="associated_entity">
 
-        <%= link_to folder_documents_path(entity_id: secondary_sale.entity_id,
-                                      folder_id: secondary_sale.document_folder.id),
-                                      class: "load_data_link",
-                                      data: { turbo_frame: 'documents_tree_frame' } do %>
+        <% src = folder_documents_path(entity_id: secondary_sale.entity_id,
+                                      folder_id: secondary_sale.document_folder.id) %>
 
-            <span>Loading...</span>
-        <% end %>
-
-        <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top", loading: :lazy, src: src do %>
         <% end %>
 
       </div>

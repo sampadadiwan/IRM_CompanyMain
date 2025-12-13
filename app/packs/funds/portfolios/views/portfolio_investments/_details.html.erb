@@ -1,14 +1,9 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
-          data-action="click->tabdetails#loadData">Documents</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-attributions-tab"
-          data-action="click->tabdetails#loadData">Attribution</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
-          data-action="click->tabdetails#loadData">Account Entries</a>
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-attributions-tab">Attribution</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab">Account Entries</a>
     <% if portfolio_investment.excused_folio_ids? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab">Excused Folios</a>
     <% end %>

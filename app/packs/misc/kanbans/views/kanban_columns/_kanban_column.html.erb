@@ -73,5 +73,6 @@
     <%= turbo_frame_tag edit_turbo_tag, loading: :lazy, src: edit_kanban_column_path( id: kanban_column.id, turbo: true, format: :turbo_stream),
                               class: "modal_kanban_column_load_data_link_#{kanban_column.id}",
                               data: { turbo_frame: edit_turbo_tag, turbo: true} do %>
+      <%= render "/layouts/loading" %>
     <% end %>
 <% end %>

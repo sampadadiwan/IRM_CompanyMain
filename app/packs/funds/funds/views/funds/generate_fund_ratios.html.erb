@@ -9,33 +9,30 @@
 
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-tab"
-          data-action="click->tabdetails#loadData">Fund</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-tab">Fund</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-fund-tab"
-          data-action="click->tabdetails#loadData">Cross Fund</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-fund-tab">Cross Fund</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-portfolio-tab"
-          data-action="click->tabdetails#loadData">Cross Portfolio</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cross-portfolio-tab">Cross Portfolio</a>
 
     </nav>
     <div class="tab-content">
 
       <div class="tab-pane fade show active" id="fund-tab" role="tabpanel">
-        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "fund" %>        
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "fund" %>
       </div>
 
       <div class="tab-pane fade show" id="cross-fund-tab" role="tabpanel">
-        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-fund" %>        
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-fund" %>
       </div>
 
       <div class="tab-pane fade show" id="cross-portfolio-tab" role="tabpanel">
-        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-portfolio" %> 
+        <%= render "/funds/generate_fund_ratios", fund: @fund, end_date:, type: "cross-portfolio" %>
       </div>
 
     </div>
   </div>`
 
-  
+
 
 <% end %>
