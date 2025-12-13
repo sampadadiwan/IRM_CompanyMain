@@ -25,7 +25,7 @@
 
   <%
     spas = []
-    offer.documents.where(owner_tag: "Generated", approved: true).each do |spa|
+    offer.entity.documents.where(owner_type: "Allocation", owner_id: offer.allocations.pluck(:id), owner_tag: "Generated", approved: true).each do |spa|
       spas << link_to(spa.name, spa.file.url, target: "_blank", class: "btn btn-outline-primary ti ti-file-text")
     end
 
@@ -34,7 +34,7 @@
           class: "btn btn-outline-primary ti ti-check" , id: 'accept_spa_btn',
           form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
           msg: "This will mark your acceptance of the Transaction Document(s). Proceed?"}) if policy(offer).accept_spa?
-              
+
       steps = [t('secondaries_actions.review_transaction_documents', documents: spas.join(' ')).html_safe,
               t('secondaries_actions.accept_transaction_documents_button', accept_button: accept_spa).html_safe,
               (t('secondaries_actions.acceptance_recorded').html_safe unless policy(offer).accept_spa? ),

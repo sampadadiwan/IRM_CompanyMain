@@ -4,7 +4,7 @@ class InterestAcceptSpa < InterestAction
   left :handle_errors, Output(:failure) => End(:failure)
   step :notify_accept_spa
 
-  def accept_spa(_ctx, interest:, **)
+  def accept_spa(_ctx, interest:, current_user:, **)
     interest.final_agreement_user = current_user
     interest.final_agreement = true
   end
