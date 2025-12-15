@@ -3,38 +3,15 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
-    # Step 1: Perform Ransack search
-    @q = FundRatio.ransack(params[:q])
-    @fund_ratios = policy_scope(@q.result).includes(:fund, :capital_commitment, :portfolio_scenario)
+    result = FundRatioList.call(current_user, params) { |relation| policy_scope(relation) }
 
-    @fund_ratios = FundRatioSearch.perform(@fund_ratios, current_user, params)
-
-    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
-
-    # Step 3: Apply additional filters using custom helper
-    @fund_ratios = filter_params(
-      @fund_ratios,
-      :import_upload_id,
-      :capital_commitment_id,
-      :portfolio_scenario_id,
-      :owner_type,
-      :owner_id,
-      :scenario,
-      :valuation_id,
-      :fund_id
-    )
-
-    # Step 4: Special filters with more specific logic
-    @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
-    @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
+    @q = result.q
+    @fund_ratios = result.fund_ratios
+    @fund = result.fund
+    @pivot = result.pivot
 
     # Step 5: Pivot grouping (if requested)
-    if params[:pivot].present?
-      group_by_period = params[:group_by_period] || :quarter
-      @pivot = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
-    elsif params[:all].blank? && params[:condensed].blank?
-      @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page])
-    end
+    @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page]) if params[:pivot].blank? && params[:all].blank? && params[:condensed].blank?
 
     # Step 6: Render appropriate format
     respond_to do |format|

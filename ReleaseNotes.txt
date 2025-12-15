@@ -1,3 +1,12 @@
+V9.1.57
+#####################################
+f92dda8f5 Tests pass
+73d0628d8 Now all tabs are loaded using turbo-frames loading: lazy, and not JS
+4d9f3db1a Better step msgs for Interest for accept SPA
+aec33a8c7 Fixed Shortlist all btn
+4af754dce Fixed bugs for SPA in Secondaries
+98427b4d3 Now utilizes Googles Material Design spacings for easy/comfy/compact layouts
+
 V9.1.56
 #####################################
 d4f2d531b Added better total_amount_across_folios for investment amounts for TN Call notice generation

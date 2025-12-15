@@ -7,36 +7,15 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments or /capital_commitments.json
   def index
-    # Step 1: Apply Ransack search and policy scope
-    @q = CapitalCommitment.ransack(params[:q])
-    @capital_commitments = policy_scope(@q.result)
-                           .includes(:entity, :fund, :investor_kyc, :investor)
-
-    # Step 2: Special filter for DataTables search
-    @capital_commitments = @capital_commitments.where(id: search_ids) if params.dig(:search, :value).present?
-
-    @capital_commitments = @capital_commitments.where(id: params[:capital_commitment_ids]) if params[:capital_commitment_ids].present?
-
-    # Step 3: Standard filters using helper
-    @capital_commitments = filter_params(
-      @capital_commitments,
-      :fund_id,
-      :investor_id,
-      :import_upload_id,
-      :onboarding_completed
-    )
-
-    # Step 4: Grouped DataFrame response (adhoc pivot or aggregation)
-    template = "index"
-    if params[:group_fields].present?
-      @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, current_user, params)
-      @adhoc_json = @data_frame.to_a.to_json
-      template = params[:template].presence || "index"
+    service = CapitalCommitmentList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = service.q
+    @capital_commitments = service.capital_commitments
+    @data_frame = service.data_frame
+    @adhoc_json = service.adhoc_json
+    template = service.template
 
     # Step 5: Apply pagination unless 'all' records requested
-    elsif params[:all].blank?
-      @pagy, @capital_commitments = pagy(@capital_commitments, limit: params[:per_page])
-    end
+    @pagy, @capital_commitments = pagy(@capital_commitments, limit: params[:per_page]) if params[:group_fields].blank? && params[:all].blank?
 
     # Step 6: Final response formatting
     respond_to do |format|
@@ -57,23 +36,6 @@ class CapitalCommitmentsController < ApplicationController
 
     @no_folders = false
     render "documents"
-  end
-
-  def search_ids
-    # This is only when the datatable sends a search query
-    query = "#{SearchHelper.sanitize_text_for_search(params[:search][:value])}*"
-    term = { entity_id: current_user.entity_id }
-
-    # Here we search for all the CapitalCommitments that belong to the entity of the current user
-    # Only return first 100 results
-    index_search = CapitalCommitmentIndex.filter(term:)
-                                         .query(simple_query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' })
-
-    index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
-    index_search = index_search.per(100)
-
-    index_search.map(&:id)
   end
 
   def transfer_fund_units

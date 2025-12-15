@@ -17,136 +17,6 @@ class AccountEntriesController < ApplicationController
     end
   end
 
-  def filter_index(params)
-    # Step 1: Apply basic equality filters using shared helper
-    @account_entries = filter_params(
-      @account_entries,
-      :capital_commitment_id,
-      :investor_id,
-      :import_upload_id,
-      :fund_id,
-      :entry_type,
-      :folio_id,
-      :unit_type,
-      :cumulative,
-      :parent_id,
-      :parent_type
-    )
-
-    # Step 2: Special case - only fund-level accounts (no capital commitment)
-    @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
-
-    # Step 3: Apply reporting_date range filter (start and/or end)
-    @account_entries = filter_range(
-      @account_entries,
-      :reporting_date,
-      start_date: params[:reporting_date_start],
-      end_date: params[:reporting_date_end]
-    )
-  end
-
-  def check_time_series_params
-    @time_series_error = []
-
-    if params[:fund_id].blank?
-      params[:fund_id] = current_user.entity.funds.first&.id
-      @time_series_error << "Please select a fund."
-    end
-    # Ensure that folio_id is not nil in the ransack params
-    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('folio_id') }
-      # Add a condition to the ransack query where folio_id is XYX
-      params[:q] ||= {}
-      params[:q][:folio_id_eq] = "Please Enter Folio ID"
-      # Redirect to the current path with notice
-      @time_series_error << "Please select a folio."
-    end
-
-    unless @q.conditions.any? { |c| c.attributes.map(&:name).include?('reporting_date') }
-      # Add a condition to the ransack query where folio_id is XYX
-      params[:q] ||= {}
-      params[:q][:reporting_date] = Time.zone.today
-      # Redirect to the current path with notice
-      @time_series_error << "Please select a reporting date."
-    end
-
-    @time_series_error.presence&.join(" ")
-  end
-
-  def sort_by_id_then_existing
-    # Pull whatever ORDER BY ransack already applied
-    existing_orders = @account_entries.order_values
-    # e.g. [#<Arel::Nodes::Ascending ...>, #<Arel::Nodes::Descending ...>, ...]
-    # or sometimes [] / [nil] / [""]
-
-    # Clean obvious junk like nil/"" so we don't pass them back
-    clean_orders = existing_orders.reject { |frag| frag.respond_to?(:blank?) ? frag.blank? : frag.nil? }
-
-    if clean_orders.present?
-      # Does the primary sort already include id? (either as symbol or SQL/Arel)
-      includes_id =
-        clean_orders.any? do |frag|
-          frag.to_s.match?(/\baccount_entries\.id\b/i) || frag == :id || frag == "id"
-        end
-
-      @account_entries = if includes_id
-                           # We already have id in the sort, so just reapply ransack's order
-                           @account_entries.reorder(clean_orders)
-                         else
-                           # Reapply ransack's full order first, then add id as a stable tiebreaker
-                           @account_entries.reorder(clean_orders).order("account_entries.id ASC")
-                         end
-    else
-      # Ransack gave us no order at all → default to id
-      @account_entries = @account_entries.reorder(nil).order("account_entries.id ASC")
-    end
-  end
-
-  def fetch_rows
-    params[:q] ||= {}
-
-    # Force reporting_date filter for perf if user didn't constrain reporting_date
-    params[:q][:reporting_date_gt] = l(Time.zone.today.beginning_of_year) unless ransack_has_attr?(params[:q], 'reporting_date')
-
-    @q = AccountEntry.ransack(params[:q])
-
-    # Start with policy scope + includes
-    @account_entries = policy_scope(@q.result).includes(:capital_commitment, :fund)
-    # Sort the results by id and the ransack ordering
-    sort_by_id_then_existing
-    # Apply additional filters
-    filter_index(params)
-    # Check for fund filter
-    @fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
-
-    if params[:group_fields].present?
-      # Create a data frame to group the data
-      @data_frame = AccountEntryDf.new.df(@account_entries, current_user, params)
-      @adhoc_json = @data_frame.to_a.to_json
-      @template = params[:template].presence || "index"
-    elsif params[:time_series].present?
-      # Create a time series view
-      error = check_time_series_params
-      if error
-        # Redirect to the referrer with an error message
-        redirect_url = request.referer || account_entries_path(params: params.to_unsafe_h)
-        redirect_to redirect_url, alert: error
-        return
-      end
-      @time_series = AccountEntryTimeSeries.new(@account_entries).call
-    elsif params[:pivot] == "true"
-      # Create a pivot table
-      group_by_param = params[:group_by] || 'entry_type' # can be "name" or "entry_type"
-      show_breakdown = params[:show_breakdown] == "true" # can be "true" or "false"
-      @pivot = AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param, show_breakdown:).call
-    else
-      # Default rows view
-      @account_entries = AccountEntrySearch.perform(@account_entries, current_user, params)
-
-      paginate
-      @template = "index"
-    end
-  end
-
   def paginate
     folio_filter = @q.conditions.any? do |cond|
       cond.attributes.any? { |attr| attr.name == 'folio_id' }
@@ -171,7 +41,23 @@ class AccountEntriesController < ApplicationController
   def index
     authorize AccountEntry
 
-    fetch_rows
+    result = AccountEntryList.call(current_user, params, request.referer) { |relation| policy_scope(relation) }
+
+    if result.error
+      redirect_to result.redirect_url, alert: result.error
+      return
+    end
+
+    @q = result.q
+    @fund = result.fund
+    @account_entries = result.account_entries
+    @data_frame = result.data_frame
+    @adhoc_json = result.adhoc_json
+    @template = result.template
+    @time_series = result.time_series
+    @pivot = result.pivot
+
+    paginate if @template == "index" && params[:group_fields].blank? && params[:time_series].blank? && params[:pivot] != "true"
 
     # Set the breadcrumbs
     fund_bread_crumbs("Account Entries")

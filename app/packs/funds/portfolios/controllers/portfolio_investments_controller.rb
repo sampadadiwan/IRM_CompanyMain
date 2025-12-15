@@ -1,53 +1,19 @@
 class PortfolioInvestmentsController < ApplicationController
   before_action :set_portfolio_investment, only: %i[show edit update destroy]
 
-  def fetch_rows
-    # Step 1: Start with base query using search (Ransack) and eager loading
-    @portfolio_investments = ransack_with_snapshot.include_proforma
-                                                  .joins(:investment_instrument)
-                                                  .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
-
-    # Step 2: Filter by fund (snapshot-aware)
-    if params[:fund_id].present?
-      if params[:snapshot].present?
-        # If snapshot mode, use snapshot versions of the fund
-        snapshot_fund_ids = Fund.with_snapshots.where(orignal_id: params[:fund_id]).pluck(:id)
-        @portfolio_investments = @portfolio_investments.where(fund_id: snapshot_fund_ids)
-      else
-        # Otherwise, use the original fund directly
-        @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id])
-      end
-    end
-
-    # Step 3: Apply additional filters based on optional parameters
-    @portfolio_investments = filter_params(
-      @portfolio_investments,
-      :portfolio_company_id,
-      :import_upload_id,
-      :investment_instrument_id,
-      :aggregate_portfolio_investment_id,
-      :capital_distribution_id
-    )
-
-    # Step 4: Perform any additional search refinements using custom logic
-    @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, current_user, params)
-  end
-
   # GET /portfolio_investments or /portfolio_investments.json
   def index
-    fetch_rows
+    result = PortfolioInvestmentList.call(current_user, params) { |relation| policy_scope(relation) }
 
-    template = "index"
-    if params[:group_fields].present?
-      @data_frame = PortfolioInvestmentDf.new.df(@portfolio_investments, current_user, params)
-      @adhoc_json = @data_frame.to_a.to_json
-      template = params[:template].presence || "index"
-    elsif params[:time_series].present?
-      @fields = params[:fields].presence || %i[fmv quantity gain]
-      @time_series = PortfolioInvestmentTimeSeries.new(@portfolio_investments, @fields).call
-    elsif params[:all].blank? && params[:ag].blank? && !request.format.xlsx?
-      @pagy, @portfolio_investments = pagy(@portfolio_investments, limit: params[:per_page])
-    end
+    @q = result.q
+    @portfolio_investments = result.portfolio_investments
+    @data_frame = result.data_frame
+    @adhoc_json = result.adhoc_json
+    @time_series = result.time_series
+    @fields = result.fields
+    template = result.template
+
+    @pagy, @portfolio_investments = pagy(@portfolio_investments, limit: params[:per_page]) if params[:group_fields].blank? && params[:time_series].blank? && params[:all].blank? && params[:ag].blank? && !request.format.xlsx?
 
     respond_to do |format|
       format.html do
