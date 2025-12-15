@@ -29,8 +29,8 @@ class ImportFormCustomField < ImportUtil
     end
 
     form_custom_field.assign_attributes(
-      name: row_data["Name"],
-      label: row_data["Label"],
+      name: row_data["Name"]&.strip,
+      label: row_data["Label"]&.strip,
       field_type: row_data["Field Type"],
       required: row_data["Required"]&.downcase&.strip == "true",
       has_attachment: row_data["Has Attachment"]&.downcase&.strip == "true",

@@ -14,6 +14,7 @@ class FormCustomField < ApplicationRecord
 
   validates :name, uniqueness: { scope: :form_type_id }
   validates :name, presence: true
+  normalizes :name, :label, with: ->(value) { value&.strip }
 
   has_rich_text :info
 
