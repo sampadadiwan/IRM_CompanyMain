@@ -168,7 +168,7 @@ class DealInvestorsController < ApplicationController
       else
         @deal_investor.deal.broadcast_message("Failed to update Deal Investor #{@deal_investor&.investor_name}")
         format.turbo_stream do
-          turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, current_user: @current_user, turbo_tag: @frame })
+          render turbo_stream: turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, current_user: @current_user, turbo_tag: @frame })
         end
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @deal_investor.errors, status: :unprocessable_entity }

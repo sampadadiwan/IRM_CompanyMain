@@ -1,15 +1,88 @@
-  <div class="row">
+<div class="row g-4">
+<div class="container-fluid px-2">
+<% units ||= nil%>
+<div class="row">
 
     <% deal_investors.includes(:deal).each_with_index do |deal_investor, index| %>
+    <% deal = deal_investor.deal %>
+        <div class="col-md-4 mb-3">
+            <div class="investment-opportunity-card h-100">
+                <div class="card-header-custom">
+                <div class="company-info">
+                    <h3 class="company-title">
+                    <%= link_to deal.name, overview_deal_path(deal) %>
+                    </h3>
+                </div>
+                </div>
 
-      <% deal = deal_investor.deal %>
-      <%= render(PreviewCardComponent.new(
-        title: deal.name,
-        path: current_user.curr_role.casecmp?("investor") ? nil : deal_path(deal),
-        model: deal,
-        object: deal_investor,
-        logo: deal.entity.logo
-      )) %>
+                <div class="card-body-custom">
+                    <!-- Hero Metric -->
+                    <div class="hero-metric">
+                    <div class="icon-box">
+                        <i class="ti ti-currency-dollar"></i>
+                    </div>
+                    <div class="content">
+                        <span class="label">Deal Size</span>
+                        <% subtitle = money_to_currency(deal.amount, params) %>
+                        <span class="value"><%= subtitle %></span>
+                    </div>
+                    </div>
 
+                    <!-- Secondary Metrics Grid -->
+                    <div class="secondary-metrics">
+                    <div class="metric-item">
+                        <div class="icon-label">
+                        <i class="ti ti-activity"></i>
+                        <span>Status</span>
+                        </div>
+                        <span class="value"><%= deal.status %></span>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="icon-label">
+                        <i class="ti ti-calendar"></i>
+                        <span>Start Date</span>
+                        </div>
+                        <span class="value"><%= deal.start_date&.strftime("%d %b %Y") || deal.created_at.strftime("%d %b %Y") %></span>
+                    </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <% if deal.tags.present? %>
+                    <% tags = deal.tags.is_a?(String) ? deal.tags.split(",") : deal.tags %>
+                    <% if tags.any? %>
+                        <div class="tags-section mt-auto pt-3 border-top">
+                        <% tags.each do |tag| %>
+                            <%= link_to tag.strip, deals_path(tag: tag.strip), class: "badge rounded-pill bg-light text-dark text-decoration-none border me-1" %>
+                        <% end %>
+                        </div>
+                    <% end %>
+                    <% end %>
+                </div>
+
+                <div class="action-footer d-flex gap-2">
+                    <%= link_to tasks_path(
+                            owner: deal_investor.id,
+                            owner_type: "DealInvestor",
+                            for_entity_id: current_user.entity_id
+                        ),
+                        class: "btn btn-view-opportunity w-auto flex-grow-1" do %>
+                        <span>Queries</span>
+                        <i class="ti ti-question-mark"></i>
+                    <% end %>
+
+                    <% link = overview_deal_path(deal) %>
+                    <%= link_to link, class: "btn btn-view-opportunity w-auto flex-grow-1" do %>
+                        <span>Overview</span>
+                        <i class="ti ti-arrow-right"></i>
+                    <% end %>
+
+                </div>
+
+            </div>
+        </div>
     <% end %>
+
   </div>
+</div>
+

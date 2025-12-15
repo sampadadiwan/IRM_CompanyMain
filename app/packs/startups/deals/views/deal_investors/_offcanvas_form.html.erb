@@ -10,7 +10,7 @@
         <%= form_with(model: deal_investor, validate: true, data: { turbo_frame: turbo_tag }) do |form| %>
             <% if deal_investor.errors.any? %>
             <div class="alert alert-danger">
-                <h2><%= pluralize(deal_investor.errors.count, "error") %> prohibited this deal_investor from being saved:</h2>
+                <h2><%= pluralize(deal_investor.errors.count, "error") %> prohibited this Deal Investor from being saved:</h2>
 
                 <ul>
                 <% deal_investor.errors.each do |error| %>
@@ -35,9 +35,7 @@
             <%= form.select :investor_id, deal_investor.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
             <small class="text-muted">
                 Create <%= link_to "New Stakeholder",
-                new_investor_path("investor[entity_id]": current_user.entity_id,
-                    "back_to": new_deal_investor_path("deal_investor[deal_id]": deal_investor.deal_id,
-                    "deal_investor[entity_id]": deal_investor.entity_id)) %>
+                new_investor_path("investor[entity_id]": current_user.entity_id), target: "_blank" %>
             </small>
             </div>
 

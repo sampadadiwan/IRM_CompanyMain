@@ -1,3 +1,8 @@
+<% if current_user.curr_role.casecmp?("investor")%>
+
+<%= render "/deal_investors/investor_view", deal_investors: deal_investors %>
+
+<% else %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Deal Investors</h1>
 
@@ -10,11 +15,6 @@
   </span>
 </div>
 
-<% if current_user.curr_role.casecmp?("investor")%>
-
-<%= render "/deal_investors/investor_view", deal_investors: deal_investors %>
-
-<% else %>
 <div class="table-responsive">
 
   <table id="deal_investors" class="table table-bordered dataTable jqDataTable">
