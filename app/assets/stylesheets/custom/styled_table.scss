@@ -44,6 +44,14 @@ table.dataTable>tbody>tr.child ul.dtr-details {
     text-align: left;
   }
 }
+.prose table {
+  th {
+    padding: 10px !important;
+  }
+  td {
+    padding: 10px !important;
+  }
+}
 
 table.dataTable {
     border-spacing: 0;

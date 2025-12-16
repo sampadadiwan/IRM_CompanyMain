@@ -1447,3 +1447,15 @@ button:disabled {
 .cursor-pointer {
   cursor: pointer;
 }
+
+// Ensure generated content (e.g., charts) doesn't overflow the prose container
+.prose {
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+

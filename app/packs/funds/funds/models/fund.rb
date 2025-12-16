@@ -137,7 +137,7 @@ class Fund < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount capital_commitments_count category collected_amount committed_amount currency distribution_amount first_close_date last_close_date name start_date tag_list unit_types snapshot_date snapshot].sort
+    %w[call_amount capital_commitments_count category collected_amount committed_amount currency distribution_amount first_close_date last_close_date name start_date tag_list unit_types snapshot_date snapshot tracking_currency currency].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

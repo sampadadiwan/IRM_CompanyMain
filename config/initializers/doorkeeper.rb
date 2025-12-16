@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-# In the console you can run the following to create an OAuth application for OpenWebUI:
-# OwSyncJob.ow_docker_cmd
-# This will return the docker cmd to run to setup OW UI to use OICD with CapHive
-
 Doorkeeper.configure do
   # Change the ORM that doorkeeper will use (requires ORM extensions installed).
   # Check the list of supported ORMs here: https://github.com/doorkeeper-gem/doorkeeper#orms

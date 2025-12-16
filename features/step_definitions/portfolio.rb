@@ -510,7 +510,7 @@ Given('I add preview documents for the aggregate portfolio investment') do
   visit(aggregate_portfolio_investment_path(@api))
   # Click the documents tab
   within(".api_details") do
-    click_on("Documents")
+    click_tab("Documents")
     sleep(2)
     # Click the new document button
     find("#doc_actions").click

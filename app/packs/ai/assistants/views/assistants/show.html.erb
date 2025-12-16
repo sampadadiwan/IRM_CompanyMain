@@ -1,0 +1,119 @@
+<div class="d-flex flex-column h-100 bg-white" data-controller="voice-chat" style="min-height: 80vh;">
+  <%= turbo_stream_from [current_user, "assistant"] if current_user %>
+
+  <!-- Main Chat Container -->
+  <div class="flex-grow-1 overflow-auto py-4 px-3 d-flex flex-column align-items-center" id="chat-feed" style="scroll-behavior: smooth;">
+    <div class="w-100">
+
+       <!-- Empty State / Welcome -->
+       <div class="text-center py-5 my-5 text-muted opacity-75" id="welcome-message" data-voice-chat-target="welcome">
+          <div class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 80px; height: 80px;">
+              <span class="fs-1">🤖</span>
+            </div>
+          </div>
+          <h2 class="fw-bold text-dark mb-2">How can I help you?</h2>
+          <p class="lead mb-0">Ask about your portfolio, funds, or investments.</p>
+       </div>
+
+       <!-- Responses will be inserted here -->
+       <div data-voice-chat-target="responses" class="d-flex flex-column gap-3"></div>
+
+       <!-- Loading Indicator -->
+       <div class="d-none py-3 text-center" data-voice-chat-target="spinner">
+         <div class="spinner-grow text-primary spinner-grow-sm" role="status"></div>
+         <div class="spinner-grow text-primary spinner-grow-sm mx-1" role="status"></div>
+         <div class="spinner-grow text-primary spinner-grow-sm" role="status"></div>
+       </div>
+
+    </div>
+  </div>
+
+  <!-- Input Area (Sticky Bottom) -->
+  <div class="p-3 bg-white">
+    <div class="container" style="max-width: 800px;">
+
+      <!-- Status Badge -->
+      <!-- div class="text-center mb-2">
+         <span class="badge rounded-pill bg-light text-secondary border fw-normal transition-all" data-voice-chat-target="status">
+           Idle
+         </span>
+      </div -->
+
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+         <div class="card-body p-2 bg-light d-flex align-items-end gap-2">
+
+            <!-- Text Input -->
+            <textarea
+              class="form-control border-0 bg-transparent shadow-none py-2 px-3"
+              rows="1"
+              placeholder="Message..."
+              style="resize: none; min-height: 48px; max-height: 150px;"
+              data-voice-chat-target="input"
+              data-action="keydown.enter->voice-chat#handleEnter input->voice-chat#autoResize"
+            ></textarea>
+
+            <!-- Send Button -->
+            <button class="btn btn-link text-primary p-2 text-decoration-none"
+                    type="button"
+                    data-action="click->voice-chat#sendText"
+                    title="Send message">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrow-up-circle-fill" viewBox="0 0 16 16">
+                 <path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z"/>
+               </svg>
+            </button>
+
+            <!-- Mic Button -->
+            <button class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center flex-shrink-0 transition-all"
+                    type="button"
+                    style="width: 48px; height: 48px;"
+                    data-voice-chat-target="micBtn"
+                    data-action="mousedown->voice-chat#startRecording mouseup->voice-chat#stopRecording mouseleave->voice-chat#stopRecording touchstart->voice-chat#startRecording touchend->voice-chat#stopRecording">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16">
+                  <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
+                  <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+            </button>
+
+         </div>
+      </div>
+
+      <div class="text-center mt-2 text-muted small opacity-75" data-voice-chat-target="hint">
+         Hold 🎙️ to speak • Enter to send
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    /* Mic Pulse Animation */
+    .mic-active {
+        background-color: #dc3545 !important; /* Red */
+        transform: scale(1.1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        animation: mic-pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+
+    @keyframes mic-pulse {
+        to {
+            box-shadow: 0 0 0 20px rgba(220, 53, 69, 0);
+        }
+    }
+
+    /* Hide scrollbar but keep functionality */
+    #chat-feed::-webkit-scrollbar {
+        width: 8px;
+    }
+    #chat-feed::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #chat-feed::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 4px;
+    }
+  </style>
+</div>

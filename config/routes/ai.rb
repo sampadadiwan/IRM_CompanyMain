@@ -19,3 +19,7 @@ resources :chats do
 end
 
 resources :ai_rules
+resources :assistants, only: [:show] do
+  post :ask, on: :collection
+  post :transcribe, on: :collection
+end

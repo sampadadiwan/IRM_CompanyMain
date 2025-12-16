@@ -44,6 +44,8 @@ mcp.json
 /storage/*
 !/storage/.keep
 /public/system/*
+/public/tmp/*
+
 # /public/assets
 /public/uploads/*
 .byebug_history

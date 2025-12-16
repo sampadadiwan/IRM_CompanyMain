@@ -2,21 +2,34 @@
 module MarkdownHelper
   # rubocop:disable Rails/OutputSafety
   def markdown_to_html(text)
-    renderer = Redcarpet::Render::HTML.new(
-      filter_html: true,     # removes raw HTML for safety
-      hard_wrap: true        # adds <br> for line breaks
+    return "" if text.blank?
+
+    renderer = Redcarpet::Render::HTML.new(hard_wrap: true)
+    markdown = Redcarpet::Markdown.new(
+      renderer,
+      autolink: true,
+      tables: true,
+      fenced_code_blocks: true,
+      strikethrough: true,
+      lax_spacing: true,
+      space_after_headers: true
     )
 
-    markdown = Redcarpet::Markdown.new(renderer, {
-                                         autolink: true, # automatically link URLs
-                                         tables: true, # enable GitHub-style tables
-                                         fenced_code_blocks: true,
-                                         strikethrough: true,
-                                         lax_spacing: true,
-                                         space_after_headers: true
-                                       })
+    rendered_html = markdown.render(text.to_s)
 
-    markdown.render(text).html_safe
+    # Use an explicit permit scrubber so attributes like img[src] are not stripped.
+    # Also allow specific tags/attributes needed for safe client-side chart rendering.
+    scrubber = Rails::Html::PermitScrubber.new
+    scrubber.tags = %w[p a strong em br table thead tbody tr th td pre code img div canvas]
+    scrubber.attributes = %w[
+      href title src alt
+      class id width height
+      data-controller
+      data-chart-renderer-spec-value
+      data-chart-renderer-target
+    ]
+
+    sanitize(rendered_html, scrubber: scrubber).html_safe
   end
   # rubocop:enable Rails/OutputSafety
 end

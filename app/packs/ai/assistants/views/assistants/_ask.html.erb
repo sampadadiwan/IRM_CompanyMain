@@ -1,0 +1,15 @@
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body p-4">
+    <div class="small text-muted mb-2">You asked</div>
+    <div class="fw-semibold mb-3"><%= h(query) %></div>
+
+    <hr class="my-3">
+
+    <div class="small text-muted mb-2">Assistant</div>
+
+    <!-- IMPORTANT: Only do this if assistant_html is already sanitized/trusted -->
+    <div class="prose">
+      <%= response ? markdown_to_html(response.content) : "Unknown response" %>
+    </div>
+  </div>
+</div>

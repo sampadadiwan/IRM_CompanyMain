@@ -18,7 +18,6 @@ Sidekiq.configure_server do |config|
   end
 
   unless Rails.env.local?
-    # Sidekiq::Cron::Job.create(name: 'OpenWebSync', cron: 'every 5 minutes', class: 'OwSyncJob') if Rails.application.credentials["OPEN_WEB_UI_ACCESS_TOKEN"].present?
 
     # Used to update the tracking currency for all funds
 

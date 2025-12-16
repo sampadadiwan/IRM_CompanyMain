@@ -1,0 +1,16 @@
+<%= turbo_frame_tag "assistant_response_#{request_id}" do %>
+  <% if error.present? %>
+    <div class="text-danger small">
+      <%= h(error) %>
+    </div>
+  <% elsif response.present? %>
+    <%= render partial: "assistants/ask", locals: { query: query, response: response } %>
+  <% else %>
+    <div class="text-muted small" role="status" aria-live="polite" aria-label="Thinking">
+      <span class="typing-indicator" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+      <span class="visually-hidden">Thinking…</span>
+    </div>
+  <% end %>
+<% end %>
