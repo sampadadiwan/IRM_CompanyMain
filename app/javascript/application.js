@@ -10,14 +10,14 @@ import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
 import "turbo_progress_bar"
+import * as bootstrap from "bootstrap"
 
 import Highcharts from "highcharts"
 import "highcharts-more"
 import "highcharts/modules/exporting"
 import "highcharts/modules/offline-exporting"
 
-
-
+window.bootstrap = bootstrap
 window.Highcharts = Highcharts
 
 Highcharts.setOptions({

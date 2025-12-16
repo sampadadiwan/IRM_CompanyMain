@@ -11,6 +11,62 @@ import { Chart, registerables } from "chart.js"
 
 Chart.register(...registerables)
 
+/**
+ * Returns the shortest prefix of `text` that forms a complete JSON object/array.
+ *
+ * This is more robust than trimming to `lastIndexOf("}")`/`lastIndexOf("]")`
+ * because assistant-generated HTML can sometimes include trailing garbage like:
+ * `{"a":1}}` or `{"a":1}"` which would otherwise break `JSON.parse`.
+ */
+function sliceToCompleteJson(text) {
+  const t = (text || "").trim()
+  if (!(t.startsWith("{") || t.startsWith("["))) return t
+
+  const stack = []
+  let inString = false
+  let quoteChar = null
+  let escaped = false
+
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i]
+
+    if (inString) {
+      if (escaped) {
+        escaped = false
+        continue
+      }
+
+      if (ch === "\\") {
+        escaped = true
+        continue
+      }
+
+      if (ch === quoteChar) {
+        inString = false
+        quoteChar = null
+      }
+
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      inString = true
+      quoteChar = ch
+      continue
+    }
+
+    if (ch === "{") stack.push("}")
+    else if (ch === "[") stack.push("]")
+    else if (stack.length > 0 && ch === stack[stack.length - 1]) {
+      stack.pop()
+      if (stack.length === 0) return t.slice(0, i + 1)
+    }
+  }
+
+  // If we couldn't find a balanced end, fall back to the whole string.
+  return t
+}
+
 export default class extends Controller {
   static targets = ["canvas"]
 
@@ -56,9 +112,8 @@ export default class extends Controller {
     // Strip trailing backslashes that would appear after valid JSON.
     text = text.replace(/\\+$/g, "")
 
-    // Another common failure mode (seen in logs): assistant output includes a stray trailing `\"`,
-    // which becomes a trailing `"` after unescaping. If the string otherwise looks like JSON,
-    // drop a single trailing quote.
+    // Another common failure mode: stray trailing quote after an otherwise-valid JSON blob.
+    // Drop a single trailing quote if the string otherwise looks like JSON.
     if (
       (text.startsWith("{") || text.startsWith("[")) &&
       (text.endsWith('"') || text.endsWith("'"))
@@ -74,6 +129,10 @@ export default class extends Controller {
     ) {
       text = text.slice(1, -1)
     }
+
+    // If there are extra characters AFTER valid JSON (common in LLM-generated HTML),
+    // slice down to the first complete JSON object/array.
+    text = sliceToCompleteJson(text)
 
     try {
       return JSON.parse(text)
