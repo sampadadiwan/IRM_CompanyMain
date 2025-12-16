@@ -1,8 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
-import * as bootstrap from "bootstrap"
 
 export default class extends Controller {
   connect() {
+    // Prefer the single global Bootstrap instance (from the Modernize layout bundle).
+    // This avoids loading Bootstrap twice (UMD + ESM), which can break dropdown behavior.
+    const bootstrap = window.bootstrap
+    if (!bootstrap?.Tooltip) return
+
     // Bootstrap 5 uses `data-bs-toggle="tooltip"`.
     // Keep backward-compat for any legacy markup using `data-toggle="tooltip"`.
     this.tooltipElements = Array.from(
@@ -15,6 +19,9 @@ export default class extends Controller {
   }
 
   disconnect() {
+    const bootstrap = window.bootstrap
+    if (!bootstrap?.Tooltip) return
+
     this.tooltipElements?.forEach((element) => {
       bootstrap.Tooltip.getInstance(element)?.dispose()
     })
