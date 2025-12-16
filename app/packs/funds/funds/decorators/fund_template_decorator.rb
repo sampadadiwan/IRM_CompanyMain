@@ -172,6 +172,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def undrawn_comm_investor = @capital_commitment.committed_amount - drawdown_cash_investor
   def undrawn_comm_investor_percent = percentage(undrawn_comm_investor, undrawn_comm_total)
 
+  # TODO: these names are incorrect - they are undrawn percents
   def percent_unpaid_comm_lp = percentage(undrawn_comm_lp.cents, committed_cash_lp.cents)
   def percent_unpaid_comm_gp = percentage(undrawn_comm_gp.cents, committed_cash_gp.cents)
   def percent_unpaid_comm_total = percentage(undrawn_comm_total.cents, (committed_cash_lp + committed_cash_gp).cents)
@@ -555,6 +556,17 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
     percentage(undrawn_comm_incl_curr_notice_investor, undrawn_comm_incl_curr_notice_total)
   end
 
+  def undrawn_comm_incl_curr_notice_kyc
+    return Money.new(0, @currency) unless @capital_remittance
+
+    money_sum(
+      fund_as_of.capital_remittances
+        .where(remittance_date: ..@as_of_date, capital_call_id: @capital_remittance.capital_call).joins(capital_commitment: :investor_kyc).where(investor_kycs: { id: @capital_commitment.investor_kyc_id }),
+      :committed_amount_cents
+    ) - agg_drawdown_incl_curr_notice_kyc
+  end
+  memoize :undrawn_comm_incl_curr_notice_kyc
+
   # Remittance Payments associated to the capital commitment
   def remittance_payments = @capital_commitment.capital_remittance_payments.where(payment_date: ..@as_of_date)
   memoize :remittance_payments
@@ -564,4 +576,31 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
     money_sum(@capital_commitment.capital_remittances.where(remittance_date: ..@as_of_date.yesterday.end_of_day), :call_amount_cents) - money_sum(prior_remittance_payments, :amount_cents)
   end
+
+  def agg_collected_incl_curr_notice_investor
+    money_sum(
+      fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id),
+      :collected_amount_cents
+    )
+  end
+  memoize :agg_collected_incl_curr_notice_investor
+
+  def agg_collected_incl_curr_notice_kyc
+    money_sum(
+      fund_as_of.capital_remittances
+        .where(remittance_date: ..@as_of_date).joins(capital_commitment: :investor_kyc).where(investor_kycs: { id: @capital_commitment.investor_kyc_id }),
+      :collected_amount_cents
+    )
+  end
+  memoize :agg_collected_incl_curr_notice_kyc
+
+  def agg_unpaid_incl_curr_notice_kyc
+    agg_drawdown_incl_curr_notice_kyc - agg_collected_incl_curr_notice_kyc
+  end
+  memoize :agg_unpaid_incl_curr_notice_kyc
+
+  def agg_unpaid_incl_curr_notice_investor
+    agg_drawdown_incl_curr_notice_investor - agg_collected_incl_curr_notice_investor
+  end
+  memoize :agg_unpaid_incl_curr_notice_investor
 end

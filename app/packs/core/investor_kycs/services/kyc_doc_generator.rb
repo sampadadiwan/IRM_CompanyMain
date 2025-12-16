@@ -115,7 +115,6 @@ class KycDocGenerator
       account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
       account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
 
-      fund_units: TemplateDecorator.new(fund_units(investor_kyc, start_date, end_date, fund_id)),
       agreement_unit_setting: TemplateDecorator.new(investor_kyc.agreement_unit_setting),
 
       capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
@@ -140,6 +139,8 @@ class KycDocGenerator
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
       portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(investor_kyc, start_date, end_date, fund_id))
     }
+
+    add_fund_units_context(investor_kyc, start_date, end_date, fund_id, context)
 
     if fund_id.present?
       context[:fund] = TemplateDecorator.decorate(Fund.find(fund_id))
@@ -222,15 +223,32 @@ class KycDocGenerator
                    })
   end
 
-  def fund_units(investor_kyc, start_date, end_date, fund_id)
+  def add_fund_units_context(investor_kyc, start_date, end_date, fund_id, context)
     fund_units = investor_kyc.fund_units
     fund_units = fund_units.where(fund_id: fund_id).order(issue_date: :asc) if fund_id
 
-    OpenStruct.new({
-                     current: fund_units.sum(:quantity),
-                     before_end_date: fund_units.where(issue_date: ..end_date).sum(:quantity),
-                     between_dates: fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
-                   })
+    context[:fund_units] = TemplateDecorator.new(
+      OpenStruct.new({
+                       current: fund_units.sum(:quantity),
+                       before_end_date: fund_units.where(issue_date: ..end_date).sum(:quantity),
+                       between_dates: fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
+                     })
+    )
+
+    start_date = Time.zone.parse(start_date) unless start_date.is_a?(Date)
+    end_date = Time.zone.parse(end_date) unless end_date.is_a?(Date)
+    fund_units_map = {}
+
+    fund_units.each do |fu|
+      key = fu.unit_type
+      aggregated_entry = fund_units_map[key] || OpenStruct.new(unit_type: fu.unit_type, total_quantity: 0, before_end_date_quantity: 0, between_dates_quantity: 0)
+      aggregated_entry.total_quantity += fu.quantity
+      aggregated_entry.before_end_date_quantity += fu.issue_date <= end_date ? fu.quantity : 0
+      aggregated_entry.between_dates_quantity += fu.issue_date.between?(start_date, end_date) ? fu.quantity : 0
+      fund_units_map[key] = aggregated_entry
+    end
+
+    context[:aggregated_fund_units] = TemplateDecorator.decorate_collection(fund_units_map.values)
   end
 
   # Add the reporting entries for the investor kyc, note that since a KYC can be linked to multiple commitments, there could be multiple account entries with the same name (ex Setup Fees, one for each commitment), so sum them (Ex Sum of Setup Fees) before adding to the context
