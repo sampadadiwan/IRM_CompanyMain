@@ -198,13 +198,14 @@ end
 Then('user {string} have {string} access to the fund ratios') do |truefalse, accesses|
   accesses.split(",").each do |access|
     @fund.fund_ratios.each do |fr|
-      puts "##Checking access #{access} on Fund Ratio #{fr} for #{@user.email} as #{truefalse}"
-      # Fund Ratios cannot be edited or destroyed
-      truefalse = "false" if ["edit", "update", "destroy"].include? access
+      result = truefalse
+      result = "false" if ["edit", "update"].include? access
+      puts "##Checking access #{access} on Fund Ratio #{fr} for #{@user.email} as #{result}"
+      # Fund Ratios cannot be edited but can be destroyed
       if @user.curr_role == "employee"
-        Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+        Pundit.policy(@user, fr).send("#{access}?").to_s.should == result
       elsif @user.curr_role == "investor"
-        Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+        Pundit.policy(@user, fr).send("#{access}?").to_s.should == result
       else
         Pundit.policy(@user, fr).send("#{access}?").to_s.should == "false"
       end
