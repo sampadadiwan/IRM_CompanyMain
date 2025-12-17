@@ -83,11 +83,12 @@ class PortfolioInvestmentList
 
     if @params[:group_fields].present?
       build_data_frame_result(result_attrs)
+      result_attrs[:template] = @params[:template].presence || template
     elsif @params[:time_series].present?
       build_time_series_result(result_attrs)
     end
 
-    result_attrs[:template] = @params[:template].presence || template
+    result_attrs[:template] ||= template
     result_attrs
   end
 
