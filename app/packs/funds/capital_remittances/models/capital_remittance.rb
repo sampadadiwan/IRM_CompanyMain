@@ -54,6 +54,7 @@ class CapitalRemittance < ApplicationRecord
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
   scope :verified, -> { where(verified: true) }
+  scope :unverified, -> { where(verified: false) }
 
   monetize :tracking_collected_amount_cents, :tracking_call_amount_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }

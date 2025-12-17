@@ -1,6 +1,61 @@
 require 'erb'
 
+
 class FundAssistant
+
+  AI_MODEL = 'gemini-2.5-pro'.freeze
+
+  class CapitalRemittanceQuery
+    include HasScope
+
+    has_scope :paid, type: :boolean
+    has_scope :pending, type: :boolean
+    has_scope :verified, type: :boolean
+    has_scope :unverified, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
+  class FundQuery
+    include HasScope
+
+    has_scope :feeder_funds, type: :boolean
+    has_scope :master_funds, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
+  class CapitalCommitmentQuery
+    include HasScope
+
+    has_scope :lp_onboarding_complete, type: :boolean
+    has_scope :lp_onboarding_incomplete, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
+  class PortfolioInvestmentQuery
+    include HasScope
+
+    has_scope :buys, type: :boolean
+    has_scope :sells, type: :boolean
+    has_scope :conversions, type: :boolean
+    has_scope :distributed, type: :boolean
+    has_scope :not_distributed, type: :boolean
+    has_scope :proforma, type: :boolean
+    has_scope :non_proforma, type: :boolean
+
+    def perform(collection:, params:)
+      apply_scopes(collection, params)
+    end
+  end
+
   def initialize(user:)
     @user = user
   end
@@ -8,11 +63,12 @@ class FundAssistant
   # --- Tool Definitions ---
 
   class ListFunds < RubyLLM::Tool
-    description "List all funds, with optional Ransack filtering and ordering. " \
+    description "Return list all funds with the committed, collected and distribution amounts, with optional Ransack filtering and ordering. " \
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: name, currency, tracking_currency, category, tag_list, unit_types, first_close_date, last_close_date, start_date. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
                 "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'name asc' or query: { s: 'first_close_date desc' }."
+    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'feeder_funds', 'master_funds'", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Venture', currency_eq: 'USD' }", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'name asc', 'first_close_date desc'. (Maps to Ransack `s`)", required: false
 
@@ -21,9 +77,9 @@ class FundAssistant
       @assistant = assistant
     end
 
-    def execute(query: {}, sort: nil)
+    def execute(scope: nil, query: {}, sort: nil)
       # Ensure query is a Hash before passing to the assistant
-      @assistant.list_funds(query: query || {}, sort: sort).to_json
+      @assistant.list_funds(scope: scope, query: query || {}, sort: sort).to_json
     end
   end
 
@@ -65,6 +121,7 @@ class FundAssistant
                 "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'commitment_date desc'."
     param :fund_id, type: "integer", desc: "Filter by fund ID", required: false
     param :folio_id, type: "string", desc: "Filter by a specific folio ID", required: false
+    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'lp_onboarding_complete', 'lp_onboarding_incomplete'", required: false
     param :query, type: :object, desc: "Ransack query hash", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'commitment_date desc'. (Maps to Ransack `s`)", required: false
 
@@ -73,19 +130,20 @@ class FundAssistant
       @assistant = assistant
     end
 
-    def execute(fund_id: nil, folio_id: nil, query: {}, sort: nil)
-      raise "Either fund_id, folio_id, or query must be provided." if fund_id.nil? && folio_id.nil? && (query || {}).empty?
+    def execute(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
+      raise "Either fund_id, folio_id, scope, or query must be provided." if fund_id.nil? && folio_id.nil? && scope.nil? && (query || {}).empty?
 
-      @assistant.list_capital_commitments(fund_id: fund_id, folio_id: folio_id, query: query || {}, sort: sort).to_json
+      @assistant.list_capital_commitments(fund_id: fund_id, folio_id: folio_id, scope: scope, query: query || {}, sort: sort).to_json
     end
   end
 
   class ListCapitalRemittances < RubyLLM::Tool
-    description "List capital remittances. Can be filtered by fund_id, folio_id, or a Ransack query. fund_id is not required if folio_id is provided. At least one filter must be used. " \
-                "Attributes for query: folio_id, investor_name, payment_date, remittance_date, status, verified, call_amount, collected_amount. Note the verified is true or false and status is Pending, Paid, Overdue. " \
+    description "List capital remittances. Can be filtered by fund_id, folio_id, scope, or a Ransack query. fund_id is not required if folio_id is provided. At least one filter must be used. " \
+                "Attributes for query: folio_id, investor_name, payment_date, remittance_date, call_amount, collected_amount." \
                 "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'payment_date desc'."
     param :fund_id, type: "integer", desc: "Filter by fund ID", required: false
     param :folio_id, type: "string", desc: "Filter by a specific folio ID", required: false
+    param :scope, type: "string", desc: "Filter by a predefined scope. Available scopes: 'paid', 'pending', 'verified', 'unverified'", required: false
     param :query, type: :object, desc: "Ransack query hash", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'payment_date desc'. (Maps to Ransack `s`)", required: false
 
@@ -94,10 +152,10 @@ class FundAssistant
       @assistant = assistant
     end
 
-    def execute(fund_id: nil, folio_id: nil, query: {}, sort: nil)
-      raise "Either fund_id, folio_id, or query must be provided." if fund_id.nil? && folio_id.nil? && (query || {}).empty?
+    def execute(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
+      raise "Either fund_id, folio_id, scope, or query must be provided." if fund_id.nil? && folio_id.nil? && scope.nil? && (query || {}).empty?
 
-      @assistant.list_capital_remittances(fund_id: fund_id, folio_id: folio_id, query: query || {}, sort: sort).to_json
+      @assistant.list_capital_remittances(fund_id: fund_id, folio_id: folio_id, scope: scope, query: query || {}, sort: sort).to_json
     end
   end
 
@@ -164,6 +222,7 @@ class FundAssistant
                 "Attributes: portfolio_company_name, investment_instrument_name, status, investment_date, amount, fmv, gain, cost_of_sold, quantity, sold_quantity, net_quantity, folio_id, notes, sector. " \
                 "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'investment_date desc'."
     param :fund_id, type: "integer", desc: "The ID of the fund", required: false
+    param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Company A', status_eq: 'Active' }", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`)", required: false
 
@@ -172,8 +231,8 @@ class FundAssistant
       @assistant = assistant
     end
 
-    def execute(fund_id: nil, query: {}, sort: nil)
-      @assistant.list_portfolio_investments(fund_id: fund_id, query: query || {}, sort: sort).to_json
+    def execute(fund_id: nil, scope: nil, query: {}, sort: nil)
+      @assistant.list_portfolio_investments(fund_id: fund_id, scope: scope, query: query || {}, sort: sort).to_json
     end
   end
 
@@ -231,16 +290,8 @@ class FundAssistant
         <div class="my-3">
           <div class="fw-semibold mb-2">#{escaped_title}</div>
           <div class="chart-wrap" style="max-width: 900px;">
-            <div
-              data-controller="chart-renderer"
-              data-chart-renderer-spec-value="#{escaped_spec}"
-            >
-              <canvas
-                id="#{canvas_id}"
-                width="900"
-                height="500"
-                data-chart-renderer-target="canvas"
-              ></canvas>
+            <div data-controller="chart-renderer" data-chart-renderer-spec-value="#{escaped_spec}">
+              <canvas id="#{canvas_id}" width="900" height="500" data-chart-renderer-target="canvas"></canvas>
             </div>
           </div>
         </div>
@@ -320,12 +371,18 @@ class FundAssistant
 
   # --- Tool Implementations ---
 
-  def list_funds(query: {}, sort: nil)
+  def list_funds(scope: nil, query: {}, sort: nil)
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
-    scope = Pundit.policy_scope(@user, Fund).ransack(ransack_query).result
-    scope.map do |f|
+    relation = Pundit.policy_scope(@user, Fund)
+
+    # Use HasScope to apply filters safely
+    scope_params = scope.present? ? { scope => true } : {}
+    relation = FundQuery.new.perform(collection: relation, params: scope_params)
+
+    funds = relation.ransack(ransack_query).result
+    funds.map do |f|
       {
         id: f.id,
         name: f.name,
@@ -397,12 +454,19 @@ class FundAssistant
     end
   end
 
-  def list_capital_commitments(fund_id: nil, folio_id: nil, query: {}, sort: nil)
+  def list_capital_commitments(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
     ransack_query[:fund_id_eq] = fund_id if fund_id.present?
     ransack_query[:folio_id_eq] = folio_id if folio_id.present?
-    commitments = Pundit.policy_scope(@user, CapitalCommitment).includes(:fund).ransack(ransack_query).result
+
+    relation = Pundit.policy_scope(@user, CapitalCommitment).includes(:fund)
+
+    # Use HasScope to apply filters safely
+    scope_params = scope.present? ? { scope => true } : {}
+    relation = CapitalCommitmentQuery.new.perform(collection: relation, params: scope_params)
+
+    commitments = relation.ransack(ransack_query).result
     commitments.map do |c|
       {
         id: c.id,
@@ -420,12 +484,21 @@ class FundAssistant
     end
   end
 
-  def list_capital_remittances(fund_id: nil, folio_id: nil, query: {}, sort: nil)
+  def list_capital_remittances(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
+    puts "query: #{query}, scope: #{scope}"
+
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
     ransack_query[:fund_id_eq] = fund_id if fund_id.present?
     ransack_query[:folio_id_eq] = folio_id if folio_id.present?
-    remittances = Pundit.policy_scope(@user, CapitalRemittance).includes(:fund, :capital_call, :capital_commitment).ransack(ransack_query).result
+
+    relation = Pundit.policy_scope(@user, CapitalRemittance).includes(:fund, :capital_call, :capital_commitment)
+
+    # Use HasScope to apply filters safely
+    scope_params = scope.present? ? { scope => true } : {}
+    relation = CapitalRemittanceQuery.new.perform(collection: relation, params: scope_params)
+
+    remittances = relation.ransack(ransack_query).result
     remittances.map do |r|
       {
         id: r.id,
@@ -507,13 +580,18 @@ class FundAssistant
     end
   end
 
-  def list_portfolio_investments(fund_id: nil, query: {}, sort: nil)
+  def list_portfolio_investments(fund_id: nil, scope: nil, query: {}, sort: nil)
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
-    investments = Pundit.policy_scope(@user, PortfolioInvestment).includes(:fund, :portfolio_company, :investment_instrument)
-    investments = investments.where(fund_id: fund_id) if fund_id.present?
-    investments = investments.ransack(ransack_query).result
+    relation = Pundit.policy_scope(@user, PortfolioInvestment).includes(:fund, :portfolio_company, :investment_instrument)
+    relation = relation.where(fund_id: fund_id) if fund_id.present?
+
+    # Use HasScope to apply filters safely
+    scope_params = scope.present? ? { scope => true } : {}
+    relation = PortfolioInvestmentQuery.new.perform(collection: relation, params: scope_params)
+
+    investments = relation.ransack(ransack_query).result
     investments.map do |i|
       {
         id: i.id,
@@ -556,7 +634,7 @@ class FundAssistant
 
   # This method is used to interact with the assistant
   def chat(prompt)
-    client = RubyLLM.chat(model: 'gemini-2.5-flash')
+    client = RubyLLM.chat(model: AI_MODEL)
 
     # Convert Langchain tool definitions to OpenAI format if needed, or pass as is if RubyLLM supports it.
     # Assuming RubyLLM can handle tools or we just construct the system prompt.

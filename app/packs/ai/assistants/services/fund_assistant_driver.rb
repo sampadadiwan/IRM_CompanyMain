@@ -4,7 +4,7 @@ class FundAssistantDriver
     @assistant = FundAssistant.new(user: @user)
 
     # Initialize the chat client and register tools from the assistant
-    @client = RubyLLM.chat(model: 'gemini-2.5-flash')
+    @client = RubyLLM.chat(model: FundAssistant::AI_MODEL)
     @client.with_tools(*@assistant.tools) # Splat the array of tools
 
     @started = false

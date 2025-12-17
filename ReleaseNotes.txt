@@ -1,3 +1,14 @@
+V9.1.58
+#####################################
+0822dcf32 Now bootstrap is loaded from importmap
+c1751d7b4 Voice agent (#1137)
+6e33dde4f Template decoator updates 151225 (#1134)
+b62ce8eff Fixed fund ratio access spec - now ratio can be destroyed (#1135)
+e4af5b110 Now custom field label is trimmed (#1130)
+2038b03ad Deals investor view fix (#1133)
+9bc602a0e Backup nil check for portfolio pivot
+8388ab9a9 Report service (#1132)
+
 V9.1.57
 #####################################
 f92dda8f5 Tests pass
