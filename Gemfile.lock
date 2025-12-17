@@ -523,6 +523,10 @@ GEM
     hirb (0.7.3)
     htmlbeautifier (1.4.3)
     htmlentities (4.3.4)
+    htmltoword (1.1.1)
+      actionpack
+      nokogiri
+      rubyzip (>= 1.0)
     httparty (0.23.2)
       csv
       mini_mime (>= 1.0.0)
@@ -1123,9 +1127,13 @@ GEM
     websocket-extensions (0.1.5)
     whenever (1.0.0)
       chronic (>= 0.6.3)
+    wicked_pdf (2.8.2)
+      activesupport
+      ostruct
     wikipedia-client (1.17.0)
       addressable (~> 2.7)
     wisper (2.0.1)
+    wkhtmltopdf-binary (0.12.6.10)
     xpath (3.2.0)
       nokogiri (~> 1.8)
     yajl-ruby (1.4.3)
@@ -1209,6 +1217,7 @@ DEPENDENCIES
   hashie
   hightop
   htmlbeautifier
+  htmltoword
   httparty
   humanize
   i18n-tasks
@@ -1291,7 +1300,9 @@ DEPENDENCIES
   webdrivers
   webmock
   whenever
+  wicked_pdf
   wikipedia-client
+  wkhtmltopdf-binary
   yajl-ruby
 
 BUNDLED WITH
