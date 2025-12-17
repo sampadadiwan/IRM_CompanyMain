@@ -1,0 +1,35 @@
+<div class="container mt-4">
+  <h1>Create New AI Portfolio Report</h1>
+  
+  <%= form_with model: @report, class: 'mt-4' do |f| %>
+    <% if @report.errors.any? %>
+      <div class="alert alert-danger">
+        <h5>Errors:</h5>
+        <ul>
+          <% @report.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    
+    <div class="mb-3">
+      <%= f.label :portfolio_company_id, 'Portfolio Company', class: 'form-label' %>
+      <%= f.collection_select :portfolio_company_id, 
+          Investor.where(category: 'Portfolio Company').order(:name), 
+          :id, :name, 
+          { prompt: 'Select a portfolio company' }, 
+          class: 'form-control' %>
+    </div>
+    
+    <div class="mb-3">
+      <%= f.label :report_date, class: 'form-label' %>
+      <%= f.date_field :report_date, class: 'form-control', value: Date.today %>
+    </div>
+    
+    <div class="mt-4">
+      <%= f.submit 'Create Report', class: 'btn btn-primary' %>
+      <%= link_to 'Cancel', ai_portfolio_reports_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>

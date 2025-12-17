@@ -1,0 +1,1924 @@
+<% if flash[:ai_notice] %>
+  <div class="ai-toast-notification" role="alert">
+    <div class="ai-toast-content">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 16v-4M12 8h.01"></path>
+      </svg>
+      <%= flash[:ai_notice] %>
+    </div>
+    <button type="button" class="ai-toast-close" data-bs-dismiss="alert">&times;</button>
+  </div>
+<% end %>
+
+<div class="ai-report-container">
+  <!-- Report Header -->
+  <div class="ai-report-header">
+    <div class="ai-report-title-section">
+      <h1 class="ai-report-title">
+        <%= @report.portfolio_company&.name || "Company ##{@report.portfolio_company_id}" %>
+        <span class="ai-report-subtitle">- AI Report Builder</span>
+      </h1>
+    </div>
+    <div class="ai-report-actions">
+      <span class="ai-review-counter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"></path>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <%= @report.ai_report_sections.where(reviewed: true).count %>/<%= @report.ai_report_sections.count %> reviewed
+      </span>
+      <span class="ai-status-badge <%= @report.status == 'published' ? 'published' : 'draft' %>">
+        <%= @report.status&.humanize || 'Draft' %>
+      </span>
+      <%= link_to collated_report_ai_portfolio_report_path(@report), class: "ai-generate-btn" do %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Generate Final Report
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="ai-report-workspace">
+    <!-- LEFT: Sections Navigation -->
+    <div class="ai-sections-panel">
+      <div class="ai-sections-header">
+        <span class="ai-sections-label">SECTIONS</span>
+      </div>
+      <div class="ai-sections-list">
+        <% @report.ai_report_sections.order(:order_index).each do |section| %>
+          <% is_active = section == @current_section %>
+          <% is_reviewed = section.reviewed? %>
+          <%= link_to ai_portfolio_report_path(@report, section_id: section.id),
+              class: "ai-section-item #{'active' if is_active} #{'reviewed' if is_reviewed}" do %>
+            <div class="ai-section-indicator"></div>
+            <span class="ai-section-name"><%= section.section_type %></span>
+            <% if is_reviewed %>
+              <svg class="ai-section-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- MIDDLE: Editor Panel -->
+    <div class="ai-editor-panel" id="editor-column">
+      <div class="ai-editor-content">
+        <!-- Section Header -->
+        <div class="ai-editor-header">
+          <h2 class="ai-editor-title">
+            <div class="ai-title-accent"></div>
+            <%= @current_section.section_type %>
+          </h2>
+          <% if AiPortfolioReport::WEB_SEARCH_DEFAULT_SECTIONS.include?(@current_section.section_type) %>
+            <div class="ai-web-search-toggle">
+              <input class="ai-checkbox"
+                     type="checkbox"
+                     id="topWebSearchCheckbox"
+                     <%= 'checked' if @show_web_search_version %>
+                     onchange="handleWebSearchToggle(this.checked)">
+              <label class="ai-checkbox-label" for="topWebSearchCheckbox">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                <%= @show_web_search_version ? 'Web search included' : 'Regenerate with web search' %>
+              </label>
+            </div>
+          <% end %>
+        </div>
+
+        <%= form_with model: [@report, @current_section],
+                url: ai_portfolio_report_ai_report_section_path(@report, @current_section),
+                method: :patch,
+                id: "section-form",
+                class: "ai-editor-form" do |f| %>
+          <%= f.hidden_field :content, id: "content-hidden-field" %>
+
+          <!-- Content Editor -->
+          <div class="ai-content-editor">
+            <div id="report-content" contenteditable="true" class="ai-editable-content">
+              <%= @current_section.current_content.to_s.html_safe %>
+            </div>
+          </div>
+
+          <!-- AI Refinement Tools -->
+          <div class="ai-refinement-section">
+            <div class="ai-refinement-input-wrapper">
+              <svg class="ai-sparkle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <textarea
+                id="ai-refinement-prompt"
+                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); regenerateWithAI(); }"
+                class="ai-refinement-input"
+                rows="2"
+                placeholder="<%= @current_section.section_type == 'Custom Charts' ? 'e.g., Add a chart showing revenue by product line OR leave empty to regenerate all charts' : 'Give instructions like: Add more competitive advantages, Expand risk analysis, Make it more concise...' %>"></textarea>
+            </div>
+            <div class="ai-refinement-actions">
+              <button type="button" class="ai-btn ai-btn-outline" onclick="regenerateWithAI()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Regenerate with AI
+              </button>
+              <%= f.submit "Save Section", class: "ai-btn ai-btn-primary" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- RIGHT: AI Assistant Panel -->
+    <div class="ai-assistant-panel" id="ai-assistant-column">
+      <!-- Resize Handle -->
+      <div class="ai-resize-handle" id="ai-resize-handle" title="Drag to resize">
+        <div class="ai-resize-grip"></div>
+      </div>
+      <div class="ai-assistant-header">
+        <div class="ai-assistant-info">
+          <div class="ai-assistant-avatar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+              <circle cx="7.5" cy="14.5" r="1.5"></circle>
+              <circle cx="16.5" cy="14.5" r="1.5"></circle>
+            </svg>
+          </div>
+          <div>
+            <h3 class="ai-assistant-title">AI Assistant</h3>
+            <span class="ai-assistant-context">Context: <%= @current_section.section_type %></span>
+          </div>
+        </div>
+        <button class="ai-hide-btn" onclick="toggleAIAssistant()" id="ai-toggle-btn" title="Hide AI Assistant">
+          Hide
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Chat Messages -->
+      <div id="chat-messages" class="ai-chat-messages">
+        <% if @chat_session.ai_chat_messages.any? %>
+          <% @chat_session.ai_chat_messages.order(:created_at).each do |message| %>
+            <div class="ai-message <%= message.role %>">
+              <% if message.role == 'assistant' %>
+                <div class="ai-message-avatar">AI</div>
+              <% end %>
+              <div class="ai-message-bubble">
+                <%= simple_format(message.content) %>
+                <% if message.role == 'assistant' && message.sources&.any? %>
+                  <div class="ai-message-sources">
+                    Sources: <%= message.sources.join(', ') %>
+                  </div>
+                <% end %>
+              </div>
+              <div class="ai-message-time"><%= message.created_at.strftime('%H:%M') %></div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="ai-chat-welcome">
+            <div class="ai-welcome-avatar">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+                <circle cx="7.5" cy="14.5" r="1.5"></circle>
+                <circle cx="16.5" cy="14.5" r="1.5"></circle>
+              </svg>
+            </div>
+            <p class="ai-welcome-text">Hello! I can help you build this report.</p>
+            <p class="ai-welcome-subtext">Ask me anything about the portfolio company!</p>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Chat Input -->
+      <div class="ai-chat-input-section">
+        <div class="ai-quick-actions">
+          <button class="ai-quick-btn" onclick="sendMessage('What was Q3 revenue?')">
+            Q3 revenue?
+          </button>
+          <button class="ai-quick-btn" onclick="sendMessage('Show key risks')">
+            Key risks
+          </button>
+        </div>
+        <div class="ai-input-wrapper">
+          <input type="text" id="chat-input" class="ai-chat-input" placeholder="Ask about the portfolio...">
+          <button class="ai-send-btn" onclick="sendMessage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expand Button (when AI panel is collapsed) -->
+  <button class="ai-expand-btn" onclick="toggleAIAssistant()" id="ai-expand-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+    </svg>
+    <span>AI Assistant</span>
+  </button>
+</div>
+    <script>
+      const reportId      = <%= @report.id %>;
+      const sectionId     = <%= @current_section.id %>;
+      const chatSessionId = <%= @chat_session.id %>;
+
+      // Add this inside your existing <script> tag
+      document.addEventListener('DOMContentLoaded', function() {
+      renderAllCharts();
+      });
+
+      // Handle web search checkbox toggle
+async function handleWebSearchToggle(isChecked) {
+  const checkbox = document.getElementById('topWebSearchCheckbox');
+  const label = document.querySelector('label[for="topWebSearchCheckbox"]');
+  const searchIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>';
+
+  // Show loading state
+  checkbox.disabled = true;
+  label.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+  label.classList.add('text-muted');
+
+  try {
+    // Call toggle with explicit state
+    const response = await fetch('/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + sectionId + '/toggle_web_search', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ enable_web_search: isChecked })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (isChecked) {
+        // Enabling web search
+        if (data.has_web_content && data.content) {
+          // Web content exists - just load it (preserves refinements)
+          document.getElementById('report-content').innerHTML = data.content;
+          renderAllCharts();
+          label.innerHTML = searchIcon + ' Web search included';
+          label.classList.remove('text-muted');
+          checkbox.disabled = false;
+        } else {
+          // No web content exists - need to generate
+          if (!confirm('This will generate the section with latest web information. Continue?')) {
+            // User cancelled - revert to document mode
+            await setWebSearchState(false);
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            label.innerHTML = searchIcon + ' Regenerate with web search';
+            label.classList.remove('text-muted');
+            return;
+          }
+
+          // Generate with web search
+          label.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating with web search...';
+
+          const genResponse = await fetch('/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + sectionId + '/regenerate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+              prompt: '',
+              current_content: '',
+              section_type: '<%= @current_section.section_type %>',
+              web_search_enabled: true
+            })
+          });
+
+          const genData = await genResponse.json();
+
+          if (genData.success) {
+            let cleanContent = genData.content
+              .replace(/```html\n?/g, '')
+              .replace(/```\n?/g, '')
+              .trim();
+
+            document.getElementById('report-content').innerHTML = cleanContent;
+            renderAllCharts();
+            label.innerHTML = searchIcon + ' Web search included';
+            label.classList.remove('text-muted');
+            checkbox.disabled = false;
+          } else {
+            alert('Error: ' + (genData.error || 'Failed to generate'));
+            await setWebSearchState(false);
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            label.innerHTML = searchIcon + ' Regenerate with web search';
+            label.classList.remove('text-muted');
+          }
+        }
+      } else {
+        // Disabling web search - load document content
+        if (data.content) {
+          document.getElementById('report-content').innerHTML = data.content;
+          renderAllCharts();
+        }
+        label.innerHTML = searchIcon + ' Regenerate with web search';
+        label.classList.remove('text-muted');
+        checkbox.disabled = false;
+      }
+    } else {
+      alert('Error: ' + (data.error || 'Failed to toggle'));
+      checkbox.checked = !isChecked; // Revert UI
+      checkbox.disabled = false;
+      label.innerHTML = searchIcon + (isChecked ? ' Regenerate with web search' : ' Web search included');
+      label.classList.remove('text-muted');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Connection error. Please try again.');
+    checkbox.checked = !isChecked; // Revert UI
+    checkbox.disabled = false;
+    label.innerHTML = searchIcon + (isChecked ? ' Regenerate with web search' : ' Web search included');
+    label.classList.remove('text-muted');
+  }
+}
+
+// Helper to set web search state explicitly
+async function setWebSearchState(enabled) {
+  try {
+    await fetch('/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + sectionId + '/toggle_web_search', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ enable_web_search: enabled })
+    });
+  } catch (e) {
+    console.error('Failed to set web search state', e);
+  }
+}
+
+
+      // Light pastel color palette for charts
+      const PASTEL_COLORS = [
+        '#93C5FD', // Light blue
+        '#A5B4FC', // Light indigo
+        '#F9A8D4', // Light pink
+        '#FCD34D', // Light yellow
+        '#6EE7B7', // Light green
+        '#FDBA74', // Light orange
+        '#C4B5FD', // Light purple
+        '#FCA5A5', // Light red
+        '#7DD3FC', // Sky blue
+        '#67E8F9', // Cyan
+      ];
+
+      function applyLightColors(data, chartType) {
+        if (!data.datasets) return data;
+
+        data.datasets.forEach((dataset, idx) => {
+          const color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+
+          if (chartType === 'pie' || chartType === 'doughnut') {
+            // For pie/doughnut, use array of colors
+            if (!dataset.backgroundColor || isDarkColor(dataset.backgroundColor)) {
+              dataset.backgroundColor = PASTEL_COLORS.slice(0, data.labels?.length || 6);
+            }
+          } else if (chartType === 'line') {
+            // For line charts
+            if (!dataset.borderColor || isDarkColor(dataset.borderColor)) {
+              dataset.borderColor = color;
+              dataset.backgroundColor = hexToRgba(color, 0.15);
+            }
+          } else {
+            // For bar charts
+            if (!dataset.backgroundColor || isDarkColor(dataset.backgroundColor)) {
+              dataset.backgroundColor = Array.isArray(data.labels)
+                ? PASTEL_COLORS.slice(0, data.labels.length)
+                : color;
+            }
+            if (!dataset.borderColor) {
+              dataset.borderColor = 'transparent';
+            }
+          }
+        });
+
+        return data;
+      }
+
+      function isDarkColor(color) {
+        if (!color) return true;
+        if (Array.isArray(color)) color = color[0];
+        if (!color || typeof color !== 'string') return true;
+
+        // Check for known dark colors
+        const darkColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                           '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+        return darkColors.some(dc => color.toUpperCase().includes(dc.substring(1).toUpperCase()));
+      }
+
+      function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      function renderAllCharts() {
+      const chartPlaceholders = document.querySelectorAll('.chart-placeholder');
+
+      chartPlaceholders.forEach((placeholder, index) => {
+        const chartConfig = placeholder.getAttribute('data-chart-config');
+        let chartType = placeholder.getAttribute('data-chart-type') || 'bar';
+
+        if (!chartConfig) return;
+
+        try {
+          let data = JSON.parse(chartConfig);
+
+          // Convert 'area' to 'line' with fill
+          if (chartType === 'area') {
+            chartType = 'line';
+            // Add fill property to all datasets
+            if (data.datasets) {
+              data.datasets.forEach(dataset => {
+                dataset.fill = true;
+              });
+            }
+          }
+
+          // Apply light pastel colors
+          data = applyLightColors(data, chartType);
+
+          // Clear placeholder and create canvas
+          placeholder.innerHTML = '';
+          const canvas = document.createElement('canvas');
+          canvas.id = `chart-${index}`;
+          placeholder.appendChild(canvas);
+
+          // Create the chart
+          new Chart(canvas, {
+            type: chartType,
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 2,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                }
+              },
+              scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
+                y: {
+                  beginAtZero: true
+                }
+              } : {}
+            }
+          });
+
+          console.log(`Chart ${index} rendered successfully`);
+        } catch (error) {
+          console.error(`Error rendering chart ${index}:`, error);
+          placeholder.innerHTML = `<div style="color: red;">Error rendering chart: ${error.message}</div>`;
+        }
+      });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        // Scroll chat to bottom
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Enter key sends message
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+          chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              sendMessage();
+            }
+          });
+        }
+
+        // Copy HTML from contenteditable into hidden field on submit
+        const sectionForm = document.getElementById('section-form');
+        if (sectionForm) {
+          sectionForm.addEventListener('submit', function () {
+            const htmlContent = document.getElementById('report-content').innerHTML;
+            document.getElementById('content-hidden-field').value = htmlContent;
+          });
+        }
+      });
+
+      // Remove flash after 5 seconds
+      var flash = document.querySelector('.ai-flash');
+      if (flash) {
+      setTimeout(function() {
+        flash.remove();
+      }, 5000);
+      }
+
+      // Master web search toggle
+      async function toggleMasterWebSearch(enabled) {
+      try {
+        const response = await fetch('/ai_portfolio_reports/' + reportId + '/toggle_master_web_search', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          },
+          body: JSON.stringify({ enabled: enabled })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Update UI
+          updateWebSearchUI(enabled);
+
+          // Show notification
+          const message = enabled ? 'Web search enabled for all sections' : 'Web search disabled globally';
+          showNotification(message, 'success');
+        } else {
+          alert('Failed to toggle web search');
+          // Revert checkbox
+          document.getElementById('masterWebSearchToggle').checked = !enabled;
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Error toggling web search');
+      }
+      }
+
+      function updateWebSearchUI(enabled) {
+      const icons = document.querySelectorAll('.web-search-icon');
+
+      icons.forEach(icon => {
+        if (enabled) {
+          icon.style.pointerEvents = 'auto';
+          icon.style.opacity = icon.classList.contains('active') ? '1' : '0.3';
+          icon.title = icon.classList.contains('active') ? 'Web search enabled' : 'Click to enable web search';
+        } else {
+          icon.style.pointerEvents = 'none';
+          icon.style.opacity = '0.1';
+          icon.title = 'Web search disabled globally';
+        }
+      });
+      }
+
+      function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `alert alert-${type} position-fixed`;
+      notification.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => notification.remove(), 3000);
+      }
+
+      // Initialize UI on page load
+      document.addEventListener('DOMContentLoaded', function() {
+      const masterEnabled = document.getElementById('masterWebSearchToggle').checked;
+      updateWebSearchUI(masterEnabled);
+      });
+
+      // Toggle web search for a section
+      async function toggleWebSearch(event, toggleSectionId) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Check if master web search is enabled
+      const masterToggle = document.getElementById('masterWebSearchToggle');
+      if (!masterToggle.checked) {
+        alert('Please enable web search globally first using the master toggle.');
+        return;
+      }
+
+      const icon = event.currentTarget;  // CHANGED from event.target
+      const isCurrentSection = (toggleSectionId === sectionId);
+
+      // Show loading state for current section
+      if (isCurrentSection) {
+        icon.style.opacity = '0.5';
+        icon.style.pointerEvents = 'none';
+
+        // Show loading message below section name
+        const sectionHeader = document.querySelector('.section-header');
+        const existingStatus = sectionHeader.querySelector('.web-search-status');
+        if (existingStatus) existingStatus.remove();
+
+        const loadingMsg = document.createElement('small');
+        loadingMsg.className = 'text-muted web-search-status d-block mt-1';
+        loadingMsg.innerHTML = 'Regenerating section<span class="loading-dots">...</span>';
+        sectionHeader.appendChild(loadingMsg);
+
+        // Add CSS animation for dots
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes blink {
+            0%, 20% { opacity: 0; }
+            40% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          .loading-dots {
+            animation: blink 1.4s infinite;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      try {
+        // Add regenerate=true for current section
+        const url = '/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + toggleSectionId + '/toggle_web_search' +
+                    (isCurrentSection ? '?regenerate=true' : '');
+
+        const response = await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // If toggling the current section, reload the page to show new content
+          if (isCurrentSection) {
+            window.location.reload();
+          } else {
+            // Toggle the active class for other sections
+            if (data.web_search_enabled) {
+              icon.classList.add('active');
+              icon.style.opacity = '1';
+              icon.title = 'Web search enabled';
+            } else {
+              icon.classList.remove('active');
+              icon.style.opacity = '0.3';
+              icon.title = 'Click to enable web search';
+            }
+          }
+        } else {
+          alert('Failed to toggle web search');
+          if (isCurrentSection) {
+            icon.style.opacity = '1';
+            icon.style.pointerEvents = 'auto';
+            // Remove loading message
+            const loadingMsg = document.querySelector('.web-search-status');
+            if (loadingMsg) loadingMsg.remove();
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Error toggling web search');
+        if (isCurrentSection) {
+          icon.style.opacity = '1';
+          icon.style.pointerEvents = 'auto';
+          // Remove loading message
+          const loadingMsg = document.querySelector('.web-search-status');
+          if (loadingMsg) loadingMsg.remove();
+        }
+      }
+      }
+      async function sendMessage(text) {
+        const input   = document.getElementById('chat-input');
+        const message = text || (input ? input.value.trim() : '');
+
+        if (!message) return;
+        if (input) input.value = '';
+
+        addMessageToUI('user', message);
+        addMessageToUI('assistant', 'Thinking...', [], true);
+
+        try {
+          const response = await fetch('/ai_portfolio_reports/' + reportId + '/ai_chat_messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message:        message,
+              section_id:     sectionId,
+              chat_session_id: chatSessionId
+            })
+          });
+
+          const data = await response.json();
+          removeLoadingMessage();
+
+          if (data.success) {
+            addMessageToUI('assistant', data.response, data.sources || []);
+          } else {
+            addMessageToUI('assistant', 'Error: ' + (data.error || 'Something went wrong'));
+          }
+        } catch (error) {
+          console.error(error);
+          removeLoadingMessage();
+          addMessageToUI('assistant', 'Connection error. Is Python backend running on port 8000?');
+        }
+      }
+
+      function addMessageToUI(role, content, sources, isLoading) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+
+        // Remove welcome message if it exists
+        const welcome = container.querySelector('.ai-chat-welcome');
+        if (welcome) welcome.remove();
+
+        const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const sourcesHtml = (sources && sources.length > 0)
+          ? '<div class="ai-message-sources">Sources: ' + sources.join(', ') + '</div>'
+          : '';
+
+        const loadClass = isLoading ? 'loading-message' : '';
+        const avatarHtml = (role === 'assistant')
+          ? '<div class="ai-message-avatar">AI</div>'
+          : '';
+
+        const html =
+          '<div class="ai-message ' + role + ' ' + loadClass + '">' +
+            avatarHtml +
+            '<div class="ai-message-bubble">' +
+              content.replace(/\n/g, '<br>') +
+              sourcesHtml +
+            '</div>' +
+            '<div class="ai-message-time">' + time + '</div>' +
+          '</div>';
+
+        container.insertAdjacentHTML('beforeend', html);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      function removeLoadingMessage() {
+        const el = document.querySelector('.loading-message');
+        if (el) el.remove();
+      }
+
+      async function addToReport(content) {
+        try {
+          const response = await fetch('/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + sectionId + '/add_content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            if (confirm('Content added! Reload to see changes?')) {
+              window.location.reload();
+            }
+          } else {
+            alert('Failed to add content');
+          }
+        } catch (error) {
+          console.error(error);
+          alert('Error adding content');
+        }
+      }
+
+      // Detect if user input looks like a question
+      function isQuestionPattern(text) {
+        if (!text || text.trim().length < 3) return false;
+        const trimmed = text.trim().toLowerCase();
+
+        // Check for question marks
+        if (trimmed.includes('?')) return true;
+
+        // Check for question starters
+        const questionStarters = [
+          'what ', 'what\'s', 'whats',
+          'how ', 'how\'s', 'hows',
+          'why ', 'why\'s', 'whys',
+          'when ', 'when\'s', 'whens',
+          'where ', 'where\'s', 'wheres',
+          'who ', 'who\'s', 'whos',
+          'which ',
+          'is there', 'are there',
+          'can you', 'could you', 'would you',
+          'do you', 'does it', 'did it',
+          'is it', 'is this', 'are they',
+          'tell me about', 'explain '
+        ];
+
+        return questionStarters.some(starter => trimmed.startsWith(starter));
+      }
+
+      // Convert question to instruction suggestion
+      function suggestRefinementInstruction(question) {
+        const q = question.trim().toLowerCase();
+
+        // Common patterns and their instruction equivalents
+        if (q.includes('revenue') || q.includes('financial')) {
+          return 'Add more details about revenue and financial performance';
+        }
+        if (q.includes('risk')) {
+          return 'Expand the section on key risks and mitigation strategies';
+        }
+        if (q.includes('competitor') || q.includes('competition')) {
+          return 'Add competitive analysis and market positioning details';
+        }
+        if (q.includes('growth') || q.includes('market')) {
+          return 'Include more information about market growth and opportunities';
+        }
+        if (q.includes('team') || q.includes('management')) {
+          return 'Add details about the management team and their experience';
+        }
+        if (q.includes('product') || q.includes('service')) {
+          return 'Expand on product/service offerings and differentiation';
+        }
+        if (q.includes('concise') || q.includes('shorter') || q.includes('brief')) {
+          return 'Make the content more concise and focused';
+        }
+        if (q.includes('detail') || q.includes('more') || q.includes('expand')) {
+          return 'Add more details and depth to the analysis';
+        }
+
+        // Generic fallback - extract the topic
+        const topic = question.replace(/\?/g, '').replace(/^(what|how|why|when|where|who|which|is|are|can|could|would|do|does|did|tell me about|explain)\s*(is|are|the|a|an)?\s*/i, '').trim();
+        if (topic.length > 2) {
+          return `Add more details about ${topic}`;
+        }
+
+        return 'Add more details on this topic';
+      }
+
+      // Show guidance in AI Assistant when question is detected
+      function showRefinementGuidance(userQuestion) {
+        const suggestion = suggestRefinementInstruction(userQuestion);
+
+        const guidanceMessage = `💡 **Tip: Use refinement instructions, not questions**
+
+I noticed you typed: "${userQuestion}"
+
+For refinements, try phrasing as an **instruction** instead. For example:
+• "${suggestion}"
+
+**Why?** The refinement box directly modifies the report content. Instructions like "Add...", "Expand...", "Make more concise...", or "Include..." work best.
+
+**Need to ask a question instead?** Use this AI Assistant chat! I can answer questions about the portfolio company, and you can then add relevant information to your report.`;
+
+        // Add the guidance to the AI chat
+        addMessageToUI('assistant', guidanceMessage);
+
+        // Scroll chat to bottom
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      }
+
+      async function regenerateWithAI() {
+  const prompt = document.getElementById('ai-refinement-prompt').value.trim();
+  const currentContent = document.getElementById('report-content').innerHTML;
+
+  if (!prompt) {
+    alert('Please enter a prompt describing how you want to refine the content');
+    return;
+  }
+
+  // Check if the prompt looks like a question and show guidance
+  if (isQuestionPattern(prompt)) {
+    showRefinementGuidance(prompt);
+    // Don't block - still allow the regeneration but educate the user
+  }
+
+  // Get web search checkbox value - use the top checkbox
+  const webSearchCheckbox = document.getElementById('topWebSearchCheckbox');
+  const webSearchEnabled = webSearchCheckbox ? webSearchCheckbox.checked : false;
+  
+  // Show loading state
+  const button = event.target;
+  const originalText = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Refining...';
+  
+  try {
+    const response = await fetch('/ai_portfolio_reports/' + reportId + '/ai_report_sections/' + sectionId + '/regenerate', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        current_content: currentContent,
+        section_type: '<%= @current_section.section_type %>',
+        web_search_enabled: webSearchEnabled
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Clean markdown code fences
+      let cleanContent = data.content
+        .replace(/```html\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      // Update the content area with new content
+      document.getElementById('report-content').innerHTML = cleanContent;
+      
+      // Clear the prompt
+      document.getElementById('ai-refinement-prompt').value = '';
+      
+      // Re-render charts
+      renderAllCharts();
+    } else {
+      alert('Error: ' + (data.error || 'Failed to regenerate content'));
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Connection error. Please try again.');
+  } finally {
+    // Restore button state
+    button.disabled = false;
+    button.innerHTML = originalText;
+  }
+}
+
+
+      function toggleAIAssistant() {
+        const aiColumn = document.getElementById('ai-assistant-column');
+        const editorColumn = document.getElementById('editor-column');
+        const expandBtn = document.getElementById('ai-expand-btn');
+
+        if (aiColumn.classList.contains('collapsed')) {
+          // Expand AI Assistant
+          aiColumn.classList.remove('collapsed');
+          editorColumn.classList.remove('expanded');
+          expandBtn.style.display = 'none';
+        } else {
+          // Collapse AI Assistant
+          aiColumn.classList.add('collapsed');
+          editorColumn.classList.add('expanded');
+          expandBtn.style.display = 'flex';
+        }
+      }
+
+      // AI Assistant Panel Resize Functionality
+      (function() {
+        const resizeHandle = document.getElementById('ai-resize-handle');
+        const aiPanel = document.getElementById('ai-assistant-column');
+
+        if (!resizeHandle || !aiPanel) return;
+
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        resizeHandle.addEventListener('mousedown', function(e) {
+          isResizing = true;
+          startX = e.clientX;
+          startWidth = aiPanel.offsetWidth;
+
+          aiPanel.classList.add('resizing');
+          resizeHandle.classList.add('dragging');
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+          if (!isResizing) return;
+
+          // Calculate new width (dragging left increases width, right decreases)
+          const diff = startX - e.clientX;
+          let newWidth = startWidth + diff;
+
+          // Enforce min/max constraints
+          const minWidth = 280;
+          const maxWidth = 600;
+          newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+          aiPanel.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', function() {
+          if (!isResizing) return;
+
+          isResizing = false;
+          aiPanel.classList.remove('resizing');
+          resizeHandle.classList.remove('dragging');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+
+          // Save width to localStorage for persistence
+          localStorage.setItem('aiAssistantWidth', aiPanel.style.width);
+        });
+
+        // Restore saved width on page load
+        const savedWidth = localStorage.getItem('aiAssistantWidth');
+        if (savedWidth) {
+          aiPanel.style.width = savedWidth;
+        }
+      })();
+    </script>
+
+    <style>
+      /* ========================================
+         AI Report Builder - Modern UI Styles
+         ======================================== */
+
+      /* CSS Variables for theming */
+      :root {
+        --ai-primary: #2563eb;
+        --ai-primary-light: #3b82f6;
+        --ai-primary-dark: #1e40af;
+        --ai-secondary: #64748b;
+        --ai-success: #10b981;
+        --ai-teal: #14b8a6;
+        --ai-purple: #8b5cf6;
+        --ai-bg: #f8fafc;
+        --ai-card: #ffffff;
+        --ai-border: #e2e8f0;
+        --ai-text: #1e293b;
+        --ai-text-muted: #64748b;
+        --ai-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+        --ai-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        --ai-radius: 12px;
+        --ai-radius-sm: 8px;
+        --ai-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Toast Notification */
+      .ai-toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border-radius: var(--ai-radius-sm);
+        box-shadow: var(--ai-shadow-lg);
+        animation: slideIn 0.3s ease, fadeOut 0.5s ease 4.5s forwards;
+      }
+
+      .ai-toast-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .ai-toast-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+      }
+
+      .ai-toast-close:hover { opacity: 1; }
+
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      @keyframes fadeOut {
+        to { opacity: 0; transform: translateY(-10px); }
+      }
+
+      /* Main Container */
+      .ai-report-container {
+        background: var(--ai-bg);
+        min-height: calc(100vh - 120px);
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      /* Report Header */
+      .ai-report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        background: var(--ai-card);
+        border-bottom: 1px solid var(--ai-border);
+        box-shadow: var(--ai-shadow);
+      }
+
+      .ai-report-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--ai-text);
+        margin: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .ai-report-subtitle {
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--ai-text-muted);
+      }
+
+      .ai-report-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .ai-review-counter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--ai-text-muted);
+      }
+
+      .ai-review-counter svg {
+        color: var(--ai-success);
+      }
+
+      .ai-status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .ai-status-badge.draft {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .ai-status-badge.published {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .ai-generate-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, var(--ai-teal), #0d9488);
+        color: white;
+        border: none;
+        border-radius: var(--ai-radius-sm);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
+        transition: var(--ai-transition);
+      }
+
+      .ai-generate-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(20, 184, 166, 0.4);
+        color: white;
+        text-decoration: none;
+      }
+
+      /* Workspace Layout */
+      .ai-report-workspace {
+        display: flex;
+        height: calc(100vh - 180px);
+        overflow: hidden;
+      }
+
+      /* Sections Panel */
+      .ai-sections-panel {
+        width: 240px;
+        flex-shrink: 0;
+        background: var(--ai-card);
+        border-right: 1px solid var(--ai-border);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .ai-sections-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--ai-border);
+      }
+
+      .ai-sections-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ai-text-muted);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .ai-sections-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+
+      .ai-section-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: var(--ai-text-muted);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        transition: var(--ai-transition);
+        position: relative;
+      }
+
+      .ai-section-item:hover {
+        background: #f1f5f9;
+        color: var(--ai-text);
+        text-decoration: none;
+      }
+
+      .ai-section-item.active {
+        background: linear-gradient(90deg, #eff6ff, transparent);
+        color: var(--ai-primary);
+        border-left-color: var(--ai-primary);
+      }
+
+      .ai-section-item.reviewed .ai-section-check {
+        color: var(--ai-success);
+      }
+
+      .ai-section-indicator {
+        display: none;
+      }
+
+      .ai-section-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ai-section-check {
+        flex-shrink: 0;
+        margin-left: 8px;
+      }
+
+      /* Editor Panel */
+      .ai-editor-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--ai-bg);
+        transition: var(--ai-transition);
+        min-width: 0;
+      }
+
+      .ai-editor-panel.expanded {
+        flex: 1.5;
+      }
+
+      .ai-editor-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        overflow: hidden;
+      }
+
+      .ai-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-shrink: 0;
+      }
+
+      .ai-editor-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--ai-primary);
+        margin: 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--ai-primary);
+      }
+
+      .ai-title-accent {
+        width: 4px;
+        height: 24px;
+        background: var(--ai-primary);
+        border-radius: 2px;
+        display: none;
+      }
+
+      .ai-web-search-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #f1f5f9;
+        border: 1px solid var(--ai-border);
+        border-radius: var(--ai-radius-sm);
+      }
+
+      .ai-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--ai-primary);
+        cursor: pointer;
+      }
+
+      .ai-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--ai-text-muted);
+        cursor: pointer;
+        margin: 0;
+      }
+
+      .ai-checkbox-label svg {
+        color: var(--ai-secondary);
+      }
+
+      /* Editor Form */
+      .ai-editor-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .ai-content-editor {
+        flex: 1;
+        background: var(--ai-card);
+        border-radius: var(--ai-radius);
+        box-shadow: var(--ai-shadow);
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .ai-editable-content {
+        height: 100%;
+        padding: 24px;
+        overflow-y: auto;
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--ai-text);
+        outline: none;
+      }
+
+      .ai-editable-content:focus {
+        box-shadow: inset 0 0 0 2px var(--ai-primary-light);
+      }
+
+      /* Refinement Section */
+      .ai-refinement-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--ai-border);
+        flex-shrink: 0;
+      }
+
+      .ai-refinement-input-wrapper {
+        position: relative;
+        margin-bottom: 12px;
+      }
+
+      .ai-sparkle-icon {
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        color: var(--ai-purple);
+        pointer-events: none;
+      }
+
+      .ai-refinement-input {
+        width: 100%;
+        padding: 12px 12px 12px 40px;
+        background: #f8fafc;
+        border: 1px solid var(--ai-border);
+        border-radius: var(--ai-radius-sm);
+        font-size: 14px;
+        resize: none;
+        transition: var(--ai-transition);
+      }
+
+      .ai-refinement-input:focus {
+        outline: none;
+        border-color: var(--ai-purple);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        background: white;
+      }
+
+      .ai-refinement-input::placeholder {
+        color: #94a3b8;
+      }
+
+      .ai-refinement-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      /* Buttons */
+      .ai-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--ai-radius-sm);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--ai-transition);
+        border: none;
+      }
+
+      .ai-btn-outline {
+        background: white;
+        border: 1px solid #c4b5fd;
+        color: var(--ai-purple);
+      }
+
+      .ai-btn-outline:hover {
+        background: #f5f3ff;
+        border-color: var(--ai-purple);
+      }
+
+      .ai-btn-primary {
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-primary-dark));
+        color: white;
+        margin-left: auto;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      }
+
+      .ai-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+      }
+
+      /* AI Assistant Panel */
+      .ai-assistant-panel {
+        width: 320px;
+        min-width: 280px;
+        max-width: 600px;
+        flex-shrink: 0;
+        background: var(--ai-card);
+        border-left: 1px solid var(--ai-border);
+        display: flex;
+        flex-direction: column;
+        box-shadow: -4px 0 15px rgba(0,0,0,0.03);
+        position: relative;
+      }
+
+      .ai-assistant-panel.collapsed {
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden;
+        opacity: 0;
+        border: none;
+        flex: 0 0 0 !important;
+      }
+
+      .ai-assistant-panel.resizing {
+        transition: none;
+        user-select: none;
+      }
+
+      /* Resize Handle */
+      .ai-resize-handle {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        cursor: col-resize;
+        background: transparent;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+      }
+
+      .ai-resize-handle:hover,
+      .ai-resize-handle.dragging {
+        background: var(--ai-primary);
+      }
+
+      .ai-resize-grip {
+        width: 2px;
+        height: 40px;
+        background: var(--ai-border);
+        border-radius: 2px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .ai-resize-handle:hover .ai-resize-grip,
+      .ai-resize-handle.dragging .ai-resize-grip {
+        opacity: 1;
+        background: white;
+      }
+
+      .ai-assistant-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid var(--ai-border);
+        flex-shrink: 0;
+      }
+
+      .ai-assistant-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .ai-assistant-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-purple));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .ai-assistant-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ai-text);
+        margin: 0;
+      }
+
+      .ai-assistant-context {
+        font-size: 12px;
+        color: var(--ai-text-muted);
+      }
+
+      .ai-hide-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        background: none;
+        border: 1px solid var(--ai-border);
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--ai-text-muted);
+        cursor: pointer;
+        transition: var(--ai-transition);
+      }
+
+      .ai-hide-btn:hover {
+        background: #f1f5f9;
+        color: var(--ai-text);
+      }
+
+      /* Chat Messages */
+      .ai-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        background: #fafbfc;
+      }
+
+      .ai-message {
+        margin-bottom: 16px;
+      }
+
+      .ai-message.user {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .ai-message.assistant {
+        display: flex;
+        gap: 10px;
+      }
+
+      .ai-message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-purple));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .ai-message-bubble {
+        max-width: 85%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .ai-message.user .ai-message-bubble {
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-primary-dark));
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+
+      .ai-message.assistant .ai-message-bubble {
+        background: white;
+        border: 1px solid var(--ai-border);
+        color: var(--ai-text);
+        border-top-left-radius: 4px;
+        box-shadow: var(--ai-shadow);
+      }
+
+      .ai-message-sources {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--ai-border);
+        font-size: 12px;
+        color: var(--ai-text-muted);
+      }
+
+      .ai-message-time {
+        font-size: 11px;
+        color: var(--ai-text-muted);
+        margin-top: 4px;
+      }
+
+      /* Welcome Message */
+      .ai-chat-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        text-align: center;
+      }
+
+      .ai-welcome-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-purple));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-bottom: 16px;
+      }
+
+      .ai-welcome-text {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ai-text);
+        margin: 0 0 4px;
+      }
+
+      .ai-welcome-subtext {
+        font-size: 13px;
+        color: var(--ai-text-muted);
+        margin: 0;
+      }
+
+      /* Chat Input */
+      .ai-chat-input-section {
+        padding: 16px;
+        border-top: 1px solid var(--ai-border);
+        flex-shrink: 0;
+      }
+
+      .ai-quick-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .ai-quick-btn {
+        padding: 6px 14px;
+        background: white;
+        border: 1px solid #bfdbfe;
+        color: var(--ai-primary);
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: var(--ai-transition);
+      }
+
+      .ai-quick-btn:hover {
+        background: #eff6ff;
+        border-color: var(--ai-primary);
+      }
+
+      .ai-input-wrapper {
+        display: flex;
+        gap: 8px;
+      }
+
+      .ai-chat-input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid var(--ai-border);
+        border-radius: var(--ai-radius-sm);
+        font-size: 14px;
+        transition: var(--ai-transition);
+      }
+
+      .ai-chat-input:focus {
+        outline: none;
+        border-color: var(--ai-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .ai-send-btn {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-primary-dark));
+        border: none;
+        border-radius: var(--ai-radius-sm);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--ai-transition);
+      }
+
+      .ai-send-btn:hover {
+        transform: scale(1.05);
+      }
+
+      /* Expand Button */
+      .ai-expand-btn {
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 10px;
+        background: linear-gradient(135deg, var(--ai-primary), var(--ai-purple));
+        color: white;
+        border: none;
+        border-radius: 8px 0 0 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        writing-mode: vertical-rl;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.15);
+        z-index: 100;
+        transition: var(--ai-transition);
+      }
+
+      .ai-expand-btn:hover {
+        padding-right: 14px;
+      }
+
+      .ai-expand-btn span {
+        letter-spacing: 1px;
+      }
+
+      /* Content Styling (preserved from original) */
+      #report-content h1,
+      #report-content h2,
+      #report-content h3 {
+        font-weight: 600;
+        margin-top: 1.2rem;
+        margin-bottom: 0.8rem;
+        line-height: 1.3;
+      }
+
+      #report-content h1 {
+        color: var(--ai-primary-dark);
+        font-size: 1.75rem;
+        border-bottom: 3px solid var(--ai-primary-light);
+        padding-bottom: 0.5rem;
+      }
+
+      #report-content h2 {
+        color: var(--ai-primary);
+        font-size: 1.5rem;
+        border-bottom: 2px solid #93c5fd;
+        padding-bottom: 0.4rem;
+      }
+
+      #report-content h3 {
+        color: var(--ai-primary-light);
+        font-size: 1.25rem;
+        border-left: 4px solid var(--ai-primary-light);
+        padding-left: 0.75rem;
+      }
+
+      #report-content h3:first-child {
+        margin-top: 0;
+      }
+
+      #report-content p {
+        margin-bottom: 0.75rem;
+        color: #374151;
+        line-height: 1.7;
+      }
+
+      #report-content ul,
+      #report-content ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+      }
+
+      #report-content ul { list-style-type: disc; }
+      #report-content ul ul { list-style-type: circle; margin-top: 0.5rem; }
+      #report-content ul ul ul { list-style-type: square; }
+      #report-content ol { list-style-type: decimal; }
+
+      #report-content li {
+        margin-bottom: 0.5rem;
+        color: #374151;
+        padding-left: 0.5rem;
+        line-height: 1.6;
+      }
+
+      #report-content li::marker {
+        color: var(--ai-primary-light);
+        font-weight: bold;
+      }
+
+      #report-content strong,
+      #report-content b {
+        color: #1f2937;
+        font-weight: 600;
+      }
+
+      /* Loading state */
+      .loading-message .ai-message-bubble {
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+
+      /* Scrollbar styling */
+      .ai-sections-list::-webkit-scrollbar,
+      .ai-chat-messages::-webkit-scrollbar,
+      .ai-editable-content::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .ai-sections-list::-webkit-scrollbar-track,
+      .ai-chat-messages::-webkit-scrollbar-track,
+      .ai-editable-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .ai-sections-list::-webkit-scrollbar-thumb,
+      .ai-chat-messages::-webkit-scrollbar-thumb,
+      .ai-editable-content::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      .ai-sections-list::-webkit-scrollbar-thumb:hover,
+      .ai-chat-messages::-webkit-scrollbar-thumb:hover,
+      .ai-editable-content::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 1200px) {
+        .ai-assistant-panel {
+          width: 280px;
+        }
+        .ai-sections-panel {
+          width: 200px;
+        }
+      }
+    </style>

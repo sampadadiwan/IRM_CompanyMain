@@ -1,0 +1,29 @@
+<%= render NewCard.new do %>
+<%
+    model = @investor
+    if params[:fund_id].present?
+        label = "#{Fund.find(params[:fund_id])}"
+        url = portfolio_llm_report_investor_path(model.id)
+    elsif model.nil?
+        model = current_user
+        label = "All"
+        url = portfolio_llm_report_investor_path(current_user.id)
+    else
+        label = "#{model}"
+        url = portfolio_llm_report_investor_path(model.id)
+    end
+%>
+
+<%= render FormCard.new(title: "Generate Portfolio LLM Report : #{label}") do %>
+  <%= form_with(model:, validate: true, url:, method: :post, data: {turbo: false}) do |form| %>
+      <div class="form-group">
+        <%= form.label :as_of, "As of Date" %><br>
+        <%= form.date_field :as_of, class: "form-control", name: :as_of, id: :as_of, value: Date.today %>
+      </div>
+
+      <div class="form-group mt-3">
+        <%= form.submit "Generate Report", class: "btn btn-outline-primary" %>
+      </div>
+  <% end %>
+<% end %>
+<% end %>

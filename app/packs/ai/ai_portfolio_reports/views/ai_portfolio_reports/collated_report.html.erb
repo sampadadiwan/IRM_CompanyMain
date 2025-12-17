@@ -1,0 +1,743 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="ai-collated-container">
+  <div class="ai-collated-header">
+    <div class="ai-collated-title-section">
+      <h1 class="ai-collated-title">
+        <%= @report.portfolio_company&.name || "Company Report" %>
+        <span class="ai-collated-subtitle">- Final Report Review</span>
+      </h1>
+      <p class="ai-collated-hint">Edit the report directly. Changes are saved automatically.</p>
+    </div>
+    <div class="ai-collated-actions">
+      <span class="ai-save-status" id="save-status"></span>
+
+      <button class="ai-btn ai-btn-primary" onclick="saveCollatedReport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save Report
+      </button>
+
+      <div class="ai-export-dropdown">
+        <button class="ai-btn ai-btn-export" onclick="toggleExportMenu()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="ai-export-menu" id="export-menu">
+          <a href="<%= export_pdf_ai_portfolio_report_path(@report) %>" class="ai-export-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Download PDF
+          </a>
+          <a href="<%= export_docx_ai_portfolio_report_path(@report) %>" class="ai-export-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Download Word
+          </a>
+        </div>
+      </div>
+
+      <%= link_to ai_portfolio_report_path(@report), class: "ai-btn ai-btn-back" do %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Sections
+      <% end %>
+
+      <span id="report-status-badge" class="ai-status-badge <%= @report.status == 'finalized' ? 'finalized' : 'draft' %>">
+        <%= @report.status&.humanize || 'Draft' %>
+      </span>
+    </div>
+  </div>
+
+  <div class="ai-collated-workspace">
+    <!-- Sections Sidebar (Fixed - doesn't scroll with content) -->
+    <div class="ai-sections-sidebar">
+      <div class="ai-sidebar-header">
+        <span class="ai-sidebar-label">SECTIONS</span>
+      </div>
+      <div class="ai-sidebar-list">
+        <% @sections.each_with_index do |section, index| %>
+          <a href="javascript:void(0)"
+             class="ai-sidebar-item"
+             data-section-id="section-<%= section.id %>"
+             onclick="scrollToSection('section-<%= section.id %>')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span class="ai-sidebar-item-text"><%= section.section_type %></span>
+          </a>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Main Content Editor -->
+    <div class="ai-collated-editor" id="collated-editor">
+      <div class="ai-editor-wrapper">
+        <div id="collated-content" contenteditable="true" class="ai-collated-content">
+          <%= @collated_content.html_safe %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const reportId = <%= @report.id %>;
+
+  // Toggle export dropdown
+  function toggleExportMenu() {
+    const menu = document.getElementById('export-menu');
+    menu.classList.toggle('show');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.querySelector('.ai-export-dropdown');
+    if (!dropdown.contains(e.target)) {
+      document.getElementById('export-menu').classList.remove('show');
+    }
+  });
+
+  // Scroll to section - scrolls only the editor pane, not the sidebar
+  function scrollToSection(sectionId) {
+    const editorPane = document.getElementById('collated-editor');
+    const targetElement = document.getElementById(sectionId);
+
+    if (targetElement && editorPane) {
+      // Calculate the position of the target relative to the editor pane
+      const editorRect = editorPane.getBoundingClientRect();
+      const targetRect = targetElement.getBoundingClientRect();
+      const scrollTop = editorPane.scrollTop + (targetRect.top - editorRect.top) - 20;
+
+      // Scroll the editor pane
+      editorPane.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+
+      // Update active state in sidebar
+      document.querySelectorAll('.ai-sidebar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      document.querySelector(`[data-section-id="${sectionId}"]`)?.classList.add('active');
+    }
+  }
+
+  // Save collated report
+  async function saveCollatedReport() {
+    const content = document.getElementById('collated-content').innerHTML;
+    const saveStatus = document.getElementById('save-status');
+    const saveBtn = document.querySelector('.ai-btn-primary');
+
+    // Show saving state
+    saveStatus.innerHTML = '<span class="ai-status-saving">Saving...</span>';
+    saveBtn.disabled = true;
+
+    try {
+      const response = await fetch('/ai_portfolio_reports/' + reportId + '/save_collated_report', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ content: content })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        saveStatus.innerHTML = '<span class="ai-status-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Saved at ' + new Date().toLocaleTimeString() + '</span>';
+
+        // Update status badge to Finalized
+        const statusBadge = document.getElementById('report-status-badge');
+        if (statusBadge) {
+          statusBadge.className = 'ai-status-badge finalized';
+          statusBadge.textContent = 'Finalized';
+        }
+      } else {
+        saveStatus.innerHTML = '<span class="ai-status-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Failed to save</span>';
+        alert('Error: ' + data.error);
+      }
+    } catch (error) {
+      console.error(error);
+      saveStatus.innerHTML = '<span class="ai-status-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Connection error</span>';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  // Light pastel color palette for charts
+  const PASTEL_COLORS = [
+    '#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7',
+    '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9',
+  ];
+
+  function applyLightColors(data, chartType) {
+    if (!data.datasets) return data;
+
+    data.datasets.forEach((dataset, idx) => {
+      const color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+
+      if (chartType === 'pie' || chartType === 'doughnut') {
+        if (!dataset.backgroundColor || isDarkColor(dataset.backgroundColor)) {
+          dataset.backgroundColor = PASTEL_COLORS.slice(0, data.labels?.length || 6);
+        }
+      } else if (chartType === 'line') {
+        if (!dataset.borderColor || isDarkColor(dataset.borderColor)) {
+          dataset.borderColor = color;
+          dataset.backgroundColor = hexToRgba(color, 0.15);
+        }
+      } else {
+        if (!dataset.backgroundColor || isDarkColor(dataset.backgroundColor)) {
+          dataset.backgroundColor = Array.isArray(data.labels)
+            ? PASTEL_COLORS.slice(0, data.labels.length)
+            : color;
+        }
+        if (!dataset.borderColor) {
+          dataset.borderColor = 'transparent';
+        }
+      }
+    });
+
+    return data;
+  }
+
+  function isDarkColor(color) {
+    if (!color) return true;
+    if (Array.isArray(color)) color = color[0];
+    if (!color || typeof color !== 'string') return true;
+
+    const darkColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                       '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+    return darkColors.some(dc => color.toUpperCase().includes(dc.substring(1).toUpperCase()));
+  }
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  // Render all charts after page load
+  document.addEventListener('DOMContentLoaded', function() {
+    renderAllCharts();
+  });
+
+  function renderAllCharts() {
+    const chartPlaceholders = document.querySelectorAll('.chart-placeholder');
+
+    chartPlaceholders.forEach((placeholder, index) => {
+      const chartConfig = placeholder.getAttribute('data-chart-config');
+      let chartType = placeholder.getAttribute('data-chart-type') || 'bar';
+
+      if (!chartConfig) return;
+
+      try {
+        let data = JSON.parse(chartConfig);
+
+        if (chartType === 'area') {
+          chartType = 'line';
+          if (data.datasets) {
+            data.datasets.forEach(dataset => {
+              dataset.fill = true;
+            });
+          }
+        }
+
+        data = applyLightColors(data, chartType);
+
+        placeholder.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        canvas.id = `chart-${index}`;
+        placeholder.appendChild(canvas);
+
+        new Chart(canvas, {
+          type: chartType,
+          data: data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              }
+            },
+            scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
+              y: {
+                beginAtZero: true
+              }
+            } : {}
+          }
+        });
+
+        console.log(`Chart ${index} rendered successfully`);
+      } catch (error) {
+        console.error(`Error rendering chart ${index}:`, error);
+        placeholder.innerHTML = `<div class="ai-chart-error">Error rendering chart: ${error.message}</div>`;
+      }
+    });
+  }
+</script>
+
+<style>
+  /* ========================================
+     Collated Report - Modern UI Styles
+     ======================================== */
+
+  /* CSS Variables */
+  :root {
+    --ai-primary: #2563eb;
+    --ai-primary-light: #3b82f6;
+    --ai-primary-dark: #1e40af;
+    --ai-secondary: #64748b;
+    --ai-success: #10b981;
+    --ai-bg: #f8fafc;
+    --ai-card: #ffffff;
+    --ai-border: #e2e8f0;
+    --ai-text: #1e293b;
+    --ai-text-muted: #64748b;
+    --ai-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --ai-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --ai-radius: 12px;
+    --ai-radius-sm: 8px;
+    --ai-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Main Container */
+  .ai-collated-container {
+    background: var(--ai-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Header */
+  .ai-collated-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--ai-card);
+    border-bottom: 1px solid var(--ai-border);
+    box-shadow: var(--ai-shadow);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .ai-collated-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ai-text);
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .ai-collated-subtitle {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--ai-text-muted);
+  }
+
+  .ai-collated-hint {
+    font-size: 13px;
+    color: var(--ai-text-muted);
+    margin: 4px 0 0;
+  }
+
+  .ai-collated-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Save Status */
+  .ai-save-status {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-status-saving { color: var(--ai-text-muted); }
+  .ai-status-success { color: var(--ai-success); display: flex; align-items: center; gap: 4px; }
+  .ai-status-error { color: #ef4444; display: flex; align-items: center; gap: 4px; }
+
+  /* Buttons */
+  .ai-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: var(--ai-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--ai-transition);
+    border: none;
+    text-decoration: none;
+  }
+
+  .ai-btn:hover { text-decoration: none; }
+
+  .ai-btn-primary {
+    background: linear-gradient(135deg, var(--ai-primary), var(--ai-primary-dark));
+    color: white;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  }
+
+  .ai-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+    color: white;
+  }
+
+  .ai-btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+  .ai-btn-export {
+    background: linear-gradient(135deg, var(--ai-success), #059669);
+    color: white;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  }
+
+  .ai-btn-export:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+    color: white;
+  }
+
+  .ai-btn-back {
+    background: white;
+    color: var(--ai-text-muted);
+    border: 1px solid var(--ai-border);
+  }
+
+  .ai-btn-back:hover { background: #f1f5f9; color: var(--ai-text); }
+
+  /* Export Dropdown */
+  .ai-export-dropdown { position: relative; }
+
+  .ai-export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: var(--ai-card);
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ai-radius-sm);
+    box-shadow: var(--ai-shadow-lg);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: var(--ai-transition);
+    z-index: 1000;
+  }
+
+  .ai-export-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+
+  .ai-export-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: var(--ai-text);
+    text-decoration: none;
+    font-size: 14px;
+    transition: var(--ai-transition);
+  }
+
+  .ai-export-item:hover { background: #f1f5f9; color: var(--ai-primary); text-decoration: none; }
+  .ai-export-item:first-child { border-radius: var(--ai-radius-sm) var(--ai-radius-sm) 0 0; }
+  .ai-export-item:last-child { border-radius: 0 0 var(--ai-radius-sm) var(--ai-radius-sm); }
+
+  /* Status Badge */
+  .ai-status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ai-status-badge.draft { background: #dbeafe; color: #1e40af; }
+  .ai-status-badge.finalized { background: #d1fae5; color: #065f46; }
+
+  /* Workspace Layout */
+  .ai-collated-workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sections Sidebar - Fixed, doesn't scroll with content */
+  .ai-sections-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--ai-card);
+    border-right: 1px solid var(--ai-border);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px); /* Full height minus header */
+    position: sticky;
+    top: 0;
+  }
+
+  .ai-sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ai-border);
+    flex-shrink: 0;
+  }
+
+  .ai-sidebar-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ai-text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .ai-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .ai-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    color: var(--ai-text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: var(--ai-transition);
+    cursor: pointer;
+  }
+
+  .ai-sidebar-item:hover {
+    background: #f1f5f9;
+    color: var(--ai-text);
+    text-decoration: none;
+  }
+
+  .ai-sidebar-item.active {
+    background: linear-gradient(90deg, #eff6ff, transparent);
+    color: var(--ai-primary);
+    border-left-color: var(--ai-primary);
+  }
+
+  .ai-sidebar-item svg { flex-shrink: 0; opacity: 0.5; }
+  .ai-sidebar-item:hover svg, .ai-sidebar-item.active svg { opacity: 1; }
+
+  .ai-sidebar-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Editor Panel - Scrolls independently */
+  .ai-collated-editor {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    background: var(--ai-bg);
+    height: calc(100vh - 80px); /* Full height minus header */
+  }
+
+  .ai-editor-wrapper {
+    width: 100%;
+  }
+
+  .ai-collated-content {
+    background: var(--ai-card);
+    padding: 48px;
+    min-height: 80vh;
+    border-radius: var(--ai-radius);
+    box-shadow: var(--ai-shadow-lg);
+    outline: none;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--ai-text);
+  }
+
+  .ai-collated-content:focus {
+    box-shadow: var(--ai-shadow-lg), inset 0 0 0 2px var(--ai-primary-light);
+  }
+
+  /* Content Formatting */
+  .ai-collated-content h1 {
+    color: var(--ai-primary-dark);
+    font-size: 1.75rem;
+    font-weight: 600;
+    border-bottom: 3px solid var(--ai-primary-light);
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .ai-collated-content h1:first-child { margin-top: 0; }
+
+  .ai-collated-content h2 {
+    color: var(--ai-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-bottom: 2px solid #93c5fd;
+    padding-bottom: 0.4rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    scroll-margin-top: 20px;
+  }
+
+  .ai-collated-content h3 {
+    color: var(--ai-primary-light);
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-left: 4px solid var(--ai-primary-light);
+    padding-left: 0.75rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .ai-collated-content p {
+    margin-bottom: 1rem;
+    color: #374151;
+    line-height: 1.8;
+  }
+
+  .ai-collated-content ul, .ai-collated-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+  }
+
+  .ai-collated-content ul { list-style-type: disc; }
+  .ai-collated-content ul ul { list-style-type: circle; margin-top: 0.5rem; }
+  .ai-collated-content ol { list-style-type: decimal; }
+
+  .ai-collated-content li {
+    margin-bottom: 0.5rem;
+    color: #374151;
+    padding-left: 0.5rem;
+    line-height: 1.7;
+  }
+
+  .ai-collated-content li::marker { color: var(--ai-primary-light); font-weight: bold; }
+  .ai-collated-content strong, .ai-collated-content b { color: #1f2937; font-weight: 600; }
+
+  .ai-collated-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .ai-collated-content th, .ai-collated-content td { padding: 12px; border: 1px solid var(--ai-border); text-align: left; }
+  .ai-collated-content th { background: #f1f5f9; font-weight: 600; color: var(--ai-text); }
+
+  /* Chart Styles */
+  .ai-chart-error {
+    padding: 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--ai-radius-sm);
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  .ai-collated-content .chart-placeholder,
+  .ai-collated-content canvas {
+    max-width: 100%;
+    height: auto !important;
+    box-sizing: border-box;
+  }
+
+  .ai-collated-content .chart-placeholder {
+    max-width: 800px;
+    margin: 20px auto;
+    height: auto;
+  }
+
+  /* Scrollbar Styling */
+  .ai-collated-editor::-webkit-scrollbar,
+  .ai-sidebar-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .ai-collated-editor::-webkit-scrollbar-track,
+  .ai-sidebar-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ai-collated-editor::-webkit-scrollbar-thumb,
+  .ai-sidebar-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .ai-collated-editor::-webkit-scrollbar-thumb:hover,
+  .ai-sidebar-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .ai-collated-content { padding: 32px; }
+    .ai-sections-sidebar { width: 180px; }
+  }
+
+  @media (max-width: 768px) {
+    .ai-collated-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .ai-collated-actions { flex-wrap: wrap; }
+    .ai-sections-sidebar { display: none; }
+    .ai-collated-editor { padding: 16px; }
+    .ai-collated-content { padding: 24px; }
+  }
+
+  /* Print Styles */
+  @media print {
+    .ai-collated-header,
+    .ai-sections-sidebar {
+      display: none !important;
+    }
+
+    .ai-collated-workspace { display: block; }
+    .ai-collated-editor { padding: 0; overflow: visible; height: auto; }
+    .ai-editor-wrapper { max-width: 100%; }
+
+    .ai-collated-content {
+      box-shadow: none;
+      border-radius: 0;
+      padding: 20px;
+      min-height: auto;
+    }
+
+    h2 { page-break-after: avoid; }
+    canvas { max-width: 100%; height: auto !important; }
+  }
+</style>

@@ -1,0 +1,73 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>AI Portfolio Reports</h1>
+    <%= link_to 'New Report', new_ai_portfolio_report_path, class: 'btn btn-primary' %>
+  </div>
+  
+  <% if @reports.any? %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Portfolio Company</th>
+          <th>Status</th>
+          <th>Report Date</th>
+          <th>Sections</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reports.each do |report| %>
+          <% # Determine Status for conditional logic %>
+          <% is_draft = report.status == 'draft' %>
+          <% is_finalized = report.status == 'finalized' %>
+
+          <% # Set link properties based on status %>
+          <% open_disabled = is_draft %>
+          <% edit_disabled = is_finalized %>
+
+          <tr>
+            <td><%= report.id %></td>
+            <td><%= report.portfolio_company&.name || "Company ##{report.portfolio_company_id}" %></td>
+            <td>
+              <span class="badge bg-<%= report.draft? ? 'secondary' : report.in_review? ? 'warning' : 'success' %>">
+                <%= report.status.humanize %>
+              </span>
+            </td>
+            <td><%= report.report_date&.strftime('%Y-%m-%d') %></td>
+            <td>
+              <%= report.ai_report_sections.select(&:completed?).count %>/<%= report.ai_report_sections.count %>
+            </td>
+            <td><%= report.created_at.strftime('%Y-%m-%d %H:%M') %></td>
+            <td>
+              
+              <% # 1. OPEN Button: Enabled for Finalized (goes to collated report), Disabled for Draft %>
+              <%= link_to 'Open', open_disabled ? '#' : collated_report_ai_portfolio_report_path(report),
+                  class: "btn btn-sm btn-info #{open_disabled ? 'disabled' : ''}",
+                  tabindex: open_disabled ? '-1' : nil,
+                  'aria-disabled': open_disabled %>
+
+              <% # 2. EDIT Button: Enabled for Draft, Disabled for Finalized %>
+              <% # NOTE: Assuming 'edit_ai_portfolio_report_path(report)' is the correct helper for the edit page %>
+              <%= link_to 'Edit', edit_disabled ? '#' : edit_ai_portfolio_report_path(report), 
+                  class: "btn btn-sm btn-warning #{edit_disabled ? 'disabled' : ''}",
+                  tabindex: edit_disabled ? '-1' : nil,
+                  'aria-disabled': edit_disabled %>
+
+              <% # 3. DELETE Button: Always Enabled %>
+              <%= link_to 'Delete', report, 
+                  data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' }, 
+                  class: 'btn btn-sm btn-danger' %>
+
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="alert alert-info">
+      No reports yet. <%= link_to 'Create your first report', new_ai_portfolio_report_path %>.
+    </div>
+  <% end %>
+</div>

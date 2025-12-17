@@ -1,0 +1,137 @@
+<%
+  # Helper to convert chart placeholder to QuickChart image URL for Word
+  def chart_to_image_url_docx(chart_config, chart_type)
+    return nil unless chart_config.present?
+
+    pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
+
+    begin
+      data = JSON.parse(chart_config)
+
+      if data['datasets']
+        data['datasets'].each_with_index do |dataset, idx|
+          color = pastel_colors[idx % pastel_colors.length]
+
+          if ['pie', 'doughnut'].include?(chart_type)
+            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+          elsif chart_type == 'line'
+            dataset['borderColor'] = color
+            dataset['backgroundColor'] = color + '40'
+            dataset['fill'] = true if chart_type == 'area'
+          else
+            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+            dataset['borderColor'] = 'transparent'
+          end
+        end
+      end
+
+      chart_type = 'line' if chart_type == 'area'
+
+      chart_config_obj = {
+        type: chart_type,
+        data: data,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true, position: 'top' }
+          },
+          scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+        }
+      }
+
+      encoded_config = ERB::Util.url_encode(chart_config_obj.to_json)
+      "https://quickchart.io/chart?c=#{encoded_config}&width=600&height=350&backgroundColor=white"
+    rescue => e
+      Rails.logger.error "Chart conversion error: #{e.message}"
+      nil
+    end
+  end
+
+  # Process section content to replace chart placeholders with images for Word
+  def convert_charts_for_word(content)
+    return content unless content.present?
+
+    content.gsub(/<div[^>]*class="chart-placeholder"[^>]*data-chart-config="([^"]*)"[^>]*data-chart-type="([^"]*)"[^>]*>.*?<\/div>/m) do |match|
+      config = CGI.unescapeHTML($1)
+      chart_type = $2 || 'bar'
+
+      image_url = chart_to_image_url_docx(config, chart_type)
+
+      if image_url
+        %(<p style="text-align: center;"><img src="#{image_url}" width="500" alt="Chart" /></p>)
+      else
+        %(<p style="text-align: center; color: #666; font-style: italic;">[Chart]</p>)
+      end
+    end
+  end
+
+  # Clean content for Word - convert complex HTML to simpler format
+  def clean_for_word(content)
+    return '' unless content.present?
+
+    # First convert charts to images
+    result = convert_charts_for_word(content)
+
+    # Remove any inline styles that might cause issues, but keep basic structure
+    result
+  end
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title><%= @report.portfolio_company&.name || "Portfolio Report" %></title>
+</head>
+<body style="font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #333333;">
+
+  <!-- Cover Page -->
+  <div style="text-align: center; padding: 80px 40px; page-break-after: always;">
+    <h1 style="font-size: 28pt; font-weight: bold; color: #1e40af; margin-bottom: 20px;">
+      <%= @report.portfolio_company&.name || "Portfolio Company" %>
+    </h1>
+    <hr style="width: 200px; border: none; border-top: 3px solid #3b82f6; margin: 30px auto;" />
+    <h2 style="font-size: 18pt; font-weight: normal; color: #3b82f6; margin-bottom: 40px;">
+      Portfolio Company Report
+    </h2>
+    <p style="font-size: 12pt; color: #666666; margin-top: 60px;">
+      <strong>Report Date:</strong> <%= @report.report_date&.strftime('%B %d, %Y') || Date.today.strftime('%B %d, %Y') %>
+    </p>
+    <p style="font-size: 12pt; color: #666666;">
+      <strong>Prepared By:</strong> <%= @report.analyst&.name || "Analyst" %>
+    </p>
+    <p style="font-size: 12pt; color: #666666;">
+      <strong>Generated:</strong> <%= Time.current.strftime('%B %d, %Y at %I:%M %p') %>
+    </p>
+  </div>
+
+  <!-- Table of Contents -->
+  <div style="page-break-after: always;">
+    <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 20px;">
+      Table of Contents
+    </h2>
+    <% @sections.each_with_index do |section, index| %>
+      <p style="font-size: 12pt; margin: 8px 0;">
+        <%= index + 1 %>. <%= section.section_type %>
+      </p>
+    <% end %>
+  </div>
+
+  <!-- Report Content -->
+  <% @sections.each_with_index do |section, index| %>
+    <div style="margin-bottom: 30px;<%= index > 0 ? ' page-break-before: always;' : '' %>">
+      <h2 style="font-size: 16pt; font-weight: bold; color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;">
+        <%= section.section_type %>
+      </h2>
+      <div style="font-size: 11pt; line-height: 1.6;">
+        <%= clean_for_word(section.current_content).html_safe %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Footer -->
+  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #cccccc; text-align: center; font-size: 10pt; color: #999999;">
+    <p><%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= Date.today.strftime('%B %d, %Y') %></p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,465 @@
+# app/packs/ai/ai_portfolio_reports/services/chart_section_generator.rb
+class ChartSectionGenerator
+  def initialize(report:, section:)
+    @report = report
+    @section = section
+    @portfolio_company = report.portfolio_company
+    @entity = @portfolio_company.entity
+  end
+
+  # Main method: Generate charts and return HTML
+  def generate_charts_html(chart_prompts: nil)
+    # Clear any existing charts
+    @section.agent_chart_ids = []
+
+    # Find relevant documents
+    document_paths = find_csv_documents
+
+    Rails.logger.info "=== Chart Generation Started ==="
+    Rails.logger.info "Company: #{@portfolio_company.name}"
+    Rails.logger.info "Documents found: #{document_paths.count}"
+
+    # Extract data preview for LLM to analyze
+    data_preview = extract_data_preview(document_paths)
+    Rails.logger.info "Data preview length: #{data_preview.length} chars"
+
+    # Generate chart prompts dynamically based on actual data (or use provided prompts)
+    prompts = chart_prompts || generate_chart_prompts_from_data(data_preview)
+    Rails.logger.info "Generated #{prompts.count} chart prompts: #{prompts.inspect}"
+
+    # Generate each chart
+    charts_html = ""
+    prompts.each_with_index do |prompt, index|
+      begin
+        chart = create_chart(prompt, document_paths, index + 1)
+        @section.add_chart(chart)
+        charts_html += chart_to_html(chart)
+      rescue StandardError => e
+        Rails.logger.error "Failed to generate chart #{index + 1}: #{e.message}"
+        charts_html += error_chart_html(prompt, e.message)
+      end
+    end
+
+    # Save the section
+    @section.save
+
+    Rails.logger.info "Generated #{@section.agent_chart_ids.count} charts"
+
+    charts_html
+  end
+
+  # Add chart from user prompt
+  def add_chart_from_prompt(user_prompt:)
+    document_paths = find_csv_documents
+
+    Rails.logger.info "=== Adding Chart from Prompt ==="
+    Rails.logger.info "User prompt: #{user_prompt}"
+    Rails.logger.info "Documents found: #{document_paths.count}"
+
+    existing_charts = @section.agent_charts.count
+    chart_number = existing_charts + 1
+
+    begin
+      chart = create_chart(user_prompt, document_paths, chart_number)
+      @section.add_chart(chart)
+
+      Rails.logger.info "Added chart: #{chart.title}"
+
+      chart_to_html(chart)
+    rescue StandardError => e
+      Rails.logger.error "Failed to add chart: #{e.message}"
+      error_chart_html(user_prompt, e.message)
+    end
+  end
+
+  private
+
+  # Create a single chart using AgentChart + ChartAgentService
+  def create_chart(prompt, document_paths, chart_number)
+    chart = AgentChart.create!(
+      entity_id: @entity.id,
+      title: "Chart #{chart_number}: #{extract_title(prompt)}",
+      prompt: prompt,
+      status: 'draft',
+      owner: @report
+    )
+
+    # Convert all documents to CSV format for the chart service
+    temp_csv_paths = []
+    document_paths.each do |original_path|
+      extension = File.extname(original_path).downcase
+
+      case extension
+      when '.xlsx', '.xls'
+        # Convert Excel to CSV
+        csv_path = convert_excel_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.pptx', '.ppt'
+        # Extract chart data from PPTX and convert to CSV
+        csv_path = convert_pptx_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.csv'
+        # Already CSV, just copy
+        temp_file = Tempfile.new(['chart_data', '.csv'])
+        FileUtils.cp(original_path, temp_file.path)
+        temp_csv_paths << temp_file.path
+      else
+        # For other files, just copy them
+        temp_file = Tempfile.new(['chart_data', extension])
+        FileUtils.cp(original_path, temp_file.path)
+        temp_csv_paths << temp_file.path
+      end
+    end
+
+    Rails.logger.info "[ChartSectionGenerator] Converted #{temp_csv_paths.count} files to CSV for chart generation"
+
+    # Generate the chart spec using existing ChartAgentService
+    chart.generate_spec!(csv_paths: temp_csv_paths)
+
+    chart
+  end
+
+  # Convert Excel file to CSV
+  def convert_excel_to_csv(excel_path)
+    require 'roo'
+    require 'csv'
+
+    Rails.logger.info "[ChartSectionGenerator] Converting Excel to CSV: #{File.basename(excel_path)}"
+
+    spreadsheet = Roo::Spreadsheet.open(excel_path)
+    temp_file = Tempfile.new(['excel_data', '.csv'])
+
+    CSV.open(temp_file.path, 'wb') do |csv|
+      # Use first sheet
+      sheet = spreadsheet.sheet(spreadsheet.sheets.first)
+
+      sheet.each_row_streaming(pad_cells: true, max_rows: 200) do |row|
+        csv << row.map { |cell| cell&.value }
+      end
+    end
+
+    Rails.logger.info "[ChartSectionGenerator] Excel converted to CSV: #{temp_file.path}"
+    temp_file.path
+  rescue => e
+    Rails.logger.error "[ChartSectionGenerator] Error converting Excel: #{e.message}"
+    nil
+  end
+
+  # Extract chart data from PPTX and convert to CSV
+  def convert_pptx_to_csv(pptx_path)
+    require 'zip'
+    require 'nokogiri'
+    require 'csv'
+
+    Rails.logger.info "[ChartSectionGenerator] Extracting chart data from PPTX: #{File.basename(pptx_path)}"
+
+    all_chart_data = []
+
+    Zip::File.open(pptx_path) do |zip_file|
+      chart_entries = zip_file.glob('ppt/charts/chart*.xml')
+
+      chart_entries.each do |entry|
+        chart_content = entry.get_input_stream.read
+        chart_doc = Nokogiri::XML(chart_content)
+        chart_doc.remove_namespaces!
+
+        # Extract series data
+        chart_doc.xpath('//ser').each do |series|
+          series_name = series.xpath('.//tx//v | .//tx//t').first&.text || 'Series'
+          categories = series.xpath('.//cat//v | .//cat//t').map(&:text)
+          values = series.xpath('.//val//v').map(&:text)
+
+          if categories.any? && values.any?
+            categories.zip(values).each do |cat, val|
+              all_chart_data << { category: cat, series: series_name, value: val }
+            end
+          end
+        end
+      end
+    end
+
+    return nil if all_chart_data.empty?
+
+    # Write to CSV
+    temp_file = Tempfile.new(['pptx_chart_data', '.csv'])
+
+    CSV.open(temp_file.path, 'wb') do |csv|
+      csv << ['Category', 'Series', 'Value']
+      all_chart_data.each do |row|
+        csv << [row[:category], row[:series], row[:value]]
+      end
+    end
+
+    Rails.logger.info "[ChartSectionGenerator] PPTX chart data converted to CSV: #{temp_file.path} (#{all_chart_data.count} rows)"
+    temp_file.path
+  rescue => e
+    Rails.logger.error "[ChartSectionGenerator] Error converting PPTX: #{e.message}"
+    nil
+  end
+
+  # Convert chart to HTML in YOUR Python format (so frontend doesn't change!)
+  def chart_to_html(chart)
+    spec = chart.spec
+    
+    # Extract chart type and data
+    chart_type = spec['type'] || 'bar'
+    chart_data = spec['data'] || {}
+    
+    <<~HTML
+      <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa;">
+        <h4>#{chart.title}</h4>
+        <p><em>#{chart.prompt}</em></p>
+        <div class="chart-placeholder" 
+             data-chart-config='#{chart_data.to_json}' 
+             data-chart-type='#{chart_type}'
+             style="background: white; padding: 20px; border-radius: 4px; min-height: 300px;">
+        </div>
+      </div>
+    HTML
+  end
+
+  # Error fallback HTML
+  def error_chart_html(prompt, error_message)
+    <<~HTML
+      <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: #f8d7da;">
+        <h4>?? Chart Generation Failed</h4>
+        <p><em>#{prompt}</em></p>
+        <p style="color: #721c24;">Error: #{error_message}</p>
+      </div>
+    HTML
+  end
+
+  # Find CSV documents for this portfolio company
+  # Find relevant documents (CSV, TXT, MD, PDF, DOCX, XLSX, PPTX) for this portfolio company
+  # Find relevant documents from demo_documents folder (like Python backend)
+  def find_csv_documents
+    document_paths = []
+
+    # Supported file types for chart generation
+    supported_extensions = ['.csv', '.txt', '.md', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt']
+    
+    Rails.logger.info "=== Searching for documents ==="
+    
+    # Use same path as GenerateSectionContentJob
+    demo_docs_path = Pathname.new('/tmp/test_documents')
+    
+    if demo_docs_path.exist?
+      Rails.logger.info "Checking folder: #{demo_docs_path}"
+      
+      supported_extensions.each do |ext|
+        Dir.glob(demo_docs_path.join("*#{ext}")).each do |file_path|
+          document_paths << file_path
+          Rails.logger.info "  ? Found: #{File.basename(file_path)}"
+        end
+      end
+    else
+      Rails.logger.warn "demo_documents folder not found at: #{demo_docs_path}"
+      Rails.logger.info "Creating demo_documents folder..."
+      FileUtils.mkdir_p(demo_docs_path)
+    end
+    
+    Rails.logger.info "Total documents found: #{document_paths.count}"
+    document_paths
+  end
+
+  # Extract a preview of data from documents for LLM analysis
+  def extract_data_preview(document_paths)
+    preview_parts = []
+
+    document_paths.each do |file_path|
+      extension = File.extname(file_path).downcase
+      filename = File.basename(file_path)
+
+      begin
+        case extension
+        when '.xlsx', '.xls'
+          preview_parts << extract_excel_preview(file_path, filename)
+        when '.pptx', '.ppt'
+          preview_parts << extract_pptx_preview(file_path, filename)
+        when '.csv'
+          preview_parts << extract_csv_preview(file_path, filename)
+        end
+      rescue => e
+        Rails.logger.warn "[ChartSectionGenerator] Could not extract preview from #{filename}: #{e.message}"
+      end
+    end
+
+    preview_parts.compact.join("\n\n")
+  end
+
+  # Extract preview from Excel file
+  def extract_excel_preview(file_path, filename)
+    require 'roo'
+
+    spreadsheet = Roo::Spreadsheet.open(file_path)
+    preview = "=== Data from: #{filename} ===\n"
+
+    spreadsheet.sheets.first(3).each do |sheet_name|
+      sheet = spreadsheet.sheet(sheet_name)
+      preview += "Sheet: #{sheet_name}\n"
+
+      rows = []
+      sheet.each_row_streaming(pad_cells: true, max_rows: 20) do |row|
+        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
+        rows << row_values.join(" | ") if row_values.any?
+      end
+
+      preview += rows.join("\n") + "\n"
+    end
+
+    preview
+  end
+
+  # Extract preview from PPTX charts
+  def extract_pptx_preview(file_path, filename)
+    require 'zip'
+    require 'nokogiri'
+
+    preview = "=== Chart Data from: #{filename} ===\n"
+
+    Zip::File.open(file_path) do |zip_file|
+      chart_entries = zip_file.glob('ppt/charts/chart*.xml')
+
+      chart_entries.first(5).each_with_index do |entry, idx|
+        chart_content = entry.get_input_stream.read
+        chart_doc = Nokogiri::XML(chart_content)
+        chart_doc.remove_namespaces!
+
+        title = chart_doc.xpath('//title//t').map(&:text).join(' ')
+        preview += "\nChart #{idx + 1}: #{title}\n" if title.present?
+
+        chart_doc.xpath('//ser').each do |series|
+          series_name = series.xpath('.//tx//v | .//tx//t').first&.text || 'Series'
+          categories = series.xpath('.//cat//v | .//cat//t').map(&:text).first(10)
+          values = series.xpath('.//val//v').map(&:text).first(10)
+
+          preview += "  #{series_name}: "
+          if categories.any? && values.any?
+            preview += categories.zip(values).map { |c, v| "#{c}=#{v}" }.join(", ")
+          elsif values.any?
+            preview += values.join(", ")
+          end
+          preview += "\n"
+        end
+      end
+    end
+
+    preview
+  end
+
+  # Extract preview from CSV file
+  def extract_csv_preview(file_path, filename)
+    require 'csv'
+
+    preview = "=== Data from: #{filename} ===\n"
+    rows = CSV.read(file_path, headers: false).first(20)
+    rows.each do |row|
+      preview += row.compact.join(" | ") + "\n"
+    end
+
+    preview
+  rescue => e
+    "=== Data from: #{filename} ===\nError reading CSV: #{e.message}"
+  end
+
+  # Generate chart prompts dynamically based on actual data
+  def generate_chart_prompts_from_data(data_preview)
+    return default_chart_prompts if data_preview.blank?
+
+    Rails.logger.info "[ChartSectionGenerator] Generating chart prompts from data..."
+
+    api_key = ENV['OPENAI_API_KEY']
+    return default_chart_prompts unless api_key
+
+    llm = Langchain::LLM::OpenAI.new(
+      api_key: api_key,
+      default_options: {
+        chat_completion_model_name: 'gpt-4o-mini',
+        temperature: 0.3
+      }
+    )
+
+    prompt = <<~PROMPT
+      Analyze the following data and suggest 3 meaningful charts that would visualize key insights.
+
+      DATA:
+      #{data_preview[0..4000]}
+
+      For each chart, provide a specific prompt that describes:
+      1. What data to visualize
+      2. The chart type (line, bar, pie, doughnut)
+      3. What insight it should convey
+
+      Return ONLY a JSON array of 3 chart prompts, like:
+      ["Revenue trend over time - show monthly revenue as a line chart", "Orders by category - show as a bar chart", "GMV distribution - show as a pie chart"]
+
+      Focus on the actual metrics and data columns present in the data. Be specific about the data fields to use.
+    PROMPT
+
+    response = llm.complete(prompt: prompt)
+    result = response.completion.strip
+
+    # Parse JSON array from response
+    result = result.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
+    prompts = JSON.parse(result)
+
+    Rails.logger.info "[ChartSectionGenerator] LLM generated prompts: #{prompts.inspect}"
+
+    prompts.is_a?(Array) && prompts.length > 0 ? prompts : default_chart_prompts
+  rescue => e
+    Rails.logger.error "[ChartSectionGenerator] Error generating prompts: #{e.message}"
+    default_chart_prompts
+  end
+
+  # Fallback default prompts
+  def default_chart_prompts
+    [
+      "Show key metrics trend over time as a line chart",
+      "Show category breakdown as a bar chart",
+      "Show distribution as a pie chart"
+    ]
+  end
+
+  # Extract text content from different document types
+  def extract_text_from_document(doc, extension)
+    case extension
+    when '.txt', '.md'
+      # Plain text - just read it
+      doc.file.download
+      
+    when '.pdf'
+      # Extract text from PDF
+      require 'pdf-reader'
+      reader = PDF::Reader.new(StringIO.new(doc.file.download))
+      reader.pages.map(&:text).join("\n")
+      
+    when '.docx', '.doc'
+      # Extract text from Word document
+      require 'docx'
+      temp_file = Tempfile.new(['doc', extension])
+      temp_file.binmode
+      temp_file.write(doc.file.download)
+      temp_file.close
+      
+      docx = Docx::Document.open(temp_file.path)
+      text = docx.paragraphs.map(&:text).join("\n")
+      temp_file.unlink
+      text
+      
+    else
+      # Fallback: try to read as text
+      doc.file.download
+    end
+  rescue StandardError => e
+    Rails.logger.error "Failed to extract text from #{extension}: #{e.message}"
+    "[Document content could not be extracted]"
+  end
+
+  # Extract a short title from the prompt
+  def extract_title(prompt)
+    # Take first part before dash or hyphen
+    title = prompt.split(/[-]/).first.strip
+    # Limit to 50 characters
+    title.truncate(50)
+  end
+end

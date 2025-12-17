@@ -1,0 +1,324 @@
+<%
+  # Helper to convert chart placeholder to QuickChart image URL
+  def chart_to_image_url(chart_config, chart_type)
+    return nil unless chart_config.present?
+
+    pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
+
+    begin
+      data = JSON.parse(chart_config)
+
+      # Apply pastel colors
+      if data['datasets']
+        data['datasets'].each_with_index do |dataset, idx|
+          color = pastel_colors[idx % pastel_colors.length]
+
+          if ['pie', 'doughnut'].include?(chart_type)
+            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+          elsif chart_type == 'line'
+            dataset['borderColor'] = color
+            dataset['backgroundColor'] = color + '40'
+            dataset['fill'] = true if chart_type == 'area'
+          else
+            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+            dataset['borderColor'] = 'transparent'
+          end
+        end
+      end
+
+      chart_type = 'line' if chart_type == 'area'
+
+      chart_config_obj = {
+        type: chart_type,
+        data: data,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true, position: 'top' }
+          },
+          scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+        }
+      }
+
+      encoded_config = ERB::Util.url_encode(chart_config_obj.to_json)
+      "https://quickchart.io/chart?c=#{encoded_config}&width=700&height=400&backgroundColor=white"
+    rescue => e
+      Rails.logger.error "Chart conversion error: #{e.message}"
+      nil
+    end
+  end
+
+  # Process section content to replace chart placeholders with images
+  def convert_charts_to_images(content)
+    return content unless content.present?
+
+    # Match chart placeholders and replace with img tags
+    content.gsub(/<div[^>]*class="chart-placeholder"[^>]*data-chart-config="([^"]*)"[^>]*data-chart-type="([^"]*)"[^>]*>.*?<\/div>/m) do |match|
+      config = CGI.unescapeHTML($1)
+      chart_type = $2 || 'bar'
+
+      image_url = chart_to_image_url(config, chart_type)
+
+      if image_url
+        %(<div style="text-align: center; margin: 20px 0;"><img src="#{image_url}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" alt="Chart" /></div>)
+      else
+        %(<div style="padding: 20px; background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; color: #64748b;">Chart visualization</div>)
+      end
+    end
+  end
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title><%= @report.portfolio_company&.name || "Portfolio Report" %> - Report</title>
+  <style>
+    /* PDF Export Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #1e293b;
+      padding: 40px;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      text-align: center;
+      padding: 100px 40px;
+      page-break-after: always;
+    }
+
+    .cover-title {
+      font-size: 28pt;
+      font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 20px;
+    }
+
+    .cover-subtitle {
+      font-size: 18pt;
+      font-weight: 400;
+      color: #3b82f6;
+      margin-bottom: 40px;
+    }
+
+    .cover-meta {
+      font-size: 12pt;
+      color: #64748b;
+      margin-top: 60px;
+    }
+
+    .cover-meta p {
+      margin: 8px 0;
+    }
+
+    .cover-line {
+      width: 200px;
+      height: 4px;
+      background: #3b82f6;
+      margin: 40px auto;
+    }
+
+    /* Content Styles */
+    .report-content {
+      padding: 20px 0;
+    }
+
+    h1 {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #1e40af;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 8px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      page-break-after: avoid;
+    }
+
+    h2 {
+      font-size: 14pt;
+      font-weight: 600;
+      color: #2563eb;
+      border-bottom: 2px solid #93c5fd;
+      padding-bottom: 6px;
+      margin-top: 25px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 12pt;
+      font-weight: 600;
+      color: #3b82f6;
+      border-left: 4px solid #3b82f6;
+      padding-left: 10px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin-bottom: 12px;
+      text-align: justify;
+      orphans: 3;
+      widows: 3;
+    }
+
+    ul, ol {
+      margin-bottom: 12px;
+      padding-left: 30px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    ul li {
+      list-style-type: disc;
+    }
+
+    ul ul li {
+      list-style-type: circle;
+    }
+
+    ol li {
+      list-style-type: decimal;
+    }
+
+    strong, b {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 10pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    /* Section Dividers */
+    .section-divider {
+      margin: 30px 0;
+      border: none;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    /* Chart Images */
+    .chart-image {
+      text-align: center;
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+
+    .chart-image img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    /* Footer */
+    .page-footer {
+      position: fixed;
+      bottom: 20px;
+      left: 40px;
+      right: 40px;
+      font-size: 9pt;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+      text-align: center;
+    }
+
+    /* Page breaks */
+    .page-break {
+      page-break-before: always;
+    }
+
+    /* Links */
+    a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    /* Blockquotes */
+    blockquote {
+      border-left: 4px solid #93c5fd;
+      padding-left: 15px;
+      margin: 15px 0;
+      color: #475569;
+      font-style: italic;
+    }
+
+    /* Code blocks */
+    code, pre {
+      font-family: 'Courier New', monospace;
+      font-size: 10pt;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      padding: 15px;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Cover Page -->
+  <div class="cover-page">
+    <h1 class="cover-title"><%= @report.portfolio_company&.name || "Portfolio Company" %></h1>
+    <div class="cover-line"></div>
+    <h2 class="cover-subtitle">Portfolio Company Report</h2>
+
+    <div class="cover-meta">
+      <p><strong>Report Date:</strong> <%= @report.report_date&.strftime('%B %d, %Y') || Date.today.strftime('%B %d, %Y') %></p>
+      <p><strong>Prepared By:</strong> <%= @report.analyst&.name || "Analyst" %></p>
+      <p><strong>Generated:</strong> <%= Time.current.strftime('%B %d, %Y at %I:%M %p') %></p>
+    </div>
+  </div>
+
+  <!-- Report Content -->
+  <div class="report-content">
+    <% @sections.each_with_index do |section, index| %>
+      <% if index > 0 %><hr class="section-divider"><% end %>
+
+      <div id="section-<%= section.id %>">
+        <h2><%= section.section_type %></h2>
+        <%= convert_charts_to_images(section.current_content).html_safe %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="page-footer">
+    <%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= Date.today.strftime('%B %d, %Y') %>
+  </div>
+</body>
+</html>
