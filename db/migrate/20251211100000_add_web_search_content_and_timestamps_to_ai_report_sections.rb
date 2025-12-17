@@ -11,7 +11,9 @@ class AddWebSearchContentAndTimestampsToAiReportSections < ActiveRecord::Migrati
     add_column :ai_report_sections, :created_at_web_included, :datetime
     add_column :ai_report_sections, :updated_at_web_included, :datetime
 
-    # Remove show_web_search as it will be derived from timestamps
-    remove_column :ai_report_sections, :show_web_search, :boolean, default: false
+    # Remove show_web_search as it will be derived from timestamps (only if it exists)
+    if column_exists?(:ai_report_sections, :show_web_search)
+      remove_column :ai_report_sections, :show_web_search, :boolean, default: false
+    end
   end
 end
