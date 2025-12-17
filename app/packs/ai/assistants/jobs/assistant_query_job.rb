@@ -9,7 +9,7 @@ class AssistantQueryJob < ApplicationJob
   def perform(user_id, request_id, query)
     user = User.find(user_id)
 
-    response = FundAssistantDriver.new(user: user).run(query)
+    response = FundAssistant.new(user: user).run(query)
 
     Turbo::StreamsChannel.broadcast_replace_to(
       [user, "assistant"],
