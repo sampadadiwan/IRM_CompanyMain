@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_11_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -162,7 +162,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
-  create_table "agent_charts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "agent_charts", force: :cascade do |t|
     t.string "title"
     t.text "prompt"
     t.json "raw_data"
@@ -186,7 +186,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
-  create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "aggregate_portfolio_investments", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "portfolio_company_id", null: false
@@ -235,6 +235,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
+  create_table "ai_chat_messages", force: :cascade do |t|
+    t.bigint "ai_chat_session_id", null: false
+    t.string "role"
+    t.text "content"
+    t.json "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_chat_session_id"], name: "index_ai_chat_messages_on_ai_chat_session_id"
+  end
+
+  create_table "ai_chat_sessions", force: :cascade do |t|
+    t.bigint "ai_portfolio_report_id", null: false
+    t.integer "analyst_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_portfolio_report_id"], name: "index_ai_chat_sessions_on_ai_portfolio_report_id"
+  end
+
   create_table "ai_checks", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "ai_rule_id"
@@ -250,8 +268,39 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.string "rule_type", limit: 15
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_ai_checks_on_owner"
-    t.index ["parent_type", "parent_id"], name: "index_ai_checks_on_parent"
+    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
+    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
+  end
+
+  create_table "ai_portfolio_reports", force: :cascade do |t|
+    t.integer "portfolio_company_id"
+    t.integer "analyst_id"
+    t.string "status"
+    t.date "report_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "collated_report_html"
+    t.boolean "web_search_enabled", default: false
+  end
+
+  create_table "ai_report_sections", force: :cascade do |t|
+    t.bigint "ai_portfolio_report_id", null: false
+    t.string "section_type"
+    t.integer "order_index"
+    t.text "ai_generated_summary"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "reviewed", default: false
+    t.text "content_html"
+    t.boolean "web_search_enabled", default: false, null: false
+    t.json "agent_chart_ids"
+    t.text "content_html_with_web"
+    t.datetime "created_at_document_only"
+    t.datetime "updated_at_document_only"
+    t.datetime "created_at_web_included"
+    t.datetime "updated_at_web_included"
+    t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
   end
 
   create_table "ai_rules", force: :cascade do |t|
@@ -284,6 +333,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.text "status"
     t.string "tag_list"
     t.boolean "locked", default: false
+    t.string "statement_for"
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
@@ -939,6 +989,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.boolean "show_menu", default: true, null: false
     t.integer "import_upload_id"
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
+    t.index ["import_upload_id"], name: "index_dashboard_widgets_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
   end
 
@@ -1243,7 +1294,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.string "pan", limit: 40
-    t.integer "permissions"
+    t.bigint "permissions"
     t.string "primary_email"
     t.integer "customization_flags", default: 0
     t.bigint "root_folder_id"
@@ -1424,7 +1475,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
   end
 
-  create_table "faq_threads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "faq_threads", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "openai_thread_id"
     t.string "title", default: "New Support Chat"
@@ -1704,7 +1755,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
   end
 
-  create_table "fund_unit_transfers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "fund_unit_transfers", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "from_commitment_id", null: false
@@ -3095,7 +3146,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["to_portfolio_investment_id"], name: "index_stock_conversions_on_to_portfolio_investment_id"
   end
 
-  create_table "support_agent_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "support_agent_reports", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.string "owner_name", limit: 50
@@ -3109,7 +3160,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
   end
 
-  create_table "support_agents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "support_agents", force: :cascade do |t|
     t.string "name", limit: 30
     t.string "description"
     t.bigint "entity_id", null: false
@@ -3125,7 +3176,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_073600) do
     t.index ["form_type_id"], name: "index_support_agents_on_form_type_id"
   end
 
-  create_table "support_client_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "support_client_mappings", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.date "end_date"
