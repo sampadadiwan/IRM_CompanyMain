@@ -30,14 +30,12 @@ class ChartSectionGenerator
     # Generate each chart
     charts_html = ""
     prompts.each_with_index do |prompt, index|
-      begin
-        chart = create_chart(prompt, document_paths, index + 1)
-        @section.add_chart(chart)
-        charts_html += chart_to_html(chart)
-      rescue StandardError => e
-        Rails.logger.error "Failed to generate chart #{index + 1}: #{e.message}"
-        charts_html += error_chart_html(prompt, e.message)
-      end
+      chart = create_chart(prompt, document_paths, index + 1)
+      @section.add_chart(chart)
+      charts_html += chart_to_html(chart)
+    rescue StandardError => e
+      Rails.logger.error "Failed to generate chart #{index + 1}: #{e.message}"
+      charts_html += error_chart_html(prompt, e.message)
     end
 
     # Save the section
@@ -114,7 +112,11 @@ class ChartSectionGenerator
     Rails.logger.info "[ChartSectionGenerator] Converted #{temp_csv_paths.count} files to CSV for chart generation"
 
     # Generate the chart spec using existing ChartAgentService
-    chart.generate_spec!(csv_paths: temp_csv_paths)
+    # chart.generate_spec!(csv_paths: temp_csv_paths)
+    #
+    ## Generate the chart spec using PortfolioChartAgentService (separate from Caphive's ChartAgentService)
+    spec_hash = PortfolioChartAgentService.new(json_data: nil, csv_paths: temp_csv_paths).generate_chart!(prompt: prompt)
+    chart.update!(spec: spec_hash, status: "ready")
 
     chart
   end
@@ -140,7 +142,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] Excel converted to CSV: #{temp_file.path}"
     temp_file.path
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[ChartSectionGenerator] Error converting Excel: #{e.message}"
     nil
   end
@@ -169,10 +171,10 @@ class ChartSectionGenerator
           categories = series.xpath('.//cat//v | .//cat//t').map(&:text)
           values = series.xpath('.//val//v').map(&:text)
 
-          if categories.any? && values.any?
-            categories.zip(values).each do |cat, val|
-              all_chart_data << { category: cat, series: series_name, value: val }
-            end
+          next unless categories.any? && values.any?
+
+          categories.zip(values).each do |cat, val|
+            all_chart_data << { category: cat, series: series_name, value: val }
           end
         end
       end
@@ -184,7 +186,7 @@ class ChartSectionGenerator
     temp_file = Tempfile.new(['pptx_chart_data', '.csv'])
 
     CSV.open(temp_file.path, 'wb') do |csv|
-      csv << ['Category', 'Series', 'Value']
+      csv << %w[Category Series Value]
       all_chart_data.each do |row|
         csv << [row[:category], row[:series], row[:value]]
       end
@@ -192,7 +194,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] PPTX chart data converted to CSV: #{temp_file.path} (#{all_chart_data.count} rows)"
     temp_file.path
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[ChartSectionGenerator] Error converting PPTX: #{e.message}"
     nil
   end
@@ -200,17 +202,17 @@ class ChartSectionGenerator
   # Convert chart to HTML in YOUR Python format (so frontend doesn't change!)
   def chart_to_html(chart)
     spec = chart.spec
-    
+
     # Extract chart type and data
     chart_type = spec['type'] || 'bar'
     chart_data = spec['data'] || {}
-    
+
     <<~HTML
       <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa;">
         <h4>#{chart.title}</h4>
         <p><em>#{chart.prompt}</em></p>
-        <div class="chart-placeholder" 
-             data-chart-config='#{chart_data.to_json}' 
+        <div class="chart-placeholder"#{' '}
+             data-chart-config='#{chart_data.to_json}'#{' '}
              data-chart-type='#{chart_type}'
              style="background: white; padding: 20px; border-radius: 4px; min-height: 300px;">
         </div>
@@ -237,15 +239,15 @@ class ChartSectionGenerator
 
     # Supported file types for chart generation
     supported_extensions = ['.csv', '.txt', '.md', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt']
-    
+
     Rails.logger.info "=== Searching for documents ==="
-    
+
     # Use same path as GenerateSectionContentJob
     demo_docs_path = Pathname.new('/tmp/test_documents')
-    
+
     if demo_docs_path.exist?
       Rails.logger.info "Checking folder: #{demo_docs_path}"
-      
+
       supported_extensions.each do |ext|
         Dir.glob(demo_docs_path.join("*#{ext}")).each do |file_path|
           document_paths << file_path
@@ -257,7 +259,7 @@ class ChartSectionGenerator
       Rails.logger.info "Creating demo_documents folder..."
       FileUtils.mkdir_p(demo_docs_path)
     end
-    
+
     Rails.logger.info "Total documents found: #{document_paths.count}"
     document_paths
   end
@@ -279,7 +281,7 @@ class ChartSectionGenerator
         when '.csv'
           preview_parts << extract_csv_preview(file_path, filename)
         end
-      rescue => e
+      rescue StandardError => e
         Rails.logger.warn "[ChartSectionGenerator] Could not extract preview from #{filename}: #{e.message}"
       end
     end
@@ -358,7 +360,7 @@ class ChartSectionGenerator
     end
 
     preview
-  rescue => e
+  rescue StandardError => e
     "=== Data from: #{filename} ===\nError reading CSV: #{e.message}"
   end
 
@@ -368,7 +370,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] Generating chart prompts from data..."
 
-    api_key = ENV['OPENAI_API_KEY']
+    api_key = ENV.fetch('OPENAI_API_KEY', nil)
     return default_chart_prompts unless api_key
 
     llm = Langchain::LLM::OpenAI.new(
@@ -406,7 +408,7 @@ class ChartSectionGenerator
     Rails.logger.info "[ChartSectionGenerator] LLM generated prompts: #{prompts.inspect}"
 
     prompts.is_a?(Array) && prompts.length > 0 ? prompts : default_chart_prompts
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[ChartSectionGenerator] Error generating prompts: #{e.message}"
     default_chart_prompts
   end
@@ -426,13 +428,13 @@ class ChartSectionGenerator
     when '.txt', '.md'
       # Plain text - just read it
       doc.file.download
-      
+
     when '.pdf'
       # Extract text from PDF
       require 'pdf-reader'
       reader = PDF::Reader.new(StringIO.new(doc.file.download))
       reader.pages.map(&:text).join("\n")
-      
+
     when '.docx', '.doc'
       # Extract text from Word document
       require 'docx'
@@ -440,12 +442,12 @@ class ChartSectionGenerator
       temp_file.binmode
       temp_file.write(doc.file.download)
       temp_file.close
-      
+
       docx = Docx::Document.open(temp_file.path)
       text = docx.paragraphs.map(&:text).join("\n")
       temp_file.unlink
       text
-      
+
     else
       # Fallback: try to read as text
       doc.file.download

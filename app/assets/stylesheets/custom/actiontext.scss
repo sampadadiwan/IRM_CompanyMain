@@ -55,3 +55,24 @@ trix-editor {
 }
 
 .trix-button--icon-attach { display:none; }
+
+// General spacing for all headings
+#report-content .trix-content h1,
+#report-content .trix-content h2,
+#report-content .trix-content h3 {
+  margin-bottom: 0.3rem !important;
+}
+
+// Override for first child - PUT THIS AFTER
+#report-content .trix-content h3:first-child,
+#report-content .trix-content h1:first-child,
+#report-content .trix-content h2:first-child {
+  margin-top: 0 !important;
+}
+
+#report-content .trix-content p {
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+

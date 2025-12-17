@@ -19,8 +19,9 @@
  @import "custom/actiontext.scss";
  @import "custom/dashboard_widgets.scss";
  @import "custom/investment_opportunity_card.scss";
-
-
+ @import "trix";
+ 
+ 
 .deleteButton {
     display: inline;
 }
@@ -33,3 +34,6 @@
 input[type="file" i] {
     height: calc(1.5em + .75rem + 7px);
 }
+
+
+  
