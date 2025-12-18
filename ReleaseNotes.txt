@@ -1,3 +1,13 @@
+V9.1.59
+#####################################
+ee47fb828 Fix migration: check if column exists before removing (#1141)
+6d1cdc741 Add htmltoword, wicked_pdf and wkhtmltopdf-binary gems (#1140)
+346dfe628 AI Portfolio Reports - Phase 2 (modified files) (#1138)
+a97527041 Add AI Portfolio Reports feature - Phase 1 (new files) (#1136)
+2beeaf24c Fixed PI ransack filter bug - template is now assigned correctly (#1139)
+3c67a00d1 Refactored FundAssistant into Tools and Helper
+7640690b8 Added scopes to FundAssistant
+
 V9.1.58
 #####################################
 0822dcf32 Now bootstrap is loaded from importmap
