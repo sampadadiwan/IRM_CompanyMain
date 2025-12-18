@@ -18,6 +18,11 @@ class CapitalRemittance < ApplicationRecord
     "Payment Date" => "payment_date"
   }.freeze
 
+  ADDITIONAL_COLUMNS = {
+    "Tracking Committed" => "tracking_committed_amount",
+    "Tracking Called" => "tracking_call_amount"
+  }.freeze
+
   INVESTOR_STANDARD_COLUMNS = {
     "Capital Call" => "capital_call_name",
     "Folio Id" => "folio_id",

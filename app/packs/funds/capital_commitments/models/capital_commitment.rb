@@ -26,6 +26,13 @@ class CapitalCommitment < ApplicationRecord
                        "Collected" => "collected_amount",
                        "Distributed" => "distribution_amount" }.freeze
 
+  ADDITIONAL_COLUMNS = {
+    "Tracking Committed" => "tracking_committed_amount",
+    "Tracking Called" => "tracking_call_amount",
+    "Tracking Collected" => "tracking_collected_amount",
+    "Tracking Distributed" => "tracking_distribution_amount"
+  }.freeze
+
   ADDITIONAL_COLUMNS_FROM = %w[investor_kyc investor].freeze
 
   INVESTOR_TAB_STANDARD_COLUMNS = {

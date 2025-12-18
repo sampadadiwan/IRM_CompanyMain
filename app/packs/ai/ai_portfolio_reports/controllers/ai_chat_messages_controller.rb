@@ -11,11 +11,11 @@ class AiChatMessagesController < ApplicationController
     # Call PortfolioChatAgent instead of Python backend
     begin
       result = PortfolioChatAgent.call(
-  support_agent_id: find_or_create_chat_agent.id,
-  target: @chat_session,
-  user_message: params[:message],
-  document_folder_path: "/tmp/test_documents"  # ? ADD THIS LINE
-)
+        support_agent_id: find_or_create_chat_agent.id,
+        target: @chat_session,
+        user_message: params[:message],
+        document_folder_path: "/tmp/test_documents" # ? ADD THIS LINE
+      )
 
       if result.success?
         # Get the last message saved by the agent (assistant's response)
@@ -30,18 +30,18 @@ class AiChatMessagesController < ApplicationController
         }
       else
         Rails.logger.error "[AiChatMessagesController] Agent error: #{result[:error]}"
-        render json: { 
-          success: false, 
-          error: result[:error] || 'Agent execution failed' 
+        render json: {
+          success: false,
+          error: result[:error] || 'Agent execution failed'
         }, status: :unprocessable_entity
       end
     rescue StandardError => e
       Rails.logger.error "[AiChatMessagesController] Error: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
-      
-      render json: { 
-        success: false, 
-        error: "Chat error: #{e.message}" 
+
+      render json: {
+        success: false,
+        error: "Chat error: #{e.message}"
       }, status: :internal_server_error
     end
   end
@@ -62,16 +62,16 @@ class AiChatMessagesController < ApplicationController
         }
       end
 
-      render json: { 
+      render json: {
         success: true,
         session_id: @chat_session.id,
-        messages: messages 
+        messages: messages
       }
     else
-      render json: { 
+      render json: {
         success: true,
         session_id: nil,
-        messages: [] 
+        messages: []
       }
     end
   end

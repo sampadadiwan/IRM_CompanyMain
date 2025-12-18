@@ -71,7 +71,7 @@ class AiPortfolioReportsController < ApplicationController
     @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
     company_name = @report.portfolio_company&.name&.parameterize || "portfolio-company"
 
-    render pdf: "#{company_name}-report-#{Date.today}",
+    render pdf: "#{company_name}-report-#{Time.zone.today}",
            template: 'ai_portfolio_reports/export_pdf',
            layout: false,
            page_size: 'A4',
@@ -100,7 +100,7 @@ class AiPortfolioReportsController < ApplicationController
 
     # Send file
     send_data file,
-              filename: "#{company_name}-report-#{Date.today}.docx",
+              filename: "#{company_name}-report-#{Time.zone.today}.docx",
               type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
               disposition: 'attachment'
   end
@@ -160,7 +160,7 @@ class AiPortfolioReportsController < ApplicationController
     <div style="text-align: center; padding: 3rem; margin-bottom: 2rem;">
       <h1 style="color: #1e40af; font-size: 2.5rem; margin-bottom: 1rem;">#{company_name}</h1>
       <h2 style="color: #3b82f6; font-size: 1.8rem; margin-bottom: 1rem;">Portfolio Company Report</h2>
-      <p style="color: #6b7280; font-size: 1.1rem;">Generated on: #{@report.report_date&.strftime('%B %d, %Y') || Date.today.strftime('%B %d, %Y')}</p>
+      <p style="color: #6b7280; font-size: 1.1rem;">Generated on: #{@report.report_date&.strftime('%B %d, %Y') || Time.zone.today.strftime('%B %d, %Y')}</p>
       <p style="color: #6b7280; font-size: 1.1rem;">Analyst: #{@report.analyst&.name || current_user.name}</p>
     </div>
     <hr style="border: 2px solid #3b82f6; margin-bottom: 3rem;">

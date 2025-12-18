@@ -31,13 +31,13 @@ class AiReportSectionsController < ApplicationController
   def toggle_web_search
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
-    
+
     # Get the desired state from params (if provided) or toggle
-    if params[:enable_web_search].present?
-      desired_state = params[:enable_web_search] == true || params[:enable_web_search] == 'true'
-    else
-      desired_state = !@section.web_search_enabled
-    end
+    desired_state = if params[:enable_web_search].present?
+                      [true, 'true'].include?(params[:enable_web_search])
+                    else
+                      !@section.web_search_enabled
+                    end
 
     # Only update flag if state is changing
     if @section.web_search_enabled != desired_state
@@ -57,13 +57,13 @@ class AiReportSectionsController < ApplicationController
     # Get content from cache or DB based on desired state
     session_id = session.id.to_s
 
-    if desired_state
-      content_to_return = SectionContentCache.get_web_content(@section.id, session_id) ||
-                          @section.content_html_with_web
-    else
-      content_to_return = SectionContentCache.get_document_content(@section.id, session_id) ||
-                          @section.content_html
-    end
+    content_to_return = if desired_state
+                          SectionContentCache.get_web_content(@section.id, session_id) ||
+                            @section.content_html_with_web
+                        else
+                          SectionContentCache.get_document_content(@section.id, session_id) ||
+                            @section.content_html
+                        end
 
     render json: {
       success: true,
@@ -94,85 +94,84 @@ class AiReportSectionsController < ApplicationController
   end
 
   def regenerate
-  @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
-  @section = @report.ai_report_sections.find(params[:id])
+    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
+    @section = @report.ai_report_sections.find(params[:id])
 
-  user_prompt = params[:prompt]
-  current_content = params[:current_content]
-  section_type = params[:section_type]
-  web_search_enabled = params[:web_search_enabled] == true || params[:web_search_enabled] == 'true'
-  
-  Rails.logger.info "=== Regenerate Request ==="
-  Rails.logger.info "Section: #{section_type}"
-  Rails.logger.info "Web search: #{web_search_enabled}"
+    user_prompt = params[:prompt]
+    current_content = params[:current_content]
+    section_type = params[:section_type]
+    web_search_enabled = [true, 'true'].include?(params[:web_search_enabled])
 
-  begin
-    if section_type == "Custom Charts"
-      # Charts logic (unchanged)
-      generator = ChartSectionGenerator.new(report: @report, section: @section)
-      
-      if user_prompt.present?
-        new_chart_html = generator.add_chart_from_prompt(user_prompt: user_prompt)
-        refined_content = current_content + new_chart_html
-      else
-        @section.update(agent_chart_ids: [])
-        refined_content = generator.generate_charts_html
-      end
-      
-      @section.update(content_html: refined_content)
-      
-    else
-      # Text sections
-      agent = SupportAgent.find_or_create_by!(
-        agent_type: 'PortfolioReportAgent',
-        entity_id: @report.analyst.entity_id
-      ) do |a|
-        a.name = 'Portfolio Report Generator'
-        a.enabled = true
-      end
+    Rails.logger.info "=== Regenerate Request ==="
+    Rails.logger.info "Section: #{section_type}"
+    Rails.logger.info "Web search: #{web_search_enabled}"
 
-      action = user_prompt.present? ? 'refine' : 'generate'
+    begin
+      if section_type == "Custom Charts"
+        # Charts logic (unchanged)
+        generator = ChartSectionGenerator.new(report: @report, section: @section)
 
-      result = PortfolioReportAgent.call(
-        support_agent_id: agent.id,
-        target: @section,
-        action: action,
-        document_folder_path: "/tmp/test_documents",
-        current_content: current_content,
-        user_prompt: user_prompt,
-        web_search_enabled: web_search_enabled
-      )
-
-      if result.success?
-        refined_content = result[:generated_content]
-        # Note: Saving is handled by PortfolioReportAgent.save_section step
-        # Reload section to get updated timestamps
-        @section.reload
-
-        # Cache the content for quick toggling within session
-        session_id = session.id.to_s
-        if web_search_enabled
-          SectionContentCache.store(@section.id, session_id, web_content: refined_content)
+        if user_prompt.present?
+          new_chart_html = generator.add_chart_from_prompt(user_prompt: user_prompt)
+          refined_content = current_content + new_chart_html
         else
-          SectionContentCache.store(@section.id, session_id, document_content: refined_content)
+          @section.update(agent_chart_ids: [])
+          refined_content = generator.generate_charts_html
         end
 
-        Rails.logger.info "? Generated #{section_type} (web_search: #{web_search_enabled})"
-      else
-        Rails.logger.error "? Failed #{section_type}"
-        render json: { success: false, error: "Generation failed" }, status: :unprocessable_entity
-        return
-      end
-    end
+        @section.update(content_html: refined_content)
 
-    render json: {
-      success: true,
-      content: refined_content
-    }
-    
-  rescue => e
-    Rails.logger.error "Error: #{e.message}"
-    render json: { success: false, error: e.message }, status: :unprocessable_entity
+      else
+        # Text sections
+        agent = SupportAgent.find_or_create_by!(
+          agent_type: 'PortfolioReportAgent',
+          entity_id: @report.analyst.entity_id
+        ) do |a|
+          a.name = 'Portfolio Report Generator'
+          a.enabled = true
+        end
+
+        action = user_prompt.present? ? 'refine' : 'generate'
+
+        result = PortfolioReportAgent.call(
+          support_agent_id: agent.id,
+          target: @section,
+          action: action,
+          document_folder_path: "/tmp/test_documents",
+          current_content: current_content,
+          user_prompt: user_prompt,
+          web_search_enabled: web_search_enabled
+        )
+
+        if result.success?
+          refined_content = result[:generated_content]
+          # NOTE: Saving is handled by PortfolioReportAgent.save_section step
+          # Reload section to get updated timestamps
+          @section.reload
+
+          # Cache the content for quick toggling within session
+          session_id = session.id.to_s
+          if web_search_enabled
+            SectionContentCache.store(@section.id, session_id, web_content: refined_content)
+          else
+            SectionContentCache.store(@section.id, session_id, document_content: refined_content)
+          end
+
+          Rails.logger.info "? Generated #{section_type} (web_search: #{web_search_enabled})"
+        else
+          Rails.logger.error "? Failed #{section_type}"
+          render json: { success: false, error: "Generation failed" }, status: :unprocessable_entity
+          return
+        end
+      end
+
+      render json: {
+        success: true,
+        content: refined_content
+      }
+    rescue StandardError => e
+      Rails.logger.error "Error: #{e.message}"
+      render json: { success: false, error: e.message }, status: :unprocessable_entity
+    end
   end
-end
 end

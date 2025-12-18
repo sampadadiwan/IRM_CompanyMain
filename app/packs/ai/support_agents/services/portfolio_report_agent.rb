@@ -80,7 +80,7 @@ class PortfolioReportAgent < SupportAgentService
     report = section.ai_portfolio_report
     company_name = report.portfolio_company&.name
 
-    return true unless company_name.present?
+    return true if company_name.blank?
 
     Rails.logger.info "[PortfolioReportAgent] Web search enabled - searching for #{company_name}"
 
@@ -581,7 +581,7 @@ class PortfolioReportAgent < SupportAgentService
         }
 
         break if documents.count >= 10
-      rescue StandardError => e
+      rescue StandardError
         Rails.logger.warn "[PortfolioReportAgent] Could not extract: #{file_path}"
       end
     end
@@ -631,7 +631,7 @@ class PortfolioReportAgent < SupportAgentService
       # Get all rows from the sheet
       rows = []
       sheet.each_row_streaming(pad_cells: true, max_rows: 100) do |row|
-        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
+        row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
         rows << row_values.join(" | ") if row_values.any?
       end
 
@@ -669,7 +669,7 @@ class PortfolioReportAgent < SupportAgentService
         doc.remove_namespaces!
 
         # Extract all text content from the slide
-        texts = doc.xpath('//t').map(&:text).reject(&:blank?)
+        texts = doc.xpath('//t').map(&:text).compact_blank
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number}: #{texts.count} text elements"
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number} text: #{texts.first(5).join(' | ')}" if texts.any?
@@ -691,7 +691,7 @@ class PortfolioReportAgent < SupportAgentService
 
         # Extract series names and values from charts
         chart_data = extract_chart_data(chart_doc)
-        next unless chart_data.present?
+        next if chart_data.blank?
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1}: #{chart_data.length} chars extracted"
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1} preview: #{chart_data[0..200]}"

@@ -13,42 +13,42 @@ class PortfolioChartAgentService
   end
 
   def build_system_msg
-  <<~SYS
-    You are a Chart.js config generator.
-    TASK: Output ONLY a single JSON object representing a valid Chart.js config:
-      {
-        "type": "<one of: #{ALLOWED_TYPES.join(', ')}>",
-        "data": {
-          "labels": [<strings or numbers>],
-          "datasets": [
-            {
-              "label": "<name>",
-              "data": [<numbers>],
-              "backgroundColor": [<array of colors for pie/bar> or <single color for line>],
-              "borderColor": "<color>",
-              "borderWidth": 2,
-              "fill": false
-            }
-          ]
-        },
-        "options": { }
-      }
-    RULES:
-    - No markdown, no code fences, no commentary - just JSON.
-    - IMPORTANT: Always use LIGHT, PASTEL colors - NOT dark saturated colors
-    - For pie/doughnut charts: Use array of light pastel colors like ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74"]
-    - For bar charts: Use array of light colors like ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74"]
-    - For line charts: Use borderColor like "#60A5FA" and backgroundColor "rgba(96, 165, 250, 0.15)"
-    - Use these LIGHT color palettes (prefer Pastel):
-      * Pastel (PREFERRED): ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74", "#C4B5FD", "#FCA5A5"]
-      * Soft Blue-Green: ["#7DD3FC", "#67E8F9", "#5EEAD4", "#6EE7B7", "#86EFAC", "#A3E635"]
-      * Warm Pastels: ["#FECACA", "#FED7AA", "#FDE68A", "#FEF08A", "#D9F99D", "#BBF7D0"]
-      * Cool Pastels: ["#BFDBFE", "#C7D2FE", "#DDD6FE", "#F5D0FE", "#FBCFE8", "#FECDD3"]
-    - If CSV files are provided, use them as primary data; if JSON is provided, merge it sensibly.
-    - Ensure arrays are equal length where required by Chart.js.
-    - Prefer sensible defaults; do not invent extra fields not in Chart.js.
-  SYS
-end
+    <<~SYS
+      You are a Chart.js config generator.
+      TASK: Output ONLY a single JSON object representing a valid Chart.js config:
+        {
+          "type": "<one of: #{ALLOWED_TYPES.join(', ')}>",
+          "data": {
+            "labels": [<strings or numbers>],
+            "datasets": [
+              {
+                "label": "<name>",
+                "data": [<numbers>],
+                "backgroundColor": [<array of colors for pie/bar> or <single color for line>],
+                "borderColor": "<color>",
+                "borderWidth": 2,
+                "fill": false
+              }
+            ]
+          },
+          "options": { }
+        }
+      RULES:
+      - No markdown, no code fences, no commentary - just JSON.
+      - IMPORTANT: Always use LIGHT, PASTEL colors - NOT dark saturated colors
+      - For pie/doughnut charts: Use array of light pastel colors like ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74"]
+      - For bar charts: Use array of light colors like ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74"]
+      - For line charts: Use borderColor like "#60A5FA" and backgroundColor "rgba(96, 165, 250, 0.15)"
+      - Use these LIGHT color palettes (prefer Pastel):
+        * Pastel (PREFERRED): ["#93C5FD", "#A5B4FC", "#F9A8D4", "#FCD34D", "#6EE7B7", "#FDBA74", "#C4B5FD", "#FCA5A5"]
+        * Soft Blue-Green: ["#7DD3FC", "#67E8F9", "#5EEAD4", "#6EE7B7", "#86EFAC", "#A3E635"]
+        * Warm Pastels: ["#FECACA", "#FED7AA", "#FDE68A", "#FEF08A", "#D9F99D", "#BBF7D0"]
+        * Cool Pastels: ["#BFDBFE", "#C7D2FE", "#DDD6FE", "#F5D0FE", "#FBCFE8", "#FECDD3"]
+      - If CSV files are provided, use them as primary data; if JSON is provided, merge it sensibly.
+      - Ensure arrays are equal length where required by Chart.js.
+      - Prefer sensible defaults; do not invent extra fields not in Chart.js.
+    SYS
+  end
 
   def build_user_msg(prompt)
     <<~USER

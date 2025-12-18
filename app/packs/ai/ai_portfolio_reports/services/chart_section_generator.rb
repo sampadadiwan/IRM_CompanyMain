@@ -302,11 +302,11 @@ class ChartSectionGenerator
 
       rows = []
       sheet.each_row_streaming(pad_cells: true, max_rows: 20) do |row|
-        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
+        row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
         rows << row_values.join(" | ") if row_values.any?
       end
 
-      preview += rows.join("\n") + "\n"
+      preview += "#{rows.join("\n")}\n"
     end
 
     preview
@@ -356,7 +356,7 @@ class ChartSectionGenerator
     preview = "=== Data from: #{filename} ===\n"
     rows = CSV.read(file_path, headers: false).first(20)
     rows.each do |row|
-      preview += row.compact.join(" | ") + "\n"
+      preview += "#{row.compact.join(' | ')}\n"
     end
 
     preview
@@ -407,7 +407,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] LLM generated prompts: #{prompts.inspect}"
 
-    prompts.is_a?(Array) && prompts.length > 0 ? prompts : default_chart_prompts
+    prompts.is_a?(Array) && prompts.length.positive? ? prompts : default_chart_prompts
   rescue StandardError => e
     Rails.logger.error "[ChartSectionGenerator] Error generating prompts: #{e.message}"
     default_chart_prompts

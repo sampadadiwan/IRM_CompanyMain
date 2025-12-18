@@ -4,9 +4,6 @@ class AiPortfolioReport < ApplicationRecord
   has_many :ai_report_sections, dependent: :destroy
   has_many :ai_chat_sessions, dependent: :destroy
 
-  validates :portfolio_company_id, presence: true
-  validates :analyst_id, presence: true
-
   enum :status, {
     draft: 'draft',
     in_review: 'in_review',
@@ -38,7 +35,7 @@ class AiPortfolioReport < ApplicationRecord
     "Negative News",
     "AML/KYB Check",
     "Investment Ask"
-  ]
+  ].freeze
 
   # Sections that benefit from web search (current external information)
   WEB_SEARCH_DEFAULT_SECTIONS = [
@@ -53,7 +50,7 @@ class AiPortfolioReport < ApplicationRecord
     "Key Risks",
     "Operational Red Flags",
     "Negative News"
-  ]
+  ].freeze
 
   private
 

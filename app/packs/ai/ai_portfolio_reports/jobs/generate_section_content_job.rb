@@ -1,7 +1,7 @@
 class GenerateSectionContentJob < ApplicationJob
   queue_as :default
 
-  DOCUMENT_FOLDER_PATH = "/tmp/test_documents"
+  DOCUMENT_FOLDER_PATH = "/tmp/test_documents".freeze
 
   def perform(report_id)
     report = AiPortfolioReport.find(report_id)
@@ -112,7 +112,7 @@ class GenerateSectionContentJob < ApplicationJob
 
       rows = []
       sheet.each_row_streaming(pad_cells: true, max_rows: 100) do |row|
-        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
+        row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
         rows << row_values.join(" | ") if row_values.any?
       end
 
@@ -143,7 +143,7 @@ class GenerateSectionContentJob < ApplicationJob
         doc = Nokogiri::XML(content)
         doc.remove_namespaces!
 
-        texts = doc.xpath('//t').map(&:text).reject(&:blank?)
+        texts = doc.xpath('//t').map(&:text).compact_blank
         if texts.any?
           text_parts << "=== Slide #{slide_number} ==="
           text_parts << texts.join("\n")
