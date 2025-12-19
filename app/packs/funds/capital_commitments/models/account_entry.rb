@@ -94,6 +94,7 @@ class AccountEntry < ApplicationRecord
 
   validates :name, :reporting_date, :entry_type, presence: true
   validates :name, length: { maximum: 125 }
+  validates :entry_type, length: { maximum: 60 }
   validates :name,
             uniqueness: { scope: %i[fund_id capital_commitment_id parent_id parent_type entry_type reporting_date cumulative amount_cents ref_id deleted_at],
                           message: "Duplicate Account Entry for reporting date" }

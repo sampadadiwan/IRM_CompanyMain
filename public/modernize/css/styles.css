@@ -24460,8 +24460,8 @@ body .select2-container--classic .select2-selection--single .select2-selection__
 body .select2-container--classic .select2-selection--single .select2-selection__rendered {
   border-color: var(--bs-border-color);
   color: var(--bs-body-color);
-  height: 40px;
-  line-height: 40px;
+  /* height: 40px;
+  line-height: 40px; */
 }
 body .select2-container--default .select2-selection--multiple {
   line-height: 27px;

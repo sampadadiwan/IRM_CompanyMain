@@ -1,3 +1,8 @@
+V9.1.60
+#####################################
+771c Added Tracking amounts to addition columns for commitments
+e5c47442a Added release notes
+
 V9.1.59
 #####################################
 ee47fb828 Fix migration: check if column exists before removing (#1141)

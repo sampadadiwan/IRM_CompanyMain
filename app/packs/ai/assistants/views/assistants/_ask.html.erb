@@ -1,15 +1,37 @@
+<%
+  show_card = false
+  if defined?(msg)
+    show_card = (msg.role == "user" || (msg.role == "assistant" && msg.content.present?))
+  else
+    show_card = true # Always show card for live queries as it contains the user's question at minimum
+  end
+%>
+<% if show_card %>
 <div class="card border-0 shadow-sm mb-3">
   <div class="card-body p-4">
-    <div class="small text-muted mb-2">You asked</div>
-    <div class="fw-semibold mb-3"><%= h(query) %></div>
+    <% if defined?(msg) %>
+      <% if msg.role == "user" %>
+        <div class="small text-muted mb-2">You asked</div>
+        <div class="fw-semibold mb-3"><%= h(msg.content) %></div>
+        <hr class="my-3">
+      <% elsif msg.role == "assistant" && msg.content.present? %>
+        <div class="small text-muted mb-2">Assistant</div>
+        <div class="prose">
+          <%= markdown_to_html(msg.content) %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="small text-muted mb-2">You asked</div>
+      <div class="fw-semibold mb-3"><%= h(query) %></div>
+      <hr class="my-3">
 
-    <hr class="my-3">
-
-    <div class="small text-muted mb-2">Assistant</div>
-
-    <!-- IMPORTANT: Only do this if assistant_html is already sanitized/trusted -->
-    <div class="prose">
-      <%= response ? markdown_to_html(response.content) : "Unknown response" %>
-    </div>
+      <% if response&.content.present? %>
+        <div class="small text-muted mb-2">Assistant</div>
+        <div class="prose">
+          <%= markdown_to_html(response.content) %>
+        </div>
+      <% end %>
+    <% end %>
   </div>
 </div>
+<% end %>

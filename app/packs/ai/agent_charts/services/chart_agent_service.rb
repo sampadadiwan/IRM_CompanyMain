@@ -34,8 +34,9 @@ class ChartAgentService
 
       STRICT RULES:
       - Output ONLY raw JSON. No markdown, no comments, no code fences, no explanation.
-      - JSON must be syntactically valid and self-contained.
+      - JSON must be syntactically valid and self-contained (e.g., ensure all colons and brackets are correctly placed).
       - Use ONLY Chart.js v4 fields. Do NOT add any fields not recognized by Chart.js.
+      - CRITICAL: Ensure every dataset has a "data" key. Dataset format: {"label": "...", "data": [...]}.
       - DO NOT add tooltip callbacks, plugin definitions, scales configuration, or extra options unless explicitly requested in the user prompt.
       - If tooltip callbacks ARE requested, ALL of them must be valid functions inside `options.plugins.tooltip.callbacks` and NEVER strings, numbers, arrays, objects, or null.
       - NEVER generate a callback unless it is explicitly requested; omit the entire tooltip block otherwise.
@@ -71,7 +72,7 @@ class ChartAgentService
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
   def generate_chart!(prompt:)
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    chat = RubyLLM.chat(model: 'gemini-2.5-flash')
 
     # Build the system message with instructions
     system_msg = build_system_msg

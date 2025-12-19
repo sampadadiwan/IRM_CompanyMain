@@ -36,3 +36,8 @@ resources :ai_portfolio_reports do
 
   resources :ai_chat_messages, only: [:create]
 end
+
+resources :assistants, only: [:show] do
+  post :ask, on: :collection
+  post :transcribe, on: :collection
+end

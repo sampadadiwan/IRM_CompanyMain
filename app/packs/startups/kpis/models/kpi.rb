@@ -39,6 +39,11 @@ class Kpi < ApplicationRecord
   scope :as_of,      ->(date) { joins(:kpi_report).where('kpi_reports.as_of': date) }
   scope :show_in_report, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { show_in_report: true }) }
 
+  scope :monthly, -> { joins(:kpi_report).where(kpi_reports: { period: 'month' }) }
+  scope :quarterly, -> { joins(:kpi_report).where(kpi_reports: { period: 'quarter' }) }
+  scope :yearly, -> { joins(:kpi_report).where(kpi_reports: { period: 'year' }) }
+  scope :ytd, -> { joins(:kpi_report).where(kpi_reports: { period: 'ytd' }) }
+
   # --- Scopes needing joins -------------------------------------------
   # Attach the parent report so date filters hit SQL, not Ruby.
   scope :with_report, -> { joins(:kpi_report) }

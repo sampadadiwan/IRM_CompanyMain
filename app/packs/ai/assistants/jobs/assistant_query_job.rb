@@ -6,10 +6,17 @@ class AssistantQueryJob < ApplicationJob
   # @param user_id [Integer]
   # @param request_id [String] client-generated id used to target a turbo-frame in the DOM
   # @param query [String]
-  def perform(user_id, request_id, query)
+  def perform(user_id, request_id, query, assistant_type = 'fund')
     user = User.find(user_id)
 
-    response = FundAssistant.new(user: user).run(query)
+    assistant = case assistant_type.to_s
+                when 'portfolio_company'
+                  PortfolioCompanyAssistant.new(user: user)
+                else
+                  FundAssistant.new(user: user)
+                end
+
+    response = assistant.run(query)
 
     Turbo::StreamsChannel.broadcast_replace_to(
       [user, "assistant"],

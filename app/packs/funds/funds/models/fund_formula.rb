@@ -36,7 +36,8 @@ class FundFormula < ApplicationRecord
   scope :reporting, -> { where(rule_for: "Reporting") }
   scope :without_ai_description, -> { where(ai_description: [nil, ""]) }
 
-  validates :rule_type, :entry_type, length: { maximum: 50 }
+  validates :rule_type, length: { maximum: 50 }
+  validates :entry_type, length: { maximum: 60 }
   validates :name, length: { maximum: 125 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }

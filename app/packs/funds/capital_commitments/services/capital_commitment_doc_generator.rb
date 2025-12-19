@@ -37,7 +37,8 @@ class CapitalCommitmentDocGenerator
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       capital_commitment: TemplateDecorator.decorate(capital_commitment),
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
-      fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting)
+      fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting),
+      capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.verified.order(:created_at))
     }
 
     # Can we have more than one LP signer ?

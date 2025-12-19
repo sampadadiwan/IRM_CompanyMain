@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "responses", "spinner", "micBtn", "hint", "welcome"]
+  static targets = ["input", "responses", "spinner", "micBtn", "hint", "welcome", "assistantType", "chatInterface"]
 
   connect() {
     this.mediaRecorder = null
@@ -34,6 +34,7 @@ export default class extends Controller {
 
   async sendText() {
     const query = (this.inputTarget.value || "").trim()
+    const assistant_type = this.hasAssistantTypeTarget ? this.assistantTypeTarget.value : 'fund'
     if (!query) return
 
     // UI Updates
@@ -45,7 +46,7 @@ export default class extends Controller {
     this.scrollToBottom()
 
     try {
-      const html = await this.postForm("/assistants/ask", { query })
+      const html = await this.postForm("/assistants/ask", { query, assistant_type })
       this.appendAssistantResponse(html)
     } catch (err) {
       console.error(err)
@@ -124,6 +125,8 @@ export default class extends Controller {
         const file = new File([blob], "voice.webm", { type: blob.type })
         const formData = new FormData()
         formData.append("audio", file)
+        const assistant_type = this.hasAssistantTypeTarget ? this.assistantTypeTarget.value : 'fund'
+        formData.append("assistant_type", assistant_type)
 
         this.hideWelcome()
         // Optionally append a placeholder like "🎤 Audio message..." if you want immediate feedback
@@ -218,36 +221,24 @@ export default class extends Controller {
   }
 
   appendAssistantResponse(htmlContent) {
-    // Wrap the response in a container if needed, or assume backend returns a nice partial.
-    // Assuming backend returns just the content, let's wrap it in a bubble style on the client side
-    // OR just append it if the backend partial already has the styling.
-    // Based on the file context, it seems the backend returns HTML.
-    // Let's assume the backend return needs to be wrapped or is a full partial.
-    // To be safe with the new design, I'll wrap it in a left-aligned bubble container.
+    // We append the raw HTML content because the backend partial (assistants/_ask_frame)
+    // already provides the necessary structure and styling, or targets a specific Turbo Frame.
+    this.responsesTarget.insertAdjacentHTML("beforeend", htmlContent)
+    this.removeDuplicateResponses()
+  }
 
-    const wrapper = `
-      <div class="d-flex justify-content-start mb-3">
-        <div class="bg-light text-dark rounded-4 py-3 px-3 shadow-sm" style="max-width: 85%; border-bottom-left-radius: 4px !important;">
-          ${htmlContent}
-        </div>
-      </div>
-    `
-    // Note: If the backend returns a Turbo Stream or a full block, this might double wrap.
-    // If the previous code was `this.responsesTarget.insertAdjacentHTML("afterbegin", html)`,
-    // it implies the backend returns a stand-alone block.
-    // However, a standard "chat" appends to the bottom ("beforeend").
-    // I will use "beforeend" now instead of "afterbegin" to maintain chronological order.
+  // Prevents duplicate assistant responses by checking if a Turbo Frame with the same ID already exists
+  removeDuplicateResponses() {
+    const responses = this.responsesTarget.querySelectorAll('[id^="assistant_response_"]')
+    const seenIds = new Set()
 
-    // For now, I will append the raw HTML. If it looks bad, I might need to adjust the backend partial too.
-    // But since I can't see the backend partial, I will try to make the container generic.
-
-    // Actually, looking at the previous code: `this.responsesTarget.insertAdjacentHTML("afterbegin", html)`
-    // It was prepending. Chat usually appends. I changed the UI to be a feed, so appending makes more sense.
-
-    // Let's trust the backend returns *something* renderable.
-    // I'll wrap it to ensure it looks like a message from the bot.
-
-    this.responsesTarget.insertAdjacentHTML("beforeend", wrapper)
+    responses.forEach(el => {
+      if (seenIds.has(el.id)) {
+        el.remove()
+      } else {
+        seenIds.add(el.id)
+      }
+    })
   }
 
   appendErrorMessage(msg) {

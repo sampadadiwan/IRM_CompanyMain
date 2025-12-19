@@ -8,11 +8,13 @@ export default class extends Controller {
     }
 
     initialize() {
-        let validateFields = this.validateFields;
-        let validateSection = this.validateSection;
+        console.log("WizardController: initialize called");
+        let validateFields = this.validateFields.bind(this);
+        let validateSection = this.validateSection.bind(this);
 
         let submitBtn = $(".wizard_form").find("input[type='submit']");
-        submitBtn.click(function (e) {
+        submitBtn.off("click").on("click", function (e) {
+            console.log("WizardController: submitBtn clicked");
             validateSection(this, validateFields);
         });
 
@@ -22,8 +24,9 @@ export default class extends Controller {
 
         allWells.hide();
 
-        navListItems.click(function (e) {
+        navListItems.off("click").on("click", function (e) {
             e.preventDefault();
+            console.log("WizardController: navListItem clicked", $(this).attr('href'));
             var $target = $($(this).attr('href')),
                 $item = $(this);
 
@@ -36,7 +39,8 @@ export default class extends Controller {
             }
         });
 
-        allNextBtn.click(function () {
+        allNextBtn.off("click").on("click", function () {
+            console.log("WizardController: nextBtn clicked");
             validateSection(this, validateFields);
         });
 
@@ -44,6 +48,7 @@ export default class extends Controller {
     }
 
     validateSection(elem, validateFields) {
+        console.log("WizardController: validateSection called", elem);
         $(".wizard_form").enableClientSideValidations();
         $(".wizard_form").removeAttr("novalidate");
 
@@ -81,8 +86,48 @@ export default class extends Controller {
             }
         }
 
-        if (isValid)
+        console.log("WizardController: isValid =", isValid);
+        if (isValid) {
             nextStepWizard.removeClass('disabled').trigger('click');
+        } else {
+            this.showErrorModal("Please correct the errors on the form before proceeding.");
+        }
+    }
+
+    showErrorModal(message) {
+        console.log("WizardController: showErrorModal called", message);
+        // Check if modal already exists and is shown
+        if ($('#validationErrorModal').hasClass('show')) {
+            console.log("WizardController: modal already showing, skipping");
+            return;
+        }
+
+        // Remove any existing modals to avoid stacking them
+        $('#validationErrorModal').remove();
+
+        const modalElement = `
+            <div class="modal fade" id="validationErrorModal" tabindex="-1" aria-labelledby="validationErrorModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="validationErrorModalLabel">Validation Error</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${message}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modalElement);
+
+        const modal = new bootstrap.Modal(document.getElementById('validationErrorModal'));
+        modal.show();
     }
 
 

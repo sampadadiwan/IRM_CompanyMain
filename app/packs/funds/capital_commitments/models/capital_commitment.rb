@@ -28,9 +28,9 @@ class CapitalCommitment < ApplicationRecord
 
   ADDITIONAL_COLUMNS = {
     "Tracking Committed" => "tracking_committed_amount",
-    "Tracking Called" => "tracking_call_amount",
     "Tracking Collected" => "tracking_collected_amount",
-    "Tracking Distributed" => "tracking_distribution_amount"
+    "Tracking Distributed" => "tracking_distribution_amount",
+    "Tracking Adjusted" => "tracking_adjustment_amount"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %w[investor_kyc investor].freeze
@@ -91,7 +91,7 @@ class CapitalCommitment < ApplicationRecord
 
   counter_culture :fund
 
-  monetize :tracking_committed_amount_cents, :tracking_orig_committed_amount_cents,
+  monetize :tracking_committed_amount_cents, :tracking_orig_committed_amount_cents, :tracking_adjustment_amount_cents,
            :tracking_distribution_amount_cents, :tracking_collected_amount_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
