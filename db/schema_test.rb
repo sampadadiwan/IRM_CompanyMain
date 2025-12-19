@@ -44,7 +44,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_161645) do
     t.string "folio_id", limit: 40
     t.date "reporting_date", null: false
     t.string "entry_type", limit: 60
-    t.string "name", limit: 125
+    # Very important to have this NOCASE, else tests start failing
+    t.string "name", limit: 125, collation: "NOCASE"
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.text "notes"
     t.datetime "created_at", null: false
