@@ -93,6 +93,7 @@ class AiReportSectionsController < ApplicationController
     render json: { success: true, content: @section.content_html }
   end
 
+  # rubocop:disable Metrics/MethodLength
   def regenerate
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -174,4 +175,5 @@ class AiReportSectionsController < ApplicationController
       render json: { success: false, error: e.message }, status: :unprocessable_entity
     end
   end
+  # rubocop:enable Metrics/MethodLength
 end
