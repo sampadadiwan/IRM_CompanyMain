@@ -80,7 +80,7 @@ class PortfolioReportAgent < SupportAgentService
     report = section.ai_portfolio_report
     company_name = report.portfolio_company&.name
 
-    return true if company_name.blank?
+    return true unless company_name.present?
 
     Rails.logger.info "[PortfolioReportAgent] Web search enabled - searching for #{company_name}"
 
@@ -186,22 +186,29 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Full prompt length: #{prompt.length}"
     Rails.logger.info "[PortfolioReportAgent] Full prompt (first 2000 chars): #{prompt[0..2000].inspect}"
 
-    # Call LLM
-    api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    raise "OpenAI API key not found" unless api_key
+    # # Call LLM
+    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+    # raise "OpenAI API key not found" unless api_key
 
-    llm = Langchain::LLM::OpenAI.new(
-      api_key: api_key,
-      default_options: {
-        chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-        temperature: 0.3
-      }
-    )
+    # llm = Langchain::LLM::OpenAI.new(
+    #   api_key: api_key,
+    #   default_options: {
+    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
+    #     temperature: 0.3
+    #   }
+    # )
 
+    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
+
+    # response = llm.complete(prompt: prompt)
+    # content = clean_llm_output(response.completion)
+
+    # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
 
-    response = llm.complete(prompt: prompt)
-    content = clean_llm_output(response.completion)
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    response = chat.ask(prompt)
+    content = clean_llm_output(response.content)
 
     ctx[:generated_content] = content
 
@@ -238,22 +245,29 @@ class PortfolioReportAgent < SupportAgentService
       web_search_enabled: web_search_enabled
     )
 
-    # Call LLM
-    api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    raise "OpenAI API key not found" unless api_key
+    # # Call LLM
+    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+    # raise "OpenAI API key not found" unless api_key
 
-    llm = Langchain::LLM::OpenAI.new(
-      api_key: api_key,
-      default_options: {
-        chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-        temperature: 0.7
-      }
-    )
+    # llm = Langchain::LLM::OpenAI.new(
+    #   api_key: api_key,
+    #   default_options: {
+    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
+    #     temperature: 0.7
+    #   }
+    # )
 
+    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+
+    # response = llm.complete(prompt: prompt)
+    # content = clean_llm_output(response.completion)
+    #
+    # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
 
-    response = llm.complete(prompt: prompt)
-    content = clean_llm_output(response.completion)
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    response = chat.ask(prompt)
+    content = clean_llm_output(response.content)
 
     ctx[:generated_content] = content
 
@@ -475,7 +489,8 @@ class PortfolioReportAgent < SupportAgentService
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
 
-      Company: #{company_name}
+      Company name must be inferred from documents if present
+
       Report Date: #{report_date}
 
       #{"AVAILABLE DOCUMENTS:\n#{documents}\n" if documents.present?}
@@ -494,6 +509,10 @@ class PortfolioReportAgent < SupportAgentService
       - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
       - Start directly with HTML tags (e.g., <h2>Section Title</h2>)
       - End with closing HTML tags (no extra text after)
+      - If documents are provided, DO NOT rely on any externally provided company name
+      - Identify and use the company name ONLY if explicitly mentioned in the documents
+      - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
+      - If no company name is mentioned, use "Company (name not specified in documents)"
 
       INSTRUCTIONS:
       1. Write in professional, analytical tone
@@ -522,7 +541,7 @@ class PortfolioReportAgent < SupportAgentService
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
 
-      Company: #{company_name}
+      Company name must be inferred from documents if present
 
       CURRENT CONTENT (HTML):
       #{current_content}
@@ -551,6 +570,11 @@ class PortfolioReportAgent < SupportAgentService
             - DO NOT add any facts, figures, or claims not found in documents
             - DO NOT use your general knowledge about the company or industry
             - If user requests information not in documents, state "Information not available in provided documents"
+            - If documents are provided, DO NOT rely on any externally provided company name
+            - Identify and use the company name ONLY if explicitly mentioned in the documents
+            - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
+            - If no company name is mentioned, use "Company (name not specified in documents)"
+
           DOC_RULES
         end}
       #{'- You may also incorporate facts from the web search results provided above' if web_search.present?}
@@ -581,7 +605,7 @@ class PortfolioReportAgent < SupportAgentService
         }
 
         break if documents.count >= 10
-      rescue StandardError
+      rescue StandardError => e
         Rails.logger.warn "[PortfolioReportAgent] Could not extract: #{file_path}"
       end
     end
@@ -631,7 +655,7 @@ class PortfolioReportAgent < SupportAgentService
       # Get all rows from the sheet
       rows = []
       sheet.each_row_streaming(pad_cells: true, max_rows: 100) do |row|
-        row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
+        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
         rows << row_values.join(" | ") if row_values.any?
       end
 
@@ -669,7 +693,7 @@ class PortfolioReportAgent < SupportAgentService
         doc.remove_namespaces!
 
         # Extract all text content from the slide
-        texts = doc.xpath('//t').map(&:text).compact_blank
+        texts = doc.xpath('//t').map(&:text).reject(&:blank?)
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number}: #{texts.count} text elements"
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number} text: #{texts.first(5).join(' | ')}" if texts.any?
@@ -691,7 +715,7 @@ class PortfolioReportAgent < SupportAgentService
 
         # Extract series names and values from charts
         chart_data = extract_chart_data(chart_doc)
-        next if chart_data.blank?
+        next unless chart_data.present?
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1}: #{chart_data.length} chars extracted"
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1} preview: #{chart_data[0..200]}"
