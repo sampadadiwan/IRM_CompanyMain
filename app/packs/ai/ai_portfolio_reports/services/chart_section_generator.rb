@@ -84,6 +84,9 @@ class ChartSectionGenerator
 
   # Create a single chart using AgentChart + ChartAgentService
   def create_chart(prompt, document_paths, chart_number)
+    # Normalize prompt if it's a Hash (from Gemini response)
+    prompt = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
+
     chart = AgentChart.create!(
       entity_id: @entity.id,
       title: "Chart #{chart_number}: #{extract_title(prompt)}",
