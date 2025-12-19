@@ -116,7 +116,7 @@
       Cashflows
     </td>
     <td>
-      <% if @fund_ratio.cash_flows.present? %>
+      <% if @fund_ratio.cash_flows.is_a?(Array) %>
 
         <button class="dropdown-item" data-controller="export-xl"
                         data-action="click->export-xl#export"
