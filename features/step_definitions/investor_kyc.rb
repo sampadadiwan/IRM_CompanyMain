@@ -76,6 +76,7 @@ When('I navigate to the new {string} KYC page') do |kyc_type|
 end
 
 Then('I get the error that StakeHolder cant be blank') do
+  click_on("Close")
   expect(page).to have_content("Stakeholder")
   expect(page).to have_content("can't be blank")
 end

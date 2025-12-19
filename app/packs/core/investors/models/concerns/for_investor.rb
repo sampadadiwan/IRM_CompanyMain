@@ -53,9 +53,9 @@ module ForInvestor
     }
 
     scope :for_rm, lambda { |user|
-      join_clause = if instance_methods.include?(:access_rights)
+      join_clause = if method_defined?(:access_rights)
                       Rails.logger.debug { "######## for_rm has access_rights" }
-                      if instance_methods.include?(:investor)
+                      if method_defined?(:investor)
                         Rails.logger.debug { "######## for_rm 1 has :investor" }
                         joins(:access_rights).joins(investor: :rm_mappings)
                       else
@@ -63,7 +63,7 @@ module ForInvestor
                         Rails.logger.debug { "######## for_rm 2 joins entity: :investor" }
                         joins(:access_rights).joins(entity: :investors)
                       end
-                    elsif instance_methods.include?(:investor)
+                    elsif method_defined?(:investor)
                       Rails.logger.debug { "######## for_rm 3 joins investor: :rm_mappings" }
                       joins(investor: :rm_mappings).joins(parent_class_type.name.underscore => :access_rights)
                     else
@@ -72,7 +72,7 @@ module ForInvestor
                     end
 
       # Filter by access rights
-      join_clause = if instance_methods.include?(:investor)
+      join_clause = if method_defined?(:investor)
                       # These are models like offers, interests, commitments etc which have an investor association, and have the access rights which are given in the parent model to the RM. So special treament to join with the rm_mappings table instead of the investors table
                       filter = AccessRight.access_filter_for_rm(user)
                       join_clause.merge(filter).where("rm_mappings.rm_entity_id=?", user.entity_id)
@@ -103,16 +103,16 @@ module ForInvestor
                  AccessRight.access_filter(user)
                end
 
-      join_clause = if instance_methods.include?(:access_rights)
+      join_clause = if method_defined?(:access_rights)
                       Rails.logger.debug { "######## for_investor has access_rights" }
-                      if instance_methods.include?(:investor)
+                      if method_defined?(:investor)
                         Rails.logger.debug { "######## for_investor has :investor" }
                         joins(:access_rights).joins(:investor)
                       else
                         Rails.logger.debug { "######## for_investor has entity: :investor" }
                         joins(:access_rights).joins(entity: :investors)
                       end
-                    elsif instance_methods.include?(:investor)
+                    elsif method_defined?(:investor)
                       Rails.logger.debug { "######## for_investor has :investor" }
                       joins(:investor, parent_class_type.name.underscore => :access_rights)
                     else

@@ -60,7 +60,7 @@ class PortfolioCompanyAssistant
     ).first_or_create!(
       owner: @user, # Default owner to user, can be overridden
       enable_broadcast: false,
-      name: "Portfolio Company Assistant Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}",
+      name: "Portfolio Company Assistant Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
     )
 
     @chat.with_instructions(system_prompt)

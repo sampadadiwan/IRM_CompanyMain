@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { isIP } from "net";
 
 export default class ValidationController extends Controller {
     initialize() {
@@ -68,10 +69,11 @@ export default class ValidationController extends Controller {
 
         for (var i = 0; i < curInputs.length; i++) {
             console.log(`Validating: ${$(curInputs[i]).attr("id")}`);
-            console.log(validators);
+            // console.log(validators);
             let input_type = $(curInputs[i]).attr("type");
             let input_id = $(curInputs[i]).attr("id");
             let jq_input_id = `#${input_id}`;
+            let isInputValid = true;
 
             if (!$(curInputs[i]).hasClass("custom_field") && !$(curInputs[i]).isValid(validators)) {
 
@@ -79,7 +81,11 @@ export default class ValidationController extends Controller {
                 if (input_type == "file") {
                     const resultField = $(curInputs[i]).closest('[data-controller="single-upload"]').find('input[data-single-upload-target="result"]');
                     if (resultField.length > 0 && resultField.val()) {
+                        console.log(`Valid Uppy file upload: ${input_id} ${input_type} 1`);
                         isInputValid = true;
+                    } else {
+                        isInputValid = false;
+                        console.log(`Not valid: ${input_id} ${input_type}`);
                     }
                 }
                 else {
@@ -89,24 +95,30 @@ export default class ValidationController extends Controller {
             } else if ( input_type == "file" || $(curInputs[i]).hasClass("custom_field")) {
                 // Special handling for file inputs created by us using _file.html.erb
                 // And for custom fields which are not under client_side_validations perview
-                let isInputValid = curInputs[i].validity.valid;
+                isInputValid = curInputs[i].validity.valid;
 
                 // For Uppy file uploads, we check the hidden field which stores the uploaded file data
                 if (input_type == "file") {
                     const resultField = $(curInputs[i]).closest('[data-controller="single-upload"]').find('input[data-single-upload-target="result"]');
                     if (resultField.length > 0 && resultField.val()) {
+                        console.log(`Valid Uppy file upload: ${input_id} ${input_type} 2`);
                         isInputValid = true;
+                    } else {
+                        console.log(`Not valid: ${input_id} ${input_type}`);
+                        isInputValid = false;
                     }
                 }
 
-                if(!isInputValid) {
-                    console.log(`Not valid: ${input_id} ${input_type}`);
-                    isValid = false;
-                    $(jq_input_id).closest(".form-group").addClass("field_with_errors");
-                } else {
-                    $(jq_input_id).closest(".form-group").removeClass("field_with_errors");
-                }
             }
+
+            if(!isInputValid) {
+                console.log(`Not valid: ${input_id} ${input_type}`);
+                isValid = false;
+                $(jq_input_id).closest(".form-group").addClass("field_with_errors");
+            } else {
+                $(jq_input_id).closest(".form-group").removeClass("field_with_errors");
+            }
+
 
         }
 
