@@ -206,24 +206,6 @@ class PortfolioCompanyAssistantDataManager
     end
   end
 
-  # Lists portfolio report extracts for a portfolio company.
-  def list_portfolio_report_extracts(portfolio_company_id:, query: {}, sort: nil)
-    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
-    return [] unless company
-
-    ransack_query = query || {}
-    ransack_query[:s] ||= sort if sort.present?
-
-    extracts = company.portfolio_report_extracts.ransack(ransack_query).result
-    extracts.map do |e|
-      {
-        id: e.id,
-        report_date: e.report_date,
-        content: e.content,
-        category: e.category
-      }
-    end
-  end
 
   # Lists fund ratios.
   #
@@ -266,7 +248,9 @@ class PortfolioCompanyAssistantDataManager
 
     # Documents are often associated through WithFolder or specific polymorphic associations
     # Assuming documents can be found via the company's entity or specific document relation
-    relation = Pundit.policy_scope(@user, Document).where(owner: company)
+    relation = Pundit.policy_scope(@user, Document).where(owner: company).or(
+      Pundit.policy_scope(@user, Document).where(owner: company.portfolio_kpi_reports)
+    )
     relation = relation.send(scope) if scope.present? && Document.respond_to?(scope)
     documents = relation.ransack(ransack_query).result
 
@@ -279,19 +263,65 @@ class PortfolioCompanyAssistantDataManager
         owner_tag: d.owner_tag,
         created_at: (I18n.l(d.created_at) if d.created_at),
         belongs_to: d.owner_type,
-        from_template: d.from_template&.name,
-        download_allowed: d.download,
-        embed_allowed: d.embed,
-        printing_allowed: d.printing,
-        original_allowed: d.orignal,
-        public_visibility: d.public_visibility,
-        send_email_allowed: d.send_email,
-        uploaded_by: "#{d.user&.full_name} (#{d.user&.email})",
         details: d.text,
         esign_status: d.esign_status&.titleize,
         esign_on_page: d.display_on_page&.titleize,
-        esign_order_forced: d.force_esign_order
+        esign_order_forced: d.force_esign_order,
+        file_url: d.file.url
       }
     end
+  end
+
+  # Gets details and text for a specific document.
+  def get_document(document_id: nil, name: nil)
+    scope = Pundit.policy_scope(@user, Document)
+    document = if document_id.present?
+                 scope.find_by(id: document_id)
+               elsif name.present?
+                 # Try exact match first, then partial match
+                 scope.find_by(name: name) || scope.where("name LIKE ?", "%#{name}%").first
+               end
+
+    return "Document not found or access denied" unless document
+
+    {
+      id: document.id,
+      name: document.name,
+      folder: document.folder&.full_path,
+      tags: document.tag_list,
+      owner_tag: document.owner_tag,
+      created_at: (I18n.l(document.created_at) if document.created_at),
+      belongs_to: document.owner_type,
+      owner_name: (document.owner&.respond_to?(:name) ? document.owner.name : document.owner&.to_s),
+      file_url: document.file.url,
+    }
+  end
+
+  # Analyzes documents using RubyLLM and their file_urls.
+  def analyze_documents(prompt:, document_ids: [], document_names: [])
+    scope = Pundit.policy_scope(@user, Document)
+    documents = []
+
+    if document_ids.present?
+      documents += scope.where(id: document_ids).to_a
+    end
+
+    if document_names.present?
+      document_names.each do |name|
+        doc = scope.find_by(name: name) || scope.where("name LIKE ?", "%#{name}%").first
+        documents << doc if doc
+      end
+    end
+
+    documents.uniq!
+
+    return "No documents found to analyze." if documents.empty?
+
+    # Prepare file URLs for RubyLLM
+    file_urls = documents.map { |d| d.file.url }
+
+    chat = RubyLLM.chat
+    response = chat.ask prompt, with: file_urls
+    response.content
   end
 end

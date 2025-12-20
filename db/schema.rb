@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_18_161645) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_20_152808) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -3293,6 +3293,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_161645) do
     t.json "arguments"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "thought_signature"
     t.index ["message_id"], name: "index_tool_calls_on_message_id"
     t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
   end

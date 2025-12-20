@@ -10,11 +10,25 @@ class AssistantsController < ApplicationController
                           'FundAssistant'
                         end
 
-      @chat = Chat.where(
-        user: current_user,
-        entity_id: current_user.entity_id,
-        assistant_type: assistant_class
-      ).order(created_at: :desc).first
+      if params[:new].present?
+        ActiveRecord::Base.connected_to(role: :writing) do
+          @chat = Chat.create!(
+            user: current_user,
+            entity_id: current_user.entity_id,
+            assistant_type: assistant_class,
+            owner: current_user, # Default owner to user, can be overridden
+            enable_broadcast: false,
+            model_id: PortfolioCompanyAssistant::AI_MODEL,
+            name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+          )
+        end
+      else
+        @chat = Chat.where(
+          user: current_user,
+          entity_id: current_user.entity_id,
+          assistant_type: assistant_class
+        ).order(created_at: :desc).first
+      end
 
       @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc) if @chat
     end

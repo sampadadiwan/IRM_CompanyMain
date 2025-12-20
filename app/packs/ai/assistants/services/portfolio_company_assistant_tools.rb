@@ -115,29 +115,6 @@ module PortfolioCompanyAssistantTools
     end
   end
 
-  # Tool to list portfolio report extracts.
-  class ListPortfolioReportExtracts < RubyLLM::Tool
-    def name = "list_portfolio_report_extracts"
-
-    description "List portfolio report extracts (summaries/highlights) for a portfolio company. " \
-                "Construct a query hash using available attributes and predicates. " \
-                "Attributes: report_date, content, category. " \
-                "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'report_date desc'."
-    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
-    param :query, type: :object, desc: "Ransack query hash, e.g. { content_cont: 'growth' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'report_date desc'. (Maps to Ransack `s`)", required: false
-
-    def initialize(assistant)
-      super()
-      @assistant = assistant
-    end
-
-    def execute(portfolio_company_id:, query: {}, sort: nil)
-      @assistant.list_portfolio_report_extracts(portfolio_company_id: portfolio_company_id, query: query || {}, sort: sort).to_json
-    end
-  end
-
   # Tool to list fund ratios (performance metrics).
   class ListFundRatios < RubyLLM::Tool
     def name = "list_fund_ratios"
@@ -181,6 +158,43 @@ module PortfolioCompanyAssistantTools
 
     def execute(portfolio_company_id:, scope: nil, query: {}, sort: nil)
       @assistant.list_documents(portfolio_company_id: portfolio_company_id, scope: scope, query: query || {}, sort: sort).to_json
+    end
+  end
+
+  # Tool to get details for a specific document.
+  class GetDocument < RubyLLM::Tool
+    def name = "get_document"
+
+    description "Get detailed information and full text content for a specific document by ID or name."
+    param :document_id, type: "integer", desc: "The ID of the document", required: false
+    param :name, type: "string", desc: "The name of the document (can be partial)", required: false
+
+    def initialize(assistant)
+      super()
+      @assistant = assistant
+    end
+
+    def execute(document_id: nil, name: nil)
+      @assistant.get_document(document_id: document_id, name: name).to_json
+    end
+  end
+
+  # Tool to analyze one or more documents using RubyLLM.
+  class AnalyzeDocument < RubyLLM::Tool
+    def name = "analyze_document"
+
+    description "Use this only to analyze documents and nothing else. Analyze one or more documents to answer specific questions or perform extraction. Requires document IDs or names and a natural language prompt."
+    param :document_ids, type: "array", desc: "List of document IDs to analyze", required: false
+    param :document_names, type: "array", desc: "List of document names (can be partial) to analyze", required: false
+    param :prompt, type: "string", desc: "Natural language instructions or question for the analysis", required: true
+
+    def initialize(assistant)
+      super()
+      @assistant = assistant
+    end
+
+    def execute(prompt:, document_ids: [], document_names: [])
+      @assistant.analyze_documents(prompt: prompt, document_ids: document_ids, document_names: document_names).to_json
     end
   end
 
