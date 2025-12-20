@@ -262,7 +262,6 @@ class PortfolioChatAgent < SupportAgentService
   def initialize_langchain_llm
     api_key = Rails.application.credentials["OPENAI_API_KEY"] || ENV.fetch('OPENAI_API_KEY', nil)
 
-
     raise "OpenAI API key not found. Set it in credentials or OPENAI_API_KEY env var" unless api_key
 
     Langchain::LLM::OpenAI.new(

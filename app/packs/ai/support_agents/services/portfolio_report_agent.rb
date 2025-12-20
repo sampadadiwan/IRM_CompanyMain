@@ -81,7 +81,7 @@ class PortfolioReportAgent < SupportAgentService
     report = section.ai_portfolio_report
     company_name = report.portfolio_company&.name
 
-    return true unless company_name.present?
+    return true if company_name.blank?
 
     Rails.logger.info "[PortfolioReportAgent] Web search enabled - searching for #{company_name}"
 
@@ -156,7 +156,6 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Generate section content using LLM
-  # rubocop:disable Metrics/MethodLength
   def generate_section_content(ctx, **)
     section_type = ctx[:section_type]
     template = ctx[:template]
@@ -218,10 +217,8 @@ class PortfolioReportAgent < SupportAgentService
 
     true
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Refine existing content
-  # rubocop:disable Metrics/MethodLength
   def refine_section_content(ctx, **)
     section_type = ctx[:section_type]
     documents = ctx[:documents_context]
@@ -278,7 +275,6 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
     true
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Save section to database
   def save_section(ctx, section:, generated_content:, **)
@@ -490,10 +486,11 @@ class PortfolioReportAgent < SupportAgentService
       length: "1-2 short paragraphs or 3-5 bullet points"
     }
   end
-
   # rubocop:enable Metrics/MethodLength
 
-  def build_generation_prompt(section_type:, template:, documents:, company_name:, report_date:, web_search: "")
+  # rubocop:disable Metrics/MethodLength
+
+  def build_generation_prompt(section_type:, template:, documents:, _company_name:, report_date:, web_search: "")
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
 
@@ -544,9 +541,11 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
   end
 
+  # rubocop:enable Metrics/MethodLength
+
   # Refinement prompt
-  # rubocop:disable Metrics/ParameterLists,  Lint/UnusedMethodArgument
-  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", web_search_enabled: false)
+  # rubocop:disable Metrics/ParameterLists
+  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, _company_name:, web_search: "", _web_search_enabled: false)
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
 
@@ -591,7 +590,8 @@ class PortfolioReportAgent < SupportAgentService
       Refine the content according to the user's request now:
     PROMPT
   end
-  # rubocop:enable Metrics/ParameterLists, Lint/UnusedMethodArgument
+
+  # rubocop:enable Metrics/ParameterLists
 
   # Load documents from folder
   def load_documents_from_folder(folder_path)
@@ -615,7 +615,7 @@ class PortfolioReportAgent < SupportAgentService
         }
 
         break if documents.count >= 10
-      rescue StandardError => e
+      rescue StandardError
         Rails.logger.warn "[PortfolioReportAgent] Could not extract: #{file_path}"
       end
     end
@@ -665,7 +665,7 @@ class PortfolioReportAgent < SupportAgentService
       # Get all rows from the sheet
       rows = []
       sheet.each_row_streaming(pad_cells: true, max_rows: 100) do |row|
-        row_values = row.map { |cell| cell&.value.to_s.strip }.reject(&:blank?)
+        row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
         rows << row_values.join(" | ") if row_values.any?
       end
 
@@ -704,7 +704,7 @@ class PortfolioReportAgent < SupportAgentService
         doc.remove_namespaces!
 
         # Extract all text content from the slide
-        texts = doc.xpath('//t').map(&:text).reject(&:blank?)
+        texts = doc.xpath('//t').map(&:text).compact_blank
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number}: #{texts.count} text elements"
         Rails.logger.info "[PortfolioReportAgent] PPTX Slide #{slide_number} text: #{texts.first(5).join(' | ')}" if texts.any?
@@ -726,7 +726,7 @@ class PortfolioReportAgent < SupportAgentService
 
         # Extract series names and values from charts
         chart_data = extract_chart_data(chart_doc)
-        next unless chart_data.present?
+        next if chart_data.blank?
 
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1}: #{chart_data.length} chars extracted"
         Rails.logger.info "[PortfolioReportAgent] PPTX Chart #{idx + 1} preview: #{chart_data[0..200]}"
@@ -749,6 +749,7 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.error "[PortfolioReportAgent] PPTX Error backtrace: #{e.backtrace.first(5).join("\n")}"
     "Error extracting PPTX: #{e.message}"
   end
+
   # rubocop:enable Metrics/MethodLength
 
   # Extract data from chart XML
