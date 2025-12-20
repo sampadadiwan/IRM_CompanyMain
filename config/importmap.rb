@@ -18,7 +18,6 @@ pin_all_from "app/javascript/channels", under: "channels"
 
 pin "uppy", to: "uppy.min.js"
 
-
 pin "moment" # @2.30.1
 pin "typeahead" # @0.2.2
 pin "dom" # @0.0.2

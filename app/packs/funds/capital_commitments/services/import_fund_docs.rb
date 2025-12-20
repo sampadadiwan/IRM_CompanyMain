@@ -39,7 +39,6 @@ class ImportFundDocs < ImportUtil
 
   def save_fund_doc(user_data, import_upload, _custom_field_headers, context)
     Rails.logger.debug { "Processing fund doc #{user_data}" }
-
     # Prevent duplicate uploads (case-insensitive)
     @docs_added ||= Set.new
     file_name = user_data['File Name']&.strip
@@ -68,7 +67,7 @@ class ImportFundDocs < ImportUtil
       else
         # Check if we need to create a folder
         folder = user_data["Folder"].presence
-        folder = model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create if folder
+        folder = folder ? model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create : model.document_folder
 
         raise "#{user_data['File Name']} does not exist. Check for missing file or extension" unless File.exist?(file_path)
 
