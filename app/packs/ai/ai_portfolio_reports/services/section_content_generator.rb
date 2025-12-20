@@ -1,5 +1,22 @@
 # app/packs/ai/ai_portfolio_reports/services/section_content_generator.rb
 class SectionContentGenerator
+  # Section-specific guidance
+  SECTION_GUIDANCE = {
+    "Company Overview" => "Provide a comprehensive overview including business model, value proposition, and key differentiators.",
+    "Key Products & Services" => "Detail the main products/services, features, target customers, and competitive advantages.",
+    "Financial Snapshot" => "Summarize key financial metrics, revenue trends, profitability, and growth indicators.",
+    "Market Size & Target" => "Analyze total addressable market, target segments, and market opportunity.",
+    "Recent Updates & Developments" => "Highlight recent news, product launches, partnerships, or significant milestones.",
+    "Founders & Shareholders" => "Provide background on founders, key shareholders, and ownership structure.",
+    "SWOT Analysis - Blitz" => "Conduct a SWOT analysis covering Strengths, Weaknesses, Opportunities, and Threats.",
+    "Competition Analysis" => "Analyze key competitors, market positioning, and competitive dynamics.",
+    "Key Risks" => "Identify and assess major risks including market, operational, financial, and regulatory.",
+    "Operational Red Flags" => "Highlight operational concerns or warning signs that merit attention.",
+    "Negative News" => "Summarize any negative press, controversies, or concerns about the company.",
+    "AML/KYB Check" => "Provide AML/KYB compliance status and relevant regulatory findings.",
+    "Investment Ask" => "Detail the investment opportunity, terms, and expected returns."
+  }.freeze
+
   def initialize(report:, section:)
     @report = report
     @section = section
@@ -127,77 +144,58 @@ class SectionContentGenerator
     "<p>#{content}</p>"
   end
 
-  # Section-specific guidance
-  SECTION_GUIDANCE = {
-    "Company Overview" => "Provide a comprehensive overview including business model, value proposition, and key differentiators.",
-    "Key Products & Services" => "Detail the main products/services, features, target customers, and competitive advantages.",
-    "Financial Snapshot" => "Summarize key financial metrics, revenue trends, profitability, and growth indicators.",
-    "Market Size & Target" => "Analyze total addressable market, target segments, and market opportunity.",
-    "Recent Updates & Developments" => "Highlight recent news, product launches, partnerships, or significant milestones.",
-    "Founders & Shareholders" => "Provide background on founders, key shareholders, and ownership structure.",
-    "SWOT Analysis - Blitz" => "Conduct a SWOT analysis covering Strengths, Weaknesses, Opportunities, and Threats.",
-    "Competition Analysis" => "Analyze key competitors, market positioning, and competitive dynamics.",
-    "Key Risks" => "Identify and assess major risks including market, operational, financial, and regulatory.",
-    "Operational Red Flags" => "Highlight operational concerns or warning signs that merit attention.",
-    "Negative News" => "Summarize any negative press, controversies, or concerns about the company.",
-    "AML/KYB Check" => "Provide AML/KYB compliance status and relevant regulatory findings.",
-    "Investment Ask" => "Detail the investment opportunity, terms, and expected returns."
-  }.freeze
-end
+  def refine_content_html(current_content:, user_prompt:)
+    # Find relevant documents
+    document_paths = find_documents
+    document_context = load_documents_content(document_paths)
 
-# Add this new method after generate_content_html
-def refine_content_html(current_content:, user_prompt:)
-  # Find relevant documents
-  document_paths = find_documents
-  document_context = load_documents_content(document_paths)
+    Rails.logger.info "=== Refining Section: #{@section.section_type} ==="
+    Rails.logger.info "Current content length: #{current_content.length}"
+    Rails.logger.info "User prompt: #{user_prompt}"
 
-  Rails.logger.info "=== Refining Section: #{@section.section_type} ==="
-  Rails.logger.info "Current content length: #{current_content.length}"
-  Rails.logger.info "User prompt: #{user_prompt}"
+    # Build refinement prompt
+    prompt = build_refinement_prompt(current_content, user_prompt, document_context)
 
-  # Build refinement prompt
-  prompt = build_refinement_prompt(current_content, user_prompt, document_context)
+    # Call AI to refine content
+    refined_content = call_ai_for_content(prompt)
 
-  # Call AI to refine content
-  refined_content = call_ai_for_content(prompt)
+    # Convert to HTML
+    html_content = convert_to_html(refined_content)
 
-  # Convert to HTML
-  html_content = convert_to_html(refined_content)
+    Rails.logger.info "Refined content length: #{html_content.length}"
 
-  Rails.logger.info "Refined content length: #{html_content.length}"
+    html_content
+  end
 
-  html_content
-end
+  def build_refinement_prompt(current_content, user_prompt, document_context)
+    company_name = @portfolio_company&.name || "Portfolio Company"
+    section_type = @section.section_type
 
-# Add this new method
-def build_refinement_prompt(current_content, user_prompt, document_context)
-  company_name = @portfolio_company&.name || "Portfolio Company"
-  section_type = @section.section_type
+    <<~PROMPT
+      You are a professional investment analyst refining a portfolio company report section.
 
-  <<~PROMPT
-    You are a professional investment analyst refining a portfolio company report section.
+      Company: #{company_name}
+      Section: #{section_type}
 
-    Company: #{company_name}
-    Section: #{section_type}
+      Current Content (HTML):
+      #{current_content}
 
-    Current Content (HTML):
-    #{current_content}
+      User Request: #{user_prompt}
 
-    User Request: #{user_prompt}
+      #{"Available Documents for Reference:\n#{document_context}\n" if document_context.present?}
 
-    #{"Available Documents for Reference:\n#{document_context}\n" if document_context.present?}
+      Task: Refine the current content according to the user's request while:
+      - Maintaining professional quality and HTML formatting
+      - Preserving important information unless asked to remove it
+      - Adding new information if requested
+      - Making it more concise/detailed as requested
+      - Using data from documents if relevant
 
-    Task: Refine the current content according to the user's request while:
-    - Maintaining professional quality and HTML formatting
-    - Preserving important information unless asked to remove it
-    - Adding new information if requested
-    - Making it more concise/detailed as requested
-    - Using data from documents if relevant
-
-    Requirements:
-    - Return content as properly formatted HTML (use <h3>, <p>, <strong>, <ul>, <li> tags)
-    - Do NOT use markdown. Return HTML directly without code blocks.
-    - Maintain the structure and style of the original content
-    - Apply the specific changes requested by the user
-  PROMPT
+      Requirements:
+      - Return content as properly formatted HTML (use <h3>, <p>, <strong>, <ul>, <li> tags)
+      - Do NOT use markdown. Return HTML directly without code blocks.
+      - Maintain the structure and style of the original content
+      - Apply the specific changes requested by the user
+    PROMPT
+  end
 end

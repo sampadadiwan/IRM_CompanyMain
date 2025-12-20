@@ -1,3 +1,4 @@
+# rubocop:disable Metrics/ClassLength
 class PortfolioReportAgent < SupportAgentService
   step :initialize_agent
   step :load_document_context
@@ -155,6 +156,7 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Generate section content using LLM
+  # rubocop:disable Metrics/MethodLength
   def generate_section_content(ctx, **)
     section_type = ctx[:section_type]
     template = ctx[:template]
@@ -209,8 +211,10 @@ class PortfolioReportAgent < SupportAgentService
 
     true
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Refine existing content
+  # rubocop:disable Metrics/MethodLength
   def refine_section_content(ctx, **)
     section_type = ctx[:section_type]
     documents = ctx[:documents_context]
@@ -260,6 +264,7 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
     true
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Save section to database
   def save_section(ctx, section:, generated_content:, **)
@@ -296,6 +301,7 @@ class PortfolioReportAgent < SupportAgentService
   # == Helper Methods ==
 
   # Get section-specific template
+  # rubocop:disable Metrics/MethodLength
   def get_section_template(section_type)
     templates = {
       "Company Overview" => {
@@ -471,6 +477,8 @@ class PortfolioReportAgent < SupportAgentService
     }
   end
 
+  # rubocop:enable Metrics/MethodLength
+
   def build_generation_prompt(section_type:, template:, documents:, company_name:, report_date:, web_search: "")
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
@@ -518,6 +526,7 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Refinement prompt
+  # rubocop:disable Metrics/ParameterLists,  Lint/UnusedMethodArgument
   def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", web_search_enabled: false)
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
@@ -558,6 +567,7 @@ class PortfolioReportAgent < SupportAgentService
       Refine the content according to the user's request now:
     PROMPT
   end
+  # rubocop:enable Metrics/ParameterLists, Lint/UnusedMethodArgument
 
   # Load documents from folder
   def load_documents_from_folder(folder_path)
@@ -645,6 +655,7 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Extract PowerPoint text using zip and XML parsing
+  # rubocop:disable Metrics/MethodLength
   def extract_pptx_text(file_path)
     require 'zip'
     require 'nokogiri'
@@ -714,6 +725,7 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.error "[PortfolioReportAgent] PPTX Error backtrace: #{e.backtrace.first(5).join("\n")}"
     "Error extracting PPTX: #{e.message}"
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Extract data from chart XML
   def extract_chart_data(chart_doc)
@@ -809,3 +821,4 @@ class PortfolioReportAgent < SupportAgentService
     formatted
   end
 end
+# rubocop:enable Metrics/ClassLength

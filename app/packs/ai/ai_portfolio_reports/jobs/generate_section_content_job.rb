@@ -22,6 +22,8 @@ class GenerateSectionContentJob < ApplicationJob
       begin
         Rails.logger.info "Generating: #{section.section_type}"
 
+        #next unless section.section_type == "Company Overview"
+
         # next unless ["Company Overview", "Key Products & Services"].include?(section.section_type) # Skip this section as per requirements
 
         # SPECIAL HANDLING: Custom Charts section uses Rails service
