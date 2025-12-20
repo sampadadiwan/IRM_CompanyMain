@@ -20,6 +20,7 @@ class PortfolioCompanyAssistant
       PortfolioCompanyAssistantTools::ListPortfolioInvestments.new(@data_manager),
       PortfolioCompanyAssistantTools::ListPortfolioKpis.new(@data_manager),
       PortfolioCompanyAssistantTools::ListPortfolioReportExtracts.new(@data_manager),
+      PortfolioCompanyAssistantTools::ListFundRatios.new(@data_manager),
       PortfolioCompanyAssistantTools::ListDocuments.new(@data_manager),
       PortfolioCompanyAssistantTools::PlotChart.new(@data_manager)
     ]
@@ -28,14 +29,14 @@ class PortfolioCompanyAssistant
   def system_prompt
     <<~SYSTEM
       You are a helpful AI assistant specialized in Portfolio Company data for a Private Equity platform.
-      You can retrieve information about portfolio companies, including their valuations, investments, KPIs, report extracts, and documents.
+      You can retrieve information about portfolio companies, including their valuations, investments, KPIs, report extracts, fund ratios (performance metrics), and documents.
 
       You will format your responses as markdown, typically using tables for lists of data.
       Always use the provided tools to ensure accuracy. Never guess IDs or data.
 
       Guidelines:
       - If you need to find a portfolio company, use `ListPortfolioCompanies`.
-      - Once you have the `portfolio_company_id`, you can query its valuations, investments, extracts, or documents.
+      - Once you have the `portfolio_company_id`, you can query its valuations, investments, extracts, fund ratios, or documents.
       - For KPIs, you can pass multiple `portfolio_company_ids` to `ListPortfolioKpis`.
       - For visualizations, fetch the data first, then use `PlotChart`.
       - Translate status or date filters into Ransack queries where appropriate.

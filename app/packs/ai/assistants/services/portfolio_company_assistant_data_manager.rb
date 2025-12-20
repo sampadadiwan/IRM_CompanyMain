@@ -225,6 +225,37 @@ class PortfolioCompanyAssistantDataManager
     end
   end
 
+  # Lists fund ratios.
+  #
+  # @param portfolio_company_id [Integer, nil] Filter by portfolio company ID.
+  # @param query [Hash] Ransack query parameters.
+  # @param sort [String, nil] Sort string.
+  # @return [Array<Hash>] List of fund ratios.
+  def list_fund_ratios(portfolio_company_id: nil, query: {}, sort: nil)
+    ransack_query = query || {}
+    ransack_query[:s] ||= sort if sort.present?
+    ransack_query[:owner_id_eq] = portfolio_company_id if portfolio_company_id.present?
+    ransack_query[:owner_type_eq] = 'Investor' if portfolio_company_id.present?
+
+    ratios = Pundit.policy_scope(@user, FundRatio).includes(:fund, :portfolio_scenario).ransack(ransack_query).result
+    ratios.map do |r|
+      {
+        id: r.id,
+        fund_id: r.fund_id,
+        fund_name: r.fund&.name,
+        name: r.name,
+        value: r.value,
+        display_value: r.display_value,
+        end_date: r.end_date,
+        latest: r.latest,
+        owner_type: r.owner_type,
+        owner_id: r.owner_id,
+        scenario: r.scenario,
+        portfolio_scenario: r.portfolio_scenario&.name
+      }
+    end
+  end
+
   # Lists documents associated with the portfolio company.
   def list_documents(portfolio_company_id:, scope: nil, query: {}, sort: nil)
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
