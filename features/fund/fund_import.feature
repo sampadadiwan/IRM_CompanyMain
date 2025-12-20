@@ -171,6 +171,26 @@ Scenario Outline: Import commitment and distribution fund documents
   Then I should see the commitment and distribuition docs upload errors
 
 @import
+Scenario Outline: Import commitment and distribution fund documents with nested folders and Index.xlsx
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  And The commitments have investor kycs linked
+  And Given I upload "capital_distributions_no_payments_1.xlsx" file for "Distributions" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "3" capital distributions created
+  And Given I upload "capital_distribution_payments.xlsx" file for the Distribution Payments of the fund
+  Then There should be "6" distribution payments created
+  And the capital distribution payments must have the data in the sheet "capital_distribution_payments.xlsx"
+  Given I upload fund documents "commitment_and_distribution_fund_docs2.zip"
+  Then I should see the "Import in progress"
+  Then The proper documents must be uploaded for the commitments and distributions
+  Then I should see the commitment and distribuition docs upload errors
+
+
+@import
 Scenario Outline: Import capital remittance payments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

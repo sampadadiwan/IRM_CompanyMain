@@ -11,22 +11,20 @@ class ImportFundDocsService < ImportServiceBase
     unzip(import_file, unzip_dir, import_upload)
 
     # We replace the import_file with the index.xlsx, so import pre_process can work right
-    index_path = "#{unzip_dir}/index.xlsx"
+    index_path = find_index_file(unzip_dir)
 
-    unless File.exist?(index_path)
+    unless index_path
       # Check if there is a single directory in the unzip_dir and index.xlsx is inside it
       entries = Dir.glob("#{unzip_dir}/*").select { |f| File.directory?(f) }
       if entries.one?
         nested_dir = entries.first
-        if File.exist?("#{nested_dir}/index.xlsx")
-          Rails.logger.debug { "Found index.xlsx in nested directory #{nested_dir}" }
-          index_path = "#{nested_dir}/index.xlsx"
-        end
+        index_path = find_index_file(nested_dir)
+        Rails.logger.debug { "Found index file in nested directory #{nested_dir}" } if index_path
       end
     end
 
-    if File.exist?(index_path)
-      Rails.logger.debug { "Found index.xlsx, proceeding with import in #{File.dirname(index_path)}" }
+    if index_path && File.exist?(index_path)
+      Rails.logger.debug { "Found index file, proceeding with import in #{File.dirname(index_path)}" }
       import_file = File.open(index_path, "r")
       ctx[:import_file] = import_file
       ctx[:unzip_dir] = File.dirname(index_path)
@@ -36,5 +34,13 @@ class ImportFundDocsService < ImportServiceBase
       ctx[:errors] = "index.xlsx not found inside zip file"
       false
     end
+  end
+
+  private
+
+  def find_index_file(dir)
+    # Case-insensitive search for index.xlsx
+    file_name = Dir.entries(dir).find { |f| f.downcase == "index.xlsx" }
+    "#{dir}/#{file_name}" if file_name
   end
 end
