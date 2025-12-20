@@ -845,7 +845,7 @@ Then('the import upload must be updated correctly for capital commitments') do
   @import_upload.failed_row_count.should == 0
   @import_upload.processed_row_count.should == @fund.capital_commitments.count
   @import_upload.total_rows_count.should == @fund.capital_commitments.count
-  @import_upload.status.should == nil
+  @import_upload.status.should == "Completed"
   @import_upload.import_type.should == "CapitalCommitment"
 end
 
@@ -1798,7 +1798,7 @@ Then('Given I upload {string} file for Fund Units of the fund') do |file_name|
   #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
   # status is nil when no errors
-  expect(ImportUpload.last.status.nil?).to be_truthy
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} fund units created with data in the sheet') do |count|

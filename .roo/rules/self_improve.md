@@ -32,17 +32,14 @@ alwaysApply: true
     - Implementation details have changed
 
 - **Example Pattern Recognition:**
-  ```typescript
-  // If you see repeated patterns like:
-  const data = await prisma.user.findMany({
-    select: { id: true, email: true },
-    where: { status: 'ACTIVE' }
-  });
-  
-  // Consider adding to [prisma.md](mdc:.roo/rules/prisma.md):
-  // - Standard select fields
-  // - Common where conditions
-  // - Performance optimization patterns
+  ```ruby
+  # If you see repeated patterns like:
+  @investor = Investor.find(params[:investor_id])
+  authorize @investor, :show?
+
+  # Consider adding to ror.md:
+  # - Standard authorization patterns
+  # - Common filtering logic
   ```
 
 - **Rule Quality Checks:**

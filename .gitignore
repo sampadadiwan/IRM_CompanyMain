@@ -25,7 +25,7 @@ mcp.json
 /config/*.sphinx.conf
 
 /vendor/cache/*
-
+/qdrant_storage/*
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*

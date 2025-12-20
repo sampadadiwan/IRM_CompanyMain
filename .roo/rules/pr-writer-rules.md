@@ -9,6 +9,6 @@
 7. **Review Focus**: highlight tricky pieces reviewers should inspect (e.g. error handling, edge-case logic).
 8. Use bullet lists and concise language. Don’t just regurgitate commit titles.
 
-- Consider only diff changes in the `app`, `config`, and `features` directories; ignore others. User git diff <tag1> <tag2> -- app/ config/ features/
+- Consider only diff changes in the `app`, `config`, and `features` directories; ignore others. Use `git diff <tag1> <tag2> -- app/ config/ features/`
 
-- Write the generated release notes into the `release_notes` directory as markdown, using the appropriate tag as the file name.
+- Write the generated release notes into the `release_notes/` directory as markdown, using the appropriate tag as the file name.
