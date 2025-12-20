@@ -38,8 +38,8 @@ div.actions {
 .field_with_errors {
   padding: 1px;
   color: rgb(233, 105, 105);
-  input, textarea, select {
-    border: 1px solid rgb(233, 105, 105);
+  input, textarea, select, file, .uppy-FileInput-container {
+    border: 2px solid rgb(233, 105, 105);
   }
   // display: table;
 }

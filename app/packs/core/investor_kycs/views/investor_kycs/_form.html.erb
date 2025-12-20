@@ -241,9 +241,18 @@
         <div class="card-body">
 
           <% if investor_kyc.entity_id == current_user.entity_id %>
-          <div class="form-group">
+          <div class="form-group" data-controller="investor-kycs">
             <%= form.label :esign_emails, "Investor Signatory Emails" %>
-            <%= form.text_field :esign_emails, class: "form-control" %>
+            <%= form.text_field :esign_emails,
+                  class: "form-control", id: "esign_emails",
+                  pattern: "[^@\\s]+@[^@\\s]+\\.[^@\\s]+(,\\s*[^@\\s]+@[^@\\s]+\\.[^@\\s]+)*",
+                  placeholder: "user1@example.com, user2@example.com",
+                  data: {
+                    investor_kycs_target: "esign_emails",
+                    action: "input->investor-kycs#checkValidEmails"
+                  }
+            %>
+
             <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
           </div>
           <% end %>

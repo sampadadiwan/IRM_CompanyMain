@@ -8,7 +8,13 @@ class ImportUploadJob < ApplicationJob
       begin
         # Download the S3 file to tmp
         import_upload.import_file.download do |file|
-          "Import#{import_upload.import_type}Service".constantize.wtf?(import_file: file, import_upload:)
+          result = "Import#{import_upload.import_type}Service".constantize.wtf?(import_file: file, import_upload:)
+          if result.success?
+            import_upload.status = "Completed"
+          else
+            import_upload.status = "Failed"
+            import_upload.error_text = result[:errors]
+          end
         end
       rescue ActiveRecord::Deadlocked => e
         raise e
@@ -19,8 +25,8 @@ class ImportUploadJob < ApplicationJob
       end
 
       import_upload.save
-      if import_upload.failed_row_count.positive?
-        msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count} errors"
+      if import_upload.failed_row_count.positive? || import_upload.status == "Failed"
+        msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count}, #{import_upload.error_text} errors"
         level = "danger"
       else
         msg = "Import of #{import_upload.name} is complete"

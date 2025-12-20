@@ -31,6 +31,7 @@ gem 'libreconv'
 gem "puma", "~> 6.0"
 # gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
+gem 'docx'
 gem 'sablon'
 
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -263,6 +264,6 @@ gem 'doorkeeper-openid_connect'
 gem 'htmltoword'
 gem 'i18n-tasks', group: :development
 gem 'json_schemer'
-gem 'ruby_llm'
+gem 'ruby_llm', git: "https://github.com/crmne/ruby_llm.git", ref: "b5df74e445ac3c60224e5ef9c5465dd90bb3a417"
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'

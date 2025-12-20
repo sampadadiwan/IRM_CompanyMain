@@ -1,5 +1,5 @@
 <%= render FormCard.new(title: "Document : #{document.name.presence || 'New'}") do %>
-    <%= form_with(model: document, validate: true, format: :html) do |form| %>
+    <%= form_with(model: document, validate: true, format: :html, html: { id: "document_form" }) do |form| %>
       <% if document.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(document.errors.count, "error") %> prohibited this document from being saved:</h2>
@@ -53,7 +53,7 @@
         </div>
 
         <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), target: "_blank") %>
-        <%= render "layouts/single_upload", form: form, field_label: label,
+        <%= render "layouts/single_upload", form: form, field_label: label, required: true,
                                   for_model: "document", field_name: "file",
                                   model: document %>
 

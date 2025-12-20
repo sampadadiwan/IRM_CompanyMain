@@ -26,7 +26,7 @@ class SupportBotService
       thread_id: @faq_thread.openai_thread_id,
       parameters: {
         assistant_id: @assistant_id,
-        additional_instructions: "Remember: You are strictly prohibited from answering questions unrelated to CapHive or the provided knowledge base. Do not use your general knowledge."
+        additional_instructions: "Remember: You are strictly prohibited from answering questions unrelated to CapHive or the provided knowledge base. Do not use your general knowledge. If you do not find the answer in the knowledge base, respond with: 'I'm sorry, I don't have the information you're looking for at the moment.'"
       }
     )
 

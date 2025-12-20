@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2025_12_11_100000) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_18_161645) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -42,8 +42,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_11_100000) do
     t.bigint "investor_id"
     t.bigint "form_type_id"
     t.string "folio_id", limit: 40
-    t.date "reporting_date"
-    t.string "entry_type", limit: 50
+    t.date "reporting_date", null: false
+    t.string "entry_type", limit: 60
     # Very important to have this NOCASE, else tests start failing
     t.string "name", limit: 125, collation: "NOCASE"
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
@@ -842,6 +842,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_11_100000) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.string "name"
+    t.boolean "enable_broadcast", default: true, null: false
     t.index ["entity_id"], name: "index_chats_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
     t.index ["user_id"], name: "index_chats_on_user_id"
@@ -1604,7 +1605,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_11_100000) do
     t.integer "sequence", default: 0
     t.string "rule_type", limit: 50
     t.boolean "enabled", default: false
-    t.string "entry_type", limit: 50
+    t.string "entry_type", limit: 60
     t.boolean "roll_up", default: false
     t.string "rule_for", limit: 10, default: "Accounting"
     t.datetime "deleted_at"

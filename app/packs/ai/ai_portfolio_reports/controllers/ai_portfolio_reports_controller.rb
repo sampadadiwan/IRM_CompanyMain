@@ -129,7 +129,9 @@ class AiPortfolioReportsController < ApplicationController
       Rails.logger.info "After: #{@report.web_search_enabled}"
 
       # If disabling, also disable all section-level toggles
+      # rubocop:disable Rails/SkipsModelValidations
       @report.ai_report_sections.update_all(web_search_enabled: false) unless enabled
+      # rubocop:enable Rails/SkipsModelValidations
 
       render json: {
         success: true,

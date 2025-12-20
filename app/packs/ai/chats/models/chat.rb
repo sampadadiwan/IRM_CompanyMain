@@ -3,10 +3,14 @@ class Chat < ApplicationRecord
   # Automatically persists associated messages and tool calls.
   acts_as_chat # Assumes Message and ToolCall model names
 
+  attr_accessor :enable_broadcast
+
   belongs_to :user
   belongs_to :owner, polymorphic: true
   belongs_to :entity
   validates :model_id, :name, presence: true
 
-  broadcasts_to ->(chat) { [chat, "messages"] }
+  def should_broadcast?
+    enable_broadcast
+  end
 end

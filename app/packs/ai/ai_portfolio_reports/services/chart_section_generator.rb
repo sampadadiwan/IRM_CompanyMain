@@ -1,4 +1,5 @@
 # app/packs/ai/ai_portfolio_reports/services/chart_section_generator.rb
+# rubocop:disable Metrics/ClassLength
 class ChartSectionGenerator
   def initialize(report:, section:, cached_document_paths: nil)
     @report = report
@@ -580,10 +581,6 @@ class ChartSectionGenerator
   # Extract text content from different document types
   def extract_text_from_document(doc, extension)
     case extension
-    when '.txt', '.md'
-      # Plain text - just read it
-      doc.file.download
-
     when '.pdf'
       # Extract text from PDF
       require 'pdf-reader'
@@ -604,8 +601,8 @@ class ChartSectionGenerator
       text
 
     else
-      # Fallback: try to read as text
-      doc.file.download
+      # Fallback for .txt, .md, and other text-based formats
+      doc.file.download.to_s
     end
   rescue StandardError => e
     Rails.logger.error "Failed to extract text from #{extension}: #{e.message}"
@@ -623,3 +620,4 @@ class ChartSectionGenerator
     title.truncate(50)
   end
 end
+# rubocop:enable Metrics/ClassLength

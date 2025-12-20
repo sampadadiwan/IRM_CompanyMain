@@ -9,7 +9,7 @@ class FundFormulaPolicy < FundBasePolicy
 
   # Only support can create / update formulas
   def create?
-    support?
+    support? || Rails.env.development?
   end
 
   def new?

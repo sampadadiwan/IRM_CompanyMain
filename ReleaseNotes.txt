@@ -1,3 +1,19 @@
+V9.1.61
+#####################################
+d6685c65d Removed unwanted importmaps
+d426003fd Fixed validation_form for IOs
+f560f0d25 Added NOCASE for account entry name in test schema (#1148)
+cb90c1375 Added checkValidEmails to kyc form
+cf18b134e Fixed file input validation
+8ef3dec44 Autogen template (#1147)
+05e6aa13c Now fund ratio cash flows is showsn only if its an array (#1144)
+
+
+V9.1.60
+#####################################
+771c Added Tracking amounts to addition columns for commitments
+e5c47442a Added release notes
+
 V9.1.59
 #####################################
 ee47fb828 Fix migration: check if column exists before removing (#1141)

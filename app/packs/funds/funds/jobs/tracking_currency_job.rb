@@ -40,8 +40,7 @@ class TrackingCurrencyJob < ApplicationJob
         @error_msg.merge!(convert_remittances(fund, user_id))
         @error_msg.merge!(convert_distributions(fund, user_id))
         @error_msg.merge!(convert_commitment_adjustments(fund, user_id))
-        @error_msg.merge!(convert_initial_capital_commitments(fund, user_id))
-        @error_msg.merge!(update_capital_commitments_from_yesterday(fund))
+        @error_msg.merge!(convert_capital_commitments(fund, user_id))
         @error_msg.merge!(convert_portfolio_investments(fund))
 
         msg = "Tracking currency updated for fund #{fund.name}"
@@ -64,7 +63,7 @@ class TrackingCurrencyJob < ApplicationJob
                                  else
                                    ae.amount_cents * ae.tracking_exchange_rate.rate
                                  end
-      ae.save
+      ae.save(validate: false)
     end
     {}
   rescue StandardError => e
@@ -92,9 +91,10 @@ class TrackingCurrencyJob < ApplicationJob
 
   def convert_remittances(fund, user_id)
     send_notification("Updating tracking currency for remittances", user_id)
-    fund.capital_remittances.where(tracking_call_amount_cents: 0).find_each do |cr|
+    fund.capital_remittances.verified.where(tracking_call_amount_cents: 0).find_each do |cr|
       cr.tracking_call_amount_cents = cr.call_amount_cents * cr.tracking_exchange_rate.rate
-      cr.save
+      cr.tracking_collected_amount_cents = cr.collected_amount_cents * cr.tracking_exchange_rate.rate
+      cr.save(validate: false)
     end
     {}
   rescue StandardError => e
@@ -109,7 +109,7 @@ class TrackingCurrencyJob < ApplicationJob
       cdp.tracking_net_payable_cents = cdp.net_payable_cents * cdp.tracking_exchange_rate.rate
       cdp.tracking_gross_payable_cents = cdp.gross_payable_cents * cdp.tracking_exchange_rate.rate
       cdp.tracking_reinvestment_with_fees_cents = cdp.reinvestment_with_fees_cents * cdp.tracking_exchange_rate.rate
-      cdp.save
+      cdp.save(validate: false)
     end
     {}
   rescue StandardError => e
@@ -122,7 +122,7 @@ class TrackingCurrencyJob < ApplicationJob
     send_notification("Updating tracking currency for commitment adjustments", user_id)
     fund.commitment_adjustments.where(tracking_amount_cents: 0).find_each do |ca|
       ca.tracking_amount_cents = ca.amount_cents * ca.tracking_exchange_rate.rate
-      ca.save
+      ca.save(validate: false)
     end
     {}
   rescue StandardError => e
@@ -131,31 +131,19 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Commitment Adjustments" => e.message }
   end
 
-  def convert_initial_capital_commitments(fund, user_id)
+  def convert_capital_commitments(fund, user_id)
     send_notification("Updating tracking currency for capital commitments", user_id)
-    fund.capital_commitments.where(tracking_orig_committed_amount_cents: 0).find_each do |cc|
+    fund.capital_commitments.find_each do |cc|
       # This is only those commitments whose tracking_orig_committed_amount_cents has not been converted
+      cc.tracking_committed_amount_cents = cc.committed_amount_cents * cc.tracking_exchange_rate.rate
       cc.tracking_orig_committed_amount_cents = cc.orig_committed_amount_cents * cc.tracking_exchange_rate.rate
-      cc.save
+      cc.save(validate: false)
     end
     {}
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     send_notification("Error updating tracking currency for capital commitments for fund #{fund.name}: #{e.message}", user_id, :danger)
     { "#{fund.name}: Capital Commitments" => e.message }
-  end
-
-  def update_capital_commitments_from_yesterday(fund)
-    fund.capital_commitments.where(updated_at: (Time.zone.today - 1.day)..).find_each do |cc|
-      tracking_committed_amount_cents = cc.tracking_orig_committed_amount_cents + cc.tracking_adjustment_amount_cents
-      # Dont update the last updated_at
-      cc.update_columns(tracking_committed_amount_cents:)
-    end
-    {}
-  rescue StandardError => e
-    Rails.logger.debug e.backtrace
-    send_notification("Error updating capital commitments from yesterday for fund #{fund.name}: #{e.message}", nil, :danger) # user_id is not available here
-    { "#{fund.name}: Updated Capital Commitments" => e.message }
   end
 
   def convert_portfolio_investments(fund)

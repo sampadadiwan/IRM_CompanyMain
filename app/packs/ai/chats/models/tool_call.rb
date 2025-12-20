@@ -3,8 +3,7 @@ class ToolCall < ApplicationRecord
   acts_as_tool_call # Assumes Message model name
 
   # --- Add your standard Rails model logic below ---
-  def initialize
+  def initialize(attributes = nil)
     super
-    self.json ||= {}
   end
 end

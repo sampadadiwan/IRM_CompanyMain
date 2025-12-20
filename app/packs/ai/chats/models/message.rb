@@ -4,8 +4,23 @@ class Message < ApplicationRecord
   # Provides methods like tool_call?, tool_result?
   acts_as_message # Assumes Chat and ToolCall model names
   has_many_attached :attachments
-  # Broadcast updates to self (for streaming into the message frame)
-  broadcasts_to ->(message) { [message.chat, "messages"] }
+
+  after_create_commit :broadcast_created, if: :should_broadcast?
+  after_update_commit :broadcast_updated, if: :should_broadcast?
+
+  def should_broadcast?
+    chat&.enable_broadcast
+  end
+
+  private
+
+  def broadcast_created
+    broadcast_append_to [chat, "messages"], target: "messages"
+  end
+
+  def broadcast_updated
+    broadcast_replace_to [chat, "messages"]
+  end
 
   # Helper to broadcast chunks during streaming
   def broadcast_append_chunk(chunk_content)

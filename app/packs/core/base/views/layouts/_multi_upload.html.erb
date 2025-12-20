@@ -1,6 +1,6 @@
 <% owner_tag ||= nil %>
-<div class="mb-3"   data-controller="multiple-upload" 
-                    data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
+<div class="form-group mb-3" data-controller="multiple-upload"
+                    data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>"
                     data-multiple-upload-server-value="<%= upload_server %>"
                     data-multiple-upload-drop-here-value="<%= title %>"
                     data-multiple-upload-owner-tag-value="<%= owner_tag  %>"

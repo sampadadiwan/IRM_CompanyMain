@@ -26,7 +26,7 @@
 
       <div class="form-group nonpdf">
         <%= form.label :orignal, "Allow Orignal Format Download" %>
-        <%= form.check_box :orignal, class: "form-check-input", 
+        <%= form.check_box :orignal, class: "form-check-input",
                   data: {action: "click->docform#onOrignalChange"} %>
         <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
       </div>
@@ -55,9 +55,9 @@
       <% end %>
 
 
-      <%= render "layouts/multi_upload", form: form, title: "Folder Documents", 
+      <%= render "layouts/multi_upload", form: form, title: "Folder Documents",
                   for_model: "folder" %>
-                        
+
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

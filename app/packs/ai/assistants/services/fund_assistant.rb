@@ -10,14 +10,15 @@ require 'erb'
 # and the underlying data and tools.
 #
 class FundAssistant
-  AI_MODEL = 'gemini-2.5-pro'.freeze
+  AI_MODEL = 'gemini-3-flash-preview'.freeze
 
   # Initializes the FundAssistant.
   #
   # @param user [User] The user for whom the assistant is acting.
   #   Used for authorization (Pundit policies) and context.
-  def initialize(user:)
+  def initialize(user:, chat: nil)
     @user = user
+    @chat = chat
     @data_manager = FundAssistantDataManager.new(user: user)
   end
 
@@ -71,14 +72,23 @@ class FundAssistant
   def run(prompt)
     Rails.logger.debug { "User: #{prompt}" }
 
-    client = RubyLLM.chat(model: AI_MODEL)
-    client.with_tools(*tools)
+    # If no chat is provided, find or create one for today.
+    @chat ||= Chat.where(
+      user: @user,
+      entity_id: @user.entity_id,
+      assistant_type: 'FundAssistant',
+      model_id: AI_MODEL
+    ).first_or_create!(
+      owner: @user,
+      enable_broadcast: false,
+      name: "Fund Assistant Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+    )
 
-    # Prepend system prompt to the message
-    input = "#{system_prompt}\n\n#{prompt}"
+    @chat.with_instructions(system_prompt)
+    @chat.with_tools(*tools)
 
     # RubyLLM handles the tool execution loop automatically
-    response = client.ask(input)
+    response = @chat.ask(prompt)
 
     # The AI often includes an internal 'thought' process in the final text response.
     # We strip this internal monologue to only return the final, clean answer.
