@@ -489,8 +489,9 @@ class PortfolioReportAgent < SupportAgentService
   # rubocop:enable Metrics/MethodLength
 
   # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Lint/UnusedMethodArgument
 
-  def build_generation_prompt(section_type:, template:, documents:, _company_name:, report_date:, web_search: "")
+  def build_generation_prompt(section_type:, template:, documents:, company_name:, report_date:, web_search: "")
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
 
@@ -542,10 +543,12 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Lint/UnusedMethodArgument
 
   # Refinement prompt
   # rubocop:disable Metrics/ParameterLists
-  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, _company_name:, web_search: "", _web_search_enabled: false)
+  # rubocop:disable Lint/UnusedMethodArgument
+  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", _web_search_enabled: false)
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
 
@@ -592,6 +595,7 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # rubocop:enable Metrics/ParameterLists
+  # rubocop:enable Lint/UnusedMethodArgument
 
   # Load documents from folder
   def load_documents_from_folder(folder_path)
