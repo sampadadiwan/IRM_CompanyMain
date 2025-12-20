@@ -548,7 +548,7 @@ class PortfolioReportAgent < SupportAgentService
   # Refinement prompt
   # rubocop:disable Metrics/ParameterLists
   # rubocop:disable Lint/UnusedMethodArgument
-  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", _web_search_enabled: false)
+  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", web_search_enabled: false)
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
 
