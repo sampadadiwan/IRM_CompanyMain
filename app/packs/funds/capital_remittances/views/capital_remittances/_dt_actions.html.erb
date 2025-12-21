@@ -11,24 +11,26 @@
           <i class="ti ti-eye"></i>Show
         <% end %>
 
+        <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
+                    class: "dropdown-item", data: {bs_toggle: "tooltip", bs_container: "body", bs_title: "Add payment(s) received"} do %>
+          <i class="ti ti-cash"></i>New Payment
+        <% end %>
+
         <% if policy(capital_remittance).verify? %>
           <%
             object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
             label = object.verified ? "Unverify" : "Verify"
             msg = object.verified ? "Mark as Unverified?" : "Mark as Verified?"
+            bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confomrations notification (if enabled)."
+            notification = object.verified ? "no" : "yes"
             icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
           %>
 
           <%= button_to verify_capital_remittance_path(capital_remittance, for_commitment: params[:for_commitment]),
                         method: :patch, class: "dropdown-item", form_class: "deleteButton",
-                        data: { action: "click->confirm#popup", msg:, turbo: true, method: :patch } do %>
+                        data: { action: "click->confirm#popup", msg:, notification:, bs_toggle: "tooltip", bs_container: "body", bs_title: , turbo: true, method: :patch } do %>
             <i class="<%= icon_class %>"></i><%= label %>
           <% end %>
-        <% end %>
-
-        <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
-                    class: "dropdown-item" do %>
-          <i class="ti ti-cash"></i>New Payment
         <% end %>
 
         <% if policy(capital_remittance).preview? %>

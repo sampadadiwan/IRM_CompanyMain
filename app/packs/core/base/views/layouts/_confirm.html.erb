@@ -7,7 +7,38 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 
             </div>
-            <div class="modal-body" id="msg"></div>
+            <div class="modal-body">
+                <%# Primary confirmation message %>
+                <div id="msg"></div>
+
+                <%# Additional details section (hidden by default, shown via Stimulus) %>
+                <div id="confirm_details" class="mt-3 border-top pt-2" style="display: none;">
+                    <table class="no_hover_table table-sm table-borderless mb-0">
+                        <tbody>
+                            <%# Notification icon and status %>
+                            <tr id="confirm_notification" style="display: none;">
+                                <td class="ps-0" style="width: 120px;"><strong>Notification:</strong></td>
+                                <td id="confirm_notification_icon"></td>
+                            </tr>
+                            <%# Reversibility icon and status %>
+                            <tr id="confirm_reversible" style="display: none;">
+                                <td class="ps-0"><strong>Reversible:</strong></td>
+                                <td id="confirm_reversible_icon"></td>
+                            </tr>
+                            <%# External documentation link %>
+                            <tr id="confirm_docs" style="display: none;">
+                                <td class="ps-0"><strong>Docs:</strong></td>
+                                <td><a id="confirm_docs_link" href="#" target="_blank">View Documentation</a></td>
+                            </tr>
+                            <%# Generic additional information text %>
+                            <tr id="confirm_other_info" style="display: none;">
+                                <td class="ps-0"><strong>Other Info:</strong></td>
+                                <td id="confirm_other_info_text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button class="btn btn-outline-danger" type="button" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
                 <input type="hidden" name="submitForm" id="submitForm" autocomplete="off">

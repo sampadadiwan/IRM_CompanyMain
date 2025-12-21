@@ -14,7 +14,7 @@
   xl_link = download_xl_link(xl_data_source)
 %>
 
-<div data-controller="remittances" data-remittances-table-name-value="#capital_remittances">
+<div data-controller="remittances tooltip" data-remittances-table-name-value="#capital_remittances">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
@@ -26,7 +26,8 @@
         <% if policy(capital_call).reminder? %>
           <%= button_to reminder_capital_call_path(id: capital_call.id), id: "capital_remittances_capital_call_reminder_btn",
               class: "btn btn-outline-primary", data: {
-                action: "click->confirm#popup", turbo: false,
+                action: "click->confirm#popup", turbo: false, notification: "yes",
+                bs_toggle: "tooltip", bs_container: "body", bs_title: "Sends reminder notification to all the Pending Remittances",
                 msg: "Send reminder for pending payments?", method: "post"
               } do %>
             <i class="ti ti-bell"></i>Capital Call Reminder
@@ -41,7 +42,7 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-              <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "dropdown-item" do %>
+              <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "dropdown-item", data: { bs_toggle: "tooltip", bs_container: "body", bs_title: "Download in excel  the called mount for each folio along with fees " } do %>
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
 
@@ -55,7 +56,7 @@
                     "import_upload[import_type]": "CapitalRemittance",
                     "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"
                   ), id: "capital_remittances_upload_remittances_btn",
-                  class: "dropdown-item #{disabled}" do %>
+                  class: "dropdown-item #{disabled}", data: {bs_toggle: "tooltip", bs_container: "body", bs_title: "Bulk upload excel file with amount called for each folio"} do %>
                   <i class="ti ti-upload"></i> <%= t_common(:upload) %> Remittances
                 <% end %>
 
@@ -65,7 +66,7 @@
                     "import_upload[import_type]": "CapitalRemittancePayment",
                     "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"
                   ), id: "capital_remittances_upload_payments_btn",
-                  class: "dropdown-item" do %>
+                  class: "dropdown-item", data: {bs_toggle: "tooltip", bs_container: "body", bs_title: "Bulk upload excel file with folio wise payment received"} do %>
                   <i class="ti ti-cash"></i> <%= t_common(:upload) %> Payments
                 <% end %>
               <% end %>

@@ -206,7 +206,6 @@ class PortfolioCompanyAssistantDataManager
     end
   end
 
-
   # Lists fund ratios.
   #
   # @param portfolio_company_id [Integer, nil] Filter by portfolio company ID.
@@ -292,8 +291,8 @@ class PortfolioCompanyAssistantDataManager
       owner_tag: document.owner_tag,
       created_at: (I18n.l(document.created_at) if document.created_at),
       belongs_to: document.owner_type,
-      owner_name: (document.owner&.respond_to?(:name) ? document.owner.name : document.owner&.to_s),
-      file_url: document.file.url,
+      owner_name: (document.owner.respond_to?(:name) ? document.owner.name : document.owner&.to_s),
+      file_url: document.file.url
     }
   end
 
@@ -302,9 +301,7 @@ class PortfolioCompanyAssistantDataManager
     scope = Pundit.policy_scope(@user, Document)
     documents = []
 
-    if document_ids.present?
-      documents += scope.where(id: document_ids).to_a
-    end
+    documents += scope.where(id: document_ids).to_a if document_ids.present?
 
     if document_names.present?
       document_names.each do |name|

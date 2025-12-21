@@ -140,11 +140,11 @@ class CapitalRemittancesController < ApplicationController
         ActionController::Base.helpers.link_to(payment.to_s, capital_remittance_payment_path(payment), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
       end.join(", ")
 
-      redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
+      redirect_to capital_call_path(@capital_remittance.capital_call), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
     else
       @capital_remittance.destroy
       respond_to do |format|
-        format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
+        format.html { redirect_to capital_call_path(@capital_remittance.capital_call), notice: "Capital remittance was successfully destroyed." }
         format.json { head :no_content }
       end
     end

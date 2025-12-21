@@ -888,3 +888,10 @@ textarea.form-control {
     }
   }
 }
+
+
+
+.tooltip {
+  --bs-tooltip-color: var(--bs-body-color);
+  --bs-tooltip-bg: var(--bs-white);
+}

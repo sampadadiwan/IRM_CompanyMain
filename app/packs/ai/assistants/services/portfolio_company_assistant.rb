@@ -47,7 +47,6 @@ class PortfolioCompanyAssistant
     SYSTEM
   end
 
-
   def run(prompt)
     Rails.logger.debug { "User: #{prompt}" }
 

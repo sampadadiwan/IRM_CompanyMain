@@ -25,6 +25,20 @@
 
         <% generated_docs_path = documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id], [:owner_tag, :cont, "Generated"]])) %>
 
+        <% if policy(@capital_call).generate_docs? %>
+          <%= button_to generate_docs_capital_call_path(@capital_call), id: "capital_call_generate_docs_btn", method: :patch, class: "dropdown-item ti ti-file-plus", form_class: "deleteButton",
+              data: {action: "click->confirm#popup", method: :patch, notification: "no",  bs_toggle: "tooltip", bs_title: "This will generate the drawdown notices for all remittances in this call based on the call notice template.",
+                     msg: "This will generate the drawdown notices for all remittances in this call. Proceed?"} do %>
+            Generate Documents
+          <% end %>
+
+
+          <%= link_to "View Generated Documents", generated_docs_path, id: "capital_call_view_generate_docs_btn", class: "dropdown-item ti ti-search", data: { bs_toggle: "tooltip", bs_title: "Review and approve the generated call notices for attaching to Call Notification" } %>
+
+          <div class="dropdown-divider"></div>
+        <% end %>
+
+
         <% if policy(@capital_call).approve? %>
 
           <%
@@ -34,30 +48,16 @@
             #{link_to 'View Generated Call Notices', generated_docs_path, class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"
           %>
           <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
-              data: {action: "click->confirm#popup", turbo: false, method: :post,
-                     msg: approval_msg} do %>
+              data: {action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: approval_msg, bs_toggle: "tooltip", bs_title: "Send email notification for the call.  Only 'Approved Documents' will be attached to the notification" } do %>
             Approve
           <% end %>
 
           <div class="dropdown-divider"></div>
         <% end %>
 
-        <% if policy(@capital_call).generate_docs? %>
-          <%= button_to generate_docs_capital_call_path(@capital_call), id: "capital_call_generate_docs_btn", method: :patch, class: "dropdown-item ti ti-file-plus", form_class: "deleteButton",
-              data: {action: "click->confirm#popup", method: :patch,
-                     msg: "This will generate the drawdown notices for all remittances in this call. Proceed?"} do %>
-            Generate Documents
-          <% end %>
-
-
-          <%= link_to "View Generated Documents", generated_docs_path, id: "capital_call_view_generate_docs_btn", class: "dropdown-item ti ti-search" %>
-
-          <div class="dropdown-divider"></div>
-        <% end %>
-
         <% if policy(@capital_call).allocate_units? %>
           <%= button_to allocate_units_capital_call_path(@capital_call), id: "capital_call_allocate_units_btn", method: :patch, class: "dropdown-item ti ti-box-multiple", form_class: "deleteButton",
-              data: {action: "click->confirm#popup", turbo: false, method: :patch,
+              data: {action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
                      msg: "This will compute the units to be allocated to each commitment in this fund."} do %>
             Allocate Units
           <% end %>
@@ -65,7 +65,8 @@
 
         <% if policy(@capital_call).recompute_fees? %>
           <%= button_to recompute_fees_capital_call_path(@capital_call), id: "capital_call_recompute_fees_btn", method: :patch, class: "dropdown-item ti ti-calculator", form_class: "deleteButton",
-              data: {action: "click->confirm#popup", turbo: false, method: :patch,
+              data: {action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+                     bs_toggle: "tooltip", bs_title: "Recomputes the Fees, Expenses to be added to the call amount, if applicable",
                      msg: "This will recompute the all remittances in this call. Proceed?"} do %>
             Recompute Call
           <% end %>
