@@ -8,8 +8,10 @@ class GenerateSectionContentJob < ApplicationJob
 
     Rails.logger.info "=== Starting generation for report #{report_id} ==="
 
+    @document_paths = collect_document_paths(DOCUMENT_FOLDER_PATH)
     # OPTIMIZATION: Load documents ONCE at the start, cache for all sections
     cached_documents_context = load_documents_once(DOCUMENT_FOLDER_PATH)
+
     Rails.logger.info "=== Documents loaded once: #{cached_documents_context.length} chars ==="
 
     # DEBUG: Save extracted text to file for inspection
@@ -22,6 +24,7 @@ class GenerateSectionContentJob < ApplicationJob
       begin
         Rails.logger.info "Generating: #{section.section_type}"
 
+        # next unless section.section_type == "Custom Charts"
         # next unless section.section_type == "Company Overview"
 
         # next unless ["Company Overview", "Key Products & Services"].include?(section.section_type) # Skip this section as per requirements
@@ -211,7 +214,9 @@ class GenerateSectionContentJob < ApplicationJob
   def generate_charts_section(report, section)
     Rails.logger.info "  → Using Rails ChartSectionGenerator"
 
-    generator = ChartSectionGenerator.new(report: report, section: section)
+    # generator = ChartSectionGenerator.new(report: report, section: section)
+    generator = ChartSectionGenerator.new(report: report, section: section, cached_document_paths: @document_paths)
+
     html = generator.generate_charts_html
 
     section.update(content_html: html)
@@ -264,6 +269,15 @@ class GenerateSectionContentJob < ApplicationJob
       error_msg = result['error'] || result[:error] || result.inspect
       Rails.logger.error "  ✗ Failed #{section.section_type}: #{error_msg}"
       Rails.logger.error "Result keys: #{result.keys.inspect}"
+    end
+  end
+
+  def collect_document_paths(folder_path)
+    return [] unless folder_path.present? && Dir.exist?(folder_path)
+
+    supported_extensions = %w[.pdf .txt .md .docx .xlsx .xls .pptx .ppt .csv]
+    Dir.glob(File.join(folder_path, "*")).select do |file_path|
+      File.file?(file_path) && supported_extensions.include?(File.extname(file_path).downcase)
     end
   end
 end

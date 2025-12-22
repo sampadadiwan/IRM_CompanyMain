@@ -260,8 +260,7 @@ class PortfolioChatAgent < SupportAgentService
   # Initializes the Langchain LLM client
   # @return [Langchain::LLM::OpenAI] configured LLM instance
   def initialize_langchain_llm
-    api_key = Rails.application.credentials.dig(:openai, :api_key) ||
-              ENV.fetch('OPENAI_API_KEY', nil)
+    api_key = Rails.application.credentials["OPENAI_API_KEY"] || ENV.fetch('OPENAI_API_KEY', nil)
 
     raise "OpenAI API key not found. Set it in credentials or OPENAI_API_KEY env var" unless api_key
 

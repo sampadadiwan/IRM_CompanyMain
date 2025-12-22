@@ -156,7 +156,6 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Generate section content using LLM
-  # rubocop:disable Metrics/MethodLength
   def generate_section_content(ctx, **)
     section_type = ctx[:section_type]
     template = ctx[:template]
@@ -188,22 +187,29 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Full prompt length: #{prompt.length}"
     Rails.logger.info "[PortfolioReportAgent] Full prompt (first 2000 chars): #{prompt[0..2000].inspect}"
 
-    # Call LLM
-    api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    raise "OpenAI API key not found" unless api_key
+    # # Call LLM
+    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+    # raise "OpenAI API key not found" unless api_key
 
-    llm = Langchain::LLM::OpenAI.new(
-      api_key: api_key,
-      default_options: {
-        chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-        temperature: 0.3
-      }
-    )
+    # llm = Langchain::LLM::OpenAI.new(
+    #   api_key: api_key,
+    #   default_options: {
+    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
+    #     temperature: 0.3
+    #   }
+    # )
 
+    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
+
+    # response = llm.complete(prompt: prompt)
+    # content = clean_llm_output(response.completion)
+
+    # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
 
-    response = llm.complete(prompt: prompt)
-    content = clean_llm_output(response.completion)
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    response = chat.ask(prompt)
+    content = clean_llm_output(response.content)
 
     ctx[:generated_content] = content
 
@@ -211,10 +217,8 @@ class PortfolioReportAgent < SupportAgentService
 
     true
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Refine existing content
-  # rubocop:disable Metrics/MethodLength
   def refine_section_content(ctx, **)
     section_type = ctx[:section_type]
     documents = ctx[:documents_context]
@@ -242,29 +246,35 @@ class PortfolioReportAgent < SupportAgentService
       web_search_enabled: web_search_enabled
     )
 
-    # Call LLM
-    api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    raise "OpenAI API key not found" unless api_key
+    # # Call LLM
+    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+    # raise "OpenAI API key not found" unless api_key
 
-    llm = Langchain::LLM::OpenAI.new(
-      api_key: api_key,
-      default_options: {
-        chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-        temperature: 0.7
-      }
-    )
+    # llm = Langchain::LLM::OpenAI.new(
+    #   api_key: api_key,
+    #   default_options: {
+    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
+    #     temperature: 0.7
+    #   }
+    # )
 
+    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+
+    # response = llm.complete(prompt: prompt)
+    # content = clean_llm_output(response.completion)
+    #
+    # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
 
-    response = llm.complete(prompt: prompt)
-    content = clean_llm_output(response.completion)
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    response = chat.ask(prompt)
+    content = clean_llm_output(response.content)
 
     ctx[:generated_content] = content
 
     Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
     true
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Save section to database
   def save_section(ctx, section:, generated_content:, **)
@@ -476,14 +486,17 @@ class PortfolioReportAgent < SupportAgentService
       length: "1-2 short paragraphs or 3-5 bullet points"
     }
   end
-
   # rubocop:enable Metrics/MethodLength
+
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Lint/UnusedMethodArgument
 
   def build_generation_prompt(section_type:, template:, documents:, company_name:, report_date:, web_search: "")
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
 
-      Company: #{company_name}
+      Company name must be inferred from documents if present
+
       Report Date: #{report_date}
 
       #{"AVAILABLE DOCUMENTS:\n#{documents}\n" if documents.present?}
@@ -502,6 +515,10 @@ class PortfolioReportAgent < SupportAgentService
       - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
       - Start directly with HTML tags (e.g., <h2>Section Title</h2>)
       - End with closing HTML tags (no extra text after)
+      - If documents are provided, DO NOT rely on any externally provided company name
+      - Identify and use the company name ONLY if explicitly mentioned in the documents
+      - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
+      - If no company name is mentioned, use "Company (name not specified in documents)"
 
       INSTRUCTIONS:
       1. Write in professional, analytical tone
@@ -525,13 +542,17 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
   end
 
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Lint/UnusedMethodArgument
+
   # Refinement prompt
-  # rubocop:disable Metrics/ParameterLists,  Lint/UnusedMethodArgument
+  # rubocop:disable Metrics/ParameterLists
+  # rubocop:disable Lint/UnusedMethodArgument
   def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", web_search_enabled: false)
     <<~PROMPT
       You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
 
-      Company: #{company_name}
+      Company name must be inferred from documents if present
 
       CURRENT CONTENT (HTML):
       #{current_content}
@@ -560,6 +581,11 @@ class PortfolioReportAgent < SupportAgentService
             - DO NOT add any facts, figures, or claims not found in documents
             - DO NOT use your general knowledge about the company or industry
             - If user requests information not in documents, state "Information not available in provided documents"
+            - If documents are provided, DO NOT rely on any externally provided company name
+            - Identify and use the company name ONLY if explicitly mentioned in the documents
+            - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
+            - If no company name is mentioned, use "Company (name not specified in documents)"
+
           DOC_RULES
         end}
       #{'- You may also incorporate facts from the web search results provided above' if web_search.present?}
@@ -567,7 +593,9 @@ class PortfolioReportAgent < SupportAgentService
       Refine the content according to the user's request now:
     PROMPT
   end
-  # rubocop:enable Metrics/ParameterLists, Lint/UnusedMethodArgument
+
+  # rubocop:enable Metrics/ParameterLists
+  # rubocop:enable Lint/UnusedMethodArgument
 
   # Load documents from folder
   def load_documents_from_folder(folder_path)
@@ -725,6 +753,7 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.error "[PortfolioReportAgent] PPTX Error backtrace: #{e.backtrace.first(5).join("\n")}"
     "Error extracting PPTX: #{e.message}"
   end
+
   # rubocop:enable Metrics/MethodLength
 
   # Extract data from chart XML

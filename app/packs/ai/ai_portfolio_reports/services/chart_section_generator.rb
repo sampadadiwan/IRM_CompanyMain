@@ -1,11 +1,15 @@
 # app/packs/ai/ai_portfolio_reports/services/chart_section_generator.rb
 # rubocop:disable Metrics/ClassLength
 class ChartSectionGenerator
-  def initialize(report:, section:)
+  def initialize(report:, section:, cached_document_paths: nil)
     @report = report
     @section = section
     @portfolio_company = report.portfolio_company
     @entity = @portfolio_company.entity
+    @cached_document_paths = cached_document_paths
+    @cached_data_preview = @section.metadata&.dig('cached_data_preview')
+    @converted_files_cache = {} # Cache converted temp files
+    @temp_files_to_keep = [] # Keep Tempfile objects alive
   end
 
   # Main method: Generate charts and return HTML
@@ -14,14 +18,20 @@ class ChartSectionGenerator
     @section.agent_chart_ids = []
 
     # Find relevant documents
-    document_paths = find_csv_documents
+    document_paths = @cached_document_paths || find_csv_documents
 
     Rails.logger.info "=== Chart Generation Started ==="
     Rails.logger.info "Company: #{@portfolio_company.name}"
     Rails.logger.info "Documents found: #{document_paths.count}"
 
     # Extract data preview for LLM to analyze
-    data_preview = extract_data_preview(document_paths)
+    # data_preview = extract_data_preview(document_paths)
+
+    data_preview = @cached_data_preview || extract_data_preview(document_paths)
+    # Save to metadata for future use (refinements)
+    @section.update(metadata: (@section.metadata || {}).merge('cached_data_preview' => data_preview)) unless @cached_data_preview
+    @cached_data_preview = data_preview
+
     Rails.logger.info "Data preview length: #{data_preview.length} chars"
 
     # Generate chart prompts dynamically based on actual data (or use provided prompts)
@@ -49,7 +59,7 @@ class ChartSectionGenerator
 
   # Add chart from user prompt
   def add_chart_from_prompt(user_prompt:)
-    document_paths = find_csv_documents
+    document_paths = @cached_document_paths || find_csv_documents
 
     Rails.logger.info "=== Adding Chart from Prompt ==="
     Rails.logger.info "User prompt: #{user_prompt}"
@@ -75,6 +85,9 @@ class ChartSectionGenerator
 
   # Create a single chart using AgentChart + ChartAgentService
   def create_chart(prompt, document_paths, chart_number)
+    # Normalize prompt if it's a Hash (from Gemini response)
+    prompt = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
+
     chart = AgentChart.create!(
       entity_id: @entity.id,
       title: "Chart #{chart_number}: #{extract_title(prompt)}",
@@ -84,31 +97,49 @@ class ChartSectionGenerator
     )
 
     # Convert all documents to CSV format for the chart service
-    temp_csv_paths = []
-    document_paths.each do |original_path|
-      extension = File.extname(original_path).downcase
+    # temp_files = [] # Keep Tempfile objects alive
+    # Use cached converted files if available, otherwise convert once
+    temp_csv_paths = get_or_create_converted_files(document_paths)
 
-      case extension
-      when '.xlsx', '.xls'
-        # Convert Excel to CSV
-        csv_path = convert_excel_to_csv(original_path)
-        temp_csv_paths << csv_path if csv_path
-      when '.pptx', '.ppt'
-        # Extract chart data from PPTX and convert to CSV
-        csv_path = convert_pptx_to_csv(original_path)
-        temp_csv_paths << csv_path if csv_path
-      when '.csv'
-        # Already CSV, just copy
-        temp_file = Tempfile.new(['chart_data', '.csv'])
-        FileUtils.cp(original_path, temp_file.path)
-        temp_csv_paths << temp_file.path
-      else
-        # For other files, just copy them
-        temp_file = Tempfile.new(['chart_data', extension])
-        FileUtils.cp(original_path, temp_file.path)
-        temp_csv_paths << temp_file.path
-      end
-    end
+    Rails.logger.info "[ChartSectionGenerator] using #{temp_csv_paths.count}"
+
+    # document_paths.each do |original_path|
+    #   extension = File.extname(original_path).downcase
+
+    #   case extension
+    #   when '.xlsx', '.xls'
+    #     # Convert Excel to CSV
+    #     csv_path = convert_excel_to_csv(original_path)
+    #     temp_csv_paths << csv_path if csv_path
+    #   when '.pptx', '.ppt'
+    #     # Extract chart data from PPTX and convert to CSV
+    #     csv_path = convert_pptx_to_csv(original_path)
+    #     temp_csv_paths << csv_path if csv_path
+    #   when '.csv'
+    #     # Already CSV, just copy
+    #     temp_file = Tempfile.new(['chart_data', '.csv'])
+    #     FileUtils.cp(original_path, temp_file.path)
+    #     temp_files << temp_file
+    #     temp_csv_paths << temp_file.path
+    #   when '.pdf'
+    #     # Extract text from PDF
+    #     temp_file, text_path = convert_pdf_to_text(original_path)
+    #     if temp_file
+    #       temp_files << temp_file
+    #       temp_csv_paths << text_path
+    #     end
+    #   when '.docx', '.doc'
+    #     # Extract text from DOCX
+    #     temp_file, text_path = convert_docx_to_text(original_path)
+    #     if temp_file
+    #       temp_files << temp_file
+    #       temp_csv_paths << text_path
+    #     end
+    #   else
+    #     # Skip unsupported files
+    #     Rails.logger.warn "[ChartSectionGenerator] Skipping unsupported file: #{File.basename(original_path)}"
+    #   end
+    # end
 
     Rails.logger.info "[ChartSectionGenerator] Converted #{temp_csv_paths.count} files to CSV for chart generation"
 
@@ -116,10 +147,53 @@ class ChartSectionGenerator
     # chart.generate_spec!(csv_paths: temp_csv_paths)
     #
     ## Generate the chart spec using PortfolioChartAgentService (separate from Caphive's ChartAgentService)
-    spec_hash = PortfolioChartAgentService.new(json_data: nil, csv_paths: temp_csv_paths).generate_chart!(prompt: prompt)
+    spec_hash = PortfolioChartAgentService.new(json_data: nil, csv_paths: temp_csv_paths, skip_cleanup: true).generate_chart!(prompt: prompt)
     chart.update!(spec: spec_hash, status: "ready")
 
     chart
+  end
+
+  def get_or_create_converted_files(document_paths)
+    return @converted_files_cache[:paths] if @converted_files_cache[:paths].present?
+
+    Rails.logger.info "[ChartSectionGenerator] Converting documents once (will be cached for all charts)"
+
+    temp_csv_paths = []
+
+    document_paths.each do |original_path|
+      extension = File.extname(original_path).downcase
+
+      case extension
+      when '.xlsx', '.xls'
+        csv_path = convert_excel_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.pptx', '.ppt'
+        csv_path = convert_pptx_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.csv'
+        temp_file = Tempfile.new(['chart_data', '.csv'])
+        FileUtils.cp(original_path, temp_file.path)
+        @temp_files_to_keep << temp_file
+        temp_csv_paths << temp_file.path
+      when '.pdf'
+        temp_file, text_path = convert_pdf_to_text(original_path)
+        if temp_file
+          @temp_files_to_keep << temp_file
+          temp_csv_paths << text_path
+        end
+      when '.docx', '.doc'
+        temp_file, text_path = convert_docx_to_text(original_path)
+        if temp_file
+          @temp_files_to_keep << temp_file
+          temp_csv_paths << text_path
+        end
+      else
+        Rails.logger.warn "[ChartSectionGenerator] Skipping unsupported file: #{File.basename(original_path)}"
+      end
+    end
+
+    @converted_files_cache[:paths] = temp_csv_paths
+    temp_csv_paths
   end
 
   # Convert Excel file to CSV
@@ -198,6 +272,46 @@ class ChartSectionGenerator
   rescue StandardError => e
     Rails.logger.error "[ChartSectionGenerator] Error converting PPTX: #{e.message}"
     nil
+  end
+
+  # Convert PDF to text file
+  def convert_pdf_to_text(pdf_path)
+    require 'pdf-reader'
+
+    Rails.logger.info "[ChartSectionGenerator] Extracting text from PDF: #{File.basename(pdf_path)}"
+
+    reader = PDF::Reader.new(pdf_path)
+    text_content = reader.pages.map(&:text).join("\n")
+
+    temp_file = Tempfile.new(['pdf_text', '.txt'])
+    temp_file.write(text_content[0..50_000]) # Limit to 50K chars
+    temp_file.close
+
+    Rails.logger.info "[ChartSectionGenerator] PDF converted to text: #{temp_file.path} (#{text_content.length} chars)"
+    [temp_file, temp_file.path]
+  rescue StandardError => e
+    Rails.logger.error "[ChartSectionGenerator] Error converting PDF: #{e.message}"
+    [nil, nil]
+  end
+
+  # Convert DOCX to text file
+  def convert_docx_to_text(docx_path)
+    require 'docx'
+
+    Rails.logger.info "[ChartSectionGenerator] Extracting text from DOCX: #{File.basename(docx_path)}"
+
+    doc = Docx::Document.open(docx_path)
+    text_content = doc.paragraphs.map(&:text).join("\n")
+
+    temp_file = Tempfile.new(['docx_text', '.txt'])
+    temp_file.write(text_content[0..50_000]) # Limit to 50K chars
+    temp_file.close
+
+    Rails.logger.info "[ChartSectionGenerator] DOCX converted to text: #{temp_file.path} (#{text_content.length} chars)"
+    [temp_file, temp_file.path]
+  rescue StandardError => e
+    Rails.logger.error "[ChartSectionGenerator] Error converting DOCX: #{e.message}"
+    [nil, nil]
   end
 
   # Convert chart to HTML in YOUR Python format (so frontend doesn't change!)
@@ -281,6 +395,10 @@ class ChartSectionGenerator
           preview_parts << extract_pptx_preview(file_path, filename)
         when '.csv'
           preview_parts << extract_csv_preview(file_path, filename)
+        when '.pdf'
+          preview_parts << extract_pdf_preview(file_path, filename)
+        when '.docx', '.doc'
+          preview_parts << extract_docx_preview(file_path, filename)
         end
       rescue StandardError => e
         Rails.logger.warn "[ChartSectionGenerator] Could not extract preview from #{filename}: #{e.message}"
@@ -302,7 +420,7 @@ class ChartSectionGenerator
       preview += "Sheet: #{sheet_name}\n"
 
       rows = []
-      sheet.each_row_streaming(pad_cells: true, max_rows: 20) do |row|
+      sheet.each_row_streaming(pad_cells: true, max_rows: 200) do |row|
         row_values = row.map { |cell| cell&.value.to_s.strip }.compact_blank
         rows << row_values.join(" | ") if row_values.any?
       end
@@ -365,22 +483,59 @@ class ChartSectionGenerator
     "=== Data from: #{filename} ===\nError reading CSV: #{e.message}"
   end
 
+  def extract_pdf_preview(file_path, filename)
+    require 'pdf-reader'
+
+    preview = "=== Data from: #{filename} ===\n"
+    reader = PDF::Reader.new(file_path)
+    text_content = reader.pages.first(200).map(&:text).join("\n")
+    preview += text_content[0..100_000] # Limit to 4000 chars for preview
+
+    preview
+  rescue StandardError => e
+    "=== Data from: #{filename} ===\nError reading PDF: #{e.message}"
+  end
+
+  # Extract preview from DOCX file
+  def extract_docx_preview(file_path, filename)
+    require 'docx'
+
+    preview = "=== Data from: #{filename} ===\n"
+    doc = Docx::Document.open(file_path)
+    text_content = doc.paragraphs.first(500).map(&:text).join("\n")
+    preview += text_content[0..100_000] # Limit to 4000 chars for preview
+
+    preview
+  rescue StandardError => e
+    "=== Data from: #{filename} ===\nError reading DOCX: #{e.message}"
+  end
+
   # Generate chart prompts dynamically based on actual data
   def generate_chart_prompts_from_data(data_preview)
     return default_chart_prompts if data_preview.blank?
 
     Rails.logger.info "[ChartSectionGenerator] Generating chart prompts from data..."
 
-    api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    return default_chart_prompts unless api_key
+    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
 
-    llm = Langchain::LLM::OpenAI.new(
-      api_key: api_key,
-      default_options: {
-        chat_completion_model_name: 'gpt-4o-mini',
-        temperature: 0.3
-      }
-    )
+    # # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+    # api_key = Rails.application.credentials.dig(:google, :gemini, :api_key)
+    # return default_chart_prompts unless api_key
+
+    # # llm = Langchain::LLM::OpenAI.new(
+    # #   api_key: api_key,
+    # #   default_options: {
+    # #     chat_completion_model_name: 'gpt-4o-mini',
+    # #     temperature: 0.3
+    # #   }
+    # # )
+    # llm = Langchain::LLM::GoogleGemini.new(
+    #   api_key: api_key,
+    #   default_options: {
+    #     chat_completion_model_name: 'gemini-2.5-flash',
+    #     temperature: 0.3
+    #   }
+    # )
 
     prompt = <<~PROMPT
       Analyze the following data and suggest 3 meaningful charts that would visualize key insights.
@@ -399,8 +554,8 @@ class ChartSectionGenerator
       Focus on the actual metrics and data columns present in the data. Be specific about the data fields to use.
     PROMPT
 
-    response = llm.complete(prompt: prompt)
-    result = response.completion.strip
+    response = chat.ask(prompt) # llm.complete(prompt: prompt)
+    result = response.content.strip
 
     # Parse JSON array from response
     result = result.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
@@ -457,7 +612,10 @@ class ChartSectionGenerator
   # Extract a short title from the prompt
   def extract_title(prompt)
     # Take first part before dash or hyphen
-    title = prompt.split(/[-]/).first.strip
+    # Handle if prompt is a Hash (from Gemini response)
+    prompt_str = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
+    # Take first part before dash or hyphen
+    title = prompt_str.split('-').first.to_s.strip
     # Limit to 50 characters
     title.truncate(50)
   end
