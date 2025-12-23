@@ -892,6 +892,46 @@ textarea.form-control {
 
 
 .tooltip {
-  --bs-tooltip-color: var(--bs-body-color);
-  --bs-tooltip-bg: var(--bs-white);
+  --bs-tooltip-color: var(--bs-primary) !important;
+  --bs-tooltip-bg: var(--bs-body-bg) !important;
+  --bs-tooltip-border-radius: 8px !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  opacity: 1 !important;
+
+  .tooltip-inner {
+    border: 1px solid var(--bs-primary) !important;
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-primary) !important;
+    box-shadow: rgba(145, 158, 171, 0.3) 0px 0px 2px 0px, rgba(145, 158, 171, 0.12) 0px 12px 24px -4px !important;
+    outline: none !important;
+    opacity: 1 !important;
+  }
+
+  // Handle the arrow border/color
+  .tooltip-arrow::before {
+    border-top-color: var(--bs-primary) !important;
+    border-bottom-color: var(--bs-primary) !important;
+    border-left-color: var(--bs-primary) !important;
+    border-right-color: var(--bs-primary) !important;
+  }
+}
+
+// Global reset for any possible wrapping tooltip classes
+.tooltip.bs-tooltip-auto, .tooltip.bs-tooltip-top, .tooltip.bs-tooltip-bottom, .tooltip.bs-tooltip-start, .tooltip.bs-tooltip-end {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background: none !important;
+}
+
+// Global reset for any possible wrapping tooltip classes
+.tooltip.bs-tooltip-auto, .tooltip.bs-tooltip-top, .tooltip.bs-tooltip-bottom, .tooltip.bs-tooltip-start, .tooltip.bs-tooltip-end {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background: none !important;
 }

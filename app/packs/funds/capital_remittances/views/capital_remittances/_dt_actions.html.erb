@@ -21,7 +21,7 @@
             object = capital_remittance.respond_to?(:object) ? capital_remittance.object : capital_remittance
             label = object.verified ? "Unverify" : "Verify"
             msg = object.verified ? "Mark as Unverified?" : "Mark as Verified?"
-            bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confomrations notification (if enabled)."
+            bs_title = object.verified ? "Unverify the remittance." : "Confirms the payment amount recorded and send payment confirmations notification (if enabled)."
             notification = object.verified ? "no" : "yes"
             icon_class = object.verified ? "ti ti-user-x" : "ti ti-user-check"
           %>
