@@ -22,6 +22,8 @@ class AssistantsController < ApplicationController
             name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
           )
         end
+      elsif params[:chat_id].present?
+        @chat = Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class)
       else
         @chat = Chat.where(
           user: current_user,
@@ -30,6 +32,7 @@ class AssistantsController < ApplicationController
         ).order(created_at: :desc).first
       end
 
+      Rails.logger.debug { "Loaded chat: #{@chat.id}" } if @chat
       @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc) if @chat
     end
   end

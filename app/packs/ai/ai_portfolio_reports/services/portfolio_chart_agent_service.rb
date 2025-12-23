@@ -69,7 +69,7 @@ class PortfolioChartAgentService
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
   def generate_chart!(prompt:)
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     # Build the system message with instructions
     system_msg = build_system_msg

@@ -516,26 +516,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] Generating chart prompts from data..."
 
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
-
-    # # api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    # api_key = Rails.application.credentials.dig(:google, :gemini, :api_key)
-    # return default_chart_prompts unless api_key
-
-    # # llm = Langchain::LLM::OpenAI.new(
-    # #   api_key: api_key,
-    # #   default_options: {
-    # #     chat_completion_model_name: 'gpt-4o-mini',
-    # #     temperature: 0.3
-    # #   }
-    # # )
-    # llm = Langchain::LLM::GoogleGemini.new(
-    #   api_key: api_key,
-    #   default_options: {
-    #     chat_completion_model_name: 'gemini-2.5-flash',
-    #     temperature: 0.3
-    #   }
-    # )
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     prompt = <<~PROMPT
       Analyze the following data and suggest 3 meaningful charts that would visualize key insights.

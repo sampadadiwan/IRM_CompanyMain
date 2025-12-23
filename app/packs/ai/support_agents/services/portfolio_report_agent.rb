@@ -216,7 +216,7 @@ class PortfolioReportAgent < SupportAgentService
     # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
 
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
     response = chat.ask(prompt)
     content = clean_llm_output(response.content)
 
@@ -275,7 +275,7 @@ class PortfolioReportAgent < SupportAgentService
     # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
 
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
     response = chat.ask(prompt)
     content = clean_llm_output(response.content)
 

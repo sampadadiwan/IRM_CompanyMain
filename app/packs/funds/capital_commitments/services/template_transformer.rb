@@ -51,7 +51,7 @@ class TemplateTransformer
 
   def map_placeholders_with_ai(placeholders, schema)
     # Use the static chat method with a specific model as per reference
-    chat = RubyLLM.chat(model: 'gemini-2.5-pro')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     system_msg = <<~SYS
       You are a legal document automation expert. I have a Word document with descriptive placeholders in square brackets.

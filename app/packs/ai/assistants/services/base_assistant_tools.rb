@@ -38,9 +38,9 @@ class BaseAssistantTools
       <<~HTML
         <div class="my-3">
           <div class="fw-semibold mb-2">#{escaped_title}</div>
-          <div class="chart-wrap" style="max-width: 900px;">
-            <div data-controller="chart-renderer" data-chart-renderer-spec-value="#{escaped_spec}">
-              <canvas id="#{canvas_id}" width="900" height="500" data-chart-renderer-target="canvas"></canvas>
+          <div class="chart-wrap" style="height: 500px;">
+            <div data-controller="chart-renderer" data-chart-renderer-spec-value="#{escaped_spec}" style="height: 100%;">
+              <canvas id="#{canvas_id}" data-chart-renderer-target="canvas"></canvas>
             </div>
           </div>
         </div>
@@ -48,12 +48,14 @@ class BaseAssistantTools
     end
 
     # rubocop:disable Metrics/CyclomaticComplexity
-    # Ensures the legend is meaningful and points/series are identifiable.
+    # ensures the legend is meaningful and points/series are identifiable.
     # Also nudges line/scatter charts to actually render points.
     def normalize_chart_config!(cfg)
       return unless cfg.is_a?(Hash)
 
       cfg["options"] ||= {}
+      cfg["options"]["responsive"] = true
+      cfg["options"]["maintainAspectRatio"] = false
       cfg["options"]["plugins"] ||= {}
       cfg["options"]["plugins"]["legend"] ||= {}
 

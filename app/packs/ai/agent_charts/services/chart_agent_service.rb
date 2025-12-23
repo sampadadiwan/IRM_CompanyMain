@@ -54,6 +54,7 @@ class ChartAgentService
       - Do NOT reference undefined variables.
       - If the user request cannot be satisfied within Chart.js rules, adjust the data minimally to produce valid JSON.
 
+
     SYS
   end
 
@@ -72,7 +73,7 @@ class ChartAgentService
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
   def generate_chart!(prompt:)
-    chat = RubyLLM.chat(model: 'gemini-2.5-flash')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     # Build the system message with instructions
     system_msg = build_system_msg

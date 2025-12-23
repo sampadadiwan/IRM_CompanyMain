@@ -315,10 +315,10 @@ class PortfolioCompanyAssistantDataManager
     return "No documents found to analyze." if documents.empty?
 
     # Prepare file URLs for RubyLLM
-    file_urls = documents.map { |d| d.file.url }
+    attachments = documents.map { |d| { d.extension.to_sym => d.file.url } }
 
     chat = RubyLLM.chat
-    response = chat.ask prompt, with: file_urls
+    response = chat.ask prompt, with: attachments
     response.content
   end
 end
