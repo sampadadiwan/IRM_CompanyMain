@@ -340,4 +340,35 @@ class PortfolioCompanyAssistantDataManager
 
     Investment.generate_cap_table(rounds, company.id, group_by_field: group_by_field.to_sym)
   end
+
+  # Gets investments in cap table across portfolio companies.
+  #
+  # @param portfolio_company_ids [Array<Integer>] List of portfolio company IDs.
+  # @param query [Hash] Optional Ransack query hash.
+  # @param sort [String] Optional sort string.
+  # @return [Array<Hash>] List of investments.
+  def get_investments_in_cap_table(portfolio_company_ids:, query: {}, sort: nil)
+    companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
+    return [] if companies.empty?
+
+    ransack_query = query || {}
+    ransack_query[:s] ||= sort if sort.present?
+
+    investments = Investment.where(portfolio_company_id: companies.pluck(:id)).ransack(ransack_query).result
+    investments.map do |i|
+      {
+        id: i.id,
+        portfolio_company: i.portfolio_company&.investor_name,
+        category: i.category,
+        investor_name: i.investor_name,
+        investment_type: i.investment_type,
+        funding_round: i.funding_round,
+        currency: i.currency,
+        price: i.price.format,
+        investment_date: (I18n.l(i.investment_date) if i.investment_date),
+        amount: i.amount.format,
+        quantity: i.quantity
+      }
+    end
+  end
 end

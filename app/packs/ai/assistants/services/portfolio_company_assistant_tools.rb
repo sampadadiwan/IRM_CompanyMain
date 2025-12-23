@@ -222,6 +222,33 @@ module PortfolioCompanyAssistantTools
     end
   end
 
+  # Tool to get investments in cap table across multiple portfolio companies.
+  class GetInvestmentsInCapTable < RubyLLM::Tool
+    def name = "get_investments_in_cap_table"
+
+    description "Get detailed list of investments in cap table for one or more portfolio companies. " \
+                "Construct a query hash using available attributes and predicates. " \
+                "Attributes: investor_name, category, investment_type, funding_round, investment_date, quantity, amount_cents. " \
+                "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
+                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'investment_date desc'."
+    param :portfolio_company_ids, type: "array", desc: "The IDs of the portfolio companies", required: true
+    param :query, type: :object, desc: "Ransack query hash", required: false
+    param :sort, type: :string, desc: "Optional sort string", required: false
+
+    def initialize(assistant)
+      super()
+      @assistant = assistant
+    end
+
+    def execute(portfolio_company_ids:, query: {}, sort: nil)
+      @assistant.get_investments_in_cap_table(
+        portfolio_company_ids: portfolio_company_ids,
+        query: query || {},
+        sort: sort
+      ).to_json
+    end
+  end
+
   # PlotChart for PortfolioCompanyAssistant.
   class PlotChart < BaseAssistantTools::PlotChart
     def name = "plot_chart"
