@@ -117,7 +117,7 @@ class PortfolioCompanyAssistantDataManager
     end
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
   # Lists portfolio investments for a portfolio company.
   def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil)
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
@@ -162,7 +162,7 @@ class PortfolioCompanyAssistantDataManager
       }
     end
   end
-  # rubocop:enable Metrics/CyclomaticComplexity
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
   def list_portfolio_kpis(portfolio_company_ids:, scope: nil, query: {}, sort: nil)

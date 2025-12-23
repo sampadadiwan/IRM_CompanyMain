@@ -2,53 +2,13 @@ class AssistantsController < ApplicationController
   def show
     authorize :assistant, :show?
 
-    if params[:assistant_type].present?
-      assistant_class = case params[:assistant_type]
-                        when 'portfolio_company'
-                          'PortfolioCompanyAssistant'
-                        else
-                          'FundAssistant'
-                        end
+    return if params[:assistant_type].blank?
 
-      if params[:new].present?
-        ActiveRecord::Base.connected_to(role: :writing) do
-          @chat = Chat.create!(
-            user: current_user,
-            entity_id: current_user.entity_id,
-            assistant_type: assistant_class,
-            owner: current_user, # Default owner to user, can be overridden
-            enable_broadcast: false,
-            model_id: PortfolioCompanyAssistant::AI_MODEL,
-            name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
-          )
-        end
-      elsif params[:chat_id].present?
-        @chat = Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class)
-      else
-        @chat = Chat.where(
-          user: current_user,
-          entity_id: current_user.entity_id,
-          assistant_type: assistant_class
-        ).order(created_at: :desc).first
+    @chat = find_or_create_chat
+    return unless @chat
 
-        if @chat.nil?
-          ActiveRecord::Base.connected_to(role: :writing) do
-            @chat = Chat.create!(
-              user: current_user,
-              entity_id: current_user.entity_id,
-              assistant_type: assistant_class,
-              owner: current_user, # Default owner to user, can be overridden
-              enable_broadcast: false,
-              model_id: PortfolioCompanyAssistant::AI_MODEL,
-              name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
-            )
-          end
-        end
-      end
-
-      Rails.logger.debug { "Loaded chat: #{@chat.id}" } if @chat
-      @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc) if @chat
-    end
+    Rails.logger.debug { "Loaded chat: #{@chat.id}" }
+    @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc)
   end
 
   def ask
@@ -80,5 +40,37 @@ class AssistantsController < ApplicationController
 
       render partial: "ask_frame", locals: { query: query, response: nil, request_id: request_id, error: nil }
     end
+  end
+
+  private
+
+  def find_or_create_chat
+    if params[:new].present?
+      create_chat
+    elsif params[:chat_id].present?
+      Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class)
+    else
+      @chat = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class)
+                  .order(created_at: :desc).first
+      @chat || create_chat
+    end
+  end
+
+  def create_chat
+    ActiveRecord::Base.connected_to(role: :writing) do
+      Chat.create!(
+        user: current_user,
+        entity_id: current_user.entity_id,
+        assistant_type: assistant_class,
+        owner: current_user,
+        enable_broadcast: false,
+        model_id: PortfolioCompanyAssistant::AI_MODEL,
+        name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+      )
+    end
+  end
+
+  def assistant_class
+    @assistant_class ||= (params[:assistant_type] == 'portfolio_company' ? 'PortfolioCompanyAssistant' : 'FundAssistant')
   end
 end
