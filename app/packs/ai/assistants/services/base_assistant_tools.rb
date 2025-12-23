@@ -38,7 +38,7 @@ class BaseAssistantTools
       <<~HTML
         <div class="my-3">
           <div class="fw-semibold mb-2">#{escaped_title}</div>
-          <div class="chart-wrap" style="height: 500px;">
+          <div class="chart-wrap">
             <div data-controller="chart-renderer" data-chart-renderer-spec-value="#{escaped_spec}" style="height: 100%;">
               <canvas id="#{canvas_id}" data-chart-renderer-target="canvas"></canvas>
             </div>
@@ -56,6 +56,7 @@ class BaseAssistantTools
       cfg["options"] ||= {}
       cfg["options"]["responsive"] = true
       cfg["options"]["maintainAspectRatio"] = false
+      cfg["options"]["resizeDelay"] = 150
       cfg["options"]["plugins"] ||= {}
       cfg["options"]["plugins"]["legend"] ||= {}
 

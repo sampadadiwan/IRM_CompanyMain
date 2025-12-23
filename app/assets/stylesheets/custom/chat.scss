@@ -203,7 +203,22 @@
 }
 
 .chart-wrap {
-    width: 100%;
-    max-height: 800px;
-    position: relative;
+  // aspect-ratio: 3.2;
+  // min-height: 260px;
+  // max-height: 420px;
+  width: 100%;
+  position: relative;
+}
+
+
+.chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 420px;;
+}
+
+
+@media (max-width: 576px) {
+  .chart-wrap { max-height: 520px; }
+  .chart-wrap canvas { height: 520px; }
 }

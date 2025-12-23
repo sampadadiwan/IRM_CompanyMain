@@ -30,6 +30,20 @@ class AssistantsController < ApplicationController
           entity_id: current_user.entity_id,
           assistant_type: assistant_class
         ).order(created_at: :desc).first
+
+        if @chat.nil?
+          ActiveRecord::Base.connected_to(role: :writing) do
+            @chat = Chat.create!(
+              user: current_user,
+              entity_id: current_user.entity_id,
+              assistant_type: assistant_class,
+              owner: current_user, # Default owner to user, can be overridden
+              enable_broadcast: false,
+              model_id: PortfolioCompanyAssistant::AI_MODEL,
+              name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+            )
+          end
+        end
       end
 
       Rails.logger.debug { "Loaded chat: #{@chat.id}" } if @chat
