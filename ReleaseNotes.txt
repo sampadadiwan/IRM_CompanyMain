@@ -1,3 +1,15 @@
+V9.1.62
+#####################################
+9fa80dc44 Fixed bug with captable
+cb5fa376b Fixed the tooltips spellings
+621493009 Added view for KYC update requested notification (#1093)
+06f807648 Clean PR for 1149. (#1151)
+b6cbe5c7a Added better tooltips and confirmations for calls
+75d6e8be1 Add better portco assistant with doc analysis
+740238600 Minor refactor of PortCo Assistant
+06f66c946 Prod IPs changed
+41fcfd2fa Added better support for nested folders in import_docs, and case insensitive index.xlsx
+
 V9.1.61
 #####################################
 d6685c65d Removed unwanted importmaps
