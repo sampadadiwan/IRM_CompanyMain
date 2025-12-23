@@ -46,6 +46,7 @@ table.dataTable>tbody>tr.child ul.dtr-details {
 }
 
 .prose table, #assistant-chat table {
+  width: 100% !important;
   th {
     padding: 10px !important;
   }

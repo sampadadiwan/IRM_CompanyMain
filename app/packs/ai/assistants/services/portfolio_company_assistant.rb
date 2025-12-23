@@ -18,6 +18,7 @@ class PortfolioCompanyAssistant
       PortfolioCompanyAssistantTools::GetPortfolioCompanyDetails.new(@data_manager),
       PortfolioCompanyAssistantTools::ListValuations.new(@data_manager),
       PortfolioCompanyAssistantTools::ListPortfolioInvestments.new(@data_manager),
+      PortfolioCompanyAssistantTools::GetCapTable.new(@data_manager),
       PortfolioCompanyAssistantTools::ListPortfolioKpis.new(@data_manager),
       PortfolioCompanyAssistantTools::ListFundRatios.new(@data_manager),
       PortfolioCompanyAssistantTools::ListDocuments.new(@data_manager),
@@ -38,6 +39,7 @@ class PortfolioCompanyAssistant
       Guidelines:
       - If you need to find a portfolio company, use `ListPortfolioCompanies`.
       - Once you have the `portfolio_company_id`, you can query its valuations, investments, extracts, or documents.
+      - For cap table information, use `GetCapTable`.
       - For KPIs, you can pass multiple `portfolio_company_ids` to `ListPortfolioKpis`.
       - For visualizations, fetch the data first, then use `PlotChart`.
       - Translate status or date filters into Ransack queries where appropriate.

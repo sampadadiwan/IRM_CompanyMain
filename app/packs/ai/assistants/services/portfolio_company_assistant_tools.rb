@@ -198,6 +198,30 @@ module PortfolioCompanyAssistantTools
     end
   end
 
+  # Tool to get cap table for a portfolio company.
+  class GetCapTable < RubyLLM::Tool
+    def name = "get_cap_table"
+
+    description "Get the cap table for a specific portfolio company. " \
+                "Optionally filter by funding rounds and group by a specific field."
+    param :portfolio_company_id, type: "integer", desc: "The ID of the portfolio company", required: true
+    param :funding_rounds, type: "array", desc: "Optional list of funding rounds to filter by", required: false
+    param :group_by_field, type: "string", desc: "Field to group by (default: 'investor_name')", required: false
+
+    def initialize(assistant)
+      super()
+      @assistant = assistant
+    end
+
+    def execute(portfolio_company_id:, funding_rounds: nil, group_by_field: :investor_name)
+      @assistant.get_cap_table(
+        portfolio_company_id: portfolio_company_id,
+        funding_rounds: funding_rounds,
+        group_by_field: group_by_field
+      ).to_json
+    end
+  end
+
   # PlotChart for PortfolioCompanyAssistant.
   class PlotChart < BaseAssistantTools::PlotChart
     def name = "plot_chart"

@@ -321,4 +321,23 @@ class PortfolioCompanyAssistantDataManager
     response = chat.ask prompt, with: attachments
     response.content
   end
+
+  # Generates a cap table for a portfolio company.
+  #
+  # @param portfolio_company_id [Integer] The ID of the portfolio company.
+  # @param funding_rounds [Array<String>, nil] Optional funding rounds to filter by.
+  # @param group_by_field [String, Symbol] Field to group the cap table by.
+  # @return [Array<Hash>] The cap table data.
+  def get_cap_table(portfolio_company_id:, funding_rounds: nil, group_by_field: :investor_name)
+    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
+    return "Portfolio Company not found or access denied" unless company
+
+    # If funding_rounds not provided, we might want to get all funding rounds for that company
+    rounds = funding_rounds
+    rounds = Investment.where(portfolio_company_id: company.id).pluck(:funding_round).uniq if rounds.blank?
+
+    return [] if rounds.blank?
+
+    Investment.generate_cap_table(rounds, company.id, group_by_field: group_by_field.to_sym)
+  end
 end
