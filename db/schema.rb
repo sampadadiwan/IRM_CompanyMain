@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_20_152808) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_23_053719) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -296,6 +296,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_20_152808) do
     t.datetime "updated_at_document_only"
     t.datetime "created_at_web_included"
     t.datetime "updated_at_web_included"
+    t.json "metadata"
     t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
   end
 
