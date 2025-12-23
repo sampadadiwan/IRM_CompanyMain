@@ -70,6 +70,7 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
+  # rubocop:disable Metrics/MethodLength
   def load_web_search_context(ctx, target:, web_search_enabled: false, **)
     ctx[:web_search_enabled] = web_search_enabled
     ctx[:web_search_context] = ""
@@ -79,7 +80,13 @@ class PortfolioReportAgent < SupportAgentService
 
     section = target
     report = section.ai_portfolio_report
-    company_name = report.portfolio_company&.name
+    fallback_company_name = report.portfolio_company&.name
+
+    # Extract actual company name from the documents usin LLM
+
+    company_name = extract_company_name_via_llm(ctx[:documents_context]) || fallback_company_name
+
+    Rails.logger.info "[PortfolioReportAgent] Extracted company name: #{company_name.inspect}"
 
     return true if company_name.blank?
 
@@ -116,6 +123,8 @@ class PortfolioReportAgent < SupportAgentService
       true
     end
   end
+
+  # rubocop:enable Metrics/MethodLength
 
   # Load section-specific template
   def load_section_template(ctx, target:, **)
@@ -818,6 +827,38 @@ class PortfolioReportAgent < SupportAgentService
               end
 
     queries.first(2) # Limit to 2 queries to avoid rate limiting
+  end
+
+  def extract_company_name_via_llm(documents_context)
+    return nil if documents_context.blank?
+
+    prompt = <<~PROMPT
+      You are an expert at extracting company names from text.
+
+      Extract ONLY the company name from the following document.
+      Return ONLY the company name, nothing else. No explanation, no punctuation, no quotes.
+      If you cannot determine the company name, return "UNKNOWN".
+
+      DOCUMENTS:
+      #{documents_context[0..2000]}
+
+      COMPANY NAME:
+    PROMPT
+
+    # Call LLM using RubyLLM
+    chat = RubyLLM.chat(model: 'gemini-2.0-flash')
+
+    response = chat.ask(prompt)
+    company_name = response.content.strip
+
+    if ["No company name found", "Multiple companies referenced"].include?(company_name)
+      nil
+    else
+      company_name
+    end
+  rescue StandardError => e
+    Rails.logger.error "[PortfolioReportAgent] Error extracting company name via LLM: #{e.message}"
+    nil
   end
 
   # NEW: Format search result for prompt

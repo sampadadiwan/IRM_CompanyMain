@@ -1,93 +1,51 @@
 module AgentTools
   class WebSearchTool
-    # Searches the web using DuckDuckGo's Instant Answer API
-    # @param query [String] search query
-    # @return [Hash] search results with abstract, related topics, and sources
     def self.search(query)
       start_time = Time.current
       Rails.logger.info "[WebSearchTool] Searching for: #{query}"
-      
+
+      # Use DuckDuckGo HTML search (no API key required)
+      encoded_query = CGI.escape(query)
       response = HTTParty.get(
-        "https://api.duckduckgo.com/",
-        query: { 
-          q: query, 
-          format: 'json',
-          no_html: 1,
-          skip_disambig: 1
+        "https://html.duckduckgo.com/html/",
+        query: { q: query },
+        headers: { 
+          'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        timeout: 10
+        timeout: 15
       )
-      
+
       duration = (Time.current - start_time).round(2)
       Rails.logger.info "[WebSearchTool] Search completed for '#{query}' in #{duration}s"
-      
-      parse_results(response)
+
+      parse_duckduckgo_html(response.body)
     rescue StandardError => e
-      Rails.logger.error "[WebSearchTool] Search failed for '#{query}': #{e.message}"
+      Rails.logger.error "[WebSearchTool] Search failed: #{e.message}"
       { error: e.message }
     end
 
     private
 
-    # Parses DuckDuckGo API response
-    # @param response [HTTParty::Response] API response
-    # @return [Hash] parsed results
-    def self.parse_results(response)
-      data = JSON.parse(response.body)
-      
+    def self.parse_duckduckgo_html(html)
+      require 'nokogiri'
+      doc = Nokogiri::HTML(html)
+
+      results = []
+      doc.css('.result').first(5).each do |result|
+        title = result.css('.result__title')&.text&.strip
+        snippet = result.css('.result__snippet')&.text&.strip
+        link = result.css('.result__url')&.text&.strip
+
+        results << "#{title}: #{snippet}" if snippet.present?
+      end
+
+      Rails.logger.info "[WebSearchTool] Parsed #{results.count} results"
+
       {
-        abstract: data['Abstract'],
-        abstract_text: data['AbstractText'],
-        abstract_source: data['AbstractSource'],
-        abstract_url: data['AbstractURL'],
-        related_topics: extract_related_topics(data),
-        sources: extract_sources(data)
+        abstract_text: results.first,
+        related_topics: results,
+        sources: []
       }
-    rescue JSON::ParserError => e
-      Rails.logger.error "[WebSearchTool] JSON parse error: #{e.message}"
-      { error: "Failed to parse search results" }
-    end
-
-    # Extracts related topics from search results
-    # @param data [Hash] parsed JSON data
-    # @return [Array<String>] related topic texts
-    def self.extract_related_topics(data)
-      return [] unless data['RelatedTopics'].present?
-      
-      topics = []
-      data['RelatedTopics'].first(5).each do |topic|
-        if topic['Text'].present?
-          topics << topic['Text']
-        elsif topic['Topics'].present?
-          # Handle nested topics
-          topic['Topics'].first(3).each do |subtopic|
-            topics << subtopic['Text'] if subtopic['Text'].present?
-          end
-        end
-      end
-      
-      topics.compact.uniq
-    end
-
-    # Extracts source URLs from search results
-    # @param data [Hash] parsed JSON data
-    # @return [Array<String>] source URLs
-    def self.extract_sources(data)
-      sources = []
-      
-      sources << data['AbstractURL'] if data['AbstractURL'].present?
-      
-      data['RelatedTopics']&.first(3)&.each do |topic|
-        sources << topic['FirstURL'] if topic['FirstURL'].present?
-        
-        if topic['Topics'].present?
-          topic['Topics'].first(2).each do |subtopic|
-            sources << subtopic['FirstURL'] if subtopic['FirstURL'].present?
-          end
-        end
-      end
-      
-      sources.compact.uniq
     end
   end
 end
