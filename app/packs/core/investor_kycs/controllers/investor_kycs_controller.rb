@@ -166,7 +166,7 @@ class InvestorKycsController < ApplicationController
   end
 
   def send_notification
-    @investor_kyc.updated_notification(msg: params[:message])
+    @investor_kyc.updates_requested_notification(msg: params[:message])
     redirect_to investor_kyc_url(@investor_kyc), notice: "Notification sent successfully. Please wait for us to respond to your request."
   end
 

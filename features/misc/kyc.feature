@@ -43,6 +43,23 @@ Scenario Outline: Cannot create KYC without Stakeholder
   And I click the "Save" button
   Then I should see the "Investor kyc was successfully saved"
 
+Scenario Outline: KYC updates required notification
+  Given Im logged in as a user "first_name=Testuser" for an entity "name=Urban1;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor "investor_name=Investor 121" with "1" users
+  When I navigate to the new "Individual" KYC page
+  Then I select the investor for the KYC
+  And I click the "Next" button
+  And I click the "Next" button
+  And I click the "Save" button
+  Then I should see the "Investor kyc was successfully saved"
+  Given The KYC is verified
+  Given I log out
+  Given I log in as the investor user
+  When I navigate to the KYC page
+  And I send the updates required notification
+  Then the updates required notification should be sent
 
 @import
 Scenario Outline: Import investor kycs

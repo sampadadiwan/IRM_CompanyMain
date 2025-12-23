@@ -20,7 +20,8 @@ class InvestorKycNotifier < BaseNotifier
     def message
       @investor_kyc ||= record
       @custom_notification ||= custom_notification
-      @custom_notification&.subject || params[:msg]
+      @message = @custom_notification&.subject || params[:msg]
+      @message
     end
 
     def custom_notification

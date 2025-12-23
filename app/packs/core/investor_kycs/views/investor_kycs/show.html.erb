@@ -41,7 +41,7 @@
     <% if policy(@investor_kyc).send_notification? %>
       <%= button_to send_notification_investor_kyc_path(
                       @investor_kyc,
-                      message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC #{@investor_kyc.full_name}"),
+                      message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC: #{@investor_kyc.full_name}"),
                   id: "investor_kyc_send_notification_btn", method: :put, class: label_class, form_class: "deleteButton",
                   data: {
                     action: "click->confirm#popup",

@@ -106,3 +106,31 @@ Then('I should see the documents attached to the correct kycs') do
     puts "Verified document #{document.name} for KYC of Investor #{user_data['Investor']}"
   end
 end
+
+Given('The KYC is verified') do
+  @investor_kyc ||= InvestorKyc.last
+  @investor_kyc.update_columns(verified: true)
+end
+
+When('I navigate to the KYC page') do
+  visit(investor_kyc_path(@investor_kyc))
+end
+
+When('I send the updates required notification') do
+  expect(page).to have_content("Updates Required", wait: 5)
+  click_on("Updates Required")
+  click_on("Proceed")
+  expect(page).to have_content("Notification sent successfully", wait: 5)
+end
+
+Then('the updates required notification should be sent') do
+  notification_receiver = User.where(entity: @entity).where(first_name: "Testuser").first || User.where(entity: @entity).first
+  current_email = nil
+  emails_sent_to(notification_receiver.email).each do |email|
+    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+    current_email = email if email.subject.downcase.include?("update requested for kyc")
+  end
+  puts "No email found for #{notification_receiver.email} with subject 'update requested for kyc'" if current_email.nil?
+  msg = "Investor #{@investor_kyc.investor} has requested updates/changes for KYC: #{@investor_kyc.full_name}"
+  expect(current_email.body).to include msg
+end

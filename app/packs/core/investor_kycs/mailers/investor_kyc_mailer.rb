@@ -16,6 +16,11 @@ class InvestorKycMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  def notify_updates_requested
+    subject = "Update requested for KYC: #{@investor_kyc.full_name}"
+    send_mail(subject:)
+  end
+
   def notify_kyc_required
     subject = "Request to add KYC: #{@investor_kyc.entity.name}"
     send_mail(subject:)
