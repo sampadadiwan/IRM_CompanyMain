@@ -15,7 +15,10 @@ class InvestmentsController < ApplicationController
       :import_upload_id
     )
 
-    @pagy, @investments = pagy(@investments) if params[:ag].blank?
+    # We want to disable pagination when using the ag grid or filtering by portfolio company. For portfolio_company specially the cap table grpahs and charts depend on having all investments loaded.
+    @use_pagy = params[:ag].blank? && params[:portfolio_company_id].blank?
+
+    @pagy, @investments = pagy(@investments) if @use_pagy
 
     respond_to do |format|
       format.html
@@ -29,6 +32,7 @@ class InvestmentsController < ApplicationController
   # GET /investments/new
   def new
     @investment = Investment.new
+    @investment.portfolio_company_id = params[:portfolio_company_id] if params[:portfolio_company_id].present?
     @investment.entity_id = current_user.entity_id
     authorize @investment
   end

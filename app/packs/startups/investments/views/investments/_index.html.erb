@@ -1,14 +1,14 @@
+
 <div class="table-responsive" data-controller="datatable">
-
-
-  <table id="investments" class="table table-bordered dataTable">
+  <!-- Use jq pagination if not using pagy -->
+  <table id="investments" class="table table-bordered dataTable <%= @use_pagy ? "" : "jqDataTable"%>">
 
     <thead>
       <tr>
         <th>
           <%= sort_link @q, :portfolio_company_investor_name, "Portfolio Company" %>
         </th>
-        <th>          
+        <th>
           <%= sort_link @q, :category, "Category" %>
         </th>
         <th>
@@ -43,6 +43,6 @@
     </tbody>
   </table>
 
-  <%= raw pagy_bootstrap_nav(@pagy) %>
+  <%= raw pagy_bootstrap_nav(@pagy) if @use_pagy %>
 
 </div>

@@ -2,7 +2,7 @@
   <h1 class="h3 mb-0 text-gray-800">Investments</h1>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
-    <%= link_to "New Investment", new_investment_path, {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
+    <%= link_to "New Investment", new_investment_path(portfolio_company_id: params[:portfolio_company_id]), {class: "btn btn-outline-primary ti ti-plus d-inline-flex align-items-center"}  %>
     <%= link_to new_import_upload_path(
                   "import_upload[import_type]": "Investment",
                   "sample_upload": "INVESTMENT_SAMPLE"),
