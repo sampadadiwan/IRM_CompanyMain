@@ -67,9 +67,7 @@ class ImportUtil < Trailblazer::Operation
         form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: nil)
 
         # If this is an import for MULTIPLE_FORM_TYPES_ALLOWED, then skip creating custom fields, as these models can have multiple form types
-        if import_upload.import_type.in?(FormType::MULTIPLE_FORM_TYPES_ALLOWED)
-          import_upload.custom_fields_created = "Data has been uploaded. Please create the required custom fields"
-        else
+        unless import_upload.import_type.in?(FormType::MULTIPLE_FORM_TYPES_ALLOWED)
           # Create the custom fields for the form type based on the headers. This is idempotent, so will not create duplicates, but will update the form type with extra custom fields if needed
           custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload, ctx[:form_type_id])
           import_upload.custom_fields_created = custom_fields_created.join(";") if custom_fields_created.present?
