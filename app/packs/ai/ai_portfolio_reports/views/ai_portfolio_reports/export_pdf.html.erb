@@ -7,6 +7,7 @@
 
     begin
       data = JSON.parse(chart_config)
+      data['datasets']&.each { |ds| ds.delete('yAxisID') }
 
       # Apply pastel colors
       if data['datasets']
@@ -41,7 +42,7 @@
       }
 
       encoded_config = ERB::Util.url_encode(chart_config_obj.to_json)
-      "https://quickchart.io/chart?c=#{encoded_config}&width=700&height=400&backgroundColor=white"
+      "https://quickchart.io/chart?c=#{encoded_config}&width=700&height=400&backgroundColor=white&v=3"
     rescue => e
       Rails.logger.error "Chart conversion error: #{e.message}"
       nil

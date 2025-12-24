@@ -106,37 +106,36 @@ class AiPortfolioReportsController < ApplicationController
   # end
 
   def export_docx
-  authorize @report
+    authorize @report
 
-  @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
-  company_name = @report.portfolio_company&.name&.parameterize || "portfolio-company"
+    @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
+    company_name = @report.portfolio_company&.name&.parameterize || "portfolio-company"
 
-  # Render the Word template to get properly formatted HTML
-  html_content = render_to_string(
-    template: 'ai_portfolio_reports/export_docx',
-    layout: false
-  )
+    # Render the Word template to get properly formatted HTML
+    html_content = render_to_string(
+      template: 'ai_portfolio_reports/export_docx',
+      layout: false
+    )
 
-  # Convert HTML to DOCX using Pandoc
-  temp_html = Tempfile.new(['report', '.html'])
-  temp_docx = Tempfile.new(['report', '.docx'])
+    # Convert HTML to DOCX using Pandoc
+    temp_html = Tempfile.new(['report', '.html'])
+    temp_docx = Tempfile.new(['report', '.docx'])
 
-  begin
-    temp_html.write(html_content)
-    temp_html.close
+    begin
+      temp_html.write(html_content)
+      temp_html.close
 
-    system("pandoc #{temp_html.path} -o #{temp_docx.path}")
+      system("pandoc #{temp_html.path} -o #{temp_docx.path}")
 
-    send_file temp_docx.path,
-              filename: "#{company_name}-report-#{Time.zone.today}.docx",
-              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-              disposition: 'attachment'
-  ensure
-    temp_html.unlink
-    # Note: temp_docx will be cleaned up after send_file completes
+      send_file temp_docx.path,
+                filename: "#{company_name}-report-#{Time.zone.today}.docx",
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                disposition: 'attachment'
+    ensure
+      temp_html.unlink
+      # NOTE: temp_docx will be cleaned up after send_file completes
+    end
   end
-end
-
 
   def destroy
     authorize @report
