@@ -125,9 +125,9 @@
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Redemption Account Entries</span>
-                            <div class="fw-bold  text-end">
-                                <%= render "/capital_distribution_payments/account_entries", type: ["FV For Redemption"] %>
-                            </div>
+                        </div>
+                        <div class="fw-bold">
+                            <%= render "/capital_distribution_payments/account_entries", type: ["FV For Redemption"] %>
                         </div>
                     </li>
 
@@ -146,9 +146,9 @@
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Other Account Entries</span>
-                            <div class="fw-bold  text-end">
-                                <%= render "/capital_distribution_payments/account_entries", type: ["Income", "Tax", "Expense"] %>
-                            </div>
+                        </div>
+                        <div class="fw-bold">
+                            <%= render "/capital_distribution_payments/account_entries", type: ["Income", "Tax", "Expense"] %>
                         </div>
                     </li>
 
@@ -167,9 +167,9 @@
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Reinvestment Account Entries</span>
-                            <div class="fw-bold  text-end">
-                                <%= render "/capital_distribution_payments/account_entries", type: ["Reinvestment"] %>
-                            </div>
+                        </div>
+                        <div class="fw-bold">
+                            <%= render "/capital_distribution_payments/account_entries", type: ["Reinvestment"] %>
                         </div>
                     </li>
 

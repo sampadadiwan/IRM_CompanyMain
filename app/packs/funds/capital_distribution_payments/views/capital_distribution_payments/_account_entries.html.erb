@@ -1,13 +1,27 @@
+<div class="small bg-light p-2 rounded">
+  <% @capital_distribution_payment.json_fields["ae_audit"]&.each do |ae_array| %>
+    <% ae_array.select { |ae| type.include?(ae[3]&.strip) }.each do |account_entry| %>
 
-<table class="ae-list table table-bordered dataTable">
-    <% @capital_distribution_payment.json_fields["ae_audit"]&.each do |ae_array| %>
-        <% ae_array.filter{|ae| type.include?(ae[3]&.strip)}.each do |account_entry| %>
-            <tr class="ae-item">
-                <td class="ae-name"><%= account_entry[0] %></td>
-                <td class="ae-description"><%= account_entry[1] %></td>
-                <td class="ae-amount"><%= currency_from_cents(account_entry[2], @capital_distribution_payment.fund.currency, params) %></td>
-                <td class="ae-type"><%= account_entry[3] %></td>
-            </tr>
-        <% end %>
-    <% end %>                
-</table>
+      <div class="d-flex justify-content-between">
+          <!-- Left column -->
+          <div class="d-flex flex-column lh-1">
+            <span><%= account_entry[0] %></span>
+            <span class="text-muted"><%= account_entry[1] %></span>
+          </div>
+
+          <!-- Right column -->
+          <div class="d-flex flex-column text-end lh-1">
+            <span>
+                <%= currency_from_cents(
+                    account_entry[2],
+                    @capital_distribution_payment.fund.currency,
+                    params
+                    ) %>
+            </span>
+            <span class="text-muted"><%= account_entry[3] %></span>
+          </div>
+      </div>
+      <hr class="my-2">
+    <% end %>
+  <% end %>
+</div>
