@@ -14,14 +14,16 @@
         </div>
       <% end %>
 
+      <% disabled = folder.persisted? %>
+
       <div class="form-group">
         <%= form.label :name %>
-        <%= form.text_field :name, class: "form-control"  %>
+        <%= form.text_field :name, disabled: disabled, class: "form-control" %>
       </div>
 
       <div class="form-group">
         <%= form.label :parent_folder %>
-        <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
+        <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, disabled: disabled, class: "form-control select2"  %>
       </div>
 
       <div class="form-group nonpdf">

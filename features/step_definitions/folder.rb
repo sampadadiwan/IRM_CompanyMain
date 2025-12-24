@@ -105,9 +105,9 @@ Then("I update the folder's name") do
   folder_to_update = Folder.find_by_name("B")
   visit edit_folder_path(folder_to_update)
   #sleep(0.2)
-  fill_in 'folder_name', with: "B - Updated"
-  click_on('Save')
-  expect(page).to have_content("successfull")
+  # field should be disabled
+  expect(page).to have_field('folder_name', disabled: true)
+  expect(page).to have_field('folder_parent_id', disabled: true)
   #sleep(2)
 end
 
