@@ -50,10 +50,25 @@ class TemplateTransformer
   end
 
   def map_placeholders_with_ai(placeholders, schema)
-    # Use the static chat method with a specific model as per reference
     chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    system_msg = build_system_msg(schema)
+    user_msg = "PLACEHOLDERS FOUND IN DOCUMENT: #{placeholders.join(', ')}"
 
-    system_msg = <<~SYS
+    full_prompt = [system_msg, user_msg].join("\n\n")
+    Rails.logger.debug "--- AI PROMPT START ---"
+    Rails.logger.debug full_prompt
+    Rails.logger.debug "--- AI PROMPT END ---"
+
+    raw_response = chat.ask(full_prompt)
+    parse_json(raw_response)
+  rescue StandardError => e
+    Rails.logger.debug { "AI Mapping Error: #{e.message}" }
+    Rails.logger.error "AI Mapping Failed: #{e.message}"
+    {}
+  end
+
+  def build_system_msg(schema)
+    <<~SYS
       You are a legal document automation expert. I have a Word document with descriptive placeholders in square brackets.
       I need to map these to a specific Ruby data schema used by the Sablon gem for document generation.
 
@@ -94,21 +109,6 @@ class TemplateTransformer
       If a placeholder cannot be mapped to a real attribute or method, leave it as the original placeholder text or map it to a generic 'comment' field.
       DO NOT hallucinate fields like 'fund.xxx' if 'xxx' is not in the schema for 'fund'.
     SYS
-
-    user_msg = "PLACEHOLDERS FOUND IN DOCUMENT: #{placeholders.join(', ')}"
-
-    full_prompt = [system_msg, user_msg].join("\n\n")
-    Rails.logger.debug "--- AI PROMPT START ---"
-    Rails.logger.debug full_prompt
-    Rails.logger.debug "--- AI PROMPT END ---"
-
-    raw_response = chat.ask(full_prompt)
-
-    parse_json(raw_response)
-  rescue StandardError => e
-    Rails.logger.debug { "AI Mapping Error: #{e.message}" }
-    Rails.logger.error "AI Mapping Failed: #{e.message}"
-    {}
   end
 
   def parse_json(obj)

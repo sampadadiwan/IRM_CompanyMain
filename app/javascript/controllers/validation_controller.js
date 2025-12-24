@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { isIP } from "net";
 
 export default class ValidationController extends Controller {
     initialize() {

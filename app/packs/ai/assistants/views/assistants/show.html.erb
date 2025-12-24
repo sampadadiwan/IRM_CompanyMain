@@ -1,14 +1,41 @@
-<div id="assistant-chat" class="d-flex flex-column h-100 bg-white position-relative" data-controller="voice-chat" style="min-height: 80vh;">
+<div id="assistant-chat" class="d-flex flex-column h-100 bg-white position-relative" data-controller="voice-chat ppt-export" style="min-height: 80vh;">
   <%= turbo_stream_from [current_user, "assistant"] if current_user %>
 
-  <!-- Assistant Selection (Top Right) -->
-  <div class="position-absolute top-0 end-0 p-3" style="z-index: 1050;">
-    <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self">
+  <!-- Assistant Selection & Export (Top Right) -->
+  <div class="position-absolute top-0 end-0 p-3 d-flex gap-2" style="z-index: 1050;">
+    <button type="button"
+            class="btn btn-sm btn-outline-success px-3 d-flex align-items-center gap-2 ti ti-file-export"
+            data-action="click->ppt-export#export"
+            title="Export chat to PowerPoint">
+      Export PPT
+    </button>
+
+    <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
+      <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true) %>"
+         class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
+         title="Start new chat">
+        <i class="ti ti-plus"></i> New Chat
+      </a>
+
+      <% if @chats.present? %>
+        <select name="chat_id"
+                class="form-select form-select-sm border-0 bg-light shadow-sm rounded-pill px-3"
+                style="width: auto; max-width: 200px; cursor: pointer;"
+                onchange="this.form.requestSubmit()">
+          <option value="" <%= 'selected' if params[:chat_id].blank? %> disabled>Chat History...</option>
+          <% @chats.each do |chat| %>
+            <option value="<%= chat.id %>" <%= 'selected' if @chat&.id == chat.id %>>
+              <%= chat.name.presence || "Chat #{chat.id}" %>
+            </option>
+          <% end %>
+        </select>
+      <% end %>
+
       <select name="assistant_type"
               class="form-select form-select-sm border-0 bg-light shadow-sm rounded-pill px-3"
               style="width: auto; cursor: pointer;"
               data-voice-chat-target="assistantType"
-              onchange="this.form.requestSubmit()">
+              onchange="const chatId = this.form.querySelector('select[name=chat_id]'); if(chatId) chatId.disabled = true; this.form.requestSubmit()">
         <option value="" <%= 'selected' if params[:assistant_type].blank? %> disabled>Select Assistant...</option>
         <option value="fund" <%= 'selected' if params[:assistant_type] == 'fund' %>>Fund Assistant</option>
         <option value="portfolio_company" <%= 'selected' if params[:assistant_type] == 'portfolio_company' %>>Portfolio Company Assistant</option>
@@ -35,7 +62,7 @@
          </div>
 
          <!-- Responses will be inserted here -->
-         <div data-voice-chat-target="responses" class="d-flex flex-column gap-3">
+         <div data-voice-chat-target="responses" data-ppt-export-target="responses" class="d-flex flex-column gap-3">
            <% if @messages.present? %>
              <% @messages.each do |msg| %>
                <%= render partial: "assistants/ask", locals: { msg: msg } %>

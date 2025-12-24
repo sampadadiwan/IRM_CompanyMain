@@ -7,7 +7,7 @@
   end
 %>
 <% if show_card %>
-<div class="card border-0 shadow-sm mb-3">
+<div class="card border-0 shadow-sm mb-3 <%= 'assistant-message-card' if defined?(msg) && msg.role == 'assistant' || defined?(response) %>">
   <div class="card-body p-4">
     <% if defined?(msg) %>
       <% if msg.role == "user" %>

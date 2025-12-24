@@ -9,6 +9,7 @@ class AssistantsController < ApplicationController
 
     Rails.logger.debug { "Loaded chat: #{@chat.id}" }
     @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc)
+    @chats = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class).order(created_at: :desc)
   end
 
   def ask
@@ -65,9 +66,13 @@ class AssistantsController < ApplicationController
         owner: current_user,
         enable_broadcast: false,
         model_id: PortfolioCompanyAssistant::AI_MODEL,
-        name: "#{assistant_class.humanize} Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+        name: "#{assistant_initials} Chat #{I18n.l(Time.zone.now, format: :default)}"
       )
     end
+  end
+
+  def assistant_initials
+    assistant_class == 'PortfolioCompanyAssistant' ? 'PCA' : 'FA'
   end
 
   def assistant_class
