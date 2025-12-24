@@ -63,7 +63,7 @@
       <div class="form-group">
         <%= label_tag :account_entries_excluded, "Account Entries Not pro-rated" %>
         <%= text_field_tag :account_entries_excluded, params[:account_entries_excluded], class: 'form-control' %>
-        <span class="text-muted">These account entries will not be included in the transfer if the checkbox above is checked</span>
+        <span class="text-muted">These account entries will be copied directly to the new commitment instead of being computed using the transfer ratio</span>
       </div>
 
 

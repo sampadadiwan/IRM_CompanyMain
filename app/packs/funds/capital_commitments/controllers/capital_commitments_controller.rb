@@ -46,7 +46,7 @@ class CapitalCommitmentsController < ApplicationController
 
       if to_commitment.blank?
         # Redirect back to the form with an error message
-        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params), alert: "Invalid folio #{params[:to_folio_id]}"
+        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.to_unsafe_h), alert: "Invalid folio #{params[:to_folio_id]}"
       else
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
@@ -75,7 +75,7 @@ class CapitalCommitmentsController < ApplicationController
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"
         else
           # Redirect back to the form with an error message
-          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params), alert: result[:error]
+          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.to_unsafe_h), alert: result[:error]
         end
       end
     end
