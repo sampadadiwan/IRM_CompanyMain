@@ -175,9 +175,9 @@ end
   <!-- Report Content -->
   <% @sections.each_with_index do |section, index| %>
     <div style="margin-bottom: 30px;<%= index > 0 ? ' page-break-before: always;' : '' %>">
-      <h2 style="font-size: 16pt; font-weight: bold; color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;">
+      <!--<h2 style="font-size: 16pt; font-weight: bold; color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;">
         <%= section.section_type %>
-      </h2>
+      </h2>-->
       <div style="font-size: 11pt; line-height: 1.6;">
         <%= clean_for_word(section.current_content).html_safe %>
       </div>
