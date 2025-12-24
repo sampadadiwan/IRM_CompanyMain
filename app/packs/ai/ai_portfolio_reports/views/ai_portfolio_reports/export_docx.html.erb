@@ -1,69 +1,125 @@
 <%
   # Helper to convert chart placeholder to QuickChart image URL for Word
   def chart_to_image_url_docx(chart_config, chart_type)
-    return nil unless chart_config.present?
+  return nil unless chart_config.present?
 
-    pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
+  pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
 
-    begin
-      data = JSON.parse(chart_config)
+  begin
+    data = JSON.parse(chart_config)
+    data['datasets']&.each { |ds| ds.delete('yAxisID') }
 
-      if data['datasets']
-        data['datasets'].each_with_index do |dataset, idx|
-          color = pastel_colors[idx % pastel_colors.length]
 
-          if ['pie', 'doughnut'].include?(chart_type)
-            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
-          elsif chart_type == 'line'
-            dataset['borderColor'] = color
-            dataset['backgroundColor'] = color + '40'
-            dataset['fill'] = true if chart_type == 'area'
-          else
-            dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
-            dataset['borderColor'] = 'transparent'
-          end
+    if data['datasets']
+      data['datasets'].each_with_index do |dataset, idx|
+        color = pastel_colors[idx % pastel_colors.length]
+        if ['pie', 'doughnut'].include?(chart_type)
+          dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+        elsif chart_type == 'line'
+          dataset['borderColor'] = color
+          dataset['backgroundColor'] = color + '40'
+          dataset['fill'] = true if chart_type == 'area'
+        else
+          dataset['backgroundColor'] = pastel_colors.slice(0, data['labels']&.length || 6)
+          dataset['borderColor'] = 'transparent'
         end
       end
+    end
 
-      chart_type = 'line' if chart_type == 'area'
+    chart_type = 'line' if chart_type == 'area'
 
-      chart_config_obj = {
-        type: chart_type,
-        data: data,
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true, position: 'top' }
-          },
-          scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
-        }
+    # chart_config_obj = {
+    #   type: chart_type,
+    #   data: data,
+    #   options: {
+    #     responsive: true,
+    #     plugins: { legend: { display: true, position: 'top' } },
+    #     scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+    #   }
+    # }
+
+    chart_config_obj = {
+      type: chart_type,
+      data: data,
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true, position: 'top' } },
+        scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+
       }
+    }
 
-      encoded_config = ERB::Util.url_encode(chart_config_obj.to_json)
-      "https://quickchart.io/chart?c=#{encoded_config}&width=600&height=350&backgroundColor=white"
-    rescue => e
-      Rails.logger.error "Chart conversion error: #{e.message}"
+    # encoded = ERB::Util.url_encode(chart_config_obj.to_json)
+    # return "https://quickchart.io/chart?c=#{encoded}&width=600&height=350&backgroundColor=white&v=3&format=png"
+
+
+    Rails.logger.info "=== QuickChart Debug ==="
+    Rails.logger.info "Chart type: #{chart_type}"
+    Rails.logger.info "Config length: #{chart_config.length}"
+    Rails.logger.info "Parsed data: #{data.inspect[0..500]}"
+    Rails.logger.info "Request body: #{{ chart: chart_config_obj }.to_json[0..1000]}"
+
+
+    response = HTTParty.post(
+      'https://quickchart.io/chart/create',
+      body: { chart: chart_config_obj.to_json, width: 600, height: 350, backgroundColor: 'white', version: '3' }.to_json,
+      headers: { 'Content-Type' => 'application/json' },
+      timeout: 15
+    )
+
+    if response.success?
+      JSON.parse(response.body)['url']
+    else
+      Rails.logger.error "QuickChart API failed: #{response.code} - #{response.body}"
       nil
     end
+  rescue => e
+    Rails.logger.error "Chart conversion error: #{e.message}"
+    nil
   end
+end
+
 
   # Process section content to replace chart placeholders with images for Word
-  def convert_charts_for_word(content)
-    return content unless content.present?
+def convert_charts_for_word(content)
+  return content unless content.present?
+  
+  require 'nokogiri'
+  doc = Nokogiri::HTML.fragment(content)
 
-    content.gsub(/<div[^>]*class="chart-placeholder"[^>]*data-chart-config="([^"]*)"[^>]*data-chart-type="([^"]*)"[^>]*>.*?<\/div>/m) do |match|
-      config = CGI.unescapeHTML($1)
-      chart_type = $2 || 'bar'
+  Rails.logger.info "=== convert_charts_for_word ==="
+  Rails.logger.info "Content length: #{content.length}"
+  Rails.logger.info "Chart placeholders found: #{doc.css('.chart-placeholder').count}"
 
-      image_url = chart_to_image_url_docx(config, chart_type)
 
-      if image_url
-        %(<p style="text-align: center;"><img src="#{image_url}" width="500" alt="Chart" /></p>)
-      else
-        %(<p style="text-align: center; color: #666; font-style: italic;">[Chart]</p>)
-      end
+  
+  doc.css('.chart-placeholder').each do |placeholder|
+    #Rails.logger.info "Image URL result: #{image_url.present? ? image_url[0..100] : 'NIL'}"
+    config = CGI.unescapeHTML(placeholder['data-chart-config'].to_s)
+    chart_type = placeholder['data-chart-type'] || 'bar'
+
+    Rails.logger.info "Processing chart: type=#{chart_type}, config_present=#{config.present?}, config_length=#{config.length}"
+
+
+    
+    next unless config.present?
+    
+    image_url = chart_to_image_url_docx(config, chart_type)
+
+    Rails.logger.info "Image URL result: #{image_url.present? ? image_url[0..100] : 'NIL'}"
+
+    
+    if image_url
+      placeholder.replace("<p style=\"text-align: center;\"><img src=\"#{image_url}\" width=\"500\" alt=\"Chart\" /></p>")
+    else
+      placeholder.replace("<p style=\"text-align: center; color: #666; font-style: italic;\">[Chart]</p>")
     end
   end
+  
+  doc.to_html
+end
+
+
 
   # Clean content for Word - convert complex HTML to simpler format
   def clean_for_word(content)
