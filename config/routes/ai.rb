@@ -31,6 +31,7 @@ resources :ai_portfolio_reports do
       post :add_content
       post :regenerate
       patch :toggle_web_search
+      post :toggle_reviewed
     end
   end
 
