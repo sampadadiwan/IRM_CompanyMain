@@ -1,3 +1,18 @@
+V9.1.63
+#####################################
+ad171e5a8 Kpi direct upload (#1161)
+e86933e80 Updated CDP account entries view (#1160)
+e83366d58 Minor fixes 241225 (#1159)
+721429be4 Updated pro-rated msg, now transfer error is shown properly (#1157)
+4a0da1918 Cannot update a folders name or parent from UI (#1156)
+75dec0dae Ppt gen for the assistants (#1155)
+0a7c53d61 Refactored assistants to add captable
+48612e8a8 Refactored assistants show method
+777da5c8b Better styles for assistant charts
+dbef5349d Now uses DEFAULT_MODEL from env
+137805806 Fix Turbo frame issue and use duckduckgo-html api for web search (#1153)
+7d097afde Added thought_signature to tool_calls for assistants
+
 V9.1.62
 #####################################
 9fa80dc44 Fixed bug with captable

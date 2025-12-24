@@ -43,7 +43,7 @@ You are Roo, an expert software engineer working on the IRM (Investor Relation M
 
 ## 🧪 Testing (Cucumber)
 
-- **Location:** Integration tests are in the `features/` directory.
+- **Location:** Integration tests are in the `features/` directory. Read the features/features.md file for more info while writing tests.
 - **Structure:**
   - `.feature` files describe scenarios.
   - `step_definitions/` contain the Ruby code for the steps.
