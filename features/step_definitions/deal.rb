@@ -210,16 +210,6 @@ Given('another entity is a deal_investor {string} in the deal') do |arg|
   puts @deal_investor.to_json
 end
 
-Given('another user has investor access {string} in the investor') do |arg|
-  @investor_access = InvestorAccess.new(entity: @entity, investor: @investor,
-                                        first_name: @another_user.first_name, last_name: @another_user.last_name,
-                                        email: @another_user.email, granter: @user)
-  key_values(@investor_access, arg)
-
-  @investor_access.save!
-  puts "\n####Investor Access####\n"
-  puts @investor_access.to_json
-end
 
 Given('investor has access right {string} in the deal') do |arg1|
   @access_right = AccessRight.new(owner: @deal, entity: @entity)

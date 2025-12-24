@@ -6,6 +6,14 @@ Given('Im logged in as a user {string} for an entity {string}') do |arg1, arg2|
   )
 end
 
+Given('Im logged in as a user {string} for an existing entity {string}') do |arg1, arg2|
+  steps %(
+    Given there is a user "#{arg1}" for an existing entity "#{arg2}"
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end
+
 
 Given('I log in with email {string}') do |email|
   @user = User.find_by_email(email)
@@ -45,7 +53,7 @@ end
 When('I fill and submit the login without password') do
   @user.confirmed_at = nil
   @user.save
-  
+
   fill_in('user_email_wo_pass', with: @user.email)
   sleep(5)
   click_on("Log In Via Email Link")

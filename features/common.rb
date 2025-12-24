@@ -52,6 +52,30 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   @entity.reload
 end
 
+Given('there is a user {string} for an existing entity {string}') do |arg1, arg2|
+  entity = FactoryBot.build(:entity)
+  key_values(entity, arg2)
+  entity = Entity.find_by(name: entity.name, category: entity.category)
+  puts "\n####Entity####\n"
+  puts entity.to_json
+
+
+  @user = FactoryBot.build(:user, entity: entity)
+  key_values(@user, arg1)
+
+  if User.where(email: @user.email).exists?
+    @user = User.find_by(email: @user.email)
+    puts "User with email #{@user.email} already exists. Using existing user."
+  else
+    @user.save!
+  end
+
+  puts "\n####User####\n"
+  puts @user.to_json
+  puts "User Permissions: #{@user.permissions}"
+
+  entity.reload
+end
 
 
 Given('there is another user {string} for another entity {string}') do |arg1, arg2|

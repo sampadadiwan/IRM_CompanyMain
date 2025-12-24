@@ -78,6 +78,7 @@ class KpiReportsController < ApplicationController
   # POST /kpi_reports or /kpi_reports.json
   def create
     @kpi_report = KpiReport.new(kpi_report_params)
+    @kpi_report.user_id = current_user.id
     authorize @kpi_report
     setup_doc_user(@kpi_report)
 
@@ -96,7 +97,7 @@ class KpiReportsController < ApplicationController
   def update
     setup_doc_user(@kpi_report)
     respond_to do |format|
-      if @kpi_report.update(kpi_report_params)
+      if @kpi_report.update(kpi_report_params.merge(user_id: current_user.id))
         format.html { redirect_to kpi_report_url(@kpi_report), notice: "Kpi report was successfully updated." }
         format.json { render :show, status: :ok, location: @kpi_report }
       else

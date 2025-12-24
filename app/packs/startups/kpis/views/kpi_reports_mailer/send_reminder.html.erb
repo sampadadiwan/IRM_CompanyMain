@@ -1,0 +1,10 @@
+<p>Dear <%= @user.name %>,</p>
+
+<p>This is a reminder to report the KPIs for <strong><%= @kpi_report.for_name %></strong> for the period ending <strong><%= @kpi_report.as_of %></strong>.</p>
+
+<p>You can fill out the report by clicking the link below:</p>
+
+<p><%= link_to 'Fill KPI Report', kpi_report_url(@kpi_report, host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')) %></p>
+
+<p>Thank you,<br>
+<%= @entity.name %> Team</p>

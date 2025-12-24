@@ -41,3 +41,4 @@ pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/hi
 # Remove ANY pins for "chart.js/auto"
 pin "chart.js", to: "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm", preload: true
 pin "xlsx", to: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+pin "pptxgenjs", to: "https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.0/+esm"
