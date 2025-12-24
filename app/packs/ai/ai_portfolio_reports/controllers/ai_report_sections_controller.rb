@@ -93,6 +93,25 @@ class AiReportSectionsController < ApplicationController
     render json: { success: true, content: @section.content_html }
   end
 
+  # Add this to ai_report_sections_controller.rb
+
+def toggle_reviewed
+  @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
+  @section = @report.ai_report_sections.find(params[:id])
+  
+  @section.reviewed = !@section.reviewed
+  @section.save!
+  
+  render json: {
+    success: true,
+    reviewed: @section.reviewed,
+    message: @section.reviewed ? 'Section included in report' : 'Section excluded from report'
+  }
+rescue StandardError => e
+  render json: { success: false, error: e.message }, status: :unprocessable_entity
+end
+
+
   # rubocop:disable Metrics/MethodLength
   def regenerate
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])

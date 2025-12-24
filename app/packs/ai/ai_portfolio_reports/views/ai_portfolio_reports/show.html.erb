@@ -59,11 +59,22 @@
               class: "ai-section-item #{'active' if is_active} #{'reviewed' if is_reviewed}" do %>
             <div class="ai-section-indicator"></div>
             <span class="ai-section-name"><%= section.section_type %></span>
-            <% if is_reviewed %>
+            <!--<% if is_reviewed %>
               <svg class="ai-section-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-            <% end %>
+            <% end %>-->
+            <span class="ai-section-toggle <%= 'checked' if section.reviewed %>" 
+      data-section-id="<%= section.id %>"
+      data-report-id="<%= @report.id %>"
+      onclick="event.preventDefault(); event.stopPropagation(); toggleReviewed(this);"
+      title="<%= section.reviewed ? 'Included in report (click to exclude)' : 'Excluded (click to include)' %>">
+  <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+</span>
+
+
           <% end %>
         <% end %>
       </div>
@@ -352,6 +363,39 @@ async function handleWebSearchToggle(isChecked) {
     label.classList.remove('text-muted');
   }
 }
+
+async function toggleReviewed(element) {
+  const sectionId = element.dataset.sectionId;
+  const reportId = element.dataset.reportId;
+  
+  try {
+    const response = await fetch(`/ai_portfolio_reports/${reportId}/ai_report_sections/${sectionId}/toggle_reviewed`, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      element.classList.toggle('checked', data.reviewed);
+      element.title = data.reviewed ? 'Included in report (click to exclude)' : 'Excluded (click to include)';
+      
+      // Update counter
+      const counter = document.querySelector('.ai-review-counter');
+      if (counter) {
+        const count = document.querySelectorAll('.ai-section-toggle.checked').length;
+        const total = document.querySelectorAll('.ai-section-toggle').length;
+        counter.innerHTML = counter.innerHTML.replace(/\d+\/\d+/, `${count}/${total}`);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to toggle:', error);
+  }
+}
+
+
+
+
+
 
 // Helper to set web search state explicitly
 async function setWebSearchState(enabled) {
@@ -1911,6 +1955,43 @@ For refinements, try phrasing as an **instruction** instead. For example:
       .ai-editable-content::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
       }
+
+     .ai-section-toggle {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+  background: transparent;
+}
+
+.ai-section-toggle:hover {
+  border-color: #a1a1aa;
+}
+
+.ai-section-toggle .check-icon {
+  opacity: 0;
+  color: #71717a;
+}
+
+.ai-section-toggle.checked {
+  border-color: #a1a1aa;
+  background: transparent;
+}
+
+.ai-section-toggle.checked .check-icon {
+  opacity: 1;
+}
+
+
+
+
 
       /* Responsive adjustments */
       @media (max-width: 1200px) {
