@@ -37,10 +37,15 @@ Our project deviates from standard Rails patterns in specific ways. Ensure these
   - Avoid passing complex Ruby objects; pass IDs and find the record inside the job.
   - Handle potential race conditions.
 
-- **Validations & Security:**
-  - Use Strong Parameters in controllers.
-  - Ensure models have robust validations.
-  - Sanitize any raw SQL or user-provided input that might lead to injection.
+- **Validations & Security (OWASP Focus):**
+  - **Injection:** Sanitize any raw SQL (`find_by_sql`, `joins`, `where` with strings) or user-provided input. Prefer hash or placeholder syntax.
+  - **Broken Access Control:**
+    - Verify `authorize` is called for every action.
+    - Check for "Insecure Direct Object Reference" (IDOR) by ensuring scopes (e.g., `current_user.notes`) are used where appropriate alongside Pundit.
+  - **Mass Assignment:** Use Strong Parameters in controllers; verify that sensitive attributes (e.g., `admin`, `role_id`) are never permitted.
+  - **Sensitive Data Exposure:** Ensure logs don't leak PII or credentials (check `filter_parameters` in `config/initializers/filter_parameter_logging.rb`).
+  - **XSS:** Ensure any `html_safe` or `raw` usage is strictly necessary and input is sanitized.
+  - **File Uploads:** Validate file types, sizes, and ensure they are scanned or stored securely (e.g., via Active Storage with proper bucket permissions).
 
 ## 3. Clean Design & Readability
 
