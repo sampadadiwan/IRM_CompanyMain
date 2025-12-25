@@ -6,6 +6,7 @@ resources :kpis
 resources :kpi_reports do
   patch 'recompute_percentage_change', on: :member
   post "analyze", on: :member
+  post 'send_portco_notification', on: :member
   get "show_performance", on: :collection
 end
 

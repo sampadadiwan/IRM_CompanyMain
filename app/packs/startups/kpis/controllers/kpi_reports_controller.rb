@@ -1,5 +1,5 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze send_portco_notification]
   after_action :verify_authorized, except: %i[index search show_performance]
 
   # GET /kpi_reports or /kpi_reports.json
@@ -120,6 +120,11 @@ class KpiReportsController < ApplicationController
   def recompute_percentage_change
     KpiPercentageChangeJob.perform_later(@kpi_report.entity_id, current_user.id)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
+  end
+
+  def send_portco_notification
+    SendPortcoNotification.call(model: @kpi_report, entity_id: current_user.entity_id)
+    redirect_to kpi_report_url(@kpi_report), notice: "Notification sent."
   end
 
   def show_performance

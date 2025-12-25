@@ -51,7 +51,15 @@ Then('I should see the kpi report details') do
   expect(page).to have_content(@kpi_report.portfolio_company.investor_name)
   expect(page).to have_content(I18n.l(@kpi_report.as_of))
   expect(page).to have_content(@kpi_report.entity.name)
-  
+end
+
+Given('I am on the kpi report show page') do
+  @kpi_report = KpiReport.last if @kpi_report.blank?
+  visit kpi_report_path(@kpi_report)
+end
+
+When('I press {string}') do |button_text|
+  click_on button_text
 end
 
 

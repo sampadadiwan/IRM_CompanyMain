@@ -50,6 +50,12 @@ class KpiReportPolicy < KpiPolicyBase
     index?
   end
 
+  # Allow sending notification reminders if the user can index reports
+  # and the report has self-reporting (portco upload) enabled.
+  def send_portco_notification?
+    update? && record.portfolio_company.investor_accesses.approved.exists?
+  end
+
   def edit?
     update?
   end

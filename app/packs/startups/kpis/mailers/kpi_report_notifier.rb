@@ -14,7 +14,8 @@ class KpiReportNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       kpi_report_id: record.id,
-      entity_id: params[:entity_id]
+      entity_id: params[:entity_id],
+      investor_id: record.portfolio_company_id
     }
   end
 

@@ -16,3 +16,12 @@ Feature: KPI Self-Reporting Reminder Email
     Given I fill and submit the login page
     Then I should see the kpi report details
 
+  @javascript
+  Scenario: Send manual reminder email from the KPI report show page
+    And a KpiReport "as_of=2024-12-31;period=Month;enable_portco_upload=true" exists for the portfolio company "Startup One"
+    And I log in with email "founder@startupone.com"
+    And I am on the kpi report show page
+    When I press "Send Notification"
+    Then an email should be sent to "founder@startupone.com" with subject containing "Reminder to report KPIs for Startup One"
+    And the email should contain a link to "Fill KPI Report"
+

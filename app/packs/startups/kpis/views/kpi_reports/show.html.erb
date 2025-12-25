@@ -59,7 +59,7 @@
       </td>
     </tr>
   <% end %>
-  
+
   <%= display_custom_fields(@kpi_report, collapsed: false) if current_user %>
 
   <tr>
@@ -97,7 +97,9 @@
   <% if policy(@kpi_report).update? %>
     <%= button_to "Analyze", analyze_kpi_report_path(@kpi_report), class: "btn btn-outline-warning", data: {action: "click->confirm#popup", msg: "Analysis will be done using an LLM and will take time, so please be patient. Your data will be sent to an external LLM. Proceed?", turbo:false, method: :post} if current_user.entity.enable_ai_chat %>
 
-    <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Send Notification", send_portco_notification_kpi_report_path(@kpi_report), method: :post, class: "btn btn-outline-info", data: {action: "click->confirm#popup", msg: "Send a notification reminder to the Portfolio Company to complete this KPI report", bs_toggle: "tooltip", bs_title: "Send a notification reminder to the Portfolio Company to complete this KPI report"} if policy(@kpi_report).send_portco_notification? %>
+
+    <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report), {class: "btn btn-outline-primary"} %>
     <%= button_to t_common(:delete), @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
   <% end %>
