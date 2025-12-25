@@ -267,3 +267,4 @@ gem 'json_schemer'
 gem 'ruby_llm', git: "https://github.com/crmne/ruby_llm.git", ref: "b5df74e445ac3c60224e5ef9c5465dd90bb3a417"
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
+gem 'google_search_results'
