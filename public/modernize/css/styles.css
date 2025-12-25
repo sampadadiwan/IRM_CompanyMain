@@ -8,7 +8,7 @@
   --bs-heading-color: #eaeff4 !important;
 }
 [data-bs-theme=dark] .tooltip-inner {
-  color: #7c8fac !important;
+  color: var(--bs-primary) !important;
 }
 [data-bs-theme=dark] .card {
   --bs-card-title-color: #eaeff4;
